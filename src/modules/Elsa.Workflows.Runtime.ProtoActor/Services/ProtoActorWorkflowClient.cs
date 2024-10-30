@@ -25,7 +25,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     /// <summary>
     /// A workflow client that uses Proto.Actor to communicate with the workflow running in the cluster.
     /// </summary>
-    public ProtoActorWorkflowClient(string workflowInstanceId, Cluster cluster, Mappers.Mappers mappers, ITenantAccessor tenantAccessor)
+    public ProtoActorWorkflowClient(string workflowInstanceId, Cluster cluster, Mappers.Mappers mappers, ITenantAccessor tenantAccessor, IWorkflowActivationStrategyEvaluator workflowActivationStrategyEvaluator)
     {
         WorkflowInstanceId = workflowInstanceId;
         _mappers = mappers;

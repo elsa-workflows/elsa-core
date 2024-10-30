@@ -2,9 +2,7 @@ using System.Net.Mime;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
 using Microsoft.AspNetCore.Http;
 
@@ -17,6 +15,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 internal abstract class EndpointBase<T>(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowRuntime workflowRuntime,
+    IWorkflowStarter workflowStarter,
     IApiSerializer apiSerializer)
     : ElsaEndpoint<T, Response> where T : IExecutionRequest, new()
 {
@@ -40,27 +39,35 @@ internal abstract class EndpointBase<T>(
             return;
         }
         
-        var workflowClient = await workflowRuntime.CreateClientAsync(cancellationToken);
-        var createWorkflowInstanceRequest = new CreateAndRunWorkflowInstanceRequest
+        var startRequest = new StartWorkflowRequest
         {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph.Workflow.Identity.Id),
+            Workflow = workflowGraph.Workflow,
             CorrelationId = request.CorrelationId,
             Input = request.GetInputAsDictionary(),
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle
         };
         
-        // Create and run the workflow instance.
-        var runWorkflowResponse = await workflowClient.CreateAndRunInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
-        var instanceId = workflowClient.WorkflowInstanceId;
+        var startResponse = await workflowStarter.StartWorkflowAsync(startRequest, cancellationToken);
+        HttpContext.Response.Headers.Append("x-elsa-workflow-cannot-start", startResponse.CannotStart.ToString());
+        
+        if (startResponse.CannotStart)
+        {
+            await SendOkAsync(cancellationToken);
+            return;
+        }
+
+        var instanceId = startResponse.WorkflowInstanceId!;
         
         // Write the workflow instance ID to the response header.
         // This allows clients to read the header even if the workflow writes a response body
         // (in which case, we can't transmit a JSON body that includes the instance ID). 
         HttpContext.Response.Headers.Append("x-elsa-workflow-instance-id", instanceId);
         
+        var workflowClient = await workflowRuntime.CreateClientAsync(cancellationToken);
+
         // If a workflow fault occurred, respond appropriately with a 500 internal server error.
-        if (runWorkflowResponse.SubStatus == WorkflowSubStatus.Faulted)
+        if (startResponse.SubStatus == WorkflowSubStatus.Faulted)
         {
             var workflowState = await workflowClient.ExportStateAsync(cancellationToken);
             await HandleFaultAsync(workflowState, cancellationToken);

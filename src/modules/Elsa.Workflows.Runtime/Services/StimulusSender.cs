@@ -2,6 +2,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Results;
+using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Runtime;
@@ -12,7 +13,9 @@ public class StimulusSender(
     ITriggerBoundWorkflowService triggerBoundWorkflowService,
     IBookmarkBoundWorkflowService bookmarkBoundWorkflowService,
     IBookmarkQueue bookmarkQueue,
-    IWorkflowRuntime workflowRuntime) : IStimulusSender
+    IWorkflowRuntime workflowRuntime,
+    IWorkflowStarter workflowStarter,
+    ILogger<StimulusSender> logger) : IStimulusSender
 {
     /// <inheritdoc />
     public Task<SendStimulusResult> SendAsync(string activityTypeName, object stimulus, StimulusMetadata? metadata = null, CancellationToken cancellationToken = default)
@@ -50,21 +53,27 @@ public class StimulusSender(
         {
             var workflowGraph = triggerBoundWorkflow.WorkflowGraph;
             var workflow = workflowGraph.Workflow;
-            var workflowClient = await workflowRuntime.CreateClientAsync(cancellationToken);
 
             foreach (var trigger in triggerBoundWorkflow.Triggers)
             {
-                var createWorkflowInstanceRequest = new CreateAndRunWorkflowInstanceRequest
+                var startRequest = new StartWorkflowRequest
                 {
-                    WorkflowDefinitionHandle = workflow.DefinitionHandle,
-                    TriggerActivityId = trigger.ActivityId,
+                    Workflow = workflow,
                     CorrelationId = correlationId,
                     Input = input,
                     Properties = properties,
                     ParentId = parentId,
+                    TriggerActivityId = trigger.ActivityId
                 };
-                var response = await workflowClient.CreateAndRunInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
-                responses.Add(response);
+                
+                var startResponse = await workflowStarter.StartWorkflowAsync(startRequest, cancellationToken);
+                if (startResponse.CannotStart)
+                {
+                    logger.LogWarning("Workflow activation strategy disallowed starting workflow {WorkflowDefinitionHandle} with correlation ID {CorrelationId}", workflow.DefinitionHandle, correlationId);
+                    continue;
+                }
+                
+                responses.Add(startResponse.ToRunWorkflowInstanceResponse());
             }
         }
 

@@ -207,6 +207,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBookmarkQueue, StoreBookmarkQueue>()
             .AddScoped<IWorkflowCanceler, WorkflowCanceler>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
+            .AddScoped<IWorkflowActivationStrategyEvaluator, DefaultWorkflowActivationStrategyEvaluator>()
+            .AddScoped<IWorkflowStarter, DefaultWorkflowStarter>()
             .AddScoped<ILogRecordExtractor<ActivityExecutionRecord>, ActivityExecutionRecordExtractor>()
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             
