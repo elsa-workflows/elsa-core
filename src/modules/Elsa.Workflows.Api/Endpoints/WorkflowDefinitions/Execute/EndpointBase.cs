@@ -64,7 +64,7 @@ internal abstract class EndpointBase<T>(
         // (in which case, we can't transmit a JSON body that includes the instance ID). 
         HttpContext.Response.Headers.Append("x-elsa-workflow-instance-id", instanceId);
         
-        var workflowClient = await workflowRuntime.CreateClientAsync(cancellationToken);
+        var workflowClient = await workflowRuntime.CreateClientAsync(instanceId, cancellationToken);
 
         // If a workflow fault occurred, respond appropriately with a 500 internal server error.
         if (startResponse.SubStatus == WorkflowSubStatus.Faulted)
