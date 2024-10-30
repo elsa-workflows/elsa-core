@@ -1,8 +1,10 @@
 using Elsa.Common;
+using Elsa.Mediator.Contracts;
+using Elsa.Secrets.Management.Notifications;
 
 namespace Elsa.Secrets.Management;
 
-public class DefaultExpiredSecretsUpdater(ISecretStore store, ISystemClock systemClock) : IExpiredSecretsUpdater
+public class DefaultExpiredSecretsUpdater(ISecretStore store, IMediator mediator, ISystemClock systemClock) : IExpiredSecretsUpdater
 {
     public async Task UpdateExpiredSecretsAsync(CancellationToken cancellationToken = default)
     {
@@ -21,6 +23,7 @@ public class DefaultExpiredSecretsUpdater(ISecretStore store, ISystemClock syste
             secret.Status = SecretStatus.Expired;
             secret.UpdatedAt = now;
             await store.UpdateAsync(secret, cancellationToken);
+            await mediator.SendAsync(new SecretExpired(secret), cancellationToken);
         }
     }
 }

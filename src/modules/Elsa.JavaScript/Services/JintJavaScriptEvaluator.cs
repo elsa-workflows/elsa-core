@@ -48,7 +48,10 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
     {
         options ??= new ExpressionEvaluatorOptions();
 
-        var engineOptions = new Jint.Options();
+        var engineOptions = new Jint.Options
+        {
+            ExperimentalFeatures = ExperimentalFeature.TaskInterop
+        };
 
         if (_jintOptions.AllowClrAccess)
             engineOptions.AllowClr();
@@ -111,7 +114,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
     {
         var preparedScript = GetOrCreatePrepareScript(expression);
         var result = engine.Evaluate(preparedScript);
-        return result.ToObject();
+        return result.UnwrapIfPromise().ToObject();
     }
 
     private Prepared<Script> GetOrCreatePrepareScript(string expression)

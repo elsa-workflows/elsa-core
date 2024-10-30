@@ -52,7 +52,6 @@ using Proto.Remote.GrpcNet;
 using StackExchange.Redis;
 
 // ReSharper disable RedundantAssignment
-
 const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
 const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.Sqlite;
 const bool useHangfire = false;
