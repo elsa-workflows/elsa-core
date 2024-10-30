@@ -17,7 +17,8 @@ public class SingletonStrategy(IWorkflowInstanceStore workflowInstanceStore) : I
     {
         var filter = new WorkflowInstanceFilter
         {
-            DefinitionId = context.Workflow.Identity.DefinitionId
+            DefinitionId = context.Workflow.Identity.DefinitionId,
+            WorkflowStatus = WorkflowStatus.Running
         };
 
         var count = await workflowInstanceStore.CountAsync(filter);

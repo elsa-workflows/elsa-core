@@ -19,6 +19,7 @@ public class CorrelatedSingletonStrategy(IWorkflowInstanceStore workflowInstance
         {
             DefinitionId = context.Workflow.Identity.DefinitionId,
             CorrelationId = context.CorrelationId,
+            WorkflowStatus = WorkflowStatus.Running
         };
 
         var count = await workflowInstanceStore.CountAsync(filter, context.CancellationToken);

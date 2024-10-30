@@ -10,9 +10,10 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 [PublicAPI]
 internal class GetEndpoint(
     IWorkflowDefinitionService workflowDefinitionService,
-    IWorkflowRuntime workflowRuntime, 
+    IWorkflowRuntime workflowRuntime,
+    IWorkflowStarter workflowStarter,
     IApiSerializer apiSerializer) 
-    : EndpointBase<GetRequest>(workflowDefinitionService, workflowRuntime, apiSerializer)
+    : EndpointBase<GetRequest>(workflowDefinitionService, workflowRuntime, workflowStarter, apiSerializer)
 {
     /// <inheritdoc />
     public override void Configure()
