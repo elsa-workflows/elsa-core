@@ -24,6 +24,7 @@ public class SignalManager
         {
             await Task.WhenAny(taskCompletionSource.Task, Task.Delay(millisecondsTimeout, cancellationTokenSource.Token));
             cancellationTokenSource.Token.ThrowIfCancellationRequested();
+            _signals.TryRemove(signal, out _);
             return taskCompletionSource.Task.Result;
         }
         catch (OperationCanceledException)
@@ -35,10 +36,10 @@ public class SignalManager
     public void Trigger(object signal, object? result = null)
     {
         var taskCompletionSource = GetOrCreate(signal);
-    
+
         if (taskCompletionSource.Task.IsCompleted)
             return;
-        
+
         taskCompletionSource.SetResult(result);
     }
 
