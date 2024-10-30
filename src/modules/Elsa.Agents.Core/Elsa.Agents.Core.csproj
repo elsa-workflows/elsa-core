@@ -17,9 +17,5 @@
       <ProjectReference Include="..\Elsa.Agents.Models\Elsa.Agents.Models.csproj" />
       <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
     </ItemGroup>
-    
-    <ItemGroup>
-        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
-    </ItemGroup>
-    
+
 </Project>

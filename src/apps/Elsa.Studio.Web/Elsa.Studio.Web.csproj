@@ -15,10 +15,6 @@
         <PackageReference Include="Elsa.Studio.Login.BlazorWasm" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
     </ItemGroup>
-    
-    <ItemGroup>
-        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
-    </ItemGroup>
 
     <ItemGroup>
         <Folder Include="wwwroot\" />
