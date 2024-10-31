@@ -1,6 +1,7 @@
 using Elsa.Workflows.Api.RealTime.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Elsa.Workflows.Api.RealTime.Hubs;
@@ -9,6 +10,7 @@ namespace Elsa.Workflows.Api.RealTime.Hubs;
 /// Represents a SignalR hub for receiving workflow events on the client.
 /// </summary>
 [PublicAPI]
+[Authorize]
 public class WorkflowInstanceHub : Hub<IWorkflowInstanceClient>
 {
     private readonly IWorkflowRuntime _workflowRuntime;
