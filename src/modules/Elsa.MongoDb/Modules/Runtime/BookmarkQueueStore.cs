@@ -32,10 +32,22 @@ public class MongoBookmarkQueueStore(MongoDbStore<BookmarkQueueItem> mongoDbStor
         return await mongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
     }
 
+    public async Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await mongoDbStore.FindManyAsync(query => Filter(query, filter), cancellationToken);
+    }
+
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
         var results = await mongoDbStore.FindManyAsync(query => Paginate(Order(query, orderBy), pageArgs), cancellationToken);
         var count = await mongoDbStore.CountAsync(queryable => Order(queryable, orderBy), cancellationToken);
+        return Page.Of(results.ToList(), count);
+    }
+
+    public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
+    {
+        var results = await mongoDbStore.FindManyAsync(query => Paginate(Order(Filter(query, filter), orderBy), pageArgs), cancellationToken);
+        var count = await mongoDbStore.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
         return Page.Of(results.ToList(), count);
     }
 

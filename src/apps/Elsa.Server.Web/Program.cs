@@ -492,11 +492,12 @@ services
 // Obfuscate HTTP request headers.
 services.AddActivityStateFilter<HttpRequestAuthenticationHeaderFilter>();
 
-// Configure recurring tasks.
+// Optionally configure recurring tasks using alternative schedules.
 services.Configure<RecurringTaskOptions>(options =>
 {
     options.Schedule.ConfigureTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(30));
-    options.Schedule.ConfigureTask<UpdateExpiredSecretsRecurringTask>(TimeSpan.FromSeconds(10));
+    options.Schedule.ConfigureTask<UpdateExpiredSecretsRecurringTask>(TimeSpan.FromHours(4));
+    options.Schedule.ConfigureTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(60));
 });
 
 //services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));

@@ -209,6 +209,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
             .AddScoped<IWorkflowActivationStrategyEvaluator, DefaultWorkflowActivationStrategyEvaluator>()
             .AddScoped<IWorkflowStarter, DefaultWorkflowStarter>()
+            .AddScoped<IBookmarkQueuePurger, DefaultBookmarkQueuePurger>()
             .AddScoped<ILogRecordExtractor<ActivityExecutionRecord>, ActivityExecutionRecordExtractor>()
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             
@@ -242,7 +243,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             
             // Startup tasks, background tasks, and recurring tasks.
             .AddStartupTask<PopulateRegistriesStartupTask>()
-            .AddRecurringTask<TriggerBookmarkQueueRecurringTask>()
+            .AddRecurringTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromMinutes(1))
+            .AddRecurringTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromMinutes(1))
 
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
