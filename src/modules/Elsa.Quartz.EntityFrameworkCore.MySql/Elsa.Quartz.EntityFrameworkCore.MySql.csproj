@@ -13,10 +13,6 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
         <PackageReference Include="Quartz.Serialization.Json" />
     </ItemGroup>
-    
-    <ItemGroup>
-        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
-    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.EntityFrameworkCore.Common\Elsa.EntityFrameworkCore.Common.csproj" />

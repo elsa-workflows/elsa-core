@@ -27,8 +27,4 @@
       <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
-    </ItemGroup>
-    
 </Project>

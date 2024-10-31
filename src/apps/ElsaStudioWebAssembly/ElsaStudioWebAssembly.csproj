@@ -14,8 +14,4 @@
         <PackageReference Include="Microsoft.Extensions.Http" />
     </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
-    </ItemGroup>
-
 </Project>
