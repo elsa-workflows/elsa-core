@@ -57,7 +57,7 @@ public class SecretManagementFeature(IModule module) : FeatureBase(module)
             .AddScoped<ISecretUpdater, DefaultSecretUpdater>()
             .AddScoped<ISecretManager, DefaultSecretManager>()
             .AddScoped<IExpiredSecretsUpdater, DefaultExpiredSecretsUpdater>()
-            .AddRecurringTask<UpdateExpiredSecretsRecurringTask>()
+            .AddRecurringTask<UpdateExpiredSecretsRecurringTask>(TimeSpan.FromHours(4))
             ;
     }
 }

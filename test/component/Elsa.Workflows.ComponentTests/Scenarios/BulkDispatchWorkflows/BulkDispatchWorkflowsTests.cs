@@ -15,7 +15,7 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
     private readonly WorkflowEvents _workflowEvents;
     private readonly SignalManager _signalManager;
     private readonly IWorkflowRuntime _workflowRuntime;
-    private static readonly object GreetEmployeesWorkflowCompletedSignal = new();
+    private readonly object _greetEmployeesWorkflowCompletedSignal = new();
 
     public BulkDispatchWorkflowsTests(App app) : base(app)
     {
@@ -35,7 +35,7 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(GreetEmployeesWorkflow.DefinitionId, VersionOptions.Published)
         });
         await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
-        var parentWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(GreetEmployeesWorkflowCompletedSignal);
+        var parentWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(_greetEmployeesWorkflowCompletedSignal);
 
         Assert.Equal(WorkflowStatus.Finished, parentWorkflowInstanceArgs.WorkflowInstance.Status);
     }
@@ -64,7 +64,7 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
             return;
 
         if (e.WorkflowInstance.DefinitionId == GreetEmployeesWorkflow.DefinitionId)
-            _signalManager.Trigger(GreetEmployeesWorkflowCompletedSignal, e);
+            _signalManager.Trigger(_greetEmployeesWorkflowCompletedSignal, e);
     }
 
     protected override void OnDispose()

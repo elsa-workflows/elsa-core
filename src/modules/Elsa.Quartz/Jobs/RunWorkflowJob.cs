@@ -3,7 +3,7 @@ using Elsa.Extensions;
 using Elsa.Scheduling;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Messages;
+using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace Elsa.Quartz.Jobs;
@@ -11,7 +11,11 @@ namespace Elsa.Quartz.Jobs;
 /// <summary>
 /// A job that runs a workflow.
 /// </summary>
-public class RunWorkflowJob(IWorkflowRuntime workflowRuntime, ITenantAccessor tenantAccessor, ITenantFinder tenantFinder) : IJob
+public class RunWorkflowJob(
+    ITenantAccessor tenantAccessor,
+    ITenantFinder tenantFinder,
+    IWorkflowStarter workflowStarter,
+    ILogger<RunWorkflowJob> logger) : IJob
 {
     /// The job key.
     public static readonly JobKey JobKey = new(nameof(RunWorkflowJob));
@@ -22,17 +26,25 @@ public class RunWorkflowJob(IWorkflowRuntime workflowRuntime, ITenantAccessor te
         tenantAccessor.Tenant = await context.GetTenantAsync(tenantFinder);
         var map = context.MergedJobDataMap;
         var cancellationToken = context.CancellationToken;
-        var workflowClient = await workflowRuntime.CreateClientAsync(cancellationToken);
-        
-        var request = new CreateAndRunWorkflowInstanceRequest
+
+        var startRequest = new StartWorkflowRequest
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId((string)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.WorkflowDefinitionHandle.DefinitionVersionId))),
-            TriggerActivityId = (string?)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.TriggerActivityId)),
             CorrelationId = (string?)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.CorrelationId)),
+            TriggerActivityId = (string?)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.TriggerActivityId)),
             Input = map.GetDictionary(nameof(ScheduleNewWorkflowInstanceRequest.Input)),
             Properties = map.GetDictionary(nameof(ScheduleNewWorkflowInstanceRequest.Properties)),
             ParentId = (string?)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.ParentId))
         };
-        await workflowClient.CreateAndRunInstanceAsync(request, cancellationToken: cancellationToken);
+        
+        var startResponse = await workflowStarter.StartWorkflowAsync(startRequest, cancellationToken);
+        
+        if (startResponse.CannotStart)
+        {
+            logger.LogWarning("Workflow activation strategy disallowed starting workflow {WorkflowDefinitionHandle} with correlation ID {CorrelationId}", startRequest.WorkflowDefinitionHandle, startRequest.CorrelationId);
+            return;
+        }
+        
+        logger.LogInformation("Started workflow {WorkflowInstanceId} with correlation ID {CorrelationId}", startResponse.WorkflowInstanceId, startRequest.CorrelationId);
     }
 }

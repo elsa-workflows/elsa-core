@@ -21,11 +21,19 @@ public interface IBookmarkQueueStore
 
     /// Returns the first bookmark queue item matching the specified filter.
     Task<BookmarkQueueItem?> FindAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default);
+    
+    /// Returns a set of bookmark queue items matching the specified filter.
+    Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns a page of records, ordered by the specified order definition.
     /// </summary>
     Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Returns a page of records, filtered and ordered by the specified order definition.
+    /// </summary>
+    Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a set of bookmark queue items matching the specified filter.

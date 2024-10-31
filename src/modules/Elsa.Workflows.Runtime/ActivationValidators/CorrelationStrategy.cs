@@ -18,6 +18,7 @@ public class CorrelationStrategy(IWorkflowInstanceStore workflowInstanceStore) :
         var filter = new WorkflowInstanceFilter
         {
             CorrelationId = context.CorrelationId,
+            WorkflowStatus = WorkflowStatus.Running
         };
 
         var count = await workflowInstanceStore.CountAsync(filter);

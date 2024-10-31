@@ -49,9 +49,6 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         CancellationToken = cancellationToken;
         Id = id;
         _publisher = GetRequiredService<INotificationSender>();
-
-        _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _cancellationRegistration = _cancellationTokenSource.Token.Register(CancelActivity);
     }
 
     /// <summary>
@@ -136,9 +133,6 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     public void TransitionTo(ActivityStatus status)
     {
         Status = status;
-
-        if (Status is ActivityStatus.Completed or ActivityStatus.Canceled or ActivityStatus.Faulted)
-            _cancellationRegistration.Dispose();
     }
 
     /// <summary>
@@ -678,7 +672,5 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
 
     void IDisposable.Dispose()
     {
-        _cancellationRegistration.Dispose();
-        _cancellationTokenSource.Dispose();
     }
 }

@@ -16,8 +16,8 @@ public class DispatchWorkflowsTests : AppComponentTest
     private readonly SignalManager _signalManager;
     private readonly IWorkflowRuntime _workflowRuntime;
 
-    private static readonly object ChildWorkflowCompletedSignal = new();
-    private static readonly object ParentWorkflowCompletedSignal = new();
+    private readonly object _childWorkflowCompletedSignal = new();
+    private readonly object _parentWorkflowCompletedSignal = new();
 
     public DispatchWorkflowsTests(App app) : base(app)
     {
@@ -36,8 +36,8 @@ public class DispatchWorkflowsTests : AppComponentTest
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(DispatchAndWaitWorkflow.DefinitionId, VersionOptions.Published)
         });
         await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
-        var childWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(ChildWorkflowCompletedSignal);
-        var parentWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(ParentWorkflowCompletedSignal);
+        var childWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(_childWorkflowCompletedSignal);
+        var parentWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(_parentWorkflowCompletedSignal);
 
         Assert.Equal(WorkflowStatus.Finished, childWorkflowInstanceArgs.WorkflowInstance.Status);
         Assert.Equal(WorkflowStatus.Finished, parentWorkflowInstanceArgs.WorkflowInstance.Status);
@@ -49,10 +49,10 @@ public class DispatchWorkflowsTests : AppComponentTest
             return;
 
         if (e.WorkflowInstance.DefinitionId == ChildWorkflow.DefinitionId)
-            _signalManager.Trigger(ChildWorkflowCompletedSignal, e);
+            _signalManager.Trigger(_childWorkflowCompletedSignal, e);
 
         if (e.WorkflowInstance.DefinitionId == DispatchAndWaitWorkflow.DefinitionId)
-            _signalManager.Trigger(ParentWorkflowCompletedSignal, e);
+            _signalManager.Trigger(_parentWorkflowCompletedSignal, e);
     }
 
     protected override void OnDispose()
