@@ -13,33 +13,40 @@ public class DefaultBookmarkQueuePurger(IBookmarkQueueStore store, ISystemClock 
 {
     private readonly TimeSpan _ttl = TimeSpan.FromMinutes(1);
     private readonly int _batchSize = 50;
-    
+
     public async Task PurgeAsync(CancellationToken cancellationToken = default)
     {
         var currentPage = 0;
         var now = systemClock.UtcNow;
-        
-        logger.LogInformation("Purging bookmark queue items older than {Ttl}.", _ttl);
+        var thresholdDate = now - _ttl;
+
+        logger.LogInformation("Purging bookmark queue items older than {ThresholdDate}.", thresholdDate);
 
         while (true)
         {
             var pageArgs = PageArgs.FromPage(currentPage, _batchSize);
-            var filter = new BookmarkQueueFilter {CreatedAtLessThan = now - _ttl};
+            var filter = new BookmarkQueueFilter
+            {
+                CreatedAtLessThan = thresholdDate
+            };
             var order = new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
             var page = await store.PageAsync(pageArgs, filter, order, cancellationToken);
             var items = page.Items;
-            
+
             if (items.Count == 0)
                 break;
-            
+
             var ids = items.Select(x => x.Id).ToList();
-            await store.DeleteAsync(new BookmarkQueueFilter {Ids = ids}, cancellationToken);
-            
+            await store.DeleteAsync(new BookmarkQueueFilter
+            {
+                Ids = ids
+            }, cancellationToken);
+
             logger.LogInformation("Purged {Count} bookmark queue items.", items.Count);
-            
+
             currentPage++;
         }
-        
+
         logger.LogInformation("Finished purging bookmark queue items.");
     }
 }
