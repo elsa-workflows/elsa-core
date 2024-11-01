@@ -7,6 +7,7 @@ using Elsa.Common.RecurringTasks;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
 using Elsa.DropIns.Extensions;
+using Elsa.EntityFrameworkCore;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
@@ -226,7 +227,12 @@ services
                     runtime.UseEntityFrameworkCore(ef =>
                     {
                         if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
-                            ef.UseSqlServer(sqlServerConnectionString!);
+                        {
+                            //ef.UseSqlServer(sqlServerConnectionString, new ElsaDbContextOptions);
+                            var migrationsAssembly = typeof(Elsa.EntityFrameworkCore.SqlServer.IdentityDbContextFactory).Assembly;
+                            var connectionString = sqlServerConnectionString;
+                            ef.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(migrationsAssembly, connectionString, null, configure => configure.CommandTimeout(60000));
+                        }
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)

@@ -34,7 +34,7 @@ public class AzureServiceBusTests : AppComponentTest
     [Fact]
     public async Task WorkflowReceivesMessage_WhenSendingMessageToTopic()
     {
-        var client = Scope.ServiceProvider.GetRequiredService<ServiceBusClient>();
+        await using var client = Scope.ServiceProvider.GetRequiredService<ServiceBusClient>();
 
         var topic = MessageReceivedTriggerWorkflow.Topic;
 
