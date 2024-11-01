@@ -66,10 +66,10 @@ const bool useAzureServiceBus = false;
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated requests.
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
-const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.ProtoActor;
+const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
-const bool useAgents = true;
+const bool useAgents = false;
 const bool useSecrets = true;
 
 var builder = WebApplication.CreateBuilder(args);
