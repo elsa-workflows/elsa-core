@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Helpers;
 using Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management;
@@ -77,7 +78,8 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
             return;
         }
 
-        var zipStream = new MemoryStream();
+        // Streams is not disposed. Potential memory leak?!
+        var zipStream = StreamHelpers.RecyclableMemoryStreamManager.GetStream(nameof(Elsa.Workflows.Api.Endpoints.WorkflowInstances.Export.Export.DownloadMultipleInstancesAsync));
         using (var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
         {
             // Create a JSON file for each workflow definition:
@@ -94,6 +96,8 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
 
         // Send the zip file to the client:
         zipStream.Position = 0;
+
+        // This could be optimized by using the SendStreamAsync function and the zipStream stream instead of a byte array.
         await SendBytesAsync(zipStream.ToArray(), "workflow-instances.zip", cancellation: cancellationToken);
     }
 

@@ -1,7 +1,9 @@
+using System.Buffers;
 using System.IO.Compression;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
+using Elsa.Helpers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -65,7 +67,8 @@ internal class Export : ElsaEndpoint<Request>
             return;
         }
 
-        var zipStream = new MemoryStream();
+        // Stream is not disposed. Potential memory leak?!
+        var zipStream = StreamHelpers.RecyclableMemoryStreamManager.GetStream(nameof(Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Export.Export.DownloadMultipleWorkflowsAsync));
         using (var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
         {
             // Create a JSON file for each workflow definition:
@@ -121,8 +124,8 @@ internal class Export : ElsaEndpoint<Request>
         var document = JsonSerializer.SerializeToDocument(model, serializerOptions);
         var rootElement = document.RootElement;
 
-        using var output = new MemoryStream();
-        await using var writer = new Utf8JsonWriter(output);
+        using var output = StreamHelpers.RecyclableMemoryStreamManager.GetStream(nameof(Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Export.Export.SerializeWorkflowDefinitionAsync));
+        await using var writer = new Utf8JsonWriter((IBufferWriter<byte>)output);
 
         writer.WriteStartObject();
         writer.WriteString("$schema", "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json");

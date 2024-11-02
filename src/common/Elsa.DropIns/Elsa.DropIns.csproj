@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -19,11 +19,10 @@
 
     <!--Overridden
     for vulnerability reasons with dependencies referencing older versions.-->
-    <ItemGroup>
-    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.DropIns.Core\Elsa.DropIns.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Helpers\Elsa.Helpers.csproj" />
     </ItemGroup>
 
 </Project>

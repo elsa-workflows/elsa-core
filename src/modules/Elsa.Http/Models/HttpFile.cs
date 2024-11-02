@@ -1,5 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
+using Elsa.Helpers;
+using FluentStorage.Utils.Extensions;
 
 namespace Elsa.Http;
 
@@ -56,7 +58,7 @@ public class HttpFile
     /// </summary>
     public byte[] GetBytes()
     {
-        using var memoryStream = new MemoryStream();
+        using var memoryStream = StreamHelpers.RecyclableMemoryStreamManager.GetStream(nameof(Elsa.Http.HttpFile.GetBytes), Stream.Length);
         if (Stream.CanSeek) Stream.Seek(0, SeekOrigin.Begin);
         Stream.CopyTo(memoryStream);
         return memoryStream.ToArray();
