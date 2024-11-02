@@ -5,7 +5,7 @@ public class App : IAsyncLifetime
     public App()
     {
         Infrastructure = new();
-        WorkflowServer = new(Infrastructure, "http://localhost:5001");
+        WorkflowServer = new(Infrastructure, "http://localhost:5004");
     }
 
     public Infrastructure Infrastructure { get; set; }

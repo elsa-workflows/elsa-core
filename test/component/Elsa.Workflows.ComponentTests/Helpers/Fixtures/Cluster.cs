@@ -3,25 +3,11 @@ using Hangfire.Annotations;
 namespace Elsa.Workflows.ComponentTests.Helpers;
 
 [UsedImplicitly]
-public class Cluster : IDisposable, IAsyncDisposable
+public class Cluster(Infrastructure infrastructure) : IAsyncDisposable
 {
-    public Cluster(Infrastructure infrastructure)
-    {
-        Pod1 = new(infrastructure, "http://localhost:5001");
-        Pod2 = new(infrastructure, "http://localhost:5002");
-        Pod3 = new(infrastructure, "http://localhost:5003");
-    }
-
-    public WorkflowServer Pod3 { get; set; }
-    public WorkflowServer Pod2 { get; set; }
-    public WorkflowServer Pod1 { get; set; }
-
-    public void Dispose()
-    {
-        Pod3.Dispose();
-        Pod2.Dispose();
-        Pod1.Dispose();
-    }
+    public WorkflowServer Pod3 { get; set; } = new(infrastructure, "http://localhost:5003");
+    public WorkflowServer Pod2 { get; set; } = new(infrastructure, "http://localhost:5002");
+    public WorkflowServer Pod1 { get; set; } = new(infrastructure, "http://localhost:5001");
 
     public async ValueTask DisposeAsync()
     {
