@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
+      <ProjectReference Include="..\..\src\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
+      <ProjectReference Include="..\..\src\modules\Elsa.Hangfire\Elsa.Hangfire.csproj" />
+      <ProjectReference Include="..\..\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+      <ProjectReference Include="..\..\src\modules\Elsa\Elsa.csproj" />
+    </ItemGroup>
+</Project>
