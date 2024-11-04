@@ -1,6 +1,7 @@
 using Elsa.Agents.Persistence.Entities;
 using Elsa.Agents.Persistence.Features;
 using Elsa.EntityFrameworkCore;
+using Elsa.EntityFrameworkCore.EntityHandlers;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,5 +35,6 @@ public class EFCoreAgentPersistenceFeature(IModule module) : PersistenceFeatureB
         AddEntityStore<ServiceDefinition, EFCoreServiceStore>();
         AddEntityStore<AgentDefinition, EFCoreAgentStore>();
         Services.AddScoped<IEntityModelCreatingHandler, SetupForOracle>();
+        Services.AddScoped<IEntityModelCreatingHandler, SetupForSqlite>();
     }
 }
