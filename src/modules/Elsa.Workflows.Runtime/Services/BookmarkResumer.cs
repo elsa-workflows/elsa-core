@@ -10,13 +10,13 @@ namespace Elsa.Workflows.Runtime;
 public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bookmarkStore, IStimulusHasher stimulusHasher, ILogger<BookmarkResumer> logger) : IBookmarkResumer
 {
     /// <inheritdoc />
-    public Task<ResumeBookmarkResult> ResumeAsync<TActivity>(object stimulus, ResumeBookmarkOptions? options, CancellationToken cancellationToken = default) where TActivity : IActivity
+    public Task<ResumeBookmarkResult> ResumeAsync<TActivity>(object stimulus, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default) where TActivity : IActivity
     {
         return ResumeAsync<TActivity>(stimulus, null, options, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<ResumeBookmarkResult> ResumeAsync<TActivity>(object stimulus, string? workflowInstanceId, ResumeBookmarkOptions? options, CancellationToken cancellationToken = default) where TActivity : IActivity
+    public async Task<ResumeBookmarkResult> ResumeAsync<TActivity>(object stimulus, string? workflowInstanceId = null, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default) where TActivity : IActivity
     {
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<TActivity>();
         var stimulusHash = stimulusHasher.Hash(activityTypeName, stimulus);
@@ -25,6 +25,18 @@ public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bo
             ActivityTypeName = activityTypeName,
             WorkflowInstanceId = workflowInstanceId,
             Hash = stimulusHash,
+        };
+        return await ResumeAsync(bookmarkFilter, options, cancellationToken);
+    }
+    
+    /// <inheritdoc />
+    public async Task<ResumeBookmarkResult> ResumeAsync<TActivity>(string bookmarkId, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default) where TActivity : IActivity
+    {
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<TActivity>();
+        var bookmarkFilter = new BookmarkFilter
+        {
+            ActivityTypeName = activityTypeName,
+            BookmarkId = bookmarkId
         };
         return await ResumeAsync(bookmarkFilter, options, cancellationToken);
     }
