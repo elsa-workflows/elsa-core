@@ -13,5 +13,6 @@ public class CommonPersistenceFeature(IModule module) : FeatureBase(module)
     {
         Services.AddScoped<IEntitySavingHandler, ApplyTenantId>();
         Services.AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>();
+        Services.AddScoped<IEntityModelCreatingHandler, SetupForSqlite>();
     }
 }
