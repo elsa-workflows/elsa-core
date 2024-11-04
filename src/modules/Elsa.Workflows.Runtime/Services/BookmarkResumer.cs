@@ -28,7 +28,21 @@ public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bo
         };
         return await ResumeAsync(bookmarkFilter, options, cancellationToken);
     }
-    
+
+    /// <inheritdoc />
+    public async Task<ResumeBookmarkResult> ResumeAsync(string bookmarkId, IDictionary<string, object> input, CancellationToken cancellationToken = default)
+    {
+        var bookmarkFilter = new BookmarkFilter
+        {
+            BookmarkId = bookmarkId
+        };
+        var options = new ResumeBookmarkOptions
+        {
+            Input = input
+        };
+        return await ResumeAsync(bookmarkFilter, options, cancellationToken);
+    }
+
     /// <inheritdoc />
     public async Task<ResumeBookmarkResult> ResumeAsync<TActivity>(string bookmarkId, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default) where TActivity : IActivity
     {
