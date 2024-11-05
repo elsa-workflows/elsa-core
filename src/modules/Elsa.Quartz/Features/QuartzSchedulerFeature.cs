@@ -35,8 +35,8 @@ public class QuartzSchedulerFeature(IModule module) : FeatureBase(module)
     public override void Apply()
     {
         Services.AddSingleton<IActivityDescriptorModifier, CronActivityDescriptorModifier>();
-        Services.AddScoped<QuartzWorkflowScheduler>();
-        Services.AddScoped<QuartzCronParser>();
+        Services.AddSingleton<QuartzCronParser>();
+        Services.AddSingleton<QuartzWorkflowScheduler>();
         Services.AddQuartz(quartz => quartz
             .AddJob<RunWorkflowJob>(job => job.WithIdentity(RunWorkflowJob.JobKey).StoreDurably())
             .AddJob<ResumeWorkflowJob>(job => job.WithIdentity(ResumeWorkflowJob.JobKey).StoreDurably()));
