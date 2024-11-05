@@ -51,7 +51,7 @@ jobs:
             TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
             echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
           else
-            echo "VERSION=3.2.1-blueberry.${{github.run_number}}" >> $GITHUB_ENV
+            echo "VERSION=3.2.2-blueberry.${{github.run_number}}" >> $GITHUB_ENV
           fi
       - name: Set up JDK 17
         uses: actions/setup-java@v2

@@ -1,12 +1,17 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.KeyValues.Entities;
+using Elsa.MongoDb.Contracts;
+using Elsa.MongoDb.NamingStrategies;
 using Elsa.MongoDb.Options;
 using Elsa.MongoDb.Serializers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
@@ -36,12 +41,22 @@ public class MongoDbFeature : FeatureBase
     /// </summary>
     public Action<MongoDbOptions> Options { get; set; } = _ => { };
 
+    /// <summary>
+    /// A delegate that creates an instance of an implementation of <see cref="ICollectionNamingStrategy"/>.
+    /// </summary>
+    public Func<IServiceProvider, ICollectionNamingStrategy> CollectionNamingStrategy { get; set; } = sp => sp.GetRequiredService<DefaultNamingStrategy>();
+
     /// <inheritdoc />
     public override void Apply()
     {
         Services.Configure(Options);
 
-        Services.AddScoped(sp => CreateDatabase(sp, ConnectionString));
+        var mongoUrl = new MongoUrl(ConnectionString);
+        Services.AddSingleton(sp => CreateMongoClient(sp, mongoUrl));
+        Services.AddScoped(sp => CreateDatabase(sp, mongoUrl));
+        
+        Services.TryAddScoped<DefaultNamingStrategy>();
+        Services.AddScoped(CollectionNamingStrategy);
 
         RegisterSerializers();
         RegisterClassMaps();
@@ -54,6 +69,7 @@ public class MongoDbFeature : FeatureBase
         TryRegisterSerializerOrSkipWhenExist(typeof(Variable), new VariableSerializer());
         TryRegisterSerializerOrSkipWhenExist(typeof(Version), new VersionSerializer());
         TryRegisterSerializerOrSkipWhenExist(typeof(JsonElement), new JsonElementSerializer());
+        TryRegisterSerializerOrSkipWhenExist(typeof(JsonNode), new JsonNodeBsonConverter());
     }
 
     private static void RegisterClassMaps()
@@ -84,11 +100,10 @@ public class MongoDbFeature : FeatureBase
        }
     }
     
-    private static IMongoDatabase CreateDatabase(IServiceProvider sp, string connectionString)
+    private static IMongoClient CreateMongoClient(IServiceProvider sp, MongoUrl mongoUrl)
     {
         var options = sp.GetRequiredService<IOptions<MongoDbOptions>>().Value;
 
-        var mongoUrl = new MongoUrl(connectionString);
         var settings = MongoClientSettings.FromUrl(mongoUrl);
 
         settings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityEventSubscriber());
@@ -100,8 +115,13 @@ public class MongoDbFeature : FeatureBase
         settings.RetryWrites = options.RetryWrites;
         settings.SslSettings = options.SslSettings;
 
-        var mongoClient = new MongoClient(settings);
-        return mongoClient.GetDatabase(mongoUrl.DatabaseName);
+        return new MongoClient(settings);
+    }
+
+    private static IMongoDatabase CreateDatabase(IServiceProvider sp, MongoUrl mongoUrl)
+    {
+        var client = sp.GetRequiredService<IMongoClient>();
+        return client.GetDatabase(mongoUrl.DatabaseName);
     }
 
     private static string GetApplicationName(MongoClientSettings settings) =>
