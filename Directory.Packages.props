@@ -84,8 +84,6 @@
     <PackageVersion Include="Quartz.Extensions.DependencyInjection" Version="3.10.0" />
     <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.10.0" />
     <PackageVersion Include="Quartz.Serialization.Json" Version="3.10.0" />
-    <PackageVersion Include="Refit" Version="7.1.2" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="7.0.0" />
     <PackageVersion Include="Scrutor" Version="4.2.2" />
     <PackageVersion Include="ShortGuid" Version="2.0.1" />
     <PackageVersion Include="StackExchange.Redis" Version="2.8.0" />
@@ -139,6 +137,8 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.18" />
     <PackageVersion Include="Polly" Version="7.2.4" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="7.0.0" />
+    <PackageVersion Include="Refit" Version="7.1.2" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="8.0.1" />
@@ -170,5 +170,7 @@
     <PackageVersion Include="Polly" Version="8.4.2" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
     <PackageVersion Include="Microsoft.Extensions.DependencyModel" Version="8.0.2" />
+    <PackageVersion Include="Refit" Version="8.0.0" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0" />
   </ItemGroup>
 </Project>
