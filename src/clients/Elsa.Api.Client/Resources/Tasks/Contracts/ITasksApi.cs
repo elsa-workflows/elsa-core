@@ -11,9 +11,10 @@ public interface ITasksApi
     /// <summary>
     /// Sends the specified request to the tasks API.
     /// </summary>
+    /// <param name="taskId">The Id of the task being reported as completed.</param>
     /// <param name="request">The request.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The response.</returns>
     [Post("/tasks/{taskId}/complete")]
-    Task ReportTaskCompletedAsync([Body] ReportTaskCompletedRequest request, CancellationToken cancellationToken = default);
+    Task ReportTaskCompletedAsync(string taskId, [Body] ReportTaskCompletedRequest request, CancellationToken cancellationToken = default);
 }
