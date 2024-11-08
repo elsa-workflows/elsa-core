@@ -87,7 +87,7 @@ internal class Post(
 
         PublishWorkflowDefinitionResult? result = null;
 
-        if (request.Publish.GetValueOrDefault(false))
+        if (request.Publish == true)
         {
             result = await workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);
 
@@ -106,7 +106,8 @@ internal class Post(
         }
 
         var mappedDefinition = await linker.MapAsync(draft, cancellationToken);
-        var response = new Response(mappedDefinition, false, result?.ConsumingWorkflows?.Count() ?? 0);
+        var affectedWorkflows = result?.AffectedWorkflows?.WorkflowDefinitions ?? [];
+        var response = new Response(mappedDefinition, false, affectedWorkflows.Count);
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
     }
 }

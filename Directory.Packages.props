@@ -146,7 +146,6 @@
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="7.0.0" />
     <PackageVersion Include="Refit" Version="7.1.2" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="7.0.0" />
-    <PackageVersion Include="Scrutor" Version="4.2.2" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="8.0.1" />
@@ -182,8 +181,8 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
     <PackageVersion Include="Polly" Version="8.4.2" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
-    <PackageVersion Include="Refit" Version="7.2.1" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="7.2.1" />
-    <PackageVersion Include="Scrutor" Version="5.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyModel" Version="8.0.2" />
+    <PackageVersion Include="Refit" Version="8.0.0" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0" />
   </ItemGroup>
 </Project>
