@@ -1,5 +1,6 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Management.Notifications;
@@ -9,4 +10,4 @@ namespace Elsa.Workflows.Management.Notifications;
 /// </summary>
 /// <param name="WorkflowDefinition">The workflow definition.</param>
 [PublicAPI]
-public record WorkflowDefinitionPublished(WorkflowDefinition WorkflowDefinition) : INotification;
+public record WorkflowDefinitionPublished(WorkflowDefinition WorkflowDefinition, AffectedWorkflows AffectedWorkflows) : INotification;

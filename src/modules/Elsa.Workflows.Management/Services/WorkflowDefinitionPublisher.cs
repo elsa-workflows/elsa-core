@@ -121,16 +121,9 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         definition = Initialize(definition);
         await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
 
-        await _notificationSender.SendAsync(new WorkflowDefinitionPublished(definition), cancellationToken);
-
-        var consumingWorkflows = new List<WorkflowDefinition>();
-
-        if (definition.Options is { UsableAsActivity: true, AutoUpdateConsumingWorkflows: true })
-        {
-            consumingWorkflows.AddRange(await UpdateReferencesInConsumingWorkflows(definition, cancellationToken));
-        }
-        
-        return new PublishWorkflowDefinitionResult(true, validationErrors, consumingWorkflows);
+        var affectedWorkflows = new AffectedWorkflows(new List<WorkflowDefinition>());
+        await _notificationSender.SendAsync(new WorkflowDefinitionPublished(definition, affectedWorkflows), cancellationToken);
+        return new PublishWorkflowDefinitionResult(true, validationErrors, affectedWorkflows);
     }
 
     /// <inheritdoc />

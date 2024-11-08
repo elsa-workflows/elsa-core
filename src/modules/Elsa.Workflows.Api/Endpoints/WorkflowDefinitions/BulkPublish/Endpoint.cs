@@ -66,10 +66,8 @@ internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
             var result = await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
             published.Add(definitionId);
             
-            if (result.ConsumingWorkflows?.Any() == true)
-            {
-                updatedConsumers.AddRange(result.ConsumingWorkflows.Select(x => x.DefinitionId));
-            }
+            if (result.AffectedWorkflows.WorkflowDefinitions.Count > 0) 
+                updatedConsumers.AddRange(result.AffectedWorkflows.WorkflowDefinitions.Select(x => x.DefinitionId));
         }
 
         return new Response(published, alreadyPublished, notFound, skipped, updatedConsumers);

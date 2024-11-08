@@ -221,7 +221,6 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<IWorkflowMaterializer, ClrWorkflowMaterializer>()
             .AddScoped<IWorkflowMaterializer, JsonWorkflowMaterializer>()
             .AddScoped<IActivityResolver, WorkflowDefinitionActivityResolver>()
-            .AddScoped<IWorkflowGraphNetworkBuilder, WorkflowGraphNetworkBuilder>()
             .AddScoped<WorkflowDefinitionMapper>()
             .AddSingleton<VariableDefinitionMapper>()
             .AddSingleton<WorkflowStateMapper>()
