@@ -70,6 +70,9 @@ public class ReloadWorkflowTests : AppComponentTest
         // Assert that the workflow definition service finds the updated workflow version.
         var definitionV2 = await _workflowDefinitionService.FindWorkflowGraphAsync(definitionId, VersionOptions.Latest);
         Assert.Equal(definitionVersionId2, definitionV2!.Workflow.Identity.Id);
+        
+        // Cleanup: Delete the workflow definition and its versions.
+        await _workflowDefinitionManager.DeleteByDefinitionIdAsync(definitionId, CancellationToken.None);
     }
     
     [Fact]
