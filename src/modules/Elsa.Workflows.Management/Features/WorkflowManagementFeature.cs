@@ -213,6 +213,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<IWorkflowDefinitionImporter, WorkflowDefinitionImporter>()
             .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
             .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
+            .AddScoped<IWorkflowReferenceUpdater, WorkflowReferenceUpdater>()
             .AddScoped<IActivityRegistryPopulator, ActivityRegistryPopulator>()
             .AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>()
             .AddSingleton<IExpressionDescriptorProvider, DefaultExpressionDescriptorProvider>()
@@ -233,6 +234,7 @@ public class WorkflowManagementFeature : FeatureBase
         Services
             .AddNotificationHandler<DeleteWorkflowInstances>()
             .AddNotificationHandler<RefreshActivityRegistry>()
+            .AddNotificationHandler<UpdateConsumingWorkflows>()
             ;
 
         Services.Configure<ManagementOptions>(options =>

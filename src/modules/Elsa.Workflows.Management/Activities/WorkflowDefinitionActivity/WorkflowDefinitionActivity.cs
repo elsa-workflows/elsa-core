@@ -52,7 +52,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         var serviceProvider = context.ServiceProvider;
         var cancellationToken = context.CancellationToken;
 
-        // Find the workflow definition and not the graph; the graph must be computed at runtime, since one NodeIds will vary across graphs.
+        // Find the workflow definition and not the graph; the graph must be computed at runtime, since NodeIds will vary across graphs.
         var workflowDefinition = await GetWorkflowDefinitionAsync(serviceProvider, cancellationToken);
 
         if (workflowDefinition == null)
