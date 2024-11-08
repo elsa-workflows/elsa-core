@@ -17,7 +17,7 @@ public class ResumeWorkflowJob(IWorkflowRuntime workflowRuntime)
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task ExecuteAsync(string name, ScheduleExistingWorkflowInstanceRequest request, CancellationToken cancellationToken)
     {
-        var client = await workflowRuntime.CreateClientAsync(cancellationToken);
+        var client = await workflowRuntime.CreateClientAsync(request.WorkflowInstanceId, cancellationToken);
         var runRequest = new RunWorkflowInstanceRequest
         {
             BookmarkId = request.BookmarkId,
