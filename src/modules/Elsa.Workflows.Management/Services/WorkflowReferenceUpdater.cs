@@ -112,7 +112,8 @@ public class WorkflowReferenceUpdater(
     {
         var workflowDefinitionFilter = new WorkflowDefinitionFilter
         {
-            VersionOptions = VersionOptions.LatestOrPublished
+            VersionOptions = VersionOptions.LatestOrPublished,
+            IsReadonly = false
         };
         var workflowDefinitionSummaries = await workflowDefinitionStore.FindSummariesAsync(workflowDefinitionFilter, cancellationToken);
         var workflowGraphs = new List<WorkflowGraph>();
