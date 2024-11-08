@@ -63,6 +63,7 @@ public class WorkflowReferenceUpdater(
         {
             workflowDefinitionActivity.WorkflowDefinitionVersionId = definition.Id;
             workflowDefinitionActivity.LatestAvailablePublishedVersionId = definition.Id;
+            workflowDefinitionActivity.Version = definition.Version;
         }
 
         // Update the new version of the published workflow definition.
