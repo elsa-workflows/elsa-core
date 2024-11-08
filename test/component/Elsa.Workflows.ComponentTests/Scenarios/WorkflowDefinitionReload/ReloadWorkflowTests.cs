@@ -22,7 +22,6 @@ public class ReloadWorkflowTests : AppComponentTest
     private readonly TestWorkflowProvider _testWorkflowProvider;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IActivityRegistry _activityRegistry;
-    private readonly IWorkflowDefinitionCacheManager _workflowDefinitionCacheManager;
 
     public ReloadWorkflowTests(App app) : base(app)
     {
@@ -33,7 +32,6 @@ public class ReloadWorkflowTests : AppComponentTest
         _activityRegistry = Scope.ServiceProvider.GetRequiredService<IActivityRegistry>();
         var workflowProviders = Scope.ServiceProvider.GetRequiredService<IEnumerable<IWorkflowProvider>>();
         _testWorkflowProvider = (TestWorkflowProvider)workflowProviders.First(x => x is TestWorkflowProvider);
-        _workflowDefinitionCacheManager = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionCacheManager>();
     }
 
     [Fact]
