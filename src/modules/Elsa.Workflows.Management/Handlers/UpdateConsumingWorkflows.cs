@@ -56,9 +56,13 @@ public class UpdateConsumingWorkflows(
             var newWorkflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(newVersion, cancellationToken);
             var newWorkflowDefinitionActivities =
                 FindWorkflowActivityDefinitionActivityNodes(newWorkflowGraph.Root)
-                    .Where(x => x.WorkflowDefinitionId == definitionId)
+                    .Where(x => x.WorkflowDefinitionId == definitionId && x.WorkflowDefinitionVersionId != definition.Id)
                     .ToList();
 
+            // Skip if the new version of the published workflow definition is not used in any workflow graph, or if the activity is already up-to-date.
+            if(newWorkflowDefinitionActivities.Count == 0)
+                continue;
+            
             foreach (var workflowDefinitionActivity in newWorkflowDefinitionActivities)
             {
                 // Update the consuming workflow graph to use the new version of the published workflow definition.
