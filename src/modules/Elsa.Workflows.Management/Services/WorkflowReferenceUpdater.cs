@@ -25,11 +25,11 @@ public class WorkflowReferenceUpdater(
             return new UpdateWorkflowReferencesResult([]);
 
         // Find all workflow graphs that contain the updated workflow definition.
-        var matchingWorkflowGraphs = await FindWorkflowsContainingUpdatedWorkflowDefinitionAsync(referencedDefinition.DefinitionId, cancellationToken);
-
-        // Find all root workflow definition activity nodes.
+        var consumingWorkflowGraphs = await FindWorkflowsContainingUpdatedWorkflowDefinitionAsync(referencedDefinition.DefinitionId, cancellationToken);
+        
+        // Update consuming workflows.
         var updatedWorkflows = new List<WorkflowDefinition>();
-        foreach (var workflowGraph in matchingWorkflowGraphs)
+        foreach (var workflowGraph in consumingWorkflowGraphs)
         {
             var newDefinition = await UpdateConsumingWorkflowAsync(workflowGraph, referencedDefinition, cancellationToken);
             
@@ -47,10 +47,11 @@ public class WorkflowReferenceUpdater(
         var originalVersionIsPublished = workflowGraph.Workflow.Publication.IsPublished;
         var newVersion = await publisher.GetDraftAsync(consumerDefinitionId, VersionOptions.LatestOrPublished, cancellationToken);
 
+        // This is null in case the definition no longer exists in the store.
         if (newVersion == null)
             return null;
 
-        // Materialize the new/draft version to find all workflow definition activities that use the updated workflow definition.
+        // Materialize the draft to find all workflow definition activities that use the updated workflow definition.
         var newWorkflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(newVersion, cancellationToken);
         var outdatedWorkflowDefinitionActivities = FindOutdatedWorkflowDefinitionActivities(newWorkflowGraph, definition).ToList();
 
