@@ -11,8 +11,8 @@ public interface IWorkflowReferenceUpdater
     /// <summary>
     /// Updates references to the specified workflow of all workflows that reference it.
     /// </summary>
-    /// <param name="definition">The workflow definition to update references for.</param>
+    /// <param name="referencedDefinition">The workflow definition that is being referenced. All workflows that reference this definition will be updated to use this newest version.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result of the operation.</returns>
-    Task<UpdateWorkflowReferencesResult> UpdateWorkflowReferencesAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
+    Task<UpdateWorkflowReferencesResult> UpdateWorkflowReferencesAsync(WorkflowDefinition referencedDefinition, CancellationToken cancellationToken = default);
 }

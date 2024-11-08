@@ -18,20 +18,20 @@ public class WorkflowReferenceUpdater(
     IApiSerializer serializer) : IWorkflowReferenceUpdater
 {
     /// <inheritdoc />
-    public async Task<UpdateWorkflowReferencesResult> UpdateWorkflowReferencesAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    public async Task<UpdateWorkflowReferencesResult> UpdateWorkflowReferencesAsync(WorkflowDefinition referencedDefinition, CancellationToken cancellationToken = default)
     {
         // Skip if the published workflow definition is not usable as an activity or does not auto-update consuming workflows.
-        if (definition.Options is not { UsableAsActivity: true, AutoUpdateConsumingWorkflows: true })
+        if (referencedDefinition.Options is not { UsableAsActivity: true, AutoUpdateConsumingWorkflows: true })
             return new UpdateWorkflowReferencesResult([]);
 
         // Find all workflow graphs that contain the updated workflow definition.
-        var matchingWorkflowGraphs = await FindWorkflowsContainingUpdatedWorkflowDefinitionAsync(definition.DefinitionId, cancellationToken);
+        var matchingWorkflowGraphs = await FindWorkflowsContainingUpdatedWorkflowDefinitionAsync(referencedDefinition.DefinitionId, cancellationToken);
 
         // Find all root workflow definition activity nodes.
         var updatedWorkflows = new List<WorkflowDefinition>();
         foreach (var workflowGraph in matchingWorkflowGraphs)
         {
-            var newDefinition = await UpdateConsumingWorkflowAsync(workflowGraph, definition, cancellationToken);
+            var newDefinition = await UpdateConsumingWorkflowAsync(workflowGraph, referencedDefinition, cancellationToken);
             
             if (newDefinition != null)
                 updatedWorkflows.Add(newDefinition);
