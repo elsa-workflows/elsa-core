@@ -7,19 +7,19 @@ public class WorkflowInstanceVariableManager(
     IWorkflowInstanceVariableReader variableReader,
     IWorkflowInstanceVariableWriter variableWriter) : IWorkflowInstanceVariableManager
 {
-    public async Task<IEnumerable<ResolvedVariable>> GetVariables(string workflowInstanceId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ResolvedVariable>> GetVariablesAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
         var workflowExecutionContext = await GetWorkflowExecutionContextAsync(workflowInstanceId, cancellationToken);
         if (workflowExecutionContext == null) return [];
         return await variableReader.GetVariables(workflowExecutionContext, cancellationToken);
     }
 
-    public Task<IEnumerable<ResolvedVariable>> GetVariables(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<ResolvedVariable>> GetVariablesAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default)
     {
         return variableReader.GetVariables(workflowExecutionContext, cancellationToken);
     }
 
-    public async Task<IEnumerable<ResolvedVariable>> SetVariables(string workflowInstanceId, IEnumerable<VariableUpdateValue> variables, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ResolvedVariable>> SetVariablesAsync(string workflowInstanceId, IEnumerable<VariableUpdateValue> variables, CancellationToken cancellationToken = default)
     {
         var workflowExecutionContext = await GetWorkflowExecutionContextAsync(workflowInstanceId, cancellationToken);
         if (workflowExecutionContext == null) return [];
@@ -28,7 +28,7 @@ public class WorkflowInstanceVariableManager(
         return resolvedVariables;
     }
 
-    public Task<IEnumerable<ResolvedVariable>> SetVariables(WorkflowExecutionContext workflowExecutionContext, IEnumerable<VariableUpdateValue> variables, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<ResolvedVariable>> SetVariablesAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<VariableUpdateValue> variables, CancellationToken cancellationToken = default)
     {
         return variableWriter.SetVariables(workflowExecutionContext, variables, cancellationToken);
     }

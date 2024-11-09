@@ -27,7 +27,7 @@ internal class List(IWorkflowInstanceVariableManager workflowInstanceVariableMan
             return;
         }
 
-        var resolvedVariables = await workflowInstanceVariableManager.SetVariables(workflowInstanceId, request.Variables, cancellationToken).ToList();
+        var resolvedVariables = await workflowInstanceVariableManager.SetVariablesAsync(workflowInstanceId, request.Variables, cancellationToken).ToList();
         var variableModels = resolvedVariables.Select(x => new ResolvedVariableModel(x.Variable.Id, x.Variable.Name, x.Value)).ToList();
         var response = new ListResponse<ResolvedVariableModel>(variableModels);
         await SendOkAsync(response, cancellationToken);
