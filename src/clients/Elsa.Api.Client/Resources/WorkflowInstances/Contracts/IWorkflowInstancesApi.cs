@@ -112,4 +112,7 @@ public interface IWorkflowInstancesApi
     [Post("/bulk-actions/import/workflow-instances")]
     [Multipart]
     Task<ImportFilesResponse> BulkImportAsync([AliasAs("files")] List<StreamPart> files, CancellationToken cancellationToken = default);
+    
+    [Get("/workflow-instances/{workflowInstanceId}/variables")]
+    Task<ListResponse<ResolvedVariable>> GetVariablesAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
 }

@@ -1,11 +1,7 @@
 using Elsa.Abstractions;
-using Elsa.Common.Entities;
-using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Api.Models;
+using Elsa.Models;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Open.Linq.AsyncExtensions;
@@ -13,7 +9,11 @@ using Open.Linq.AsyncExtensions;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Variables;
 
 [UsedImplicitly]
-internal class List(IWorkflowInstanceStore workflowInstanceStore, IWorkflowDefinitionService workflowDefinitionService, IServiceProvider serviceProvider, IWorkflowInstanceVariableEnumerator variableEnumerator) : ElsaEndpointWithoutRequest<Response>
+internal class List(
+    IWorkflowInstanceStore workflowInstanceStore, 
+    IWorkflowDefinitionService workflowDefinitionService, 
+    IServiceProvider serviceProvider, 
+    IWorkflowInstanceVariableEnumerator variableEnumerator) : ElsaEndpointWithoutRequest<ListResponse<ResolvedVariableModel>>
 {
     public override void Configure()
     {
@@ -59,15 +59,9 @@ internal class List(IWorkflowInstanceStore workflowInstanceStore, IWorkflowDefin
         
         var variables = await variableEnumerator.EnumerateVariables(workflowExecutionContext, cancellationToken).ToList();
         var variableModels = variables.Select(x => new ResolvedVariableModel(x.Variable.Id, x.Variable.Name, x.Value)).ToList();
-        var response = new Response(variableModels);
+        var response = new ListResponse<ResolvedVariableModel>(variableModels);
         await SendOkAsync(response, cancellationToken);
     }
-}
-
-[UsedImplicitly]
-internal class Response(ICollection<ResolvedVariableModel> variables)
-{
-    public ICollection<ResolvedVariableModel> Variables { get; set; } = variables;
 }
 
 internal record ResolvedVariableModel(string Id, string Name, object? Value);
