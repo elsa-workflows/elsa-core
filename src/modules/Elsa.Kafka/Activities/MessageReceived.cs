@@ -41,6 +41,11 @@ public class MessageReceived : Trigger<object>
     public Input<Type?> MessageType { get; set; } = default!;
     
     /// <summary>
+    /// The correlating fields to use when resuming the workflow.
+    /// </summary>
+    public Input<IDictionary<string, object?>> CorrelatingFields { get; set; } = default!;
+    
+    /// <summary>
     /// The received transport message.
     /// </summary>
     public Output<KafkaTransportMessage> TransportMessage = default!;
@@ -79,6 +84,7 @@ public class MessageReceived : Trigger<object>
     private object GetStimulus(ExpressionExecutionContext context)
     {
         var consumerDefinitionId = ConsumerDefinitionId.Get(context);
-        return new MessageReceivedStimulus(consumerDefinitionId);
+        var correlatingFields = CorrelatingFields.GetOrDefault(context) ?? new Dictionary<string, object?>();
+        return new MessageReceivedStimulus(consumerDefinitionId, correlatingFields);
     }
 }

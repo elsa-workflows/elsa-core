@@ -20,5 +20,6 @@ public class KafkaFeature(IModule module) : FeatureBase(module)
         Services.Configure(_configureOptions);
         Services.AddBackgroundTask<StartConsumersStartupTask>();
         Services.AddScoped<IConsumerDefinitionProvider, OptionsConsumerDefinitionProvider>();
+        Services.AddHandlersFrom<KafkaFeature>();
     }
 }

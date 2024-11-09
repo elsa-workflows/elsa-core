@@ -9,10 +9,12 @@ public class MessageReceivedStimulus
     {
     }
 
-    public MessageReceivedStimulus(string consumerDefinitionId)
+    public MessageReceivedStimulus(string consumerDefinitionId, IDictionary<string, object?> correlatingFields)
     {
         ConsumerDefinitionId = consumerDefinitionId;
+        CorrelatingFields = correlatingFields;
     }
 
     public string ConsumerDefinitionId { get; set; } = default!;
+    public IDictionary<string, object?> CorrelatingFields { get; set; } = new Dictionary<string, object?>();
 }
