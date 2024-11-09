@@ -16,6 +16,7 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Identity.Multitenancy;
+using Elsa.Kafka;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;
@@ -63,6 +64,7 @@ const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
 const bool useAzureServiceBus = false;
+const bool useKafka = true;
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated requests.
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
@@ -430,6 +432,14 @@ services
             elsa.UseAzureServiceBus(azureServiceBusConnectionString, asb =>
             {
                 asb.AzureServiceBusOptions = options => configuration.GetSection("AzureServiceBus").Bind(options);
+            });
+        }
+        
+        if(useKafka)
+        {
+            elsa.UseKafka(kafka =>
+            {
+                kafka.ConfigureOptions(options => configuration.GetSection("Kafka").Bind(options));
             });
         }
 

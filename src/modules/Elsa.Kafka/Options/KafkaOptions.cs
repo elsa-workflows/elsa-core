@@ -4,6 +4,6 @@ namespace Elsa.Kafka;
 
 public class KafkaOptions
 {
-    public ICollection<ConsumerDefinition> ConsumerConfigs { get; set; } = [];
+    public ICollection<ConsumerDefinition> ConsumerDefinitions { get; set; } = [];
     public JsonSerializerOptions MessageSerializerOptions { get; set; } = new();
 }

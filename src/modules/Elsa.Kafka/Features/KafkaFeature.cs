@@ -14,7 +14,12 @@ public class KafkaFeature(IModule module) : FeatureBase(module)
         _configureOptions += configureOptions;
         return this;
     }
-    
+
+    public override void Configure()
+    {
+        Module.AddActivitiesFrom<KafkaFeature>();
+    }
+
     public override void Apply()
     {
         Services.Configure(_configureOptions);
