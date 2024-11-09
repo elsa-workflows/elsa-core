@@ -1,7 +1,7 @@
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Updates references to the specified workflow of all workflows that reference it.

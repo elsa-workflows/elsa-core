@@ -150,6 +150,8 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IVariablePersistenceManager, VariablePersistenceManager>()
             .AddScoped<IIncidentStrategyResolver, DefaultIncidentStrategyResolver>()
             .AddScoped<IActivityStateFilterManager, DefaultActivityStateFilterManager>()
+            .AddScoped<IWorkflowInstanceVariableReader, DefaultWorkflowInstanceVariableReader>()
+            .AddScoped<IWorkflowInstanceVariableWriter, DefaultWorkflowInstanceVariableWriter>()
 
             // Incident Strategies.
             .AddTransient<IIncidentStrategy, FaultStrategy>()

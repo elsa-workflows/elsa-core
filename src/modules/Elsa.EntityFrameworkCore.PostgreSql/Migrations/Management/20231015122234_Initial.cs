@@ -1,6 +1,7 @@
-﻿#nullable disable
-
+﻿using Elsa.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 {
@@ -8,12 +9,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
     public partial class Initial : Migration
     {
         private readonly IElsaDbContextSchema _schema;
-
         public Initial(IElsaDbContextSchema schema)
         {
             _schema = schema ?? throw new ArgumentNullException(nameof(schema));
         }
-
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -76,10 +75,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 name: "IX_WorkflowDefinition_DefinitionId_Version",
                 schema: _schema.Schema,
                 table: "WorkflowDefinitions",
-                columns: new[]
-                {
-                    "DefinitionId", "Version"
-                },
+                columns: new[] { "DefinitionId", "Version" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -152,28 +148,19 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 name: "IX_WorkflowInstance_Status_DefinitionId",
                 schema: _schema.Schema,
                 table: "WorkflowInstances",
-                columns: new[]
-                {
-                    "Status", "DefinitionId"
-                });
+                columns: new[] { "Status", "DefinitionId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_Status_SubStatus",
                 schema: _schema.Schema,
                 table: "WorkflowInstances",
-                columns: new[]
-                {
-                    "Status", "SubStatus"
-                });
+                columns: new[] { "Status", "SubStatus" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_Status_SubStatus_DefinitionId_Version",
                 schema: _schema.Schema,
                 table: "WorkflowInstances",
-                columns: new[]
-                {
-                    "Status", "SubStatus", "DefinitionId", "Version"
-                });
+                columns: new[] { "Status", "SubStatus", "DefinitionId", "Version" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_SubStatus",
@@ -185,10 +172,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 name: "IX_WorkflowInstance_SubStatus_DefinitionId",
                 schema: _schema.Schema,
                 table: "WorkflowInstances",
-                columns: new[]
-                {
-                    "SubStatus", "DefinitionId"
-                });
+                columns: new[] { "SubStatus", "DefinitionId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_UpdatedAt",

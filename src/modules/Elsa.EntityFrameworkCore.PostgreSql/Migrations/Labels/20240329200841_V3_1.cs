@@ -1,16 +1,16 @@
-#nullable disable
-
 using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Labels
 {
     /// <inheritdoc />
     public partial class V3_1 : Migration
     {
-        private readonly IElsaDbContextSchema _schema;
+        private readonly Elsa.EntityFrameworkCore.IElsaDbContextSchema _schema;
 
         /// <inheritdoc />
-        public V3_1(IElsaDbContextSchema schema)
+        public V3_1(Elsa.EntityFrameworkCore.IElsaDbContextSchema schema)
         {
             _schema = schema;
         }
@@ -18,11 +18,13 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Labels
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+
         }
     }
 }
