@@ -58,13 +58,16 @@ internal class List(IWorkflowInstanceStore workflowInstanceStore, IWorkflowDefin
             cancellationToken: cancellationToken);
         
         var variables = await variableEnumerator.EnumerateVariables(workflowExecutionContext, cancellationToken).ToList();
-        var response = new Response(variables);
+        var variableModels = variables.Select(x => new ResolvedVariableModel(x.Variable.Id, x.Variable.Name, x.Value)).ToList();
+        var response = new Response(variableModels);
         await SendOkAsync(response, cancellationToken);
     }
 }
 
 [UsedImplicitly]
-internal class Response(ICollection<ResolvedVariable> variables)
+internal class Response(ICollection<ResolvedVariableModel> variables)
 {
-    public ICollection<ResolvedVariable> Variables { get; set; } = variables;
+    public ICollection<ResolvedVariableModel> Variables { get; set; } = variables;
 }
+
+internal record ResolvedVariableModel(string Id, string Name, object? Value);
