@@ -1,5 +1,4 @@
 using Elsa.Abstractions;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Workflows.Management;
 using JetBrains.Annotations;
@@ -9,11 +8,7 @@ using Open.Linq.AsyncExtensions;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Variables.List;
 
 [UsedImplicitly]
-internal class List(
-    IWorkflowInstanceStore workflowInstanceStore, 
-    IWorkflowDefinitionService workflowDefinitionService, 
-    IServiceProvider serviceProvider, 
-    IWorkflowInstanceVariableReader variableReader) : ElsaEndpointWithoutRequest<ListResponse<ResolvedVariableModel>>
+internal class List(IWorkflowInstanceVariableManager workflowInstanceVariableManager) : ElsaEndpointWithoutRequest<ListResponse<ResolvedVariableModel>>
 {
     public override void Configure()
     {
@@ -32,32 +27,7 @@ internal class List(
             return;
         }
         
-        var workflowInstance = await workflowInstanceStore.FindAsync(workflowInstanceId, cancellationToken);
-        
-        if (workflowInstance == null)
-        {
-            AddError($"Workflow instance with ID {workflowInstanceId} was not found.");
-            await SendErrorsAsync(StatusCodes.Status404NotFound, cancellationToken);
-            return;
-        }
-        
-        var workflowState = workflowInstance.WorkflowState;
-        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowState.DefinitionVersionId, cancellationToken);
-        
-        if (workflowGraph == null)
-        {
-            AddError($"Workflow definition with ID {workflowState.DefinitionVersionId} was not found.");
-            await SendErrorsAsync(StatusCodes.Status404NotFound, cancellationToken);
-            return;
-        }
-        
-        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
-            serviceProvider,
-            workflowGraph,
-            workflowState,
-            cancellationToken: cancellationToken);
-        
-        var variables = await variableReader.GetVariables(workflowExecutionContext, cancellationToken).ToList();
+        var variables = await workflowInstanceVariableManager.GetVariables(workflowInstanceId, cancellationToken).ToList();
         var variableModels = variables.Select(x => new ResolvedVariableModel(x.Variable.Id, x.Variable.Name, x.Value)).ToList();
         var response = new ListResponse<ResolvedVariableModel>(variableModels);
         await SendOkAsync(response, cancellationToken);

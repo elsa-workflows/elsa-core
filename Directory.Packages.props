@@ -145,7 +145,7 @@
     <PackageVersion Include="Oracle.EntityFrameworkCore" Version="7.21.13" />
     <PackageVersion Include="Polly" Version="7.2.4" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="7.0.0" />
-    <PackageVersion Include="Refit" Version="7.1.2" />
+    <PackageVersion Include="Refit" Version="7.2.22" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
