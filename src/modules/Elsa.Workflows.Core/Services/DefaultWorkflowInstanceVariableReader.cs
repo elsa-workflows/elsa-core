@@ -1,8 +1,8 @@
 namespace Elsa.Workflows;
 
-public class DefaultWorkflowInstanceVariableEnumerator(IVariablePersistenceManager variablePersistenceManager) : IWorkflowInstanceVariableEnumerator
+public class DefaultWorkflowInstanceVariableReader(IVariablePersistenceManager variablePersistenceManager) : IWorkflowInstanceVariableReader
 {
-    public async Task<IEnumerable<ResolvedVariable>> EnumerateVariables(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ResolvedVariable>> GetVariables(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default)
     {
         var workflow = workflowExecutionContext.Workflow;
         var workflowVariables = workflow.Variables;

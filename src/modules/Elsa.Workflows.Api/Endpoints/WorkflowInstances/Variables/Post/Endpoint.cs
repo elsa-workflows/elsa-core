@@ -6,22 +6,23 @@ using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Open.Linq.AsyncExtensions;
 
-namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Variables;
+namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Variables.Post;
 
 [UsedImplicitly]
 internal class List(
-    IWorkflowInstanceStore workflowInstanceStore, 
+    IWorkflowInstanceManager workflowInstanceManager,
+    //IWorkflowInstanceStore workflowInstanceStore, 
     IWorkflowDefinitionService workflowDefinitionService, 
     IServiceProvider serviceProvider, 
-    IWorkflowInstanceVariableEnumerator variableEnumerator) : ElsaEndpointWithoutRequest<ListResponse<ResolvedVariableModel>>
+    IWorkflowInstanceVariableWriter variableWriter) : ElsaEndpoint<Request, ListResponse<ResolvedVariableModel>>
 {
     public override void Configure()
     {
-        Get("/workflow-instances/{id}/variables");
-        ConfigurePermissions("read:workflow-instances");
+        Post("/workflow-instances/{id}/variables");
+        ConfigurePermissions("write:workflow-instances");
     }
 
-    public override async Task HandleAsync(CancellationToken cancellationToken)
+    public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var workflowInstanceId = Route<string>("id");
         
@@ -32,7 +33,7 @@ internal class List(
             return;
         }
         
-        var workflowInstance = await workflowInstanceStore.FindAsync(workflowInstanceId, cancellationToken);
+        var workflowInstance = await workflowInstanceManager.FindByIdAsync(workflowInstanceId, cancellationToken);
         
         if (workflowInstance == null)
         {
@@ -57,11 +58,17 @@ internal class List(
             workflowState,
             cancellationToken: cancellationToken);
         
-        var variables = await variableEnumerator.EnumerateVariables(workflowExecutionContext, cancellationToken).ToList();
-        var variableModels = variables.Select(x => new ResolvedVariableModel(x.Variable.Id, x.Variable.Name, x.Value)).ToList();
+        var resolvedVariables = await variableWriter.SetVariables(workflowExecutionContext, request.Variables, cancellationToken).ToList();
+        await workflowInstanceManager.SaveAsync(workflowExecutionContext, cancellationToken);
+        var variableModels = resolvedVariables.Select(x => new ResolvedVariableModel(x.Variable.Id, x.Variable.Name, x.Value)).ToList();
         var response = new ListResponse<ResolvedVariableModel>(variableModels);
         await SendOkAsync(response, cancellationToken);
     }
+}
+
+internal class Request
+{
+    public ICollection<VariableUpdateValue> Variables { get; set; }
 }
 
 internal record ResolvedVariableModel(string Id, string Name, object? Value);
