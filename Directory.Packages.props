@@ -15,6 +15,7 @@
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="Bogus" Version="35.6.1" />
     <PackageVersion Include="ConfigureAwait.Fody" Version="3.3.2" PrivateAssets="All" />
+    <PackageVersion Include="Confluent.Kafka" Version="2.6.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" PrivateAssets="All" />
     <PackageVersion Include="Cronos" Version="0.8.4" />
     <PackageVersion Include="Dapper" Version="2.1.35" />
@@ -84,7 +85,7 @@
     <PackageVersion Include="pythonnet" Version="3.0.4" />
     <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.13.0" />
     <PackageVersion Include="Quartz.Serialization.Json" Version="3.13.0" />
-    <PackageVersion Include="Scrutor" Version="5.0.2"/>
+    <PackageVersion Include="Scrutor" Version="5.0.2" />
     <PackageVersion Include="ShortGuid" Version="2.0.1" />
     <PackageVersion Include="StackExchange.Redis" Version="2.8.16" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
