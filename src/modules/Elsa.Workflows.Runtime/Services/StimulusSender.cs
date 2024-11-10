@@ -119,27 +119,21 @@ public class StimulusSender(
         }
         else
         {
-            // If no bookmarks were matched, but bookmark-specific details were given, enqueue the request in case a matching bookmark is created in the near future.
+            // If no bookmarks were matched, enqueue the request in case a matching bookmark is created in the near future.
             var workflowInstanceId = metadata?.WorkflowInstanceId;
-            var bookmarkId = metadata?.BookmarkId;
-            var activityInstanceId = metadata?.ActivityInstanceId;
-            var correlationId = metadata?.CorrelationId;
 
-            if (workflowInstanceId != null || bookmarkId != null || activityInstanceId != null || correlationId != null)
+            var bookmarkQueueItem = new NewBookmarkQueueItem
             {
-                var bookmarkQueueItem = new NewBookmarkQueueItem
+                WorkflowInstanceId = workflowInstanceId,
+                BookmarkId = metadata?.BookmarkId,
+                StimulusHash = stimulusHash,
+                Options = new ResumeBookmarkOptions
                 {
-                    WorkflowInstanceId = workflowInstanceId,
-                    BookmarkId = metadata?.BookmarkId,
-                    StimulusHash = stimulusHash,
-                    Options = new ResumeBookmarkOptions
-                    {
-                        Input = input,
-                        Properties = properties
-                    }
-                };
-                await bookmarkQueue.EnqueueAsync(bookmarkQueueItem, cancellationToken);
-            }
+                    Input = input,
+                    Properties = properties
+                }
+            };
+            await bookmarkQueue.EnqueueAsync(bookmarkQueueItem, cancellationToken);
         }
 
         return responses;

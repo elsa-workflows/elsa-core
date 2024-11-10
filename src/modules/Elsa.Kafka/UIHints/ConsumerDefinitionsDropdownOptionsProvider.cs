@@ -9,6 +9,6 @@ public class ConsumerDefinitionsDropdownOptionsProvider(IConsumerDefinitionEnume
     protected override async ValueTask<ICollection<SelectListItem>> GetItemsAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken)
     {
         var definitions = await consumerDefinitionEnumerator.GetConsumerDefinitionsAsync(cancellationToken).ToList();
-        return definitions.Select(x => new SelectListItem(x.Id, x.Name)).ToList();
+        return definitions.Select(x => new SelectListItem(x.Name, x.Id)).ToList();
     }
 }
