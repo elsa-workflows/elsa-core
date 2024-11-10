@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.Json;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Kafka.Stimuli;
@@ -8,6 +7,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Kafka.Activities;
 
@@ -31,24 +31,24 @@ public class MessageReceived : Trigger<object>
     /// The consumer to read from.
     /// </summary>
     [Input(
-        DisplayName =  "Consumer",
+        DisplayName = "Consumer",
         Description = "The consumer to connect to.",
         UIHandler = typeof(ConsumerDefinitionsDropdownOptionsProvider),
         UIHint = InputUIHints.DropDown
     )]
     public Input<string> ConsumerDefinitionId { get; set; } = default!;
-    
+
     /// <summary>
     /// Optional. The .NET type to deserialize the message into. Defaults to <see cref="string"/>. 
     /// </summary>
     [Input(Description = "Optional. The .NET type to deserialize the message into.")]
     public Input<Type?> MessageType { get; set; } = default!;
-    
+
     /// <summary>
     /// The correlating fields to use when resuming the workflow.
     /// </summary>
     public Input<IDictionary<string, object?>> CorrelatingFields { get; set; } = default!;
-    
+
     /// <summary>
     /// The received transport message.
     /// </summary>
@@ -62,9 +62,9 @@ public class MessageReceived : Trigger<object>
             await Resume(context);
         else
             // Otherwise, create a bookmark and wait for the stimulus to arrive.
-            context.CreateBookmark(GetStimulus(context.ExpressionExecutionContext), Resume,false);
+            context.CreateBookmark(GetStimulus(context.ExpressionExecutionContext), Resume, false);
     }
-    
+
     /// <inheritdoc />
     protected override object GetTriggerPayload(TriggerIndexingContext context) => GetStimulus(context.ExpressionExecutionContext);
 
@@ -79,7 +79,9 @@ public class MessageReceived : Trigger<object>
     {
         var bodyAsString = receivedMessage.Value;
         var targetType = MessageType.GetOrDefault(context);
-        var body = targetType == null ? bodyAsString : JsonSerializer.Deserialize(bodyAsString, targetType)!;
+        var deserializer = context.GetRequiredService<IOptions<KafkaOptions>>().Value.Deserializer;
+        var serviceProvider = context.WorkflowExecutionContext.ServiceProvider;
+        var body = targetType == null ? bodyAsString : deserializer(serviceProvider, bodyAsString, targetType);
 
         context.Set(TransportMessage, receivedMessage);
         context.SetResult(body);

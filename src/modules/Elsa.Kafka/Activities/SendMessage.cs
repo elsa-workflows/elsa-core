@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Confluent.Kafka;
 using Elsa.Extensions;
 using Elsa.Kafka.UIHints;
@@ -6,6 +5,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Kafka.Activities;
 
@@ -46,7 +46,9 @@ public class SendMessage : CodeActivity
         var producerDefinitionEnumerator = context.GetRequiredService<IProducerDefinitionEnumerator>();
         var producerDefinition = await producerDefinitionEnumerator.GetByIdAsync(producerDefinitionId);
         var content = Content.Get(context);
-        var serializedContent = content as string ?? JsonSerializer.Serialize(content);
+        var serializer = context.GetRequiredService<IOptions<KafkaOptions>>().Value.Serializer;
+        var serviceProvider = context.WorkflowExecutionContext.ServiceProvider;
+        var serializedContent = content as string ?? serializer(serviceProvider, content);
         var config = new ProducerConfig
         {
             BootstrapServers = string.Join(",", producerDefinition.BootstrapServers),

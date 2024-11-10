@@ -32,6 +32,14 @@ public interface IPayloadSerializer
     /// Deserializes the specified serialized state.
     /// </summary>
     /// <param name="serializedData">The serialized state.</param>
+    /// <param name="type">The type to deserialize the state into.</param>
+    /// <returns>The deserialized state.</returns>
+    object Deserialize(string serializedData, Type type);
+
+    /// <summary>
+    /// Deserializes the specified serialized state.
+    /// </summary>
+    /// <param name="serializedData">The serialized state.</param>
     /// <returns>The deserialized state.</returns>
     object Deserialize(JsonElement serializedData);
 

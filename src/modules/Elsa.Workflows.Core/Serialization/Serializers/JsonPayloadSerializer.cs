@@ -41,6 +41,12 @@ public class JsonPayloadSerializer : IPayloadSerializer
         return Deserialize<object>(payload);
     }
 
+    public object Deserialize(string serializedData, Type type)
+    {
+        var options = GetOptions();
+        return JsonSerializer.Deserialize(serializedData, type, options)!;
+    }
+
     /// <inheritdoc />
     public object Deserialize(JsonElement payload)
     {
