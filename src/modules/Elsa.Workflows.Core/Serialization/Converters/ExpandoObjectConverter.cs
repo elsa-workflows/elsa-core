@@ -12,7 +12,7 @@ public sealed class ExpandoObjectConverter : JsonConverter<object>
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
     {
-        JsonSerializer.Serialize(writer, value, typeof(ExpandoObject), options);
+        JsonSerializer.Serialize(writer, value, value.GetType(), options);
     }
 
     /// <inheritdoc />
