@@ -1,3 +1,4 @@
+using Elsa.Kafka.Workers;
 using Elsa.Mediator.Contracts;
 
 namespace Elsa.Kafka.Notifications;

@@ -7,5 +7,5 @@ public interface IConsumerDefinitionEnumerator
     /// </summary>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A list of ConsumerDefinition objects.</returns>
-    Task<IEnumerable<ConsumerDefinition>> GetConsumerDefinitionsAsync(CancellationToken cancellationToken);
+    Task<IEnumerable<ConsumerDefinition>> EnumerateAsync(CancellationToken cancellationToken);
 }

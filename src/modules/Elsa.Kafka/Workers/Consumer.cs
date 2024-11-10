@@ -1,6 +1,6 @@
 using Confluent.Kafka;
 
-namespace Elsa.Kafka;
+namespace Elsa.Kafka.Workers;
 
 public class Consumer(ConsumerDefinition consumerDefinition) : IDisposable
 {

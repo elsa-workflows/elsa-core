@@ -1,6 +1,7 @@
 ﻿using Confluent.Kafka;
 using Elsa.Common;
 using Elsa.Kafka.Notifications;
+using Elsa.Kafka.Workers;
 using Elsa.Mediator.Contracts;
 using JetBrains.Annotations;
 using Open.Linq.AsyncExtensions;
@@ -28,7 +29,7 @@ public class StartConsumersStartupTask(IConsumerDefinitionEnumerator consumerDef
     
     private async Task CreateConsumersAsync(CancellationToken cancellationToken)
     {
-        var consumerDefinitions = await consumerDefinitionEnumerator.GetConsumerDefinitionsAsync(cancellationToken).ToList();
+        var consumerDefinitions = await consumerDefinitionEnumerator.EnumerateAsync(cancellationToken).ToList();
         
         foreach (var consumerDefinition in consumerDefinitions)
         {

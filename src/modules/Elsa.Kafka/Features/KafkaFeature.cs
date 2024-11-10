@@ -28,8 +28,12 @@ public class KafkaFeature(IModule module) : FeatureBase(module)
 
         Services
             .AddBackgroundTask<StartConsumersStartupTask>()
-            .AddScoped<IConsumerDefinitionProvider, OptionsConsumerDefinitionProvider>()
+            .AddScoped<IConsumerDefinitionProvider, OptionsDefinitionProvider>()
+            .AddScoped<IProducerDefinitionProvider, OptionsDefinitionProvider>()
+            .AddScoped<ITopicDefinitionProvider, OptionsDefinitionProvider>()
             .AddScoped<IConsumerDefinitionEnumerator, ConsumerDefinitionEnumerator>()
+            .AddScoped<IProducerDefinitionEnumerator, ProducerDefinitionEnumerator>()
+            .AddScoped<ITopicDefinitionEnumerator, TopicDefinitionEnumerator>()
             .AddScoped<IPropertyUIHandler, ConsumerDefinitionsDropdownOptionsProvider>()
             .AddHandlersFrom<KafkaFeature>();
     }

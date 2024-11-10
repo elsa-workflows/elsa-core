@@ -5,7 +5,7 @@ namespace Elsa.Kafka;
 
 public class ConsumerDefinitionEnumerator(IEnumerable<IConsumerDefinitionProvider> providers) : IConsumerDefinitionEnumerator
 {
-    public async Task<IEnumerable<ConsumerDefinition>> GetConsumerDefinitionsAsync(CancellationToken cancellationToken)
+    public async Task<IEnumerable<ConsumerDefinition>> EnumerateAsync(CancellationToken cancellationToken)
     {
         return await GetConsumerDefinitionsInternalAsync(cancellationToken).ToListAsync(cancellationToken);
     }
@@ -14,7 +14,7 @@ public class ConsumerDefinitionEnumerator(IEnumerable<IConsumerDefinitionProvide
     {
         foreach (var provider in providers)
         {
-            var consumerDefinitions = await provider.GetConsumerConfigsAsync(cancellationToken).ToList();
+            var consumerDefinitions = await provider.GetConsumerDefinitionsAsync(cancellationToken).ToList();
 
             foreach (var consumerDefinition in consumerDefinitions)
                 yield return consumerDefinition;
