@@ -3,9 +3,11 @@ using System.Text.Json;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Kafka.Stimuli;
+using Elsa.Kafka.UIHints;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 
 namespace Elsa.Kafka.Activities;
 
@@ -29,8 +31,10 @@ public class MessageReceived : Trigger<object>
     /// The consumer to read from.
     /// </summary>
     [Input(
-        Name =  "Consumer",
-        Description = "The consumer to read from."
+        DisplayName =  "Consumer",
+        Description = "The consumer to connect to.",
+        UIHandler = typeof(ConsumerDefinitionsDropdownOptionsProvider),
+        UIHint = InputUIHints.DropDown
     )]
     public Input<string> ConsumerDefinitionId { get; set; } = default!;
     

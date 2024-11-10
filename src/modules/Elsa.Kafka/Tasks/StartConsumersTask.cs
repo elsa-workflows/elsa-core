@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using Confluent.Kafka;
+﻿using Confluent.Kafka;
 using Elsa.Common;
 using Elsa.Kafka.Notifications;
 using Elsa.Mediator.Contracts;
@@ -9,7 +8,7 @@ using Open.Linq.AsyncExtensions;
 namespace Elsa.Kafka;
 
 [UsedImplicitly]
-public class StartConsumersStartupTask(IEnumerable<IConsumerDefinitionProvider> providers, IMediator mediator) : BackgroundTask
+public class StartConsumersStartupTask(IConsumerDefinitionEnumerator consumerDefinitionEnumerator, IMediator mediator) : BackgroundTask
 {
     private readonly ICollection<Consumer> _consumers = new List<Consumer>();
 
@@ -29,7 +28,7 @@ public class StartConsumersStartupTask(IEnumerable<IConsumerDefinitionProvider> 
     
     private async Task CreateConsumersAsync(CancellationToken cancellationToken)
     {
-        var consumerDefinitions = await GetConsumerDefinitionsAsync(cancellationToken).ToListAsync(cancellationToken);
+        var consumerDefinitions = await consumerDefinitionEnumerator.GetConsumerDefinitionsAsync(cancellationToken).ToList();
         
         foreach (var consumerDefinition in consumerDefinitions)
         {
@@ -44,16 +43,5 @@ public class StartConsumersStartupTask(IEnumerable<IConsumerDefinitionProvider> 
     {
         var notification = new TransportMessageReceived(consumer, new KafkaTransportMessage(arg.Key, arg.Value, arg.Headers, arg.Timestamp));
         await mediator.SendAsync(notification, cancellationToken);
-    }
-
-    private async IAsyncEnumerable<ConsumerDefinition> GetConsumerDefinitionsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        foreach (var provider in providers)
-        {
-            var consumerDefinitions = await provider.GetConsumerConfigsAsync(cancellationToken).ToList();
-
-            foreach (var consumerDefinition in consumerDefinitions)
-                yield return consumerDefinition;
-        }
     }
 }

@@ -11,7 +11,7 @@ public class Consumer(ConsumerDefinition consumerDefinition) : IDisposable
     public void Start(CancellationToken cancellationToken)
     {
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _ = RunAsync(_cancellationTokenSource.Token);
+        Task.Run(() => RunAsync(_cancellationTokenSource.Token), cancellationToken);
     }
     
     public void Stop()
