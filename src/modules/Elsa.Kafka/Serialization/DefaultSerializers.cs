@@ -5,12 +5,13 @@ namespace Elsa.Kafka.Serialization;
 
 public static class DefaultSerializers
 {
-    private static JsonSerializerOptions _serializerOptions = GetOptions();
+    private static readonly JsonSerializerOptions SerializerOptions = GetOptions();
     
     private static JsonSerializerOptions GetOptions()
     {
         var options = new JsonSerializerOptions
         {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             Converters =
             {
                 new ExpandoObjectConverterFactory()
@@ -22,13 +23,13 @@ public static class DefaultSerializers
     
     public static string PayloadSerializer(IServiceProvider serviceProvider, object obj)
     {
-        var json = JsonSerializer.Serialize(obj, obj.GetType(), _serializerOptions);
+        var json = JsonSerializer.Serialize(obj, obj.GetType(), SerializerOptions);
         return json;
     }
 
     public static object PayloadDeserializer(IServiceProvider serviceProvider, string json, Type type)
     {
-        var value = JsonSerializer.Deserialize(json, type, _serializerOptions)!;
+        var value = JsonSerializer.Deserialize(json, type, SerializerOptions)!;
         return value;
     }
 }
