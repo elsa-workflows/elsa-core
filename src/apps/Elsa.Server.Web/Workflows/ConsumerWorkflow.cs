@@ -1,4 +1,5 @@
 using System.Dynamic;
+using System.Text.Json;
 using Elsa.Kafka.Activities;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
@@ -27,7 +28,7 @@ public class ConsumerWorkflow : WorkflowBase
                     Result = new(message),
                     CanStartWorkflow = true
                 },
-                new WriteLine(c => message.Get(c)!.ToString())
+                new WriteLine(c => JsonSerializer.Serialize(message.Get(c)))
             }
         };
     }
