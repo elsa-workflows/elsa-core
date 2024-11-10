@@ -26,7 +26,7 @@ public class SendMessage : CodeActivity
     /// The producer to use when sending the message.
     /// </summary>
     [Input(
-        Name = "Producer",
+        DisplayName = "Producer",
         Description = "The producer to use when sending the message.",
         UIHint = InputUIHints.DropDown,
         UIHandler = typeof(ProducerDefinitionsDropdownOptionsProvider)
@@ -36,6 +36,7 @@ public class SendMessage : CodeActivity
     /// <summary>
     /// The content of the message to send.
     /// </summary>
+    [Input(Description = "The content of the message to send.")]
     public Input<object> Content { get; set; } = default!;
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

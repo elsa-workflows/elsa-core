@@ -6,16 +6,16 @@ public class OptionsDefinitionProvider(IOptions<KafkaOptions> options) : IConsum
 {
     public Task<IEnumerable<ConsumerDefinition>> GetConsumerDefinitionsAsync(CancellationToken cancellationToken = default)
     {
-        return Task.FromResult<IEnumerable<ConsumerDefinition>>(options.Value.ConsumerDefinitions);
+        return Task.FromResult<IEnumerable<ConsumerDefinition>>(options.Value.Consumers);
     }
 
     public Task<IEnumerable<ProducerDefinition>> GetProducerDefinitionsAsync(CancellationToken cancellationToken = default)
     {
-        return Task.FromResult<IEnumerable<ProducerDefinition>>(options.Value.ProducerDefinitions);
+        return Task.FromResult<IEnumerable<ProducerDefinition>>(options.Value.Producers);
     }
 
     public Task<IEnumerable<TopicDefinition>> GetTopicDefinitionsAsync(CancellationToken cancellationToken = default)
     {
-        return Task.FromResult<IEnumerable<TopicDefinition>>(options.Value.TopicDefinitions);
+        return Task.FromResult<IEnumerable<TopicDefinition>>(options.Value.Topics);
     }
 }

@@ -35,6 +35,8 @@ public class KafkaFeature(IModule module) : FeatureBase(module)
             .AddScoped<IProducerDefinitionEnumerator, ProducerDefinitionEnumerator>()
             .AddScoped<ITopicDefinitionEnumerator, TopicDefinitionEnumerator>()
             .AddScoped<IPropertyUIHandler, ConsumerDefinitionsDropdownOptionsProvider>()
+            .AddScoped<IPropertyUIHandler, ProducerDefinitionsDropdownOptionsProvider>()
+            .AddScoped<IPropertyUIHandler, TopicDefinitionsDropdownOptionsProvider>()
             .AddHandlersFrom<KafkaFeature>();
     }
 }
