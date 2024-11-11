@@ -3,14 +3,17 @@
     <ItemGroup>
         <ProjectReference Include="..\..\modules\Elsa.Agents.Activities\Elsa.Agents.Activities.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Agents.Api\Elsa.Agents.Api.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Agents.Persistence.EntityFrameworkCore.MySql\Elsa.Agents.Persistence.EntityFrameworkCore.MySql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.AzureServiceBus\Elsa.AzureServiceBus.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.ProtoActor\Elsa.Caching.Distributed.ProtoActor.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.MySql\Elsa.EntityFrameworkCore.MySql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Kafka\Elsa.Kafka.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.OpenTelemetry\Elsa.OpenTelemetry.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Quartz.EntityFrameworkCore.MySql\Elsa.Quartz.EntityFrameworkCore.MySql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Secrets.Api\Elsa.Secrets.Api.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql\Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite\Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.csproj" />

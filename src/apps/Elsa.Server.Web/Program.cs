@@ -56,7 +56,7 @@ using StackExchange.Redis;
 
 // ReSharper disable RedundantAssignment
 const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
-const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.Sqlite;
+const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.MySql;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
@@ -65,7 +65,7 @@ const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
 const bool useAzureServiceBus = false;
-const bool useKafka = true;
+const bool useKafka = false;
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated requests.
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
@@ -83,6 +83,7 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var sqlServerConnectionString = configuration.GetConnectionString("SqlServer")!;
 var postgresConnectionString = configuration.GetConnectionString("PostgreSql")!;
+var mySqlConnectionString = configuration.GetConnectionString("MySql")!;
 var cockroachDbConnectionString = configuration.GetConnectionString("CockroachDb")!;
 var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
@@ -138,6 +139,8 @@ services
                             ef.UseSqlServer(sqlServerConnectionString!);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
+                        else if(sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                            ef.UseMySql(mySqlConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
@@ -170,6 +173,8 @@ services
                             ef.UseSqlServer(sqlServerConnectionString!);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
+                        else if(sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                            ef.UseMySql(mySqlConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
@@ -238,6 +243,8 @@ services
                         }
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
+                        else if(sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                            ef.UseMySql(mySqlConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
@@ -359,6 +366,8 @@ services
                             ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString);
+                        else if(sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                            ef.UseMySql(mySqlConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else

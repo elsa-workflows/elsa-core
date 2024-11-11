@@ -11,6 +11,19 @@
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh  # This will initialize the 'tracelens' database
     ports:
       - "5432:5432"
+        
+  mysql:
+    image: mysql:9.1.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: elsa
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
   
   mongodb:
     image: mongo:latest
@@ -91,5 +104,6 @@
 
 volumes:
   postgres-data:
+  mysql_data:
   cockroachdb-data:
   mongodb_data:
