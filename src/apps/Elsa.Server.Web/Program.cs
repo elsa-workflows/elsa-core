@@ -31,6 +31,7 @@ using Elsa.Server.Web;
 using Elsa.Server.Web.Extensions;
 using Elsa.Server.Web.Filters;
 using Elsa.Server.Web.Messages;
+using Elsa.Server.Web.WorkflowContextProviders;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows.Api;
@@ -441,6 +442,8 @@ services
             {
                 kafka.ConfigureOptions(options => configuration.GetSection("Kafka").Bind(options));
             });
+
+            services.AddWorkflowContextProvider<ConsumerDefinitionWorkflowContextProvider>();
         }
 
         if (useAgents)

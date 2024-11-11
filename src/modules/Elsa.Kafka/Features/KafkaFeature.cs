@@ -10,10 +10,36 @@ namespace Elsa.Kafka;
 public class KafkaFeature(IModule module) : FeatureBase(module)
 {
     private Action<KafkaOptions> _configureOptions = _ => { };
+    private Func<IServiceProvider, ICorrelationStrategy> _correlationStrategyFactory = sp => sp.GetRequiredService<HeaderCorrelationStrategy>();
 
     public KafkaFeature ConfigureOptions(Action<KafkaOptions> configureOptions)
     {
         _configureOptions += configureOptions;
+        return this;
+    }
+
+    public KafkaFeature WithCorrelationStrategy<T>() where T : class, ICorrelationStrategy
+    {
+        Services.AddScoped<T>();
+        _correlationStrategyFactory = sp => sp.GetRequiredService<T>();
+        return this;
+    }
+    
+    public KafkaFeature WithCorrelationStrategy(Func<IServiceProvider, ICorrelationStrategy> correlationStrategyFactory)
+    {
+        _correlationStrategyFactory = correlationStrategyFactory;
+        return this;
+    }
+
+    public KafkaFeature WithCorrelationStrategy(Func<ICorrelationStrategy> correlationStrategyFactory)
+    {
+        _correlationStrategyFactory = _ => correlationStrategyFactory();
+        return this;
+    }
+
+    public KafkaFeature WithCorrelationStrategy(ICorrelationStrategy correlationStrategy)
+    {
+        _correlationStrategyFactory = _ => correlationStrategy;
         return this;
     }
 
@@ -37,6 +63,9 @@ public class KafkaFeature(IModule module) : FeatureBase(module)
             .AddScoped<IPropertyUIHandler, ConsumerDefinitionsDropdownOptionsProvider>()
             .AddScoped<IPropertyUIHandler, ProducerDefinitionsDropdownOptionsProvider>()
             .AddScoped<IPropertyUIHandler, TopicDefinitionsDropdownOptionsProvider>()
+            .AddScoped<HeaderCorrelationStrategy>()
+            .AddScoped<NullCorrelationStrategy>()
+            .AddScoped(_correlationStrategyFactory)
             .AddHandlersFrom<KafkaFeature>();
     }
 }

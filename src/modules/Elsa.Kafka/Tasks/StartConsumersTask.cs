@@ -42,7 +42,8 @@ public class StartConsumersStartupTask(IConsumerDefinitionEnumerator consumerDef
 
     private async Task OnMessageReceivedAsync(Consumer consumer, Message<Ignore, string> arg, CancellationToken cancellationToken)
     {
-        var notification = new TransportMessageReceived(consumer, new KafkaTransportMessage(arg.Key, arg.Value));
+        var headers = arg.Headers.ToDictionary(x => x.Key, x => x.GetValueBytes());
+        var notification = new TransportMessageReceived(consumer, new KafkaTransportMessage(arg.Key, arg.Value, headers));
         await mediator.SendAsync(notification, cancellationToken);
     }
 }

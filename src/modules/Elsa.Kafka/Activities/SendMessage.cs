@@ -1,3 +1,4 @@
+using System.Text;
 using Confluent.Kafka;
 using Elsa.Extensions;
 using Elsa.Kafka.UIHints;
@@ -21,7 +22,7 @@ public class SendMessage : CodeActivity
         UIHandler = typeof(TopicDefinitionsDropdownOptionsProvider)
     )]
     public Input<string> Topic { get; set; } = default!;
-    
+
     /// <summary>
     /// The producer to use when sending the message.
     /// </summary>
@@ -32,6 +33,16 @@ public class SendMessage : CodeActivity
         UIHandler = typeof(ProducerDefinitionsDropdownOptionsProvider)
     )]
     public Input<string> ProducerDefinitionId { get; set; } = default!;
+
+
+    /// <summary>
+    /// Optional. The correlation ID to assign to the message.
+    /// </summary>
+    [Input(
+        DisplayName = "Correlation ID",
+        Description = "Optional. The correlation ID to assign to the message."
+    )]
+    public Input<string?> CorrelationId { get; set; } = default!;
 
     /// <summary>
     /// The content of the message to send.
@@ -46,16 +57,29 @@ public class SendMessage : CodeActivity
         var producerDefinitionEnumerator = context.GetRequiredService<IProducerDefinitionEnumerator>();
         var producerDefinition = await producerDefinitionEnumerator.GetByIdAsync(producerDefinitionId);
         var content = Content.Get(context);
+        var correlationId = CorrelationId.GetOrDefault(context);
         var serializer = context.GetRequiredService<IOptions<KafkaOptions>>().Value.Serializer;
         var serviceProvider = context.WorkflowExecutionContext.ServiceProvider;
         var serializedContent = content as string ?? serializer(serviceProvider, content);
         var config = new ProducerConfig
         {
             BootstrapServers = string.Join(",", producerDefinition.BootstrapServers),
-            
         };
         using var producer = new ProducerBuilder<Null, string>(config).Build();
-        var result = await producer.ProduceAsync(topic, new Message<Null, string> { Value = serializedContent });
+        var message = new Message<Null, string>
+        {
+            Value = serializedContent,
+        };
+        
+        if(!string.IsNullOrWhiteSpace(correlationId))
+        {
+            var options = context.GetRequiredService<IOptions<KafkaOptions>>().Value;
+            var headers = new Headers();
+            headers.Add(options.CorrelationHeaderKey, Encoding.UTF8.GetBytes(correlationId));
+            message.Headers = headers;
+        }
+        
+        var result = await producer.ProduceAsync(topic, message);
         context.JournalData.Add("MessageId", result.Message.Value);
         context.JournalData.Add("Offset", result.Offset);
         context.JournalData.Add("Status", result.Status);
