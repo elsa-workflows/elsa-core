@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.EntityFrameworkCore.Extensions;
@@ -10,18 +11,25 @@ public static class SqlServerProvidersExtensions
 {
     private static Assembly Assembly => typeof(SqlServerProvidersExtensions).Assembly;
     
-    public static TFeature UseSqlServer<TFeature, TDbContext>(this PersistenceFeatureBase<TFeature, TDbContext> feature, string connectionString, ElsaDbContextOptions? options = null) 
+    public static TFeature UseSqlServer<TFeature, TDbContext>(this PersistenceFeatureBase<TFeature, TDbContext> feature, 
+        string connectionString, 
+        ElsaDbContextOptions? options = null,
+        Action<SqlServerDbContextOptionsBuilder>? configure = null) 
         where TDbContext : ElsaDbContextBase
         where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
     {
-        return feature.UseSqlServer(Assembly, connectionString, options);
+        return feature.UseSqlServer(Assembly, connectionString, options, configure);
     }
     
-    public static TFeature UseSqlServer<TFeature, TDbContext>(this PersistenceFeatureBase<TFeature, TDbContext> feature, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options = null) 
+    public static TFeature UseSqlServer<TFeature, TDbContext>(this PersistenceFeatureBase<TFeature, TDbContext> feature, 
+        Assembly migrationsAssembly, 
+        string connectionString, 
+        ElsaDbContextOptions? options = null,
+        Action<SqlServerDbContextOptionsBuilder>? configure = null) 
         where TDbContext : ElsaDbContextBase
         where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(migrationsAssembly, connectionString, options);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(migrationsAssembly, connectionString, options, configure);
         return (TFeature)feature;
     }
 }

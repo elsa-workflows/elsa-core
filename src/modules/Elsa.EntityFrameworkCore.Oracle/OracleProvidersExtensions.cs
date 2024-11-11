@@ -1,20 +1,20 @@
 ﻿using System.Reflection;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Oracle.EntityFrameworkCore.Infrastructure;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.EntityFrameworkCore.Extensions;
 
 /// <summary>
-/// Provides extensions to configure EF Core to use MySQL.
+/// Provides extensions to configure EF Core to use Oracle.
 /// </summary>
-public static class MySqlProvidersExtensions
+public static class OracleProvidersExtensions
 {
-    private static Assembly Assembly => typeof(MySqlProvidersExtensions).Assembly;
+    private static Assembly Assembly => typeof(OracleProvidersExtensions).Assembly;
     
     public static TFeature UseMySql<TFeature, TDbContext>(this PersistenceFeatureBase<TFeature, TDbContext> feature, 
         string connectionString, 
         ElsaDbContextOptions? options = null, 
-        Action<MySqlDbContextOptionsBuilder>? configure = null) 
+        Action<OracleDbContextOptionsBuilder>? configure = null) 
         where TDbContext : ElsaDbContextBase
         where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
     {
@@ -25,12 +25,12 @@ public static class MySqlProvidersExtensions
         Assembly migrationsAssembly, 
         string connectionString, 
         ElsaDbContextOptions? options = null,
-        Action<MySqlDbContextOptionsBuilder>? configure = null
-        ) 
+        Action<OracleDbContextOptionsBuilder>? configure = null
+    ) 
         where TDbContext : ElsaDbContextBase
         where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(Assembly, connectionString, options, configure: configure);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaOracle(Assembly, connectionString, options, configure: configure);
         return (TFeature)feature;
     }
 }
