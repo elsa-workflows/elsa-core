@@ -58,7 +58,8 @@ public static class SqliteProvidersExtensions
     /// Configures the feature to use Sqlite.
     /// </summary>
     public static TFeature UseSqlite<TFeature, TDbContext>(this PersistenceFeatureBase<TFeature, TDbContext> feature, 
-        Assembly migrationsAssembly, Func<IServiceProvider, string> connectionStringFunc, 
+        Assembly migrationsAssembly, 
+        Func<IServiceProvider, string> connectionStringFunc, 
         ElsaDbContextOptions? options = null,
         Action<SqliteDbContextOptionsBuilder>? configure = null)
         where TDbContext : ElsaDbContextBase

@@ -22,15 +22,38 @@ public static class MySqlProvidersExtensions
     }
     
     public static TFeature UseMySql<TFeature, TDbContext>(this PersistenceFeatureBase<TFeature, TDbContext> feature, 
+        Func<IServiceProvider, string> connectionStringFunc,
+        ElsaDbContextOptions? options = null,
+        Action<MySqlDbContextOptionsBuilder>? configure = null
+    ) 
+        where TDbContext : ElsaDbContextBase
+        where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
+    {
+        return feature.UseMySql(Assembly, connectionStringFunc, options, configure);
+    }
+    
+    public static TFeature UseMySql<TFeature, TDbContext>(this PersistenceFeatureBase<TFeature, TDbContext> feature, 
         Assembly migrationsAssembly, 
-        string connectionString, 
+        string connectionString,
+        ElsaDbContextOptions? options = null,
+        Action<MySqlDbContextOptionsBuilder>? configure = null
+    ) 
+        where TDbContext : ElsaDbContextBase
+        where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
+    {
+        return feature.UseMySql(migrationsAssembly, _ => connectionString, options, configure);
+    }
+    
+    public static TFeature UseMySql<TFeature, TDbContext>(this PersistenceFeatureBase<TFeature, TDbContext> feature, 
+        Assembly migrationsAssembly, 
+        Func<IServiceProvider, string> connectionStringFunc,
         ElsaDbContextOptions? options = null,
         Action<MySqlDbContextOptionsBuilder>? configure = null
         ) 
         where TDbContext : ElsaDbContextBase
         where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(Assembly, connectionString, options, configure: configure);
+        feature.DbContextOptionsBuilder = (sp, db) => db.UseElsaMySql(migrationsAssembly, connectionStringFunc(sp), options, configure: configure);
         return (TFeature)feature;
     }
 }
