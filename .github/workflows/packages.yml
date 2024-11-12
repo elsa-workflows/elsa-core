@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Verify commit exists in branch
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && "${{ github.event.action }}" == "published" ]]; then
+          if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased")]]; then
             git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
             git branch --remote --contains | grep origin/main
           else
@@ -47,7 +47,7 @@ jobs:
           fi
       - name: Set VERSION variable
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && "${{ github.event.action }}" == "published" ]]; then
+          if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased") ]]; then
             TAG_NAME=${{ github.ref }} # e.g., refs/tags/3.0.0
             TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
             echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
