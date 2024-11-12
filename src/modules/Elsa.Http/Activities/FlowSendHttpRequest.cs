@@ -25,7 +25,8 @@ public class FlowSendHttpRequest : SendHttpRequestBase, IActivityPropertyDefault
     [Input(
         Description = "A list of expected status codes to handle.",
         UIHint = InputUIHints.MultiText,
-        DefaultValueProvider = typeof(FlowSendHttpRequest)
+        DefaultValueProvider = typeof(FlowSendHttpRequest),
+        Order = 5.1f
     )]
     public Input<ICollection<int>> ExpectedStatusCodes { get; set; } = default!;
 
