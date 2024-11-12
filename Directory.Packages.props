@@ -111,6 +111,7 @@
     <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite" Version="0.5.1" />
     <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SqlServer" Version="0.5.1" />
     <PackageVersion Include="System.Text.Json" Version="$(SystemTextJsonVersion)" />
+    <PackageVersion Include="YesSql.Core" Version="5.1.1" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
     <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="7.0.0" />

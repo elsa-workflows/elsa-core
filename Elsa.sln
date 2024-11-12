@@ -384,6 +384,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Tenants.AspNetCore", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql", "src\modules\Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql\Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql.csproj", "{2B939AC9-03A4-479E-AA0D-CB58F4A7F480}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Aspects.Core", "src\common\Elsa.Aspects.Core\Elsa.Aspects.Core.csproj", "{FBF21CF8-4AFF-4540-A3A1-E22112982924}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -816,6 +818,10 @@ Global
 		{2B939AC9-03A4-479E-AA0D-CB58F4A7F480}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B939AC9-03A4-479E-AA0D-CB58F4A7F480}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B939AC9-03A4-479E-AA0D-CB58F4A7F480}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBF21CF8-4AFF-4540-A3A1-E22112982924}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBF21CF8-4AFF-4540-A3A1-E22112982924}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBF21CF8-4AFF-4540-A3A1-E22112982924}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBF21CF8-4AFF-4540-A3A1-E22112982924}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -960,6 +966,7 @@ Global
 		{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C} = {2F3E1026-5054-4E1F-899B-F1A7F70F9912}
 		{2B939AC9-03A4-479E-AA0D-CB58F4A7F480} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{2CDF3E1C-267D-4198-B1C7-7E1F548FC120} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{FBF21CF8-4AFF-4540-A3A1-E22112982924} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
