@@ -1,29 +1,38 @@
 using System.Dynamic;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Helpers;
 using Elsa.JavaScript.Notifications;
+using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
 using JetBrains.Annotations;
 using Jint;
 using Jint.Native;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.JavaScript.Handlers;
 
 /// A handler that configures the Jint engine with workflow variables.
 [UsedImplicitly]
-public class ConfigureEngineWithVariables : INotificationHandler<EvaluatingJavaScript>, INotificationHandler<EvaluatedJavaScript>
+public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INotificationHandler<EvaluatingJavaScript>, INotificationHandler<EvaluatedJavaScript>
 {
     /// <inheritdoc />
     public Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
+        if(options.Value.DisableWrappers)
+            return Task.CompletedTask;
+        
         CopyVariablesIntoEngine(notification);
         return Task.CompletedTask;
     }
 
     public Task HandleAsync(EvaluatedJavaScript notification, CancellationToken cancellationToken)
     {
+        if(options.Value.DisableWrappers)
+            return Task.CompletedTask;
+        
         CopyVariablesIntoWorkflowExecutionContext(notification);
         return Task.CompletedTask;
     }
@@ -33,7 +42,7 @@ public class ConfigureEngineWithVariables : INotificationHandler<EvaluatingJavaS
         var context = notification.Context;
         var engine = notification.Engine;
         var variablesContainer = (IDictionary<string, object?>)engine.GetValue("variables").ToObject()!;
-        var inputNames = GetInputNames(context).Distinct().ToList();
+        var inputNames = GetInputNames(context).FilterInvalidVariableNames().Distinct().ToList();
 
         foreach (var (variableName, variableValue) in variablesContainer)
         {
@@ -67,7 +76,7 @@ public class ConfigureEngineWithVariables : INotificationHandler<EvaluatingJavaS
     {
         var engine = notification.Engine;
         var context = notification.Context;
-        var variableNames = context.GetVariableNamesInScope().ToList();
+        var variableNames = context.GetVariableNamesInScope().FilterInvalidVariableNames().ToList();
         var variablesContainer = (IDictionary<string, object?>)new ExpandoObject();
 
         foreach (var variableName in variableNames)

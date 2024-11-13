@@ -71,6 +71,7 @@ const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
 const bool useAgents = false;
 const bool useSecrets = true;
+const bool disableVariableWrappers = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -314,6 +315,7 @@ services
             .UseJavaScript(options =>
             {
                 options.AllowClrAccess = true;
+                options.DisableWrappers = disableVariableWrappers;
                 options.ConfigureEngine(engine =>
                 {
                     engine.Execute("function greet(name) { return `Hello ${name}!`; }");

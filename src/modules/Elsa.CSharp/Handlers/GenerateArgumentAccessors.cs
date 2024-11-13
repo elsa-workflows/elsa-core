@@ -1,9 +1,12 @@
 using System.Text;
+using Elsa.CSharp.Extensions;
 using Elsa.CSharp.Notifications;
+using Elsa.CSharp.Options;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.CSharp.Handlers;
 
@@ -11,7 +14,7 @@ namespace Elsa.CSharp.Handlers;
 /// Configures the C# evaluator with methods to access workflow variables.
 /// </summary>
 [UsedImplicitly]
-public class GenerateArgumentAccessors : INotificationHandler<EvaluatingCSharp>
+public class GenerateArgumentAccessors(IOptions<CSharpOptions> options) : INotificationHandler<EvaluatingCSharp>
 {
     /// <inheritdoc />
     public Task HandleAsync(EvaluatingCSharp notification, CancellationToken cancellationToken)
@@ -24,17 +27,19 @@ public class GenerateArgumentAccessors : INotificationHandler<EvaluatingCSharp>
         sb.AppendLine();
         sb.AppendLine("\tpublic T? Get<T>(string name) => Arguments.TryGetValue(name, out var v) ? (T?)v : default;");
         sb.AppendLine();
-        foreach (var argument in arguments)
+
+        if (!options.Value.DisableWrappers)
         {
-            // var d = new Dictionary<string, object>();
-            // d.TryGetValue("", out var f);
-            var argumentName = argument.Key;
-            var variableType = argument.Value.GetType();
-            var friendlyTypeName = variableType.GetFriendlyTypeName(Brackets.Angle);
-            sb.AppendLine($"\tpublic {friendlyTypeName} {argumentName}");
-            sb.AppendLine("\t{");
-            sb.AppendLine($"\t\tget => Get<{friendlyTypeName}>(\"{argumentName}\");");
-            sb.AppendLine("\t}");
+            foreach (var argument in arguments.Where(x => x.Key.IsValidVariableName()))
+            {
+                var argumentName = argument.Key;
+                var variableType = argument.Value.GetType();
+                var friendlyTypeName = variableType.GetFriendlyTypeName(Brackets.Angle);
+                sb.AppendLine($"\tpublic {friendlyTypeName} {argumentName}");
+                sb.AppendLine("\t{");
+                sb.AppendLine($"\t\tget => Get<{friendlyTypeName}>(\"{argumentName}\");");
+                sb.AppendLine("\t}");
+            }
         }
 
         sb.AppendLine("}");
