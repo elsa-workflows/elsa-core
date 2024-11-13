@@ -309,6 +309,7 @@ services
             })
             .UseCSharp(options =>
             {
+                options.DisableWrappers = disableVariableWrappers;
                 options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
                 options.AppendScript("string SayHelloWorld() => Greet(\"World\");");
             })
