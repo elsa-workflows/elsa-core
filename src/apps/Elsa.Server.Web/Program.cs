@@ -71,6 +71,7 @@ const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
 const bool useAgents = false;
 const bool useSecrets = true;
+const bool disableVariableWrappers = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -308,12 +309,14 @@ services
             })
             .UseCSharp(options =>
             {
+                options.DisableWrappers = disableVariableWrappers;
                 options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
                 options.AppendScript("string SayHelloWorld() => Greet(\"World\");");
             })
             .UseJavaScript(options =>
             {
                 options.AllowClrAccess = true;
+                options.DisableWrappers = disableVariableWrappers;
                 options.ConfigureEngine(engine =>
                 {
                     engine.Execute("function greet(name) { return `Hello ${name}!`; }");
