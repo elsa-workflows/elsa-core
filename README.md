@@ -8,6 +8,7 @@
 [![Docker Image Version (latest semver)](https://img.shields.io/docker/v/elsaworkflows/elsa-v3?label=docker&logo=docker)](https://hub.docker.com/repository/docker/elsaworkflows/elsa-v3)
 [![Discord](https://img.shields.io/discord/814605913783795763?label=discord&logo=discord)](https://discord.gg/hhChk5H472)
 [![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
+[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Elsa%20Guru-006BFF)](https://gurubase.io/g/elsa)
 
 ### [For Elsa 2 Click Here](https://github.com/elsa-workflows/elsa-core/tree/2.x)
 
