@@ -18,4 +18,8 @@
         <PackageReference Include="Jint" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="TypeDefinitions\Providers\" />
+    </ItemGroup>
+
 </Project>
