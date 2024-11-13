@@ -1,9 +1,12 @@
 using System.Text;
+using Elsa.CSharp.Extensions;
 using Elsa.CSharp.Notifications;
+using Elsa.CSharp.Options;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.CSharp.Handlers;
 
@@ -11,13 +14,12 @@ namespace Elsa.CSharp.Handlers;
 /// Configures the C# evaluator with methods to access workflow variables.
 /// </summary>
 [UsedImplicitly]
-public class GenerateWorkflowInputAccessors : INotificationHandler<EvaluatingCSharp>
+public class GenerateWorkflowInputAccessors(IOptions<CSharpOptions> options) : INotificationHandler<EvaluatingCSharp>
 {
     /// <inheritdoc />
     public Task HandleAsync(EvaluatingCSharp notification, CancellationToken cancellationToken)
     {
         var expressionExecutionContext = notification.Context;
-        var workflowInputs = expressionExecutionContext.GetWorkflowInputs().ToList();
 
         if (!expressionExecutionContext.TryGetWorkflowExecutionContext(out var workflowExecutionContext))
             return Task.CompletedTask;
@@ -31,15 +33,19 @@ public class GenerateWorkflowInputAccessors : INotificationHandler<EvaluatingCSh
         sb.AppendLine();
         sb.AppendLine("\tpublic T? Get<T>(string name) => ExecutionContext.GetInput<T>(name);");
         sb.AppendLine();
-        foreach (var inputDefinition in inputDefinitions)
+
+        if (!options.Value.DisableWrappers)
         {
-            var inputName = inputDefinition.Name;
-            var variableType = inputDefinition.Type;
-            var friendlyTypeName = variableType.GetFriendlyTypeName(Brackets.Angle);
-            sb.AppendLine($"\tpublic {friendlyTypeName} {inputName}");
-            sb.AppendLine("\t{");
-            sb.AppendLine($"\t\tget => Get<{friendlyTypeName}>(\"{inputName}\");");
-            sb.AppendLine("\t}");
+            foreach (var inputDefinition in inputDefinitions.Where(x => x.Name.IsValidVariableName()))
+            {
+                var inputName = inputDefinition.Name;
+                var variableType = inputDefinition.Type;
+                var friendlyTypeName = variableType.GetFriendlyTypeName(Brackets.Angle);
+                sb.AppendLine($"\tpublic {friendlyTypeName} {inputName}");
+                sb.AppendLine("\t{");
+                sb.AppendLine($"\t\tget => Get<{friendlyTypeName}>(\"{inputName}\");");
+                sb.AppendLine("\t}");
+            }
         }
 
         sb.AppendLine("}");
