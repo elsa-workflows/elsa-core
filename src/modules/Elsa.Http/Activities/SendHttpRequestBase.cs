@@ -19,7 +19,7 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
     /// <summary>
     /// The URL to send the request to.
     /// </summary>
-    [Input] public Input<Uri?> Url { get; set; } = default!;
+    [Input(Order = 0)] public Input<Uri?> Url { get; set; } = default!;
 
     /// <summary>
     /// The HTTP method to use when sending the request.
@@ -31,14 +31,18 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
             "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"
         },
         DefaultValue = "GET",
-        UIHint = InputUIHints.DropDown
+        UIHint = InputUIHints.DropDown,
+        Order = 1
     )]
     public Input<string> Method { get; set; } = new("GET");
 
     /// <summary>
     /// The content to send with the request. Can be a string, an object, a byte array or a stream.
     /// </summary>
-    [Input(Description = "The content to send with the request. Can be a string, an object, a byte array or a stream.")]
+    [Input(
+        Description = "The content to send with the request. Can be a string, an object, a byte array or a stream.",
+        Order = 2
+        )]
     public Input<object?> Content { get; set; } = default!;
 
     /// <summary>
@@ -47,7 +51,8 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
     [Input(
         Description = "The content type to use when sending the request.",
         UIHandler = typeof(HttpContentTypeOptionsProvider),
-        UIHint = InputUIHints.DropDown
+        UIHint = InputUIHints.DropDown,
+        Order = 3
     )]
     public Input<string?> ContentType { get; set; } = default!;
 
@@ -58,13 +63,19 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
     [Input(
         Description = "The Authorization header value to send with the request. For example: Bearer {some-access-token}",
         Category = "Security",
-        CanContainSecrets = true)]
+        CanContainSecrets = true,
+        Order = 4
+    )]
     public Input<string?> Authorization { get; set; } = default!;
 
     /// <summary>
     /// A value that allows to add the Authorization header without validation.
     /// </summary>
-    [Input(Description = "A value that allows to add the Authorization header without validation.", Category = "Security")]
+    [Input(
+        Description = "A value that allows to add the Authorization header without validation.", 
+        Category = "Security",
+        Order = 5
+    )]
     public Input<bool> DisableAuthorizationHeaderValidation { get; set; } = default!;
 
     /// <summary>
@@ -73,7 +84,8 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
     [Input(
         Description = "The headers to send along with the request.",
         UIHint = InputUIHints.JsonEditor,
-        Category = "Advanced"
+        Category = "Advanced",
+        Order = 6
     )]
     public Input<HttpHeaders?> RequestHeaders { get; set; } = new(new HttpHeaders());
 

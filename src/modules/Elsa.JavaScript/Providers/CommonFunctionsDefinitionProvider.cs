@@ -1,15 +1,18 @@
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
+using Elsa.JavaScript.Extensions;
+using Elsa.JavaScript.Options;
 using Elsa.JavaScript.TypeDefinitions.Abstractions;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Humanizer;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Options;
 
-namespace Elsa.JavaScript.TypeDefinitions.Providers;
+namespace Elsa.JavaScript.Providers;
 
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
 [UsedImplicitly]
-internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry) : FunctionDefinitionProvider
+internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry, IOptions<JintOptions> options) : FunctionDefinitionProvider
 {
     protected override IEnumerable<FunctionDefinition> GetFunctionDefinitions(TypeDefinitionContext context)
     {
@@ -124,18 +127,21 @@ internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasReg
             .Parameter("value", "string")
             .ReturnType("string"));
 
-        // Variable getter and setters.
-        foreach (var variable in context.WorkflowGraph.Workflow.Variables)
+        if (!options.Value.DisableWrappers)
         {
-            var pascalName = variable.Name.Pascalize();
-            var variableType = variable.GetVariableType();
-            var typeAlias = typeAliasRegistry.TryGetAlias(variableType, out var alias) ? alias : "any";
+            // Variable getter and setters.
+            foreach (var variable in context.WorkflowGraph.Workflow.Variables.Where(x => x.Name.IsValidVariableName()))
+            {
+                var pascalName = variable.Name.Pascalize();
+                var variableType = variable.GetVariableType();
+                var typeAlias = typeAliasRegistry.TryGetAlias(variableType, out var alias) ? alias : "any";
 
-            // get{Variable}.
-            yield return CreateFunctionDefinition(builder => builder.Name($"get{pascalName}").ReturnType(typeAlias));
+                // get{Variable}.
+                yield return CreateFunctionDefinition(builder => builder.Name($"get{pascalName}").ReturnType(typeAlias));
 
-            // set{Variable}.
-            yield return CreateFunctionDefinition(builder => builder.Name($"set{pascalName}").Parameter("value", typeAlias));
+                // set{Variable}.
+                yield return CreateFunctionDefinition(builder => builder.Name($"set{pascalName}").Parameter("value", typeAlias));
+            }
         }
     }
 }

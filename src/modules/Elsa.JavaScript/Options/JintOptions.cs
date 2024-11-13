@@ -40,6 +40,12 @@ public class JintOptions
     /// If the value of <c>ScriptCacheTimeout</c> is <c>null</c>, the scripts are cached indefinitely. If a time value is specified, the scripts will be recompiled after the specified duration has elapsed.
     /// </remarks>
     public TimeSpan? ScriptCacheTimeout { get; set; } = TimeSpan.FromDays(1);
+
+    /// <summary>
+    /// Disables the generation of variable wrappers. E.g. <c>getMyVariable()</c> will no longer be available for variables. Instead, you can only access variables using <c>getVariable("MyVariable")</c> function.
+    /// This is useful if your application requires the use of invalid JavaScript variable names.
+    /// </summary>
+    public bool DisableWrappers { get; set; }
     
     /// <summary>
     /// Configures the Jint engine options.
