@@ -17,6 +17,9 @@ public interface IBookmarkResumer
     
     /// Resumes the bookmark.
     Task<ResumeBookmarkResult> ResumeAsync<TActivity>(string bookmarkId, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default) where TActivity : IActivity;
+
+    /// Resumes the bookmark.
+    Task<ResumeBookmarkResult> ResumeAsync(ResumeBookmarkRequest request, CancellationToken cancellationToken = default);
     
     /// Resumes the bookmark.
     Task<ResumeBookmarkResult> ResumeAsync(BookmarkFilter filter, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default);

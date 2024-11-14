@@ -2,7 +2,7 @@ using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Runtime;
 
-public class InvokeBookmarkRequest
+public class ResumeBookmarkRequest
 {
     public string WorkflowInstanceId { get; set; } = default!;
 

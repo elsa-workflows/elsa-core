@@ -206,6 +206,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
             .AddScoped<IBookmarkResumer, BookmarkResumer>()
             .AddScoped<IBookmarkQueue, StoreBookmarkQueue>()
+            .AddScoped<ITriggerInvoker, TriggerInvoker>()
             .AddScoped<IWorkflowCanceler, WorkflowCanceler>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
             .AddScoped<IWorkflowActivationStrategyEvaluator, DefaultWorkflowActivationStrategyEvaluator>()

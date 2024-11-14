@@ -14,7 +14,7 @@ namespace Elsa.Kafka.Handlers;
 [UsedImplicitly]
 public class TriggerWorkflows(
     ITriggerInvoker triggerInvoker,
-    IBookmarkInvoker bookmarkInvoker,
+    IBookmarkResumer bookmarkResumer,
     ICorrelationStrategy correlationStrategy, 
     IExpressionEvaluator expressionEvaluator, 
     IOptions<KafkaOptions> options, 
@@ -67,7 +67,7 @@ public class TriggerWorkflows(
         
         foreach (var binding in matchingBookmarks)
         {
-            var invokeBookmarkRequest = new InvokeBookmarkRequest
+            var invokeBookmarkRequest = new ResumeBookmarkRequest
             {
                 WorkflowInstanceId = binding.WorkflowInstanceId,
                 BookmarkId = binding.BookmarkId,
@@ -77,7 +77,7 @@ public class TriggerWorkflows(
                     [MessageReceived.InputKey] = transportMessage
                 }
             };
-            await bookmarkInvoker.InvokeAsync(invokeBookmarkRequest, cancellationToken);
+            await bookmarkResumer.ResumeAsync(invokeBookmarkRequest, cancellationToken);
         }
     }
 
