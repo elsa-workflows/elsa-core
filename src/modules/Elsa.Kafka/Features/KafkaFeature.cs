@@ -1,6 +1,9 @@
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Kafka.Implementations;
+using Elsa.Kafka.Providers;
+using Elsa.Kafka.Tasks;
 using Elsa.Kafka.UIHints;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;

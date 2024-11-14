@@ -475,6 +475,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         var parentContext = options?.Owner;
         var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext ?? ExpressionExecutionContext;
         var properties = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(this, Input);
+        properties[ExpressionExecutionContextExtensions.ActivityKey] = activity;
         var memory = new MemoryRegister();
         var now = SystemClock.UtcNow;
         var expressionExecutionContext = new ExpressionExecutionContext(ServiceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);

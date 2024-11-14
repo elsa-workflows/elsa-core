@@ -1,20 +1,13 @@
-using System.Text.Json.Serialization;
+using Elsa.Expressions.Models;
+using Elsa.Workflows.Attributes;
 
 namespace Elsa.Kafka.Stimuli;
 
 public class MessageReceivedStimulus
 {
-    [JsonConstructor]
-    public MessageReceivedStimulus()
-    {
-    }
-
-    public MessageReceivedStimulus(string consumerDefinitionId, IDictionary<string, object?> correlatingFields)
-    {
-        ConsumerDefinitionId = consumerDefinitionId;
-        CorrelatingFields = correlatingFields;
-    }
-
     public string ConsumerDefinitionId { get; set; } = default!;
-    public IDictionary<string, object?> CorrelatingFields { get; set; } = new Dictionary<string, object?>();
+    [ExcludeFromHash] public Type? MessageType { get; set; }
+    public ICollection<string> Topics { get; set; } = [];
+    public IDictionary<string, object?>? CorrelatingFields { get; set; }
+    public Expression? Predicate { get; set; }
 }

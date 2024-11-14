@@ -37,12 +37,28 @@ public class MessageReceived : Trigger<object>
         UIHint = InputUIHints.DropDown
     )]
     public Input<string> ConsumerDefinitionId { get; set; } = default!;
+    
+    /// <summary>
+    /// The topics to read from.
+    /// </summary>
+    [Input(
+        DisplayName = "Topics",
+        Description = "The topics to read from.",
+        UIHint = InputUIHints.MultiText
+    )]
+    public Input<ICollection<string>> Topics { get; set; } = default!;
 
     /// <summary>
     /// Optional. The .NET type to deserialize the message into. Defaults to <see cref="string"/>. 
     /// </summary>
     [Input(Description = "Optional. The .NET type to deserialize the message into.")]
     public Input<Type?> MessageType { get; set; } = default!;
+
+    [Input(
+        Description = "Optional. A predicate to filter messages.",
+        AutoEvaluate = false
+    )]
+    public Input<bool> Predicate { get; set; } = default!;
 
     /// <summary>
     /// The correlating fields to use when resuming the workflow.
@@ -90,7 +106,21 @@ public class MessageReceived : Trigger<object>
     private object GetStimulus(ExpressionExecutionContext context)
     {
         var consumerDefinitionId = ConsumerDefinitionId.Get(context);
-        var correlatingFields = CorrelatingFields.GetOrDefault(context) ?? new Dictionary<string, object?>();
-        return new MessageReceivedStimulus(consumerDefinitionId, correlatingFields);
+        var topics = Topics.GetOrDefault(context) ?? [];
+        var messageType = MessageType.GetOrDefault(context) ?? typeof(string);
+        var activity = context.GetActivity();
+        var activityRegistry = context.GetRequiredService<IActivityRegistry>();
+        var activityDescriptor = activityRegistry.Find(activity.Type, activity.Version)!;
+        var inputDescriptor = activityDescriptor.GetWrappedInputPropertyDescriptor(activity, nameof(Predicate));
+        var predicateInput = (Input?)inputDescriptor!.ValueGetter(activity);
+        var predicateExpression = predicateInput?.Expression;
+        
+        return new MessageReceivedStimulus
+        {
+            ConsumerDefinitionId = consumerDefinitionId,
+            Topics = topics.Distinct().ToList(),
+            MessageType = messageType,
+            Predicate = predicateExpression,
+        };
     }
 }

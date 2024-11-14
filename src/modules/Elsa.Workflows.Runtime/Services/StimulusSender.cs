@@ -15,6 +15,7 @@ public class StimulusSender(
     IBookmarkQueue bookmarkQueue,
     IWorkflowRuntime workflowRuntime,
     IWorkflowStarter workflowStarter,
+    ITriggerInvoker triggerInvoker,
     ILogger<StimulusSender> logger) : IStimulusSender
 {
     /// <inheritdoc />
@@ -56,24 +57,25 @@ public class StimulusSender(
 
             foreach (var trigger in triggerBoundWorkflow.Triggers)
             {
-                var startRequest = new StartWorkflowRequest
+                var triggerRequest = new InvokeTriggerRequest
                 {
-                    Workflow = workflow,
                     CorrelationId = correlationId,
+                    Workflow = workflow,
+                    ActivityId = trigger.ActivityId,
                     Input = input,
                     Properties = properties,
-                    ParentId = parentId,
-                    TriggerActivityId = trigger.ActivityId
+                    ParentWorkflowInstanceId = parentId
                 };
                 
-                var startResponse = await workflowStarter.StartWorkflowAsync(startRequest, cancellationToken);
-                if (startResponse.CannotStart)
+                var response = await triggerInvoker.InvokeAsync(triggerRequest, cancellationToken);
+                
+                if (response.CannotStart)
                 {
                     logger.LogWarning("Workflow activation strategy disallowed starting workflow {WorkflowDefinitionHandle} with correlation ID {CorrelationId}", workflow.DefinitionHandle, correlationId);
                     continue;
                 }
                 
-                responses.Add(startResponse.ToRunWorkflowInstanceResponse());
+                responses.Add(response.ToRunWorkflowInstanceResponse());
             }
         }
 

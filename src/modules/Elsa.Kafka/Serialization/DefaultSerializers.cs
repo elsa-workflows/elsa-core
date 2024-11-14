@@ -21,13 +21,13 @@ public static class DefaultSerializers
         return options;
     }
     
-    public static string PayloadSerializer(IServiceProvider serviceProvider, object obj)
+    public static string SerializePayload(IServiceProvider serviceProvider, object obj)
     {
         var json = JsonSerializer.Serialize(obj, obj.GetType(), SerializerOptions);
         return json;
     }
 
-    public static object PayloadDeserializer(IServiceProvider serviceProvider, string json, Type type)
+    public static object DeserializePayload(IServiceProvider serviceProvider, string json, Type type)
     {
         var value = JsonSerializer.Deserialize(json, type, SerializerOptions)!;
         return value;

@@ -6,49 +6,37 @@ namespace Elsa.Expressions.Models;
 /// <summary>
 /// Provides context to workflow expressions. 
 /// </summary>
-public class ExpressionExecutionContext
+public class ExpressionExecutionContext(
+    IServiceProvider serviceProvider,
+    MemoryRegister memory,
+    ExpressionExecutionContext? parentContext = default,
+    IDictionary<object, object>? transientProperties = default,
+    CancellationToken cancellationToken = default)
 {
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public ExpressionExecutionContext(
-        IServiceProvider serviceProvider,
-        MemoryRegister memory,
-        ExpressionExecutionContext? parentContext = default,
-        IDictionary<object, object>? transientProperties = default,
-        CancellationToken cancellationToken = default)
-    {
-        ServiceProvider = serviceProvider;
-        Memory = memory;
-        TransientProperties = transientProperties ?? new Dictionary<object, object>();
-        ParentContext = parentContext;
-        CancellationToken = cancellationToken;
-    }
-
     /// <summary>
     /// A scoped service provider.
     /// </summary>
-    public IServiceProvider ServiceProvider { get; }
+    public IServiceProvider ServiceProvider { get; } = serviceProvider;
 
     /// <summary>
     /// A shared register of computer memory. 
     /// </summary>
-    public MemoryRegister Memory { get; }
+    public MemoryRegister Memory { get; } = memory;
 
     /// <summary>
     /// A dictionary of transient properties.
     /// </summary>
-    public IDictionary<object, object> TransientProperties { get; set; }
+    public IDictionary<object, object> TransientProperties { get; set; } = transientProperties ?? new Dictionary<object, object>();
 
     /// <summary>
     /// Provides access to the parent <see cref="ExpressionExecutionContext"/>, if there is any.
     /// </summary>
-    public ExpressionExecutionContext? ParentContext { get; set; }
+    public ExpressionExecutionContext? ParentContext { get; set; } = parentContext;
 
     /// <summary>
     /// A cancellation token.
     /// </summary>
-    public CancellationToken CancellationToken { get; }
+    public CancellationToken CancellationToken { get; } = cancellationToken;
 
     /// <summary>
     /// Returns the <see cref="MemoryBlock"/> pointed to by the specified memory block reference.

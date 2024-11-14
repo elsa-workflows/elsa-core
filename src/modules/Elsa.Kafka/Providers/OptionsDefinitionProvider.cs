@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Kafka;
+namespace Elsa.Kafka.Providers;
 
 public class OptionsDefinitionProvider(IOptions<KafkaOptions> options) : IConsumerDefinitionProvider, IProducerDefinitionProvider, ITopicDefinitionProvider
 {

@@ -45,6 +45,7 @@ public static class TriggerExtensions
         var cancellationToken = context.CancellationToken;
         var expressionInput = new Dictionary<string, object>();
         var applicationProperties = ExpressionExecutionContextExtensions.CreateTriggerIndexingPropertiesFrom(context.Workflow, expressionInput);
+        applicationProperties[ExpressionExecutionContextExtensions.ActivityKey] = trigger;
         var expressionExecutionContext = new ExpressionExecutionContext(serviceProvider, register, default, applicationProperties, cancellationToken);
 
         // Evaluate activity inputs before requesting trigger data.

@@ -9,6 +9,6 @@ public class KafkaOptions
     public ICollection<ProducerDefinition> Producers { get; set; } = [];
     public string CorrelationHeaderKey { get; set; } = "correlation-id";
     
-    public Func<IServiceProvider, object, string> Serializer { get; set; } = DefaultSerializers.PayloadSerializer;
-    public Func<IServiceProvider, string, Type, object> Deserializer { get; set; } = DefaultSerializers.PayloadDeserializer;
+    public Func<IServiceProvider, object, string> Serializer { get; set; } = DefaultSerializers.SerializePayload;
+    public Func<IServiceProvider, string, Type, object> Deserializer { get; set; } = DefaultSerializers.DeserializePayload;
 }
