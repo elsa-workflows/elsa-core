@@ -35,9 +35,10 @@ public class PropertyUIHandlerResolver(IServiceScopeFactory scopeFactory) : IPro
             }
         }
 
+        var propertyUIHandlers = scope.ServiceProvider.GetServices<IPropertyUIHandler>().ToList();
         foreach (var handlerType in uiHandlers)
         {
-            var provider = (IPropertyUIHandler?)scope.ServiceProvider.GetService(handlerType);
+            var provider = propertyUIHandlers.FirstOrDefault(x => x.GetType() == handlerType);
 
             if (provider == null)
                 continue;
