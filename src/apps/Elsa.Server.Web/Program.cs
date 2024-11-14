@@ -56,7 +56,7 @@ using StackExchange.Redis;
 
 // ReSharper disable RedundantAssignment
 const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
-const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.MySql;
+const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.Sqlite;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
@@ -65,7 +65,7 @@ const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
 const bool useAzureServiceBus = false;
-const bool useKafka = false;
+const bool useKafka = true;
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated requests.
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;

@@ -186,6 +186,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
 
             // Activity property options providers.
             .AddScoped<IPropertyUIHandler, HttpContentTypeOptionsProvider>()
+            .AddScoped<IPropertyUIHandler, HttpEndpointPathUIHandler>()
             .AddScoped(_httpEndpointBasePathProvider)
 
             // Port resolvers.

@@ -1,6 +1,7 @@
 using Elsa.Common;
 using Elsa.Common.Features;
 using Elsa.Common.Serialization;
+using Elsa.CSharp.Activities;
 using Elsa.Expressions.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -39,19 +40,19 @@ public class WorkflowsFeature : FeatureBase
     public WorkflowsFeature(IModule module) : base(module)
     {
     }
-    
+
     /// A factory that instantiates a concrete <see cref="IStandardInStreamProvider"/>.
     public Func<IServiceProvider, IStandardInStreamProvider> StandardInStreamProvider { get; set; } = _ => new StandardInStreamProvider(Console.In);
-    
+
     /// A factory that instantiates a concrete <see cref="IStandardOutStreamProvider"/>.
     public Func<IServiceProvider, IStandardOutStreamProvider> StandardOutStreamProvider { get; set; } = _ => new StandardOutStreamProvider(Console.Out);
-    
+
     /// A factory that instantiates a concrete <see cref="IIdentityGenerator"/>.
     public Func<IServiceProvider, IIdentityGenerator> IdentityGenerator { get; set; } = sp => new RandomLongIdentityGenerator();
-    
+
     /// A handler for committing workflow execution state.
     public Func<IServiceProvider, ICommitStateHandler> CommitStateHandler { get; set; } = sp => new NoopCommitStateHandler();
-    
+
     /// A factory that instantiates a concrete <see cref="ILoggerStateGenerator{WorkflowExecutionContext}"/>.
     public Func<IServiceProvider, ILoggerStateGenerator<WorkflowExecutionContext>> WorkflowLoggerStateGenerator { get; set; } = sp => new WorkflowLoggerStateGenerator();
 
@@ -62,7 +63,7 @@ public class WorkflowsFeature : FeatureBase
     public Action<IWorkflowExecutionPipelineBuilder> WorkflowExecutionPipeline { get; set; } = builder => builder
         .UseExceptionHandling()
         .UseDefaultActivityScheduler();
-    
+
     /// A delegate to configure the <see cref="IActivityExecutionPipeline"/>.
     public Action<IActivityExecutionPipelineBuilder> ActivityExecutionPipeline { get; set; } = builder => builder.UseDefaultActivityInvoker();
 
@@ -72,7 +73,7 @@ public class WorkflowsFeature : FeatureBase
         StandardInStreamProvider = provider;
         return this;
     }
-    
+
     /// Fluent method to set <see cref="StandardOutStreamProvider"/>.
     public WorkflowsFeature WithStandardOutStreamProvider(Func<IServiceProvider, IStandardOutStreamProvider> provider)
     {
@@ -198,10 +199,15 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IUIHintHandler, CheckListUIHintHandler>()
             .AddScoped<IUIHintHandler, JsonEditorUIHintHandler>()
 
+            // UI property handlers.
+            .AddScoped<IPropertyUIHandler, StaticCheckListOptionsProvider>()
+            .AddScoped<IPropertyUIHandler, StaticDropDownOptionsProvider>()
+            .AddScoped<IPropertyUIHandler, JsonCodeOptionsProvider>()
+
             // Logger state generators.
             .AddSingleton(WorkflowLoggerStateGenerator)
             .AddSingleton(ActivityLoggerStateGenerator)
-            
+
             // Log Persistence Strategies.
             .AddScoped<ILogPersistenceStrategyService, DefaultLogPersistenceStrategyService>()
             .AddScoped<ILogPersistenceStrategy, Include>()
