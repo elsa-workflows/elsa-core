@@ -95,7 +95,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
             var stimulus = bookmark.GetPayload<MessageReceivedStimulus>();
             var consumerDefinitionId = stimulus.ConsumerDefinitionId;
             var worker = GetWorker(consumerDefinitionId);
-            var bookmarkBinding = new BookmarkBinding(bookmark.WorkflowInstanceId, bookmark.Id, stimulus);
+            var bookmarkBinding = new BookmarkBinding(bookmark.WorkflowInstanceId, bookmark.CorrelationId, bookmark.Id, stimulus);
             worker.BindBookmark(bookmarkBinding);
         }
         

@@ -107,7 +107,14 @@ public class TriggerWorkflows(
 
         foreach (var binding in boundTriggers)
         {
-            var isMatch = await IsMatchAsync(consumerDefinitionId, transportMessage, binding.Stimulus, topic, cancellationToken);
+            var stimulus = binding.Stimulus;
+            if (stimulus.ConsumerDefinitionId != consumerDefinitionId)
+                continue;
+
+            if (stimulus.Topics.All(x => x != topic))
+                continue;
+
+            var isMatch = await EvaluatePredicateAsync(transportMessage, stimulus, cancellationToken);
 
             if (isMatch)
                 matchingTriggers.Add(binding);
@@ -128,26 +135,37 @@ public class TriggerWorkflows(
         if (string.IsNullOrEmpty(topic))
             return matchingBookmarks;
 
+        var correlationId = GetCorrelationId(transportMessage);
+        var workflowInstanceId = GetWorkflowInstanceId(transportMessage);
+        
         foreach (var binding in boundBookmarks)
         {
-            var isMatch = await IsMatchAsync(consumerDefinitionId, transportMessage, binding.Stimulus, topic, cancellationToken);
+            var stimulus = binding.Stimulus;
+            if (stimulus.ConsumerDefinitionId != consumerDefinitionId)
+                continue;
+
+            if (stimulus.Topics.All(x => x != topic))
+                continue;
+
+            if (stimulus.IsLocal)
+            {
+                if (binding.WorkflowInstanceId != workflowInstanceId)
+                {
+                    if (string.IsNullOrWhiteSpace(correlationId))
+                        continue;
+
+                    if (binding.CorrelationId != correlationId)
+                        continue;
+                }
+            }
+
+            var isMatch = await EvaluatePredicateAsync(transportMessage, stimulus, cancellationToken);
 
             if (isMatch)
                 matchingBookmarks.Add(binding);
         }
 
         return matchingBookmarks;
-    }
-
-    private async Task<bool> IsMatchAsync(string consumerDefinitionId, KafkaTransportMessage transportMessage, MessageReceivedStimulus stimulus, string topic, CancellationToken cancellationToken)
-    {
-        if (stimulus.ConsumerDefinitionId != consumerDefinitionId)
-            return false;
-
-        if (stimulus.Topics.All(x => x != topic))
-            return false;
-
-        return await EvaluatePredicateAsync(transportMessage, stimulus, cancellationToken);
     }
 
     private async Task<bool> EvaluatePredicateAsync(KafkaTransportMessage transportMessage, MessageReceivedStimulus stimulus, CancellationToken cancellationToken)
@@ -170,6 +188,12 @@ public class TriggerWorkflows(
     {
         return type == null ? value : options.Value.Deserializer(serviceProvider, value, type);
     }
+    
+    private string? GetWorkflowInstanceId(KafkaTransportMessage transportMessage)
+    {
+        var key = options.Value.WorkflowInstanceIdHeaderKey;
+        return transportMessage.Headers.TryGetValue(key, out var value) ? Encoding.UTF8.GetString(value) : null;
+    }
 
     private string? GetCorrelationId(KafkaTransportMessage transportMessage)
     {
@@ -178,7 +202,7 @@ public class TriggerWorkflows(
 
     private string? GetTopic(KafkaTransportMessage transportMessage)
     {
-        var topicHeaderKey = options.Value.TopicHeaderKey;
-        return transportMessage.Headers.TryGetValue(topicHeaderKey, out var topicBytes) ? Encoding.UTF8.GetString(topicBytes) : null;
+        var key = options.Value.TopicHeaderKey;
+        return transportMessage.Headers.TryGetValue(key, out var value) ? Encoding.UTF8.GetString(value) : null;
     }
 }

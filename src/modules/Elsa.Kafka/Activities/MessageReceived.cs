@@ -59,11 +59,9 @@ public class MessageReceived : Trigger<object>
         AutoEvaluate = false
     )]
     public Input<bool> Predicate { get; set; } = default!;
-
-    /// <summary>
-    /// The correlating fields to use when resuming the workflow.
-    /// </summary>
-    public Input<IDictionary<string, object?>> CorrelatingFields { get; set; } = default!;
+    
+    [Input(DisplayName = "Local", Description = "Whether the event is local to the workflow. When checked, only events delivered to this workflow instance will resume this activity.")]
+    public Input<bool> IsLocal { get; set; } = default!;
 
     /// <summary>
     /// The received transport message.
@@ -75,10 +73,14 @@ public class MessageReceived : Trigger<object>
     {
         // If the activity is triggered by a workflow trigger, resume immediately.
         if (context.IsTriggerOfWorkflow())
+        {
             await Resume(context);
+        }
         else
+        {
             // Otherwise, create a bookmark and wait for the stimulus to arrive.
             context.CreateBookmark(GetStimulus(context.ExpressionExecutionContext), Resume, false);
+        }
     }
 
     /// <inheritdoc />
@@ -108,6 +110,7 @@ public class MessageReceived : Trigger<object>
         var consumerDefinitionId = ConsumerDefinitionId.Get(context);
         var topics = Topics.GetOrDefault(context) ?? [];
         var messageType = MessageType.GetOrDefault(context) ?? typeof(string);
+        var isLocal = IsLocal.GetOrDefault(context);
         var activity = context.GetActivity();
         var activityRegistry = context.GetRequiredService<IActivityRegistry>();
         var activityDescriptor = activityRegistry.Find(activity.Type, activity.Version)!;
@@ -120,6 +123,7 @@ public class MessageReceived : Trigger<object>
             ConsumerDefinitionId = consumerDefinitionId,
             Topics = topics.Distinct().ToList(),
             MessageType = messageType,
+            IsLocal = isLocal,
             Predicate = predicateExpression,
         };
     }

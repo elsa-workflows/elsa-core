@@ -54,13 +54,14 @@ public class UpdateWorkers(IWorkerManager workerManager, IWorkflowDefinitionServ
         
         var addedBookmarks = notification.IndexedWorkflowBookmarks.AddedBookmarks;
         var workflowInstanceId = notification.IndexedWorkflowBookmarks.WorkflowExecutionContext.Id;
+        var correlationId = notification.IndexedWorkflowBookmarks.WorkflowExecutionContext.CorrelationId;
         
         foreach (var addedBookmark in addedBookmarks)
         {
             var stimulus = addedBookmark.GetPayload<MessageReceivedStimulus>();
             var consumerDefinitionId = stimulus.ConsumerDefinitionId;
             var worker = workerManager.GetWorker(consumerDefinitionId);
-            var bookmarkBinding = new BookmarkBinding(workflowInstanceId, addedBookmark.Id, stimulus);
+            var bookmarkBinding = new BookmarkBinding(workflowInstanceId, correlationId, addedBookmark.Id, stimulus);
             worker.BindBookmark(bookmarkBinding);
         }
 
