@@ -2,16 +2,19 @@ using Confluent.Kafka;
 using Elsa.Kafka.Notifications;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows;
+using Microsoft.Extensions.DependencyInjection;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Kafka.Implementations;
 
-public class WorkerManager(IConsumerDefinitionEnumerator consumerDefinitionEnumerator, IHasher hasher, IMediator mediator) : IWorkerManager
+public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : IWorkerManager
 {
     private IDictionary<string, Worker> Workers { get; set; } = new Dictionary<string, Worker>();
 
     public async Task UpdateWorkersAsync(CancellationToken cancellationToken = default)
     {
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var consumerDefinitionEnumerator = scope.ServiceProvider.GetRequiredService<IConsumerDefinitionEnumerator>();
         var consumerDefinitions = await consumerDefinitionEnumerator.EnumerateAsync(cancellationToken).ToList();
         var workers = new Dictionary<string, Worker>(Workers);
         var workersToRemove = workers.Keys.Except(consumerDefinitions.Select(x => x.Id)).ToList();
@@ -83,6 +86,8 @@ public class WorkerManager(IConsumerDefinitionEnumerator consumerDefinitionEnume
     {
         var headers = arg.Headers.ToDictionary(x => x.Key, x => x.GetValueBytes());
         var notification = new TransportMessageReceived(worker, new KafkaTransportMessage(arg.Key, arg.Value, headers));
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
         await mediator.SendAsync(notification, cancellationToken);
     }
 
