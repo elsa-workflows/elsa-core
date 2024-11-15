@@ -27,7 +27,8 @@ public class UpdateWorkers(IWorkerManager workerManager, IWorkflowDefinitionServ
         {
             var consumerDefinitionId = removedTrigger.GetPayload<MessageReceivedStimulus>().ConsumerDefinitionId;
             var worker = workerManager.GetWorker(consumerDefinitionId);
-            worker.RemoveTriggers(removedTriggerIds);
+
+            worker?.RemoveTriggers(removedTriggerIds);
         }
         
         var addedTriggers = notification.IndexedWorkflowTriggers.AddedTriggers;
@@ -37,6 +38,10 @@ public class UpdateWorkers(IWorkerManager workerManager, IWorkflowDefinitionServ
             var stimulus = addedTrigger.GetPayload<MessageReceivedStimulus>();
             var consumerDefinitionId = stimulus.ConsumerDefinitionId;
             var worker = workerManager.GetWorker(consumerDefinitionId);
+            
+            if(worker == null)
+                continue;
+            
             var workflow = await workflowDefinitionService.FindWorkflowAsync(addedTrigger.WorkflowDefinitionVersionId, cancellationToken);
             
             if (workflow == null)
@@ -61,6 +66,10 @@ public class UpdateWorkers(IWorkerManager workerManager, IWorkflowDefinitionServ
             var stimulus = addedBookmark.GetPayload<MessageReceivedStimulus>();
             var consumerDefinitionId = stimulus.ConsumerDefinitionId;
             var worker = workerManager.GetWorker(consumerDefinitionId);
+            
+            if(worker == null)
+                continue;
+            
             var bookmarkBinding = new BookmarkBinding(workflowInstanceId, correlationId, addedBookmark.Id, stimulus);
             worker.BindBookmark(bookmarkBinding);
         }
@@ -82,7 +91,8 @@ public class UpdateWorkers(IWorkerManager workerManager, IWorkflowDefinitionServ
             var stimulus = bookmark.GetPayload<MessageReceivedStimulus>();
             var consumerDefinitionId = stimulus.ConsumerDefinitionId;
             var worker = workerManager.GetWorker(consumerDefinitionId);
-            worker.RemoveBookmarks(removedBookmarkIds);
+            
+            worker?.RemoveBookmarks(removedBookmarkIds);
         }
     }
 }

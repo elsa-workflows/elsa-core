@@ -108,9 +108,9 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
             worker.Stop();
     }
 
-    public IWorker GetWorker(string consumerDefinitionId)
+    public IWorker? GetWorker(string consumerDefinitionId)
     {
-        return Workers[consumerDefinitionId];
+        return Workers.TryGetValue(consumerDefinitionId, out var worker) ? worker : null;
     }
 
     private Worker CreateWorker(ConsumerDefinition consumerDefinition)
