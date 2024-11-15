@@ -23,7 +23,7 @@ public record Bookmark(
     object? Payload,
     string ActivityId,
     string ActivityNodeId,
-    string ActivityInstanceId,
+    string? ActivityInstanceId,
     DateTimeOffset CreatedAt,
     bool AutoBurn = true,
     string? CallbackMethodName = default,

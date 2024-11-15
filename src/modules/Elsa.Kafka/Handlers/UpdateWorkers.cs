@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.Kafka.Stimuli;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Notifications;
 using JetBrains.Annotations;
 
@@ -11,7 +12,10 @@ namespace Elsa.Kafka.Handlers;
 /// Creates workers for each trigger &amp; bookmark in response to updated workflow trigger indexes and bookmarks.
 /// </summary>
 [UsedImplicitly]
-public class UpdateWorkers(IWorkerManager workerManager, IWorkflowDefinitionService workflowDefinitionService) : INotificationHandler<WorkflowTriggersIndexed>, INotificationHandler<WorkflowBookmarksIndexed>
+public class UpdateWorkers(IWorkerManager workerManager, IWorkflowDefinitionService workflowDefinitionService) : 
+    INotificationHandler<WorkflowTriggersIndexed>, 
+    INotificationHandler<WorkflowBookmarksIndexed>,
+    INotificationHandler<BookmarksDeleted>
 {
     /// Adds, updates and removes workers based on added and removed triggers.
     public async Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
@@ -46,15 +50,7 @@ public class UpdateWorkers(IWorkerManager workerManager, IWorkflowDefinitionServ
     /// Adds, updates and removes workers based on added and removed bookmarks.
     public Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
     {
-        var removedBookmarks = notification.IndexedWorkflowBookmarks.RemovedBookmarks;
-        var removedBookmarkIds = removedBookmarks.Select(x => x.Id).ToList();
-        
-        foreach (var removedBookmark in removedBookmarks)
-        {
-            var consumerDefinitionId = removedBookmark.GetPayload<MessageReceivedStimulus>().ConsumerDefinitionId;
-            var worker = workerManager.GetWorker(consumerDefinitionId);
-            worker.RemoveBookmarks(removedBookmarkIds);
-        }
+        RemoveBookmarkBindings(notification.IndexedWorkflowBookmarks.RemovedBookmarks);
         
         var addedBookmarks = notification.IndexedWorkflowBookmarks.AddedBookmarks;
         var workflowInstanceId = notification.IndexedWorkflowBookmarks.WorkflowExecutionContext.Id;
@@ -69,5 +65,23 @@ public class UpdateWorkers(IWorkerManager workerManager, IWorkflowDefinitionServ
         }
 
         return Task.CompletedTask;
+    }
+
+    public Task HandleAsync(BookmarksDeleted notification, CancellationToken cancellationToken)
+    {
+        RemoveBookmarkBindings(notification.Bookmarks.Select(x => x.ToBookmark()).ToList());
+        return Task.CompletedTask;
+    }
+    
+    private void RemoveBookmarkBindings(ICollection<Bookmark> bookmarks)
+    {
+        var removedBookmarkIds = bookmarks.Select(x => x.Id).ToList();
+        foreach (var bookmark in bookmarks)
+        {
+            var stimulus = bookmark.GetPayload<MessageReceivedStimulus>();
+            var consumerDefinitionId = stimulus.ConsumerDefinitionId;
+            var worker = workerManager.GetWorker(consumerDefinitionId);
+            worker.RemoveBookmarks(removedBookmarkIds);
+        }
     }
 }
