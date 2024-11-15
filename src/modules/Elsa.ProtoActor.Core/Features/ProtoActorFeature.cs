@@ -38,7 +38,7 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
     public Func<IServiceProvider, IClusterProvider> CreateClusterProvider { get; set; } = _ => new TestProvider(new TestProviderOptions(), new InMemAgent());
 
     /// A delegate that configures an instance of <see cref="ConfigureActorSystemConfig"/>. 
-    public Action<IServiceProvider, ActorSystemConfig> ConfigureActorSystemConfig { get; set; } = SetupDefaultConfig;
+    public Func<IServiceProvider, ActorSystemConfig, ActorSystemConfig> ConfigureActorSystemConfig { get; set; } = SetupDefaultConfig;
 
     /// A delegate that configures an instance of an <see cref="ConfigureActorSystem"/>. 
     public Action<IServiceProvider, ActorSystem> ConfigureActorSystem { get; set; } = (_, _) => { };
@@ -187,8 +187,9 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
         return clusterConfig;
     }
 
-    private static void SetupDefaultConfig(IServiceProvider serviceProvider, ActorSystemConfig config)
+    private static ActorSystemConfig SetupDefaultConfig(IServiceProvider serviceProvider, ActorSystemConfig config)
     {
+        return config;
     }
 
     private static GrpcNetRemoteConfig CreateDefaultRemoteConfig(IServiceProvider serviceProvider)
