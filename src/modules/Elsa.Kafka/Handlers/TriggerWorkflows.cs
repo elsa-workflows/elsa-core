@@ -5,8 +5,10 @@ using Elsa.Kafka.Activities;
 using Elsa.Kafka.Notifications;
 using Elsa.Kafka.Stimuli;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 
@@ -16,11 +18,14 @@ namespace Elsa.Kafka.Handlers;
 public class TriggerWorkflows(
     ITriggerInvoker triggerInvoker,
     IBookmarkResumer bookmarkResumer,
+    IBookmarkQueue bookmarkQueue,
     ICorrelationStrategy correlationStrategy, 
     IExpressionEvaluator expressionEvaluator, 
     IOptions<KafkaOptions> options, 
     IServiceProvider serviceProvider) : INotificationHandler<TransportMessageReceived>
 {
+    private static readonly string MessageReceivedActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
+    
     public async Task HandleAsync(TransportMessageReceived notification, CancellationToken cancellationToken)
     {
         var worker = notification.Worker;
@@ -67,19 +72,34 @@ public class TriggerWorkflows(
             [MessageReceived.InputKey] = transportMessage
         };
         
+        var properties = new Dictionary<string, object>
+        {
+            [MessageReceived.InputKey] = transportMessage
+        };
+        
         foreach (var binding in matchingBookmarks)
         {
-            var invokeBookmarkRequest = new ResumeBookmarkRequest
+            // var invokeBookmarkRequest = new ResumeBookmarkRequest
+            // {
+            //     WorkflowInstanceId = binding.WorkflowInstanceId,
+            //     BookmarkId = binding.BookmarkId,
+            //     Input = input,
+            //     Properties = properties
+            // };
+
+            var bookmarkQueueItem = new NewBookmarkQueueItem
             {
                 WorkflowInstanceId = binding.WorkflowInstanceId,
                 BookmarkId = binding.BookmarkId,
-                Input = input,
-                Properties = new Dictionary<string, object>
+                Options = new ResumeBookmarkOptions
                 {
-                    [MessageReceived.InputKey] = transportMessage
-                }
+                    Input = input,
+                    Properties = properties
+                },
+                ActivityTypeName = MessageReceivedActivityTypeName
             };
-            await bookmarkResumer.ResumeAsync(invokeBookmarkRequest, cancellationToken);
+            await bookmarkQueue.EnqueueAsync(bookmarkQueueItem, cancellationToken);
+            //await bookmarkResumer.ResumeAsync(invokeBookmarkRequest, cancellationToken);
         }
     }
 
