@@ -1,7 +1,11 @@
 using Confluent.Kafka;
+using Elsa.Extensions;
 using Elsa.Kafka.Notifications;
+using Elsa.Kafka.Stimuli;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Open.Linq.AsyncExtensions;
 
@@ -60,10 +64,44 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
         foreach (var worker in workers.Values)
             worker.Start(cancellationToken);
 
-        // Update the workers dictionary.
+        // Update the worker dictionary.
         Workers = workers;
     }
-    
+
+    public async Task BindTriggersAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
+    {
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
+        
+        foreach (var trigger in triggers)
+        {
+            var workflow = await workflowDefinitionService.FindWorkflowAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
+
+            if (workflow == null)
+                continue;
+
+            var stimulus = trigger.GetPayload<MessageReceivedStimulus>();
+            var consumerDefinitionId = stimulus.ConsumerDefinitionId;
+            var worker = GetWorker(consumerDefinitionId);
+            var triggerBinding = new TriggerBinding(workflow, trigger.Id, trigger.ActivityId, stimulus);
+            worker.BindTrigger(triggerBinding);
+        }
+    }
+
+    public Task BindBookmarksAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
+    {
+        foreach (var bookmark in bookmarks)
+        {
+            var stimulus = bookmark.GetPayload<MessageReceivedStimulus>();
+            var consumerDefinitionId = stimulus.ConsumerDefinitionId;
+            var worker = GetWorker(consumerDefinitionId);
+            var bookmarkBinding = new BookmarkBinding(bookmark.WorkflowInstanceId, bookmark.Id, stimulus);
+            worker.BindBookmark(bookmarkBinding);
+        }
+        
+        return Task.CompletedTask;
+    }
+
     public void StopWorkers()
     {
         foreach (var worker in Workers.Values)
@@ -81,7 +119,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
         worker.MessageReceived = OnMessageReceivedAsync;
         return worker;
     }
-    
+
     private async Task OnMessageReceivedAsync(Worker worker, Message<Ignore, string> arg, CancellationToken cancellationToken)
     {
         var headers = arg.Headers.ToDictionary(x => x.Key, x => x.GetValueBytes());

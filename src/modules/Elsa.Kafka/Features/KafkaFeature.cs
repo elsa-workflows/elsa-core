@@ -58,6 +58,7 @@ public class KafkaFeature(IModule module) : FeatureBase(module)
         Services
             .AddBackgroundTask<StartConsumersStartupTask>()
             .AddSingleton<IWorkerManager, WorkerManager>()
+            .AddScoped<IWorkerTopicSubscriber, WorkerTopicSubscriber>()
             .AddScoped<IConsumerDefinitionProvider, OptionsDefinitionProvider>()
             .AddScoped<IProducerDefinitionProvider, OptionsDefinitionProvider>()
             .AddScoped<ITopicDefinitionProvider, OptionsDefinitionProvider>()

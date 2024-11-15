@@ -57,7 +57,6 @@ public class SendMessage : CodeActivity
         var producerDefinitionEnumerator = context.GetRequiredService<IProducerDefinitionEnumerator>();
         var producerDefinition = await producerDefinitionEnumerator.GetByIdAsync(producerDefinitionId);
         var content = Content.Get(context);
-        var correlationId = CorrelationId.GetOrDefault(context);
         var serializer = context.GetRequiredService<IOptions<KafkaOptions>>().Value.Serializer;
         var serviceProvider = context.WorkflowExecutionContext.ServiceProvider;
         var serializedContent = content as string ?? serializer(serviceProvider, content);
@@ -65,24 +64,33 @@ public class SendMessage : CodeActivity
         {
             BootstrapServers = string.Join(",", producerDefinition.BootstrapServers),
         };
+        
         using var producer = new ProducerBuilder<Null, string>(config).Build();
+        var headers = CreateHeaders(context);
         var message = new Message<Null, string>
         {
             Value = serializedContent,
+            Headers = headers
         };
-        
-        if(!string.IsNullOrWhiteSpace(correlationId))
-        {
-            var options = context.GetRequiredService<IOptions<KafkaOptions>>().Value;
-            var headers = new Headers();
-            headers.Add(options.CorrelationHeaderKey, Encoding.UTF8.GetBytes(correlationId));
-            message.Headers = headers;
-        }
         
         var result = await producer.ProduceAsync(topic, message);
         context.JournalData.Add("MessageId", result.Message.Value);
         context.JournalData.Add("Offset", result.Offset);
         context.JournalData.Add("Status", result.Status);
         context.JournalData.Add("Timestamp", result.Timestamp);
+    }
+    
+    private Headers CreateHeaders(ActivityExecutionContext context)
+    {
+        var options = context.GetRequiredService<IOptions<KafkaOptions>>().Value;
+        var headers = new Headers();
+        var correlationId = CorrelationId.GetOrDefault(context);
+        var topic = Topic.Get(context);
+        
+        headers.Add(options.TopicHeaderKey, Encoding.UTF8.GetBytes(topic));
+        if(!string.IsNullOrWhiteSpace(correlationId)) 
+            headers.Add(options.CorrelationHeaderKey, Encoding.UTF8.GetBytes(correlationId));
+        
+        return headers;
     }
 }

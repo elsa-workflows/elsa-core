@@ -4,11 +4,12 @@ using JetBrains.Annotations;
 namespace Elsa.Kafka.Tasks;
 
 [UsedImplicitly]
-public class StartConsumersStartupTask(IWorkerManager workerManager) : BackgroundTask
+public class StartConsumersStartupTask(IWorkerManager workerManager, IWorkerTopicSubscriber workerTopicSubscriber) : BackgroundTask
 {
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
         await workerManager.UpdateWorkersAsync(cancellationToken);
+        await workerTopicSubscriber.UpdateTopicSubscriptionsAsync(cancellationToken);
     }
 
     public override Task StopAsync(CancellationToken cancellationToken)

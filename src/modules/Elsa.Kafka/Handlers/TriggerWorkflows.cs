@@ -1,3 +1,4 @@
+using System.Text;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Kafka.Activities;
@@ -46,6 +47,7 @@ public class TriggerWorkflows(
         {
             var invokeTriggerRequest = new InvokeTriggerRequest
             {
+                Workflow = binding.Workflow,
                 ActivityId = binding.TriggerActivityId,
                 CorrelationId = GetCorrelationId(transportMessage),
                 Input = input,
@@ -88,9 +90,18 @@ public class TriggerWorkflows(
         CancellationToken cancellationToken)
     {
         var matchingTriggers = new List<TriggerBinding>();
+        var topicHeaderKey = options.Value.TopicHeaderKey;
+        var topic = transportMessage.Headers.TryGetValue(topicHeaderKey, out var topicBytes) ? Encoding.UTF8.GetString(topicBytes) : null;
+        
+        if(string.IsNullOrEmpty(topic))
+            return matchingTriggers;
+        
         foreach (var binding in boundTriggers)
         {
             if(binding.Stimulus.ConsumerDefinitionId != consumerDefinitionId)
+                continue;
+            
+            if(binding.Stimulus.Topics.All(x => x != topic))
                 continue;
             
             var isMatch = await EvaluatePredicateAsync(transportMessage, binding.Stimulus, cancellationToken);

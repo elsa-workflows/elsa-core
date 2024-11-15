@@ -20,6 +20,7 @@ public class ConsumerWorkflow : WorkflowBase
                 {
                     ConsumerDefinitionId = new("consumer-1"),
                     MessageType = new(typeof(ExpandoObject)),
+                    Topics = new(["topic-1"]),
                     CorrelatingFields = new(() => new Dictionary<string, object?>
                     {
                         ["orderId"] = "1",

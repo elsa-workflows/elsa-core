@@ -49,7 +49,7 @@ public class Worker(ConsumerDefinition consumerDefinition) : IWorker
     }
 
     public void BindTrigger(TriggerBinding binding)
-    { ;
+    {
         var topics = binding.Stimulus.Topics.Distinct().ToList();
         TriggerBindings[binding.TriggerId] = binding;
         Subscribe(topics);
@@ -65,13 +65,13 @@ public class Worker(ConsumerDefinition consumerDefinition) : IWorker
     public void RemoveTriggers(IEnumerable<string> triggerIds)
     {
         var triggerIdList = triggerIds.ToList();
-        TriggerBindings.RemoveWhere(x => !triggerIdList.Contains(x.Key));
+        TriggerBindings.RemoveWhere(x => triggerIdList.Contains(x.Key));
     }
 
     public void RemoveBookmarks(IEnumerable<string> bookmarkIds)
     {
         var bookmarkIdList = bookmarkIds.ToList();
-        BookmarkBindings.RemoveWhere(x => !bookmarkIdList.Contains(x.Key));
+        BookmarkBindings.RemoveWhere(x => bookmarkIdList.Contains(x.Key));
     }
 
     public void Subscribe(IEnumerable<BookmarkBinding> bookmarkBindings)

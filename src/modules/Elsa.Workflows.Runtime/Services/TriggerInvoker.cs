@@ -11,7 +11,7 @@ public class TriggerInvoker(IWorkflowStarter workflowStarter) : ITriggerInvoker
             Input = request.Input,
             Properties = request.Properties,
             ParentId = request.ParentWorkflowInstanceId,
-            TriggerActivityId = request.ActivityId
+            TriggerActivityId = request.ActivityId,
         };
                 
         return await workflowStarter.StartWorkflowAsync(startRequest, cancellationToken);
