@@ -34,7 +34,9 @@ public class BookmarkQueueItem : Entity
     /// </summary>
     public string? ActivityInstanceId { get; set; }
 
-    // The type name of the activity associated with the bookmark.
+    /// <summary>
+    /// The type name of the activity associated with the bookmark.
+    /// </summary>
     public string? ActivityTypeName { get; set; }
 
     /// <summary>

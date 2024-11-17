@@ -7,8 +7,8 @@ public class StartWorkflowRequest
 {
     /// <summary>
     /// The ID of the workflow definition version to create an instance of.
-    /// </summary>
     /// Will be used if <see cref="Workflow"/> is not set.
+    /// </summary>
     public WorkflowDefinitionHandle? WorkflowDefinitionHandle { get; set; }
 
     /// The workflow to create an instance of.
