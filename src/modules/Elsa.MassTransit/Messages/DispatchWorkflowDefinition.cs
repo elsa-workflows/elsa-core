@@ -40,7 +40,9 @@ public record DispatchWorkflowDefinition
     /// </summary>
     public string? ParentWorkflowInstanceId { get; init; }
 
+    /// <summary>
     /// Deprecated. Use the <see cref="SerializedInput"/> property instead.
+    /// </summary>
     [Obsolete("This property is no longer used and will be removed in a future version. Use the SerializedInput property instead.")]
     public IDictionary<string, object>? Input { get; set; }
 

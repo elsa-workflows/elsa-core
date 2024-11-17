@@ -16,7 +16,9 @@ public class SecretsDbContext : ElsaDbContextBase
     {
     }
     
+    /// <summary>
     /// The API Keys DB set.
+    /// </summary>
     public DbSet<Secret> Secrets { get; set; } = default!;
     
     /// <inheritdoc />

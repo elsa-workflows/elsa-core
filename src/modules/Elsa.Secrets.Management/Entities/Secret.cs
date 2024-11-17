@@ -19,13 +19,19 @@ public class Secret : ManagedEntity
     /// </summary>
     public string? Scope { get; set; } = default!;
     
+    /// <summary>
     /// The encrypted value of the secret using the encryption key referenced by <see cref="EncryptionKeyId"/>.
+    /// </summary>
     public string EncryptedValue { get; set; } = default!;
     
+    /// <summary>
     /// An optional description of the secret.
+    /// </summary>
     public string Description { get; set; } = "";
     
+    /// <summary>
     /// The version of the secret. Increments after each update or rotation.
+    /// </summary>
     public int Version { get; set; }
 
     /// <summary>

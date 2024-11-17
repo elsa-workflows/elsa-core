@@ -6,7 +6,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
+/// <summary>
 /// Refreshes the <see cref="IActivityRegistry"/> for the <see cref="WorkflowDefinitionActivityProvider"/> provider whenever workflow definitions are reloaded.
+/// </summary>
 [PublicAPI]
 public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater workflowDefinitionActivityRegistryUpdater) : INotificationHandler<WorkflowDefinitionsReloaded>
 {

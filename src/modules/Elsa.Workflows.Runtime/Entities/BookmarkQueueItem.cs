@@ -49,7 +49,9 @@ public class BookmarkQueueItem : Entity
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; }
 
+    /// <summary>
     /// Creates a <see cref="BookmarkFilter"/> from this bookmark queue item.
+    /// </summary>
     public BookmarkFilter CreateBookmarkFilter()
     {
         return new BookmarkFilter

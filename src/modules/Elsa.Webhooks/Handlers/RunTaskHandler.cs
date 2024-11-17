@@ -6,7 +6,9 @@ using WebhooksCore;
 
 namespace Elsa.Webhooks.Handlers;
 
+/// <summary>
 /// Handles the <see cref="RunTaskRequest"/> notification and asynchronously invokes all registered webhook endpoints.
+/// </summary>
 [UsedImplicitly]
 public class RunTaskHandler(IWebhookEventBroadcaster webhookDispatcher) : INotificationHandler<RunTaskRequest>
 {

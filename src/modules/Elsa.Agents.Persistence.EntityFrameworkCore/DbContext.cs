@@ -16,13 +16,19 @@ public class AgentsDbContext : ElsaDbContextBase
     {
     }
     
+    /// <summary>
     /// The API Keys DB set.
+    /// </summary>
     public DbSet<ApiKeyDefinition> ApiKeysDefinitions { get; set; } = default!;
     
+    /// <summary>
     /// The Services DB set.
+    /// </summary>
     public DbSet<ServiceDefinition> ServicesDefinitions { get; set; } = default!;
     
+    /// <summary>
     /// The Services DB set.
+    /// </summary>
     public DbSet<AgentDefinition> AgentDefinitions { get; set; } = default!;
 
     /// <inheritdoc />

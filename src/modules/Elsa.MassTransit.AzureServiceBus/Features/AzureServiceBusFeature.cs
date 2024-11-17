@@ -35,7 +35,9 @@ public class AzureServiceBusFeature : FeatureBase
     {
     }
 
+    /// <summary>
     /// An Azure Service Bus connection string.
+    /// </summary>
     public string? ConnectionString { get; set; }
 
     /// <summary>

@@ -9,7 +9,9 @@ namespace Elsa.Workflows.Runtime.OrderDefinitions;
 /// </summary>
 public class ActivityExecutionRecordOrder<TProp> : OrderDefinition<ActivityExecutionRecord, TProp>
 {
+    /// <summary>
     /// Creates a new instance of the <see cref="ActivityExecutionRecordOrder{TProp}"/> class.
+    /// </summary>
     public ActivityExecutionRecordOrder(Expression<Func<ActivityExecutionRecord, TProp>> keySelector, OrderDirection direction)
     {
         KeySelector = keySelector;

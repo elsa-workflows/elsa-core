@@ -5,7 +5,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
+/// <summary>
 /// Entity Framework implementation of the <see cref="IKeyValueStore"/>
+/// </summary>
 [UsedImplicitly]
 public class EFCoreKeyValueStore(Store<RuntimeElsaDbContext, SerializedKeyValuePair> store) : IKeyValueStore
 {

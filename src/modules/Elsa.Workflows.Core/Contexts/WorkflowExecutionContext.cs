@@ -38,7 +38,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
     private IList<ActivityExecutionContext> _activityExecutionContexts;
     private readonly IHasher _hasher;
 
+    /// <summary>
     /// Initializes a new instance of <see cref="WorkflowExecutionContext"/>.
+    /// </summary>
     private WorkflowExecutionContext(
         IServiceProvider serviceProvider,
         WorkflowGraph workflowGraph,
@@ -81,7 +83,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
         _cancellationRegistrations.Add(linkedCancellationTokenSource.Token.Register(CancelWorkflow));
     }
 
+    /// <summary>
     /// Creates a new <see cref="WorkflowExecutionContext"/> for the specified workflow.
+    /// </summary>
     public static async Task<WorkflowExecutionContext> CreateAsync(
         IServiceProvider serviceProvider,
         WorkflowGraph workflowGraph,
@@ -113,7 +117,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
         );
     }
 
+    /// <summary>
     /// Creates a new <see cref="WorkflowExecutionContext"/> for the specified workflow.
+    /// </summary>
     public static async Task<WorkflowExecutionContext> CreateAsync(
         IServiceProvider serviceProvider,
         WorkflowGraph workflowGraph,
@@ -147,7 +153,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
         return workflowExecutionContext;
     }
 
+    /// <summary>
     /// Creates a new <see cref="WorkflowExecutionContext"/> for the specified workflow.
+    /// </summary>
     public static async Task<WorkflowExecutionContext> CreateAsync(
         IServiceProvider serviceProvider,
         WorkflowGraph workflowGraph,
@@ -188,7 +196,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
         return workflowExecutionContext;
     }
 
+    /// <summary>
     /// Assigns the specified workflow to this workflow execution context.
+    /// </summary>
     /// <param name="workflowGraph">The workflow graph to assign.</param>
     public async Task SetWorkflowGraphAsync(WorkflowGraph workflowGraph)
     {
@@ -295,76 +305,116 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <inheritdoc />
     public IDictionary<string, object> Properties { get; set; }
 
+    /// <summary>
     /// A dictionary that can be used by application code and middleware to store information and even services. Values do not need to be serializable.
-    /// All data will be gone once workflow execution completes. 
+    /// All data will be gone once workflow execution completes.
+    /// </summary>
     public IDictionary<object, object> TransientProperties { get; set; } = new Dictionary<object, object>();
 
+    /// <summary>
     /// A collection of incidents that may have occurred during execution.
+    /// </summary>
     public ICollection<ActivityIncident> Incidents { get; set; }
 
+    /// <summary>
     /// The current <see cref="ExecuteActivityDelegate"/> delegate to invoke when executing the next activity.
+    /// </summary>
     public ExecuteActivityDelegate? ExecuteDelegate { get; set; }
 
-    /// Provides context about the bookmark that was used to resume workflow execution, if any. 
+    /// <summary>
+    /// Provides context about the bookmark that was used to resume workflow execution, if any.
+    /// </summary>
     public ResumedBookmarkContext? ResumedBookmarkContext { get; set; }
 
-    /// The ID of the activity associated with the trigger that caused this workflow execution, if any. 
+    /// <summary>
+    /// The ID of the activity associated with the trigger that caused this workflow execution, if any.
+    /// </summary>
     public string? TriggerActivityId { get; set; }
 
+    /// <summary>
     /// A set of cancellation tokens that can be used to cancel the workflow execution without cancelling system-level operations.
+    /// </summary>
     public CancellationToken CancellationToken { get; }
 
+    /// <summary>
     /// A list of <see cref="ActivityCompletionCallbackEntry"/> callbacks that are invoked when the associated child activity completes.
+    /// </summary>
     public ICollection<ActivityCompletionCallbackEntry> CompletionCallbacks => new ReadOnlyCollection<ActivityCompletionCallbackEntry>(_completionCallbackEntries);
 
+    /// <summary>
     /// A list of <see cref="ActivityExecutionContext"/>s that are currently active.
+    /// </summary>
     public IReadOnlyCollection<ActivityExecutionContext> ActivityExecutionContexts
     {
         get => _activityExecutionContexts.ToList();
         internal set => _activityExecutionContexts = value.ToList();
     }
 
+    /// <summary>
     /// The last execution log sequence number. This number is incremented every time a new entry is added to the execution log and is persisted alongside the workflow instance and restored when the workflow is resumed.
+    /// </summary>
     public long ExecutionLogSequence { get; set; }
 
+    /// <summary>
     /// A collection of execution log entries. This collection is flushed when the workflow execution context ends.
+    /// </summary>
     public ICollection<WorkflowExecutionLogEntry> ExecutionLog { get; } = new List<WorkflowExecutionLogEntry>();
 
+    /// <summary>
     /// The expression execution context for the current workflow execution.
+    /// </summary>
     public ExpressionExecutionContext? ExpressionExecutionContext { get; private set; }
 
     /// <inheritdoc />
     public IEnumerable<Variable> Variables => Workflow.Variables;
 
+    /// <summary>
     /// Resolves the specified service type from the service provider.
+    /// </summary>
     public T GetRequiredService<T>() where T : notnull => ServiceProvider.GetRequiredService<T>();
 
+    /// <summary>
     /// Resolves the specified service type from the service provider.
+    /// </summary>
     public object GetRequiredService(Type serviceType) => ServiceProvider.GetRequiredService(serviceType);
 
+    /// <summary>
     /// Resolves the specified service type from the service provider, or creates a new instance if the service type was not found in the service container.
+    /// </summary>
     public T GetOrCreateService<T>() where T : notnull => ActivatorUtilities.GetServiceOrCreateInstance<T>(ServiceProvider);
 
+    /// <summary>
     /// Resolves the specified service type from the service provider, or creates a new instance if the service type was not found in the service container.
+    /// </summary>
     public object GetOrCreateService(Type serviceType) => ActivatorUtilities.GetServiceOrCreateInstance(ServiceProvider, serviceType);
 
+    /// <summary>
     /// Resolves the specified service type from the service provider.
+    /// </summary>
     public T? GetService<T>() where T : notnull => ServiceProvider.GetService<T>();
 
+    /// <summary>
     /// Resolves the specified service type from the service provider.
+    /// </summary>
     public object? GetService(Type serviceType) => ServiceProvider.GetService(serviceType);
 
+    /// <summary>
     /// Resolves multiple implementations of the specified service type from the service provider.
+    /// </summary>
     public IEnumerable<T> GetServices<T>() where T : notnull => ServiceProvider.GetServices<T>();
 
+    /// <summary>
     /// Registers a completion callback for the specified activity.
+    /// </summary>
     internal void AddCompletionCallback(ActivityExecutionContext owner, ActivityNode child, ActivityCompletionCallback? completionCallback = default, object? tag = default)
     {
         var entry = new ActivityCompletionCallbackEntry(owner, child, completionCallback, tag);
         _completionCallbackEntries.Add(entry);
     }
 
+    /// <summary>
     /// Unregisters the completion callback for the specified owner and child activity.
+    /// </summary>
     internal ActivityCompletionCallbackEntry? PopCompletionCallback(ActivityExecutionContext owner, ActivityNode child)
     {
         var entry = _completionCallbackEntries.FirstOrDefault(x => x.Owner == owner && x.Child == child);
@@ -407,7 +457,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     public ActivityNode? FindNodeById(string nodeId) => NodeIdLookup.TryGetValue(nodeId, out var node) ? node : default;
 
+    /// <summary>
     /// Returns the <see cref="ActivityNode"/> with the specified hash of the activity node ID from the workflow graph.
+    /// </summary>
     /// <param name="hash">The hash of the activity node ID.</param>
     /// <returns>The <see cref="ActivityNode"/> with the specified hash of the activity node ID.</returns>
     public ActivityNode? FindNodeByHash(string hash) => NodeHashLookup.TryGetValue(hash, out var node) ? node : default;

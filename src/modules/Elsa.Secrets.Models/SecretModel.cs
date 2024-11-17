@@ -16,19 +16,27 @@ public class SecretModel
     /// </summary>
     public string? Scope { get; set; } = default!;
     
+    /// <summary>
     /// The encrypted value of the secret using the encryption key referenced by <see cref="EncryptionKeyId"/>.
+    /// </summary>
     public string EncryptedValue { get; set; } = default!;
     
+    /// <summary>
     /// An optional description of the secret.
+    /// </summary>
     public string Description { get; set; } = "";
     
     public TimeSpan? ExpiresIn { get; set; }
     public DateTimeOffset? ExpiresAt { get; set; }
     
+    /// <summary>
     /// The version of the secret. Increments after each update or rotation.
+    /// </summary>
     public int Version { get; set; }
     
+    /// <summary>
     /// The status of the secret.
+    /// </summary>
     public SecretStatus Status { get; set; }
     
     public DateTimeOffset? LastAccessedAt { get; set; }

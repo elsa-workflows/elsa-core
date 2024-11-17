@@ -9,9 +9,13 @@ namespace Elsa.ProtoActor;
 /// </summary>
 public interface IVirtualActorsProvider
 {
+    /// <summary>
     /// Return a list of <see cref="ClusterKind"/> objects.
+    /// </summary>
     IEnumerable<ClusterKind> GetClusterKinds(ActorSystem system);
     
+    /// <summary>
     /// Return all file descriptors for protobuf serialization.
+    /// </summary>
     IEnumerable<FileDescriptor> GetFileDescriptors();
 }

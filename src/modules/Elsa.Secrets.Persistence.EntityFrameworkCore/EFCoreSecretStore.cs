@@ -7,7 +7,9 @@ using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Secrets.Persistence.EntityFrameworkCore;
 
+/// <summary>
 /// An EF Core implementation of <see cref="ISecretStore"/>.
+/// </summary>
 [UsedImplicitly]
 public class EFCoreSecretStore(EntityStore<SecretsDbContext, Secret> store) : ISecretStore
 {

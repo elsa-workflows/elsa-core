@@ -24,26 +24,40 @@ public class SendMessage : CodeActivity
     {
     }
 
+    /// <summary>
     /// The contents of the message to send.
+    /// </summary>
     [Input(Description = "The contents of the message to send.")]
     public Input<object> MessageBody { get; set; } = default!;
 
+    /// <summary>
     /// The queue or topic to send the message to.
+    /// </summary>
     public Input<string> QueueOrTopic { get; set; } = default!;
 
+    /// <summary>
     /// The content type of the message.
+    /// </summary>
     public Input<string>? ContentType { get; set; }
 
+    /// <summary>
     /// The subject of the message.
+    /// </summary>
     public Input<string>? Subject { get; set; }
 
+    /// <summary>
     /// The correlation ID of the message.
+    /// </summary>
     public Input<string>? CorrelationId { get; set; }
 
+    /// <summary>
     /// The formatter to use when serializing the message body.
+    /// </summary>
     public Input<Type?> FormatterType { get; set; } = default!;
 
+    /// <summary>
     /// The application properties to embed with the Service Bus Message
+    /// </summary>
     [Input(Category = "Advanced",
         DefaultSyntax = "Json",
         SupportedSyntaxes = ["JavaScript", "Json"],
