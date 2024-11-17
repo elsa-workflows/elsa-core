@@ -5,9 +5,13 @@ namespace Elsa.AzureServiceBus.Models;
 /// </summary>
 public class TopicDefinition
 {
+    /// <summary>
     /// The topic name.
+    /// </summary>
     public string Name { get; set; } = default!;
 
+    /// <summary>
     /// The subscriptions.
+    /// </summary>
     public ICollection<SubscriptionDefinition> Subscriptions { get; set; } = new List<SubscriptionDefinition>();
 }

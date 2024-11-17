@@ -23,11 +23,15 @@ using static Elsa.Api.Client.RefitSettingsHelper;
 
 namespace Elsa.Api.Client.Extensions;
 
+/// <summary>
 /// Provides extension methods for dependency injection.
+/// </summary>
 [PublicAPI]
 public static class DependencyInjectionExtensions
 {
+    /// <summary>
     /// Adds default Elsa API clients configured to use an API key.
+    /// </summary>
     public static IServiceCollection AddDefaultApiClientsUsingApiKey(this IServiceCollection services, Action<ElsaClientOptions> configureOptions)
     {
         var options = new ElsaClientOptions();
@@ -41,7 +45,9 @@ public static class DependencyInjectionExtensions
         });
     }
 
+    /// <summary>
     /// Adds default Elsa API clients.
+    /// </summary>
     public static IServiceCollection AddDefaultApiClients(this IServiceCollection services, Action<ElsaClientBuilderOptions>? configureClient = null)
     {
         return services.AddApiClients(configureClient, builderOptions =>
@@ -84,7 +90,9 @@ public static class DependencyInjectionExtensions
         return services.AddApiClients(configureClient, builderOptions => services.AddApi<T>(builderOptions));
     }
 
+    /// <summary>
     /// Adds the Elsa client to the service collection.
+    /// </summary>
     public static IServiceCollection AddApiClients(this IServiceCollection services, Action<ElsaClientBuilderOptions>? configureClient = null, Action<ElsaClientBuilderOptions>? configureServices = null)
     {
         var builderOptions = new ElsaClientBuilderOptions();
@@ -143,7 +151,9 @@ public static class DependencyInjectionExtensions
         httpClientBuilderOptions?.ConfigureHttpClientBuilder(builder);
     }
 
+    /// <summary>
     /// Creates an API client for the specified API type.
+    /// </summary>
     public static T CreateApi<T>(this IServiceProvider serviceProvider, Uri baseAddress) where T : class
     {
         var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
@@ -152,7 +162,9 @@ public static class DependencyInjectionExtensions
         return CreateApi<T>(serviceProvider, httpClient);
     }
 
+    /// <summary>
     /// Creates an API client for the specified API type.
+    /// </summary>
     public static T CreateApi<T>(this IServiceProvider serviceProvider, HttpClient httpClient) where T : class
     {
         return RestService.For<T>(httpClient, CreateRefitSettings(serviceProvider));

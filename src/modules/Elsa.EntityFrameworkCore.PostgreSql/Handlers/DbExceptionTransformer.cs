@@ -4,7 +4,9 @@ using Npgsql;
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Handlers;
 
+/// <summary>
 /// Transforms database exceptions encountered when using a postgreSQL database into more generic exceptions.
+/// </summary>
 [UsedImplicitly]
 public class DbExceptionTransformer : IDbExceptionHandler
 {

@@ -7,7 +7,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Features;
 
+/// <summary>
 /// A feature that installs API endpoints to interact with skilled agents.
+/// </summary>
 [DependsOn(typeof(AgentPersistenceFeature))]
 [UsedImplicitly]
 public class AgentsApiFeature(IModule module) : FeatureBase(module)

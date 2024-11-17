@@ -14,7 +14,9 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.JavaScript.Handlers;
 
+/// <summary>
 /// A handler that configures the Jint engine with workflow variables.
+/// </summary>
 [UsedImplicitly]
 public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INotificationHandler<EvaluatingJavaScript>, INotificationHandler<EvaluatedJavaScript>
 {

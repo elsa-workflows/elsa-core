@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Secrets.Persistence.EntityFrameworkCore;
 
+/// <summary>
 /// DB context for the secrets module.
+/// </summary>
 [UsedImplicitly]
 public class SecretsDbContext : ElsaDbContextBase
 {

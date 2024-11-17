@@ -4,7 +4,9 @@ using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime.OrderDefinitions;
 
+/// <summary>
 /// Represents the order by which to order the results of a query.
+/// </summary>
 public class ActivityExecutionRecordOrder<TProp> : OrderDefinition<ActivityExecutionRecord, TProp>
 {
     /// Creates a new instance of the <see cref="ActivityExecutionRecordOrder{TProp}"/> class.

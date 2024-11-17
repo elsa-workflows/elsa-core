@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Agents.Persistence.EntityFrameworkCore;
 
+/// <summary>
 /// DB context for the Agents module.
+/// </summary>
 [UsedImplicitly]
 public class AgentsDbContext : ElsaDbContextBase
 {

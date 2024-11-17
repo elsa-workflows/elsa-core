@@ -8,7 +8,9 @@ using Distributed = Elsa.MassTransit.Messages;
 
 namespace Elsa.MassTransit.Handlers;
 
+/// <summary>
 /// Represents a handler for distributed workflow definition notifications.
+/// </summary>
 [UsedImplicitly]
 public class DistributedWorkflowDefinitionNotificationsHandler(IBus bus) :
     INotificationHandler<WorkflowDefinitionPublished>,

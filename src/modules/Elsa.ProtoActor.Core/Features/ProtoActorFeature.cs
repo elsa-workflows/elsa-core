@@ -17,7 +17,9 @@ using Proto.Remote.GrpcNet;
 
 namespace Elsa.ProtoActor.Features;
 
+/// <summary>
 /// Installs the Proto Actor feature.
+/// </summary>
 public class ProtoActorFeature(IModule module) : FeatureBase(module)
 {
     private const string TenantHeaderName = "TenantId";

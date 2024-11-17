@@ -1,4 +1,4 @@
-﻿namespace Elsa.Secrets;
+namespace Elsa.Secrets;
 
 public class SecretModel
 {
@@ -11,7 +11,9 @@ public class SecretModel
     
     public string Name { get; set; } = default!;
     
+    /// <summary>
     /// An optional scope of the secret. Examples: "API Key", "ConnectionString", "JWT", "Password", "EncryptionKey", etc.
+    /// </summary>
     public string? Scope { get; set; } = default!;
     
     /// The encrypted value of the secret using the encryption key referenced by <see cref="EncryptionKeyId"/>.

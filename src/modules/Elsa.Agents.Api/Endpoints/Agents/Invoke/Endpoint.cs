@@ -1,10 +1,12 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Elsa.Abstractions;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Agents.Invoke;
 
+/// <summary>
 /// Invokes an agent.
+/// </summary>
 [UsedImplicitly]
 public class Execute(AgentInvoker agentInvoker) : ElsaEndpoint<Request, JsonElement>
 {

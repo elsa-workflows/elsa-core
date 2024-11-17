@@ -5,7 +5,9 @@ namespace Elsa.Workflows.Runtime;
 
 public class StartWorkflowRequest
 {
+    /// <summary>
     /// The ID of the workflow definition version to create an instance of.
+    /// </summary>
     /// Will be used if <see cref="Workflow"/> is not set.
     public WorkflowDefinitionHandle? WorkflowDefinitionHandle { get; set; }
 

@@ -5,7 +5,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Serialization.Helpers;
 
+/// <summary>
 /// The ActivityWriter class is responsible for writing an activity to a JSON writer using the provided options.
+/// </summary>
 public class ActivityWriter(IActivityRegistry activityRegistry, SyntheticPropertiesWriter syntheticPropertiesWriter, ILogger<ActivityWriter> logger)
 {
     /// <summary>

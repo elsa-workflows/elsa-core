@@ -1,10 +1,12 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Secrets.Management;
 using JetBrains.Annotations;
 
 namespace Elsa.Secrets.Api.Endpoints.Secrets.Update;
 
+/// <summary>
 /// Updates an agent.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(ISecretManager manager, ISecretNameValidator nameValidator) : ElsaEndpoint<SecretInputModel, SecretModel>
 {

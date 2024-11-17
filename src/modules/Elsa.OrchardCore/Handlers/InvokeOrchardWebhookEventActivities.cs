@@ -9,7 +9,9 @@ using WebhooksCore;
 
 namespace Elsa.OrchardCore.Handlers;
 
+/// <summary>
 /// Invokes Orchard activities based on the received webhook.
+/// </summary>
 [UsedImplicitly]
 public class InvokeOrchardWebhookEventActivities(IStimulusSender stimulusSender) : INotificationHandler<WebhookEventReceived>
 {

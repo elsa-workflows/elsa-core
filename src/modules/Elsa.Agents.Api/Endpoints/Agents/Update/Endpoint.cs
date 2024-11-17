@@ -1,11 +1,13 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
 using Elsa.Extensions;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Agents.Update;
 
+/// <summary>
 /// Updates an agent.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(IAgentManager agentManager) : ElsaEndpoint<AgentInputModel, AgentModel>
 {

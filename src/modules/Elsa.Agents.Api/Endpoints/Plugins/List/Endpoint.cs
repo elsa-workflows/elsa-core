@@ -1,10 +1,12 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Plugins.List;
 
+/// <summary>
 /// Lists all registered plugins.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(IPluginDiscoverer pluginDiscoverer) : ElsaEndpointWithoutRequest<ListResponse<PluginDescriptorModel>>
 {

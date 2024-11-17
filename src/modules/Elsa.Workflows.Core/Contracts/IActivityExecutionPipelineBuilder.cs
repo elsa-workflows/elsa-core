@@ -19,7 +19,9 @@ public interface IActivityExecutionPipelineBuilder
     /// <returns>The current <see cref="IActivityExecutionPipelineBuilder"/>.</returns>
     IActivityExecutionPipelineBuilder Use(Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate> middleware);
     
+    /// <summary>
     /// Inserts the middleware component at the specified index.
+    /// </summary>
     IActivityExecutionPipelineBuilder Insert(int index, Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate> middleware);
     
     /// <summary>

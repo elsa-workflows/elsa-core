@@ -327,7 +327,9 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         CancellationToken cancellationToken = default) =>
         await FindManyAsync(predicate, orderBy, orderDirection, pageArgs, default, cancellationToken);
 
+    /// <summary>
     /// Returns a list of entities using a query
+    /// </summary>
     public async Task<Page<TEntity>> FindManyAsync<TKey>(
         Expression<Func<TEntity, bool>>? predicate,
         Expression<Func<TEntity, TKey>>? orderBy,

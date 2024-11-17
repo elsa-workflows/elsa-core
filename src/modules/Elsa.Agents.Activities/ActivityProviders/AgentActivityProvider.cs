@@ -8,7 +8,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Agents.Activities.ActivityProviders;
 
+/// <summary>
 /// Provides activities for each function of registered agents.
+/// </summary>
 [UsedImplicitly]
 public class AgentActivityProvider(
     IKernelConfigProvider kernelConfigProvider,

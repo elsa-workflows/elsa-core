@@ -1,6 +1,8 @@
 namespace Elsa.Workflows.Runtime.Requests;
 
+/// <summary>
 /// Represents a request to refresh workflow definitions by re-indexing their triggers.
+/// </summary>
 public class RefreshWorkflowDefinitionsRequest
 {
     /// Initializes a new instance of <see cref="RefreshWorkflowDefinitionsRequest"/>.

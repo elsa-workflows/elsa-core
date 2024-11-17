@@ -1,11 +1,13 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
 using Elsa.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Services.List;
 
+/// <summary>
 /// Lists all registered API keys.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(IServiceStore store) : ElsaEndpointWithoutRequest<ListResponse<ServiceModel>>
 {

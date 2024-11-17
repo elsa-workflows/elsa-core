@@ -6,12 +6,16 @@ using JetBrains.Annotations;
 
 namespace Elsa.Workflows;
 
+/// <summary>
 /// A storage driver that stores objects in the workflow state itself.
+/// </summary>
 [Display(Name = "Workflow Instance")]
 [UsedImplicitly]
 public class WorkflowInstanceStorageDriver : IStorageDriver
 {
+    /// <summary>
     /// The key used to store the variables in the workflow state.
+    /// </summary>
     public const string VariablesDictionaryStateKey = "Variables";
 
     public double Priority => 5;

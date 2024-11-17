@@ -15,14 +15,18 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows;
 
+/// <summary>
 /// A delegate entry that is used by activities to be notified when the activities they scheduled are completed.
+/// </summary>
 /// <param name="Owner">The activity scheduling the <see cref="Child"/> activity.</param>
 /// <param name="Child">The child <see cref="IActivity"/> being scheduled.</param>
 /// <param name="CompletionCallback">The <see cref="ActivityCompletionCallback"/> delegate to invoke when the scheduled <see cref="Child"/> activity completes.</param>
 /// <param name="Tag">An optional tag.</param>
 public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, ActivityNode Child, ActivityCompletionCallback? CompletionCallback, object? Tag = default);
 
+/// <summary>
 /// Provides context to the currently executing workflow.
+/// </summary>
 [PublicAPI]
 public partial class WorkflowExecutionContext : IExecutionContext
 {
@@ -283,7 +287,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     public IDictionary<string, object> Input { get; set; }
 
-    /// A dictionary of outputs provided by the current workflow execution. 
+    /// <summary>
+    /// A dictionary of outputs provided by the current workflow execution.
+    /// </summary>
     public IDictionary<string, object> Output { get; set; } = new Dictionary<string, object>();
 
     /// <inheritdoc />
@@ -521,7 +527,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <param name="predicate">The predicate used to filter the activity execution contexts to remove.</param>
     public void RemoveActivityExecutionContext(Func<ActivityExecutionContext, bool> predicate) => _activityExecutionContexts.RemoveWhere(predicate);
 
-    /// Records the output of the specified activity into the current workflow execution context. 
+    /// <summary>
+    /// Records the output of the specified activity into the current workflow execution context.
+    /// </summary>
     /// <param name="activityExecutionContext">The <see cref="ActivityExecutionContext"/> of the activity.</param>
     /// <param name="outputName">The name of the output.</param>
     /// <param name="value">The value of the output.</param>

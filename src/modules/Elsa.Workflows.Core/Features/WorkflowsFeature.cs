@@ -27,7 +27,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Features;
 
+/// <summary>
 /// Adds workflow services to the system.
+/// </summary>
 [DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(ExpressionsFeature))]
 [DependsOn(typeof(MediatorFeature))]

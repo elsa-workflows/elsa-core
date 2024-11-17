@@ -1,9 +1,13 @@
 namespace Elsa.Mediator.Contracts;
 
+/// <summary>
 /// Manages jobs.
+/// </summary>
 public interface IJobQueue
 {
+    /// <summary>
     /// Creates a pending job. The caller must use the returned ID to schedule the job for execution.
+    /// </summary>
     string Create(Func<CancellationToken, Task> job);
     
     /// <summary>

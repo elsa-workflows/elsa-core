@@ -9,7 +9,9 @@ using WebhooksCore.Options;
 
 namespace Elsa.Webhooks.Features;
 
+/// <summary>
 /// Installs and configures webhook services.
+/// </summary>
 public class WebhooksFeature : FeatureBase
 {
     /// <inheritdoc />

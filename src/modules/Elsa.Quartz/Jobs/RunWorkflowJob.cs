@@ -17,7 +17,9 @@ public class RunWorkflowJob(
     IWorkflowStarter workflowStarter,
     ILogger<RunWorkflowJob> logger) : IJob
 {
+    /// <summary>
     /// The job key.
+    /// </summary>
     public static readonly JobKey JobKey = new(nameof(RunWorkflowJob));
 
     /// <inheritdoc />

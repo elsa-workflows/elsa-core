@@ -22,8 +22,10 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.MassTransit.AzureServiceBus.Features;
 
+/// <summary>
 /// Configures MassTransit to use the Azure Service Bus transport.
 /// See https://masstransit.io/documentation/configuration/transports/azure-service-bus
+/// </summary>
 [DependsOn(typeof(MassTransitFeature))]
 [DependsOn(typeof(ClusteringFeature))]
 public class AzureServiceBusFeature : FeatureBase

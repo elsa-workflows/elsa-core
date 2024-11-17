@@ -1,11 +1,13 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Secrets.Management;
 using Elsa.Secrets.UniqueName;
 using JetBrains.Annotations;
 
 namespace Elsa.Secrets.Api.Endpoints.Secrets.IsUniqueName;
 
+/// <summary>
 /// Checks if a name is unique.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(ISecretNameValidator nameValidator) : ElsaEndpoint<IsUniqueNameRequest, IsUniqueNameResponse>
 {

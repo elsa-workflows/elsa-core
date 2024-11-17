@@ -7,7 +7,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Secrets.Scripting.JavaScript;
 
+/// <summary>
 /// A handler that configures the Jint engine with secrets.
+/// </summary>
 [UsedImplicitly]
 public class ConfigureEngineWithSecrets(ISecretManager secretManager, IDecryptor decryptor) : INotificationHandler<EvaluatingJavaScript>
 {

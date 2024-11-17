@@ -1,17 +1,25 @@
-﻿namespace Elsa.Secrets;
+namespace Elsa.Secrets;
 
 public class SecretInputModel
 {
+    /// <summary>
     /// The unique name of the secret.
+    /// </summary>
     public string Name { get; set; } = default!;
     
+    /// <summary>
     /// An optional type of the secret. Examples: "API Key", "ConnectionString", "JWT", "Password", "EncryptionKey", etc.
+    /// </summary>
     public string? Scope { get; set; } = default!;
     
+    /// <summary>
     /// The clear-text value of the secret.
+    /// </summary>
     public string Value { get; set; } = default!;
     
+    /// <summary>
     /// An optional description of the secret.
+    /// </summary>
     public string Description { get; set; } = "";
     
     /// <summary>

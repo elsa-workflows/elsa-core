@@ -4,7 +4,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Secrets.Management;
 
+/// <summary>
 /// Represents the order by which to order the results of a query.
+/// </summary>
 [PublicAPI]
 public class SecretOrder<TProp> : OrderDefinition<Secret, TProp>
 {

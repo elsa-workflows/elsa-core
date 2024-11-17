@@ -5,7 +5,9 @@ using Elsa.Workflows.Runtime.OrderDefinitions;
 
 namespace Elsa.Workflows.Runtime;
 
+/// <summary>
 /// Provides access to bookmark queue items.
+/// </summary>
 public interface IBookmarkQueueStore
 {
     /// <summary>

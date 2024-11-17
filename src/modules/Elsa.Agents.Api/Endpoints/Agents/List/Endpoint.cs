@@ -1,4 +1,4 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
 using Elsa.Extensions;
 using Elsa.Models;
@@ -6,7 +6,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Agents.List;
 
+/// <summary>
 /// Lists all agents.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(IAgentManager agentManager) : ElsaEndpointWithoutRequest<ListResponse<AgentModel>>
 {

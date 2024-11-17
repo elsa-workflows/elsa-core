@@ -6,7 +6,9 @@ using Elsa.Extensions;
 
 namespace Elsa.Expressions.Options;
 
+/// <summary>
 /// Options for the expression feature.
+/// </summary>
 public class ExpressionOptions
 {
     private readonly IDictionary<string, Type> _aliasTypeDictionary = new Dictionary<string, Type>();

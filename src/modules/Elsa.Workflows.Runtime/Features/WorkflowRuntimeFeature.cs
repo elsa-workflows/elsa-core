@@ -26,7 +26,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Features;
 
+/// <summary>
 /// Installs and configures workflow runtime features.
+/// </summary>
 [DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(BackgroundTasksFeature))]
 public class WorkflowRuntimeFeature : FeatureBase

@@ -14,7 +14,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Features;
 
+/// <summary>
 /// Installs the Proto Actor feature to host &amp; execute workflow instances.
+/// </summary>
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(WorkflowRuntimeFeature))]
 [DependsOn(typeof(ProtoActorFeature))]
