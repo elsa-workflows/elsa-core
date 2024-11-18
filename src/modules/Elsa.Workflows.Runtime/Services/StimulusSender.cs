@@ -15,6 +15,7 @@ public class StimulusSender(
     IBookmarkQueue bookmarkQueue,
     IWorkflowRuntime workflowRuntime,
     IWorkflowStarter workflowStarter,
+    ITriggerInvoker triggerInvoker,
     ILogger<StimulusSender> logger) : IStimulusSender
 {
     /// <inheritdoc />
@@ -56,24 +57,25 @@ public class StimulusSender(
 
             foreach (var trigger in triggerBoundWorkflow.Triggers)
             {
-                var startRequest = new StartWorkflowRequest
+                var triggerRequest = new InvokeTriggerRequest
                 {
-                    Workflow = workflow,
                     CorrelationId = correlationId,
+                    Workflow = workflow,
+                    ActivityId = trigger.ActivityId,
                     Input = input,
                     Properties = properties,
-                    ParentId = parentId,
-                    TriggerActivityId = trigger.ActivityId
+                    ParentWorkflowInstanceId = parentId
                 };
                 
-                var startResponse = await workflowStarter.StartWorkflowAsync(startRequest, cancellationToken);
-                if (startResponse.CannotStart)
+                var response = await triggerInvoker.InvokeAsync(triggerRequest, cancellationToken);
+                
+                if (response.CannotStart)
                 {
                     logger.LogWarning("Workflow activation strategy disallowed starting workflow {WorkflowDefinitionHandle} with correlation ID {CorrelationId}", workflow.DefinitionHandle, correlationId);
                     continue;
                 }
                 
-                responses.Add(startResponse.ToRunWorkflowInstanceResponse());
+                responses.Add(response.ToRunWorkflowInstanceResponse());
             }
         }
 
@@ -119,27 +121,21 @@ public class StimulusSender(
         }
         else
         {
-            // If no bookmarks were matched, but bookmark-specific details were given, enqueue the request in case a matching bookmark is created in the near future.
+            // If no bookmarks were matched, enqueue the request in case a matching bookmark is created in the near future.
             var workflowInstanceId = metadata?.WorkflowInstanceId;
-            var bookmarkId = metadata?.BookmarkId;
-            var activityInstanceId = metadata?.ActivityInstanceId;
-            var correlationId = metadata?.CorrelationId;
 
-            if (workflowInstanceId != null || bookmarkId != null || activityInstanceId != null || correlationId != null)
+            var bookmarkQueueItem = new NewBookmarkQueueItem
             {
-                var bookmarkQueueItem = new NewBookmarkQueueItem
+                WorkflowInstanceId = workflowInstanceId,
+                BookmarkId = metadata?.BookmarkId,
+                StimulusHash = stimulusHash,
+                Options = new ResumeBookmarkOptions
                 {
-                    WorkflowInstanceId = workflowInstanceId,
-                    BookmarkId = metadata?.BookmarkId,
-                    StimulusHash = stimulusHash,
-                    Options = new ResumeBookmarkOptions
-                    {
-                        Input = input,
-                        Properties = properties
-                    }
-                };
-                await bookmarkQueue.EnqueueAsync(bookmarkQueueItem, cancellationToken);
-            }
+                    Input = input,
+                    Properties = properties
+                }
+            };
+            await bookmarkQueue.EnqueueAsync(bookmarkQueueItem, cancellationToken);
         }
 
         return responses;

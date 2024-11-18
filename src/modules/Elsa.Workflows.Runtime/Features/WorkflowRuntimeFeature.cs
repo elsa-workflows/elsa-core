@@ -20,6 +20,7 @@ using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.Runtime.Stores;
 using Elsa.Workflows.Runtime.Tasks;
+using Elsa.Workflows.Runtime.UIHints;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
@@ -251,6 +252,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
             .AddScoped<IBookmarkResumer, BookmarkResumer>()
             .AddScoped<IBookmarkQueue, StoreBookmarkQueue>()
+            .AddScoped<ITriggerInvoker, TriggerInvoker>()
             .AddScoped<IWorkflowCanceler, WorkflowCanceler>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
             .AddScoped<IWorkflowActivationStrategyEvaluator, DefaultWorkflowActivationStrategyEvaluator>()
@@ -297,6 +299,9 @@ public class WorkflowRuntimeFeature : FeatureBase
 
             // Workflow definition providers.
             .AddWorkflowDefinitionProvider<ClrWorkflowsProvider>()
+            
+            // UI prooprty handlers.
+            .AddScoped<IPropertyUIHandler, DispatcherChannelOptionsProvider>()
 
             // Domain handlers.
             .AddCommandHandler<DispatchWorkflowCommandHandler>()

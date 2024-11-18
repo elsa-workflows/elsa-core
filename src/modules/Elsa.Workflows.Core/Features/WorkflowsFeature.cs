@@ -1,6 +1,7 @@
 using Elsa.Common;
 using Elsa.Common.Features;
 using Elsa.Common.Serialization;
+using Elsa.CSharp.Activities;
 using Elsa.Expressions.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -230,10 +231,15 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IUIHintHandler, CheckListUIHintHandler>()
             .AddScoped<IUIHintHandler, JsonEditorUIHintHandler>()
 
+            // UI property handlers.
+            .AddScoped<IPropertyUIHandler, StaticCheckListOptionsProvider>()
+            .AddScoped<IPropertyUIHandler, StaticDropDownOptionsProvider>()
+            .AddScoped<IPropertyUIHandler, JsonCodeOptionsProvider>()
+
             // Logger state generators.
             .AddSingleton(WorkflowLoggerStateGenerator)
             .AddSingleton(ActivityLoggerStateGenerator)
-            
+
             // Log Persistence Strategies.
             .AddScoped<ILogPersistenceStrategyService, DefaultLogPersistenceStrategyService>()
             .AddScoped<ILogPersistenceStrategy, Include>()

@@ -61,6 +61,7 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
 
         return new()
         {
+            Name = typeName,
             TypeName = fullTypeName,
             Version = 1,
             DisplayName = displayName,

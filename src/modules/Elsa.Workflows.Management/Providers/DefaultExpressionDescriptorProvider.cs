@@ -55,6 +55,10 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
             {
                 var valueElement = context.JsonElement.TryGetProperty("value", out var v) ? v : default;
                 var valueString = valueElement.GetValue()?.ToString();
+
+                if (string.IsNullOrWhiteSpace(valueString))
+                    return new Expression("Variable", null);
+
                 try
                 {
                     var value = JsonSerializer.Deserialize(valueString, context.MemoryBlockType, context.Options);
@@ -62,10 +66,8 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
                 }
                 catch (Exception)
                 {
-
                     return new Expression("Variable", null);
                 }
-                
             }
         );
     }

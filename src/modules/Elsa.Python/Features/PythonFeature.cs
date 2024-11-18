@@ -4,11 +4,13 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Python.Activities;
 using Elsa.Python.Contracts;
 using Elsa.Python.HostedServices;
 using Elsa.Python.Options;
 using Elsa.Python.Providers;
 using Elsa.Python.Services;
+using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Python.Features;
@@ -52,5 +54,8 @@ public class PythonFeature : FeatureBase
 
         // Activities.
         Module.AddActivitiesFrom<PythonFeature>();
+        
+        // UI property handlers.
+        Services.AddScoped<IPropertyUIHandler, RunPythonOptionsProvider>();
     }
 }

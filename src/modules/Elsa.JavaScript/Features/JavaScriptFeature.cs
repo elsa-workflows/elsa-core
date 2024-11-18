@@ -36,7 +36,7 @@ public class JavaScriptFeature : FeatureBase
     /// Configures the Jint options.
     /// </summary>
     private Action<JintOptions> JintOptions { get; set; } = _ => { };
-    
+
     public JavaScriptFeature ConfigureJintOptions(Action<JintOptions> configure)
     {
         JintOptions += configure;
@@ -88,8 +88,10 @@ public class JavaScriptFeature : FeatureBase
         // Activities.
         Module.UseWorkflowManagement(management => management.AddActivity<RunJavaScript>());
 
-        Services
-            .AddScoped<IPropertyUIHandler, RunJavaScriptOptionsProvider>()
-            .AddFunctionDefinitionProvider<InputFunctionsDefinitionProvider>();
+        // Type Script definitions.
+        Services.AddFunctionDefinitionProvider<InputFunctionsDefinitionProvider>();
+
+        // UI property handlers.
+        Services.AddScoped<IPropertyUIHandler, RunJavaScriptOptionsProvider>();
     }
 }

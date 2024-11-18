@@ -16,6 +16,7 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Identity.Multitenancy;
+using Elsa.Kafka;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;
@@ -30,6 +31,7 @@ using Elsa.Server.Web;
 using Elsa.Server.Web.Extensions;
 using Elsa.Server.Web.Filters;
 using Elsa.Server.Web.Messages;
+using Elsa.Server.Web.WorkflowContextProviders;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows.Api;
@@ -63,6 +65,7 @@ const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
 const bool useAzureServiceBus = false;
+const bool useKafka = true;
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated requests.
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
@@ -81,6 +84,7 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var sqlServerConnectionString = configuration.GetConnectionString("SqlServer")!;
 var postgresConnectionString = configuration.GetConnectionString("PostgreSql")!;
+var mySqlConnectionString = configuration.GetConnectionString("MySql")!;
 var cockroachDbConnectionString = configuration.GetConnectionString("CockroachDb")!;
 var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
@@ -136,6 +140,8 @@ services
                             ef.UseSqlServer(sqlServerConnectionString!);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
+                        else if(sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                            ef.UseMySql(mySqlConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
@@ -168,6 +174,8 @@ services
                             ef.UseSqlServer(sqlServerConnectionString!);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
+                        else if(sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                            ef.UseMySql(mySqlConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
@@ -236,6 +244,8 @@ services
                         }
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
+                        else if(sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                            ef.UseMySql(mySqlConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
@@ -359,6 +369,8 @@ services
                             ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString);
+                        else if(sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                            ef.UseMySql(mySqlConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
@@ -434,6 +446,16 @@ services
             {
                 asb.AzureServiceBusOptions = options => configuration.GetSection("AzureServiceBus").Bind(options);
             });
+        }
+        
+        if(useKafka)
+        {
+            elsa.UseKafka(kafka =>
+            {
+                kafka.ConfigureOptions(options => configuration.GetSection("Kafka").Bind(options));
+            });
+
+            services.AddWorkflowContextProvider<ConsumerDefinitionWorkflowContextProvider>();
         }
 
         if (useAgents)

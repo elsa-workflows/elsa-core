@@ -55,6 +55,22 @@ public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bo
         return await ResumeAsync(bookmarkFilter, options, cancellationToken);
     }
 
+    public async Task<ResumeBookmarkResult> ResumeAsync(ResumeBookmarkRequest request, CancellationToken cancellationToken = default)
+    {
+        var runRequest = new RunWorkflowInstanceRequest
+        {
+            Input = request.Input,
+            Properties = request.Properties,
+            ActivityHandle = request.ActivityHandle,
+            BookmarkId = request.BookmarkId
+        };
+        
+        var workflowInstanceId = request.WorkflowInstanceId;
+        var workflowClient = await workflowRuntime.CreateClientAsync(workflowInstanceId, cancellationToken);
+        var response = await workflowClient.RunInstanceAsync(runRequest, cancellationToken);
+        return ResumeBookmarkResult.Found(response);
+    }
+
     /// <inheritdoc />
     public async Task<ResumeBookmarkResult> ResumeAsync(BookmarkFilter filter, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default)
     {

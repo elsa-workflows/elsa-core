@@ -1,4 +1,5 @@
 using Elsa.Common.Features;
+using Elsa.CSharp.Activities;
 using Elsa.CSharp.Contracts;
 using Elsa.CSharp.Options;
 using Elsa.CSharp.Providers;
@@ -8,6 +9,7 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.CSharp.Features;
@@ -45,5 +47,8 @@ public class CSharpFeature : FeatureBase
 
         // Activities.
         Module.AddActivitiesFrom<CSharpFeature>();
+        
+        // UI property handlers.
+        Services.AddScoped<IPropertyUIHandler, RunCSharpOptionsProvider>();
     }
 }
