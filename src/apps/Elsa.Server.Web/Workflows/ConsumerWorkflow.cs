@@ -1,5 +1,6 @@
 using System.Dynamic;
 using System.Text.Json;
+using Elsa.JavaScript.Models;
 using Elsa.Kafka.Activities;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
@@ -21,6 +22,7 @@ public class ConsumerWorkflow : WorkflowBase
                     ConsumerDefinitionId = new("consumer-1"),
                     MessageType = new(typeof(ExpandoObject)),
                     Topics = new(["topic-1"]),
+                    Predicate = new(JavaScriptExpression.Create("message => message.OrderId == '1'")),
                     Result = new(message),
                     CanStartWorkflow = true
                 },
