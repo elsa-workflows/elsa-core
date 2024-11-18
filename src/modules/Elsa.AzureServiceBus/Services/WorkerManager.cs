@@ -10,7 +10,9 @@ public class WorkerManager(IServiceProvider serviceProvider) : IWorkerManager, I
 {
     private readonly ICollection<Worker> _workers = new List<Worker>();
 
+    /// <summary>
     /// A list of workers under management.
+    /// </summary>
     public IEnumerable<Worker> Workers => _workers.ToList();
 
     /// <inheritdoc />

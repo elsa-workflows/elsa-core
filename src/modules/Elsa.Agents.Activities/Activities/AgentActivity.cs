@@ -13,7 +13,9 @@ using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.Agents.Activities;
 
+/// <summary>
 /// An activity that executes a function of a skilled agent. This is an internal activity that is used by <see cref="AgentActivityProvider"/>.
+/// </summary>
 [Browsable(false)]
 public class AgentActivity : CodeActivity
 {

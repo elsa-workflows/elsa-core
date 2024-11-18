@@ -6,8 +6,10 @@ using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Workflows.ComponentTests.Helpers;
 
+/// <summary>
 /// Provides a decorator for the `IChangeTokenSignaler` interface that triggers change token events.
 /// This class is used to raise change token signal events and delegate the actual work to the decorated service.
+/// </summary>
 [UsedImplicitly]
 public class EventPublishingChangeTokenSignaler(IChangeTokenSignaler decoratedService, TriggerChangeTokenSignalEvents triggerChangeTokenSignalEvents) : IChangeTokenSignaler
 {

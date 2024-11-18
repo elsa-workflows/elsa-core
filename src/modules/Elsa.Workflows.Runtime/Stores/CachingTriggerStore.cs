@@ -11,7 +11,9 @@ namespace Elsa.Workflows.Runtime.Stores;
 /// </summary>
 public class CachingTriggerStore(ITriggerStore decoratedStore, ICacheManager cacheManager, IHasher hasher, ITenantAccessor tenantAccessor) : ITriggerStore
 {
+    /// <summary>
     /// The token key to evict all cached triggers.
+    /// </summary>
     public static readonly string CacheInvalidationTokenKey = typeof(CachingTriggerStore).FullName!;
 
     /// <inheritdoc />

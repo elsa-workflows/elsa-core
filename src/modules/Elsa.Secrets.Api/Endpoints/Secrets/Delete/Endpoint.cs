@@ -1,10 +1,12 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Secrets.Management;
 using JetBrains.Annotations;
 
 namespace Elsa.Secrets.Api.Endpoints.Secrets.Delete;
 
+/// <summary>
 /// Deletes a secret.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(ISecretManager manager) : ElsaEndpoint<Request>
 {

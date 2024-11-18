@@ -12,7 +12,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Caching.Distributed.ProtoActor.Features;
 
+/// <summary>
 /// Installs the Proto Actor feature to host &amp; execute workflow instances.
+/// </summary>
 [DependsOn(typeof(DistributedCacheFeature))]
 public class ProtoActorDistributedCacheFeature : FeatureBase
 {

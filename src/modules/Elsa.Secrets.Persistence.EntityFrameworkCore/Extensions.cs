@@ -1,11 +1,13 @@
-﻿using Elsa.Secrets.Management.Features;
+using Elsa.Secrets.Management.Features;
 using Elsa.Secrets.Persistence.EntityFrameworkCore;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Secrets.Persistence;
 
+/// <summary>
 /// Provides extensions to the <see cref="SecretManagementFeature"/> feature.
+/// </summary>
 [PublicAPI]
 public static class Extensions
 {

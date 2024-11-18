@@ -12,7 +12,9 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.JavaScript.Handlers;
 
+/// <summary>
 /// A handler that configures the Jint engine with workflow input and output accessors.
+/// </summary>
 [UsedImplicitly]
 public class ConfigureEngineWithVariablesAndInputOutputAccessors(IOptions<JintOptions> options) : INotificationHandler<EvaluatingJavaScript>
 {

@@ -74,6 +74,8 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
 [UsedImplicitly]
 public static class OpenTelemetryTracingActivityExecutionMiddlewareExtensions
 {
+    /// <summary>
     /// Installs the <see cref="OpenTelemetryTracingActivityExecutionMiddleware"/> component in the workflow execution pipeline.
+    /// </summary>
     public static IActivityExecutionPipelineBuilder UseActivityExecutionTracing(this IActivityExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.Insert<OpenTelemetryTracingActivityExecutionMiddleware>(0);
 }

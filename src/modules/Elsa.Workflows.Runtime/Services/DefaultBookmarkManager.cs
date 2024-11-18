@@ -6,7 +6,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime;
 
+/// <summary>
 /// Default implementation of <see cref="IBookmarkManager"/>.
+/// </summary>
 public class DefaultBookmarkManager(IBookmarkStore bookmarkStore, INotificationSender notificationSender, ILogger<DefaultBookmarkManager> logger)
     : IBookmarkManager
 {

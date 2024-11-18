@@ -5,7 +5,9 @@ using Elsa.Workflows.Runtime.OrderDefinitions;
 
 namespace Elsa.Workflows.Runtime;
 
+/// <summary>
 /// Provides access to bookmark queue items.
+/// </summary>
 public interface IBookmarkQueueStore
 {
     /// <summary>
@@ -16,13 +18,19 @@ public interface IBookmarkQueueStore
     /// </remarks>
     Task SaveAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default);
 
+    /// <summary>
     /// Adds the specified <see cref="BookmarkQueueItem"/> to the persistence store.
+    /// </summary>
     Task AddAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default);
 
+    /// <summary>
     /// Returns the first bookmark queue item matching the specified filter.
+    /// </summary>
     Task<BookmarkQueueItem?> FindAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default);
     
+    /// <summary>
     /// Returns a set of bookmark queue items matching the specified filter.
+    /// </summary>
     Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default);
 
     /// <summary>

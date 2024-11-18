@@ -26,7 +26,9 @@ public class RabbitMqServiceBusFeature : FeatureBase
     {
     }
 
+    /// <summary>
     /// A RabbitMQ connection string.
+    /// </summary>
     public string? ConnectionString { get; set; }
 
     /// <summary>

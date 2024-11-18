@@ -6,7 +6,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Agents.Persistence.EntityFrameworkCore;
 
+/// <summary>
 /// An EF Core implementation of <see cref="IServiceStore"/>.
+/// </summary>
 [UsedImplicitly]
 public class EFCoreServiceStore(EntityStore<AgentsDbContext, ServiceDefinition> store) : IServiceStore
 {

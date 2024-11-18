@@ -6,7 +6,9 @@ using JetBrains.Annotations;
 // ReSharper disable once CheckNamespace
 namespace Elsa.JavaScript.Activities;
 
+/// <summary>
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
+/// </summary>
 [UsedImplicitly]
 internal class RunJavaScriptFunctionsDefinitionProvider() : FunctionDefinitionProvider
 {

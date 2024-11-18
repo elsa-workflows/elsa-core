@@ -2,7 +2,9 @@ using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime;
 
+/// <summary>
 /// Extracts activity execution log records.
+/// </summary>
 public class ActivityExecutionRecordExtractor(IActivityExecutionMapper activityExecutionMapper) : ILogRecordExtractor<ActivityExecutionRecord>
 {
     /// <inheritdoc />

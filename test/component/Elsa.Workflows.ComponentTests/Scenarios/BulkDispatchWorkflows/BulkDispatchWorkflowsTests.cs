@@ -25,7 +25,9 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
         _workflowEvents.WorkflowInstanceSaved += OnWorkflowInstanceSaved;
     }
 
+    /// <summary>
     /// Dispatches and waits for child workflows to complete.
+    /// </summary>
     [Fact]
     public async Task DispatchAndWaitWorkflow_ShouldWaitForChildWorkflowToComplete()
     {

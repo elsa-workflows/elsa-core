@@ -3,7 +3,9 @@ using Elsa.Secrets.Contracts;
 
 namespace Elsa.Secrets.Management;
 
-/// A secret provider that gets secrets from the configured <see cref="ISecretStore"/>. 
+/// <summary>
+/// A secret provider that gets secrets from the configured <see cref="ISecretStore"/>.
+/// </summary>
 public class StoreSecretProvider(ISecretStore store, IDecryptor decryptor) : ISecretProvider
 {
     public async Task<string?> GetSecretAsync(string name, CancellationToken cancellationToken = default)

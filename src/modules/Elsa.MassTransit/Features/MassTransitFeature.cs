@@ -32,7 +32,9 @@ public class MassTransitFeature : FeatureBase
     {
     }
 
+    /// <summary>
     /// The number of messages to prefetch.
+    /// </summary>
     [Obsolete("PrefetchCount has been moved to be included in MassTransitOptions")]
     public int? PrefetchCount { get; set; }
 

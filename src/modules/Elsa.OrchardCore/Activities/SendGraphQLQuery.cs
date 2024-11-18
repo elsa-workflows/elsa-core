@@ -9,7 +9,9 @@ namespace Elsa.OrchardCore.Activities;
 [Activity("OrchardCore", "Orchard Core", "Send a GraphQL query to Orchard Core", DisplayName = "GraphQL Query", Kind = ActivityKind.Task)]
 public class SendGraphQLQuery : CodeActivity<object>
 {
+    /// <summary>
     /// The content type to handle the event for.
+    /// </summary>
     [Input(Description = "The GraphQL query string to send.")]
     public Input<string> Query { get; set; } = default!;
 

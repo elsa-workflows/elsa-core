@@ -9,7 +9,9 @@ using WebhooksCore.Options;
 
 namespace Elsa.Webhooks.Features;
 
+/// <summary>
 /// Installs and configures webhook services.
+/// </summary>
 public class WebhooksFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -20,7 +22,9 @@ public class WebhooksFeature : FeatureBase
     public Action<IOptions<WebhookSinksOptions>> ConfigureSinks { get; set; } = options => { };
     public Action<IHttpClientBuilder> ConfigureHttpClient { get; set; } = builder => { };
 
+    /// <summary>
     /// Registers the specified webhook with <see cref="WebhookSinksOptions"/>
+    /// </summary>
     public WebhooksFeature RegisterWebhookSink(Uri endpoint)
     {
         var sink = new WebhookSink
@@ -31,10 +35,14 @@ public class WebhooksFeature : FeatureBase
         return RegisterSink(sink);
     }
     
+    /// <summary>
     /// Registers the specified webhook with <see cref="WebhookSinksOptions"/>
+    /// </summary>
     public WebhooksFeature RegisterSink(WebhookSink sink) => RegisterSinks(sink);
     
+    /// <summary>
     /// Registers the specified webhooks with <see cref="WebhookSinksOptions"/>
+    /// </summary>
     public WebhooksFeature RegisterSinks(params WebhookSink[] sinks)
     {
         Services.Configure(ConfigureSinks);
@@ -42,10 +50,14 @@ public class WebhooksFeature : FeatureBase
         return this;
     }
     
+    /// <summary>
     /// Registers the specified webhook source with <see cref="WebhookSourcesOptions"/>
+    /// </summary>
     public WebhooksFeature RegisterWebhookSource(WebhookSource source) => RegisterWebhookSources(source);
     
+    /// <summary>
     /// Registers the specified webhook sources with <see cref="WebhookSourcesOptions"/>
+    /// </summary>
     public WebhooksFeature RegisterWebhookSources(params WebhookSource[] sources)
     {
         Services.Configure<WebhookSourcesOptions>(options => options.Sources.AddRange(sources));

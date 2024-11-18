@@ -3,7 +3,9 @@ using Proto.Cluster;
 
 namespace Elsa.ProtoActor.MemberStrategies;
 
+/// <summary>
 /// Performs placement on current node.
+/// </summary>
 public class LocalNodeStrategy(Cluster cluster) : IMemberStrategy
 {
     private Member? _me;

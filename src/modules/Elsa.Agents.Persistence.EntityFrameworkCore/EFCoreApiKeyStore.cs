@@ -6,7 +6,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Agents.Persistence.EntityFrameworkCore;
 
+/// <summary>
 /// An EF Core implementation of <see cref="IApiKeyStore"/>.
+/// </summary>
 [UsedImplicitly]
 public class EFCoreApiKeyStore(EntityStore<AgentsDbContext, ApiKeyDefinition> store) : IApiKeyStore
 {

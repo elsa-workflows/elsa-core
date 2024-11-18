@@ -1,4 +1,4 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
 using Elsa.Agents.Persistence.Entities;
 using Elsa.Agents.Persistence.Filters;
@@ -7,7 +7,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.ApiKeys.Create;
 
+/// <summary>
 /// Lists all registered API keys.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(IApiKeyStore store, IIdentityGenerator identityGenerator) : ElsaEndpoint<ApiKeyInputModel, ApiKeyModel>
 {

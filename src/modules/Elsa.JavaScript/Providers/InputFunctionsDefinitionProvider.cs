@@ -10,7 +10,9 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.JavaScript.Providers;
 
+/// <summary>
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
+/// </summary>
 [UsedImplicitly]
 internal class InputFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry, IOptions<JintOptions> options) : FunctionDefinitionProvider
 {

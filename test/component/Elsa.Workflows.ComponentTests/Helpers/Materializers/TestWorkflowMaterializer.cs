@@ -5,10 +5,14 @@ using Elsa.Workflows.Runtime;
 
 namespace Elsa.Workflows.ComponentTests.Helpers;
 
+/// <summary>
 /// A workflow materializer that deserializes workflows created from <see cref="TestWorkflowProvider"/>.
+/// </summary>
 public class TestWorkflowMaterializer(IEnumerable<IWorkflowsProvider> workflowProviders) : IWorkflowMaterializer
 {
+    /// <summary>
     /// The name of the materializer.
+    /// </summary>
     public const string MaterializerName = "Test";
 
     /// <inheritdoc />

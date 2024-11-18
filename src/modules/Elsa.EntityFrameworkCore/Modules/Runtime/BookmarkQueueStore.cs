@@ -11,7 +11,9 @@ using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
+/// <summary>
 /// An EF Core implementation of <see cref="IBookmarkQueueStore"/>.
+/// </summary>
 [UsedImplicitly]
 public class EFBookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem> store, IPayloadSerializer serializer) : IBookmarkQueueStore
 {

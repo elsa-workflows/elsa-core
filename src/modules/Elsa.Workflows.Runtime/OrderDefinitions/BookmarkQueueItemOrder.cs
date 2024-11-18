@@ -5,7 +5,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.OrderDefinitions;
 
+/// <summary>
 /// Represents the order by which to order the results of a query.
+/// </summary>
 [UsedImplicitly]
 public class BookmarkQueueItemOrder<TProp> : OrderDefinition<BookmarkQueueItem, TProp>
 {

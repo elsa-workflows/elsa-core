@@ -10,11 +10,15 @@ namespace Elsa.OrchardCore.Activities;
 
 public class ContentItemEvent : Trigger<ContentItemEventPayload>, INotification
 {
+    /// <summary>
     /// The content type to handle the event for.
+    /// </summary>
     [Input(Description = "The content type to handle the event for.")]
     public string ContentType { get; set; } = default!;
     
+    /// <summary>
     /// The event to handle.
+    /// </summary>
     [Input(Description = "The event to handle the event for.")]
     public string EventType { get; set; } = default!;
 

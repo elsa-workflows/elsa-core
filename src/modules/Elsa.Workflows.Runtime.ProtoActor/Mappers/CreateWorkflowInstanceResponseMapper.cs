@@ -8,7 +8,9 @@ namespace Elsa.Workflows.Runtime.ProtoActor.Mappers;
 /// </summary>
 public class CreateWorkflowInstanceResponseMapper
 {
+    /// <summary>
     /// Maps <see cref="CreateWorkflowInstanceResponse"/> to <see cref="ProtoCreateWorkflowInstanceResponse"/>.
+    /// </summary>
     public ProtoCreateWorkflowInstanceResponse Map(CreateWorkflowInstanceResponse? source)
     {
         if(source == null)

@@ -6,7 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Agents.Features;
 
+/// <summary>
 /// A feature that installs API endpoints to interact with skilled agents.
+/// </summary>
 [UsedImplicitly]
 public class AgentsFeature(IModule module) : FeatureBase(module)
 {

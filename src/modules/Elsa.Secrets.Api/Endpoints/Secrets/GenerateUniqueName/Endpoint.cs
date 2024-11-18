@@ -1,11 +1,13 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Secrets.Management;
 using Elsa.Secrets.UniqueName;
 using JetBrains.Annotations;
 
 namespace Elsa.Secrets.Api.Endpoints.Secrets.GenerateUniqueName;
 
+/// <summary>
 /// Generates a unique name for a secret.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(ISecretNameGenerator nameGenerator) : ElsaEndpointWithoutRequest<GenerateUniqueNameResponse>
 {

@@ -8,7 +8,9 @@ using WebhooksCore;
 
 namespace Elsa.Webhooks.Endpoints.Webhooks;
 
+/// <summary>
 /// An API endpoint that receives webhook events from a webhook source.
+/// </summary>
 [PublicAPI]
 internal class Post(IWebhookSourceProvider webhookSourceProvider, INotificationSender notificationSender, IStimulusSender stimulusSender) : ElsaEndpointWithoutRequest
 {

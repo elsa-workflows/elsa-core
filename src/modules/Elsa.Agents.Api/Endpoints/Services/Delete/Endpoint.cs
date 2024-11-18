@@ -1,10 +1,12 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Services.Delete;
 
+/// <summary>
 /// Delete an API key.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(IServiceStore store) : ElsaEndpoint<Request>
 {

@@ -1,11 +1,13 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
 using Elsa.Agents.Persistence.Filters;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Agents.BulkDelete;
 
+/// <summary>
 /// Deletes an agent.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(IAgentManager agentManager) : ElsaEndpoint<BulkDeleteRequest, BulkDeleteResponse>
 {

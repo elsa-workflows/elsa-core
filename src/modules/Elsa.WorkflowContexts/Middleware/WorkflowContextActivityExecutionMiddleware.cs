@@ -5,7 +5,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.WorkflowContexts.Middleware;
 
-/// Middleware that loads and save workflow context into the currently executing workflow using installed workflow context providers. 
+/// <summary>
+/// Middleware that loads and save workflow context into the currently executing workflow using installed workflow context providers.
+/// </summary>
 [UsedImplicitly]
 public class WorkflowContextActivityExecutionMiddleware(ActivityMiddlewareDelegate next) : IActivityExecutionMiddleware
 { 
