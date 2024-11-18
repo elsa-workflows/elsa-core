@@ -2,6 +2,7 @@
 using System.IO.Compression;
 using System.Text;
 using Elsa.Extensions;
+using Elsa.Helpers;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
@@ -45,19 +46,20 @@ public class SaveFile : CodeActivity
         await blobStorage.WriteAsync(path, data, append, cancellationToken);
     }
 
+    // Returned streams are not disposed by the caller. Potential memory leak?!
     private async Task<Stream> ResolveAsStreamAsync(object data, CancellationToken cancellationToken)
     {
         if(data is Stream stream)
             return stream;
         
         if(data is byte[] bytes)
-            return new MemoryStream(bytes);
+            return StreamHelpers.RecyclableMemoryStreamManager.GetStream(nameof(Elsa.FileStorage.Activities.SaveFile.ResolveAsStreamAsync), bytes);
         
         if(data is IFormFile formFile)
             return formFile.OpenReadStream();
         
         if(data is string stringData)
-            return new MemoryStream(Encoding.UTF8.GetBytes(stringData));
+            return StreamHelpers.RecyclableMemoryStreamManager.GetStream(nameof(Elsa.FileStorage.Activities.SaveFile.ResolveAsStreamAsync), Encoding.UTF8.GetBytes(stringData));
 
         if (data is IEnumerable enumerable)
         {
@@ -67,11 +69,12 @@ public class SaveFile : CodeActivity
         
         throw new NotSupportedException($"The provided data type is not supported: {data.GetType().Name}");
     }
-    
+
+    // Returned streams are not disposed by the caller. Potential memory leak?!
     private async Task<Stream> CreateZipArchiveAsync(IEnumerable files, CancellationToken cancellationToken = default)
     {
         var currentFileIndex = 0;
-        var zipStream = new MemoryStream();
+        var zipStream = StreamHelpers.RecyclableMemoryStreamManager.GetStream(nameof(Elsa.FileStorage.Activities.SaveFile.CreateZipArchiveAsync));
         var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true);
         
         foreach (var file in files)

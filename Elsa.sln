@@ -232,9 +232,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.PerformanceT
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "retention", "retention", "{3F20899B-C5E1-485F-808B-ADB1877EB3FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Retention", "src\modules\Elsa.Retention\Elsa.Retention.csproj", "{3D42FCA2-5BD0-4624-9FCA-F4BF935B27AE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Retention", "src\modules\Elsa.Retention\Elsa.Retention.csproj", "{3D42FCA2-5BD0-4624-9FCA-F4BF935B27AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MongoDb.UnitTests", "test\unit\Elsa.MongoDb.UnitTests\Elsa.MongoDb.UnitTests.csproj", "{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.MongoDb.UnitTests", "test\unit\Elsa.MongoDb.UnitTests\Elsa.MongoDb.UnitTests.csproj", "{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Runtime.Distributed", "src\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj", "{0D4A88A1-8AEE-49ED-BC2E-ED68C96F60AD}"
 EndProject
@@ -382,7 +382,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "multitenancy", "multitenanc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Tenants.AspNetCore", "src\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj", "{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql", "src\modules\Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql\Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql.csproj", "{2B939AC9-03A4-479E-AA0D-CB58F4A7F480}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql", "src\modules\Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql\Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql.csproj", "{2B939AC9-03A4-479E-AA0D-CB58F4A7F480}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Helpers", "src\common\Elsa.Helpers\Elsa.Helpers.csproj", "{4F159759-B22F-4DA6-BDDF-686E7AD0C9EB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -816,6 +818,10 @@ Global
 		{2B939AC9-03A4-479E-AA0D-CB58F4A7F480}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B939AC9-03A4-479E-AA0D-CB58F4A7F480}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B939AC9-03A4-479E-AA0D-CB58F4A7F480}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F159759-B22F-4DA6-BDDF-686E7AD0C9EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F159759-B22F-4DA6-BDDF-686E7AD0C9EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F159759-B22F-4DA6-BDDF-686E7AD0C9EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F159759-B22F-4DA6-BDDF-686E7AD0C9EB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -922,6 +928,7 @@ Global
 		{690B0274-291F-4D9E-BA76-54EFF7D3E4BC} = {D92BEAB2-60D6-4BB4-885A-6BA681C6CCF1}
 		{060FD0BA-BD78-48E1-A8A7-4906A5AD5E39} = {D92BEAB2-60D6-4BB4-885A-6BA681C6CCF1}
 		{169A82A5-2DB3-40EA-801E-14C08D743DF7} = {D92BEAB2-60D6-4BB4-885A-6BA681C6CCF1}
+		{2CDF3E1C-267D-4198-B1C7-7E1F548FC120} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{47FBCB04-0C2D-453C-BE2F-7052CAC22524} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
 		{B32DB9B2-AD6C-48A5-8682-4373CB045185} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
@@ -959,7 +966,7 @@ Global
 		{2F3E1026-5054-4E1F-899B-F1A7F70F9912} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C} = {2F3E1026-5054-4E1F-899B-F1A7F70F9912}
 		{2B939AC9-03A4-479E-AA0D-CB58F4A7F480} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
-		{2CDF3E1C-267D-4198-B1C7-7E1F548FC120} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{4F159759-B22F-4DA6-BDDF-686E7AD0C9EB} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

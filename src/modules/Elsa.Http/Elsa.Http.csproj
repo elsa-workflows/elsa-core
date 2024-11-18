@@ -12,6 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\common\Elsa.Helpers\Elsa.Helpers.csproj" />
         <ProjectReference Include="..\Elsa.Liquid\Elsa.Liquid.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime.ProtoActor\Elsa.Workflows.Runtime.ProtoActor.csproj" />
         <ProjectReference Include="..\Elsa.SasTokens\Elsa.SasTokens.csproj" />
