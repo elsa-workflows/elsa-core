@@ -22,6 +22,7 @@ public class CachingHttpWorkflowLookupService(
         var cache = cacheManager.Cache;
         return await cache.GetOrCreateAsync(key, async entry =>
         {
+            var details = "";
             try
             {
                 var cachingOptions = cache.CachingOptions.Value;
@@ -33,7 +34,9 @@ public class CachingHttpWorkflowLookupService(
                 if (result == null)
                     return null;
 
+                details += "workflowGraph: " + result?.WorkflowGraph is null ? "null" : "not null";
                 var workflowGraph = result.WorkflowGraph!;
+                details += "DefinitionId: " + workflowGraph?.Workflow?.Identity?.DefinitionId is null ? "null" : "not null";
                 var changeTokenKey = cacheManager.GetWorkflowChangeTokenKey(workflowGraph.Workflow.Identity.DefinitionId);
                 var changeToken = cache.GetToken(changeTokenKey);
                 entry.AddExpirationToken(changeToken);
