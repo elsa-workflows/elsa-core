@@ -27,7 +27,9 @@ public class CachingHttpWorkflowLookupService(
             {
                 var cachingOptions = cache.CachingOptions.Value;
                 entry.SetSlidingExpiration(cachingOptions.CacheDuration);
-                entry.AddExpirationToken(cache.GetToken(cacheManager.GetTriggerChangeTokenKey(bookmarkHash)));
+                var expirationToken = cache.GetToken(cacheManager.GetTriggerChangeTokenKey(bookmarkHash));
+                details += "expirationToken: " + expirationToken is null ? "null" : "not null";
+                entry.AddExpirationToken(expirationToken);
 
                 var result = await decoratedService.FindWorkflowAsync(bookmarkHash, cancellationToken);
 
@@ -39,13 +41,14 @@ public class CachingHttpWorkflowLookupService(
                 details += "DefinitionId: " + workflowGraph?.Workflow?.Identity?.DefinitionId is null ? "null" : "not null";
                 var changeTokenKey = cacheManager.GetWorkflowChangeTokenKey(workflowGraph.Workflow.Identity.DefinitionId);
                 var changeToken = cache.GetToken(changeTokenKey);
+                details += "changeToken: " + changeToken is null ? "null" : "not null";
                 entry.AddExpirationToken(changeToken);
 
                 return result;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "The workflow with bookmark hash {bh} has issues: {message}", bookmarkHash, ex.Message);
+                logger.LogError(ex, "The workflow with bookmark hash {bh} has issues: {message}, details: {details}", bookmarkHash, ex.Message, details);
                 return null;
             }
         });
