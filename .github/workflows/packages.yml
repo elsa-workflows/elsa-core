@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'blueberry'
+      - '*blueberry*'
   release:
     types: [ prereleased, published ]
 env:
