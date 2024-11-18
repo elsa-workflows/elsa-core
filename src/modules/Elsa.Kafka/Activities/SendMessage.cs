@@ -5,6 +5,7 @@ using Elsa.Kafka.UIHints;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.UIHints;
 using Microsoft.Extensions.Options;
 
@@ -34,6 +35,8 @@ public class SendMessage : CodeActivity
     )]
     public Input<string> ProducerDefinitionId { get; set; } = default!;
 
+    [Input(DisplayName = "Local", Description = "When checked, the message will be delivered to this workflow instance only.")]
+    public Input<bool> IsLocal { get; set; } = default!;
 
     /// <summary>
     /// Optional. The correlation ID to assign to the message.
@@ -64,33 +67,36 @@ public class SendMessage : CodeActivity
         {
             BootstrapServers = string.Join(",", producerDefinition.BootstrapServers),
         };
-        
-        using var producer = new ProducerBuilder<Null, string>(config).Build();
-        var headers = CreateHeaders(context);
-        var message = new Message<Null, string>
+
+        context.DeferTask(async () =>
         {
-            Value = serializedContent,
-            Headers = headers
-        };
-        
-        var result = await producer.ProduceAsync(topic, message);
-        context.JournalData.Add("MessageId", result.Message.Value);
-        context.JournalData.Add("Offset", result.Offset);
-        context.JournalData.Add("Status", result.Status);
-        context.JournalData.Add("Timestamp", result.Timestamp);
+            using var producer = new ProducerBuilder<Null, string>(config).Build();
+            var headers = CreateHeaders(context);
+            var message = new Message<Null, string>
+            {
+                Value = serializedContent,
+                Headers = headers
+            };
+            await producer.ProduceAsync(topic, message);
+        });
     }
-    
+
     private Headers CreateHeaders(ActivityExecutionContext context)
     {
         var options = context.GetRequiredService<IOptions<KafkaOptions>>().Value;
         var headers = new Headers();
         var correlationId = CorrelationId.GetOrDefault(context);
+        var isLocal = IsLocal.Get(context);
         var topic = Topic.Get(context);
-        
+
         headers.Add(options.TopicHeaderKey, Encoding.UTF8.GetBytes(topic));
-        if(!string.IsNullOrWhiteSpace(correlationId)) 
+
+        if (!string.IsNullOrWhiteSpace(correlationId))
             headers.Add(options.CorrelationHeaderKey, Encoding.UTF8.GetBytes(correlationId));
-        
+
+        if (isLocal)
+            headers.Add(options.WorkflowInstanceIdHeaderKey, Encoding.UTF8.GetBytes(context.WorkflowExecutionContext.Id));
+
         return headers;
     }
 }
