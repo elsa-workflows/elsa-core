@@ -3,7 +3,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Management.Models;
 
+/// <summary>
 /// Represents a serializable workflow definition.
+/// </summary>
 [PublicAPI]
 public record WorkflowDefinitionModel(
     string Id,

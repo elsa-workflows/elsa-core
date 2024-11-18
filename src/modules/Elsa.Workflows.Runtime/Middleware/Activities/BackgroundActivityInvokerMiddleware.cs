@@ -10,7 +10,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Middleware.Activities;
 
+/// <summary>
 /// Collects the current activity for scheduling for execution from a background job if the activity is of kind <see cref="ActivityKind.Job"/> or <see cref="Task"/>.
+/// </summary>
 [UsedImplicitly]
 public class BackgroundActivityInvokerMiddleware(
     ActivityMiddlewareDelegate next,
@@ -52,7 +54,9 @@ public class BackgroundActivityInvokerMiddleware(
         }
     }
 
+    /// <summary>
     /// Schedules the current activity for execution in the background.
+    /// </summary>
     private async Task ScheduleBackgroundActivityAsync(ActivityExecutionContext context)
     {
         var cancellationToken = context.CancellationToken;
@@ -80,7 +84,9 @@ public class BackgroundActivityInvokerMiddleware(
         });
     }
 
+    /// <summary>
     /// Determines whether the current activity should be executed in the background.
+    /// </summary>
     private static bool GetShouldRunInBackground(ActivityExecutionContext context)
     {
         var activity = context.Activity;
@@ -94,7 +100,9 @@ public class BackgroundActivityInvokerMiddleware(
 
     private static bool GetIsBackgroundExecution(ActivityExecutionContext context) => context.TransientProperties.ContainsKey(BackgroundActivityExecutionContextExtensions.IsBackgroundExecution);
     
+    /// <summary>
     /// If the input contains captured output from the background activity invoker, apply that to the execution context.
+    /// </summary>
     private static void CaptureOutputIfAny(ActivityExecutionContext context)
     {
         var activity = context.Activity;

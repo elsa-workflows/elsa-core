@@ -14,7 +14,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Modules.Runtime.Stores;
 
+/// <summary>
 /// A Dapper-based <see cref="IBookmarkQueueStore"/> implementation.
+/// </summary>
 [UsedImplicitly]
 internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IPayloadSerializer payloadSerializer) : IBookmarkQueueStore
 {

@@ -27,7 +27,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Features;
 
+/// <summary>
 /// Adds workflow services to the system.
+/// </summary>
 [DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(ExpressionsFeature))]
 [DependsOn(typeof(MediatorFeature))]
@@ -40,75 +42,105 @@ public class WorkflowsFeature : FeatureBase
     {
     }
     
+    /// <summary>
     /// A factory that instantiates a concrete <see cref="IStandardInStreamProvider"/>.
+    /// </summary>
     public Func<IServiceProvider, IStandardInStreamProvider> StandardInStreamProvider { get; set; } = _ => new StandardInStreamProvider(Console.In);
     
+    /// <summary>
     /// A factory that instantiates a concrete <see cref="IStandardOutStreamProvider"/>.
+    /// </summary>
     public Func<IServiceProvider, IStandardOutStreamProvider> StandardOutStreamProvider { get; set; } = _ => new StandardOutStreamProvider(Console.Out);
     
+    /// <summary>
     /// A factory that instantiates a concrete <see cref="IIdentityGenerator"/>.
+    /// </summary>
     public Func<IServiceProvider, IIdentityGenerator> IdentityGenerator { get; set; } = sp => new RandomLongIdentityGenerator();
     
+    /// <summary>
     /// A handler for committing workflow execution state.
+    /// </summary>
     public Func<IServiceProvider, ICommitStateHandler> CommitStateHandler { get; set; } = sp => new NoopCommitStateHandler();
     
+    /// <summary>
     /// A factory that instantiates a concrete <see cref="ILoggerStateGenerator{WorkflowExecutionContext}"/>.
+    /// </summary>
     public Func<IServiceProvider, ILoggerStateGenerator<WorkflowExecutionContext>> WorkflowLoggerStateGenerator { get; set; } = sp => new WorkflowLoggerStateGenerator();
 
+    /// <summary>
     /// A factory that instantiates a concrete <see cref="ILoggerStateGenerator{ActivityExecutionContext}"/>.
+    /// </summary>
     public Func<IServiceProvider, ILoggerStateGenerator<ActivityExecutionContext>> ActivityLoggerStateGenerator { get; set; } = sp => new ActivityLoggerStateGenerator();
 
+    /// <summary>
     /// A delegate to configure the <see cref="IWorkflowExecutionPipeline"/>.
+    /// </summary>
     public Action<IWorkflowExecutionPipelineBuilder> WorkflowExecutionPipeline { get; set; } = builder => builder
         .UseExceptionHandling()
         .UseDefaultActivityScheduler();
     
+    /// <summary>
     /// A delegate to configure the <see cref="IActivityExecutionPipeline"/>.
+    /// </summary>
     public Action<IActivityExecutionPipelineBuilder> ActivityExecutionPipeline { get; set; } = builder => builder.UseDefaultActivityInvoker();
 
+    /// <summary>
     /// Fluent method to set <see cref="StandardInStreamProvider"/>.
+    /// </summary>
     public WorkflowsFeature WithStandardInStreamProvider(Func<IServiceProvider, IStandardInStreamProvider> provider)
     {
         StandardInStreamProvider = provider;
         return this;
     }
     
+    /// <summary>
     /// Fluent method to set <see cref="StandardOutStreamProvider"/>.
+    /// </summary>
     public WorkflowsFeature WithStandardOutStreamProvider(Func<IServiceProvider, IStandardOutStreamProvider> provider)
     {
         StandardOutStreamProvider = provider;
         return this;
     }
 
+    /// <summary>
     /// Fluent method to set <see cref="IdentityGenerator"/>.
+    /// </summary>
     public WorkflowsFeature WithIdentityGenerator(Func<IServiceProvider, IIdentityGenerator> generator)
     {
         IdentityGenerator = generator;
         return this;
     }
 
+    /// <summary>
     /// Fluent method to set <see cref="ILoggerStateGenerator{WorkflowExecutionContext}"/>.
+    /// </summary>
     public WorkflowsFeature WithWorkflowLoggerStateGenerator(Func<IServiceProvider, ILoggerStateGenerator<WorkflowExecutionContext>> generator)
     {
         WorkflowLoggerStateGenerator = generator;
         return this;
     }
 
+    /// <summary>
     /// Fluent method to set <see cref="ILoggerStateGenerator{ActivityExecutionContext}"/>.
+    /// </summary>
     public WorkflowsFeature WithActivityLoggerStateGenerator(Func<IServiceProvider, ILoggerStateGenerator<ActivityExecutionContext>> generator)
     {
         ActivityLoggerStateGenerator = generator;
         return this;
     }
 
+    /// <summary>
     /// Fluent method to configure the <see cref="IWorkflowExecutionPipeline"/>.
+    /// </summary>
     public WorkflowsFeature WithWorkflowExecutionPipeline(Action<IWorkflowExecutionPipelineBuilder> setup)
     {
         WorkflowExecutionPipeline = setup;
         return this;
     }
 
+    /// <summary>
     /// Fluent method to configure the <see cref="IActivityExecutionPipeline"/>.
+    /// </summary>
     public WorkflowsFeature WithActivityExecutionPipeline(Action<IActivityExecutionPipelineBuilder> setup)
     {
         ActivityExecutionPipeline = setup;

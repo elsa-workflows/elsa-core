@@ -10,7 +10,9 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.JavaScript.Providers;
 
+/// <summary>
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
+/// </summary>
 [UsedImplicitly]
 internal class ActivityOutputFunctionsDefinitionProvider(IActivityRegistryLookupService activityRegistryLookup, IOptions<JintOptions> options) : FunctionDefinitionProvider
 {

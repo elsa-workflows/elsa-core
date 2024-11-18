@@ -17,7 +17,9 @@ public static class ActivityExecutionMiddlewareExtensions
         return pipelineBuilder.Insert(index, delegateFactory);
     }
 
+    /// <summary>
     /// Creates a middleware delegate for the specified middleware component.
+    /// </summary>
     public static Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate> CreateMiddlewareDelegateFactory<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TMiddleware>(
         this IActivityExecutionPipelineBuilder pipelineBuilder, params object[] args) where TMiddleware : IActivityExecutionMiddleware
     {

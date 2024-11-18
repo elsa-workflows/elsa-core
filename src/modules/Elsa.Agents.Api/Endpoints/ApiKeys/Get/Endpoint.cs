@@ -1,10 +1,12 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.ApiKeys.Get;
 
+/// <summary>
 /// Lists all registered API keys.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(IApiKeyStore store) : ElsaEndpoint<Request, ApiKeyModel>
 {

@@ -1,10 +1,12 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Agents.GenerateUniqueName;
 
+/// <summary>
 /// Generates a unique name for an agent.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(IAgentManager agentManager) : ElsaEndpointWithoutRequest<GenerateUniqueNameResponse>
 {

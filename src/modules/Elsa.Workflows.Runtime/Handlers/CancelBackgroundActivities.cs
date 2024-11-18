@@ -7,7 +7,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
+/// <summary>
 /// A handler that cancels background activities based on removed bookmarks.
+/// </summary>
 [UsedImplicitly]
 public class CancelBackgroundActivities(IBackgroundActivityScheduler backgroundActivityScheduler) : INotificationHandler<WorkflowBookmarksIndexed>
 {

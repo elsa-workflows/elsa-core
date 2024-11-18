@@ -10,7 +10,9 @@ using MongoDB.Driver.Linq;
 
 namespace Elsa.MongoDb.Modules.Runtime;
 
+/// <summary>
 /// A MongoDb implementation of <see cref="IBookmarkQueueStore"/>.
+/// </summary>
 [UsedImplicitly]
 public class MongoBookmarkQueueStore(MongoDbStore<BookmarkQueueItem> mongoDbStore) : IBookmarkQueueStore
 {

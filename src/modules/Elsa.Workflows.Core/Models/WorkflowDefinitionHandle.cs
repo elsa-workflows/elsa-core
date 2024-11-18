@@ -15,8 +15,8 @@ public class WorkflowDefinitionHandle
     /// <summary>
     /// Gets or sets the version options. When set, the <see cref="DefinitionVersionId"/> property is ignored.
     /// </summary>
-    /// 
     public VersionOptions? VersionOptions { get; set; }
+
     /// <summary>
     /// Gets or sets the definition version ID. When set, the <see cref="DefinitionId"/> and <see cref="VersionOptions"/> properties are ignored.
     /// </summary>

@@ -6,7 +6,9 @@ using Proto.Cluster.PubSub;
 
 namespace Elsa.Caching.Distributed.ProtoActor.HostedServices;
 
+/// <summary>
 /// Subscribes the LocalCacheActor to the "change-token-signals" topic.
+/// </summary>
 [UsedImplicitly]
 public class StartLocalCacheActor(Cluster cluster) : BackgroundService
 {

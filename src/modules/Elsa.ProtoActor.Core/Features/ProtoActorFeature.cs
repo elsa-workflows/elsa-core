@@ -17,7 +17,9 @@ using Proto.Remote.GrpcNet;
 
 namespace Elsa.ProtoActor.Features;
 
+/// <summary>
 /// Installs the Proto Actor feature.
+/// </summary>
 public class ProtoActorFeature(IModule module) : FeatureBase(module)
 {
     private const string TenantHeaderName = "TenantId";
@@ -34,22 +36,34 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
     /// </remarks>
     public string ClusterName { get; set; } = "elsa-cluster";
 
-    /// A delegate that returns an instance of a concrete implementation of <see cref="IClusterProvider"/>. 
+    /// <summary>
+    /// A delegate that returns an instance of a concrete implementation of <see cref="IClusterProvider"/>.
+    /// </summary>
     public Func<IServiceProvider, IClusterProvider> CreateClusterProvider { get; set; } = _ => new TestProvider(new TestProviderOptions(), new InMemAgent());
 
-    /// A delegate that configures an instance of <see cref="ConfigureActorSystemConfig"/>. 
+    /// <summary>
+    /// A delegate that configures an instance of <see cref="ConfigureActorSystemConfig"/>.
+    /// </summary>
     public Func<IServiceProvider, ActorSystemConfig, ActorSystemConfig> ConfigureActorSystemConfig { get; set; } = SetupDefaultConfig;
 
-    /// A delegate that configures an instance of an <see cref="ConfigureActorSystem"/>. 
+    /// <summary>
+    /// A delegate that configures an instance of an <see cref="ConfigureActorSystem"/>.
+    /// </summary>
     public Action<IServiceProvider, ActorSystem> ConfigureActorSystem { get; set; } = (_, _) => { };
 
-    /// A delegate that returns an instance of <see cref="GrpcNetRemoteConfig"/> to be used by the actor system. 
+    /// <summary>
+    /// A delegate that returns an instance of <see cref="GrpcNetRemoteConfig"/> to be used by the actor system.
+    /// </summary>
     public Func<IServiceProvider, GrpcNetRemoteConfig> ConfigureRemoteConfig { get; set; } = CreateDefaultRemoteConfig;
 
-    /// A delegate that returns an instance of a concrete implementation of <see cref="IProvider"/> to use for persisting events and snapshots. 
+    /// <summary>
+    /// A delegate that returns an instance of a concrete implementation of <see cref="IProvider"/> to use for persisting events and snapshots.
+    /// </summary>
     public Func<IServiceProvider, IProvider> PersistenceProvider { get; set; } = _ => new InMemoryProvider();
 
-    /// A delegate that configures an instance of <see cref="ClusterConfig"/>. 
+    /// <summary>
+    /// A delegate that configures an instance of <see cref="ClusterConfig"/>.
+    /// </summary>
     public Func<IServiceProvider, ClusterConfig, ClusterConfig>? ConfigureClusterConfig { get; set; }
 
     public ProtoActorFeature EnableMetrics(bool value = true)

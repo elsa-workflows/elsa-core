@@ -8,7 +8,9 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.OrchardCore.ActivityProviders;
 
+/// <summary>
 /// An activity provider that generates activity types based on Orchard content type events.
+/// </summary>
 [UsedImplicitly]
 public class OrchardContentItemsEventActivityProvider(IOptions<OrchardCoreOptions> options, IActivityFactory activityFactory, IActivityDescriber activityDescriber) : IActivityProvider
 {

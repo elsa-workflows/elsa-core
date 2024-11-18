@@ -1,10 +1,12 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Agents.IsUniqueName;
 
+/// <summary>
 /// Checks if a name is unique.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(IAgentManager agentManager) : ElsaEndpoint<IsUniqueNameRequest, IsUniqueNameResponse>
 {

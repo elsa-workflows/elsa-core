@@ -5,7 +5,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
+/// <summary>
 /// Deletes bookmarks for workflow instances being deleted.
+/// </summary>
 [UsedImplicitly]
 public class DeleteBookmarks(IBookmarkManager bookmarkManager) : INotificationHandler<WorkflowInstancesDeleting>
 {

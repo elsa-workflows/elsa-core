@@ -14,22 +14,34 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     {
     }
     
+    /// <summary>
     /// The workflow triggers.
+    /// </summary>
     public DbSet<StoredTrigger> Triggers { get; set; } = default!;
     
+    /// <summary>
     /// The workflow execution log records.
+    /// </summary>
     public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
     
+    /// <summary>
     /// The activity execution records.
+    /// </summary>
     public DbSet<ActivityExecutionRecord> ActivityExecutionRecords { get; set; } = default!;
     
+    /// <summary>
     /// The workflow bookmarks.
+    /// </summary>
     public DbSet<StoredBookmark> Bookmarks { get; set; } = default!;
     
+    /// <summary>
     /// The bookmark queue items.
+    /// </summary>
     public DbSet<BookmarkQueueItem> BookmarkQueueItems { get; set; } = default!;
     
+    /// <summary>
     /// The generic key value pairs.
+    /// </summary>
     public DbSet<SerializedKeyValuePair> KeyValuePairs { get; set; } = default!;
 
     /// <inheritdoc />

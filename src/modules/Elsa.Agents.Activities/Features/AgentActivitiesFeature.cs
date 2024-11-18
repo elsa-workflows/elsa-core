@@ -10,7 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Agents.Activities.Features;
 
+/// <summary>
 /// A feature that installs Semantic Kernel functionality.
+/// </summary>
 [DependsOn(typeof(WorkflowManagementFeature))]
 [DependsOn(typeof(AgentsFeature))]
 [UsedImplicitly]

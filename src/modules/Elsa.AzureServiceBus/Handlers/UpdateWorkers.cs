@@ -14,14 +14,18 @@ namespace Elsa.AzureServiceBus.Handlers;
 [UsedImplicitly]
 public class UpdateWorkers(IWorkerManager workerManager) : INotificationHandler<WorkflowTriggersIndexed>, INotificationHandler<WorkflowBookmarksIndexed>
 {
+    /// <summary>
     /// Adds, updates and removes workers based on added and removed triggers.
+    /// </summary>
     public async Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
     {
         var added = notification.IndexedWorkflowTriggers.AddedTriggers.Filter<MessageReceived>().Select(x => x.GetPayload<MessageReceivedStimulus>());
         await StartWorkersAsync(added, cancellationToken);
     }
 
+    /// <summary>
     /// Adds, updates and removes workers based on added and removed bookmarks.
+    /// </summary>
     public async Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
     {
         var added = notification.IndexedWorkflowBookmarks.AddedBookmarks.Filter<MessageReceived>().Select(x => x.GetPayload<MessageReceivedStimulus>());

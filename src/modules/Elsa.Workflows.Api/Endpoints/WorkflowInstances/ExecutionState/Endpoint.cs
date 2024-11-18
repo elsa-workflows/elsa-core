@@ -5,7 +5,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.ExecutionState;
 
+/// <summary>
 /// Returns the execution state of the specified workflow instance.
+/// </summary>
 [PublicAPI]
 internal class ExecutionState(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Response>
 {

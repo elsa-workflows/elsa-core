@@ -1,4 +1,4 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
 using Elsa.Agents.Persistence.Entities;
 using Elsa.Agents.Persistence.Filters;
@@ -8,7 +8,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Agents.Create;
 
+/// <summary>
 /// Lists all registered agents.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(IAgentManager agentManager, IIdentityGenerator identityGenerator) : ElsaEndpoint<AgentInputModel, AgentModel>
 {

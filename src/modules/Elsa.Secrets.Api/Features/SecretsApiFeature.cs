@@ -7,7 +7,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Secrets.Api.Features;
 
+/// <summary>
 /// A feature that installs API endpoints to interact with skilled agents.
+/// </summary>
 [DependsOn(typeof(SecretManagementFeature))]
 [UsedImplicitly]
 public class SecretsApiFeature(IModule module) : FeatureBase(module)

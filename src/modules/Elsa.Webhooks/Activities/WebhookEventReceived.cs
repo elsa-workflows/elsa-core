@@ -12,15 +12,21 @@ namespace Elsa.Webhooks.Activities;
 
 public class WebhookEventReceived : Trigger<WebhookEvent>, INotification
 {
+    /// <summary>
     /// The webhook event type to be received.
+    /// </summary>
     [Input(Description = "The webhook event type to be received.")]
     public string EventType { get; set; } = default!;
 
+    /// <summary>
     /// The webhook event payload type to be received.
+    /// </summary>
     [Input(Description = "The webhook event payload type to be received.")]
     public Type? PayloadType { get; set; }
 
+    /// <summary>
     /// The webhook payload, if any.
+    /// </summary>
     [Output(Description = "The webhook payload, if any.")]
     public Output<object?> Payload { get; set; } = default!;
 

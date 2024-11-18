@@ -4,7 +4,9 @@ using Elsa.Workflows.Pipelines.WorkflowExecution;
 
 namespace Elsa.WorkflowContexts.Middleware;
 
-/// Middleware that loads and save workflow context into the currently executing workflow using installed workflow context providers. 
+/// <summary>
+/// Middleware that loads and save workflow context into the currently executing workflow using installed workflow context providers.
+/// </summary>
 public class WorkflowContextWorkflowExecutionMiddleware : WorkflowExecutionMiddleware
 { 
     /// <inheritdoc />

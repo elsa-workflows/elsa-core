@@ -1,4 +1,4 @@
-﻿using Elsa.Common.Entities;
+using Elsa.Common.Entities;
 
 namespace Elsa.Secrets.Management;
 
@@ -9,19 +9,29 @@ public class Secret : ManagedEntity
     /// </summary>
     public string SecretId { get; set; } = default!;
     
+    /// <summary>
     /// The unique name of the secret.
+    /// </summary>
     public string Name { get; set; } = default!;
     
+    /// <summary>
     /// An scope type of the secret. Examples: "API Key", "ConnectionString", "JWT", "Password", "EncryptionKey", etc.
+    /// </summary>
     public string? Scope { get; set; } = default!;
     
+    /// <summary>
     /// The encrypted value of the secret using the encryption key referenced by <see cref="EncryptionKeyId"/>.
+    /// </summary>
     public string EncryptedValue { get; set; } = default!;
     
+    /// <summary>
     /// An optional description of the secret.
+    /// </summary>
     public string Description { get; set; } = "";
     
+    /// <summary>
     /// The version of the secret. Increments after each update or rotation.
+    /// </summary>
     public int Version { get; set; }
 
     /// <summary>
@@ -29,7 +39,9 @@ public class Secret : ManagedEntity
     /// </summary>
     public bool IsLatest { get; set; }
     
+    /// <summary>
     /// The status of the secret.
+    /// </summary>
     public SecretStatus Status { get; set; }
 
     public TimeSpan? ExpiresIn { get; set; }

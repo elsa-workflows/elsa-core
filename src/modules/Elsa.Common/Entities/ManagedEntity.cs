@@ -1,6 +1,8 @@
 namespace Elsa.Common.Entities;
 
-/// An entity that maintains a "created" timestamp. 
+/// <summary>
+/// An entity that maintains a "created" timestamp.
+/// </summary>
 public abstract class ManagedEntity : Entity
 {
     public DateTimeOffset CreatedAt { get; set; }

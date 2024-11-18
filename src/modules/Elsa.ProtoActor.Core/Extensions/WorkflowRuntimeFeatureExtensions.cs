@@ -8,7 +8,9 @@ namespace Elsa.Extensions;
 [PublicAPI]
 public static class ProtoActorModuleExtensions
 {
-    /// Creates and configures a new ActorSystem. 
+    /// <summary>
+    /// Creates and configures a new ActorSystem.
+    /// </summary>
     public static IModule UseProtoActor(this IModule module, Action<ProtoActorFeature>? configure = default)
     {
         module.Configure(configure);

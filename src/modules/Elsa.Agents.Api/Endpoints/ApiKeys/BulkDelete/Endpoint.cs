@@ -1,11 +1,13 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
 using Elsa.Agents.Persistence.Filters;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.ApiKeys.BulkDelete;
 
+/// <summary>
 /// Deletes an API key.
+/// </summary>
 [UsedImplicitly]
 public class Endpoint(IApiKeyStore store) : ElsaEndpoint<BulkDeleteRequest, BulkDeleteResponse>
 {
