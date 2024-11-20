@@ -25,20 +25,20 @@ public class WorkflowReferenceUpdater(
 
         // Find all workflow graphs that contain the updated workflow definition.
         var consumingWorkflowGraphs = await FindWorkflowsContainingUpdatedWorkflowDefinitionAsync(referencedDefinition.DefinitionId, cancellationToken);
-        
+
         // Update consuming workflows.
         var updatedWorkflows = new List<WorkflowDefinition>();
         foreach (var workflowGraph in consumingWorkflowGraphs)
         {
             var newDefinition = await UpdateConsumingWorkflowAsync(workflowGraph, referencedDefinition, cancellationToken);
-            
+
             if (newDefinition != null)
                 updatedWorkflows.Add(newDefinition);
         }
 
         return new UpdateWorkflowReferencesResult(updatedWorkflows);
     }
-    
+
     private async Task<WorkflowDefinition?> UpdateConsumingWorkflowAsync(WorkflowGraph workflowGraph, WorkflowDefinition definition, CancellationToken cancellationToken)
     {
         // Create a new version of the published workflow definition or get the existing draft.
@@ -101,9 +101,11 @@ public class WorkflowReferenceUpdater(
         {
             if (child.Activity is WorkflowDefinitionActivity workflowDefinitionActivity)
                 yield return workflowDefinitionActivity;
-
-            foreach (var grandChild in FindWorkflowActivityDefinitionActivityNodes(child))
-                yield return grandChild;
+            else
+            {
+                foreach (var grandChild in FindWorkflowActivityDefinitionActivityNodes(child))
+                    yield return grandChild;
+            }
         }
     }
 
@@ -115,11 +117,18 @@ public class WorkflowReferenceUpdater(
             IsReadonly = false
         };
         var workflowDefinitionSummaries = await workflowDefinitionStore.FindSummariesAsync(workflowDefinitionFilter, cancellationToken);
+        
+        // If there are workflow definition summaries with the same definition ID, only take the latest version.
+        workflowDefinitionSummaries = workflowDefinitionSummaries
+            .GroupBy(x => x.DefinitionId)
+            .Select(x => x.OrderByDescending(y => y.Version).First())
+            .ToList();
+        
         var workflowGraphs = new List<WorkflowGraph>();
 
         foreach (var workflowDefinitionSummary in workflowDefinitionSummaries)
         {
-            var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionSummary.DefinitionId, VersionOptions.LatestOrPublished, cancellationToken);
+            var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionSummary.Id, cancellationToken);
 
             if (workflowGraph != null)
                 workflowGraphs.Add(workflowGraph);
