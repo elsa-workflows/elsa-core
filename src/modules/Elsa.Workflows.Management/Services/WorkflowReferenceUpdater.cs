@@ -118,11 +118,18 @@ public class WorkflowReferenceUpdater(
             IsReadonly = false
         };
         var workflowDefinitionSummaries = await workflowDefinitionStore.FindSummariesAsync(workflowDefinitionFilter, cancellationToken);
+        
+        // If there are workflow definition summaries with the same definition ID, only take the latest version.
+        workflowDefinitionSummaries = workflowDefinitionSummaries
+            .GroupBy(x => x.DefinitionId)
+            .Select(x => x.OrderByDescending(y => y.Version).First())
+            .ToList();
+        
         var workflowGraphs = new List<WorkflowGraph>();
 
         foreach (var workflowDefinitionSummary in workflowDefinitionSummaries)
         {
-            var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionSummary.DefinitionId, VersionOptions.LatestOrPublished, cancellationToken);
+            var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionSummary.Id, cancellationToken);
 
             if (workflowGraph != null)
                 workflowGraphs.Add(workflowGraph);
