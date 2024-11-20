@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// </summary>
 [Activity("Elsa", "Composition", "Create a new workflow instance of the specified workflow and execute it.", Kind = ActivityKind.Task)]
 [UsedImplicitly]
-public class ExecuteWorkflow : Activity<ExecutedWorkflowResult>
+public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
 {
     /// <inheritdoc />
     public ExecuteWorkflow([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
@@ -55,7 +55,7 @@ public class ExecuteWorkflow : Activity<ExecutedWorkflowResult>
         await context.CompleteActivityAsync();
     }
 
-    private async ValueTask<ExecutedWorkflowResult> ExecuteWorkflowAsync(ActivityExecutionContext context)
+    private async ValueTask<ExecuteWorkflowResult> ExecuteWorkflowAsync(ActivityExecutionContext context)
     {
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
@@ -77,7 +77,7 @@ public class ExecuteWorkflow : Activity<ExecutedWorkflowResult>
         };
 
         var workflowResult = await workflowInvoker.InvokeAsync(workflowGraph, options, context.CancellationToken);
-        var info = new ExecutedWorkflowResult
+        var info = new ExecuteWorkflowResult
         {
             WorkflowInstanceId = options.WorkflowInstanceId,
             Status = workflowResult.WorkflowState.Status,

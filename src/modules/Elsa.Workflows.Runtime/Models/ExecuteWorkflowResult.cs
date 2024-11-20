@@ -3,7 +3,7 @@ namespace Elsa.Workflows.Runtime;
 /// <summary>
 /// Represents the result of executing a workflow.
 /// </summary>
-public class ExecutedWorkflowResult
+public class ExecuteWorkflowResult
 {
     public string WorkflowDefinitionVersionId { get; set; } = default!;
     public string WorkflowInstanceId { get; set; } = default!;
