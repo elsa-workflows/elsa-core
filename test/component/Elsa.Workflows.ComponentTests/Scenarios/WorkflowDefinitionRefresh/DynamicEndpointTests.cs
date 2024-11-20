@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Elsa.Testing.Shared.Services;
-using Elsa.Workflows.ComponentTests.Helpers;
+using Elsa.Workflows.ComponentTests.Abstractions;
+using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 

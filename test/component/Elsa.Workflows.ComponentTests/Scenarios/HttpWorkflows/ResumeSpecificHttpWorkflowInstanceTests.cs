@@ -1,5 +1,6 @@
 ﻿using System.Net;
-using Elsa.Workflows.ComponentTests.Helpers;
+using Elsa.Workflows.ComponentTests.Abstractions;
+using Elsa.Workflows.ComponentTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.HttpWorkflows;

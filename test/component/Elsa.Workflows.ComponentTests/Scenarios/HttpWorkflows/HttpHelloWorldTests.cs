@@ -1,4 +1,5 @@
-﻿using Elsa.Workflows.ComponentTests.Helpers;
+﻿using Elsa.Workflows.ComponentTests.Abstractions;
+using Elsa.Workflows.ComponentTests.Fixtures;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.HttpWorkflows;
 

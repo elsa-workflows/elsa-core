@@ -4,7 +4,7 @@ using Elsa.Testing.Shared.Services;
 using Hangfire.Annotations;
 using MassTransit;
 
-namespace Elsa.Workflows.ComponentTests.Helpers;
+namespace Elsa.Workflows.ComponentTests.Consumers;
 
 [UsedImplicitly]
 public class WorkflowDefinitionEventConsumer(WorkflowDefinitionEvents workflowDefinitionEvents) : IConsumer<WorkflowDefinitionDeleted>

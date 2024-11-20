@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.ComponentTests.Helpers;
+namespace Elsa.Workflows.ComponentTests.Fixtures;
 
 [CollectionDefinition(nameof(AppCollection))]
 public class AppCollection : ICollectionFixture<App>
