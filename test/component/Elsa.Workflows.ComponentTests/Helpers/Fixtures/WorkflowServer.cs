@@ -76,7 +76,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 });
                 elsa.UseMassTransit(massTransit =>
                 {
-                    massTransit.UseRabbitMq(rabbitMqConnectionString);
+                    //massTransit.UseRabbitMq(rabbitMqConnectionString);
                     massTransit.AddConsumer<WorkflowDefinitionEventConsumer>("elsa-test-workflow-definition-updates", true);
                 });
                 elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));

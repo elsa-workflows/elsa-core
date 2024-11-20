@@ -9,11 +9,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.ExecuteWorkflows;
 
-public class DispatchWorkflowsTests : AppComponentTest
+public class ExecuteWorkflowsTests : AppComponentTest
 {
     private readonly IWorkflowRuntime _workflowRuntime;
 
-    public DispatchWorkflowsTests(App app) : base(app)
+    public ExecuteWorkflowsTests(App app) : base(app)
     {
         _workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
     }
