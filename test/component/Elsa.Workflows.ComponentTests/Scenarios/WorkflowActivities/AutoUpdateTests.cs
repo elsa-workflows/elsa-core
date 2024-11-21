@@ -1,7 +1,8 @@
 using Elsa.Http;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Services;
-using Elsa.Workflows.ComponentTests.Helpers;
+using Elsa.Workflows.ComponentTests.Abstractions;
+using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Filters;
