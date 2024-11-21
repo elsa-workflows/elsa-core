@@ -1,6 +1,7 @@
+using Elsa.Workflows.ComponentTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.ComponentTests.Helpers;
+namespace Elsa.Workflows.ComponentTests.Abstractions;
 
 [Collection(nameof(AppCollection))]
 public abstract class AppComponentTest(App app) : IDisposable
