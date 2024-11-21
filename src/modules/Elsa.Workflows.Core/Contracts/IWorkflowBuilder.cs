@@ -145,6 +145,31 @@ public interface IWorkflowBuilder
     /// A fluent method for adding an input to <see cref="Inputs"/>.
     /// </summary>
     IWorkflowBuilder WithInput(InputDefinition inputDefinition);
+    
+    /// <summary>
+    /// A fluent method for adding an output to <see cref="Outputs"/>.
+    /// </summary>
+    OutputDefinition WithOutput<T>(string name, string? description = default);
+    
+    /// <summary>
+    /// A fluent method for adding an output to <see cref="Outputs"/>.
+    /// </summary>
+    OutputDefinition WithOutput(string name, Type type, string? description = default);
+    
+    /// <summary>
+    /// A fluent method for adding an output to <see cref="Outputs"/>.
+    /// </summary>
+    OutputDefinition WithOutput(string name, Type type, Action<OutputDefinition>? setup = default);
+    
+    /// <summary>
+    /// A fluent method for adding an output to <see cref="Outputs"/>.
+    /// </summary>
+    OutputDefinition WithOutput(Action<OutputDefinition> setup);
+    
+    /// <summary>
+    /// A fluent method for adding an output to <see cref="Outputs"/>.
+    /// </summary>
+    OutputDefinition WithOutput(OutputDefinition outputDefinition);
 
     /// <summary>
     /// A fluent method for adding a property to <see cref="CustomProperties"/>.
