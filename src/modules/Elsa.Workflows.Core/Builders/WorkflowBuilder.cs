@@ -114,14 +114,7 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
     /// <inheritdoc />
     public InputDefinition WithInput<T>(string name, string? description = default)
     {
-        return WithInput(inputDefinition =>
-        {
-            inputDefinition.Name = name;
-            inputDefinition.Type = typeof(T);
-
-            if (description != null)
-                inputDefinition.Description = description;
-        });
+        return WithInput(name, typeof(T), description);
     }
 
     /// <inheritdoc />
@@ -162,6 +155,46 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
     {
         Inputs.Add(inputDefinition);
         return this;
+    }
+
+    public OutputDefinition WithOutput<T>(string name, string? description = default)
+    {
+        return WithOutput(name, typeof(T), description);
+    }
+
+    public OutputDefinition WithOutput(string name, Type type, string? description = default)
+    {
+        return WithOutput(outputDefinition =>
+        {
+            outputDefinition.Name = name;
+            outputDefinition.Type = type;
+
+            if (description != null)
+                outputDefinition.Description = description;
+        });
+    }
+
+    public OutputDefinition WithOutput(string name, Type type, Action<OutputDefinition>? setup = default)
+    {
+        return WithOutput(outputDefinition =>
+        {
+            outputDefinition.Name = name;
+            outputDefinition.Type = type;
+            setup?.Invoke(outputDefinition);
+        });
+    }
+
+    public OutputDefinition WithOutput(Action<OutputDefinition> setup)
+    {
+        var outputDefinition = new OutputDefinition();
+        setup(outputDefinition);
+        return WithOutput(outputDefinition);
+    }
+
+    public OutputDefinition WithOutput(OutputDefinition outputDefinition)
+    {
+        Outputs.Add(outputDefinition);
+        return outputDefinition;
     }
 
     /// <inheritdoc />
