@@ -19,7 +19,7 @@ public class HttpEndpointPathUIHandler(IHttpEndpointBasePathProvider httpEndpoin
         {
             [InputUIHints.SingleLine] = new SingleLineProps
             {
-                AdornmentText = completeBaseUrl.TrimEnd('/') + '/',
+                AdornmentText = completeBaseUrl,
                 EnableCopyAdornment = true
             },
             ["Refresh"] = true
