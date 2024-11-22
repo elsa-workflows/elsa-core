@@ -100,7 +100,7 @@ public class TriggerWorkflows(
         CancellationToken cancellationToken)
     {
         var matchingTriggers = new List<TriggerBinding>();
-        var topic = GetTopic(transportMessage);
+        var topic = transportMessage.Topic;
 
         if (string.IsNullOrEmpty(topic))
             return matchingTriggers;
@@ -130,7 +130,7 @@ public class TriggerWorkflows(
         CancellationToken cancellationToken)
     {
         var matchingBookmarks = new List<BookmarkBinding>();
-        var topic = GetTopic(transportMessage);
+        var topic = transportMessage.Topic;
 
         if (string.IsNullOrEmpty(topic))
             return matchingBookmarks;
@@ -177,16 +177,10 @@ public class TriggerWorkflows(
 
         var memory = new MemoryRegister();
         var messageVariable = new Variable("message", transportMessage);
-        var messageType = stimulus.MessageType;
-        var message = DeserializeMessage(transportMessage.Value, messageType);
+        var message = transportMessage;
         var expressionExecutionContext = new ExpressionExecutionContext(serviceProvider, memory, cancellationToken: cancellationToken);
         messageVariable.Set(expressionExecutionContext, message);
         return await expressionEvaluator.EvaluateAsync<bool>(predicate, expressionExecutionContext);
-    }
-
-    private object DeserializeMessage(string value, Type? type)
-    {
-        return type == null ? value : options.Value.Deserializer(serviceProvider, value, type);
     }
     
     private string? GetWorkflowInstanceId(KafkaTransportMessage transportMessage)
@@ -198,11 +192,5 @@ public class TriggerWorkflows(
     private string? GetCorrelationId(KafkaTransportMessage transportMessage)
     {
         return correlationStrategy.GetCorrelationId(transportMessage);
-    }
-
-    private string? GetTopic(KafkaTransportMessage transportMessage)
-    {
-        var key = options.Value.TopicHeaderKey;
-        return transportMessage.Headers.TryGetValue(key, out var value) ? Encoding.UTF8.GetString(value) : null;
     }
 }

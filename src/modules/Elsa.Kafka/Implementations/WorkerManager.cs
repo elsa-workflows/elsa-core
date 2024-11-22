@@ -1,9 +1,8 @@
-using Confluent.Kafka;
 using Elsa.Extensions;
-using Elsa.Kafka.Notifications;
+using Elsa.Kafka.Activities;
 using Elsa.Kafka.Stimuli;
-using Elsa.Mediator.Contracts;
 using Elsa.Workflows;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,14 +12,15 @@ namespace Elsa.Kafka.Implementations;
 
 public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : IWorkerManager
 {
-    private IDictionary<string, Worker> Workers { get; set; } = new Dictionary<string, Worker>();
+    private static readonly string MessageReceivedActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
+    private IDictionary<string, IWorker> Workers { get; set; } = new Dictionary<string, IWorker>();
 
     public async Task UpdateWorkersAsync(CancellationToken cancellationToken = default)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var consumerDefinitionEnumerator = scope.ServiceProvider.GetRequiredService<IConsumerDefinitionEnumerator>();
         var consumerDefinitions = await consumerDefinitionEnumerator.EnumerateAsync(cancellationToken).ToList();
-        var workers = new Dictionary<string, Worker>(Workers);
+        var workers = new Dictionary<string, IWorker>(Workers);
         var workersToRemove = workers.Keys.Except(consumerDefinitions.Select(x => x.Id)).ToList();
 
         // Remove workers that are no longer needed.
@@ -41,7 +41,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
             if (existingWorker == null)
             {
                 // Add a new worker.
-                var worker = CreateWorker(consumerDefinition);
+                var worker = CreateWorker(scope.ServiceProvider, consumerDefinition);
                 workers.Add(consumerDefinition.Id, worker);
             }
             else
@@ -54,7 +54,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
                 if (existingHash != hash)
                 {
                     existingWorker.Stop();
-                    var worker = CreateWorker(consumerDefinition);
+                    var worker = CreateWorker(scope.ServiceProvider, consumerDefinition);
                     workers[consumerDefinition.Id] = worker;
                 }
             }
@@ -70,10 +70,12 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
 
     public async Task BindTriggersAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
+        var triggerList = triggers.Where(x => x.Name == MessageReceivedActivityTypeName).ToList();
         await using var scope = scopeFactory.CreateAsyncScope();
+
+        // Bind triggers to workers.
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        
-        foreach (var trigger in triggers)
+        foreach (var trigger in triggerList)
         {
             var workflow = await workflowDefinitionService.FindWorkflowAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
 
@@ -83,20 +85,67 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
             var stimulus = trigger.GetPayload<MessageReceivedStimulus>();
             var consumerDefinitionId = stimulus.ConsumerDefinitionId;
             var worker = GetWorker(consumerDefinitionId);
+
+            if (worker == null)
+                continue;
+
             var triggerBinding = new TriggerBinding(workflow, trigger.Id, trigger.ActivityId, stimulus);
             worker.BindTrigger(triggerBinding);
         }
     }
 
+    public Task UnbindTriggersAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
+    {
+        var triggerList = triggers.Where(x => x.Name == MessageReceivedActivityTypeName).ToList();
+        var removedTriggerIds = triggerList.Select(x => x.Id).ToList();
+
+        foreach (var trigger in triggerList)
+        {
+            var consumerDefinitionId = trigger.GetPayload<MessageReceivedStimulus>().ConsumerDefinitionId;
+            var worker = GetWorker(consumerDefinitionId);
+
+            worker?.RemoveTriggers(removedTriggerIds);
+        }
+        
+        return Task.CompletedTask;
+    }
+
     public Task BindBookmarksAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
     {
-        foreach (var bookmark in bookmarks)
+        var bookmarkList = bookmarks.Where(x => x.ActivityTypeName == MessageReceivedActivityTypeName).ToList();
+
+        if (bookmarkList.Count == 0)
+            return Task.CompletedTask;
+
+        // Bind bookmarks to workers.
+        foreach (var bookmark in bookmarkList)
         {
             var stimulus = bookmark.GetPayload<MessageReceivedStimulus>();
             var consumerDefinitionId = stimulus.ConsumerDefinitionId;
             var worker = GetWorker(consumerDefinitionId);
+
+            if (worker == null)
+                continue;
+
             var bookmarkBinding = new BookmarkBinding(bookmark.WorkflowInstanceId, bookmark.CorrelationId, bookmark.Id, stimulus);
             worker.BindBookmark(bookmarkBinding);
+        }
+
+        return Task.CompletedTask;
+    }
+    
+    public Task UnbindBookmarksAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
+    {
+        var bookmarkList = bookmarks.Where(x => x.ActivityTypeName == MessageReceivedActivityTypeName).ToList();
+        var removedBookmarkIds = bookmarkList.Select(x => x.Id).ToList();
+
+        foreach (var bookmark in bookmarkList)
+        {
+            var stimulus = bookmark.GetPayload<MessageReceivedStimulus>();
+            var consumerDefinitionId = stimulus.ConsumerDefinitionId;
+            var worker = GetWorker(consumerDefinitionId);
+
+            worker?.RemoveBookmarks(removedBookmarkIds);
         }
         
         return Task.CompletedTask;
@@ -113,20 +162,23 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
         return Workers.TryGetValue(consumerDefinitionId, out var worker) ? worker : null;
     }
 
-    private Worker CreateWorker(ConsumerDefinition consumerDefinition)
+    private IWorker CreateWorker(IServiceProvider serviceProvider, ConsumerDefinition consumerDefinition)
     {
-        var worker = new Worker(consumerDefinition);
-        worker.MessageReceived = OnMessageReceivedAsync;
-        return worker;
-    }
+        var factoryType = consumerDefinition.FactoryType;
 
-    private async Task OnMessageReceivedAsync(Worker worker, Message<Ignore, string> arg, CancellationToken cancellationToken)
-    {
-        var headers = arg.Headers.ToDictionary(x => x.Key, x => x.GetValueBytes());
-        var notification = new TransportMessageReceived(worker, new KafkaTransportMessage(arg.Key, arg.Value, headers));
-        await using var scope = scopeFactory.CreateAsyncScope();
-        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-        await mediator.SendAsync(notification, cancellationToken);
+        if (serviceProvider.GetRequiredService(factoryType) is not IConsumerFactory consumerFactory)
+            throw new InvalidOperationException($"Worker factory of type '{factoryType}' not found.");
+
+        var createConsumerContext = new CreateConsumerContext(consumerDefinition);
+        var consumerProxy = consumerFactory.CreateConsumer(createConsumerContext);
+        var wrappedConsumer = consumerProxy.Consumer;
+        var wrappedConsumerType = wrappedConsumer.GetType();
+        var keyType = wrappedConsumerType.GetGenericArguments()[0];
+        var valueType = wrappedConsumerType.GetGenericArguments()[1];
+        var workerType = typeof(Worker<,>).MakeGenericType(keyType, valueType);
+        var workerContext = new WorkerContext(serviceProvider.GetRequiredService<IServiceScopeFactory>(), consumerDefinition);
+        var worker = (IWorker)ActivatorUtilities.CreateInstance(serviceProvider, workerType, workerContext, consumerProxy.Consumer);
+        return worker;
     }
 
     private string ComputeHash(ConsumerDefinition consumerDefinition)
