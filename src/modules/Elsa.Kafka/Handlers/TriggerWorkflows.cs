@@ -10,6 +10,7 @@ using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Options;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Kafka.Handlers;
@@ -21,7 +22,8 @@ public class TriggerWorkflows(
     ICorrelationStrategy correlationStrategy,
     IExpressionEvaluator expressionEvaluator,
     IOptions<KafkaOptions> options,
-    IServiceProvider serviceProvider) : INotificationHandler<TransportMessageReceived>
+    IServiceProvider serviceProvider,
+    ILogger<TriggerWorkflows> logger) : INotificationHandler<TransportMessageReceived>
 {
     private static readonly string MessageReceivedActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
 
@@ -137,7 +139,7 @@ public class TriggerWorkflows(
 
         var correlationId = GetCorrelationId(transportMessage);
         var workflowInstanceId = GetWorkflowInstanceId(transportMessage);
-        
+
         foreach (var binding in boundBookmarks)
         {
             var stimulus = binding.Stimulus;
@@ -176,13 +178,24 @@ public class TriggerWorkflows(
             return true;
 
         var memory = new MemoryRegister();
-        var messageVariable = new Variable("message", transportMessage);
-        var message = transportMessage;
+        var transportMessageVariable = new Variable("transportMessage", transportMessage);
+        var messageVariable = new Variable("message", transportMessage.Value);
         var expressionExecutionContext = new ExpressionExecutionContext(serviceProvider, memory, cancellationToken: cancellationToken);
-        messageVariable.Set(expressionExecutionContext, message);
-        return await expressionEvaluator.EvaluateAsync<bool>(predicate, expressionExecutionContext);
+
+        transportMessageVariable.Set(expressionExecutionContext, transportMessage);
+        messageVariable.Set(expressionExecutionContext, transportMessage.Value);
+
+        try
+        {
+            return await expressionEvaluator.EvaluateAsync<bool>(predicate, expressionExecutionContext);
+        }
+        catch (Exception e)
+        {
+            logger.LogWarning(e, "An error occurred while evaluating the predicate for stimulus {Stimulus}", stimulus);
+            return false;
+        }
     }
-    
+
     private string? GetWorkflowInstanceId(KafkaTransportMessage transportMessage)
     {
         var key = options.Value.WorkflowInstanceIdHeaderKey;

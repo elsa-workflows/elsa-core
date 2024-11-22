@@ -85,26 +85,44 @@ public class Worker<TKey, TValue>(WorkerContext workerContext, IConsumer<TKey, T
             throw new InvalidOperationException("The worker is not running.");
 
         var topicList = topics.ToHashSet();
-        
+
         if (topicList.SetEquals(_subscribedTopics))
             return;
-        
+
         _subscribedTopics = topicList.ToHashSet();
         consumer.Subscribe(_subscribedTopics);
-        
+
         logger.LogInformation("Subscribed to topics: {Topics}", string.Join(", ", _subscribedTopics));
     }
 
     private async Task RunAsync(CancellationToken cancellationToken)
     {
+        var consumeExceptionCount = 0;
         while (!cancellationToken.IsCancellationRequested)
         {
-            var consumeResult = consumer.Consume(cancellationToken);
+            try
+            {
+                var consumeResult = consumer.Consume(cancellationToken);
+                consumeExceptionCount = 0;
 
-            if (consumeResult.IsPartitionEOF)
-                continue;
+                if (consumeResult.IsPartitionEOF)
+                    continue;
 
-            await ProcessMessageAsync(consumeResult, cancellationToken);
+                await ProcessMessageAsync(consumeResult, cancellationToken);
+            }
+            catch (ConsumeException e)
+            {
+                logger.LogWarning(e, "Error consuming message.");
+                consumeExceptionCount++;
+
+                if (consumeExceptionCount > 100)
+                    throw new InvalidOperationException("Too many consume exceptions.");
+            }
+            catch (OperationCanceledException)
+            {
+                logger.LogInformation("Consumer was cancelled.");
+                break;
+            }
         }
 
         consumer.Unsubscribe();

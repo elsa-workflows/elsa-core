@@ -21,9 +21,9 @@ public class ConsumerWorkflow : WorkflowBase
                 {
                     ConsumerDefinitionId = new("consumer-1"),
                     Topics = new(["topic-1"]),
-                    Predicate = new(JavaScriptExpression.Create("message => message.OrderId == '1'")),
+                    Predicate = new(JavaScriptExpression.Create("getMessage().OrderId == '1'")),
                     Result = new(message),
-                    CanStartWorkflow = false
+                    CanStartWorkflow = true
                 },
                 new WriteLine(c => JsonSerializer.Serialize(message.Get(c)))
             }
