@@ -3,16 +3,17 @@ using Elsa.Extensions;
 using Elsa.Kafka.Notifications;
 using Elsa.Mediator.Contracts;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Kafka.Implementations;
 
-public class Worker<TKey, TValue>(WorkerContext workerContext, IConsumer<TKey, TValue> consumer) : IWorker
+public class Worker<TKey, TValue>(WorkerContext workerContext, IConsumer<TKey, TValue> consumer, ILogger<Worker<TKey, TValue>> logger) : IWorker
 {
     private bool _running;
     private CancellationTokenSource _cancellationTokenSource = new();
-    private readonly HashSet<string> _subscribedTopics = new();
-    
-    public IDictionary<string, BookmarkBinding> BookmarkBindings { get;  } = new Dictionary<string, BookmarkBinding>();
+    private HashSet<string> _subscribedTopics = new();
+
+    public IDictionary<string, BookmarkBinding> BookmarkBindings { get; } = new Dictionary<string, BookmarkBinding>();
     public IDictionary<string, TriggerBinding> TriggerBindings { get; } = new Dictionary<string, TriggerBinding>();
     public ConsumerDefinition ConsumerDefinition { get; } = workerContext.ConsumerDefinition;
 
@@ -41,57 +42,57 @@ public class Worker<TKey, TValue>(WorkerContext workerContext, IConsumer<TKey, T
 
     public void BindTrigger(TriggerBinding binding)
     {
-        var topics = binding.Stimulus.Topics.Distinct().ToList();
         TriggerBindings[binding.TriggerId] = binding;
-        Subscribe(topics);
+        ReduceTopicSubscriptions();
     }
 
     public void BindBookmark(BookmarkBinding binding)
     {
-        var topics = binding.Stimulus.Topics.Distinct().ToList();
         BookmarkBindings[binding.BookmarkId] = binding;
-        Subscribe(topics);
+        ReduceTopicSubscriptions();
     }
 
     public void RemoveTriggers(IEnumerable<string> triggerIds)
     {
         var triggerIdList = triggerIds.ToList();
         TriggerBindings.RemoveWhere(x => triggerIdList.Contains(x.Key));
+        ReduceTopicSubscriptions();
     }
 
     public void RemoveBookmarks(IEnumerable<string> bookmarkIds)
     {
         var bookmarkIdList = bookmarkIds.ToList();
         BookmarkBindings.RemoveWhere(x => bookmarkIdList.Contains(x.Key));
+        ReduceTopicSubscriptions();
     }
 
-    public void Subscribe(IEnumerable<BookmarkBinding> bookmarkBindings)
+    private void ReduceTopicSubscriptions()
     {
-        var topics = bookmarkBindings.SelectMany(x => x.Stimulus.Topics).Distinct().ToList();
-        Subscribe(topics);
+        var bookmarkTopics = BookmarkBindings.Values.SelectMany(x => x.Stimulus.Topics).Distinct().ToList();
+        var triggerTopics = TriggerBindings.Values.SelectMany(x => x.Stimulus.Topics).Distinct().ToList();
+        var allTopics = bookmarkTopics.Concat(triggerTopics).Distinct().ToList();
+        Subscribe(allTopics);
     }
 
     public void Dispose()
     {
         Stop();
     }
-    
+
     private void Subscribe(IEnumerable<string> topics)
     {
-        if(!_running)
+        if (!_running)
             throw new InvalidOperationException("The worker is not running.");
-        
+
         var topicList = topics.ToHashSet();
         
-        // Check if there are any topics not yet in the list of subscribed topics.
-        if (topicList.All(topic => _subscribedTopics.Contains(topic)))
+        if (topicList.SetEquals(_subscribedTopics))
             return;
-
-        // Add the new topics to the list of subscribed topics.
-        _subscribedTopics.UnionWith(topicList);
         
-        // Update the consumer's subscription.
+        _subscribedTopics = topicList.ToHashSet();
         consumer.Subscribe(_subscribedTopics);
+        
+        logger.LogInformation("Subscribed to topics: {Topics}", string.Join(", ", _subscribedTopics));
     }
 
     private async Task RunAsync(CancellationToken cancellationToken)

@@ -1,6 +1,8 @@
 using Elsa.Extensions;
+using Elsa.Kafka.Activities;
 using Elsa.Kafka.Stimuli;
 using Elsa.Workflows;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,6 +12,7 @@ namespace Elsa.Kafka.Implementations;
 
 public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : IWorkerManager
 {
+    private static readonly string MessageReceivedActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
     private IDictionary<string, IWorker> Workers { get; set; } = new Dictionary<string, IWorker>();
 
     public async Task UpdateWorkersAsync(CancellationToken cancellationToken = default)
@@ -67,10 +70,12 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
 
     public async Task BindTriggersAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
+        var triggerList = triggers.Where(x => x.Name == MessageReceivedActivityTypeName).ToList();
         await using var scope = scopeFactory.CreateAsyncScope();
-        var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
 
-        foreach (var trigger in triggers)
+        // Bind triggers to workers.
+        var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
+        foreach (var trigger in triggerList)
         {
             var workflow = await workflowDefinitionService.FindWorkflowAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
 
@@ -80,22 +85,69 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
             var stimulus = trigger.GetPayload<MessageReceivedStimulus>();
             var consumerDefinitionId = stimulus.ConsumerDefinitionId;
             var worker = GetWorker(consumerDefinitionId);
+
+            if (worker == null)
+                continue;
+
             var triggerBinding = new TriggerBinding(workflow, trigger.Id, trigger.ActivityId, stimulus);
             worker.BindTrigger(triggerBinding);
         }
     }
 
+    public Task UnbindTriggersAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
+    {
+        var triggerList = triggers.Where(x => x.Name == MessageReceivedActivityTypeName).ToList();
+        var removedTriggerIds = triggerList.Select(x => x.Id).ToList();
+
+        foreach (var trigger in triggerList)
+        {
+            var consumerDefinitionId = trigger.GetPayload<MessageReceivedStimulus>().ConsumerDefinitionId;
+            var worker = GetWorker(consumerDefinitionId);
+
+            worker?.RemoveTriggers(removedTriggerIds);
+        }
+        
+        return Task.CompletedTask;
+    }
+
     public Task BindBookmarksAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
     {
-        foreach (var bookmark in bookmarks)
+        var bookmarkList = bookmarks.Where(x => x.ActivityTypeName == MessageReceivedActivityTypeName).ToList();
+
+        if (bookmarkList.Count == 0)
+            return Task.CompletedTask;
+
+        // Bind bookmarks to workers.
+        foreach (var bookmark in bookmarkList)
         {
             var stimulus = bookmark.GetPayload<MessageReceivedStimulus>();
             var consumerDefinitionId = stimulus.ConsumerDefinitionId;
             var worker = GetWorker(consumerDefinitionId);
+
+            if (worker == null)
+                continue;
+
             var bookmarkBinding = new BookmarkBinding(bookmark.WorkflowInstanceId, bookmark.CorrelationId, bookmark.Id, stimulus);
             worker.BindBookmark(bookmarkBinding);
         }
 
+        return Task.CompletedTask;
+    }
+    
+    public Task UnbindBookmarksAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
+    {
+        var bookmarkList = bookmarks.Where(x => x.ActivityTypeName == MessageReceivedActivityTypeName).ToList();
+        var removedBookmarkIds = bookmarkList.Select(x => x.Id).ToList();
+
+        foreach (var bookmark in bookmarkList)
+        {
+            var stimulus = bookmark.GetPayload<MessageReceivedStimulus>();
+            var consumerDefinitionId = stimulus.ConsumerDefinitionId;
+            var worker = GetWorker(consumerDefinitionId);
+
+            worker?.RemoveBookmarks(removedBookmarkIds);
+        }
+        
         return Task.CompletedTask;
     }
 
