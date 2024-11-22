@@ -1,3 +1,4 @@
+using Elsa.Caching.Features;
 using Elsa.Common.Features;
 using Elsa.CSharp.Activities;
 using Elsa.CSharp.Contracts;
@@ -19,6 +20,7 @@ namespace Elsa.CSharp.Features;
 /// </summary>
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(ExpressionsFeature))]
+[DependsOn(typeof(MemoryCacheFeature))]
 public class CSharpFeature : FeatureBase
 {
     /// <inheritdoc />

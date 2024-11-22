@@ -53,14 +53,10 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
             ExperimentalFeatures = ExperimentalFeature.TaskInterop
         };
 
-        if (_jintOptions.AllowClrAccess)
-            engineOptions.AllowClr();
-
         ConfigureClrAccess(engineOptions);
         ConfigureObjectWrapper(engineOptions);
         ConfigureObjectConverters(engineOptions);
 
-        engineOptions.Interop.ObjectConverters.Add(new ByteArrayConverter());
         await mediator.SendAsync(new CreatingJavaScriptEngine(engineOptions, context), cancellationToken);
         _jintOptions.ConfigureEngineOptionsCallback(engineOptions, context);
         
@@ -95,7 +91,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
     private void ConfigureObjectConverters(Jint.Options options)
     {
-        options.Interop.ObjectConverters.AddRange([new ByteArrayConverter()]);
+        options.Interop.ObjectConverters.Add(new ByteArrayConverter());
     }
 
     private void ConfigureArgumentGetters(Engine engine, ExpressionEvaluatorOptions options)
@@ -124,7 +120,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         return memoryCache.GetOrCreate(cacheKey, entry =>
         {
             if (_jintOptions.ScriptCacheTimeout.HasValue)
-                entry.SetAbsoluteExpiration(_jintOptions.ScriptCacheTimeout.Value);
+                entry.SetSlidingExpiration(_jintOptions.ScriptCacheTimeout.Value);
 
             return PrepareScript(expression);
         })!;
