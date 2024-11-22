@@ -66,7 +66,6 @@ public class SendMessage : CodeActivity
             using var producer = CreateProducer(context, producerDefinition);
             var headers = CreateHeaders(context);
             await producer.ProduceAsync(topic, content, headers);
-            producer.Dispose();
         });
     }
 

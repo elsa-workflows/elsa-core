@@ -11,6 +11,5 @@ public class DefaultConsumerFactory : IConsumerFactory
         var config = consumerDefinition.Config;
         var consumer = new ConsumerBuilder<Ignore, string>(config).Build();
         return new ConsumerProxy(consumer);
-        //return new Worker<Ignore, string>(workerContext, consumer);
     }
 }
