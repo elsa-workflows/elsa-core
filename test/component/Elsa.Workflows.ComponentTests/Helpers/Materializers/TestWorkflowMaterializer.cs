@@ -1,9 +1,10 @@
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.ComponentTests.WorkflowProviders;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime;
 
-namespace Elsa.Workflows.ComponentTests.Helpers;
+namespace Elsa.Workflows.ComponentTests.Materializers;
 
 /// <summary>
 /// A workflow materializer that deserializes workflows created from <see cref="TestWorkflowProvider"/>.

@@ -4,7 +4,7 @@ using Elsa.Testing.Shared.Services;
 using Hangfire.Annotations;
 using Microsoft.Extensions.Primitives;
 
-namespace Elsa.Workflows.ComponentTests.Helpers;
+namespace Elsa.Workflows.ComponentTests.Decorators;
 
 /// <summary>
 /// Provides a decorator for the `IChangeTokenSignaler` interface that triggers change token events.

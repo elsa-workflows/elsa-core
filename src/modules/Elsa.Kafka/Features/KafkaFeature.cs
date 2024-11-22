@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Kafka.Factories;
 using Elsa.Kafka.Implementations;
 using Elsa.Kafka.Providers;
 using Elsa.Kafka.Tasks;
@@ -71,6 +72,11 @@ public class KafkaFeature(IModule module) : FeatureBase(module)
             .AddScoped<HeaderCorrelationStrategy>()
             .AddScoped<NullCorrelationStrategy>()
             .AddScoped(_correlationStrategyFactory)
-            .AddHandlersFrom<KafkaFeature>();
+            .AddHandlersFrom<KafkaFeature>()
+            .AddConsumerFactory<DefaultConsumerFactory>()
+            .AddConsumerFactory<ExpandoObjectConsumerFactory>()
+            .AddProducerFactory<DefaultProducerFactory>()
+            .AddProducerFactory<ExpandoObjectProducerFactory>()
+            ;
     }
 }

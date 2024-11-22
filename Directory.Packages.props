@@ -24,10 +24,10 @@
     <PackageVersion Include="DistributedLock.Postgres" Version="1.2.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.0.3" />
     <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="8.15.10" />
-    <PackageVersion Include="Elsa.Studio" Version="3.3.0-preview.600" />
-    <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.3.0-preview.600" />
-    <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.3.0-preview.600" />
-    <PackageVersion Include="Elsa.Studio.Agents" Version="3.3.0-preview.600" />
+    <PackageVersion Include="Elsa.Studio" Version="3.3.0-preview.630" />
+    <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.3.0-preview.630" />
+    <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.3.0-preview.630" />
+    <PackageVersion Include="Elsa.Studio.Agents" Version="3.3.0-preview.630" />
     <PackageVersion Include="FastEndpoints" Version="5.30.0" />
     <PackageVersion Include="FastEndpoints.Security" Version="5.30.0" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="5.30.0" />

@@ -8,7 +8,7 @@ public class ProducerWorkflow : WorkflowBase
     protected override void Build(IWorkflowBuilder builder)
     {
         builder.Name = "Producer Workflow";
-        builder.Root = new SendMessage
+        builder.Root = new ProduceMessage
         {
             Topic = new("topic-2"),
             ProducerDefinitionId = new("producer-1"),

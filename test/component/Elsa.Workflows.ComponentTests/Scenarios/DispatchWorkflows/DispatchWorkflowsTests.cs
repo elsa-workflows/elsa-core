@@ -1,7 +1,8 @@
 ﻿using Elsa.Common.Models;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Services;
-using Elsa.Workflows.ComponentTests.Helpers;
+using Elsa.Workflows.ComponentTests.Abstractions;
+using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows.Workflows;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;

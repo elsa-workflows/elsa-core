@@ -47,18 +47,4 @@ public class StoredBookmark : Entity
     /// The date and time the bookmark was created.
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; }
-
-    public Bookmark ToBookmark()
-    {
-        return new Bookmark
-        {
-            Id = Id,
-            Name = ActivityTypeName,
-            Hash = Hash,
-            CreatedAt = CreatedAt,
-            ActivityInstanceId = ActivityInstanceId,
-            Payload = Payload,
-            Metadata = Metadata
-        };
-    }
 }

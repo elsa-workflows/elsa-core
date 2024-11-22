@@ -10,6 +10,7 @@ using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Options;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Kafka.Handlers;
@@ -21,7 +22,8 @@ public class TriggerWorkflows(
     ICorrelationStrategy correlationStrategy,
     IExpressionEvaluator expressionEvaluator,
     IOptions<KafkaOptions> options,
-    IServiceProvider serviceProvider) : INotificationHandler<TransportMessageReceived>
+    IServiceProvider serviceProvider,
+    ILogger<TriggerWorkflows> logger) : INotificationHandler<TransportMessageReceived>
 {
     private static readonly string MessageReceivedActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
 
@@ -100,7 +102,7 @@ public class TriggerWorkflows(
         CancellationToken cancellationToken)
     {
         var matchingTriggers = new List<TriggerBinding>();
-        var topic = GetTopic(transportMessage);
+        var topic = transportMessage.Topic;
 
         if (string.IsNullOrEmpty(topic))
             return matchingTriggers;
@@ -130,14 +132,14 @@ public class TriggerWorkflows(
         CancellationToken cancellationToken)
     {
         var matchingBookmarks = new List<BookmarkBinding>();
-        var topic = GetTopic(transportMessage);
+        var topic = transportMessage.Topic;
 
         if (string.IsNullOrEmpty(topic))
             return matchingBookmarks;
 
         var correlationId = GetCorrelationId(transportMessage);
         var workflowInstanceId = GetWorkflowInstanceId(transportMessage);
-        
+
         foreach (var binding in boundBookmarks)
         {
             var stimulus = binding.Stimulus;
@@ -176,19 +178,24 @@ public class TriggerWorkflows(
             return true;
 
         var memory = new MemoryRegister();
-        var messageVariable = new Variable("message", transportMessage);
-        var messageType = stimulus.MessageType;
-        var message = DeserializeMessage(transportMessage.Value, messageType);
+        var transportMessageVariable = new Variable("transportMessage", transportMessage);
+        var messageVariable = new Variable("message", transportMessage.Value);
         var expressionExecutionContext = new ExpressionExecutionContext(serviceProvider, memory, cancellationToken: cancellationToken);
-        messageVariable.Set(expressionExecutionContext, message);
-        return await expressionEvaluator.EvaluateAsync<bool>(predicate, expressionExecutionContext);
+
+        transportMessageVariable.Set(expressionExecutionContext, transportMessage);
+        messageVariable.Set(expressionExecutionContext, transportMessage.Value);
+
+        try
+        {
+            return await expressionEvaluator.EvaluateAsync<bool>(predicate, expressionExecutionContext);
+        }
+        catch (Exception e)
+        {
+            logger.LogWarning(e, "An error occurred while evaluating the predicate for stimulus {Stimulus}", stimulus);
+            return false;
+        }
     }
 
-    private object DeserializeMessage(string value, Type? type)
-    {
-        return type == null ? value : options.Value.Deserializer(serviceProvider, value, type);
-    }
-    
     private string? GetWorkflowInstanceId(KafkaTransportMessage transportMessage)
     {
         var key = options.Value.WorkflowInstanceIdHeaderKey;
@@ -198,11 +205,5 @@ public class TriggerWorkflows(
     private string? GetCorrelationId(KafkaTransportMessage transportMessage)
     {
         return correlationStrategy.GetCorrelationId(transportMessage);
-    }
-
-    private string? GetTopic(KafkaTransportMessage transportMessage)
-    {
-        var key = options.Value.TopicHeaderKey;
-        return transportMessage.Headers.TryGetValue(key, out var value) ? Encoding.UTF8.GetString(value) : null;
     }
 }

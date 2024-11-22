@@ -7,7 +7,6 @@ using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Kafka.Activities;
 
@@ -47,12 +46,6 @@ public class MessageReceived : Trigger<object>
         UIHint = InputUIHints.MultiText
     )]
     public Input<ICollection<string>> Topics { get; set; } = default!;
-
-    /// <summary>
-    /// Optional. The .NET type to deserialize the message into. Defaults to <see cref="string"/>. 
-    /// </summary>
-    [Input(Description = "Optional. The .NET type to deserialize the message into.")]
-    public Input<Type?> MessageType { get; set; } = default!;
 
     [Input(
         Description = "Optional. A predicate to filter messages.",
@@ -95,12 +88,7 @@ public class MessageReceived : Trigger<object>
 
     private void SetResult(KafkaTransportMessage receivedMessage, ActivityExecutionContext context)
     {
-        var bodyAsString = receivedMessage.Value;
-        var targetType = MessageType.GetOrDefault(context);
-        var deserializer = context.GetRequiredService<IOptions<KafkaOptions>>().Value.Deserializer;
-        var serviceProvider = context.WorkflowExecutionContext.ServiceProvider;
-        var body = targetType == null ? bodyAsString : deserializer(serviceProvider, bodyAsString, targetType);
-
+        var body = receivedMessage.Value;
         context.Set(TransportMessage, receivedMessage);
         context.SetResult(body);
     }
@@ -109,7 +97,6 @@ public class MessageReceived : Trigger<object>
     {
         var consumerDefinitionId = ConsumerDefinitionId.Get(context);
         var topics = Topics.GetOrDefault(context) ?? [];
-        var messageType = MessageType.GetOrDefault(context) ?? typeof(string);
         var isLocal = IsLocal.GetOrDefault(context);
         var activity = context.GetActivity();
         var activityRegistry = context.GetRequiredService<IActivityRegistry>();
@@ -122,7 +109,6 @@ public class MessageReceived : Trigger<object>
         {
             ConsumerDefinitionId = consumerDefinitionId,
             Topics = topics.Distinct().ToList(),
-            MessageType = messageType,
             IsLocal = isLocal,
             Predicate = predicateExpression,
         };
