@@ -1,3 +1,4 @@
+using Confluent.Kafka;
 using Elsa.Common.Entities;
 
 namespace Elsa.Kafka;
@@ -5,5 +6,5 @@ namespace Elsa.Kafka;
 public class ProducerDefinition : Entity
 {
     public string Name { get; set; } = default!;
-    public ICollection<string> BootstrapServers { get; set; } = [];
+    public ProducerConfig Config { get; set; } = new();
 }
