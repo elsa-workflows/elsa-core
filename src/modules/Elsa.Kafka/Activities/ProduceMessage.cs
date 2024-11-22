@@ -11,14 +11,14 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Kafka.Activities;
 
-[Activity("Elsa.Kafka", "Kafka", "Sends a message to a given topic")]
-public class SendMessage : CodeActivity
+[Activity("Elsa.Kafka", "Kafka", "Produces a message and delivers it to a given topic.")]
+public class ProduceMessage : CodeActivity
 {
     /// <summary>
     /// The topic to which the message will be sent.
     /// </summary>
     [Input(
-        Description = "The topic to which the message will be sent.",
+        Description = "The topic to which the message will be delivered.",
         UIHint = InputUIHints.DropDown,
         UIHandler = typeof(TopicDefinitionsDropdownOptionsProvider)
     )]
@@ -29,7 +29,7 @@ public class SendMessage : CodeActivity
     /// </summary>
     [Input(
         DisplayName = "Producer",
-        Description = "The producer to use when sending the message.",
+        Description = "The producer to use to produce the message.",
         UIHint = InputUIHints.DropDown,
         UIHandler = typeof(ProducerDefinitionsDropdownOptionsProvider)
     )]
@@ -50,7 +50,7 @@ public class SendMessage : CodeActivity
     /// <summary>
     /// The content of the message to send.
     /// </summary>
-    [Input(Description = "The content of the message to send.")]
+    [Input(Description = "The content of the message to produce.")]
     public Input<object> Content { get; set; } = default!;
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

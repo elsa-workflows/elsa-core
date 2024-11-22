@@ -7,9 +7,7 @@ public class DefaultConsumerFactory : IConsumerFactory
 {
     public IConsumer CreateConsumer(CreateConsumerContext context)
     {
-        var consumerDefinition = context.ConsumerDefinition;
-        var config = consumerDefinition.Config;
-        var consumer = new ConsumerBuilder<Ignore, string>(config).Build();
+        var consumer = new ConsumerBuilder<Ignore, string>(context.ConsumerDefinition.Config).Build();
         return new ConsumerProxy(consumer);
     }
 }

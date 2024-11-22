@@ -74,6 +74,9 @@ public class KafkaFeature(IModule module) : FeatureBase(module)
             .AddScoped(_correlationStrategyFactory)
             .AddHandlersFrom<KafkaFeature>()
             .AddConsumerFactory<DefaultConsumerFactory>()
-            .AddProducerFactory<DefaultProducerFactory>();
+            .AddConsumerFactory<ExpandoObjectConsumerFactory>()
+            .AddProducerFactory<DefaultProducerFactory>()
+            .AddProducerFactory<ExpandoObjectProducerFactory>()
+            ;
     }
 }
