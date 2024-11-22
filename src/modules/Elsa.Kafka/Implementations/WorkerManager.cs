@@ -69,7 +69,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        
+
         foreach (var trigger in triggers)
         {
             var workflow = await workflowDefinitionService.FindWorkflowAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
@@ -95,7 +95,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
             var bookmarkBinding = new BookmarkBinding(bookmark.WorkflowInstanceId, bookmark.CorrelationId, bookmark.Id, stimulus);
             worker.BindBookmark(bookmarkBinding);
         }
-        
+
         return Task.CompletedTask;
     }
 
@@ -114,11 +114,18 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
     {
         var factoryType = consumerDefinition.FactoryType;
 
-        if (serviceProvider.GetRequiredService(factoryType) is not IWorkerFactory workerFactory)
+        if (serviceProvider.GetRequiredService(factoryType) is not IConsumerFactory consumerFactory)
             throw new InvalidOperationException($"Worker factory of type '{factoryType}' not found.");
-        
+
+        var createConsumerContext = new CreateConsumerContext(consumerDefinition);
+        var consumerProxy = consumerFactory.CreateConsumer(createConsumerContext);
+        var wrappedConsumer = consumerProxy.Consumer;
+        var wrappedConsumerType = wrappedConsumer.GetType();
+        var keyType = wrappedConsumerType.GetGenericArguments()[0];
+        var valueType = wrappedConsumerType.GetGenericArguments()[1];
+        var workerType = typeof(Worker<,>).MakeGenericType(keyType, valueType);
         var workerContext = new WorkerContext(serviceProvider.GetRequiredService<IServiceScopeFactory>(), consumerDefinition);
-        var worker = workerFactory.CreateWorker(workerContext);
+        var worker = (IWorker)Activator.CreateInstance(workerType, workerContext, consumerProxy.Consumer)!;
         return worker;
     }
 

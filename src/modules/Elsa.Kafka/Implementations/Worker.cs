@@ -103,7 +103,7 @@ public class Worker<TKey, TValue>(WorkerContext workerContext, IConsumer<TKey, T
             if (consumeResult.IsPartitionEOF)
                 continue;
 
-            await ProcessMessageAsync(consumeResult.Message, cancellationToken);
+            await ProcessMessageAsync(consumeResult, cancellationToken);
         }
 
         consumer.Unsubscribe();
@@ -111,10 +111,12 @@ public class Worker<TKey, TValue>(WorkerContext workerContext, IConsumer<TKey, T
         consumer.Dispose();
     }
 
-    private async Task ProcessMessageAsync(Message<TKey, TValue> message, CancellationToken cancellationToken)
+    private async Task ProcessMessageAsync(ConsumeResult<TKey, TValue> consumeResult, CancellationToken cancellationToken)
     {
+        var message = consumeResult.Message;
+        var topic = consumeResult.Topic;
         var headers = message.Headers.ToDictionary(x => x.Key, x => x.GetValueBytes());
-        var notification = new TransportMessageReceived(this, new KafkaTransportMessage(message.Key, message.Value, headers));
+        var notification = new TransportMessageReceived(this, new KafkaTransportMessage(message.Key, message.Value, topic, headers));
         await using var scope = workerContext.ScopeFactory.CreateAsyncScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
         await mediator.SendAsync(notification, cancellationToken);

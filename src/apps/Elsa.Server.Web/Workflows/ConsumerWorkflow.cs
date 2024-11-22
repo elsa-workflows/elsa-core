@@ -20,11 +20,10 @@ public class ConsumerWorkflow : WorkflowBase
                 new MessageReceived
                 {
                     ConsumerDefinitionId = new("consumer-1"),
-                    MessageType = new(typeof(ExpandoObject)),
                     Topics = new(["topic-1"]),
                     Predicate = new(JavaScriptExpression.Create("message => message.OrderId == '1'")),
                     Result = new(message),
-                    CanStartWorkflow = true
+                    CanStartWorkflow = false
                 },
                 new WriteLine(c => JsonSerializer.Serialize(message.Get(c)))
             }

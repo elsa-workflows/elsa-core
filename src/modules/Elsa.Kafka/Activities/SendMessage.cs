@@ -60,24 +60,13 @@ public class SendMessage : CodeActivity
         var producerDefinitionEnumerator = context.GetRequiredService<IProducerDefinitionEnumerator>();
         var producerDefinition = await producerDefinitionEnumerator.GetByIdAsync(producerDefinitionId);
         var content = Content.Get(context);
-        var serializer = context.GetRequiredService<IOptions<KafkaOptions>>().Value.Serializer;
-        var serviceProvider = context.WorkflowExecutionContext.ServiceProvider;
-        var serializedContent = content as string ?? serializer(serviceProvider, content);
-        var config = new ProducerConfig
-        {
-            BootstrapServers = string.Join(",", producerDefinition.BootstrapServers),
-        };
 
         context.DeferTask(async () =>
         {
-            using var producer = new ProducerBuilder<Null, string>(config).Build();
+            using var producer = CreateProducer(context, producerDefinition);
             var headers = CreateHeaders(context);
-            var message = new Message<Null, string>
-            {
-                Value = serializedContent,
-                Headers = headers
-            };
-            await producer.ProduceAsync(topic, message);
+            await producer.ProduceAsync(topic, content, headers);
+            producer.Dispose();
         });
     }
 
@@ -87,9 +76,6 @@ public class SendMessage : CodeActivity
         var headers = new Headers();
         var correlationId = CorrelationId.GetOrDefault(context);
         var isLocal = IsLocal.Get(context);
-        var topic = Topic.Get(context);
-
-        headers.Add(options.TopicHeaderKey, Encoding.UTF8.GetBytes(topic));
 
         if (!string.IsNullOrWhiteSpace(correlationId))
             headers.Add(options.CorrelationHeaderKey, Encoding.UTF8.GetBytes(correlationId));
@@ -98,5 +84,16 @@ public class SendMessage : CodeActivity
             headers.Add(options.WorkflowInstanceIdHeaderKey, Encoding.UTF8.GetBytes(context.WorkflowExecutionContext.Id));
 
         return headers;
+    }
+    
+    private IProducer CreateProducer(ActivityExecutionContext context, ProducerDefinition producerDefinition)
+    {
+        var factory = context.GetRequiredService(producerDefinition.FactoryType) as IProducerFactory;
+        
+        if (factory == null)
+            throw new InvalidOperationException($"Producer factory of type '{producerDefinition.FactoryType}' not found.");
+        
+        var createProducerContext = new CreateProducerContext(producerDefinition);
+        return factory.CreateProducer(createProducerContext);
     }
 }

@@ -66,13 +66,14 @@ public class KafkaFeature(IModule module) : FeatureBase(module)
             .AddScoped<IConsumerDefinitionEnumerator, ConsumerDefinitionEnumerator>()
             .AddScoped<IProducerDefinitionEnumerator, ProducerDefinitionEnumerator>()
             .AddScoped<ITopicDefinitionEnumerator, TopicDefinitionEnumerator>()
-            .AddScoped<DefaultWorkerFactory>()
             .AddScoped<IPropertyUIHandler, ConsumerDefinitionsDropdownOptionsProvider>()
             .AddScoped<IPropertyUIHandler, ProducerDefinitionsDropdownOptionsProvider>()
             .AddScoped<IPropertyUIHandler, TopicDefinitionsDropdownOptionsProvider>()
             .AddScoped<HeaderCorrelationStrategy>()
             .AddScoped<NullCorrelationStrategy>()
             .AddScoped(_correlationStrategyFactory)
-            .AddHandlersFrom<KafkaFeature>();
+            .AddHandlersFrom<KafkaFeature>()
+            .AddConsumerFactory<DefaultConsumerFactory>()
+            .AddProducerFactory<DefaultProducerFactory>();
     }
 }

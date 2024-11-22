@@ -100,7 +100,7 @@ public class TriggerWorkflows(
         CancellationToken cancellationToken)
     {
         var matchingTriggers = new List<TriggerBinding>();
-        var topic = GetTopic(transportMessage);
+        var topic = transportMessage.Topic;
 
         if (string.IsNullOrEmpty(topic))
             return matchingTriggers;
@@ -130,7 +130,7 @@ public class TriggerWorkflows(
         CancellationToken cancellationToken)
     {
         var matchingBookmarks = new List<BookmarkBinding>();
-        var topic = GetTopic(transportMessage);
+        var topic = transportMessage.Topic;
 
         if (string.IsNullOrEmpty(topic))
             return matchingBookmarks;
@@ -192,11 +192,5 @@ public class TriggerWorkflows(
     private string? GetCorrelationId(KafkaTransportMessage transportMessage)
     {
         return correlationStrategy.GetCorrelationId(transportMessage);
-    }
-
-    private string? GetTopic(KafkaTransportMessage transportMessage)
-    {
-        var key = options.Value.TopicHeaderKey;
-        return transportMessage.Headers.TryGetValue(key, out var value) ? Encoding.UTF8.GetString(value) : null;
     }
 }
