@@ -177,7 +177,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
         var valueType = wrappedConsumerType.GetGenericArguments()[1];
         var workerType = typeof(Worker<,>).MakeGenericType(keyType, valueType);
         var workerContext = new WorkerContext(serviceProvider.GetRequiredService<IServiceScopeFactory>(), consumerDefinition);
-        var worker = (IWorker)Activator.CreateInstance(workerType, workerContext, consumerProxy.Consumer)!;
+        var worker = (IWorker)ActivatorUtilities.CreateInstance(serviceProvider, workerType, workerContext, consumerProxy.Consumer);
         return worker;
     }
 
