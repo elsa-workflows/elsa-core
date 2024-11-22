@@ -177,16 +177,10 @@ public class TriggerWorkflows(
 
         var memory = new MemoryRegister();
         var messageVariable = new Variable("message", transportMessage);
-        var messageType = stimulus.MessageType;
-        var message = DeserializeMessage(transportMessage.Value, messageType);
+        var message = transportMessage;
         var expressionExecutionContext = new ExpressionExecutionContext(serviceProvider, memory, cancellationToken: cancellationToken);
         messageVariable.Set(expressionExecutionContext, message);
         return await expressionEvaluator.EvaluateAsync<bool>(predicate, expressionExecutionContext);
-    }
-
-    private object DeserializeMessage(string value, Type? type)
-    {
-        return type == null ? value : options.Value.Deserializer(serviceProvider, value, type);
     }
     
     private string? GetWorkflowInstanceId(KafkaTransportMessage transportMessage)

@@ -1,19 +1,20 @@
 using Confluent.Kafka;
 using Elsa.Extensions;
+using Elsa.Kafka.Notifications;
+using Elsa.Mediator.Contracts;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Kafka.Implementations;
 
-public class Worker(ConsumerDefinition consumerDefinition) : IWorker
+public class Worker<TKey, TValue>(WorkerContext workerContext, IConsumer<TKey, TValue> consumer) : IWorker
 {
     private bool _running;
-    private IConsumer<Ignore, string> _consumer = default!;
     private CancellationTokenSource _cancellationTokenSource = new();
     private readonly HashSet<string> _subscribedTopics = new();
     
     public IDictionary<string, BookmarkBinding> BookmarkBindings { get;  } = new Dictionary<string, BookmarkBinding>();
     public IDictionary<string, TriggerBinding> TriggerBindings { get; } = new Dictionary<string, TriggerBinding>();
-    public Func<Worker, Message<Ignore, string>, CancellationToken, Task>? MessageReceived { get; set; }
-    public ConsumerDefinition ConsumerDefinition { get; } = consumerDefinition;
+    public ConsumerDefinition ConsumerDefinition { get; } = workerContext.ConsumerDefinition;
 
     public void Start(CancellationToken cancellationToken)
     {
@@ -21,16 +22,6 @@ public class Worker(ConsumerDefinition consumerDefinition) : IWorker
             return;
 
         _running = true;
-
-        var config = new ConsumerConfig
-        {
-            BootstrapServers = string.Join(",", ConsumerDefinition.BootstrapServers),
-            GroupId = ConsumerDefinition.GroupId,
-            AutoOffsetReset = ConsumerDefinition.AutoOffsetReset,
-            EnableAutoCommit = ConsumerDefinition.EnableAutoCommit
-        };
-
-        _consumer = new ConsumerBuilder<Ignore, string>(config).Build();
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _ = Task.Run(() => RunAsync(_cancellationTokenSource.Token), cancellationToken);
     }
@@ -41,9 +32,9 @@ public class Worker(ConsumerDefinition consumerDefinition) : IWorker
             return;
 
         _running = false;
-        _consumer.Unsubscribe();
-        _consumer.Close();
-        _consumer.Dispose();
+        consumer.Unsubscribe();
+        consumer.Close();
+        consumer.Dispose();
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
     }
@@ -100,29 +91,32 @@ public class Worker(ConsumerDefinition consumerDefinition) : IWorker
         _subscribedTopics.UnionWith(topicList);
         
         // Update the consumer's subscription.
-        _consumer.Subscribe(_subscribedTopics);
+        consumer.Subscribe(_subscribedTopics);
     }
 
     private async Task RunAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            var consumeResult = _consumer.Consume(cancellationToken);
+            var consumeResult = consumer.Consume(cancellationToken);
 
             if (consumeResult.IsPartitionEOF)
                 continue;
 
-            await ProcessMessageAsync(consumeResult.Message);
+            await ProcessMessageAsync(consumeResult.Message, cancellationToken);
         }
 
-        _consumer.Unsubscribe();
-        _consumer.Close();
-        _consumer.Dispose();
+        consumer.Unsubscribe();
+        consumer.Close();
+        consumer.Dispose();
     }
 
-    private Task ProcessMessageAsync(Message<Ignore, string> message)
+    private async Task ProcessMessageAsync(Message<TKey, TValue> message, CancellationToken cancellationToken)
     {
-        MessageReceived?.Invoke(this, message, _cancellationTokenSource.Token);
-        return Task.CompletedTask;
+        var headers = message.Headers.ToDictionary(x => x.Key, x => x.GetValueBytes());
+        var notification = new TransportMessageReceived(this, new KafkaTransportMessage(message.Key, message.Value, headers));
+        await using var scope = workerContext.ScopeFactory.CreateAsyncScope();
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        await mediator.SendAsync(notification, cancellationToken);
     }
 }

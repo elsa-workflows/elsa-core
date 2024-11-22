@@ -1,8 +1,5 @@
-using Confluent.Kafka;
 using Elsa.Extensions;
-using Elsa.Kafka.Notifications;
 using Elsa.Kafka.Stimuli;
-using Elsa.Mediator.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Entities;
@@ -13,14 +10,14 @@ namespace Elsa.Kafka.Implementations;
 
 public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : IWorkerManager
 {
-    private IDictionary<string, Worker> Workers { get; set; } = new Dictionary<string, Worker>();
+    private IDictionary<string, IWorker> Workers { get; set; } = new Dictionary<string, IWorker>();
 
     public async Task UpdateWorkersAsync(CancellationToken cancellationToken = default)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var consumerDefinitionEnumerator = scope.ServiceProvider.GetRequiredService<IConsumerDefinitionEnumerator>();
         var consumerDefinitions = await consumerDefinitionEnumerator.EnumerateAsync(cancellationToken).ToList();
-        var workers = new Dictionary<string, Worker>(Workers);
+        var workers = new Dictionary<string, IWorker>(Workers);
         var workersToRemove = workers.Keys.Except(consumerDefinitions.Select(x => x.Id)).ToList();
 
         // Remove workers that are no longer needed.
@@ -41,7 +38,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
             if (existingWorker == null)
             {
                 // Add a new worker.
-                var worker = CreateWorker(consumerDefinition);
+                var worker = CreateWorker(scope.ServiceProvider, consumerDefinition);
                 workers.Add(consumerDefinition.Id, worker);
             }
             else
@@ -54,7 +51,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
                 if (existingHash != hash)
                 {
                     existingWorker.Stop();
-                    var worker = CreateWorker(consumerDefinition);
+                    var worker = CreateWorker(scope.ServiceProvider, consumerDefinition);
                     workers[consumerDefinition.Id] = worker;
                 }
             }
@@ -113,20 +110,16 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
         return Workers.TryGetValue(consumerDefinitionId, out var worker) ? worker : null;
     }
 
-    private Worker CreateWorker(ConsumerDefinition consumerDefinition)
+    private IWorker CreateWorker(IServiceProvider serviceProvider, ConsumerDefinition consumerDefinition)
     {
-        var worker = new Worker(consumerDefinition);
-        worker.MessageReceived = OnMessageReceivedAsync;
-        return worker;
-    }
+        var factoryType = consumerDefinition.FactoryType;
 
-    private async Task OnMessageReceivedAsync(Worker worker, Message<Ignore, string> arg, CancellationToken cancellationToken)
-    {
-        var headers = arg.Headers.ToDictionary(x => x.Key, x => x.GetValueBytes());
-        var notification = new TransportMessageReceived(worker, new KafkaTransportMessage(arg.Key, arg.Value, headers));
-        await using var scope = scopeFactory.CreateAsyncScope();
-        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-        await mediator.SendAsync(notification, cancellationToken);
+        if (serviceProvider.GetRequiredService(factoryType) is not IWorkerFactory workerFactory)
+            throw new InvalidOperationException($"Worker factory of type '{factoryType}' not found.");
+        
+        var workerContext = new WorkerContext(serviceProvider.GetRequiredService<IServiceScopeFactory>(), consumerDefinition);
+        var worker = workerFactory.CreateWorker(workerContext);
+        return worker;
     }
 
     private string ComputeHash(ConsumerDefinition consumerDefinition)
