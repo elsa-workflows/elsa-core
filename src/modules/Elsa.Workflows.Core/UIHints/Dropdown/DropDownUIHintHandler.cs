@@ -11,6 +11,6 @@ public class DropDownUIHintHandler : IUIHintHandler
     /// <inheritdoc />
     public ValueTask<IEnumerable<Type>> GetPropertyUIHandlersAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken)
     {
-        return new(new[] { typeof(StaticDropDownOptionsProvider) });
+        return new([typeof(StaticDropDownOptionsProvider)]);
     }
 }

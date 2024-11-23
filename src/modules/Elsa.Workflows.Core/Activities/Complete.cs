@@ -37,7 +37,7 @@ public class Complete : Activity, ITerminalNode
 
     /// <inheritdoc />
     public Complete(Func<ExpressionExecutionContext, string> outcome, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(context => new[] { outcome(context) }, source, line)
+        : this(context => [outcome(context)], source, line)
     {
     }
 

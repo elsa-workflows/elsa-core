@@ -19,7 +19,7 @@ namespace Elsa.Workflows;
 public partial class ActivityExecutionContext : IExecutionContext, IDisposable
 {
     private readonly ISystemClock _systemClock;
-    private readonly List<Bookmark> _bookmarks = new();
+    private readonly List<Bookmark> _bookmarks = [];
     private long _executionCount;
 
     /// <summary>

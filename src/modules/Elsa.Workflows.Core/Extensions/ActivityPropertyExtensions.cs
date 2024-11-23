@@ -8,9 +8,9 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class ActivityPropertyExtensions
 {
-    private static readonly string[] CanStartWorkflowPropertyName = {"canStartWorkflow", "CanStartWorkflow", };
-    private static readonly string[] RunAsynchronouslyPropertyName = {"runAsynchronously", "RunAsynchronously" };
-    private static readonly string[] SourcePropertyName = {"source", "Source"};
+    private static readonly string[] CanStartWorkflowPropertyName = ["canStartWorkflow", "CanStartWorkflow"];
+    private static readonly string[] RunAsynchronouslyPropertyName = ["runAsynchronously", "RunAsynchronously"];
+    private static readonly string[] SourcePropertyName = ["source", "Source"];
 
     /// <summary>
     /// Gets a flag indicating whether this activity can be used for starting a workflow.

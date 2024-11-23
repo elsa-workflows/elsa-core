@@ -29,7 +29,7 @@ public abstract class Trigger : Activity, ITrigger
     /// <summary>
     /// Override this method to return trigger data.
     /// </summary>
-    protected virtual IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context) => new[] { GetTriggerPayload(context) };
+    protected virtual IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context) => [GetTriggerPayload(context)];
 
     /// <summary>
     /// Override this method to return a trigger datum.
@@ -61,7 +61,7 @@ public abstract class Trigger<TResult> : Activity<TResult>, ITrigger
     /// <summary>
     /// Override this method to return a trigger payload.
     /// </summary>
-    protected virtual IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context) => new[] { GetTriggerPayload(context) };
+    protected virtual IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context) => [GetTriggerPayload(context)];
 
     /// <summary>
     /// Override this method to return a trigger payload.

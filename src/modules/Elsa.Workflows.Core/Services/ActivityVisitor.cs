@@ -21,14 +21,12 @@ public class ActivityVisitor : IActivityVisitor
     public async Task<ActivityNode> VisitAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var graph = new ActivityNode(activity, "Root");
-        var collectedNodes = new HashSet<ActivityNode>(new[]
-        {
+        var collectedNodes = new HashSet<ActivityNode>([
             graph
-        });
-        var collectedActivities = new HashSet<IActivity>(new[]
-        {
+        ]);
+        var collectedActivities = new HashSet<IActivity>([
             activity
-        });
+        ]);
         var visitorContext = new ActivityVisitorContext
         {
             CollectedActivities = collectedActivities,
@@ -87,7 +85,7 @@ public class ActivityVisitor : IActivityVisitor
 
     private class ActivityVisitorContext
     {
-        public HashSet<IActivity> CollectedActivities { get; set; } = new();
-        public HashSet<ActivityNode> CollectedNodes { get; set; } = new();
+        public HashSet<IActivity> CollectedActivities { get; set; } = [];
+        public HashSet<ActivityNode> CollectedNodes { get; set; } = [];
     }
 }

@@ -464,10 +464,9 @@ public static class ExpressionExecutionContextExtensions
             foreach (var output in activityDescriptor.Outputs)
             {
                 var outputPascalName = output.Name.Pascalize();
-                yield return new ActivityOutputs(activity.Id, activityIdPascalName, new[]
-                {
+                yield return new ActivityOutputs(activity.Id, activityIdPascalName, [
                     outputPascalName
-                });
+                ]);
             }
         }
     }
@@ -548,9 +547,8 @@ public static class ExpressionExecutionContextExtensions
             return obj;
 
         var toArrayMethod = typeof(Enumerable).GetMethod("ToArray")!.MakeGenericMethod(elementType);
-        return toArrayMethod.Invoke(null, new object[]
-        {
+        return toArrayMethod.Invoke(null, [
             enumerable
-        })!;
+        ])!;
     }
 }

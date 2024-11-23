@@ -12,6 +12,6 @@ public class JsonEditorUIHintHandler : IUIHintHandler
     /// <inheritdoc />
     public ValueTask<IEnumerable<Type>> GetPropertyUIHandlersAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken)
     {
-        return new(new[] { typeof(JsonCodeOptionsProvider) });
+        return new([typeof(JsonCodeOptionsProvider)]);
     }
 }
