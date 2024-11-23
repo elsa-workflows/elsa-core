@@ -49,7 +49,9 @@ public class MessageReceived : Trigger<object>
 
     [Input(
         Description = "Optional. A predicate to filter messages.",
-        AutoEvaluate = false
+        AutoEvaluate = false,
+        DefaultSyntax = "JavaScript",
+        UIHint = InputUIHints.ExpressionEditor
     )]
     public Input<bool> Predicate { get; set; } = default!;
     
