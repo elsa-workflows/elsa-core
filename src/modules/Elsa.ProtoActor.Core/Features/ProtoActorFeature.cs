@@ -1,7 +1,7 @@
-using Elsa.Common.Multitenancy;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.ProtoActor.HostedServices;
+using Elsa.ProtoActor.Middleware;
 using Elsa.Workflows.Runtime.ProtoActor.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -22,7 +22,6 @@ namespace Elsa.ProtoActor.Features;
 /// </summary>
 public class ProtoActorFeature(IModule module) : FeatureBase(module)
 {
-    private const string TenantHeaderName = "TenantId";
     private LogLevel _diagnosticsLogLevel = LogLevel.Information;
     private bool _enableMetrics;
     private bool _enableTracing;
@@ -170,27 +169,7 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
                 if (_enableTracing)
                     kind = kind.WithProps(props => props.WithTracing());
 
-                kind = kind.WithProps(props =>
-                {
-                    props = props.WithReceiverMiddleware(next => async (context, envelope) =>
-                    {
-                        var tenantId = envelope.Header.GetValueOrDefault(TenantHeaderName);
-                        if (tenantId != null)
-                        {
-                            var tenantContextInitializer = sp.GetRequiredService<ITenantContextInitializer>();
-                            await tenantContextInitializer.InitializeAsync(tenantId);
-                        }
-
-                        await next(context, envelope);
-                    }).WithSenderMiddleware(next => async (context, target, envelope) =>
-                    {
-                        var tenantAccessor = sp.GetRequiredService<ITenantAccessor>();
-                        if (tenantAccessor.Tenant != null) envelope.WithHeader(TenantHeaderName, tenantAccessor.Tenant.Id);
-                        await next(context, target, envelope);
-                    });
-
-                    return props;
-                });
+                kind = kind.WithProps(props => props.WithMultitenancy(sp));
                 clusterConfig = clusterConfig.WithClusterKind(kind);
             }
 
