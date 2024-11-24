@@ -8,21 +8,20 @@ namespace Elsa.Common.Multitenancy;
 /// </summary>
 public class TenantScope : IAsyncDisposable
 {
-    private readonly IServiceScope _serviceScope;
-
     public TenantScope(IServiceScope serviceScope, ITenantAccessor tenantAccessor, Tenant? tenant)
     {
-        _serviceScope = serviceScope;
+        ServiceScope = serviceScope;
         tenantAccessor.Tenant = tenant;
     }
     
-    public IServiceProvider ServiceProvider => _serviceScope.ServiceProvider;
+    public IServiceScope ServiceScope { get; }
+    public IServiceProvider ServiceProvider => ServiceScope.ServiceProvider;
 
     public async ValueTask DisposeAsync()
     {
-        if (_serviceScope is IAsyncDisposable asyncDisposable)
+        if (ServiceScope is IAsyncDisposable asyncDisposable)
             await asyncDisposable.DisposeAsync();
         else
-            _serviceScope.Dispose();
+            ServiceScope.Dispose();
     }
 }

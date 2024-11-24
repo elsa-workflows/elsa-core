@@ -1,9 +1,10 @@
 using Elsa.Common.Multitenancy;
 using MassTransit;
+using MassTransit.DependencyInjection;
 
 namespace Elsa.MassTransit.Middleware;
 
-public class TenantConsumeMiddleware<T>(ITenantContextInitializer tenantContextInitializer) : IFilter<ConsumeContext<T>> where T : class
+public class TenantConsumeMiddleware<T>(ITenantFinder tenantFinder, ITenantScopeFactory tenantScopeFactory, Bind<IBus, ISetScopedConsumeContext> scopeSetter) : IFilter<ConsumeContext<T>> where T : class
 {
     public void Probe(ProbeContext context)
     {
@@ -12,9 +13,16 @@ public class TenantConsumeMiddleware<T>(ITenantContextInitializer tenantContextI
 
     public async Task Send(ConsumeContext<T> context, IPipe<ConsumeContext<T>> next)
     {
-        if (context.Headers.TryGetHeader(HeaderNames.TenantId, out var tenantId) && tenantId is string tenantIdString) 
-            await tenantContextInitializer.InitializeAsync(tenantIdString, context.CancellationToken);
-
-        await next.Send(context);
+        if (context.Headers.TryGetHeader(HeaderNames.TenantId, out var tenantId) && tenantId is string tenantIdString)
+        {
+            var tenant = await tenantFinder.FindByIdAsync(tenantIdString);
+            await using var tenantScope = tenantScopeFactory.CreateScope(tenant);
+            using var scope = scopeSetter.Value.PushContext(tenantScope.ServiceScope, context);
+            await next.Send(context);
+        }
+        else
+        {
+            await next.Send(context);
+        }
     }
 }
