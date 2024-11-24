@@ -1,5 +1,6 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
+using Elsa.ProtoActor;
 using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
@@ -87,7 +88,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     private IDictionary<string, string> CreateHeaders()
     {
         var headers = new Dictionary<string, string>();
-        if (_tenantAccessor.Tenant != null) headers["TenantId"] = _tenantAccessor.Tenant.Id;
+        if (_tenantAccessor.Tenant != null) headers[HeaderNames.TenantId] = _tenantAccessor.Tenant.Id;
         return headers;
     }
 }

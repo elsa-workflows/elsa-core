@@ -18,7 +18,7 @@ public static class TenantScopeMiddleware
     {
         async Task Receiver(IReceiverContext context, MessageEnvelope envelope)
         {
-            var tenantId = envelope.Header.GetValueOrDefault(Constants.TenantHeaderName);
+            var tenantId = envelope.Header.GetValueOrDefault(HeaderNames.TenantId);
             if (tenantId != null)
             {
                 var tenantFinder = sp.GetRequiredService<ITenantFinder>();
@@ -44,7 +44,7 @@ public static class TenantScopeMiddleware
         async Task Sender(ISenderContext context, PID target, MessageEnvelope envelope)
         {
             var tenantAccessor = sp.GetRequiredService<ITenantAccessor>();
-            if (tenantAccessor.Tenant != null) envelope.WithHeader(Constants.TenantHeaderName, tenantAccessor.Tenant.Id);
+            if (tenantAccessor.Tenant != null) envelope.WithHeader(HeaderNames.TenantId, tenantAccessor.Tenant.Id);
             await next(context, target, envelope);
         }
 
