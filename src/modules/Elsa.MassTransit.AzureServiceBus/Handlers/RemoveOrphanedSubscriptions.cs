@@ -45,7 +45,7 @@ public class RemoveOrphanedSubscriptions(MessageTopologyProvider topologyProvide
             }
             catch (ServiceBusException ex) when (ex.Reason == ServiceBusFailureReason.MessagingEntityNotFound)
             {
-                logger.LogWarning(ex, "Service bus entity {entityPath} was not found", ex.EntityPath);
+                logger.LogWarning("Unable to remove orphaned subscription: Service bus entity {entityPath} was not found, most likely due to it being removed automatically", ex.EntityPath);
             }
         }
     }
