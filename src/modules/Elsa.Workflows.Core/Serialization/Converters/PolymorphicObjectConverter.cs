@@ -271,13 +271,10 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
         {
             if (shouldWriteTypeField)
             {
-                var typeOptions = newOptions.Clone();
-                typeOptions.Converters.RemoveWhere(c => c.GetType() != typeof(TypeJsonConverter));
-
-                if (typeOptions.Converters.Any())
+                if (newOptions.Converters.OfType<TypeJsonConverter>().FirstOrDefault() is { } typeJsonConverter)
                 {
-                    var typeValue = JsonSerializer.Serialize(type, typeOptions).Trim('"');
-                    writer.WriteString(TypePropertyName, typeValue);
+                    writer.WritePropertyName(TypePropertyName);
+                    typeJsonConverter.Write(writer, type, newOptions);
                 }
                 else
                 {
