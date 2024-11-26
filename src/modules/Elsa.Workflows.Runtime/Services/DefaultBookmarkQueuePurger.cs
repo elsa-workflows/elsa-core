@@ -2,29 +2,28 @@ using Elsa.Common;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime;
 
 [UsedImplicitly]
-public class DefaultBookmarkQueuePurger(IBookmarkQueueStore store, ISystemClock systemClock, ILogger<DefaultBookmarkQueuePurger> logger) : IBookmarkQueuePurger
+public class DefaultBookmarkQueuePurger(IBookmarkQueueStore store, ISystemClock systemClock, IOptions<BookmarkQueuePurgeOptions> options, ILogger<DefaultBookmarkQueuePurger> logger) : IBookmarkQueuePurger
 {
-    private readonly TimeSpan _ttl = TimeSpan.FromMinutes(1);
-    private readonly int _batchSize = 50;
-
     public async Task PurgeAsync(CancellationToken cancellationToken = default)
     {
         var currentPage = 0;
         var now = systemClock.UtcNow;
-        var thresholdDate = now - _ttl;
+        var thresholdDate = now - options.Value.Ttl;
 
         logger.LogInformation("Purging bookmark queue items older than {ThresholdDate}.", thresholdDate);
 
         while (true)
         {
-            var pageArgs = PageArgs.FromPage(currentPage, _batchSize);
+            var pageArgs = PageArgs.FromPage(currentPage, options.Value.BatchSize);
             var filter = new BookmarkQueueFilter
             {
                 CreatedAtLessThan = thresholdDate
