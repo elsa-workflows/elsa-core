@@ -51,15 +51,14 @@ public class TypeJsonConverter : JsonConverter<Type>
             var elementType = value.GenericTypeArguments.First();
             var typedEnumerable = typeof(IEnumerable<>).MakeGenericType(elementType);
 
-            if (typedEnumerable.IsAssignableFrom(value))
+            if (typedEnumerable.IsAssignableFrom(value) && _wellKnownTypeRegistry.TryGetAlias(elementType, out var elementTypeAlias))
             {
-                var elementTypeAlias = _wellKnownTypeRegistry.TryGetAlias(elementType, out var elementAlias) ? elementAlias : value.GetSimpleAssemblyQualifiedName();
-                JsonSerializer.Serialize(writer, $"{elementTypeAlias}[]", options);
+                writer.WriteStringValue($"{elementTypeAlias}[]");
                 return;
             }
         }
 
         var typeAlias = _wellKnownTypeRegistry.TryGetAlias(value, out var @alias) ? alias : value.GetSimpleAssemblyQualifiedName();
-        JsonSerializer.Serialize(writer, typeAlias, options);
+        writer.WriteStringValue(typeAlias);
     }
 }
