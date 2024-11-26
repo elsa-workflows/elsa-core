@@ -15,8 +15,8 @@ message StartWorkflowRequest {
   string InstanceId = 2;
   string VersionOptions = 3;
   optional string CorrelationId = 4;
-  optional Input input = 5;
-  optional Properties properties = 6;
+  optional Input Input = 5;
+  optional Properties Properties = 6;
   optional string TriggerActivityId = 7;
   optional bool IsExistingInstance = 8;
 }
@@ -29,6 +29,7 @@ message WorkflowExecutionResponse {
   repeated Bookmark Bookmarks = 5;
   repeated ActivityIncident Incidents = 6;
   optional string TriggeredActivityId = 7;
+  optional Output Output = 8;
 }
 
 message ActivityIncident {
