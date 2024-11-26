@@ -68,12 +68,12 @@ const bool useAzureServiceBus = false;
 const bool useKafka = false;
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated requests.
-const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
-const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.ProtoActor;
+const WorkflowRuntime workflowRuntime = WorkflowRuntime.Distributed;
+const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
 const bool useAgents = false;
-const bool useSecrets = true;
+const bool useSecrets = false;
 const bool disableVariableWrappers = false;
 
 var builder = WebApplication.CreateBuilder(args);
