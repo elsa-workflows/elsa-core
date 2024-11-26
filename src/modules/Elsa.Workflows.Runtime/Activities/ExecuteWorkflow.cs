@@ -5,6 +5,7 @@ using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
+using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
@@ -46,13 +47,34 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
     /// </summary>
     [Input(Description = "The input to send to the workflow.")]
     public Input<IDictionary<string, object>?> Input { get; set; } = default!;
+    
+    /// <summary>
+    /// True to wait for the child workflow to complete before completing this activity. If not set, the child workflow will be executed until it either completes or goes idle before this activity completes.
+    /// </summary>
+    [Input(Description = "Wait for the child workflow to complete before completing this activity.")]
+    public Input<bool> WaitForCompletion { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var result = await ExecuteWorkflowAsync(context);
-        context.SetResult(result);
-        await context.CompleteActivityAsync();
+        var waitForCompletion = WaitForCompletion.Get(context);
+        
+        if(!waitForCompletion || result.Status == WorkflowStatus.Finished)
+        {
+            context.SetResult(result);
+            await context.CompleteActivityAsync();
+            return;
+        }
+        
+        // Since the child workflow is still running, we need to wait for it to complete using a bookmark.
+        var bookmarkOptions = new CreateBookmarkArgs
+        {
+            Callback = OnChildWorkflowCompletedAsync,
+            Stimulus = new ExecuteWorkflowStimulus(result.WorkflowInstanceId),
+            IncludeActivityInstanceId = false
+        };
+        context.CreateBookmark(bookmarkOptions);
     }
 
     private async ValueTask<ExecuteWorkflowResult> ExecuteWorkflowAsync(ActivityExecutionContext context)
@@ -86,5 +108,12 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
         };
 
         return info;
+    }
+    
+    private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
+    {
+        var input = context.WorkflowInput;
+        context.Set(Result, input);
+        await context.CompleteActivityAsync();
     }
 }

@@ -38,6 +38,7 @@ using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Stores;
 using Elsa.Workflows.Runtime.Tasks;
 using JetBrains.Annotations;
@@ -527,8 +528,10 @@ services.Configure<RecurringTaskOptions>(options =>
 {
     options.Schedule.ConfigureTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(30));
     options.Schedule.ConfigureTask<UpdateExpiredSecretsRecurringTask>(TimeSpan.FromHours(4));
-    options.Schedule.ConfigureTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(60));
+    options.Schedule.ConfigureTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(11));
 });
+
+services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(10));
 
 //services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.AddHealthChecks();
