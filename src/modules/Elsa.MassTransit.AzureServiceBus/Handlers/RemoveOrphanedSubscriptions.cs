@@ -45,7 +45,9 @@ public class RemoveOrphanedSubscriptions(MessageTopologyProvider topologyProvide
             }
             catch (ServiceBusException ex) when (ex.Reason == ServiceBusFailureReason.MessagingEntityNotFound)
             {
-                logger.LogWarning("Unable to remove orphaned subscription: Service bus entity {entityPath} was not found, most likely due to it being removed automatically", ex.EntityPath);
+                // Queues are created with a TTL, which causes them to be deleted automatically.
+                // We still need to try to delete them in case the queue is still receiving messages, which prevents the auto-deletion.
+                logger.LogInformation("Unable to remove orphaned subscription: Service bus entity {entityPath} was not found, most likely due to it being removed automatically", ex.EntityPath);
             }
         }
     }
