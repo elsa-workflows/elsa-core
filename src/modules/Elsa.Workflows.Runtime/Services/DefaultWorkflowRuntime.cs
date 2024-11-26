@@ -168,7 +168,7 @@ public class DefaultWorkflowRuntime(
             await workflowHost.ResumeWorkflowAsync(resumeWorkflowOptions, applicationCancellationToken);
             await workflowHost.PersistStateAsync(systemCancellationToken);
             workflowState = workflowHost.WorkflowState;
-            return new WorkflowExecutionResult(workflowState.Id, workflowState.Status, workflowState.SubStatus, workflowState.Bookmarks, workflowState.Incidents);
+            return new WorkflowExecutionResult(workflowState.Id, workflowState.Status, workflowState.SubStatus, workflowState.Bookmarks, workflowState.Incidents, null, workflowState.Output);
         }
     }
 
@@ -349,10 +349,10 @@ public class DefaultWorkflowRuntime(
     {
         var workflowInstanceId = string.IsNullOrEmpty(options?.InstanceId)
             ? identityGenerator.GenerateId()
-            : options?.InstanceId;
+            : options.InstanceId;
         var cancellationTokens = options?.CancellationTokens ?? default;
 
-        await using (await AcquireLockAsync(workflowInstanceId!, cancellationTokens.SystemCancellationToken))
+        await using (await AcquireLockAsync(workflowInstanceId, cancellationTokens.SystemCancellationToken))
         {
             var input = options?.Input;
             var correlationId = options?.CorrelationId;
@@ -377,7 +377,8 @@ public class DefaultWorkflowRuntime(
                 workflowState.SubStatus,
                 workflowState.Bookmarks,
                 workflowState.Incidents,
-                default);
+                default,
+                workflowState.Output);
         }
     }
 
@@ -426,8 +427,10 @@ public class DefaultWorkflowRuntime(
                 });
 
             if (resumeResult != null)
-                resumedWorkflows.Add(new WorkflowExecutionResult(workflowInstanceId, resumeResult.Status,
-                    resumeResult.SubStatus, resumeResult.Bookmarks, resumeResult.Incidents));
+                resumedWorkflows.Add(resumeResult with
+                {
+                    WorkflowInstanceId = workflowInstanceId
+                });
         }
 
         return resumedWorkflows;

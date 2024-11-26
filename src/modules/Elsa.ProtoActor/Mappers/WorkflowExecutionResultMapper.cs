@@ -42,7 +42,8 @@ internal class WorkflowExecutionResultMapper
             _workflowSubStatusMapper.Map(source.SubStatus),
             _bookmarkMapper.Map(source.Bookmarks).ToList(),
             _activityIncidentStateMapper.Map(source.Incidents).ToList(),
-            source.TriggeredActivityId.NullIfEmpty()
+            source.TriggeredActivityId.NullIfEmpty(),
+            source.Output.Deserialize()
         );
     }
 
@@ -61,6 +62,7 @@ internal class WorkflowExecutionResultMapper
             Bookmarks = { _bookmarkMapper.Map(source.Bookmarks) },
             Incidents = { _activityIncidentStateMapper.Map(source.Incidents).ToList() },
             TriggeredActivityId = source.TriggeredActivityId,
+            Output = source.Output.SerializeOutput()
         };
     }
 }

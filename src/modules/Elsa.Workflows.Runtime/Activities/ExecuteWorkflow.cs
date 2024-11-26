@@ -5,7 +5,8 @@ using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Options;
+using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
@@ -61,7 +62,7 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
         var correlationId = CorrelationId.GetOrDefault(context);
-        var workflowInvoker = context.GetRequiredService<IWorkflowRunner>();
+        var workflowRuntime = context.GetRequiredService<IWorkflowRuntime>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
         var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published, context.CancellationToken);
@@ -69,21 +70,21 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
         if (workflowGraph == null)
             throw new Exception($"No published version of workflow definition with ID {workflowDefinitionId} found.");
 
-        var options = new RunWorkflowOptions
+        var options = new StartWorkflowRuntimeParams
         {
             ParentWorkflowInstanceId = context.WorkflowExecutionContext.Id,
             Input = input,
             CorrelationId = correlationId,
-            WorkflowInstanceId = identityGenerator.GenerateId()
+            InstanceId = identityGenerator.GenerateId()
         };
 
-        var workflowResult = await workflowInvoker.RunAsync(workflowGraph, options, context.CancellationToken);
+        var workflowResult = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, options);
         var info = new ExecuteWorkflowResult
         {
-            WorkflowInstanceId = options.WorkflowInstanceId,
-            Status = workflowResult.WorkflowState.Status,
-            SubStatus = workflowResult.WorkflowState.SubStatus,
-            Output = workflowResult.WorkflowState.Output
+            WorkflowInstanceId = workflowResult.WorkflowInstanceId,
+            Status = workflowResult.Status,
+            SubStatus = workflowResult.SubStatus,
+            Output = workflowResult.Output
         };
 
         return info;
