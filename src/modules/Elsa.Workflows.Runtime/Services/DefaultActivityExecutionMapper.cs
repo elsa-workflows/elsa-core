@@ -1,6 +1,9 @@
+using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.LogPersistence;
+using Elsa.Workflows.LogPersistence.Strategies;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
@@ -14,11 +17,13 @@ namespace Elsa.Workflows.Runtime;
 public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 {
     private readonly IOptions<ManagementOptions> _options;
+    private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly IDictionary<string, ILogPersistenceStrategy> _logPersistenceStrategies;
 
-    public DefaultActivityExecutionMapper(IOptions<ManagementOptions> options, ILogPersistenceStrategyService logPersistenceStrategyService)
+    public DefaultActivityExecutionMapper(IOptions<ManagementOptions> options, ILogPersistenceStrategyService logPersistenceStrategyService, IExpressionEvaluator expressionEvaluator)
     {
         _options = options;
+        _expressionEvaluator = expressionEvaluator;
         _logPersistenceStrategies = logPersistenceStrategyService.ListStrategies().ToDictionary(x => x.GetType().GetSimpleAssemblyQualifiedName(), x => x);
     }
 
@@ -58,16 +63,18 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         var outputs = GetOutputs(source);
 
         outputs = await StorePropertyUsingPersistenceMode(
+            source,
             outputs,
             legacyActivityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, object>())!,
-            activityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, object>())!,
+            activityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, LogPersistenceConfiguration>())!,
             activityPersistencePropertyDefault,
             cancellationToken);
 
         var inputs = await StorePropertyUsingPersistenceMode(
-            source.ActivityState, 
+            source, 
+            source.ActivityState,
             legacyActivityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!,
-            activityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!,
+            activityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, LogPersistenceConfiguration>())!,
             activityPersistencePropertyDefault,
             cancellationToken);
 
@@ -117,9 +124,10 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
     }
 
     private async Task<Dictionary<string, object?>> StorePropertyUsingPersistenceMode(
+        ActivityExecutionContext activityExecutionContext,
         IDictionary<string, object?> state,
-        IDictionary<string, object> persistenceModeConfiguration,
-        IDictionary<string, object> persistenceStrategyConfiguration,
+        IDictionary<string, object> obsoletePersistenceModeConfiguration,
+        IDictionary<string, LogPersistenceConfiguration> persistenceStrategyConfiguration,
         LogPersistenceMode defaultLogPersistenceMode,
         CancellationToken cancellationToken)
     {
@@ -128,17 +136,27 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         foreach (var value in state)
         {
             var propKey = value.Key.Camelize();
-            var strategy = persistenceStrategyConfiguration.GetValueOrDefault(propKey) is string strategyTypeName ? _logPersistenceStrategies.TryGetValue(strategyTypeName, out var v) ? v : null : null;
+            var logPersistenceConfig = persistenceStrategyConfiguration.GetValueOrDefault(propKey, () => null);
             var mode = defaultLogPersistenceMode;
 
-            if (strategy != null)
+            if (logPersistenceConfig != null)
             {
-                var strategyContext = new LogPersistenceStrategyContext(cancellationToken);
-                mode = await strategy.GetPersistenceModeAsync(strategyContext);
+                if (logPersistenceConfig.EvaluationMode == LogPersistenceEvaluationMode.Strategy)
+                {
+                    var strategyTypeName = logPersistenceConfig.StrategyType ?? typeof(Inherit).GetSimpleAssemblyQualifiedName();
+                    var strategy = _logPersistenceStrategies.TryGetValue(strategyTypeName, out var v) ? v : new Inherit();
+                    var strategyContext = new LogPersistenceStrategyContext(cancellationToken);
+                    mode = await strategy.GetPersistenceModeAsync(strategyContext);
+                }
+                else
+                {
+                    var expression = logPersistenceConfig.Expression ?? Expression.LiteralExpression("Inherit");
+                    mode = await _expressionEvaluator.EvaluateAsync<LogPersistenceMode>(expression, activityExecutionContext.ExpressionExecutionContext);
+                }
             }
             else
             {
-                mode = persistenceModeConfiguration.GetValueOrDefault(propKey, () => defaultLogPersistenceMode);
+                mode = obsoletePersistenceModeConfiguration.GetValueOrDefault(propKey, () => defaultLogPersistenceMode);
             }
 
             if (mode == LogPersistenceMode.Include || mode == LogPersistenceMode.Inherit && defaultLogPersistenceMode is LogPersistenceMode.Include or LogPersistenceMode.Inherit)
@@ -196,4 +214,17 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         
         return outputs;
     }
+}
+
+public class LogPersistenceConfiguration
+{
+    public LogPersistenceEvaluationMode EvaluationMode { get; set; }
+    public string? StrategyType { get; set; }
+    public Expression? Expression { get; set; }
+}
+
+public enum LogPersistenceEvaluationMode
+{
+    Strategy,
+    Expression
 }

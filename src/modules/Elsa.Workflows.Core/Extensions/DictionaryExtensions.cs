@@ -9,6 +9,18 @@ public static class DictionaryExtensions
     public static bool TryGetValue<T>(this IDictionary<string, object> dictionary, IEnumerable<string> keys, out T value) => dictionary.TryGetValue<string, T>(keys, out value);
     public static bool TryGetValue<T>(this IDictionary<object, object> dictionary, string key, out T value) => dictionary.TryGetValue<object, T>(key, out value);
 
+    public static bool TryGetValue<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key, out T value)
+    {
+        if (!dictionary.TryGetValue(key, out var item))
+        {
+            value = default!;
+            return false;
+        }
+
+        value = item;
+        return true;
+    }
+    
     public static bool TryGetValue<TKey, T>(this IDictionary<TKey, object> dictionary, TKey key, out T value)
     {
         if (!dictionary.TryGetValue(key, out var item))
@@ -38,6 +50,7 @@ public static class DictionaryExtensions
 
     public static T? GetValue<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key) => ConvertValue<T>(dictionary[key]);
     public static T? GetValue<T>(this IDictionary<string, object> dictionary, string key) => ConvertValue<T>(dictionary[key]);
+    public static T? GetValueOrDefault<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key, Func<T?> defaultValueFactory) => TryGetValue(dictionary, key, out var value) ? value : defaultValueFactory();
     
     public static T? GetValueOrDefault<TKey, T>(this IDictionary<TKey, object> dictionary, TKey key, Func<T?> defaultValueFactory) => TryGetValue<TKey, T>(dictionary, key, out var value) ? value : defaultValueFactory();
     public static T? GetValueOrDefault<TKey, T>(this IDictionary<TKey, object> dictionary, TKey key) => GetValueOrDefault<TKey, T>(dictionary, key, () => default);
