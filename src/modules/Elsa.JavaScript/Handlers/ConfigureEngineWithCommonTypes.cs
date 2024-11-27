@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.JavaScript.Notifications;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.LogPersistence;
 using JetBrains.Annotations;
 
 namespace Elsa.JavaScript.Handlers;
@@ -22,6 +23,7 @@ public class ConfigureEngineWithCommonTypes : INotificationHandler<EvaluatingJav
         engine.RegisterType<TimeSpan>();
         engine.RegisterType<Guid>();
         engine.RegisterType<Random>();
+        engine.RegisterType<LogPersistenceMode>();
         
         return Task.CompletedTask;
     }

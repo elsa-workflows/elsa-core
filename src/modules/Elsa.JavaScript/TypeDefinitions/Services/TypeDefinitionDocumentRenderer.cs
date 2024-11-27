@@ -40,9 +40,17 @@ public class TypeDefinitionDocumentRenderer : ITypeDefinitionDocumentRenderer
     {
         output.AppendLine($"declare {typeDefinition.DeclarationKeyword} {typeDefinition.Name} {{");
 
-        foreach (var property in typeDefinition.Properties)
-            Render(property, output);
-        
+        if (typeDefinition.DeclarationKeyword == "enum")
+        {
+            foreach (var property in typeDefinition.Properties)
+                RenderEnumMember(property, output);
+        }
+        else
+        {
+            foreach (var property in typeDefinition.Properties)
+                Render(property, output);
+        }
+
         foreach (var method in typeDefinition.Methods)
             RenderMethod(method, output);
 
@@ -50,6 +58,7 @@ public class TypeDefinitionDocumentRenderer : ITypeDefinitionDocumentRenderer
     }
 
     private void Render(PropertyDefinition property, StringBuilder output) => output.AppendLine($"{property.Name}{(property.IsOptional ? "?" : "")}: {property.Type};");
+    private void RenderEnumMember(PropertyDefinition property, StringBuilder output) => output.AppendLine($"{property.Name} = \"{property.Name}\";");
     private void Render(VariableDefinition variable, StringBuilder output) => output.AppendLine($"declare var {variable.Name}: {variable.Type};");
     string RenderParameter(ParameterDefinition parameter) => $"{parameter.Name}{(parameter.IsOptional ? "?" : "")}: {parameter.Type}";
     string RenderParameters(IEnumerable<ParameterDefinition> parameters) => string.Join(", ", parameters.Select(RenderParameter));

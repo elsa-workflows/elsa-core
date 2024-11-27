@@ -36,6 +36,9 @@ public class TypeDescriber : ITypeDescriber
 
     private IEnumerable<FunctionDefinition> GetMethodDefinitions(Type type)
     {
+        if(type.IsEnum)
+            yield break;
+        
 #pragma warning disable IL2070
         var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(x => !x.IsSpecialName).ToList();
 #pragma warning restore IL2070
@@ -68,6 +71,22 @@ public class TypeDescriber : ITypeDescriber
 
     private IEnumerable<PropertyDefinition> GetPropertyDefinitions([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type)
     {
+        // If the type is an enum, enumerate its members.
+        if (type.IsEnum)
+        {
+            foreach (var name in Enum.GetNames(type))
+            {
+                yield return new PropertyDefinition
+                {
+                    Name = name,
+                    Type = "string",
+                    IsOptional = false,
+                };
+            }
+
+            yield break;
+        }
+        
         var properties = type.GetProperties();
 
         foreach (var property in properties)
@@ -86,8 +105,8 @@ public class TypeDescriber : ITypeDescriber
         {
             { IsInterface: true } => "interface",
             { IsClass: true } => "class",
-            { IsValueType: true } => "class",
             { IsEnum: true } => "enum",
+            { IsValueType: true, IsEnum: false } => "class",
             _ => "interface"
         };
 }

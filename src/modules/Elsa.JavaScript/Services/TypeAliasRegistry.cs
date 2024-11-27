@@ -1,6 +1,7 @@
 using System.Dynamic;
 using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Extensions;
+using Elsa.Workflows.LogPersistence;
 
 namespace Elsa.JavaScript.Services;
 
@@ -32,6 +33,7 @@ public class TypeAliasRegistry : ITypeAliasRegistry
         this.RegisterType<DateOnly>("Date");
         this.RegisterType<TimeOnly>("Date");
         this.RegisterType<IDictionary<string, object>>("ObjectDictionary");
+        this.RegisterType<LogPersistenceMode>("LogPersistenceMode");
     }
 
     /// <inheritdoc />

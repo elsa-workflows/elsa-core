@@ -215,16 +215,3 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         return outputs;
     }
 }
-
-public class LogPersistenceConfiguration
-{
-    public LogPersistenceEvaluationMode EvaluationMode { get; set; }
-    public string? StrategyType { get; set; }
-    public Expression? Expression { get; set; }
-}
-
-public enum LogPersistenceEvaluationMode
-{
-    Strategy,
-    Expression
-}
