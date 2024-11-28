@@ -25,7 +25,7 @@ internal class VariableTypeDefinitionProvider(ITypeDescriber typeDescriber) : Ty
         var variableTypeQuery =
             from variable in variables
             let variableType = variable.GetVariableType()
-            where (variableType.IsClass || variableType.IsInterface) && !variableType.IsPrimitive && !excludedTypes.Any(x => x(variableType))
+            where (variableType.IsClass || variableType.IsInterface || variableType.IsEnum) && !variableType.IsPrimitive && !excludedTypes.Any(x => x(variableType))
             select variableType;
 
         var variableTypes = variableTypeQuery.Distinct();

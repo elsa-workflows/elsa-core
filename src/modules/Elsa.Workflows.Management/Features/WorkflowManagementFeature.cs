@@ -47,6 +47,7 @@ public class WorkflowManagementFeature : FeatureBase
     private const string LookupsCategory = "Lookups";
     private const string DynamicCategory = "Dynamic";
     private const string DataCategory = "Data";
+    private const string SystemCategory = "System";
 
     private string CompressionAlgorithm { get; set; } = nameof(None);
     private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
@@ -86,7 +87,8 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(JsonNode), DynamicCategory, "A JSON node for reading and writing a JSON structure."),
         new(typeof(JsonObject), DynamicCategory, "A JSON object for reading and writing a JSON structure."),
         new(typeof(byte[]), DataCategory, "A byte array."),
-        new(typeof(Stream), DataCategory, "A stream.")
+        new(typeof(Stream), DataCategory, "A stream."),
+        new(typeof(LogPersistenceMode), SystemCategory, "A LogPersistenceMode enum value.")
     ];
 
     /// <summary>
