@@ -10,7 +10,7 @@ namespace Elsa.JavaScript.Activities;
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
 /// </summary>
 [UsedImplicitly]
-internal class RunJavaScriptFunctionsDefinitionProvider() : FunctionDefinitionProvider
+internal class RunJavaScriptFunctionsDefinitionProvider : FunctionDefinitionProvider
 {
     protected override IEnumerable<FunctionDefinition> GetFunctionDefinitions(TypeDefinitionContext context)
     {

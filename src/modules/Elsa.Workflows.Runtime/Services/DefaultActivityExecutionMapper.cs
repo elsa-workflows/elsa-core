@@ -12,6 +12,7 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.State;
 using Humanizer;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime;
@@ -22,16 +23,19 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
     private readonly JsonSerializerOptions _logPersistenceConfigSerializerOptions;
     private readonly IOptions<ManagementOptions> _options;
     private readonly IExpressionEvaluator _expressionEvaluator;
+    private readonly ILogger<DefaultActivityExecutionMapper> _logger;
     private readonly IDictionary<string, ILogPersistenceStrategy> _logPersistenceStrategies;
 
     public DefaultActivityExecutionMapper(
         IOptions<ManagementOptions> options,
         ILogPersistenceStrategyService logPersistenceStrategyService,
         IExpressionEvaluator expressionEvaluator,
-        IExpressionDescriptorRegistry expressionDescriptorRegistry)
+        IExpressionDescriptorRegistry expressionDescriptorRegistry,
+        ILogger<DefaultActivityExecutionMapper> logger)
     {
         _options = options;
         _expressionEvaluator = expressionEvaluator;
+        _logger = logger;
         _logPersistenceStrategies = logPersistenceStrategyService.ListStrategies().ToDictionary(x => x.GetType().GetSimpleAssemblyQualifiedName(), x => x);
 
         _logPersistenceConfigSerializerOptions = new JsonSerializerOptions
@@ -71,7 +75,8 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 
         var cancellationToken = source.WorkflowExecutionContext.CancellationToken;
         var workflow = (Workflow?)source.GetAncestors().FirstOrDefault(x => x.Activity is Workflow)?.Activity ?? source.WorkflowExecutionContext.Workflow;
-        var workflowPersistenceProperty = await GetDefaultPersistenceModeAsync(source.WorkflowExecutionContext.ExpressionExecutionContext!, workflow.CustomProperties, () => _options.Value.LogPersistenceMode, cancellationToken);
+        var rootActivityExecutionContext = source.WorkflowExecutionContext.ActivityExecutionContexts.First(x => x.ParentActivityExecutionContext == null);
+        var workflowPersistenceProperty = await GetDefaultPersistenceModeAsync(rootActivityExecutionContext.ExpressionExecutionContext, workflow.CustomProperties, () => _options.Value.LogPersistenceMode, cancellationToken);
         var activityPersistencePropertyDefault = await GetDefaultPersistenceModeAsync(source.ExpressionExecutionContext, source.Activity.CustomProperties, () => workflowPersistenceProperty, cancellationToken);
         var legacyActivityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LegacyLogPersistenceModeKey, () => new Dictionary<string, object?>());
         var activityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceConfigKey, () => new Dictionary<string, object?>());
@@ -202,7 +207,16 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             return defaultMode();
 
         var expression = config.Expression;
-        return await _expressionEvaluator.EvaluateAsync<LogPersistenceMode>(expression, executionContext);
+
+        try
+        {
+            return await _expressionEvaluator.EvaluateAsync<LogPersistenceMode>(expression, executionContext);
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning(e, "Error evaluating log persistence expression");
+            return defaultMode();
+        }
     }
 
     private static ActivityStatus GetAggregateStatus(ActivityExecutionContext context)

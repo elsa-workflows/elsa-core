@@ -50,7 +50,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
         var engineOptions = new Jint.Options
         {
-            ExperimentalFeatures = ExperimentalFeature.TaskInterop
+            ExperimentalFeatures = ExperimentalFeature.TaskInterop,
         };
 
         ConfigureClrAccess(engineOptions);
@@ -59,14 +59,14 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
         await mediator.SendAsync(new CreatingJavaScriptEngine(engineOptions, context), cancellationToken);
         _jintOptions.ConfigureEngineOptionsCallback(engineOptions, context);
-        
+
         var engine = new Engine(engineOptions);
 
         configureEngine?.Invoke(engine);
         ConfigureArgumentGetters(engine, options);
         ConfigureConfigurationAccess(engine);
         _jintOptions.ConfigureEngineCallback(engine, context);
-        
+
         return engine;
     }
 
@@ -75,7 +75,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         if (_jintOptions.AllowClrAccess)
             options.AllowClr();
     }
-    
+
     private void ConfigureObjectWrapper(Jint.Options options)
     {
         options.SetWrapObjectHandler((engine, target, type) =>
@@ -91,7 +91,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
     private void ConfigureObjectConverters(Jint.Options options)
     {
-        options.Interop.ObjectConverters.Add(new ByteArrayConverter());
+        options.Interop.ObjectConverters.AddRange([new ByteArrayConverter(), new EnumToStringConverter()]);
     }
 
     private void ConfigureArgumentGetters(Engine engine, ExpressionEvaluatorOptions options)
@@ -99,7 +99,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         foreach (var argument in options.Arguments)
             engine.SetValue($"get{argument.Key}", (Func<object?>)(() => argument.Value));
     }
-    
+
     private void ConfigureConfigurationAccess(Engine engine)
     {
         if (_jintOptions.AllowConfigurationAccess)
