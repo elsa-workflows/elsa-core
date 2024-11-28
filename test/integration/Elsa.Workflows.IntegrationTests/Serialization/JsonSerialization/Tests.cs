@@ -89,6 +89,23 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(typeof(List<TestObject>), result.GetType());
     }
 
+    [Fact]
+    public void RoundtripPrimitiveCollections()
+    {
+        var dict = new Dictionary<string, object>
+        {
+            { "Content", new List<Guid>
+                {
+                   Guid.NewGuid()
+                }
+            }
+        };
+        var jsonSerialized = SerializeUsingPayloadSerializer(dict);
+        var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonSerialized);
+        var result = transformationModel["Content"];
+        Assert.Equal(typeof(List<Guid>), result.GetType());
+    }
+
     private string SerializeUsingPayloadSerializer(object obj)
     {
         var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
