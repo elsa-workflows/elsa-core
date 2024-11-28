@@ -61,10 +61,10 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 
         /* The following JSON structure is expected to be found in the custom properties of the workflow and activity:
          * {
-         *      "logPersistenceStrategy": {
-         *          "default": "null",
-         *          "inputs": { k : v },
-         *          "outputs": { k: v }
+         *      "logPersistenceConfig": {
+         *          "default": { "evaluationMode": "Strategy", "strategyType": "Elsa.Workflows.LogPersistence.Strategies.Inherit, Elsa.Workflows.Core", "expression": "..." },
+         *          "inputs": { "input1" : { "evaluationMode": "Strategy", "strategyType": "Elsa.Workflows.LogPersistence.Strategies.Inherit, Elsa.Workflows.Core", "expression": "..." } },
+         *          "outputs": { "output1" : { "evaluationMode": "Strategy", "strategyType": "Elsa.Workflows.LogPersistence.Strategies.Inherit, Elsa.Workflows.Core", "expression": "..." } }
          *          }
          *  }
          */
