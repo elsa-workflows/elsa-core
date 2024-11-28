@@ -28,7 +28,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
     }
 
     private const string LegacyLogPersistenceModeKey = "logPersistenceMode";
-    private const string LogPersistenceStrategyKey = "logPersistenceStrategy";
+    private const string LogPersistenceConfigKey = "logPersistenceConfig";
 
     /// <inheritdoc />
     public async Task<ActivityExecutionRecord> MapAsync(ActivityExecutionContext source)
@@ -58,7 +58,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         var workflowPersistenceProperty = await GetDefaultPersistenceModeAsync(workflow.CustomProperties, () => _options.Value.LogPersistenceMode, cancellationToken);
         var activityPersistencePropertyDefault = await GetDefaultPersistenceModeAsync(source.Activity.CustomProperties, () => workflowPersistenceProperty, cancellationToken);
         var legacyActivityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LegacyLogPersistenceModeKey, () => new Dictionary<string, object?>());
-        var activityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceStrategyKey, () => new Dictionary<string, object?>());
+        var activityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceConfigKey, () => new Dictionary<string, object?>());
         var payload = GetPayload(source);
         var outputs = GetOutputs(source);
 
@@ -102,7 +102,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
     private async Task<LogPersistenceMode> GetDefaultPersistenceModeAsync(IDictionary<string, object> customProperties, Func<LogPersistenceMode> defaultFactory, CancellationToken cancellationToken)
     {
         var legacyProperties = customProperties.GetValueOrDefault<IDictionary<string, object?>>(LegacyLogPersistenceModeKey, () => new Dictionary<string, object?>());
-        var properties = customProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceStrategyKey, () => new Dictionary<string, object?>());
+        var properties = customProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceConfigKey, () => new Dictionary<string, object?>());
         var defaultPersistenceStrategyTypeName = properties!.GetValueOrDefault<string>("default");
 
         if (defaultPersistenceStrategyTypeName == null)
