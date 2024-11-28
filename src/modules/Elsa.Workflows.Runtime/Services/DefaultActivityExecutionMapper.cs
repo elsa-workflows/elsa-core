@@ -200,7 +200,8 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
                 return defaultMode();
 
             var strategyContext = new LogPersistenceStrategyContext(cancellationToken);
-            return await strategy.GetPersistenceModeAsync(strategyContext);
+            var logMode = await strategy.GetPersistenceModeAsync(strategyContext);
+            return logMode == LogPersistenceMode.Inherit ? defaultMode() : logMode;
         }
 
         if (config.Expression == null)
