@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
@@ -7,6 +9,7 @@ using Elsa.Workflows.LogPersistence.Strategies;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.State;
 using Humanizer;
 using Microsoft.Extensions.Options;
@@ -16,15 +19,28 @@ namespace Elsa.Workflows.Runtime;
 /// <inheritdoc />
 public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 {
+    private readonly JsonSerializerOptions _logPersistenceConfigSerializerOptions;
     private readonly IOptions<ManagementOptions> _options;
     private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly IDictionary<string, ILogPersistenceStrategy> _logPersistenceStrategies;
 
-    public DefaultActivityExecutionMapper(IOptions<ManagementOptions> options, ILogPersistenceStrategyService logPersistenceStrategyService, IExpressionEvaluator expressionEvaluator)
+    public DefaultActivityExecutionMapper(
+        IOptions<ManagementOptions> options,
+        ILogPersistenceStrategyService logPersistenceStrategyService,
+        IExpressionEvaluator expressionEvaluator,
+        IExpressionDescriptorRegistry expressionDescriptorRegistry)
     {
         _options = options;
         _expressionEvaluator = expressionEvaluator;
         _logPersistenceStrategies = logPersistenceStrategyService.ListStrategies().ToDictionary(x => x.GetType().GetSimpleAssemblyQualifiedName(), x => x);
+
+        _logPersistenceConfigSerializerOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        }.WithConverters(
+            new ExpressionJsonConverterFactory(expressionDescriptorRegistry),
+            new JsonStringEnumConverter(),
+            new ExpandoObjectConverterFactory());
     }
 
     private const string LegacyLogPersistenceModeKey = "logPersistenceMode";
@@ -55,26 +71,26 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 
         var cancellationToken = source.WorkflowExecutionContext.CancellationToken;
         var workflow = (Workflow?)source.GetAncestors().FirstOrDefault(x => x.Activity is Workflow)?.Activity ?? source.WorkflowExecutionContext.Workflow;
-        var workflowPersistenceProperty = await GetDefaultPersistenceModeAsync(workflow.CustomProperties, () => _options.Value.LogPersistenceMode, cancellationToken);
-        var activityPersistencePropertyDefault = await GetDefaultPersistenceModeAsync(source.Activity.CustomProperties, () => workflowPersistenceProperty, cancellationToken);
+        var workflowPersistenceProperty = await GetDefaultPersistenceModeAsync(source.WorkflowExecutionContext.ExpressionExecutionContext!, workflow.CustomProperties, () => _options.Value.LogPersistenceMode, cancellationToken);
+        var activityPersistencePropertyDefault = await GetDefaultPersistenceModeAsync(source.ExpressionExecutionContext, source.Activity.CustomProperties, () => workflowPersistenceProperty, cancellationToken);
         var legacyActivityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LegacyLogPersistenceModeKey, () => new Dictionary<string, object?>());
         var activityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceConfigKey, () => new Dictionary<string, object?>());
         var payload = GetPayload(source);
         var outputs = GetOutputs(source);
 
         outputs = await StorePropertyUsingPersistenceMode(
-            source,
+            source.ExpressionExecutionContext,
             outputs,
             legacyActivityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, object>())!,
-            activityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, LogPersistenceConfiguration>())!,
+            activityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, object>())!,
             activityPersistencePropertyDefault,
             cancellationToken);
 
         var inputs = await StorePropertyUsingPersistenceMode(
-            source, 
+            source.ExpressionExecutionContext,
             source.ActivityState,
             legacyActivityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!,
-            activityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, LogPersistenceConfiguration>())!,
+            activityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!,
             activityPersistencePropertyDefault,
             cancellationToken);
 
@@ -99,13 +115,13 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         };
     }
 
-    private async Task<LogPersistenceMode> GetDefaultPersistenceModeAsync(IDictionary<string, object> customProperties, Func<LogPersistenceMode> defaultFactory, CancellationToken cancellationToken)
+    private async Task<LogPersistenceMode> GetDefaultPersistenceModeAsync(ExpressionExecutionContext expressionExecutionContext, IDictionary<string, object> customProperties, Func<LogPersistenceMode> defaultFactory, CancellationToken cancellationToken)
     {
         var legacyProperties = customProperties.GetValueOrDefault<IDictionary<string, object?>>(LegacyLogPersistenceModeKey, () => new Dictionary<string, object?>());
-        var properties = customProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceConfigKey, () => new Dictionary<string, object?>());
-        var defaultPersistenceStrategyTypeName = properties!.GetValueOrDefault<string>("default");
+        var properties = customProperties.GetValueOrDefault<IDictionary<string, object>>(LogPersistenceConfigKey, () => new Dictionary<string, object>());
+        var defaultPersistenceConfigObject = properties?.TryGetValue("default", out var defaultPersistenceConfigObjectValue) == true ? defaultPersistenceConfigObjectValue : null;
 
-        if (defaultPersistenceStrategyTypeName == null)
+        if (defaultPersistenceConfigObject == null)
         {
             var legacyPersistencePropertyDefault = legacyProperties!.GetValueOrDefault("default", defaultFactory);
 
@@ -114,20 +130,15 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             return legacyPersistencePropertyDefault;
         }
 
-        var strategy = _logPersistenceStrategies.TryGetValue(defaultPersistenceStrategyTypeName, out var v) ? v : null;
-
-        if (strategy == null)
-            return defaultFactory();
-
-        var strategyContext = new LogPersistenceStrategyContext(cancellationToken);
-        return await strategy.GetPersistenceModeAsync(strategyContext);
+        var defaultPersistenceConfig = Convert(defaultPersistenceConfigObject);
+        return await EvaluateLogPersistenceConfigAsync(defaultPersistenceConfig, expressionExecutionContext, defaultFactory, cancellationToken);
     }
 
     private async Task<Dictionary<string, object?>> StorePropertyUsingPersistenceMode(
-        ActivityExecutionContext activityExecutionContext,
+        ExpressionExecutionContext expressionExecutionContext,
         IDictionary<string, object?> state,
         IDictionary<string, object> obsoletePersistenceModeConfiguration,
-        IDictionary<string, LogPersistenceConfiguration> persistenceStrategyConfiguration,
+        IDictionary<string, object> persistenceStrategyConfiguration,
         LogPersistenceMode defaultLogPersistenceMode,
         CancellationToken cancellationToken)
     {
@@ -136,23 +147,13 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         foreach (var value in state)
         {
             var propKey = value.Key.Camelize();
-            var logPersistenceConfig = persistenceStrategyConfiguration.GetValueOrDefault(propKey, () => null);
+            var logPersistenceConfigObject = persistenceStrategyConfiguration.GetValueOrDefault(propKey, () => null);
+            var logPersistenceConfig = Convert(logPersistenceConfigObject);
             var mode = defaultLogPersistenceMode;
 
             if (logPersistenceConfig != null)
             {
-                if (logPersistenceConfig.EvaluationMode == LogPersistenceEvaluationMode.Strategy)
-                {
-                    var strategyTypeName = logPersistenceConfig.StrategyType ?? typeof(Inherit).GetSimpleAssemblyQualifiedName();
-                    var strategy = _logPersistenceStrategies.TryGetValue(strategyTypeName, out var v) ? v : new Inherit();
-                    var strategyContext = new LogPersistenceStrategyContext(cancellationToken);
-                    mode = await strategy.GetPersistenceModeAsync(strategyContext);
-                }
-                else
-                {
-                    var expression = logPersistenceConfig.Expression ?? Expression.LiteralExpression("Inherit");
-                    mode = await _expressionEvaluator.EvaluateAsync<LogPersistenceMode>(expression, activityExecutionContext.ExpressionExecutionContext);
-                }
+                mode = await EvaluateLogPersistenceConfigAsync(logPersistenceConfig, expressionExecutionContext, () => defaultLogPersistenceMode, cancellationToken);
             }
             else
             {
@@ -166,6 +167,44 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         return result;
     }
 
+    private LogPersistenceConfiguration? Convert(object? value)
+    {
+        if (value == null)
+            return null;
+
+        if (value is LogPersistenceConfiguration c)
+            return c;
+
+        var json = JsonSerializer.Serialize(value);
+        var config = JsonSerializer.Deserialize<LogPersistenceConfiguration>(json, _logPersistenceConfigSerializerOptions);
+
+        return config;
+    }
+
+    private async Task<LogPersistenceMode> EvaluateLogPersistenceConfigAsync(LogPersistenceConfiguration? config, ExpressionExecutionContext executionContext, Func<LogPersistenceMode> defaultMode, CancellationToken cancellationToken)
+    {
+        if (config == null)
+            return defaultMode();
+
+        if (config.EvaluationMode == LogPersistenceEvaluationMode.Strategy)
+        {
+            var strategyTypeName = config.StrategyType ?? typeof(Inherit).GetSimpleAssemblyQualifiedName();
+            var strategy = _logPersistenceStrategies.TryGetValue(strategyTypeName, out var v) ? v : null;
+
+            if (strategy == null)
+                return defaultMode();
+
+            var strategyContext = new LogPersistenceStrategyContext(cancellationToken);
+            return await strategy.GetPersistenceModeAsync(strategyContext);
+        }
+
+        if (config.Expression == null)
+            return defaultMode();
+
+        var expression = config.Expression;
+        return await _expressionEvaluator.EvaluateAsync<LogPersistenceMode>(expression, executionContext);
+    }
+
     private static ActivityStatus GetAggregateStatus(ActivityExecutionContext context)
     {
         // If any child activity is faulted, the aggregate status is faulted.
@@ -176,7 +215,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 
         return context.Status;
     }
-    
+
     private static IDictionary<string, object> GetPayload(ActivityExecutionContext source)
     {
         var outcomes = source.JournalData.TryGetValue("Outcomes", out var resultValue) ? resultValue as string[] : default;
@@ -184,11 +223,10 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 
         if (outcomes != null)
             payload.Add("Outcomes", outcomes);
-        
+
         return payload;
     }
 
-    // Get the outputs of the activity execution context.
     private static IDictionary<string, object?> GetOutputs(ActivityExecutionContext source)
     {
         var activity = source.Activity;
@@ -211,7 +249,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 
             return default;
         });
-        
+
         return outputs;
     }
 }
