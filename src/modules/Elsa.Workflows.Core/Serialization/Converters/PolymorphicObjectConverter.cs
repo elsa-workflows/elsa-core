@@ -199,8 +199,8 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
         if (type == typeof(JObject) || type == typeof(JArray) || type == typeof(JsonObject) || type == typeof(JsonArray))
         {
             writer.WriteStartObject();
-            writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
             writer.WriteString(IslandPropertyName, value.ToString());
+            writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
             writer.WriteEndObject();
             return;
         }
@@ -245,6 +245,20 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
 
         writer.WriteStartObject();
 
+        if (jsonElement.ValueKind == JsonValueKind.Array)
+        {
+            writer.WritePropertyName(ItemsPropertyName);
+            jsonElement.WriteTo(writer);
+        }
+        else
+        {
+            foreach (var property in jsonElement.EnumerateObject().Where(property => !property.NameEquals(TypePropertyName)))
+            {
+                writer.WritePropertyName(property.Name);
+                property.Value.WriteTo(writer);
+            }
+        }
+
         if (type != typeof(ExpandoObject))
         {
             if (shouldWriteTypeField)
@@ -258,20 +272,6 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
                 {
                     writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
                 }
-            }
-        }
-
-        if (jsonElement.ValueKind == JsonValueKind.Array)
-        {
-            writer.WritePropertyName(ItemsPropertyName);
-            jsonElement.WriteTo(writer);
-        }
-        else
-        {
-            foreach (var property in jsonElement.EnumerateObject().Where(property => !property.NameEquals(TypePropertyName)))
-            {
-                writer.WritePropertyName(property.Name);
-                property.Value.WriteTo(writer);
             }
         }
 
