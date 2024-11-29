@@ -183,6 +183,9 @@ public class TriggerWorkflows(
 
         if (predicate == null)
             return true;
+        
+        if(string.IsNullOrWhiteSpace(predicate.Value as string))
+            return true;
 
         var expressionExecutionContext = await GetExpressionExecutionContextAsync(transportMessage, binding, cancellationToken);
 

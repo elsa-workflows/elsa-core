@@ -90,7 +90,10 @@ public class Worker<TKey, TValue>(WorkerContext workerContext, IConsumer<TKey, T
             return;
 
         _subscribedTopics = topicList.ToHashSet();
-        consumer.Subscribe(_subscribedTopics);
+        if(_subscribedTopics.Any())
+            consumer.Subscribe(_subscribedTopics);
+        else
+            consumer.Unsubscribe();
 
         logger.LogInformation("Subscribed to topics: {Topics}", string.Join(", ", _subscribedTopics));
     }

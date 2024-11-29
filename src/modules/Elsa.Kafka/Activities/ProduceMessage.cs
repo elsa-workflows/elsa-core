@@ -7,6 +7,7 @@ using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.UIHints;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Kafka.Activities;
@@ -48,25 +49,33 @@ public class ProduceMessage : CodeActivity
     public Input<string?> CorrelationId { get; set; } = default!;
 
     /// <summary>
-    /// The content of the message to send.
+    /// The content of the message to produce.
     /// </summary>
     [Input(Description = "The content of the message to produce.")]
     public Input<object> Content { get; set; } = default!;
 
+    /// <summary>
+    /// The key of the message to send.
+    /// </summary>
+    [Input(Description = "The key of the message to produce.")]
+    public Input<object?> Key { get; set; } = default!;
+
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        var cancellationToken = context.CancellationToken;
         var topic = Topic.Get(context);
         var producerDefinitionId = ProducerDefinitionId.Get(context);
         var producerDefinitionEnumerator = context.GetRequiredService<IProducerDefinitionEnumerator>();
         var producerDefinition = await producerDefinitionEnumerator.GetByIdAsync(producerDefinitionId);
         var content = Content.Get(context);
+        var key = Key.Get(context);
 
-        context.DeferTask(async () =>
-        {
-            using var producer = CreateProducer(context, producerDefinition);
-            var headers = CreateHeaders(context);
-            await producer.ProduceAsync(topic, content, headers);
-        });
+        if (key is string keyString && string.IsNullOrWhiteSpace(keyString))
+            key = null;
+
+        using var producer = CreateProducer(context, producerDefinition);
+        var headers = CreateHeaders(context);
+        await producer.ProduceAsync(topic, key, content, headers, cancellationToken);
     }
 
     private Headers CreateHeaders(ActivityExecutionContext context)
@@ -84,14 +93,14 @@ public class ProduceMessage : CodeActivity
 
         return headers;
     }
-    
+
     private IProducer CreateProducer(ActivityExecutionContext context, ProducerDefinition producerDefinition)
     {
-        var factory = context.GetRequiredService(producerDefinition.FactoryType) as IProducerFactory;
-        
+        var factory = context.GetOrCreateService(producerDefinition.FactoryType) as IProducerFactory;
+
         if (factory == null)
             throw new InvalidOperationException($"Producer factory of type '{producerDefinition.FactoryType}' not found.");
-        
+
         var createProducerContext = new CreateProducerContext(producerDefinition);
         return factory.CreateProducer(createProducerContext);
     }
