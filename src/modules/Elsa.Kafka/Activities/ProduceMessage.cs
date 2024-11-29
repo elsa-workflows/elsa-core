@@ -48,24 +48,32 @@ public class ProduceMessage : CodeActivity
     public Input<string?> CorrelationId { get; set; } = default!;
 
     /// <summary>
-    /// The content of the message to send.
+    /// The content of the message to produce.
     /// </summary>
     [Input(Description = "The content of the message to produce.")]
     public Input<object> Content { get; set; } = default!;
+    
+    /// <summary>
+    /// The key of the message to send.
+    /// </summary>
+    [Input(Description = "The key of the message to produce.")]
+    public Input<object?> Key { get; set; } = default!;
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        var cancellationToken = context.CancellationToken;
         var topic = Topic.Get(context);
         var producerDefinitionId = ProducerDefinitionId.Get(context);
         var producerDefinitionEnumerator = context.GetRequiredService<IProducerDefinitionEnumerator>();
         var producerDefinition = await producerDefinitionEnumerator.GetByIdAsync(producerDefinitionId);
         var content = Content.Get(context);
+        var key = Key.Get(context);
 
         context.DeferTask(async () =>
         {
             using var producer = CreateProducer(context, producerDefinition);
             var headers = CreateHeaders(context);
-            await producer.ProduceAsync(topic, content, headers);
+            await producer.ProduceAsync(topic, key, content, headers, cancellationToken);
         });
     }
 

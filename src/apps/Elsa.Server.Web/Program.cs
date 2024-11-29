@@ -29,8 +29,6 @@ using Elsa.Secrets.Persistence;
 using Elsa.Server.Web;
 using Elsa.Server.Web.Extensions;
 using Elsa.Server.Web.Filters;
-using Elsa.Server.Web.Messages;
-using Elsa.Server.Web.WorkflowContextProviders;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows.Api;
@@ -65,7 +63,7 @@ const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
 const bool useAzureServiceBus = false;
-const bool useKafka = false;
+const bool useKafka = true;
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated requests.
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.Distributed;
@@ -426,8 +424,6 @@ services
                         // etc.
                     });
                 }
-
-                massTransit.AddMessageType<OrderReceived>();
             });
         }
 
@@ -454,8 +450,6 @@ services
             {
                 kafka.ConfigureOptions(options => configuration.GetSection("Kafka").Bind(options));
             });
-
-            services.AddWorkflowContextProvider<ConsumerDefinitionWorkflowContextProvider>();
         }
 
         if (useAgents)
