@@ -39,6 +39,7 @@ public class MultitenancyFeature(IModule module) : FeatureBase(module)
             .AddSingleton<ITenantAccessor, DefaultTenantAccessor>()
             .AddSingleton<ITenantFinder, DefaultTenantFinder>()
             .AddSingleton<ITenantContextInitializer, DefaultTenantContextInitializer>()
+            .AddSingleton<ITenantService, DefaultTenantService>()
             .AddScoped<DefaultTenantsProvider>()
             .AddScoped<DefaultTenantResolver>()
             .AddScoped(_tenantsProviderFactory);
