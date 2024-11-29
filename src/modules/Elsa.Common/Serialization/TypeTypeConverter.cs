@@ -15,7 +15,11 @@ public class TypeTypeConverter : TypeConverter
     public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
     {
         if (value is string stringValue)
+        {
+            if (TypeAliasRegistry.GetType(stringValue) is { } type)
+                return type;
             return Type.GetType(stringValue);
+        }
         return base.ConvertFrom(context, culture, value);
     }
 
@@ -27,7 +31,11 @@ public class TypeTypeConverter : TypeConverter
     public override object? ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value, Type destinationType)
     {
         if (destinationType == typeof(string) && value is Type type)
+        {
+            if (TypeAliasRegistry.TypeAliases.FirstOrDefault(x => x.Value == type).Key is { } alias)
+                return alias;
             return type.AssemblyQualifiedName;
+        }
         return base.ConvertTo(context, culture, value, destinationType);
     }
 }

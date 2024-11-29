@@ -165,8 +165,9 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
     private IWorker CreateWorker(IServiceProvider serviceProvider, ConsumerDefinition consumerDefinition)
     {
         var factoryType = consumerDefinition.FactoryType;
-
-        if (serviceProvider.GetRequiredService(factoryType) is not IConsumerFactory consumerFactory)
+        var consumerFactory = ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, factoryType) as IConsumerFactory;
+        
+        if (consumerFactory == null)
             throw new InvalidOperationException($"Worker factory of type '{factoryType}' not found.");
 
         var createConsumerContext = new CreateConsumerContext(consumerDefinition);
