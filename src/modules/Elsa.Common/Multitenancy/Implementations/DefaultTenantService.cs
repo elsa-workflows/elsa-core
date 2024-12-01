@@ -2,9 +2,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.Multitenancy;
 
-public class DefaultTenantService(IServiceScopeFactory scopeFactory) : ITenantService
+public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScopeFactory tenantScopeFactory, TenantEventsManager tenantEvents) : ITenantService, IAsyncDisposable
 {
+    private readonly AsyncServiceScope _serviceScope = scopeFactory.CreateAsyncScope();
     private IDictionary<string, Tenant>? _tenantsDictionary;
+    private IDictionary<Tenant, TenantScope>? _tenantScopesDictionary;
+
+    public async ValueTask DisposeAsync()
+    {
+        await _serviceScope.DisposeAsync();
+    }
 
     public async Task<Tenant?> FindAsync(string id, CancellationToken cancellationToken = default)
     {
@@ -52,15 +59,13 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory) : ITenantSe
         var newTenantIds = newTenants.Keys;
         var removedTenantIds = currentTenantIds.Except(newTenantIds).ToArray();
         var addedTenantIds = newTenantIds.Except(currentTenantIds).ToArray();
-        
-        _tenantsDictionary = newTenants;
-        
+
         foreach (var removedTenantId in removedTenantIds)
         {
             var removedTenant = currentTenants[removedTenantId];
             //await mediator.SendAsync(new TenantRemoved(removedTenant), cancellationToken);
         }
-        
+
         foreach (var addedTenantId in addedTenantIds)
         {
             var addedTenant = newTenants[addedTenantId];
@@ -72,12 +77,24 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory) : ITenantSe
     {
         if (_tenantsDictionary == null)
         {
-            await using var scope = scopeFactory.CreateAsyncScope();
-            var tenantsProvider = scope.ServiceProvider.GetRequiredService<ITenantsProvider>();
+            _tenantsDictionary = new Dictionary<string, Tenant>();
+            _tenantScopesDictionary = new Dictionary<Tenant, TenantScope>();
+            var tenantsProvider = _serviceScope.ServiceProvider.GetRequiredService<ITenantsProvider>();
             var tenants = await tenantsProvider.ListAsync(cancellationToken);
-            _tenantsDictionary = tenants.ToDictionary(x => x.Id);
+            
+            foreach (var tenant in tenants) 
+                await RegisterTenant(tenant, cancellationToken);
         }
 
         return _tenantsDictionary;
+    }
+
+    private async Task RegisterTenant(Tenant tenant, CancellationToken cancellationToken = default)
+    {
+        var scope = tenantScopeFactory.CreateScope(tenant);
+        _tenantsDictionary![tenant.Id] = tenant;
+        _tenantScopesDictionary![tenant] = scope;
+
+        await tenantEvents.TenantActivatedAsync(new TenantActivatedEventArgs(tenant, scope, cancellationToken));
     }
 }
