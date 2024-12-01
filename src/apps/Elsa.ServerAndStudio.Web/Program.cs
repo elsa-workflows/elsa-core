@@ -69,6 +69,8 @@ services
                     management.UseEntityFrameworkCore(ef => ef.UseMySql(mySqlConnectionString));
                 else if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                     management.UseEntityFrameworkCore(ef => ef.UseSqlServer(sqlServerConnectionString));
+                else if(sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+                    management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgreSqlConnectionString));
                 else if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite)
                     management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             })
