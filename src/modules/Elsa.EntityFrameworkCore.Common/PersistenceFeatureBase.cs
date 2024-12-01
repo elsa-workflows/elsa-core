@@ -1,4 +1,5 @@
 using Elsa.Common.Entities;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -45,19 +46,15 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase
             .MigrationsHistoryTable(ElsaDbContextBase.MigrationsHistoryTable, ElsaDbContextBase.ElsaSchema));
 
     /// <inheritdoc />
-    public override void ConfigureHostedServices()
-    {
-        if (RunMigrations)
-            Module.ConfigureHostedService<RunMigrationsHostedService<TDbContext>>(-100); // Migrations need to run before other hosted services that depend on DB access.
-    }
-
-    /// <inheritdoc />
     public override void Apply()
     {
         if (UseContextPooling)
             Services.AddPooledDbContextFactory<TDbContext>(DbContextOptionsBuilder);
         else
             Services.AddDbContextFactory<TDbContext>(DbContextOptionsBuilder, DbContextFactoryLifetime);
+
+        if (RunMigrations)
+            Services.AddStartupTask<RunMigrationsStartupTask<TDbContext>>();
     }
 
     /// <summary>

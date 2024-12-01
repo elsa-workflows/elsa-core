@@ -1,4 +1,5 @@
-﻿using Elsa.Quartz.EntityFrameworkCore.MySql;
+﻿using Elsa.Extensions;
+using Elsa.Quartz.EntityFrameworkCore.MySql;
 using Elsa.Quartz.Features;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
@@ -35,9 +36,8 @@ public static class MySqlQuartzExtensions
                     store.UseClustering();
             });
         };
-
-        // Configure the Quartz hosted service to run migrations.
-        feature.Module.ConfigureHostedService<RunMigrationsHostedService<MySqlQuartzDbContext>>(-100);
+        
+        feature.Services.AddStartupTask<RunMigrationsStartupTask<MySqlQuartzDbContext>>();
 
         return feature;
     }

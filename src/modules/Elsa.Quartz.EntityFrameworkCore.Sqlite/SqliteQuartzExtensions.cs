@@ -1,4 +1,5 @@
-﻿using Elsa.Quartz.EntityFrameworkCore.Sqlite;
+﻿using Elsa.Extensions;
+using Elsa.Quartz.EntityFrameworkCore.Sqlite;
 using Elsa.Quartz.Features;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
@@ -33,8 +34,7 @@ public static class SqliteQuartzExtensions
             });
         };
 
-        // Configure the Quartz hosted service to run migrations.
-        feature.Module.ConfigureHostedService<RunMigrationsHostedService<SqliteQuartzDbContext>>(-100);
+        feature.Services.AddStartupTask<RunMigrationsStartupTask<SqliteQuartzDbContext>>();
 
         return feature;
     }

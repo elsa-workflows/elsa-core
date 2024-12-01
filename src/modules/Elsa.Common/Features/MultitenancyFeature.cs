@@ -51,6 +51,8 @@ public class MultitenancyFeature(IModule module) : FeatureBase(module)
             .AddStartupTask<ConfigureRecurringTasksScheduleStartupTask>()
             .AddScoped<DefaultTenantsProvider>()
             .AddScoped<DefaultTenantResolver>()
+            .AddScoped<ITaskExecutor, TaskExecutor>()
+            .AddScoped<IBackgroundTaskStarter, TaskExecutor>()
             .AddScoped(_tenantsProviderFactory);
     }
 }
