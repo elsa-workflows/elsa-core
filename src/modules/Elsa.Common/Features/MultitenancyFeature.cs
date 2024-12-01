@@ -1,4 +1,5 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Common.Multitenancy.EventHandlers;
 using Elsa.Common.Multitenancy.HostedServices;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
@@ -23,14 +24,14 @@ public class MultitenancyFeature(IModule module) : FeatureBase(module)
         return this;
     }
 
-    public override void ConfigureHostedServices()
-    {
-        Module
-            .ConfigureHostedService<StartupTasksRunner>(1)
-            .ConfigureHostedService<BackgroundTasksRunner>(1)
-            .ConfigureHostedService<RecurringTasksRunner>(1)
-            ;
-    }
+    // public override void ConfigureHostedServices()
+    // {
+    //     Module
+    //         .ConfigureHostedService<StartupTasksRunner>(1)
+    //         .ConfigureHostedService<BackgroundTasksRunner>(1)
+    //         .ConfigureHostedService<RecurringTasksRunner>(1)
+    //         ;
+    // }
 
     public override void Apply()
     {
@@ -40,6 +41,11 @@ public class MultitenancyFeature(IModule module) : FeatureBase(module)
             .AddSingleton<ITenantFinder, DefaultTenantFinder>()
             .AddSingleton<ITenantContextInitializer, DefaultTenantContextInitializer>()
             .AddSingleton<ITenantService, DefaultTenantService>()
+            .AddSingleton<ITenantActivatedEvent, RunBackgroundTasks>()
+            .AddSingleton<ITenantActivatedEvent, RunStartupTasks>()
+            .AddSingleton<ITenantActivatedEvent, StartRecurringTasks>()
+            .AddSingleton<ITenantDeactivatedEvent, RunBackgroundTasks>()
+            .AddSingleton<ITenantDeactivatedEvent, StartRecurringTasks>()
             .AddScoped<DefaultTenantsProvider>()
             .AddScoped<DefaultTenantResolver>()
             .AddScoped(_tenantsProviderFactory);

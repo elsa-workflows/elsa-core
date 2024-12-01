@@ -63,13 +63,13 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
         foreach (var removedTenantId in removedTenantIds)
         {
             var removedTenant = currentTenants[removedTenantId];
-            //await mediator.SendAsync(new TenantRemoved(removedTenant), cancellationToken);
+            await UnregisterTenant(removedTenant, cancellationToken);
         }
 
         foreach (var addedTenantId in addedTenantIds)
         {
             var addedTenant = newTenants[addedTenantId];
-            //await mediator.SendAsync(new TenantAdded(addedTenant), cancellationToken);
+            await RegisterTenant(addedTenant, cancellationToken);
         }
     }
 
@@ -81,8 +81,8 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
             _tenantScopesDictionary = new Dictionary<Tenant, TenantScope>();
             var tenantsProvider = _serviceScope.ServiceProvider.GetRequiredService<ITenantsProvider>();
             var tenants = await tenantsProvider.ListAsync(cancellationToken);
-            
-            foreach (var tenant in tenants) 
+
+            foreach (var tenant in tenants)
                 await RegisterTenant(tenant, cancellationToken);
         }
 
@@ -96,5 +96,14 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
         _tenantScopesDictionary![tenant] = scope;
 
         await tenantEvents.TenantActivatedAsync(new TenantActivatedEventArgs(tenant, scope, cancellationToken));
+    }
+
+    private async Task UnregisterTenant(Tenant tenant, CancellationToken cancellationToken = default)
+    {
+        var scope = _tenantScopesDictionary![tenant];
+        _tenantsDictionary!.Remove(tenant.Id);
+        _tenantScopesDictionary!.Remove(tenant);
+
+        await tenantEvents.TenantDeactivatedAsync(new TenantDeactivatedEventArgs(tenant, scope, cancellationToken));
     }
 }
