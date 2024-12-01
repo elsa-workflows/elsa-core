@@ -14,7 +14,7 @@ public static class AgentsPostgreSqlProvidersExtensions
     /// <summary>
     /// Configures the feature to use SQL Server.
     /// </summary>
-    public static EFCoreAgentPersistenceFeature UseSqlServer(this EFCoreAgentPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = null)
+    public static EFCoreAgentPersistenceFeature UsePostgreSql(this EFCoreAgentPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = null)
     {
         feature.UsePostgreSql(Assembly, connectionString, options);
         return feature;
