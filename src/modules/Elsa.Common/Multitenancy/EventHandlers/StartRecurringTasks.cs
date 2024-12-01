@@ -1,4 +1,3 @@
-using Elsa.Common.Multitenancy.HostedServices;
 using Elsa.Common.RecurringTasks;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,7 +14,7 @@ public class StartRecurringTasks(RecurringTaskScheduleManager scheduleManager) :
         _cancellationTokenSource = new CancellationTokenSource();
         var tenantScope = args.TenantScope;
         var tasks = tenantScope.ServiceProvider.GetServices<IRecurringTask>().ToList();
-        var taskExecutor = tenantScope.ServiceProvider.GetRequiredService<TaskExecutor>();
+        var taskExecutor = tenantScope.ServiceProvider.GetRequiredService<ITaskExecutor>();
 
         foreach (var task in tasks)
         {

@@ -4,7 +4,7 @@ using Elsa.Common.RecurringTasks;
 using Medallion.Threading;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Common.Multitenancy.HostedServices;
+namespace Elsa.Common.Multitenancy;
 
 public class TaskExecutor(IDistributedLockProvider distributedLockProvider, IOptions<DistributedLockingOptions> options) : ITaskExecutor, IBackgroundTaskStarter
 {

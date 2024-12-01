@@ -1,4 +1,3 @@
-using Elsa.Common.Multitenancy.HostedServices;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.Multitenancy.EventHandlers;
