@@ -10,7 +10,7 @@ namespace Elsa.EntityFrameworkCore;
 /// </summary>
 [UsedImplicitly]
 [SingleNodeTask]
-[Priority(-100)]
+[Order(-100)]
 public class RunMigrationsStartupTask<TDbContext>(IDbContextFactory<TDbContext> dbContextFactory) : IStartupTask where TDbContext : DbContext
 {
     /// <inheritdoc /

@@ -10,7 +10,7 @@ public class RunStartupTasks : ITenantActivatedEvent
     {
         var cancellationToken = args.CancellationToken;
         var tenantScope = args.TenantScope;
-        var tasks = tenantScope.ServiceProvider.GetServices<IStartupTask>().OrderBy(x => x.GetType().GetCustomAttribute<PriorityAttribute>()?.Priority ?? 0f).ToList();
+        var tasks = tenantScope.ServiceProvider.GetServices<IStartupTask>().OrderBy(x => x.GetType().GetCustomAttribute<OrderAttribute>()?.Order ?? 0f).ToList();
         var taskExecutor = tenantScope.ServiceProvider.GetRequiredService<ITaskExecutor>();
 
         foreach (var task in tasks)

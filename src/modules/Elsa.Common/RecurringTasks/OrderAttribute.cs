@@ -4,7 +4,7 @@ namespace Elsa.Common.RecurringTasks;
 /// Configures a task with a priority.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
-public class PriorityAttribute(float priority) : Attribute
+public class OrderAttribute(float order) : Attribute
 {
-    public float Priority { get; } = priority;
+    public float Order { get; } = order;
 }
