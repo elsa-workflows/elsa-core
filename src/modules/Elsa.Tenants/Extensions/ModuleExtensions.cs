@@ -21,18 +21,18 @@ public static class ModuleExtensions
     /// <summary>
     /// Installs and configures the <see cref="TenantManagementEndpointsFeature"/> feature.
     /// </summary>
-    public static IModule UseTenantManagementEndpoints(this IModule module, Action<TenantManagementEndpointsFeature>? configure = default)
+    public static TenantsFeature UseTenantManagementEndpoints(this TenantsFeature feature, Action<TenantManagementEndpointsFeature>? configure = default)
     {
-        module.Configure(configure);
-        return module;
+        feature.Module.Configure(configure);
+        return feature;
     }
 
     /// <summary>
     /// Installs and configures the <see cref="TenantManagementFeature"/> feature.
     /// </summary>
-    public static IModule UseTenantManagement(this IModule module, Action<TenantManagementFeature>? configure = default)
+    public static TenantsFeature UseTenantManagement(this TenantsFeature feature, Action<TenantManagementFeature>? configure = default)
     {
-        module.Configure(configure);
-        return module;
+        feature.Module.Configure(configure);
+        return feature;
     }
 }

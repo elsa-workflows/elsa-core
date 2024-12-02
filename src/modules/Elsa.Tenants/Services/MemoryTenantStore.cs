@@ -23,6 +23,12 @@ public class MemoryTenantStore(MemoryStore<Tenant> store) : ITenantStore
         return Task.FromResult(result);
     }
 
+    public Task<IEnumerable<Tenant>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        var result = store.List();
+        return Task.FromResult(result);
+    }
+
     public Task AddAsync(Tenant tenant, CancellationToken cancellationToken = default)
     {
         store.Add(tenant, GetId);

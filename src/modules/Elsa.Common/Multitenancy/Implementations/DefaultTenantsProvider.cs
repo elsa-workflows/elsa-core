@@ -10,14 +10,14 @@ public class DefaultTenantsProvider : ITenantsProvider
 {
     private readonly Tenant[]  _tenants = { Tenant.Default };
 
-    public ValueTask<IEnumerable<Tenant>> ListAsync(CancellationToken cancellationToken = default)
+    public Task<IEnumerable<Tenant>> ListAsync(CancellationToken cancellationToken = default)
     {
-        return new(_tenants);
+        return Task.FromResult<IEnumerable<Tenant>>(_tenants);
     }
 
-    public ValueTask<Tenant?> FindAsync(TenantFilter filter, CancellationToken cancellationToken = default)
+    public Task<Tenant?> FindAsync(TenantFilter filter, CancellationToken cancellationToken = default)
     {
         var queryable = _tenants.AsQueryable();
-        return new ValueTask<Tenant?>(filter.Apply(queryable).FirstOrDefault());
+        return Task.FromResult(filter.Apply(queryable).FirstOrDefault());
     }
 }

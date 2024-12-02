@@ -21,6 +21,11 @@ public class EFCoreTenantStore(EntityStore<TenantsElsaDbContext, Tenant> store) 
         return await store.QueryAsync(queryable => Filter(queryable, filter), cancellationToken);
     }
 
+    public async Task<IEnumerable<Tenant>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        return await store.ListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(Tenant tenant, CancellationToken cancellationToken = default)
     {
         await store.AddAsync(tenant, cancellationToken);

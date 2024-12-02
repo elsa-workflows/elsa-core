@@ -44,7 +44,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
         var documentsList = documents.ToList();
 
         if (!documentsList.Any())
-           return;
+            return;
 
         ApplyTenantId(documentsList);
         await collection.InsertManyAsync(documentsList, new InsertManyOptions(), cancellationToken);
@@ -281,7 +281,16 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     public async Task<long> CountAsync<TProperty>(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, Expression<Func<TDocument, TProperty>> propertySelector, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
         var queryable = GetQueryableCollection(tenantAgnostic);
-        return await query((IQueryable<TDocument>)queryable.DistinctBy(propertySelector)).LongCountAsync(cancellationToken);
+        return await query(queryable.DistinctBy(propertySelector)).LongCountAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Lists all documents.
+    /// </summary>
+    public async Task<IEnumerable<TDocument>> ListAsync(bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    {
+        var queryable = GetQueryableCollection(tenantAgnostic);
+        return await queryable.ToListAsync(cancellationToken);
     }
 
     /// <summary>
@@ -385,21 +394,21 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
 
         return count;
     }
-    
+
     private IQueryable<TDocument> GetQueryableCollection(bool tenantAgnostic = false)
     {
         var queryable = collection.AsQueryable();
-        
-        if(tenantAgnostic)
+
+        if (tenantAgnostic)
             return queryable;
-        
-        if(typeof(Entity).IsAssignableFrom(typeof(TDocument)))
+
+        if (typeof(Entity).IsAssignableFrom(typeof(TDocument)))
         {
             var tenant = tenantAccessor.Tenant;
             var tenantId = tenant?.Id;
             queryable = queryable.Where(x => (x as Entity)!.TenantId == tenantId);
         }
-        
+
         return queryable;
     }
 

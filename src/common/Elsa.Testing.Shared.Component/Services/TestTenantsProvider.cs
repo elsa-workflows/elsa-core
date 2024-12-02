@@ -1,17 +1,18 @@
 using Elsa.Common.Multitenancy;
-using Elsa.Tenants;
+using JetBrains.Annotations;
 
 namespace Elsa.Testing.Shared.Services;
 
+[UsedImplicitly]
 public class TestTenantsProvider(params string[] tenantIds) : ITenantsProvider
 {
-    public ValueTask<IEnumerable<Tenant>> ListAsync(CancellationToken cancellationToken = default)
+    public Task<IEnumerable<Tenant>> ListAsync(CancellationToken cancellationToken = default)
     {
         var tenants = tenantIds.Select(id => new Tenant {Id = id, Name = id});
-        return new(tenants);
+        return Task.FromResult(tenants);
     }
 
-    public async ValueTask<Tenant?> FindAsync(TenantFilter filter, CancellationToken cancellationToken = default)
+    public async Task<Tenant?> FindAsync(TenantFilter filter, CancellationToken cancellationToken = default)
     {
         var query = (await ListAsync(cancellationToken)).AsQueryable();
         return filter.Apply(query).FirstOrDefault();

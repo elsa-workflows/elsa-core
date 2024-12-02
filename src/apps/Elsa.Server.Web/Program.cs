@@ -13,6 +13,7 @@ using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.EntityFrameworkCore.Modules.Tenants;
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Identity.Multitenancy;
@@ -24,6 +25,7 @@ using Elsa.MongoDb.Modules.Alterations;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
+using Elsa.MongoDb.Modules.Tenants;
 using Elsa.OpenTelemetry.Middleware;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Management.Tasks;
@@ -73,6 +75,7 @@ const WorkflowRuntime workflowRuntime = WorkflowRuntime.Distributed;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = true;
+const bool useTenantsFromConfiguration = false;
 const bool useAgents = false;
 const bool useSecrets = false;
 const bool disableVariableWrappers = false;
@@ -502,16 +505,39 @@ services
         {
             elsa.UseTenants(tenants =>
             {
-                tenants.ConfigureOptions(options =>
+                tenants.ConfigureMultitenancy(options =>
                 {
-                    configuration.GetSection("Multitenancy").Bind(options);
                     options.TenantResolverPipelineBuilder
                         .Append<HostTenantResolver>()
                         .Append<RoutePrefixTenantResolver>()
                         .Append<HeaderTenantResolver>()
                         .Append<ClaimsTenantResolver>();
                 });
-                tenants.UseConfigurationBasedTenantsProvider();
+                
+                if (useTenantsFromConfiguration)
+                {
+                    tenants.UseConfigurationBasedTenantsProvider(options => configuration.GetSection("Multitenancy").Bind(options));
+                }
+                else
+                {
+                    tenants.UseStoreBasedTenantsProvider();
+                    
+                    if(persistenceProvider == PersistenceProvider.MongoDb)
+                        tenants.UseTenantManagement(management => management.UseMongoDb());
+                    if(persistenceProvider == PersistenceProvider.Dapper)
+                        throw new NotSupportedException("Dapper is not supported for tenant management.");
+                    if (persistenceProvider == PersistenceProvider.EntityFrameworkCore)
+                    {
+                        tenants.UseTenantManagement(management => management.UseEntityFrameworkCore(ef =>
+                        {
+                            if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite) ef.UseSqlite(sqliteConnectionString);
+                            if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer) ef.UseSqlServer(sqlServerConnectionString);
+                            if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);
+                            if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) ef.UseMySql(mySqlConnectionString);
+                            if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb) ef.UsePostgreSql(cockroachDbConnectionString);
+                        }));
+                    }
+                }
             });
 
             elsa.UseTenantHttpRouting();

@@ -1,14 +1,14 @@
 using Elsa.Abstractions;
 using Elsa.Common.Multitenancy;
 
-namespace Elsa.Tenants.Endpoints.Tenants;
+namespace Elsa.Tenants.Endpoints.Tenants.Refresh;
 
-public class Refresh(ITenantService tenantService) : ElsaEndpointWithoutRequest
+public class Endpoint(ITenantService tenantService) : ElsaEndpointWithoutRequest
 {
     public override void Configure()
     {
         Post("/tenants/refresh");
-        ConfigurePermissions("execute:refresh-tenants");
+        ConfigurePermissions("execute:tenants:refresh");
     }
 
     public override async Task HandleAsync(CancellationToken ct)

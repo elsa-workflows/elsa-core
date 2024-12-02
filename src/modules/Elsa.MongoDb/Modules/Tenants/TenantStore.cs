@@ -31,6 +31,11 @@ public class MongoTenantStore(MongoDbStore<Tenant> store) : ITenantStore
         return store.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken);
     }
 
+    public async Task<IEnumerable<Tenant>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        return await store.ListAsync(cancellationToken: cancellationToken);
+    }
+
     /// <inheritdoc />
     public Task AddAsync(Tenant tenant, CancellationToken cancellationToken = default)
     {

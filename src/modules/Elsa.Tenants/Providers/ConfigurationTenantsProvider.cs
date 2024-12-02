@@ -1,7 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Elsa.Common.Multitenancy;
+﻿using Elsa.Common.Multitenancy;
 using Elsa.Tenants.Options;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Tenants.Providers;
@@ -9,30 +10,40 @@ namespace Elsa.Tenants.Providers;
 /// <summary>
 /// Provides the implementation to retrieve tenant information from a configuration.
 /// </summary>
+[UsedImplicitly]
 public class ConfigurationTenantsProvider : ITenantsProvider
 {
     private readonly IConfiguration _configuration;
     private readonly ITenantService _tenantService;
+    private readonly ILogger<ConfigurationTenantsProvider> _logger;
     private ICollection<Tenant> _tenants = new List<Tenant>();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigurationTenantsProvider"/> class.
     /// </summary>
-    public ConfigurationTenantsProvider(IOptionsMonitor<MultitenancyOptions> options, IConfiguration configuration, ITenantService tenantService)
+    public ConfigurationTenantsProvider(IOptionsMonitor<TenantsOptions> options, IConfiguration configuration, ITenantService tenantService, ILogger<ConfigurationTenantsProvider> logger)
     {
         _configuration = configuration;
         _tenantService = tenantService;
+        _logger = logger;
         UpdateTenants(options.CurrentValue);
         options.OnChange(OnOptionsChanged);
     }
 
-    private async void OnOptionsChanged(MultitenancyOptions options, string? name)
+    private async void OnOptionsChanged(TenantsOptions options, string? name)
     {
-        UpdateTenants(options);
-        await _tenantService.RefreshAsync();
+        try
+        {
+            UpdateTenants(options);
+            await _tenantService.RefreshAsync();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "An error occurred while updating tenants.");
+        }
     }
 
-    private void UpdateTenants(MultitenancyOptions options)
+    private void UpdateTenants(TenantsOptions options)
     {
         var tenants = options.Tenants.ToList();
         
@@ -44,17 +55,16 @@ public class ConfigurationTenantsProvider : ITenantsProvider
     }
 
     /// <inheritdoc />
-    public ValueTask<IEnumerable<Tenant>> ListAsync(CancellationToken cancellationToken = default)
+    public Task<IEnumerable<Tenant>> ListAsync(CancellationToken cancellationToken = default)
     {
-        return new(_tenants);
+        return Task.FromResult<IEnumerable<Tenant>>(_tenants);
     }
 
     /// <inheritdoc />
-    [RequiresUnreferencedCode("The caller of this method may require dynamic access to the tenant properties.")]
-    public ValueTask<Tenant?> FindAsync(TenantFilter filter, CancellationToken cancellationToken = default)
+    public Task<Tenant?> FindAsync(TenantFilter filter, CancellationToken cancellationToken = default)
     {
         var tenantsQueryable = _tenants.AsQueryable();
         var tenant = filter.Apply(tenantsQueryable).FirstOrDefault();
-        return new(tenant);
+        return Task.FromResult(tenant);
     }
 }
