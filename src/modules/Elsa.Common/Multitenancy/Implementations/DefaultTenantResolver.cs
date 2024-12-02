@@ -7,7 +7,7 @@ public class DefaultTenantResolver : TenantResolverBase
 {
     private readonly Tenant _defaultTenant = new()
     {
-        Id = null!,
+        Id = string.Empty,
         Name = "Default"
     };
 

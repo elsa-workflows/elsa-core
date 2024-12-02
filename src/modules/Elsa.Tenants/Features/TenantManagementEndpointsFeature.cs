@@ -12,7 +12,7 @@ namespace Elsa.Tenants.Features;
 public class TenantManagementEndpointsFeature(IModule serviceConfiguration) : FeatureBase(serviceConfiguration)
 {
     /// <inheritdoc />
-    public override void Apply()
+    public override void Configure()
     {
         Module.AddFastEndpointsAssembly<TenantManagementEndpointsFeature>();
     }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Multitenancy;
+using Elsa.Common.Serialization;
 using Elsa.Workflows;
 using Microsoft.Extensions.Configuration;
 
@@ -27,21 +28,10 @@ public class Endpoint(ITenantService tenantService, IIdentityGenerator identityG
         
         tenant.TenantId = req.TenantId;
         tenant.Name = req.Name.Trim();
-        tenant.Configuration = DeserializeConfiguration(req.Configuration);
+        tenant.Configuration = Serializers.DeserializeConfiguration(req.Configuration);
         await tenantStore.UpdateAsync(tenant, ct);
         await tenantService.RefreshAsync(ct);
         await SendOkAsync(tenant, ct);
-    }
-    
-    private static IConfiguration DeserializeConfiguration(JsonElement? json)
-    {
-        if (json == null)
-            return new ConfigurationBuilder().Build();
-
-        var data = json.Value.Deserialize<Dictionary<string, string?>>();
-        var configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.AddInMemoryCollection(data);
-        return configurationBuilder.Build();
     }
 }
 

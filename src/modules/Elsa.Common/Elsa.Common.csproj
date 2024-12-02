@@ -18,6 +18,7 @@
         <PackageReference Include="DistributedLock.Core" />
         <PackageReference Include="LinqKit.Core" />
         <PackageReference Include="Microsoft.Extensions.Configuration" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">

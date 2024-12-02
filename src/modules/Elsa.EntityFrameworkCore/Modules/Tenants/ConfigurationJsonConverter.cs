@@ -1,4 +1,4 @@
-using System.Text.Json;
+using Elsa.Common.Serialization;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
 
@@ -11,21 +11,12 @@ public class ConfigurationJsonConverter() : ValueConverter<IConfiguration, strin
     private static string SerializeConfiguration(IConfiguration configuration)
     {
         if (configuration == null) throw new ArgumentNullException(nameof(configuration));
-
-        var jsonOptions = new JsonSerializerOptions
-        {
-            WriteIndented = true
-        };
-        return JsonSerializer.Serialize(configuration.AsEnumerable(), jsonOptions);
+        return Serializers.SerializeConfiguration(configuration);
     }
 
     private static IConfiguration DeserializeConfiguration(string json)
     {
         if (json == null) throw new ArgumentNullException(nameof(json));
-
-        var data = JsonSerializer.Deserialize<Dictionary<string, string?>>(json);
-        var configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.AddInMemoryCollection(data);
-        return configurationBuilder.Build();
+        return Serializers.DeserializeConfiguration(json);
     }
 }
