@@ -1,9 +1,10 @@
 using Elsa.Common.RecurringTasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Common.Multitenancy.EventHandlers;
 
-public class StartRecurringTasks(RecurringTaskScheduleManager scheduleManager) : ITenantActivatedEvent, ITenantDeactivatedEvent
+public class StartRecurringTasks(RecurringTaskScheduleManager scheduleManager, ILogger<StartRecurringTasks> logger) : ITenantActivatedEvent, ITenantDeactivatedEvent
 {
     private readonly ICollection<ScheduledTimer> _scheduledTimers = new List<ScheduledTimer>();
     private CancellationTokenSource _cancellationTokenSource = default!;
@@ -21,7 +22,15 @@ public class StartRecurringTasks(RecurringTaskScheduleManager scheduleManager) :
             var schedule = scheduleManager.GetScheduleFor(task.GetType());
             var timer = schedule.CreateTimer(async () =>
             {
-                await taskExecutor.ExecuteTaskAsync(task, _cancellationTokenSource.Token);
+                try
+                {
+                    await taskExecutor.ExecuteTaskAsync(task, _cancellationTokenSource.Token);
+                }
+                catch (OperationCanceledException e)
+                {
+                    logger.LogInformation(e, "Task {TaskType} was cancelled", task.GetType().Name);
+                }
+                
             });
             _scheduledTimers.Add(timer);
             await task.StartAsync(cancellationToken);
