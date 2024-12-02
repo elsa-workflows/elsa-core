@@ -1,6 +1,5 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Tenants.Providers;
-using Elsa.Tenants.Services;
 
 namespace Elsa.Tenants.Options;
 

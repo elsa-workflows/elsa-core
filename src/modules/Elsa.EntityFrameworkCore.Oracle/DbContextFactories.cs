@@ -5,6 +5,7 @@ using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.EntityFrameworkCore.Modules.Tenants;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,29 +14,22 @@ using Microsoft.EntityFrameworkCore;
 namespace Elsa.EntityFrameworkCore.Oracle;
 
 [UsedImplicitly]
-public class IdentityDbContextFactory : OracleDesignTimeDbContextFactory<IdentityElsaDbContext>
-{
-}
+public class IdentityDbContextFactory : OracleDesignTimeDbContextFactory<IdentityElsaDbContext>;
 
 [UsedImplicitly]
-public class ManagementDbContextFactory : OracleDesignTimeDbContextFactory<ManagementElsaDbContext>
-{
-}
+public class ManagementDbContextFactory : OracleDesignTimeDbContextFactory<ManagementElsaDbContext>;
 
 [UsedImplicitly]
-public class RuntimeDbContextFactory : OracleDesignTimeDbContextFactory<RuntimeElsaDbContext>
-{
-}
+public class RuntimeDbContextFactory : OracleDesignTimeDbContextFactory<RuntimeElsaDbContext>;
 
 [UsedImplicitly]
-public class LabelsDbContextFactory : OracleDesignTimeDbContextFactory<LabelsElsaDbContext>
-{
-}
+public class LabelsDbContextFactory : OracleDesignTimeDbContextFactory<LabelsElsaDbContext>;
 
 [UsedImplicitly]
-public class AlterationsDbContextFactories : OracleDesignTimeDbContextFactory<AlterationsElsaDbContext>
-{
-}
+public class AlterationsDbContextFactories : OracleDesignTimeDbContextFactory<AlterationsElsaDbContext>;
+
+[UsedImplicitly]
+public class TenantsDbContextFactories : OracleDesignTimeDbContextFactory<TenantsElsaDbContext>;
 
 public class OracleDesignTimeDbContextFactory<TDbContext> : DesignTimeDbContextFactoryBase<TDbContext> where TDbContext : DbContext
 {

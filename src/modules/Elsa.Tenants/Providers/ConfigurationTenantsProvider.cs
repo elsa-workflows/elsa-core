@@ -11,18 +11,34 @@ namespace Elsa.Tenants.Providers;
 /// </summary>
 public class ConfigurationTenantsProvider : ITenantsProvider
 {
-    private readonly ICollection<Tenant> _tenants;
+    private readonly IConfiguration _configuration;
+    private readonly ITenantService _tenantService;
+    private ICollection<Tenant> _tenants = new List<Tenant>();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigurationTenantsProvider"/> class.
     /// </summary>
-    public ConfigurationTenantsProvider(IOptions<MultitenancyOptions> options, IConfiguration configuration)
+    public ConfigurationTenantsProvider(IOptionsMonitor<MultitenancyOptions> options, IConfiguration configuration, ITenantService tenantService)
     {
-        var tenants = options.Value.Tenants.ToList();
+        _configuration = configuration;
+        _tenantService = tenantService;
+        UpdateTenants(options.CurrentValue);
+        options.OnChange(OnOptionsChanged);
+    }
+
+    private async void OnOptionsChanged(MultitenancyOptions options, string? name)
+    {
+        UpdateTenants(options);
+        await _tenantService.RefreshAsync();
+    }
+
+    private void UpdateTenants(MultitenancyOptions options)
+    {
+        var tenants = options.Tenants.ToList();
         
         // Rebind each Tenant's Configuration property manually using array indices
         for (int i = 0; i < tenants.Count; i++) 
-            tenants[i].Configuration = configuration.GetSection($"Multitenancy:Tenants:{i}:Configuration");
+            tenants[i].Configuration = _configuration.GetSection($"Multitenancy:Tenants:{i}:Configuration");
         
         _tenants = tenants;
     }

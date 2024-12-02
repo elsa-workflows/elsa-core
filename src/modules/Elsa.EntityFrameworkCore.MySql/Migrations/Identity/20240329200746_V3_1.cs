@@ -7,10 +7,10 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
     /// <inheritdoc />
     public partial class V3_1 : Migration
     {
-        private readonly Elsa.EntityFrameworkCore.IElsaDbContextSchema _schema;
+        private readonly IElsaDbContextSchema _schema;
 
         /// <inheritdoc />
-        public V3_1(Elsa.EntityFrameworkCore.IElsaDbContextSchema schema)
+        public V3_1(IElsaDbContextSchema schema)
         {
             _schema = schema;
         }

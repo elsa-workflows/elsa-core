@@ -4,7 +4,6 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
-using Elsa.Tenants.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Tenants.Features;

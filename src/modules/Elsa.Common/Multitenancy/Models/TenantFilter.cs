@@ -24,4 +24,6 @@ public class TenantFilter
 
         return queryable;
     }
+    
+    public static TenantFilter ById(string id) => new() { Id = id };
 }

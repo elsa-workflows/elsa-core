@@ -5,6 +5,7 @@ using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.EntityFrameworkCore.Modules.Tenants;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,29 +14,22 @@ using Microsoft.EntityFrameworkCore;
 namespace Elsa.EntityFrameworkCore.MySql;
 
 [UsedImplicitly]
-public class IdentityDbContextFactory : MySqlDesignTimeDbContextFactory<IdentityElsaDbContext>
-{
-}
+public class IdentityDbContextFactory : MySqlDesignTimeDbContextFactory<IdentityElsaDbContext>;
 
 [UsedImplicitly]
-public class ManagementDbContextFactory : MySqlDesignTimeDbContextFactory<ManagementElsaDbContext>
-{
-}
+public class ManagementDbContextFactory : MySqlDesignTimeDbContextFactory<ManagementElsaDbContext>;
 
 [UsedImplicitly]
-public class RuntimeDbContextFactory : MySqlDesignTimeDbContextFactory<RuntimeElsaDbContext>
-{
-}
+public class RuntimeDbContextFactory : MySqlDesignTimeDbContextFactory<RuntimeElsaDbContext>;
 
 [UsedImplicitly]
-public class LabelsDbContextFactory : MySqlDesignTimeDbContextFactory<LabelsElsaDbContext>
-{
-}
+public class LabelsDbContextFactory : MySqlDesignTimeDbContextFactory<LabelsElsaDbContext>;
 
 [UsedImplicitly]
-public class AlterationsDbContextFactories : MySqlDesignTimeDbContextFactory<AlterationsElsaDbContext>
-{
-}
+public class AlterationsDbContextFactories : MySqlDesignTimeDbContextFactory<AlterationsElsaDbContext>;
+
+[UsedImplicitly]
+public class TenantsDbContextFactories : MySqlDesignTimeDbContextFactory<TenantsElsaDbContext>;
 
 public class MySqlDesignTimeDbContextFactory<TDbContext> : DesignTimeDbContextFactoryBase<TDbContext> where TDbContext : DbContext
 {
