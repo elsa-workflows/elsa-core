@@ -1,4 +1,5 @@
 ﻿using System.Dynamic;
+using System.Numerics;
 using System.Text.Json;
 using Elsa.Common.Converters;
 using Elsa.Expressions.Models;
@@ -26,7 +27,6 @@ public class JsonConverterTest(ITestOutputHelper testOutputHelper)
         {
             Converters = { new BigIntegerJsonConverter() }
         };
-        var serializedText1 = JsonSerializer.Serialize(result);
         var serializedText = JsonSerializer.Serialize(result, options);
 
         Assert.Equal("{\"BigNumber\":7239948466988781569}", serializedText);
@@ -44,5 +44,18 @@ public class JsonConverterTest(ITestOutputHelper testOutputHelper)
         var serializedText = JsonSerializer.Serialize(result);
 
         Assert.Equal("{\"BigNumber\":{\"IsPowerOfTwo\":false,\"IsZero\":false,\"IsOne\":false,\"IsEven\":false,\"Sign\":1}}", serializedText);
+    }
+
+    [Fact(DisplayName = "BigIntegerJsonConverter Deserialize")]
+    public async Task Test3()
+    {
+        var options = new JsonSerializerOptions()
+        {
+            Converters = { new BigIntegerJsonConverter() }
+        };
+
+        BigInteger bigInteger = JsonSerializer.Deserialize<BigInteger>("7239948466988781569", options);
+
+        Assert.Equal(7239948466988781569, bigInteger);
     }
 }
