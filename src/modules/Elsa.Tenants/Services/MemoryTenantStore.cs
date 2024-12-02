@@ -1,8 +1,10 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
+using JetBrains.Annotations;
 
 namespace Elsa.Tenants;
 
+[UsedImplicitly]
 public class MemoryTenantStore(MemoryStore<Tenant> store) : ITenantStore
 {
     public Task<Tenant?> FindAsync(TenantFilter filter, CancellationToken cancellationToken = default)
@@ -41,16 +43,16 @@ public class MemoryTenantStore(MemoryStore<Tenant> store) : ITenantStore
         return Task.CompletedTask;
     }
 
-    public Task DeleteAsync(string id, CancellationToken cancellationToken = default)
+    public Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        store.Delete(id);
-        return Task.CompletedTask;
+        var found = store.Delete(id);
+        return Task.FromResult(found);
     }
 
-    public Task DeleteAsync(TenantFilter filter, CancellationToken cancellationToken = default)
+    public Task<long> DeleteAsync(TenantFilter filter, CancellationToken cancellationToken = default)
     {
-        store.DeleteMany(filter.Apply(store.Queryable), GetId);
-        return Task.CompletedTask;
+        var deletedCount = store.DeleteMany(filter.Apply(store.Queryable), GetId);
+        return Task.FromResult(deletedCount);
     }
     
     private IQueryable<Tenant> Filter(IQueryable<Tenant> queryable, TenantFilter filter) => filter.Apply(queryable);

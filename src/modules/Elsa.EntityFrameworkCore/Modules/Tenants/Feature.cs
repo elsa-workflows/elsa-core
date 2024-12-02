@@ -27,4 +27,9 @@ public class EFCoreTenantManagementFeature(IModule module) : PersistenceFeatureB
         base.Apply();
         AddEntityStore<Tenant, EFCoreTenantStore>();
     }
+
+    protected override void ConfigureMigrations()
+    {
+        Module.ConfigureHostedService<RunMigrationsHostedService<TenantsElsaDbContext>>(-100);
+    }
 }

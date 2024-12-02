@@ -45,6 +45,12 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase
             .MigrationsAssembly("Elsa.EntityFrameworkCore.Sqlite")
             .MigrationsHistoryTable(ElsaDbContextBase.MigrationsHistoryTable, ElsaDbContextBase.ElsaSchema));
 
+    public override void ConfigureHostedServices()
+    {
+        if (RunMigrations)
+            ConfigureMigrations();
+    }
+
     /// <inheritdoc />
     public override void Apply()
     {
@@ -52,9 +58,11 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase
             Services.AddPooledDbContextFactory<TDbContext>(DbContextOptionsBuilder);
         else
             Services.AddDbContextFactory<TDbContext>(DbContextOptionsBuilder, DbContextFactoryLifetime);
+    }
 
-        if (RunMigrations)
-            Services.AddStartupTask<RunMigrationsStartupTask<TDbContext>>();
+    protected virtual void ConfigureMigrations()
+    {
+        Services.AddStartupTask<RunMigrationsStartupTask<TDbContext>>();
     }
 
     /// <summary>

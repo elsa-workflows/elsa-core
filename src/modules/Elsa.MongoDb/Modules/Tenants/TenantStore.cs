@@ -49,14 +49,15 @@ public class MongoTenantStore(MongoDbStore<Tenant> store) : ITenantStore
     }
 
     /// <inheritdoc />
-    public Task DeleteAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
         var filter = TenantFilter.ById(id);
-        return DeleteAsync(filter, cancellationToken);
+        var count = await DeleteAsync(filter, cancellationToken);
+        return count > 0;
     }
 
     /// <inheritdoc />
-    public Task DeleteAsync(TenantFilter filter, CancellationToken cancellationToken = default)
+    public Task<long> DeleteAsync(TenantFilter filter, CancellationToken cancellationToken = default)
     {
         return store.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
     }

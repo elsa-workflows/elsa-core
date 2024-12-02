@@ -1,8 +1,10 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Tenants;
+using JetBrains.Annotations;
 
 namespace Elsa.EntityFrameworkCore.Modules.Tenants;
 
+[UsedImplicitly]
 public class EFCoreTenantStore(EntityStore<TenantsElsaDbContext, Tenant> store) : ITenantStore
 {
     public async Task<Tenant?> FindAsync(TenantFilter filter, CancellationToken cancellationToken = default)
@@ -36,15 +38,16 @@ public class EFCoreTenantStore(EntityStore<TenantsElsaDbContext, Tenant> store) 
         await store.UpdateAsync(tenant, cancellationToken);
     }
 
-    public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
         var filter = TenantFilter.ById(id);
-        await DeleteAsync(filter, cancellationToken);
+        var count = await DeleteAsync(filter, cancellationToken);
+        return count > 0;
     }
 
-    public async Task DeleteAsync(TenantFilter filter, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteAsync(TenantFilter filter, CancellationToken cancellationToken = default)
     {
-        await store.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
+        return await store.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
     }
     
     private static IQueryable<Tenant> Filter(IQueryable<Tenant> query, TenantFilter filter) => filter.Apply(query);

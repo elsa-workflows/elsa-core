@@ -10,6 +10,6 @@ public interface ITenantStore
     Task<IEnumerable<Tenant>> ListAsync(CancellationToken cancellationToken = default);
     Task AddAsync(Tenant tenant, CancellationToken cancellationToken = default);
     Task UpdateAsync(Tenant tenant, CancellationToken cancellationToken = default);
-    Task DeleteAsync(string id, CancellationToken cancellationToken = default);
-    Task DeleteAsync(TenantFilter filter, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
+    Task<long> DeleteAsync(TenantFilter filter, CancellationToken cancellationToken = default);
 }

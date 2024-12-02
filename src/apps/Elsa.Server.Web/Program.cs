@@ -149,7 +149,7 @@ services
                             ef.UseSqlServer(sqlServerConnectionString!);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
-                        else if(sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
                             ef.UseMySql(mySqlConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
@@ -183,7 +183,7 @@ services
                             ef.UseSqlServer(sqlServerConnectionString!);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
-                        else if(sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
                             ef.UseMySql(mySqlConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
@@ -254,7 +254,7 @@ services
                         }
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
-                        else if(sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
                             ef.UseMySql(mySqlConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
@@ -379,7 +379,7 @@ services
                             ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString);
-                        else if(sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
                             ef.UseMySql(mySqlConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
@@ -455,8 +455,8 @@ services
                 asb.AzureServiceBusOptions = options => configuration.GetSection("AzureServiceBus").Bind(options);
             });
         }
-        
-        if(useKafka)
+
+        if (useKafka)
         {
             elsa.UseKafka(kafka =>
             {
@@ -471,10 +471,10 @@ services
                 .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite(sp => sp.GetSqliteConnectionString())))
                 .UseAgentsApi()
                 ;
-            
+
             services.Configure<AgentsOptions>(options => builder.Configuration.GetSection("Agents").Bind(options));
         }
-        
+
         if (useSecrets)
         {
             elsa
@@ -485,11 +485,11 @@ services
                     if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                         management.UseEntityFrameworkCore(ef =>
                             ef.UseSqlServer(sqlServerConnectionString)
-                            );
+                        );
                     else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
-                        management.UseEntityFrameworkCore(ef => 
+                        management.UseEntityFrameworkCore(ef =>
                             ef.UsePostgreSql(postgresConnectionString)
-                            );
+                        );
                     else
                         management.UseEntityFrameworkCore(ef =>
                         {
@@ -513,7 +513,7 @@ services
                         .Append<HeaderTenantResolver>()
                         .Append<ClaimsTenantResolver>();
                 });
-                
+
                 if (useTenantsFromConfiguration)
                 {
                     tenants.UseConfigurationBasedTenantsProvider(options => configuration.GetSection("Multitenancy").Bind(options));
@@ -522,21 +522,26 @@ services
                 {
                     tenants.UseStoreBasedTenantsProvider();
                     
-                    if(persistenceProvider == PersistenceProvider.MongoDb)
-                        tenants.UseTenantManagement(management => management.UseMongoDb());
-                    if(persistenceProvider == PersistenceProvider.Dapper)
-                        throw new NotSupportedException("Dapper is not supported for tenant management.");
-                    if (persistenceProvider == PersistenceProvider.EntityFrameworkCore)
+                    tenants.UseTenantManagement(management =>
                     {
-                        tenants.UseTenantManagement(management => management.UseEntityFrameworkCore(ef =>
+                        if (persistenceProvider == PersistenceProvider.MongoDb)
+                            management.UseMongoDb();
+                        if (persistenceProvider == PersistenceProvider.Dapper)
+                            throw new NotSupportedException("Dapper is not supported for tenant management.");
+                        if (persistenceProvider == PersistenceProvider.EntityFrameworkCore)
                         {
-                            if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite) ef.UseSqlite(sqliteConnectionString);
-                            if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer) ef.UseSqlServer(sqlServerConnectionString);
-                            if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);
-                            if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) ef.UseMySql(mySqlConnectionString);
-                            if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb) ef.UsePostgreSql(cockroachDbConnectionString);
-                        }));
-                    }
+                            management.UseEntityFrameworkCore(ef =>
+                            {
+                                if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite) ef.UseSqlite(sqliteConnectionString);
+                                if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer) ef.UseSqlServer(sqlServerConnectionString);
+                                if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);
+                                if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) ef.UseMySql(mySqlConnectionString);
+                                if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb) ef.UsePostgreSql(cockroachDbConnectionString);
+                            });
+                        }
+                    });
+                    
+                    tenants.UseTenantManagementEndpoints();
                 }
             });
 
@@ -588,7 +593,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Multitenancy.
-if(useMultitenancy)
+if (useMultitenancy)
     app.UseTenants();
 
 // Elsa API endpoints for designer.

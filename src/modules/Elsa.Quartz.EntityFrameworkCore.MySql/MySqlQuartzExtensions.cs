@@ -1,5 +1,4 @@
-﻿using Elsa.Extensions;
-using Elsa.Quartz.EntityFrameworkCore.MySql;
+﻿using Elsa.Quartz.EntityFrameworkCore.MySql;
 using Elsa.Quartz.Features;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
@@ -37,7 +36,7 @@ public static class MySqlQuartzExtensions
             });
         };
         
-        feature.Services.AddStartupTask<RunMigrationsStartupTask<MySqlQuartzDbContext>>();
+        feature.Module.ConfigureHostedService<RunMigrationsHostedService<MySqlQuartzDbContext>>(-100);
 
         return feature;
     }

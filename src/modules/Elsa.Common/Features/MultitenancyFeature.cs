@@ -29,7 +29,7 @@ public class MultitenancyFeature(IModule module) : FeatureBase(module)
     public override void ConfigureHostedServices()
     {
         Module
-            .ConfigureHostedService<ActivateTenants>(1)
+            .ConfigureHostedService<ActivateTenants>(-1)
             ;
     }
 

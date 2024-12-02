@@ -1,5 +1,4 @@
-﻿using Elsa.Extensions;
-using Elsa.Quartz.EntityFrameworkCore.SqlServer;
+﻿using Elsa.Quartz.EntityFrameworkCore.SqlServer;
 using Elsa.Quartz.Features;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +40,7 @@ public static class SqlServerQuartzExtensions
             });
         };
 
-        feature.Services.AddStartupTask<RunMigrationsStartupTask<SqlServerQuartzDbContext>>();
+        feature.Module.ConfigureHostedService<RunMigrationsHostedService<SqlServerQuartzDbContext>>(-100);
 
         return feature;
     }
