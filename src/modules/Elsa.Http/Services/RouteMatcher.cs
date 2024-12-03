@@ -13,7 +13,8 @@ public class RouteMatcher : IRouteMatcher
     public RouteValueDictionary? Match(string routeTemplate, string route)
     {
         var normalizedRoute = route.NormalizeRoute();
-        var template = TemplateParser.Parse(routeTemplate);
+        var normalizedRouteTemplate = routeTemplate.NormalizeRoute();
+        var template = TemplateParser.Parse(normalizedRouteTemplate);
         var matcher = new TemplateMatcher(template, GetDefaults(template));
         var values = new RouteValueDictionary();
 
