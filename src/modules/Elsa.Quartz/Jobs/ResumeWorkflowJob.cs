@@ -14,27 +14,25 @@ namespace Elsa.Quartz.Jobs;
 /// </summary>
 public class ResumeWorkflowJob(IWorkflowRuntime workflowRuntime, IJsonSerializer jsonSerializer, ITenantFinder tenantFinder, ITenantAccessor tenantAccessor) : IJob
 {
-    /// <summary>
-    /// The job key.
-    /// </summary>
-    public static readonly JobKey JobKey = new(nameof(ResumeWorkflowJob));
-
     /// <inheritdoc />
     public async Task Execute(IJobExecutionContext context)
     {
-        tenantAccessor.Tenant = await context.GetTenantAsync(tenantFinder);
-        var map = context.MergedJobDataMap;
-        var serializedActivityHandle = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.ActivityHandle));
-        var activityHandle = serializedActivityHandle != null ? jsonSerializer.Deserialize<ActivityHandle>(serializedActivityHandle) : null;
-        var workflowInstanceId = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.WorkflowInstanceId));
-        var workflowClient = await workflowRuntime.CreateClientAsync(workflowInstanceId, context.CancellationToken);
-        var request = new RunWorkflowInstanceRequest
+        var tenant = await context.GetTenantAsync(tenantFinder);
+        using (tenantAccessor.PushContext(tenant))
         {
-            BookmarkId = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.BookmarkId)),
-            ActivityHandle = activityHandle,
-            Input = map.GetDictionary(nameof(ScheduleExistingWorkflowInstanceRequest.Input)),
-            Properties = map.GetDictionary(nameof(ScheduleExistingWorkflowInstanceRequest.Properties)),
-        };
-        await workflowClient.RunInstanceAsync(request, cancellationToken: context.CancellationToken);
+            var map = context.MergedJobDataMap;
+            var serializedActivityHandle = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.ActivityHandle));
+            var activityHandle = serializedActivityHandle != null! ? jsonSerializer.Deserialize<ActivityHandle>(serializedActivityHandle) : null;
+            var workflowInstanceId = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.WorkflowInstanceId));
+            var workflowClient = await workflowRuntime.CreateClientAsync(workflowInstanceId, context.CancellationToken);
+            var request = new RunWorkflowInstanceRequest
+            {
+                BookmarkId = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.BookmarkId)),
+                ActivityHandle = activityHandle,
+                Input = map.GetDictionary(nameof(ScheduleExistingWorkflowInstanceRequest.Input)),
+                Properties = map.GetDictionary(nameof(ScheduleExistingWorkflowInstanceRequest.Properties)),
+            };
+            await workflowClient.RunInstanceAsync(request, cancellationToken: context.CancellationToken);
+        }
     }
 }

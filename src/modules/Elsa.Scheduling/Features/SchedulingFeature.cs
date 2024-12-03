@@ -1,4 +1,5 @@
 using Elsa.Common.Features;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -36,6 +37,9 @@ public class SchedulingFeature : FeatureBase
     public override void Apply()
     {
         Services
+            .AddSingleton<UpdateTenantSchedules>()
+            .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<UpdateTenantSchedules>())
+            .AddSingleton<ITenantDeactivatedEvent>(sp => sp.GetRequiredService<UpdateTenantSchedules>())
             .AddSingleton<IScheduler, LocalScheduler>()
             .AddSingleton<CronosCronParser>()
             .AddSingleton(CronParser)

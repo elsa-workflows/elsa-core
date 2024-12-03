@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.Multitenancy;
 
-public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScopeFactory tenantScopeFactory, TenantEventsManager tenantEvents) : ITenantService, IAsyncDisposable
+public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScopeFactory tenantScopeFactory, TenantEventsManager tenantEvents, ITenantAccessor tenantAccessor) : ITenantService, IAsyncDisposable
 {
     private readonly AsyncServiceScope _serviceScope = scopeFactory.CreateAsyncScope();
     private IDictionary<string, Tenant>? _tenantsDictionary;
@@ -57,7 +57,7 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
     public async Task DeactivateTenantsAsync(CancellationToken cancellationToken = default)
     {
         var tenants = _tenantsDictionary!.Values.ToArray();
-        
+
         foreach (var tenant in tenants)
             await UnregisterTenantAsync(tenant, cancellationToken);
     }
@@ -108,7 +108,8 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
         _tenantsDictionary![tenant.Id] = tenant;
         _tenantScopesDictionary![tenant] = scope;
 
-        await tenantEvents.TenantActivatedAsync(new TenantActivatedEventArgs(tenant, scope, cancellationToken));
+        using (tenantAccessor.PushContext(tenant))
+            await tenantEvents.TenantActivatedAsync(new TenantActivatedEventArgs(tenant, scope, cancellationToken));
     }
 
     private async Task UnregisterTenantAsync(Tenant tenant, CancellationToken cancellationToken = default)
@@ -117,6 +118,7 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
         _tenantsDictionary!.Remove(tenant.Id);
         _tenantScopesDictionary!.Remove(tenant);
 
-        await tenantEvents.TenantDeactivatedAsync(new TenantDeactivatedEventArgs(tenant, scope, cancellationToken));
+        using (tenantAccessor.PushContext(tenant))
+            await tenantEvents.TenantDeactivatedAsync(new TenantDeactivatedEventArgs(tenant, scope, cancellationToken));
     }
 }

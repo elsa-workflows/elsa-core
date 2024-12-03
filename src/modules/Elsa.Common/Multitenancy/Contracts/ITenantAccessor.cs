@@ -6,5 +6,7 @@ public interface ITenantAccessor
     /// Get the current <see cref="Multitenancy.Tenant"/>.
     /// </summary>
     /// <returns>Current tenant or null.</returns>
-    Tenant? Tenant { get; set; }
+    Tenant? Tenant { get; }
+
+    IDisposable PushContext(Tenant? tenant);
 }
