@@ -44,6 +44,7 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
         var context = notification.Context;
         var engine = notification.Engine;
         var variablesContainer = (IDictionary<string, object?>)engine.GetValue("variables").ToObject()!;
+        var originalValues = (IDictionary<string, object?>)engine.GetValue("_originalValues").ToObject()!;
         var inputNames = GetInputNames(context).FilterInvalidVariableNames().Distinct().ToList();
 
         foreach (var (variableName, variableValue) in variablesContainer)
@@ -51,11 +52,35 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
             if (inputNames.Contains(variableName))
                 continue;
 
-            var processedValue = variableValue is JsObject jsValue ? jsValue.ToObject() : variableValue ?? context.GetVariableInScope(variableName);
-            context.SetVariable(variableName, processedValue);
+            var isVariableUntouched = originalValues.TryGetValue(variableName, out var originalValue) && Equals(originalValue, variableValue);
+            if (!isVariableUntouched)
+            {
+                var processedValue = variableValue is JsObject jsValue ? jsValue.ToObject() : variableValue ?? context.GetVariableInScope(variableName);
+                context.SetVariable(variableName, processedValue);
+            }
         }
     }
 
+    private void CopyVariablesIntoEngine(EvaluatingJavaScript notification)
+    {
+        var engine = notification.Engine;
+        var context = notification.Context;
+        var variableNames = context.GetVariableNamesInScope().FilterInvalidVariableNames().ToList();
+        var variablesContainer = (IDictionary<string, object?>)new ExpandoObject();
+        var originalValues = new Dictionary<string, object?>();
+
+        foreach (var variableName in variableNames)
+        {
+            var variableValue = context.GetVariableInScope(variableName);
+            originalValues[variableName] = variableValue;
+            variableValue = ProcessVariableValue(engine, variableValue);
+            variablesContainer[variableName] = variableValue;
+        }
+        
+        engine.SetValue("_originalValues", originalValues);
+        engine.SetValue("variables", variablesContainer);
+    }
+    
     private IEnumerable<string> GetInputNames(ExpressionExecutionContext context)
     {
         var activityExecutionContext = context.TryGetActivityExecutionContext(out var aec) ? aec : null;
@@ -72,23 +97,6 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
 
             activityExecutionContext = activityExecutionContext.ParentActivityExecutionContext;
         }
-    }
-
-    private void CopyVariablesIntoEngine(EvaluatingJavaScript notification)
-    {
-        var engine = notification.Engine;
-        var context = notification.Context;
-        var variableNames = context.GetVariableNamesInScope().FilterInvalidVariableNames().ToList();
-        var variablesContainer = (IDictionary<string, object?>)new ExpandoObject();
-
-        foreach (var variableName in variableNames)
-        {
-            var variableValue = context.GetVariableInScope(variableName);
-            variableValue = ProcessVariableValue(engine, variableValue);
-            variablesContainer[variableName] = variableValue;
-        }
-
-        engine.SetValue("variables", variablesContainer);
     }
 
     private object? ProcessVariableValue(Engine engine, object? variableValue)
