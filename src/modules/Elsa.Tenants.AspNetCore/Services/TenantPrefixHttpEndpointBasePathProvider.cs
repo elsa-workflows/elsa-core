@@ -22,7 +22,7 @@ public class TenantPrefixHttpEndpointBasePathProvider(
             return (baseUrl + basePath).TrimEnd('/') + '/';
         
         var tenant = tenantAccessor.Tenant;
-        var tenantPrefix = tenant?.GetRoutePrefix();
+        var tenantPrefix = tenant?.GetRoutePrefix()?.Trim('/');
         
         if(string.IsNullOrWhiteSpace(tenantPrefix))
             return (baseUrl + basePath).TrimEnd('/') + '/';

@@ -9,7 +9,7 @@ public class DefaultHttpEndpointBasePathProvider(IOptions<HttpActivityOptions> o
 {
     public string GetBasePath()
     {
-        var baseUrl = new Uri(options.Value.BaseUrl.ToString().TrimEnd('/'));
+        var baseUrl = new Uri(options.Value.BaseUrl.ToString().TrimEnd('/') + '/');
         var basePath = options.Value.BasePath?.ToString().Trim('/');
         var completeBaseUrl = new Uri(baseUrl, basePath);
 
