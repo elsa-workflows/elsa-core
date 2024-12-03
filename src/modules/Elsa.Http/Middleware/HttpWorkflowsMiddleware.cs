@@ -41,7 +41,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
     {
         var path = GetPath(httpContext);
         var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
-        var strippedMatchingPath = matchingPath;
         var basePath = options.Value.BasePath?.ToString().NormalizeRoute();
 
         // If the request path does not match the configured base path to handle workflows, then skip.
@@ -54,10 +53,10 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
             }
 
             // Strip the base path.
-            strippedMatchingPath = matchingPath[basePath.Length..];
+            matchingPath = matchingPath[basePath.Length..];
         }
 
-        strippedMatchingPath = strippedMatchingPath.NormalizeRoute();
+        matchingPath = matchingPath.NormalizeRoute();
         
         var input = new Dictionary<string, object>
         {
@@ -71,7 +70,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
         var httpWorkflowLookupService = serviceProvider.GetRequiredService<IHttpWorkflowLookupService>();
         var workflowInstanceId = await GetWorkflowInstanceIdAsync(serviceProvider, httpContext, cancellationToken);
         var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, cancellationToken);
-        var bookmarkHash = ComputeBookmarkHash(serviceProvider, strippedMatchingPath, method);
+        var bookmarkHash = ComputeBookmarkHash(serviceProvider, matchingPath, method);
         var lookupResult = await httpWorkflowLookupService.FindWorkflowAsync(bookmarkHash, cancellationToken);
 
         if (lookupResult != null)
