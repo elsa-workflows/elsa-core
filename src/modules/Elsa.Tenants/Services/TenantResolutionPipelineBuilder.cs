@@ -1,7 +1,7 @@
 using Elsa.Common.Multitenancy;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Tenants.Services;
+namespace Elsa.Tenants;
 
 /// <inheritdoc />
 public class TenantResolverPipelineBuilder : ITenantResolverPipelineBuilder

@@ -3,7 +3,7 @@ using Elsa.Tenants.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Tenants.Services;
+namespace Elsa.Tenants;
 
 /// <summary>
 /// Resolves the tenant using a pipeline of resolvers.

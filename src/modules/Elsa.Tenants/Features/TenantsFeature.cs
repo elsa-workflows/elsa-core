@@ -4,7 +4,6 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
-using Elsa.Tenants.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Tenants.Features;
@@ -17,23 +16,37 @@ public class TenantsFeature(IModule serviceConfiguration) : FeatureBase(serviceC
     /// <summary>
     /// Configures the Tenants options.
     /// </summary>
-    private Action<MultitenancyOptions> TenantsOptions { get; set; } = _ => { };
+    private Action<MultitenancyOptions> MultitenancyOptions { get; set; } = _ => { };
     
-    public TenantsFeature ConfigureOptions(Action<MultitenancyOptions> configure)
+    private Action<TenantsOptions> TenantsOptions { get; set; } = _ => { };
+    
+    public TenantsFeature ConfigureMultitenancy(Action<MultitenancyOptions> configure)
     {
         Services.Configure(configure);
         return this;
     }
     
-    public void UseConfigurationBasedTenantsProvider()
+    public TenantsFeature ConfigureTenants(Action<TenantsOptions> configure)
     {
+        Services.Configure(configure);
+        return this;
+    }
+    
+    public void UseConfigurationBasedTenantsProvider(Action<TenantsOptions> configure)
+    {
+        ConfigureTenants(configure);
         Module.Configure<MultitenancyFeature>(feature => feature.UseTenantsProvider<ConfigurationTenantsProvider>());
+    }
+    
+    public void UseStoreBasedTenantsProvider()
+    {
+        Module.Configure<MultitenancyFeature>(feature => feature.UseTenantsProvider<StoreTenantsProvider>());
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.Configure(TenantsOptions);
+        Services.Configure(MultitenancyOptions);
 
         Services
             .AddScoped<ITenantResolverPipelineInvoker, DefaultTenantResolverPipelineInvoker>()

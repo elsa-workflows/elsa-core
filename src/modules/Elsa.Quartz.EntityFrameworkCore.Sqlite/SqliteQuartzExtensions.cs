@@ -33,7 +33,6 @@ public static class SqliteQuartzExtensions
             });
         };
 
-        // Configure the Quartz hosted service to run migrations.
         feature.Module.ConfigureHostedService<RunMigrationsHostedService<SqliteQuartzDbContext>>(-100);
 
         return feature;

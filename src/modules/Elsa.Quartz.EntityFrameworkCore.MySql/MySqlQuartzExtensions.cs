@@ -35,8 +35,7 @@ public static class MySqlQuartzExtensions
                     store.UseClustering();
             });
         };
-
-        // Configure the Quartz hosted service to run migrations.
+        
         feature.Module.ConfigureHostedService<RunMigrationsHostedService<MySqlQuartzDbContext>>(-100);
 
         return feature;

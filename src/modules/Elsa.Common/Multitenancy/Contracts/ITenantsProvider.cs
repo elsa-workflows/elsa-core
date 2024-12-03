@@ -8,10 +8,10 @@ public interface ITenantsProvider
     /// <summary>
     /// Lists all the tenants.
     /// </summary>
-    ValueTask<IEnumerable<Tenant>> ListAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<Tenant>> ListAsync(CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Finds a tenant by the given filter.
     /// </summary>
-    ValueTask<Tenant?> FindAsync(TenantFilter filter, CancellationToken cancellationToken = default);
+    Task<Tenant?> FindAsync(TenantFilter filter, CancellationToken cancellationToken = default);
 }

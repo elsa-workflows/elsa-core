@@ -1,6 +1,7 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime.Exceptions;
 using Elsa.Workflows.Runtime.Messages;
 
 namespace Elsa.Workflows.Runtime;
@@ -55,7 +56,7 @@ public class DefaultWorkflowStarter(IWorkflowDefinitionService workflowDefinitio
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(request.WorkflowDefinitionHandle, cancellationToken);
 
         if (workflowGraph == null)
-            throw new InvalidOperationException($"Workflow definition with handle {request.WorkflowDefinitionHandle} was not found.");
+            throw new WorkflowGraphNotFoundException($"Workflow definition not found.", request.WorkflowDefinitionHandle);
 
         return workflowGraph.Workflow;
     }

@@ -22,7 +22,7 @@ public class Tenant : Entity
     
     public static readonly Tenant Default = new()
     {
-        Id = null!,
+        Id = string.Empty,
         Name = "Default"
     };
 }

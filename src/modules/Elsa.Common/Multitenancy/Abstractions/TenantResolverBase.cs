@@ -40,9 +40,4 @@ public abstract class TenantResolverBase : ITenantResolver
     /// Automatically resolves the tenant if the tenant ID is not null.
     /// </summary>
     protected TenantResolverResult AutoResolve(string? tenantId) => tenantId == null ? Unresolved() : Resolved(tenantId);
-
-    public Task<Tenant?> ResolveAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
 }

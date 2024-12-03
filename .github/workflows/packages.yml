@@ -5,7 +5,7 @@ on:
     branches:
       - 'main'
   release:
-    types: [ prereleased, published ]
+    types: [ prereleased ]
 env:
   base_version: '3.3.0'
   feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'

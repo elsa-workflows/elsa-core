@@ -1,6 +1,4 @@
 using Elsa.Common.Multitenancy;
-using Elsa.Tenants.Providers;
-using Elsa.Tenants.Services;
 
 namespace Elsa.Tenants.Options;
 
@@ -9,11 +7,6 @@ namespace Elsa.Tenants.Options;
 /// </summary>
 public class MultitenancyOptions
 {
-    /// <summary>
-    /// Gets or sets the tenants through configuration. Will be used by the <see cref="ConfigurationTenantsProvider"/>
-    /// </summary>
-    public ICollection<Tenant> Tenants { get; set; } = new List<Tenant>();
-
     /// <summary>
     /// Gets or sets the tenant resolution pipeline builder.
     /// </summary>

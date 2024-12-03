@@ -68,7 +68,7 @@ public class ProduceMessage : CodeActivity
         var producerDefinitionEnumerator = context.GetRequiredService<IProducerDefinitionEnumerator>();
         var producerDefinition = await producerDefinitionEnumerator.GetByIdAsync(producerDefinitionId);
         var content = Content.Get(context);
-        var key = Key.Get(context);
+        var key = Key.GetOrDefault(context);
 
         if (key is string keyString && string.IsNullOrWhiteSpace(keyString))
             key = null;

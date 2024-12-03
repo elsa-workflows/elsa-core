@@ -1,21 +1,33 @@
-﻿using Elsa.Common.Multitenancy;
-using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// Executes EF Core migrations using the specified <see cref="DbContext"/> type.
 /// </summary>
-[UsedImplicitly]
-public class RunMigrationsHostedService<TDbContext>(IServiceScopeFactory scopeFactory) : MultitenantHostedService(scopeFactory) where TDbContext : DbContext
+public class RunMigrationsHostedService<TDbContext> : IHostedService where TDbContext : DbContext
 {
-    /// <inheritdoc />
-    protected override async Task StartAsync(TenantScope tenantScope, CancellationToken cancellationToken)
+    private readonly IServiceScopeFactory _scopeFactory;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RunMigrationsHostedService{TDbContext}"/> class.
+    /// </summary>
+    public RunMigrationsHostedService(IServiceScopeFactory scopeFactory)
     {
-        var dbContextFactory = tenantScope.ServiceProvider.GetRequiredService<IDbContextFactory<TDbContext>>();
-        var tenantDbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        await tenantDbContext.Database.MigrateAsync(cancellationToken);
+        _scopeFactory = scopeFactory;
     }
+
+    /// <inheritdoc />
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TDbContext>>();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await dbContext.Database.MigrateAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

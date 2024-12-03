@@ -1,5 +1,8 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Common.Multitenancy.EventHandlers;
 using Elsa.Common.Multitenancy.HostedServices;
+using Elsa.Common.RecurringTasks;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,9 +29,7 @@ public class MultitenancyFeature(IModule module) : FeatureBase(module)
     public override void ConfigureHostedServices()
     {
         Module
-            .ConfigureHostedService<StartupTasksRunner>(1)
-            .ConfigureHostedService<BackgroundTasksRunner>(1)
-            .ConfigureHostedService<RecurringTasksRunner>(1)
+            .ConfigureHostedService<ActivateTenants>(-1)
             ;
     }
 
@@ -38,9 +39,24 @@ public class MultitenancyFeature(IModule module) : FeatureBase(module)
             .AddSingleton<ITenantScopeFactory, DefaultTenantScopeFactory>()
             .AddSingleton<ITenantAccessor, DefaultTenantAccessor>()
             .AddSingleton<ITenantFinder, DefaultTenantFinder>()
-            .AddSingleton<ITenantContextInitializer, DefaultTenantContextInitializer>()
+            .AddSingleton<ITenantService, DefaultTenantService>()
+            
+            .AddSingleton<RunBackgroundTasks>()
+            .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<RunBackgroundTasks>())
+            .AddSingleton<ITenantDeactivatedEvent>(sp => sp.GetRequiredService<RunBackgroundTasks>())
+            
+            .AddSingleton<StartRecurringTasks>()
+            .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<StartRecurringTasks>())
+            .AddSingleton<ITenantDeactivatedEvent>(sp => sp.GetRequiredService<StartRecurringTasks>())
+            
+            .AddSingleton<ITenantActivatedEvent, RunStartupTasks>()
+            .AddSingleton<RecurringTaskScheduleManager>()
+            .AddSingleton<TenantEventsManager>()
+            .AddStartupTask<ConfigureRecurringTasksScheduleStartupTask>()
             .AddScoped<DefaultTenantsProvider>()
             .AddScoped<DefaultTenantResolver>()
+            .AddScoped<ITaskExecutor, TaskExecutor>()
+            .AddScoped<IBackgroundTaskStarter, TaskExecutor>()
             .AddScoped(_tenantsProviderFactory);
     }
 }

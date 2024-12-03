@@ -41,7 +41,6 @@ public static class PostgreSqlQuartzExtensions
             });
         };
 
-        // Configure the Quartz hosted service to run migrations.
         feature.Module.ConfigureHostedService<RunMigrationsHostedService<PostgreSqlQuartzDbContext>>(-100);
 
         return feature;

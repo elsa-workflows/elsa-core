@@ -33,7 +33,6 @@ public static class SqlServerQuartzExtensions
                 {
                     options.ConnectionString = connectionString;
                     options.TablePrefix = "[quartz].qrtz_";
-
                 });
 
                 if (useClustering)
@@ -41,7 +40,6 @@ public static class SqlServerQuartzExtensions
             });
         };
 
-        // Configure the Quartz hosted service to run migrations.
         feature.Module.ConfigureHostedService<RunMigrationsHostedService<SqlServerQuartzDbContext>>(-100);
 
         return feature;
