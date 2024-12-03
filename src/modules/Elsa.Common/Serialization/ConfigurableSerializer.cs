@@ -79,6 +79,7 @@ public abstract class ConfigurableSerializer
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
         options.Converters.Add(new IntegerJsonConverter());
+        options.Converters.Add(new BigIntegerJsonConverter());
         options.Converters.Add(new DecimalJsonConverter());
 
         return options;
