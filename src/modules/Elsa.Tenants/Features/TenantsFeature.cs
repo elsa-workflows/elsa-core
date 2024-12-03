@@ -1,6 +1,7 @@
 using Elsa.Common.Features;
 using Elsa.Common.Multitenancy;
 using Elsa.Features.Abstractions;
+using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
@@ -11,6 +12,7 @@ namespace Elsa.Tenants.Features;
 /// <summary>
 /// Configures multi-tenancy features.
 /// </summary>
+[DependencyOf(typeof(MultitenancyFeature))]
 public class TenantsFeature(IModule serviceConfiguration) : FeatureBase(serviceConfiguration)
 {
     /// <summary>
