@@ -7,6 +7,6 @@ namespace Elsa.Kafka;
 public class ConsumerDefinition : Entity
 {
     public string Name { get; set; } = default!;
-    public Type FactoryType { get; set; } = typeof(DefaultConsumerFactory);
+    public Type FactoryType { get; set; } = default!;
     public ConsumerConfig Config { get; set; } = new();
 }
