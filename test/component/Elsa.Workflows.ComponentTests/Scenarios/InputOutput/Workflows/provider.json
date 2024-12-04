@@ -1,0 +1,104 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "5ba5a7e36d60549b",
+  "definitionId": "780fbf96f1bb1e7e",
+  "name": "Provider",
+  "createdAt": "2024-12-04T16:22:39.064075\u002B00:00",
+  "version": 1,
+  "toolVersion": "3.3.0.0",
+  "variables": [],
+  "inputs": [
+    {
+      "uiHint": "singleline",
+      "storageDriverType": "Elsa.Workflows.WorkflowInstanceStorageDriver, Elsa.Workflows.Core",
+      "type": "Object",
+      "name": "Input1",
+      "displayName": "Input 1",
+      "description": "",
+      "category": "Primitives",
+      "isArray": false
+    }
+  ],
+  "outputs": [
+    {
+      "type": "Object",
+      "name": "Output1",
+      "displayName": "Output 1",
+      "description": "",
+      "category": "Primitives",
+      "isArray": false
+    }
+  ],
+  "outcomes": [],
+  "customProperties": {
+    "logPersistenceConfig": {
+      "default": {
+        "evaluationMode": "Strategy",
+        "strategyType": "Elsa.Workflows.LogPersistence.Strategies.Inherit, Elsa.Workflows.Core",
+        "expression": null
+      }
+    }
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": false,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true
+  },
+  "root": {
+    "id": "85a5e1d9e487bfa4",
+    "nodeId": "Workflow1:85a5e1d9e487bfa4",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "outputName": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Output1"
+          }
+        },
+        "outputValue": {
+          "typeName": "Object",
+          "expression": {
+            "type": "JavaScript",
+            "value": "return getInput1()"
+          }
+        },
+        "id": "985eb3bfb8d4dd3f",
+        "nodeId": "Workflow1:85a5e1d9e487bfa4:985eb3bfb8d4dd3f",
+        "name": "SetOutput1",
+        "type": "Elsa.SetOutput",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -380,
+              "y": -220
+            },
+            "size": {
+              "width": 107.3203125,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": []
+  }
+}
