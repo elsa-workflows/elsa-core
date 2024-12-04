@@ -21,12 +21,12 @@ public class ConfigureEngineWithVariablesAndInputOutputAccessors(IOptions<JintOp
     /// <inheritdoc />
     public async Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
-        if(options.Value.DisableWrappers)
+        if (options.Value.DisableWrappers)
             return;
-        
+
         var engine = notification.Engine;
         var context = notification.Context;
-        
+
         // The order of the next 3 lines is important.
         CreateVariableAccessors(engine, context);
         CreateWorkflowInputAccessors(engine, context);
@@ -41,7 +41,11 @@ public class ConfigureEngineWithVariablesAndInputOutputAccessors(IOptions<JintOp
         {
             var pascalName = variableName.Pascalize();
             engine.SetValue($"get{pascalName}", (Func<object?>)(() => context.GetVariableInScope(variableName)));
-            engine.SetValue($"set{pascalName}", (Action<object?>)(value => context.SetVariableInScope(variableName, value)));
+            engine.SetValue($"set{pascalName}", (Action<object?>)(value =>
+            {
+                engine.SyncVariablesContainer(options, variableName, value);
+                context.SetVariableInScope(variableName, value);
+            }));
         }
     }
 
@@ -65,7 +69,7 @@ public class ConfigureEngineWithVariablesAndInputOutputAccessors(IOptions<JintOp
             engine.SetValue($"get{inputDefinition.Name}", (Func<object?>)(() => input?.Value));
         }
     }
-    
+
     private static async Task CreateActivityOutputAccessorsAsync(Engine engine, ExpressionExecutionContext context)
     {
         var activityOutputs = context.GetActivityOutputs();

@@ -23,18 +23,18 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
     /// <inheritdoc />
     public Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
-        if(options.Value.DisableWrappers)
+        if (options.Value.DisableWrappers)
             return Task.CompletedTask;
-        
+
         CopyVariablesIntoEngine(notification);
         return Task.CompletedTask;
     }
 
     public Task HandleAsync(EvaluatedJavaScript notification, CancellationToken cancellationToken)
     {
-        if(options.Value.DisableWrappers)
+        if (options.Value.DisableWrappers)
             return Task.CompletedTask;
-        
+
         CopyVariablesIntoWorkflowExecutionContext(notification);
         return Task.CompletedTask;
     }
@@ -56,6 +56,23 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
         }
     }
 
+    private void CopyVariablesIntoEngine(EvaluatingJavaScript notification)
+    {
+        var engine = notification.Engine;
+        var context = notification.Context;
+        var variableNames = context.GetVariableNamesInScope().FilterInvalidVariableNames().ToList();
+        var variablesContainer = (IDictionary<string, object?>)new ExpandoObject();
+
+        foreach (var variableName in variableNames)
+        {
+            var variableValue = context.GetVariableInScope(variableName);
+            variableValue = ObjectConverterHelper.ProcessVariableValue(engine, variableValue);
+            variablesContainer[variableName] = variableValue;
+        }
+
+        engine.SetValue("variables", variablesContainer);
+    }
+
     private IEnumerable<string> GetInputNames(ExpressionExecutionContext context)
     {
         var activityExecutionContext = context.TryGetActivityExecutionContext(out var aec) ? aec : null;
@@ -72,33 +89,5 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
 
             activityExecutionContext = activityExecutionContext.ParentActivityExecutionContext;
         }
-    }
-
-    private void CopyVariablesIntoEngine(EvaluatingJavaScript notification)
-    {
-        var engine = notification.Engine;
-        var context = notification.Context;
-        var variableNames = context.GetVariableNamesInScope().FilterInvalidVariableNames().ToList();
-        var variablesContainer = (IDictionary<string, object?>)new ExpandoObject();
-
-        foreach (var variableName in variableNames)
-        {
-            var variableValue = context.GetVariableInScope(variableName);
-            variableValue = ProcessVariableValue(engine, variableValue);
-            variablesContainer[variableName] = variableValue;
-        }
-
-        engine.SetValue("variables", variablesContainer);
-    }
-
-    private object? ProcessVariableValue(Engine engine, object? variableValue)
-    {
-        if (variableValue == null)
-            return null;
-
-        if (variableValue is not ExpandoObject expandoObject)
-            return variableValue;
-
-        return ObjectConverterHelper.ConvertToJsObject(engine, expandoObject);
     }
 }
