@@ -39,7 +39,8 @@ public class JavaScriptVariablesWorkflowTests(App app) : AppComponentTest(app)
         return
         [
             [JavaScriptVariablesWorkflow1.DefinitionId],
-            [JavaScriptVariablesWorkflow2.DefinitionId]
+            [JavaScriptVariablesWorkflow2.DefinitionId],
+            [JavaScriptVariablesWorkflow3.DefinitionId]
         ];
     }
 

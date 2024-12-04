@@ -1,14 +1,30 @@
 using System.Collections;
+using System.Dynamic;
 using Elsa.Extensions;
+using Elsa.JavaScript.Options;
 using Jint;
 using Jint.Native;
 using Jint.Native.Object;
 using Jint.Runtime.Descriptors;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.JavaScript.Helpers;
 
 internal static class ObjectConverterHelper
 {
+    
+    
+    public static object? ProcessVariableValue(Engine engine, object? variableValue)
+    {
+        if (variableValue == null)
+            return null;
+
+        if (variableValue is not ExpandoObject expandoObject)
+            return variableValue;
+
+        return ConvertToJsObject(engine, expandoObject);
+    }
+    
     public static ObjectInstance ConvertToJsObject(Engine engine, IDictionary<string, object?> expando)
     {
         var jsObject = engine.Intrinsics.Object.Construct([]);

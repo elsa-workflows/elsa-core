@@ -23,18 +23,18 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
     /// <inheritdoc />
     public Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
-        if(options.Value.DisableWrappers)
+        if (options.Value.DisableWrappers)
             return Task.CompletedTask;
-        
+
         CopyVariablesIntoEngine(notification);
         return Task.CompletedTask;
     }
 
     public Task HandleAsync(EvaluatedJavaScript notification, CancellationToken cancellationToken)
     {
-        if(options.Value.DisableWrappers)
+        if (options.Value.DisableWrappers)
             return Task.CompletedTask;
-        
+
         CopyVariablesIntoWorkflowExecutionContext(notification);
         return Task.CompletedTask;
     }
@@ -44,7 +44,6 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
         var context = notification.Context;
         var engine = notification.Engine;
         var variablesContainer = (IDictionary<string, object?>)engine.GetValue("variables").ToObject()!;
-        var originalValues = (IDictionary<string, object?>)engine.GetValue("_originalValues").ToObject()!;
         var inputNames = GetInputNames(context).FilterInvalidVariableNames().Distinct().ToList();
 
         foreach (var (variableName, variableValue) in variablesContainer)
@@ -52,12 +51,8 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
             if (inputNames.Contains(variableName))
                 continue;
 
-            var isVariableUntouched = originalValues.TryGetValue(variableName, out var originalValue) && Equals(originalValue, variableValue);
-            if (!isVariableUntouched)
-            {
-                var processedValue = variableValue is JsObject jsValue ? jsValue.ToObject() : variableValue ?? context.GetVariableInScope(variableName);
-                context.SetVariable(variableName, processedValue);
-            }
+            var processedValue = variableValue is JsObject jsValue ? jsValue.ToObject() : variableValue ?? context.GetVariableInScope(variableName);
+            context.SetVariable(variableName, processedValue);
         }
     }
 
@@ -67,20 +62,17 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
         var context = notification.Context;
         var variableNames = context.GetVariableNamesInScope().FilterInvalidVariableNames().ToList();
         var variablesContainer = (IDictionary<string, object?>)new ExpandoObject();
-        var originalValues = new Dictionary<string, object?>();
 
         foreach (var variableName in variableNames)
         {
             var variableValue = context.GetVariableInScope(variableName);
-            originalValues[variableName] = variableValue;
-            variableValue = ProcessVariableValue(engine, variableValue);
+            variableValue = ObjectConverterHelper.ProcessVariableValue(engine, variableValue);
             variablesContainer[variableName] = variableValue;
         }
-        
-        engine.SetValue("_originalValues", originalValues);
+
         engine.SetValue("variables", variablesContainer);
     }
-    
+
     private IEnumerable<string> GetInputNames(ExpressionExecutionContext context)
     {
         var activityExecutionContext = context.TryGetActivityExecutionContext(out var aec) ? aec : null;
@@ -97,16 +89,5 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
 
             activityExecutionContext = activityExecutionContext.ParentActivityExecutionContext;
         }
-    }
-
-    private object? ProcessVariableValue(Engine engine, object? variableValue)
-    {
-        if (variableValue == null)
-            return null;
-
-        if (variableValue is not ExpandoObject expandoObject)
-            return variableValue;
-
-        return ObjectConverterHelper.ConvertToJsObject(engine, expandoObject);
     }
 }
