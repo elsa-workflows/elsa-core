@@ -53,7 +53,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
             }
 
             // Strip the base path.
-            path = path[basePath.Length..];
             matchingPath = matchingPath[basePath.Length..];
         }
 
@@ -62,7 +61,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
         var input = new Dictionary<string, object>
         {
             [HttpEndpoint.HttpContextInputKey] = true,
-            [HttpEndpoint.RequestPathInputKey] = path
+            [HttpEndpoint.RequestPathInputKey] = path.NormalizeRoute()
         };
 
         var cancellationToken = httpContext.RequestAborted;
