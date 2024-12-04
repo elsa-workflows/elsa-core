@@ -58,7 +58,7 @@ public class TypeJsonConverter : JsonConverter<Type>
             }
         }
 
-        var typeAlias = _wellKnownTypeRegistry.TryGetAlias(value, out var @alias) ? alias : value.GetSimpleAssemblyQualifiedName();
+        var typeAlias = _wellKnownTypeRegistry.TryGetAlias(value, out var alias) ? alias : value.GetSimpleAssemblyQualifiedName();
         writer.WriteStringValue(typeAlias);
     }
 }

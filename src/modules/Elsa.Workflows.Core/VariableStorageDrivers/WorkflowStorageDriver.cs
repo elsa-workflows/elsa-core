@@ -1,12 +1,15 @@
 using System.ComponentModel.DataAnnotations;
 using Elsa.Extensions;
 
-namespace Elsa.Workflows;
+
+// ReSharper disable once CheckNamespace
+// Backwards compatibility for the old namespace. 
+namespace Elsa.Workflows.Services;
 
 /// <summary>
 /// A storage driver that stores objects in the workflow state itself.
 /// </summary>
-[Display(Name = "Workflow")]
+[Display(Name = "Workflow (Deprecated)")]
 [Obsolete("This is no longer used and will be removed in a future version. Use the WorkflowInstanceStorageDriver instead.")]
 public class WorkflowStorageDriver : IStorageDriver
 {
