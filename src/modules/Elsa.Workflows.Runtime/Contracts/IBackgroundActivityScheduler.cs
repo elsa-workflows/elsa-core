@@ -26,6 +26,11 @@ public interface IBackgroundActivityScheduler
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A handle representing the asynchronous invocation.</returns>
     Task<string> ScheduleAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Removes the specified job from the schedule.
+    /// </summary>
+    Task UnscheduledAsync(string jobId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cancels the specified job.
