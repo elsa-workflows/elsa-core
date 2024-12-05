@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
-using Acornima.Ast;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.JavaScript.Contracts;
@@ -10,6 +9,7 @@ using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.ObjectConverters;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
+using Esprima.Ast;
 using Jint;
 using Jint.Runtime.Interop;
 using Microsoft.Extensions.Caching.Memory;
