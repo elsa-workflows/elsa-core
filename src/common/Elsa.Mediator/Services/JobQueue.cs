@@ -41,6 +41,16 @@ public class JobQueue(IJobsChannel jobsChannel, ILogger<JobQueue> logger) : IJob
     }
 
     /// <inheritdoc />
+    public bool Dequeue(string jobId)
+    {
+        if (!_pendingItems.TryRemove(jobId, out _))
+            if (!_scheduledItems.TryRemove(jobId, out _))
+                return false;
+
+        return true;
+    }
+
+    /// <inheritdoc />
     public bool Cancel(string jobId)
     {
         if (!_pendingItems.TryGetValue(jobId, out var jobItem))

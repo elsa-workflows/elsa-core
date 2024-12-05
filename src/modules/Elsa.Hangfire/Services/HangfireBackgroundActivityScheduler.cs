@@ -32,6 +32,12 @@ public class HangfireBackgroundActivityScheduler(IBackgroundJobClient background
         return Task.FromResult(jobId);
     }
 
+    public Task UnscheduledAsync(string jobId, CancellationToken cancellationToken = default)
+    {
+        backgroundJobClient.Delete(jobId);
+        return Task.CompletedTask;
+    }
+
     /// <inheritdoc />
     public Task CancelAsync(string jobId, CancellationToken cancellationToken = default)
     {

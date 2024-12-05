@@ -22,7 +22,7 @@ public class CancelBackgroundActivities(IBackgroundActivityScheduler backgroundA
         {
             var payload = removedBookmark.GetPayload<BackgroundActivityStimulus>();
             if (payload.JobId != null)
-                await backgroundActivityScheduler.CancelAsync(payload.JobId, cancellationToken);
+                await backgroundActivityScheduler.UnscheduledAsync(payload.JobId, cancellationToken);
         }
     }
 }
