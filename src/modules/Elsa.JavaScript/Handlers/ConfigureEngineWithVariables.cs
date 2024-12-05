@@ -87,6 +87,11 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
                     yield return inputDefinition.Name;
             }
 
+            foreach (var syntheticProperty in activityExecutionContext.Activity.SyntheticProperties)
+            {
+                yield return syntheticProperty.Key;
+            }
+
             activityExecutionContext = activityExecutionContext.ParentActivityExecutionContext;
         }
     }
