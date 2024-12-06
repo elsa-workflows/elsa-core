@@ -71,7 +71,7 @@
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
     <PackageVersion Include="NuGet.Packaging" Version="6.12.1" />
     <PackageVersion Include="NuGet.Protocol" Version="6.12.1" />
-    <PackageVersion Include="Nuke.Components" Version="8.1.2" />
+    <PackageVersion Include="Nuke.Components" Version="9.0.3" />
     <PackageVersion Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
     <PackageVersion Include="PolySharp" Version="1.15.0" />
