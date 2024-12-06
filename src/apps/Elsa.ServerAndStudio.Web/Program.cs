@@ -17,6 +17,7 @@ using WebhooksCore.Options;
 const bool useMassTransit = true;
 const bool useProtoActor = true;
 const bool useCaching = true;
+const bool usePython = true;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
@@ -112,15 +113,6 @@ services
             })
             .UseLiquid()
             .UseCSharp()
-            .UsePython(python =>
-            {
-                python.PythonOptions += options =>
-                {
-                    // Make sure to configure the path to the python DLL. E.g. /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
-                    // alternatively, you can set the PYTHONNET_PYDLL environment variable.
-                    configuration.GetSection("Scripting:Python").Bind(options);
-                };
-            })
             .UseHttp(http =>
             {
                 if (useCaching)
@@ -147,6 +139,19 @@ services
             .UseRealTimeWorkflows()
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>();
+
+        if (usePython)
+        {
+            elsa.UsePython(python =>
+            {
+                python.PythonOptions += options =>
+                {
+                    // Make sure to configure the path to the python DLL. E.g. /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
+                    // alternatively, you can set the PYTHONNET_PYDLL environment variable.
+                    configuration.GetSection("Scripting:Python").Bind(options);
+                };
+            });
+        }
 
         if (useProtoActor)
         {
