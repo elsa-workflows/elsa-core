@@ -65,25 +65,29 @@ services
                 if (useCaching)
                     management.UseCache();
 
-                if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
-                    management.UseEntityFrameworkCore(ef => ef.UseMySql(mySqlConnectionString));
-                else if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
+                if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                     management.UseEntityFrameworkCore(ef => ef.UseSqlServer(sqlServerConnectionString));
-                else if(sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+                else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                     management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgreSqlConnectionString));
                 else if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite)
                     management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+#if !NET9_0
+                else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                    management.UseEntityFrameworkCore(ef => ef.UseMySql(mySqlConnectionString));
+#endif
             })
             .UseWorkflowRuntime(runtime =>
             {
-                if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
-                    runtime.UseEntityFrameworkCore(ef => ef.UseMySql(mySqlConnectionString));
-                else if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
+                if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                     runtime.UseEntityFrameworkCore(ef => ef.UseSqlServer(sqlServerConnectionString));
-                else if(sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+                else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                     runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgreSqlConnectionString));
                 else if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite)
                     runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+#if !NET9_0
+                else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                    runtime.UseEntityFrameworkCore(ef => ef.UseMySql(mySqlConnectionString));
+#endif
 
                 if (useMassTransit)
                 {
@@ -134,14 +138,16 @@ services
             .UseAgentsApi()
             .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef =>
             {
-                if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
-                    ef.UseMySql(mySqlConnectionString);
-                else if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
+                if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                     ef.UseSqlServer(sqlServerConnectionString);
-                else if(sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+                else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                     ef.UsePostgreSql(postgreSqlConnectionString);
                 else if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite)
                     ef.UseSqlite(sqliteConnectionString);
+#if !NET9_0
+                else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                    ef.UseMySql(mySqlConnectionString);
+#endif
             }))
             .UseAgentActivities()
             .AddActivitiesFrom<Program>()
