@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'main'
+      - 'bug/*'
   release:
     types: [ prereleased ]
 env:
