@@ -27,12 +27,12 @@ public class StoreBookmarkQueue(
 
         if (result.Matched)
         {
-            logger.LogDebug("Successfully resumed workflow instance {WorkflowInstance} using bookmark {BookmarkId}", item.WorkflowInstanceId, item.BookmarkId);
+            logger.LogDebug("Successfully resumed workflow instance {WorkflowInstance} using bookmark {BookmarkId} for activity type {ActivityType}", item.WorkflowInstanceId, item.BookmarkId, item.ActivityTypeName);
             return;
         }
 
         // There was no matching bookmark yet. Store the queue item for the system to pick up whenever the bookmark becomes present.
-        logger.LogDebug("No bookmark with ID {BookmarkId} found for workflow {WorkflowInstance}. Adding the request to the bookmark queue", item.BookmarkId, item.WorkflowInstanceId);
+        logger.LogDebug("No bookmark with ID {BookmarkId} found for workflow {WorkflowInstance} for activity type {ActivityType}. Adding the request to the bookmark queue", item.BookmarkId, item.WorkflowInstanceId, item.ActivityTypeName);
         
         var entity = new BookmarkQueueItem
         {
@@ -49,6 +49,6 @@ public class StoreBookmarkQueue(
         await store.AddAsync(entity, cancellationToken);
 
         // Trigger the bookmark queue processor.
-        bookmarkQueueSignaler.Trigger();
+        await bookmarkQueueSignaler.TriggerAsync(cancellationToken);
     }
 }

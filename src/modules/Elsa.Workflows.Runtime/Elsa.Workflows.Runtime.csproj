@@ -12,6 +12,7 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions"/>
         <PackageReference Include="Open.Linq.AsyncExtensions"/>
+        <PackageReference Include="ThrottleDebounce" />
     </ItemGroup>
 
     <ItemGroup>

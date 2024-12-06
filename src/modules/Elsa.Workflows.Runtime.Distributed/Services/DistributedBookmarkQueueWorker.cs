@@ -8,7 +8,7 @@ public class DistributedBookmarkQueueWorker(
     IDistributedLockProvider distributedLockProvider,
     IBookmarkQueueSignaler signaler,
     IServiceScopeFactory scopeFactory,
-    ILogger<DistributedBookmarkQueueWorker> logger) : BookmarkQueueWorker(signaler, scopeFactory)
+    ILogger<DistributedBookmarkQueueWorker> logger) : BookmarkQueueWorker(signaler, scopeFactory, logger)
 {
     protected override async Task ProcessAsync(CancellationToken cancellationToken)
     {

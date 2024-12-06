@@ -1,11 +1,25 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using ThrottleDebounce;
 
 namespace Elsa.Workflows.Runtime;
 
-public class BookmarkQueueWorker(IBookmarkQueueSignaler signaler, IServiceScopeFactory scopeFactory) : IBookmarkQueueWorker
+public class BookmarkQueueWorker : IBookmarkQueueWorker
 {
+    private readonly RateLimitedFunc<CancellationToken, Task> _rateLimitedProcessAsync;
     private CancellationTokenSource _cts = default!;
     private bool _running;
+    private readonly IBookmarkQueueSignaler _signaler;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<BookmarkQueueWorker> _logger;
+    
+    public BookmarkQueueWorker(IBookmarkQueueSignaler signaler, IServiceScopeFactory scopeFactory, ILogger<BookmarkQueueWorker> logger)
+    {
+        _signaler = signaler;
+        _scopeFactory = scopeFactory;
+        _logger = logger;
+        _rateLimitedProcessAsync = Debouncer.Debounce<CancellationToken, Task>(ProcessAsync, TimeSpan.FromMilliseconds(500));
+    }
 
     public void Start()
     {
@@ -33,15 +47,17 @@ public class BookmarkQueueWorker(IBookmarkQueueSignaler signaler, IServiceScopeF
     {
         while (!_cts.IsCancellationRequested)
         {
-            await signaler.AwaitAsync();
-            await ProcessAsync(_cts.Token);
+            await _signaler.AwaitAsync(_cts.Token);
+            await _rateLimitedProcessAsync.InvokeAsync(_cts.Token);
         }
     }
 
     protected virtual async Task ProcessAsync(CancellationToken cancellationToken)
     {
-        using var scope = scopeFactory.CreateScope();
+        _logger.LogDebug("Processing bookmark queue...");
+        using var scope = _scopeFactory.CreateScope();
         var processor = scope.ServiceProvider.GetRequiredService<IBookmarkQueueProcessor>();
         await processor.ProcessAsync(cancellationToken);
+        _logger.LogDebug("Processed bookmark queue.");
     }
 }
