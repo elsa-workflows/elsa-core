@@ -22,10 +22,12 @@ public class RunTaskHandler(IWebhookEventBroadcaster webhookDispatcher) : INotif
         var workflow = workflowExecutionContext.Workflow;
         var workflowDefinitionId = workflow.Identity.DefinitionId;
         var workflowName = workflow.WorkflowMetadata.Name;
+        var tenantId = workflowExecutionContext.Workflow.Identity.TenantId;
         
         var payload = new RunTaskWebhookPayload(
             workflowInstanceId,
             workflowDefinitionId,
+            tenantId,
             workflowName,
             correlationId,
             notification.TaskId, 

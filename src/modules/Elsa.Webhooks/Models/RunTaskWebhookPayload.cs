@@ -6,6 +6,7 @@ namespace Elsa.Webhooks.Models;
 public record RunTaskWebhookPayload(
     string WorkflowInstanceId, 
     string WorkflowDefinitionId, 
+    string? TenantId,
     string? WorkflowName, 
     string? CorrelationId,
     string TaskId, 
