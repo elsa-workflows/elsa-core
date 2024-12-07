@@ -51,7 +51,11 @@ public class CSharpEvaluator(INotificationSender notificationSender, IOptions<CS
         script = notification.Script.ContinueWith(expression, scriptOptions);
         script = GetPreCompiledScript(script);
         var scriptState = await script.RunAsync(globals, cancellationToken: cancellationToken);
-        return scriptState.ReturnValue;
+
+        var returnValue = scriptState.ReturnValue;
+        scriptState = null;
+
+        return returnValue;
     }
 
     private Script<object> GetPreCompiledScript(Script<object> script)
