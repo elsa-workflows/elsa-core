@@ -149,8 +149,10 @@ services
                             ef.UseSqlServer(sqlServerConnectionString!);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
+#if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
                             ef.UseMySql(mySqlConnectionString);
+#endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
@@ -183,8 +185,10 @@ services
                             ef.UseSqlServer(sqlServerConnectionString!);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
+#if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
                             ef.UseMySql(mySqlConnectionString);
+#endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
@@ -254,8 +258,10 @@ services
                         }
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
+#if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
                             ef.UseMySql(mySqlConnectionString);
+#endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
@@ -380,8 +386,10 @@ services
                             ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString);
+#if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
                             ef.UseMySql(mySqlConnectionString);
+#endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
@@ -522,7 +530,7 @@ services
                 else
                 {
                     tenants.UseStoreBasedTenantsProvider();
-                    
+
                     tenants.UseTenantManagement(management =>
                     {
                         if (persistenceProvider == PersistenceProvider.MongoDb)
@@ -536,12 +544,14 @@ services
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite) ef.UseSqlite(sqliteConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer) ef.UseSqlServer(sqlServerConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);
+#if !NET9_0
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) ef.UseMySql(mySqlConnectionString);
+#endif
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb) ef.UsePostgreSql(cockroachDbConnectionString);
                             });
                         }
                     });
-                    
+
                     tenants.UseTenantManagementEndpoints();
                 }
             });
