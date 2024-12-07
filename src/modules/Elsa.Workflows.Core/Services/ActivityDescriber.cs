@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
@@ -10,6 +11,7 @@ using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;
 using Humanizer;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows;
 
@@ -20,15 +22,17 @@ public class ActivityDescriber : IActivityDescriber
     private readonly IPropertyDefaultValueResolver _defaultValueResolver;
     private readonly IActivityFactory _activityFactory;
     private readonly IPropertyUIHandlerResolver _propertyUIHandlerResolver;
+    private readonly IServiceProvider _serviceProvider;
     /// <summary>
     /// Constructor.
     /// </summary>
-    public ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolver, IActivityFactory activityFactory, IPropertyUIHandlerResolver propertyUIHandlerResolver)
+    public ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolver, IActivityFactory activityFactory, IPropertyUIHandlerResolver propertyUIHandlerResolver, IServiceProvider serviceProvider)
     {
         //_optionsResolver = optionsResolver;
         _defaultValueResolver = defaultValueResolver;
         _activityFactory = activityFactory;
         _propertyUIHandlerResolver = propertyUIHandlerResolver;
+        _serviceProvider = serviceProvider;
     }
 
     /// <inheritdoc />
@@ -110,6 +114,13 @@ public class ActivityDescriber : IActivityDescriber
         {
             var isResultSerializable = outputAttribute?.IsSerializable;
             defaultOutputDescriptor.IsSerializable = isResultSerializable;
+        }
+
+        if (activityAttr?.CustomPropertiesTypeProvider != null)
+        {
+            var providerType = activityAttr.CustomPropertiesTypeProvider;
+            var provider = (ICustomPropertiesProvider)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, providerType);
+            descriptor.CustomProperties = provider.GetDefaultCustomProperties(activityType);
         }
 
         return descriptor;

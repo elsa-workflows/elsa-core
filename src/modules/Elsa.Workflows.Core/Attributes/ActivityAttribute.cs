@@ -31,6 +31,11 @@ public class ActivityAttribute : Attribute
     public int Version { get; set; } = 1;
     public string? Description { get; set; }
     public string? DisplayName { get; set; }
-    public string? Category { get; set; }
+    public string? Category { get; set; }   
+    
+    /// <summary>
+    /// A type that implements <see cref="ICustomPropertiesProvider"/> and provides a default value for custom properties.
+    /// </summary>
+    public Type CustomPropertiesTypeProvider { get; set; }
     public ActivityKind Kind { get; set; } = ActivityKind.Action;
 }
