@@ -337,6 +337,7 @@ services
             {
                 options.AllowClrAccess = true;
                 options.DisableWrappers = disableVariableWrappers;
+                options.RegisterType<OrderReceived>();
                 options.ConfigureEngine(engine =>
                 {
                     engine.Execute("function greet(name) { return `Hello ${name}!`; }");
@@ -560,9 +561,9 @@ services.AddActivityStateFilter<HttpRequestAuthenticationHeaderFilter>();
 // Optionally configure recurring tasks using alternative schedules.
 services.Configure<RecurringTaskOptions>(options =>
 {
-    options.Schedule.ConfigureTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(30));
+    options.Schedule.ConfigureTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(300));
+    options.Schedule.ConfigureTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(300));
     options.Schedule.ConfigureTask<UpdateExpiredSecretsRecurringTask>(TimeSpan.FromHours(4));
-    options.Schedule.ConfigureTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(11));
 });
 
 services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(10));
