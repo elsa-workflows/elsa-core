@@ -41,7 +41,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
             if (existingWorker == null)
             {
                 // Add a new worker.
-                var worker = CreateWorker(scope.ServiceProvider, consumerDefinition);
+                var worker = await CreateWorkerAsync(scope.ServiceProvider, consumerDefinition, cancellationToken);
                 workers.Add(consumerDefinition.Id, worker);
             }
             else
@@ -54,7 +54,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
                 if (existingHash != hash)
                 {
                     existingWorker.Stop();
-                    var worker = CreateWorker(scope.ServiceProvider, consumerDefinition);
+                    var worker = await CreateWorkerAsync(scope.ServiceProvider, consumerDefinition, cancellationToken);
                     workers[consumerDefinition.Id] = worker;
                 }
             }
@@ -162,7 +162,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
         return Workers.TryGetValue(consumerDefinitionId, out var worker) ? worker : null;
     }
 
-    private IWorker CreateWorker(IServiceProvider serviceProvider, ConsumerDefinition consumerDefinition)
+    private async Task<IWorker> CreateWorkerAsync(IServiceProvider serviceProvider, ConsumerDefinition consumerDefinition, CancellationToken cancellationToken)
     {
         var factoryType = consumerDefinition.FactoryType;
         var consumerFactory = ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, factoryType) as IConsumerFactory;
@@ -170,7 +170,8 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
         if (consumerFactory == null)
             throw new InvalidOperationException($"Worker factory of type '{factoryType}' not found.");
 
-        var createConsumerContext = new CreateConsumerContext(consumerDefinition);
+        var schemaRegistryDefinition = await GetSchemaRegistryDefinitionAsync(serviceProvider, consumerDefinition.SchemaRegistryId, cancellationToken);
+        var createConsumerContext = new CreateConsumerContext(consumerDefinition, schemaRegistryDefinition);
         var consumerProxy = consumerFactory.CreateConsumer(createConsumerContext);
         var wrappedConsumer = consumerProxy.Consumer;
         var wrappedConsumerType = wrappedConsumer.GetType();
@@ -185,5 +186,15 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
     private string ComputeHash(ConsumerDefinition consumerDefinition)
     {
         return hasher.Hash(consumerDefinition);
+    }
+    
+    private async Task<SchemaRegistryDefinition?> GetSchemaRegistryDefinitionAsync(IServiceProvider serviceProvider, string? id, CancellationToken cancellationToken = default)
+    {
+        if (id == null)
+            return null;
+        
+        var schemaRegistryDefinitionEnumerator = serviceProvider.GetRequiredService<ISchemaRegistryDefinitionEnumerator>();
+        var schemaRegistryDefinitions = await schemaRegistryDefinitionEnumerator.EnumerateAsync(cancellationToken).ToList();
+        return schemaRegistryDefinitions.FirstOrDefault(x => x.Id == id);
     }
 }
