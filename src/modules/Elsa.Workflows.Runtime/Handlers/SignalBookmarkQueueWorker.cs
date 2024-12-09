@@ -20,9 +20,8 @@ public class SignalBookmarkQueueWorker(IBookmarkQueueSignaler signaler) : INotif
         return Trigger();
     }
 
-    private Task Trigger()
+    private async Task Trigger()
     {
-        signaler.Trigger();
-        return Task.CompletedTask;
+        await signaler.TriggerAsync();
     }
 }

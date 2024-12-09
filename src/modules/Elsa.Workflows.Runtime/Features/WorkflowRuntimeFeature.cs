@@ -230,7 +230,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowExecutionLogSink)
             .AddSingleton(BackgroundActivityScheduler)
             .AddSingleton<RandomLongIdentityGenerator>()
-            .AddScoped<IBookmarkQueueSignaler, BookmarkQueueSignaler>()
+            .AddSingleton<IBookmarkQueueSignaler, BookmarkQueueSignaler>()
             .AddScoped<IBookmarkQueueWorker, BookmarkQueueWorker>()
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
             .AddScoped<IActivityExecutionManager, DefaultActivityExecutionManager>()

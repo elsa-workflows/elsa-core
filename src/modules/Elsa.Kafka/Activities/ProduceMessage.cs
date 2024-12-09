@@ -5,10 +5,9 @@ using Elsa.Kafka.UIHints;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime;
 using Elsa.Workflows.UIHints;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Kafka.Activities;
 
@@ -73,7 +72,7 @@ public class ProduceMessage : CodeActivity
         if (key is string keyString && string.IsNullOrWhiteSpace(keyString))
             key = null;
 
-        using var producer = CreateProducer(context, producerDefinition);
+        using var producer = await CreateProducerAsync(context, producerDefinition);
         var headers = CreateHeaders(context);
         await producer.ProduceAsync(topic, key, content, headers, cancellationToken);
     }
@@ -94,14 +93,25 @@ public class ProduceMessage : CodeActivity
         return headers;
     }
 
-    private IProducer CreateProducer(ActivityExecutionContext context, ProducerDefinition producerDefinition)
+    private async Task<IProducer> CreateProducerAsync(ActivityExecutionContext context, ProducerDefinition producerDefinition)
     {
         var factory = context.GetOrCreateService(producerDefinition.FactoryType) as IProducerFactory;
 
         if (factory == null)
             throw new InvalidOperationException($"Producer factory of type '{producerDefinition.FactoryType}' not found.");
 
-        var createProducerContext = new CreateProducerContext(producerDefinition);
+        var schemaRegistryDefinition = await GetSchemaRegistryDefinitionAsync(context, producerDefinition.SchemaRegistryId);
+        var createProducerContext = new CreateProducerContext(producerDefinition, schemaRegistryDefinition);
         return factory.CreateProducer(createProducerContext);
+    }
+
+    private async Task<SchemaRegistryDefinition?> GetSchemaRegistryDefinitionAsync(ActivityExecutionContext context, string? id, CancellationToken cancellationToken = default)
+    {
+        if (id == null)
+            return null;
+        
+        var schemaRegistryDefinitionEnumerator = context.GetRequiredService<ISchemaRegistryDefinitionEnumerator>();
+        var schemaRegistryDefinitions = await schemaRegistryDefinitionEnumerator.EnumerateAsync(cancellationToken).ToList();
+        return schemaRegistryDefinitions.FirstOrDefault(x => x.Id == id);
     }
 }

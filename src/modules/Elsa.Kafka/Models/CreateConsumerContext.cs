@@ -1,3 +1,3 @@
 namespace Elsa.Kafka;
 
-public record CreateConsumerContext(ConsumerDefinition ConsumerDefinition);
+public record CreateConsumerContext(ConsumerDefinition ConsumerDefinition, SchemaRegistryDefinition? SchemaRegistryDefinition);

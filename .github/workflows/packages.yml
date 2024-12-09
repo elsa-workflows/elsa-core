@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - 'raspberry'
+      - 'main'
+      - 'bug/*'
   release:
     types: [ prereleased ]
 env:

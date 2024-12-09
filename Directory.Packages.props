@@ -15,7 +15,8 @@
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="Bogus" Version="35.6.1" />
     <PackageVersion Include="ConfigureAwait.Fody" Version="3.3.2" PrivateAssets="All" />
-    <PackageVersion Include="Confluent.Kafka" Version="2.6.0" />
+    <PackageVersion Include="Confluent.Kafka" Version="2.6.1" />
+    <PackageVersion Include="Confluent.SchemaRegistry.Serdes.Avro" Version="2.4.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" PrivateAssets="All" />
     <PackageVersion Include="Cronos" Version="0.8.4" />
     <PackageVersion Include="Dapper" Version="2.1.35" />
@@ -100,7 +101,7 @@
     <PackageVersion Include="Testcontainers.Redis" Version="3.10.0" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="3.10.0" />
     <PackageVersion Include="ThrottleDebounce" Version="2.0.0" />
-    <PackageVersion Include="WebhooksCore" Version="0.0.1-preview.17" />
+    <PackageVersion Include="WebhooksCore" Version="0.0.1" />
     <PackageVersion Include="xunit" Version="2.9.2" />
     <PackageVersion Include="xunit.abstractions" Version="2.0.3" />
     <PackageVersion Include="xunit.extensibility.core" Version="2.9.2" />

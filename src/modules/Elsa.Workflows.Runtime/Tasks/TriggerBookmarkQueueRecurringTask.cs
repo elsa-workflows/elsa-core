@@ -23,7 +23,6 @@ public class TriggerBookmarkQueueRecurringTask(IBookmarkQueueWorker bookmarkQueu
 
     public Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        signaler.Trigger();
-        return Task.CompletedTask;
+        return signaler.TriggerAsync(stoppingToken);
     }
 }
