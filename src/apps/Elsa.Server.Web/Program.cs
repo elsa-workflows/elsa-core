@@ -79,6 +79,7 @@ const bool useTenantsFromConfiguration = false;
 const bool useAgents = false;
 const bool useSecrets = false;
 const bool disableVariableWrappers = false;
+const bool usePython = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -344,15 +345,6 @@ services
                     engine.Execute("function sayHelloWorld() { return greet('World'); }");
                 });
             })
-            .UsePython(python =>
-            {
-                python.PythonOptions += options =>
-                {
-                    // Make sure to configure the path to the python DLL. E.g. /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
-                    // alternatively, you can set the PYTHONNET_PYDLL environment variable.
-                    configuration.GetSection("Scripting:Python").Bind(options);
-                };
-            })
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
             .UseHttp(http =>
             {
@@ -397,6 +389,19 @@ services
                 }
             })
             .UseWorkflowContexts();
+
+        if (usePython)
+        {
+            elsa.UsePython(python =>
+            {
+                python.PythonOptions += options =>
+                {
+                    // Make sure to configure the path to the python DLL. E.g. /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
+                    // alternatively, you can set the PYTHONNET_PYDLL environment variable.
+                    configuration.GetSection("Scripting:Python").Bind(options);
+                };
+            });
+        }
 
         if (useQuartz)
         {
