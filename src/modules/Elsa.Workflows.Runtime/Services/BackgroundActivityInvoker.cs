@@ -41,6 +41,7 @@ public class BackgroundActivityInvoker(
         activityExecutionContext.SetIsBackgroundExecution();
         await activityInvoker.InvokeAsync(activityExecutionContext);
         await ResumeWorkflowAsync(activityExecutionContext, scheduledBackgroundActivity);
+        await variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
     }
 
     private async Task ResumeWorkflowAsync(ActivityExecutionContext activityExecutionContext, ScheduledBackgroundActivity scheduledBackgroundActivity)
