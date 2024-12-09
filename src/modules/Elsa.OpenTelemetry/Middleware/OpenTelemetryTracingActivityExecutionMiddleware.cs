@@ -30,6 +30,7 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
         span.SetTag("activity.name", activity.Name);
         span.SetTag("activityInstance.id", context.Id);
         span.SetTag("activityExecution.startTimeUtc", span.StartTimeUtc);
+        span.SetTag("tenantId", context.WorkflowExecutionContext.Workflow.Identity.TenantId);
         
         span.AddEvent(new ActivityEvent("Executing", tags: CreateStatusTags(context)));
         
