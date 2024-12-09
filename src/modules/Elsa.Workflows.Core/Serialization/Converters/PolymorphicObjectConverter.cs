@@ -31,7 +31,7 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
         if (reader.TokenType != JsonTokenType.StartObject && reader.TokenType != JsonTokenType.StartArray)
             return ReadPrimitive(ref reader, newOptions);
 
-        var targetType = ReadType(reader);
+        var targetType = ReadType(reader, options);
         if (targetType == null)
             return ReadObject(ref reader, newOptions);
 
@@ -183,15 +183,7 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
                    || valueType.IsEnum;
         }
 
-        bool IsListOfPrimitives(Type valueType)
-        {
-            var isEnumerable = typeof(IEnumerable).IsAssignableFrom(valueType)  && valueType.IsGenericType && valueType.GetGenericArguments().Length == 1;
-            if (!isEnumerable) return false;
-            var elementType = valueType.GetGenericArguments()[0];
-            return IsPrimitive(elementType);
-        }
-
-        if (IsPrimitive(type) || IsListOfPrimitives(type))
+        if (IsPrimitive(type))
         {
             // Remove the converter so that we don't end up in an infinite loop.
             newOptions.Converters.RemoveWhere(x => x is PolymorphicObjectConverterFactory);
@@ -286,7 +278,7 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
         writer.WriteEndObject();
     }
 
-    private Type? ReadType(Utf8JsonReader reader)
+    private Type? ReadType(Utf8JsonReader reader, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
             return null;
@@ -301,7 +293,14 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
             if (reader.TokenType == JsonTokenType.PropertyName && reader.ValueTextEquals(TypePropertyName))
             {
                 reader.Read(); // Move to the value of the _type property
-                typeName = reader.GetString();
+                if (options.Converters.OfType<TypeJsonConverter>().FirstOrDefault() is { } typeJsonConverter)
+                {
+                    return typeJsonConverter.Read(ref reader, typeof(Type), options);
+                }
+                else
+                {
+                    typeName = reader.GetString();
+                }
                 break;
             }
 
@@ -331,7 +330,7 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
         }
 
         // If we found the _type property, attempt to resolve the type.
-        var targetType = typeName != null ? wellKnownTypeRegistry.TryGetType(typeName, out var type) ? type : Type.GetType(typeName) : default;
+        var targetType = typeName != null ? Type.GetType(typeName) : default;
         return targetType;
     }
 
