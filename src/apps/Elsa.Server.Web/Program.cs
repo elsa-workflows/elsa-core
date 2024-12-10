@@ -77,7 +77,7 @@ const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
 const bool useTenantsFromConfiguration = false;
 const bool useAgents = false;
-const bool useSecrets = false;
+const bool useSecrets = true;
 const bool disableVariableWrappers = false;
 
 var builder = WebApplication.CreateBuilder(args);

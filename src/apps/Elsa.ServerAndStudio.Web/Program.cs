@@ -144,7 +144,6 @@ services
                     ef.UseSqlite(sqliteConnectionString);
             }))
             .UseAgentActivities()
-            .UseRealTimeWorkflows()
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>();
 
@@ -216,6 +215,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseWorkflowsApi();
 app.UseWorkflows();
-app.UseWorkflowsSignalRHubs();
 app.MapFallbackToPage("/_Host");
 await app.RunAsync();
