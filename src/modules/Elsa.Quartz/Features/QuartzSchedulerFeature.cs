@@ -1,9 +1,11 @@
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Quartz.Contracts;
 using Elsa.Quartz.Handlers;
-using Elsa.Quartz.Jobs;
 using Elsa.Quartz.Services;
+using Elsa.Quartz.Tasks;
 using Elsa.Scheduling;
 using Elsa.Scheduling.Features;
 using Elsa.Workflows;
@@ -34,9 +36,12 @@ public class QuartzSchedulerFeature(IModule module) : FeatureBase(module)
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSingleton<IActivityDescriptorModifier, CronActivityDescriptorModifier>();
-        Services.AddSingleton<QuartzCronParser>();
-        Services.AddSingleton<QuartzWorkflowScheduler>();
-        Services.AddQuartz();
+        Services
+            .AddSingleton<IActivityDescriptorModifier, CronActivityDescriptorModifier>()
+            .AddSingleton<QuartzCronParser>()
+            .AddScoped<QuartzWorkflowScheduler>()
+            .AddScoped<IJobKeyProvider, JobKeyProvider>()
+            .AddStartupTask<RegisterJobsTask>()
+            .AddQuartz();
     }
 }

@@ -1,108 +1,103 @@
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
+using Elsa.Quartz.Contracts;
 using Elsa.Quartz.Jobs;
 using Elsa.Scheduling;
 using Quartz;
+using IScheduler = Quartz.IScheduler;
 
 namespace Elsa.Quartz.Services;
 
 /// <summary>
 /// An implementation of <see cref="IWorkflowScheduler"/> that uses Quartz.NET.
 /// </summary>
-public class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, IJsonSerializer jsonSerializer, ITenantAccessor tenantAccessor) : IWorkflowScheduler
+internal class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, IJsonSerializer jsonSerializer, ITenantAccessor tenantAccessor, IJobKeyProvider jobKeyProvider) : IWorkflowScheduler
 {
     /// <inheritdoc />
     public async ValueTask ScheduleAtAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
     {
         var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
-        var job = JobBuilder.Create<RunWorkflowJob>()
-            .WithIdentity(GetRunWorkflowJobKey())
-            .Build();
+
         var trigger = TriggerBuilder.Create()
+            .ForJob(GetRunWorkflowJobKey())
             .UsingJobData(CreateJobDataMap(request))
             .WithIdentity(GetTriggerKey(taskName))
             .StartAt(at)
             .Build();
 
-        if (!await scheduler.CheckExists(job.Key, cancellationToken))
-            await scheduler.ScheduleJob(job, trigger, cancellationToken);
+        await ScheduleJobAsync(scheduler, trigger, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask ScheduleAtAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
     {
         var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
-        var job = JobBuilder.Create<ResumeWorkflowJob>().WithIdentity(GetResumeWorkflowJobKey()).Build();
         var trigger = TriggerBuilder.Create()
+            .ForJob(GetResumeWorkflowJobKey())
             .UsingJobData(CreateJobDataMap(request))
             .WithIdentity(GetTriggerKey(taskName))
             .StartAt(at)
             .Build();
 
-        if (!await scheduler.CheckExists(job.Key, cancellationToken))
-            await scheduler.ScheduleJob(job, trigger, cancellationToken);
+        await ScheduleJobAsync(scheduler, trigger, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask ScheduleRecurringAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
     {
         var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
-        var job = JobBuilder.Create<RunWorkflowJob>().WithIdentity(GetRunWorkflowJobKey()).Build();
         var trigger = TriggerBuilder.Create()
             .WithIdentity(GetTriggerKey(taskName))
+            .ForJob(GetRunWorkflowJobKey())
             .UsingJobData(CreateJobDataMap(request))
             .StartAt(startAt)
             .WithSimpleSchedule(schedule => schedule.WithInterval(interval).RepeatForever())
             .Build();
 
-        if (!await scheduler.CheckExists(job.Key, cancellationToken))
-            await scheduler.ScheduleJob(job, trigger, cancellationToken);
+        await ScheduleJobAsync(scheduler, trigger, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask ScheduleRecurringAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
     {
         var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
-        var job = JobBuilder.Create<ResumeWorkflowJob>().WithIdentity(GetResumeWorkflowJobKey()).Build();
         var trigger = TriggerBuilder.Create()
             .WithIdentity(GetTriggerKey(taskName))
+            .ForJob(GetResumeWorkflowJobKey())
             .UsingJobData(CreateJobDataMap(request))
             .StartAt(startAt)
             .WithSimpleSchedule(schedule => schedule.WithInterval(interval).RepeatForever())
             .Build();
 
-        if (!await scheduler.CheckExists(job.Key, cancellationToken))
-            await scheduler.ScheduleJob(job, trigger, cancellationToken);
+        await ScheduleJobAsync(scheduler, trigger, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask ScheduleCronAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
     {
         var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
-        var job = JobBuilder.Create<RunWorkflowJob>().WithIdentity(GetRunWorkflowJobKey()).Build();
         var trigger = TriggerBuilder.Create()
             .UsingJobData(CreateJobDataMap(request))
+            .ForJob(GetRunWorkflowJobKey())
             .WithIdentity(GetTriggerKey(taskName))
             .WithCronSchedule(cronExpression)
             .Build();
 
-        if (!await scheduler.CheckExists(job.Key, cancellationToken))
-            await scheduler.ScheduleJob(job, trigger, cancellationToken);
+        await ScheduleJobAsync(scheduler, trigger, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask ScheduleCronAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
     {
         var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
-        var job = JobBuilder.Create<ResumeWorkflowJob>().WithIdentity(GetResumeWorkflowJobKey()).Build();
         var trigger = TriggerBuilder.Create()
+            .ForJob(GetResumeWorkflowJobKey())
             .UsingJobData(CreateJobDataMap(request))
             .WithIdentity(GetTriggerKey(taskName))
             .WithCronSchedule(cronExpression).Build();
 
-        if (!await scheduler.CheckExists(job.Key, cancellationToken))
-            await scheduler.ScheduleJob(job, trigger, cancellationToken);
+        await ScheduleJobAsync(scheduler, trigger, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -111,6 +106,12 @@ public class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, 
         var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
         var triggerKey = GetTriggerKey(taskName);
         await scheduler.UnscheduleJob(triggerKey, cancellationToken);
+    }
+    
+    private async Task ScheduleJobAsync(IScheduler scheduler, ITrigger trigger, CancellationToken cancellationToken)
+    {
+        if (!await scheduler.CheckExists(trigger.Key, cancellationToken))
+            await scheduler.ScheduleJob(trigger, cancellationToken);
     }
 
     private JobDataMap CreateJobDataMap(ScheduleNewWorkflowInstanceRequest request)
@@ -138,18 +139,9 @@ public class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, 
             .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.ActivityHandle), serializedActivityHandle)
             .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.BookmarkId), request.BookmarkId);
     }
-    
-    private JobKey GetRunWorkflowJobKey() => new(nameof(RunWorkflowJob),  GetGroupName());
-    private JobKey GetResumeWorkflowJobKey() => new(nameof(ResumeWorkflowJob), GetGroupName());
 
-    private string GetGroupName()
-    {
-        var tenantId = tenantAccessor.Tenant?.Id;
-        return string.IsNullOrWhiteSpace(tenantId) ? "Default" : tenantId;
-    }
-    
-    private TriggerKey GetTriggerKey(string taskName)
-    {
-        return new TriggerKey(taskName, GetGroupName());
-    }
+    private JobKey GetRunWorkflowJobKey() => jobKeyProvider.GetJobKey<RunWorkflowJob>();
+    private JobKey GetResumeWorkflowJobKey() => jobKeyProvider.GetJobKey<ResumeWorkflowJob>();
+    private string GetGroupName() => jobKeyProvider.GetGroupName();
+    private TriggerKey GetTriggerKey(string taskName) => new(taskName, GetGroupName());
 }
