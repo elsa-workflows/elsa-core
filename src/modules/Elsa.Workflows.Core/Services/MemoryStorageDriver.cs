@@ -9,8 +9,10 @@ namespace Elsa.Workflows;
 public class MemoryStorageDriver : IStorageDriver
 {
     private readonly IDictionary<string, object> _dictionary = new Dictionary<string, object>();
-
+    /// <inheritdoc />
     public double Priority => 0;
+    /// <inheritdoc />
+    public StorageDriverTag[] Tags => [];
 
     /// <inheritdoc />
     public ValueTask WriteAsync(string id, object value, StorageDriverContext context)
