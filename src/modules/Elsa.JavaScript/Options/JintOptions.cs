@@ -32,6 +32,12 @@ public class JintOptions
     public TimeSpan? ScriptCacheTimeout { get; set; } = TimeSpan.FromDays(1);
 
     /// <summary>
+    /// Disables the generation of variable wrappers. E.g. <c>getMyVariable()</c> will no longer be available for variables. Instead, you can only access variables using <c>getVariable("MyVariable")</c> function.
+    /// This is useful if your application requires the use of invalid JavaScript variable names.
+    /// </summary>
+    public bool DisableWrappers { get; set; }
+    
+    /// <summary>
     /// A list of callbacks that are invoked when the Jint engine is created. Use this to configure the engine.
     /// </summary>
     public Action<Engine, ExpressionExecutionContext> ConfigureEngineCallback = (_, _) => { };

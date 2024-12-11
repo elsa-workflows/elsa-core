@@ -1,10 +1,12 @@
 using Elsa.Extensions;
+using Elsa.JavaScript.Extensions;
+using Elsa.JavaScript.Options;
 using Elsa.JavaScript.TypeDefinitions.Abstractions;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Workflows.Contracts;
 using Humanizer;
 
-namespace Elsa.JavaScript.TypeDefinitions.Providers;
+namespace Elsa.JavaScript.Providers;
 
 /// <summary>
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
@@ -28,7 +30,7 @@ internal class ActivityOutputFunctionsDefinitionProvider(
 
         await foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
         {
-            definitions.AddRange(from output in activityDescriptor.Outputs
+            definitions.AddRange(from output in activityDescriptor.Outputs.Where(x => x.Name.IsValidVariableName())
                 select output.Name.Pascalize()
                 into outputPascalName
                 let activityIdPascalName = activity.Id.Pascalize()

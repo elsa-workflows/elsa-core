@@ -269,6 +269,7 @@ services
             .UseJavaScript(options =>
             {
                 options.AllowClrAccess = true;
+                options.DisableWrappers = disableVariableWrappers;
                 options.ConfigureEngine(engine =>
                 {
                     engine.Execute("function greet(name) { return `Hello ${name}!`; }");
