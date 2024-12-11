@@ -23,6 +23,7 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.OpenTelemetry.Middleware;
 using Elsa.Server.Web;
+using Elsa.Server.Web.Messages;
 using Elsa.Workflows;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
@@ -273,6 +274,7 @@ services
                     engine.Execute("function greet(name) { return `Hello ${name}!`; }");
                     engine.Execute("function sayHelloWorld() { return greet('World'); }");
                 });
+                options.RegisterType<OrderReceived>();
             })
             .UsePython(python =>
             {
