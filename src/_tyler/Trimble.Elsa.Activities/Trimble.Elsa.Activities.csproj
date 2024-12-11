@@ -1,32 +1,32 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>Trimble Elsa Activities</Title>
     <Company>Viewpoint</Company>
     <Description>The Elsa workflow engine provides UI and programmatic tools for creating and managing workflows. This project extends the Elsa core to provide additional functionality.</Description>
     <Authors>CMS Core Services</Authors>
-    <Version>1.1.13</Version>
-    <AssemblyVersion>1.1.13</AssemblyVersion>
-    <FileVersion>1.1.13</FileVersion>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/trimble-oss/service-registry</RepositoryUrl>
-    <PackageReleaseNotes>$([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/ReleaseNotes.txt"))</PackageReleaseNotes>
-    <PackAsTool>False</PackAsTool>
   </PropertyGroup>
-  <ItemGroup>
-    <None Update="README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Azure.Messaging.ServiceBus" />
+		<PackageReference Include="Azure.ResourceManager.ServiceBus" />
+		<PackageReference Include="Chr.Avro.Json" />
+		<PackageReference Include="Confluent.Kafka" />
+		<PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+		<PackageReference Include="System.Linq.Async" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+		<ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+	</ItemGroup>
   <ItemGroup>
     <Folder Include="Elsa.Kafka\" />
   </ItemGroup>
-  <Import Project=".paket\Paket.Restore.targets" />
 </Project>
