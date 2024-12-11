@@ -26,7 +26,4 @@
 		<ProjectReference Include="..\..\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
 	</ItemGroup>
-  <ItemGroup>
-    <Folder Include="Elsa.Kafka\" />
-  </ItemGroup>
 </Project>

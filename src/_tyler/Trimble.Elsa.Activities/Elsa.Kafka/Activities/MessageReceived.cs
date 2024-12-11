@@ -5,6 +5,7 @@ using Elsa.Kafka.Stimuli;
 using Elsa.Kafka.UIHints;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;
 
@@ -51,7 +52,7 @@ public class MessageReceived : Trigger<object>
         Description = "Optional. A predicate to filter messages.",
         AutoEvaluate = false,
         DefaultSyntax = "JavaScript",
-        UIHint = InputUIHints.ExpressionEditor
+        UIHint = InputUIHints.MultiLine
     )]
     public Input<bool> Predicate { get; set; } = default!;
     

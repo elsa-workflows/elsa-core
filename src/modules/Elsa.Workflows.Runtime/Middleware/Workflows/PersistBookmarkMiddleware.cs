@@ -25,7 +25,7 @@ public class PersistBookmarkMiddleware : WorkflowExecutionMiddleware
         await Next(context);
         var updatedBookmarks = context.Bookmarks.ToList();
         var diff = Diff.For(originalBookmarks, updatedBookmarks);
-        var bookmarkRequest = new UpdateBookmarksRequest(context.Id, diff, context.CorrelationId);
+        var bookmarkRequest = new UpdateBookmarksRequest(context, context.Id, diff, context.CorrelationId);
         await _bookmarksPersister.PersistBookmarksAsync(bookmarkRequest);
     }
 }

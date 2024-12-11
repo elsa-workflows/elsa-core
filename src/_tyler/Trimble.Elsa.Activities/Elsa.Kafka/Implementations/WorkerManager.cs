@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.Kafka.Activities;
 using Elsa.Kafka.Stimuli;
 using Elsa.Workflows;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Entities;
@@ -127,7 +128,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
             if (worker == null)
                 continue;
 
-            var bookmarkBinding = new BookmarkBinding(bookmark.WorkflowInstanceId, bookmark.CorrelationId, bookmark.Id, stimulus);
+            var bookmarkBinding = new BookmarkBinding(bookmark.WorkflowInstanceId, bookmark.CorrelationId, bookmark.BookmarkId, stimulus);
             worker.BindBookmark(bookmarkBinding);
         }
 
@@ -137,7 +138,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
     public Task UnbindBookmarksAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.Where(x => x.ActivityTypeName == MessageReceivedActivityTypeName).ToList();
-        var removedBookmarkIds = bookmarkList.Select(x => x.Id).ToList();
+        var removedBookmarkIds = bookmarkList.Select(x => x.BookmarkId).ToList();
 
         foreach (var bookmark in bookmarkList)
         {

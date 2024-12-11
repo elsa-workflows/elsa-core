@@ -15,7 +15,7 @@ public class BookmarksPersister(IBookmarkUpdater bookmarkUpdater, INotificationS
         await bookmarkUpdater.UpdateBookmarksAsync(updateBookmarksRequest);
     
         // Publish domain event.
-        await notificationSender.SendAsync(new WorkflowBookmarksIndexed(new IndexedWorkflowBookmarks(updateBookmarksRequest.WorkflowInstanceId, updateBookmarksRequest.Diff.Added, updateBookmarksRequest.Diff.Removed, updateBookmarksRequest.Diff.Unchanged)));
+        await notificationSender.SendAsync(new WorkflowBookmarksIndexed(updateBookmarksRequest.WorkflowExecutionContext, new IndexedWorkflowBookmarks(updateBookmarksRequest.WorkflowInstanceId, updateBookmarksRequest.Diff.Added, updateBookmarksRequest.Diff.Removed, updateBookmarksRequest.Diff.Unchanged)));
     
         // Publish domain event.
         await notificationSender.SendAsync(new WorkflowBookmarksPersisted(updateBookmarksRequest.Diff), NotificationStrategy.Background);

@@ -1,4 +1,5 @@
 using System.Text;
+using Elsa.Common.Models;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
@@ -17,6 +18,7 @@ using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -26,6 +28,7 @@ namespace Elsa.Kafka.Handlers;
 public class TriggerWorkflows(
     //ITriggerInvoker triggerInvoker,
     IWorkflowInbox workflowInbox,
+    IWorkflowRuntime workflowRuntime,
     ICorrelationStrategy correlationStrategy,
     IWorkflowInstanceStore workflowInstanceStore,
     IWorkflowDefinitionService workflowDefinitionService,
@@ -58,20 +61,25 @@ public class TriggerWorkflows(
         {
             [MessageReceived.InputKey] = transportMessage
         };
-
+        
         foreach (var binding in matchingTriggers)
         {
-            var results = await workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+            await workflowRuntime.StartWorkflowAsync(binding.Workflow.Identity.DefinitionId, new StartWorkflowRuntimeParams
             {
-                Workflow = binding.Workflow,
-                ActivityId = binding.TriggerActivityId,
                 CorrelationId = GetCorrelationId(transportMessage),
                 Input = input,
-                Properties = new Dictionary<string, object>
-                {
-                    [MessageReceived.InputKey] = transportMessage
-                }
-            }, cancellationToken);
+                CancellationTokens = cancellationToken,
+                TriggerActivityId = binding.TriggerActivityId,
+                VersionOptions = VersionOptions.SpecificVersion(binding.Workflow.Identity.Version)
+            });
+
+            // await workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+            // {
+            //     ActivityTypeName = MessageReceivedActivityTypeName,
+            //     CorrelationId = GetCorrelationId(transportMessage),
+            //     Input = input
+            //     
+            // }, cancellationToken);
 
             //var invokeTriggerRequest = new InvokeTriggerRequest
             //{
@@ -102,18 +110,16 @@ public class TriggerWorkflows(
 
         foreach (var binding in matchingBookmarks)
         {
-            var bookmarkQueueItem = new NewBookmarkQueueItem
+            var inboxMessage = new NewWorkflowInboxMessage
             {
                 WorkflowInstanceId = binding.WorkflowInstanceId,
-                BookmarkId = binding.BookmarkId,
-                Options = new ResumeBookmarkOptions
-                {
-                    Input = input,
-                    Properties = properties
-                },
-                ActivityTypeName = MessageReceivedActivityTypeName
+                BookmarkPayload = binding.Stimulus,
+                CorrelationId = GetCorrelationId(transportMessage),
+                ActivityTypeName = MessageReceivedActivityTypeName,
+                Input = input
             };
-            await bookmarkQueue.EnqueueAsync(bookmarkQueueItem, cancellationToken);
+            await workflowInbox.SubmitAsync(inboxMessage, cancellationToken);
+            //await bookmarkQueue.EnqueueAsync(bookmarkQueueItem, cancellationToken);
         }
     }
 
@@ -269,6 +275,6 @@ public class TriggerWorkflows(
             throw new InvalidOperationException($"Could not find workflow definition with ID {workflowInstance.DefinitionVersionId}");
 
         var workflowState = workflowInstance.WorkflowState;
-        return await WorkflowExecutionContext.CreateAsync(serviceProvider, workflowDefinition, workflowState, cancellationToken: cancellationToken);
+        return await WorkflowExecutionContext.CreateAsync(serviceProvider, workflowDefinition, workflowState, cancellationTokens: cancellationToken);
     }
 }

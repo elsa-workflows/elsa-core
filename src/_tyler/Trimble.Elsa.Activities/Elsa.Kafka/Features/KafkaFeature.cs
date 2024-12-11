@@ -7,6 +7,7 @@ using Elsa.Kafka.Providers;
 using Elsa.Kafka.Tasks;
 using Elsa.Kafka.UIHints;
 using Elsa.Workflows;
+using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Kafka;
@@ -49,6 +50,7 @@ public class KafkaFeature(IModule module) : FeatureBase(module)
 
     public override void Configure()
     {
+        Module.ConfigureHostedService<StartConsumersStartupTask>();
         Module.AddActivitiesFrom<KafkaFeature>();
     }
 
@@ -57,7 +59,6 @@ public class KafkaFeature(IModule module) : FeatureBase(module)
         Services.Configure(_configureOptions);
 
         Services
-            .AddBackgroundTask<StartConsumersStartupTask>()
             .AddSingleton<IWorkerManager, WorkerManager>()
             .AddScoped<IWorkerTopicSubscriber, WorkerTopicSubscriber>()
             .AddScoped<OptionsDefinitionProvider>()

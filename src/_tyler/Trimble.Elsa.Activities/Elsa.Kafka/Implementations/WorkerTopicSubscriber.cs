@@ -1,6 +1,7 @@
 using Elsa.Kafka.Activities;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 
