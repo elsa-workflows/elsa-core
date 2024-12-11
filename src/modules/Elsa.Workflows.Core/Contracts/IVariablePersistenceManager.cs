@@ -6,9 +6,12 @@ namespace Elsa.Workflows;
 public interface IVariablePersistenceManager
 {
     /// <summary>
-    /// Loads the variables into the specified <see cref="WorkflowExecutionContext"/>. 
+    /// Loads the variables into the specified <see cref="WorkflowExecutionContext"/>.
     /// </summary>
-    Task LoadVariablesAsync(WorkflowExecutionContext context);
+    /// <param name="context"></param>
+    /// <param name="excludeValueRetrievalForLargeDataDrivers"></param>
+    /// <returns></returns>
+    Task LoadVariablesAsync(WorkflowExecutionContext context, bool excludeValueRetrievalForLargeDataDrivers = false);
 
     /// <summary>
     /// Persists all persistable variables from the specified <see cref="WorkflowExecutionContext"/>. 

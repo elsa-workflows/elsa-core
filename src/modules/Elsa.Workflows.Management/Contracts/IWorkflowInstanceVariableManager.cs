@@ -6,17 +6,19 @@ public interface IWorkflowInstanceVariableManager
     /// Retrieves all variables for the specified workflow instance.
     /// </summary>
     /// <param name="workflowInstanceId">The ID of the workflow instance.</param>
+    /// <param name="excludeValueRetrievalForLargeDataDrivers"></param>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains a collection of <see cref="ResolvedVariable"/> instances.</returns>
-    Task<IEnumerable<ResolvedVariable>> GetVariablesAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<ResolvedVariable>> GetVariablesAsync(string workflowInstanceId, bool excludeValueRetrievalForLargeDataDrivers = false, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retrieves all variables from the specified <see cref="WorkflowExecutionContext"/>.
     /// </summary>
     /// <param name="workflowExecutionContext">The context of the workflow execution.</param>
+    /// <param name="excludeValueRetrievalForLargeDataDrivers"></param>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains a collection of <see cref="ResolvedVariable"/> instances.</returns>
-    Task<IEnumerable<ResolvedVariable>> GetVariablesAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default);
+    Task<IEnumerable<ResolvedVariable>> GetVariablesAsync(WorkflowExecutionContext workflowExecutionContext, bool excludeValueRetrievalForLargeDataDrivers = false, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Sets the specified variables in the specified workflow instance.
