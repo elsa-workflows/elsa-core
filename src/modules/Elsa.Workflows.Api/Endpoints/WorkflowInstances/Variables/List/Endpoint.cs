@@ -27,7 +27,7 @@ internal class List(IWorkflowInstanceVariableManager workflowInstanceVariableMan
             return;
         }
         
-        var variables = await workflowInstanceVariableManager.GetVariablesAsync(workflowInstanceId, cancellationToken).ToList();
+        var variables = await workflowInstanceVariableManager.GetVariablesAsync(workflowInstanceId, ["LargeData"],cancellationToken).ToList();
         var variableModels = variables.Select(x => new ResolvedVariableModel(x.Variable.Id, x.Variable.Name, x.Value)).ToList();
         var response = new ListResponse<ResolvedVariableModel>(variableModels);
         await SendOkAsync(response, cancellationToken);

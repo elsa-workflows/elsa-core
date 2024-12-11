@@ -17,8 +17,11 @@ public class WorkflowInstanceStorageDriver : IStorageDriver
     /// The key used to store the variables in the workflow state.
     /// </summary>
     public const string VariablesDictionaryStateKey = "Variables";
-
+    
+    /// <inheritdoc />
     public double Priority => 5;
+    /// <inheritdoc />
+    public IEnumerable<string> Tags => [];
 
     /// <inheritdoc />
     public ValueTask WriteAsync(string id, object value, StorageDriverContext context)

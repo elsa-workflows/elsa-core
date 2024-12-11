@@ -7,16 +7,16 @@ public class WorkflowInstanceVariableManager(
     IWorkflowInstanceVariableReader variableReader,
     IWorkflowInstanceVariableWriter variableWriter) : IWorkflowInstanceVariableManager
 {
-    public async Task<IEnumerable<ResolvedVariable>> GetVariablesAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ResolvedVariable>> GetVariablesAsync(string workflowInstanceId, IEnumerable<string>? excludeTags = default, CancellationToken cancellationToken = default)
     {
         var workflowExecutionContext = await GetWorkflowExecutionContextAsync(workflowInstanceId, cancellationToken);
         if (workflowExecutionContext == null) return [];
-        return await variableReader.GetVariables(workflowExecutionContext, cancellationToken);
+        return await variableReader.GetVariables(workflowExecutionContext, excludeTags, cancellationToken);
     }
 
-    public Task<IEnumerable<ResolvedVariable>> GetVariablesAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<ResolvedVariable>> GetVariablesAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<string>? excludeTags = default, CancellationToken cancellationToken = default)
     {
-        return variableReader.GetVariables(workflowExecutionContext, cancellationToken);
+        return variableReader.GetVariables(workflowExecutionContext, excludeTags, cancellationToken);
     }
 
     public async Task<IEnumerable<ResolvedVariable>> SetVariablesAsync(string workflowInstanceId, IEnumerable<VariableUpdateValue> variables, CancellationToken cancellationToken = default)
