@@ -13,7 +13,7 @@ public interface IStorageDriver
     /// <summary>
     /// A list of tags assigned to the driver used to describe the data contents.
     /// </summary>
-    StorageDriverTag[] Tags { get; }
+    IEnumerable<string> Tags { get; }
     
     /// <summary>
     /// Writes a value to the storage driver.
