@@ -1,0 +1,19 @@
+source https://api.nuget.org/v3/index.json
+source https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json
+source https://f.feedz.io/sfmskywalker/webhooks-core/nuget/index.json
+
+storage: none
+framework: auto-detect
+
+// Runtime dependencies.
+nuget Chr.Avro.Json ~> 10.5.0
+nuget Confluent.SchemaRegistry.Serdes.Avro ~> 2.6.0
+nuget Elsa == 3.2.0
+nuget Elsa.Http == 3.2.0
+nuget Elsa.Scheduling == 3.2.0
+nuget JsonPath.Net ~> 1.0.0
+nuget Microsoft.AspNetCore.Authentication.JwtBearer ~> 8.0
+nuget Microsoft.Extensions.Configuration.Abstractions ~> 8.0
+nuget Microsoft.Extensions.DependencyInjection.Abstractions ~> 8.0
+nuget Microsoft.Extensions.Logging.Abstractions ~> 8.0
+nuget Stubble.Core ~> 1.10.8
