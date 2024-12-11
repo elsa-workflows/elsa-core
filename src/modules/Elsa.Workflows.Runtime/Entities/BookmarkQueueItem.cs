@@ -60,7 +60,8 @@ public class BookmarkQueueItem : Entity
             CorrelationId = CorrelationId,
             BookmarkId = BookmarkId,
             Hash = StimulusHash,
-            ActivityInstanceId = ActivityInstanceId
+            ActivityInstanceId = ActivityInstanceId,
+            ActivityTypeName =  ActivityTypeName
         };
     }
 }
