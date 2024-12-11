@@ -14,6 +14,7 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Http.Options;
+using Elsa.Kafka;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;
@@ -51,6 +52,7 @@ const bool useCaching = true;
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disable until Elsa Studio is updated to send authenticated requests to the SignalR hub. 
 const bool useAzureServiceBus = false;
+const bool useKafka = true;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
@@ -336,6 +338,14 @@ services
 
         if (useAzureServiceBus)
             elsa.UseAzureServiceBus(asb => asb.AzureServiceBusOptions += options => configuration.GetSection("AzureServiceBus").Bind(options));
+        
+        if (useKafka)
+        {
+            elsa.UseKafka(kafka =>
+            {
+                kafka.ConfigureOptions(options => configuration.GetSection("Kafka").Bind(options));
+            });
+        }
 
         if (useMassTransit)
         {

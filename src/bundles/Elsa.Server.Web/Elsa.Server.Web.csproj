@@ -13,6 +13,7 @@
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.OpenTelemetry\Elsa.OpenTelemetry.csproj" />
+        <ProjectReference Include="..\..\_tyler\Trimble.Elsa.Activities\Trimble.Elsa.Activities.csproj" />
         <ProjectReference Include="..\Elsa\Elsa.csproj"/>
         <ProjectReference Include="..\..\common\Elsa.DropIns\Elsa.DropIns.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Alterations.MassTransit\Elsa.Alterations.MassTransit.csproj"/>
