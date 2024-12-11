@@ -1,7 +1,7 @@
 <Project>
     <PropertyGroup>
         <Authors>Elsa Workflows Community</Authors>
-        <Copyright>2023</Copyright>
+        <Copyright>2024</Copyright>
 
         <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
         <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
@@ -38,6 +38,5 @@
     </PropertyGroup>
     <PropertyGroup>
         <ElsaStudioVersion>3.3.0-preview.666</ElsaStudioVersion>
-        <SystemTextJsonVersion>8.0.5</SystemTextJsonVersion>
     </PropertyGroup>
 </Project>
