@@ -8,7 +8,7 @@ namespace Elsa.Workflows;
 public class VariablePersistenceManager(IStorageDriverManager storageDriverManager) : IVariablePersistenceManager
 {
     /// <inheritdoc />
-    public async Task LoadVariablesAsync(WorkflowExecutionContext workflowExecutionContext, bool excludeValueRetrievalForLargeDataDrivers = false)
+    public async Task LoadVariablesAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<string>? excludeTags = default)
     {
         var cancellationToken = workflowExecutionContext.CancellationToken;
         var contexts = workflowExecutionContext.ActivityExecutionContexts.ToList();
@@ -34,7 +34,7 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
                 if (driver == null)
                     continue;
 
-                if (excludeValueRetrievalForLargeDataDrivers && driver.Tags.Contains(StorageDriverTag.LargeData))
+                if (excludeTags != null && driver.Tags.All(excludeTags!.Contains))
                     continue;
 
                 var id = GetStateId(variable);

@@ -9,9 +9,9 @@ public interface IVariablePersistenceManager
     /// Loads the variables into the specified <see cref="WorkflowExecutionContext"/>.
     /// </summary>
     /// <param name="context"></param>
-    /// <param name="excludeValueRetrievalForLargeDataDrivers"></param>
+    /// <param name="excludeTags"></param>
     /// <returns></returns>
-    Task LoadVariablesAsync(WorkflowExecutionContext context, bool excludeValueRetrievalForLargeDataDrivers = false);
+    Task LoadVariablesAsync(WorkflowExecutionContext context, IEnumerable<string>? excludeTags = default);
 
     /// <summary>
     /// Persists all persistable variables from the specified <see cref="WorkflowExecutionContext"/>. 

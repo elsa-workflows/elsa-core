@@ -21,7 +21,7 @@ public class WorkflowInstanceStorageDriver : IStorageDriver
     /// <inheritdoc />
     public double Priority => 5;
     /// <inheritdoc />
-    public StorageDriverTag[] Tags => [];
+    public IEnumerable<string> Tags => [];
 
     /// <inheritdoc />
     public ValueTask WriteAsync(string id, object value, StorageDriverContext context)

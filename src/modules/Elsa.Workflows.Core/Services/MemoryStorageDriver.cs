@@ -12,7 +12,7 @@ public class MemoryStorageDriver : IStorageDriver
     /// <inheritdoc />
     public double Priority => 0;
     /// <inheritdoc />
-    public StorageDriverTag[] Tags => [];
+    public IEnumerable<string> Tags => [];
 
     /// <inheritdoc />
     public ValueTask WriteAsync(string id, object value, StorageDriverContext context)
