@@ -49,12 +49,11 @@ public class CSharpEvaluator(INotificationSender notificationSender, IOptions<CS
         await notificationSender.SendAsync(notification, cancellationToken);
         scriptOptions = notification.ScriptOptions;
         script = notification.Script.ContinueWith(expression, scriptOptions);
-        script = GetPreCompiledScript(script);
-        var scriptState = await script.RunAsync(globals, cancellationToken: cancellationToken);
-        return scriptState.ReturnValue;
+        var runner = GetCompiledScript(script);
+        return await runner(globals, cancellationToken: cancellationToken);
     }
 
-    private Script<object> GetPreCompiledScript(Script<object> script)
+    private ScriptRunner<object> GetCompiledScript(Script<object> script)
     {
         var cacheKey = "csharp:script:" + Hash(script);
 
@@ -63,7 +62,7 @@ public class CSharpEvaluator(INotificationSender notificationSender, IOptions<CS
             if (_csharpOptions.ScriptCacheTimeout.HasValue)
                 entry.SetSlidingExpiration(_csharpOptions.ScriptCacheTimeout.Value);
 
-            return script;
+            return script.CreateDelegate();
         })!;
     }
 
