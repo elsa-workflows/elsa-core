@@ -54,6 +54,7 @@ const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disable until Elsa Studio is updated to send authenticated requests to the SignalR hub. 
 const bool useAzureServiceBus = false;
 const bool useKafka = true;
+const bool disableVariableWrappers = false;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
