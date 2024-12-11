@@ -130,7 +130,7 @@ internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasReg
         if (!options.Value.DisableWrappers)
         {
             // Variable getter and setters.
-            foreach (var variable in context.WorkflowGraph.Workflow.Variables.Where(x => x.Name.IsValidVariableName()))
+            foreach (var variable in context.Workflow.Variables.Where(x => x.Name.IsValidVariableName()))
             {
                 var pascalName = variable.Name.Pascalize();
                 var variableType = variable.GetVariableType();
