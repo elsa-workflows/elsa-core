@@ -3,6 +3,7 @@ using Elsa.Expressions.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
@@ -34,14 +35,15 @@ public static class TriggerExtensions
     /// <param name="logger">The logger.</param>
     /// <returns>An expression execution context.</returns>
     public static async Task<ExpressionExecutionContext> CreateExpressionExecutionContextAsync(
-        this ITrigger trigger, 
+        this ITrigger trigger,
+        ActivityDescriptor activityDescriptor,
         IServiceProvider serviceProvider, 
         WorkflowIndexingContext context, 
         IExpressionEvaluator expressionEvaluator,
         ILogger logger)
     {
-        var inputs = trigger.GetInputs();
-        var assignedInputs = inputs.Where(x => x.MemoryBlockReference != null!).ToList();
+        var namedInputs = trigger.GetNamedInputs();
+        var assignedInputs = namedInputs.Where(x => x.Value.MemoryBlockReference != null!).ToList();
         var register = context.GetOrCreateRegister(trigger);
         var cancellationToken = context.CancellationToken;
         var expressionInput = new Dictionary<string, object>();
@@ -50,8 +52,23 @@ public static class TriggerExtensions
         var expressionExecutionContext = new ExpressionExecutionContext(serviceProvider, register, default, applicationProperties, cancellationToken);
 
         // Evaluate activity inputs before requesting trigger data.
-        foreach (var input in assignedInputs)
+        foreach (var namedInput in assignedInputs)
         {
+            var inputDescriptor = activityDescriptor.Inputs.FirstOrDefault(x => x.Name == namedInput.Key);
+
+            if (inputDescriptor == null)
+            {
+                logger.LogWarning("Input descriptor not found for input '{InputName}'", namedInput.Key);
+                continue;
+            }
+
+            if (!inputDescriptor.AutoEvaluate)
+            {
+                logger.LogDebug("Skipping input '{InputName}' because it is not set to auto-evaluate.", namedInput.Key);
+                continue;
+            }
+            
+            var input = namedInput.Value;
             var locationReference = input.MemoryBlockReference();
 
             if(locationReference.Id == null!)
