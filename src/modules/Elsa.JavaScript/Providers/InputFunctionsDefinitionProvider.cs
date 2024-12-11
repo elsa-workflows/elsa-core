@@ -15,11 +15,13 @@ namespace Elsa.JavaScript.Providers;
 
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
 [UsedImplicitly]
-    : FunctionDefinitionProvider
-internal class InputFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry, IWorkflowDefinitionService workflowDefinitionService)
+internal class InputFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry, IWorkflowDefinitionService workflowDefinitionService, IOptions<JintOptions> options) : FunctionDefinitionProvider
 {
     protected override async ValueTask<IEnumerable<FunctionDefinition>> GetFunctionDefinitionsAsync(TypeDefinitionContext context)
     {
+        if (options.Value.DisableWrappers)
+            return [];
+        
         var cancellationToken = context.CancellationToken;
         var workflow = context.Workflow;
         var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(workflow.Identity.DefinitionId, VersionOptions.SpecificVersion(workflow.Identity.Version), cancellationToken);
@@ -29,7 +31,7 @@ internal class InputFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegi
     private IEnumerable<FunctionDefinition> GetFunctionDefinitionsAsync(WorkflowDefinition workflowDefinition)
     {
         // Input argument getters.
-        foreach (var input in workflowDefinition.Inputs)
+        foreach (var input in workflowDefinition.Inputs.Where(x => VariableNameValidator.IsValidVariableName(x.Name)))
         {
             var pascalName = input.Name.Pascalize();
             var variableType = input.Type;

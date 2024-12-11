@@ -5,6 +5,7 @@ using Elsa.JavaScript.TypeDefinitions.Abstractions;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Workflows.Contracts;
 using Humanizer;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.JavaScript.Providers;
 
@@ -14,10 +15,14 @@ namespace Elsa.JavaScript.Providers;
 internal class ActivityOutputFunctionsDefinitionProvider(
     IActivityVisitor activityVisitor, 
     IActivityRegistryLookupService activityRegistryLookup, 
-    IIdentityGraphService identityGraphService) : FunctionDefinitionProvider
+    IIdentityGraphService identityGraphService, 
+    IOptions<JintOptions> options) : FunctionDefinitionProvider
 {
     protected override async ValueTask<IEnumerable<FunctionDefinition>> GetFunctionDefinitionsAsync(TypeDefinitionContext context)
     {
+        if(options.Value.DisableWrappers)
+            return [];
+        
         // Output getters.
         var workflow = context.Workflow;
         var nodes = (await activityVisitor.VisitAsync(workflow.Root, context.CancellationToken)).Flatten().Distinct().ToList();
@@ -25,7 +30,7 @@ internal class ActivityOutputFunctionsDefinitionProvider(
         // Ensure identities.
         await identityGraphService.AssignIdentitiesAsync(nodes);
         
-        var activitiesWithOutputs = nodes.GetActivitiesWithOutputs(activityRegistryLookup);
+        var activitiesWithOutputs = nodes.GetActivitiesWithOutputs(activityRegistryLookup).Where(x => x.activity.Name != null && x.activity.Name.IsValidVariableName());
         var definitions = new List<FunctionDefinition>();
 
         await foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
