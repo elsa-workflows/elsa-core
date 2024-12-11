@@ -39,6 +39,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         span.SetTag("workflowDefinition.version", workflow.Identity.Version);
         span.SetTag("workflowDefinition.name", workflow.WorkflowMetadata.Name);
         span.SetTag("workflowExecution.startTimeUtc", span.StartTimeUtc);
+        span.SetTag("tenantId", workflow.Identity.TenantId);
         
         if(context.TriggerActivityId != null)
         {

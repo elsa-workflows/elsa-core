@@ -1,7 +1,7 @@
 # Version: 1
 # Description: Dockerfile for building and running Elsa Server
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-bookworm-slim AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim AS build
 WORKDIR /source
 
 # Copy sources.
@@ -15,10 +15,10 @@ RUN dotnet restore "./src/bundles/Elsa.Server.Web/Elsa.Server.Web.csproj"
 # Build and publish (UseAppHost=false creates platform independent binaries).
 WORKDIR /source/src/bundles/Elsa.Server.Web
 RUN dotnet build "Elsa.Server.Web.csproj" -c Release -o /app/build
-RUN dotnet publish "Elsa.Server.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net8.0
+RUN dotnet publish "Elsa.Server.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net9.0
 
 # Move binaries into smaller base image.
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim AS base
 WORKDIR /app
 COPY --from=build /app/publish ./
 

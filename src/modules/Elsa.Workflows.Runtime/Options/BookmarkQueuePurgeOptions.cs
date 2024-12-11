@@ -8,7 +8,7 @@ public class BookmarkQueuePurgeOptions
     /// <summary>
     /// The time-to-live for bookmark queue items.
     /// </summary>
-    public TimeSpan Ttl { get; set; } = TimeSpan.FromSeconds(10);
+    public TimeSpan Ttl { get; set; } = TimeSpan.FromMinutes(1);
 
     /// <summary>
     /// The number of records to clean up per sweep.

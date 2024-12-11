@@ -37,7 +37,7 @@ jobs:
           echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
           echo "PACKAGE_PREFIX=${PACKAGE_PREFIX}" >> $GITHUB_ENV
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Verify commit exists in branch
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased")]]; then
@@ -61,6 +61,9 @@ jobs:
 #        with:
 #          java-version: '17'
 #          distribution: 'adopt'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.x
 #      - name: Install SonarScanner for .NET
 #        run: dotnet tool install --global dotnet-sonarscanner
 #      - name: Install Coverlet for code coverage

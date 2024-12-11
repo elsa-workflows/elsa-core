@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net8.0;net9.0</TargetFrameworks>
         <Description>
             Provides integration with the Quartz.NET library and provide am implementation of Elsa's IJobScheduler using Quartz.NET.
         </Description>

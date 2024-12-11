@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using Elsa.Common.Entities;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using JetBrains.Annotations;
@@ -23,7 +24,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        return await store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, filter.TenantAgnostic, cancellationToken).FirstOrDefault();
+        var orderBy = new WorkflowDefinitionOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await FindAsync(filter, orderBy, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -35,9 +37,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await store.QueryAsync(queryable => Filter(queryable, filter), cancellationToken).LongCount();
-        var results = await store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
-        return new(results, count);
+        var orderBy = new WorkflowDefinitionOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await FindManyAsync(filter, orderBy, pageArgs, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -51,7 +52,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        return await store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
+        var orderBy = new WorkflowDefinitionOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await FindManyAsync(filter, orderBy, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -64,18 +66,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     [RequiresUnreferencedCode("The method 'FindSummariesAsync' is used for serialization and requires unreferenced code to be preserved.")]
     public async Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
-        var set = dbContext.WorkflowDefinitions.AsNoTracking();
-        var queryable = Filter(set.AsQueryable(), filter);
-
-        if (filter.TenantAgnostic)
-            queryable = queryable.IgnoreQueryFilters();
-        
-        var count = await queryable.LongCountAsync(cancellationToken);
-        queryable = Paginate(queryable, pageArgs);
-        var results = await queryable.Select(WorkflowDefinitionSummary.FromDefinitionExpression()).ToListAsync(cancellationToken);
-
-        return Page.Of(results, count);
+        var orderBy = new WorkflowDefinitionOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await FindSummariesAsync(filter, orderBy, pageArgs, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -99,14 +91,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     [RequiresUnreferencedCode("The method 'FindSummariesAsync' is used for serialization and requires unreferenced code to be preserved.")]
     public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
-        var set = dbContext.WorkflowDefinitions.AsNoTracking();
-        var queryable = Filter(set.AsQueryable(), filter);
-        
-        if (filter.TenantAgnostic)
-            queryable = queryable.IgnoreQueryFilters();
-        
-        return await queryable.Select(WorkflowDefinitionSummary.FromDefinitionExpression()).ToListAsync(cancellationToken);
+        var orderBy = new WorkflowDefinitionOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await FindSummariesAsync(filter, orderBy, cancellationToken);
     }
 
     /// <inheritdoc />
