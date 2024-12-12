@@ -13,6 +13,16 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     public RuntimeElsaDbContext(DbContextOptions<RuntimeElsaDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
     {
     }
+
+    #region Obsolete
+
+    /// <summary>
+    /// The workflow inbox messages.
+    /// </summary>
+    [Obsolete("Use BookmarkQueueItems instead.")]
+    public DbSet<WorkflowInboxMessage> WorkflowInboxMessages { get; set; } = null!;
+
+    #endregion
     
     /// <summary>
     /// The workflow triggers.
@@ -40,12 +50,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     public DbSet<BookmarkQueueItem> BookmarkQueueItems { get; set; } = null!;
     
     /// <summary>
-    /// The workflow inbox messages.
-    /// </summary>
-    [Obsolete("Use BookmarkQueueItems instead.")]
-    public DbSet<WorkflowInboxMessage> WorkflowInboxMessages { get; set; } = null!;
-    
-    /// <summary>
     /// The generic key value pairs.
     /// </summary>
     public DbSet<SerializedKeyValuePair> KeyValuePairs { get; set; } = null!;
@@ -62,5 +66,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<StoredBookmark>(config);
         modelBuilder.ApplyConfiguration<BookmarkQueueItem>(config);
         modelBuilder.ApplyConfiguration<SerializedKeyValuePair>(config);
+        modelBuilder.ApplyConfiguration<WorkflowInboxMessage>(config);
     }
 }
