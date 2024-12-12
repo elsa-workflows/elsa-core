@@ -3,6 +3,7 @@
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RootNamespace>Trimble.Elsa.Activities</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
     <Title>Trimble Elsa Activities</Title>

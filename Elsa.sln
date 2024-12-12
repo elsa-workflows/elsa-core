@@ -394,9 +394,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "trace-lens", "trace-lens", 
 		scripts\k8s\trace-lens\service.yaml = scripts\k8s\trace-lens\service.yaml
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_tyler", "_tyler", "{520188FE-E914-4000-A114-E9E692EFAA29}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Trimble.Elsa.Activities", "src\_tyler\Trimble.Elsa.Activities\Trimble.Elsa.Activities.csproj", "{80075F40-69AC-48D4-ADA3-97684039808E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Kafka", "src\modules\Elsa.Kafka\Elsa.Kafka.csproj", "{393EB52E-C929-4A1A-843F-85E467D01BD8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -891,10 +889,10 @@ Global
 		{25880971-403E-4872-93A1-D33089E07C91}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{25880971-403E-4872-93A1-D33089E07C91}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{25880971-403E-4872-93A1-D33089E07C91}.Release|Any CPU.Build.0 = Release|Any CPU
-		{80075F40-69AC-48D4-ADA3-97684039808E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{80075F40-69AC-48D4-ADA3-97684039808E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{80075F40-69AC-48D4-ADA3-97684039808E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{80075F40-69AC-48D4-ADA3-97684039808E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{393EB52E-C929-4A1A-843F-85E467D01BD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{393EB52E-C929-4A1A-843F-85E467D01BD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{393EB52E-C929-4A1A-843F-85E467D01BD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{393EB52E-C929-4A1A-843F-85E467D01BD8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1049,8 +1047,7 @@ Global
 		{BFB87B50-3FE9-4AB1-8F18-96BE667C953D} = {924BA0AE-46B1-40B5-992C-CFB4EB14EDB0}
 		{399C61BC-A51B-4B57-AA32-46BC24D4AE1C} = {924BA0AE-46B1-40B5-992C-CFB4EB14EDB0}
 		{2FDF67FD-2BD3-4F73-9A24-DA255641ED25} = {924BA0AE-46B1-40B5-992C-CFB4EB14EDB0}
-		{520188FE-E914-4000-A114-E9E692EFAA29} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
-		{80075F40-69AC-48D4-ADA3-97684039808E} = {520188FE-E914-4000-A114-E9E692EFAA29}
+		{393EB52E-C929-4A1A-843F-85E467D01BD8} = {DD089B8B-DA73-492A-9010-F772D1C178DA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

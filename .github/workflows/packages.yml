@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - 'blackberry'
-  release:
-    types: [ prereleased, published ]
 env:
   feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
 

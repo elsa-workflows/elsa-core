@@ -11,9 +11,9 @@
         <ProjectReference Include="..\..\modules\Elsa.AzureServiceBus\Elsa.AzureServiceBus.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Kafka\Elsa.Kafka.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.OpenTelemetry\Elsa.OpenTelemetry.csproj" />
-        <ProjectReference Include="..\..\_tyler\Trimble.Elsa.Activities\Trimble.Elsa.Activities.csproj" />
         <ProjectReference Include="..\Elsa\Elsa.csproj"/>
         <ProjectReference Include="..\..\common\Elsa.DropIns\Elsa.DropIns.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Alterations.MassTransit\Elsa.Alterations.MassTransit.csproj"/>
@@ -22,7 +22,6 @@
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.MassTransit.RabbitMq\Elsa.MassTransit.RabbitMq.csproj"/>
-        <ProjectReference Include="..\..\modules\Elsa.Python\Elsa.Python.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Quartz.EntityFrameworkCore.Sqlite\Elsa.Quartz.EntityFrameworkCore.Sqlite.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.FileStorage\Elsa.FileStorage.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Dapper.Migrations\Elsa.Dapper.Migrations.csproj"/>
