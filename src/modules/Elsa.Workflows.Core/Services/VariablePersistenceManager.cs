@@ -34,7 +34,7 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
                 if (driver == null)
                     continue;
 
-                if (excludeTags != null && driver.Tags.All(excludeTags!.Contains))
+                if (excludeTags != null && driver.Tags.Any(excludeTags!.Contains))
                     continue;
 
                 var id = GetStateId(variable);
