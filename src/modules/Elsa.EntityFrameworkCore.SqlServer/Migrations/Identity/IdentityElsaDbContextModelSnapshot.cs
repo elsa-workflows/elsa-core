@@ -56,9 +56,6 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Identity
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("Roles");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId")
@@ -68,9 +65,6 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Identity
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_Application_Name");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("IX_Application_TenantId");
 
                     b.ToTable("Applications", "Elsa");
                 });
@@ -89,17 +83,11 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Identity
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("Permissions");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_Role_Name");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("IX_Role_TenantId");
 
                     b.ToTable("Roles", "Elsa");
                 });
@@ -126,17 +114,11 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Identity
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("Roles");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_User_Name");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("IX_User_TenantId");
 
                     b.ToTable("Users", "Elsa");
                 });

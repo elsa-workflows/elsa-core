@@ -17,32 +17,38 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     /// <summary>
     /// The workflow triggers.
     /// </summary>
-    public DbSet<StoredTrigger> Triggers { get; set; } = default!;
+    public DbSet<StoredTrigger> Triggers { get; set; } = null!;
     
     /// <summary>
     /// The workflow execution log records.
     /// </summary>
-    public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
+    public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = null!;
     
     /// <summary>
     /// The activity execution records.
     /// </summary>
-    public DbSet<ActivityExecutionRecord> ActivityExecutionRecords { get; set; } = default!;
+    public DbSet<ActivityExecutionRecord> ActivityExecutionRecords { get; set; } = null!;
     
     /// <summary>
     /// The workflow bookmarks.
     /// </summary>
-    public DbSet<StoredBookmark> Bookmarks { get; set; } = default!;
+    public DbSet<StoredBookmark> Bookmarks { get; set; } = null!;
     
     /// <summary>
     /// The bookmark queue items.
     /// </summary>
-    public DbSet<BookmarkQueueItem> BookmarkQueueItems { get; set; } = default!;
+    public DbSet<BookmarkQueueItem> BookmarkQueueItems { get; set; } = null!;
+    
+    /// <summary>
+    /// The workflow inbox messages.
+    /// </summary>
+    [Obsolete("Use BookmarkQueueItems instead.")]
+    public DbSet<WorkflowInboxMessage> WorkflowInboxMessages { get; set; } = null!;
     
     /// <summary>
     /// The generic key value pairs.
     /// </summary>
-    public DbSet<SerializedKeyValuePair> KeyValuePairs { get; set; } = default!;
+    public DbSet<SerializedKeyValuePair> KeyValuePairs { get; set; } = null!;
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)

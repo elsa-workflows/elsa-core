@@ -38,9 +38,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Labels
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("longtext");
-
                     b.HasKey("Id");
 
                     b.ToTable("Labels", "Elsa");
@@ -55,9 +52,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Labels
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("varchar(255)");
-
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -70,9 +64,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Labels
 
                     b.HasIndex("LabelId")
                         .HasDatabaseName("WorkflowDefinitionLabel_LabelId");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("WorkflowDefinitionLabel_TenantId");
 
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("WorkflowDefinitionLabel_WorkflowDefinitionId");
