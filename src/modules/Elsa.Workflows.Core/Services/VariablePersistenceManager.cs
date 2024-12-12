@@ -47,7 +47,7 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
 
                 if (!variable.TryParseValue(value, out var parsedValue))
                 {
-                    logger.LogWarning("Failed to parse value for variable {VariableId} of type {VariableType} with value {Value}", variable.Id, variable.GetType().Name, value);
+                    logger.LogWarning("Failed to parse value for variable {VariableId} of type {VariableType} with value {Value}", variable.Id, variable.GetVariableType().FullName, value);
                     continue;
                 }
 
