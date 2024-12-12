@@ -121,11 +121,12 @@ public static partial class ActivityExecutionContextExtensions
         // Serializing the value ensures we store a copy of the value and not a reference to the input, which may change over time.
         if (inputDescriptor.IsSerializable != false)
         {
-            var serializedValue = await context.GetRequiredService<ISafeSerializer>().SerializeToElementAsync(value);
-            var manager = context.GetRequiredService<IActivityStateFilterManager>();
-            var filterContext = new ActivityStateFilterContext(context, inputDescriptor, serializedValue, context.CancellationToken);
-            var filterResult = await manager.RunFiltersAsync(filterContext);
-            context.ActivityState[inputDescriptor.Name] = filterResult;
+            // TODO: Disable filtering for now until we redesign log sanitization.
+            // var serializedValue = await context.GetRequiredService<ISafeSerializer>().SerializeToElementAsync(value);
+            // var manager = context.GetRequiredService<IActivityStateFilterManager>();
+            // var filterContext = new ActivityStateFilterContext(context, inputDescriptor, serializedValue, context.CancellationToken);
+            // var filterResult = await manager.RunFiltersAsync(filterContext);
+            context.ActivityState[inputDescriptor.Name] = value;
         }
     }
 }
