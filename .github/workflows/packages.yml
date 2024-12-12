@@ -50,6 +50,8 @@ jobs:
           else
             echo "VERSION=3.2.2-blackberry.${{github.run_number}}" >> $GITHUB_ENV
           fi
+      - name: Compile+Test+Pack
+        run: ./build.sh Compile+Test+Pack --version ${VERSION} --analyseCode true
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
