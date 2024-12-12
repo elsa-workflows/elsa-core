@@ -1,5 +1,4 @@
 using Elsa.Common.Entities;
-using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Runtime.Entities;
 
@@ -8,20 +7,26 @@ namespace Elsa.Workflows.Runtime.Entities;
 /// </summary>
 public class StoredBookmark : Entity
 {
+    [Obsolete("Use Id instead.")] public string BookmarkId
+    {
+        get => Id;
+        set => Id = value;
+    }
+
     /// <summary>
     /// The name of the activity type associated with the bookmark.
     /// </summary>
-    public string ActivityTypeName { get; set; } = default!;
+    public string ActivityTypeName { get; set; } = null!;
 
     /// <summary>
     /// The hash of the bookmark.
     /// </summary>
-    public string Hash { get; set; } = default!;
+    public string Hash { get; set; } = null!;
 
     /// <summary>
     /// The ID of the workflow instance associated with the bookmark.
     /// </summary>
-    public string WorkflowInstanceId { get; set; } = default!;
+    public string WorkflowInstanceId { get; set; } = null!;
 
     /// <summary>
     /// The ID of the activity instance associated with the bookmark.
