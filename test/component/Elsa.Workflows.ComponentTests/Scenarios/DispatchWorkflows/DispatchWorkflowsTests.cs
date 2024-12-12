@@ -28,7 +28,7 @@ public class DispatchWorkflowsTests : AppComponentTest
         _workflowEvents.WorkflowInstanceSaved += OnWorkflowInstanceSaved;
     }
 
-    [Fact(Skip = "Fails due to timeouts, needs to be revised")]
+    [Fact]
     public async Task DispatchAndWaitWorkflow_ShouldWaitForChildWorkflowToComplete()
     {
         var workflowClient = await _workflowRuntime.CreateClientAsync();
