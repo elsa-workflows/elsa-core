@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using Elsa.Expressions.Helpers;
+using Elsa.Expressions.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Serialization.Converters;
@@ -62,6 +63,16 @@ public static class VariableExtensions
         variable.StorageDriverType = storageDriverType;
         return variable;
     }
+    
+    public static void Set(this Variable variable, ActivityExecutionContext context, object? value)
+    {
+        // Validate type compatibility.
+        if (!variable.TryParseValue(value, out var parsedValue))
+            throw new InvalidCastException($"The value '{value}' is not compatible with the variable '{variable.Name}' of type '{variable.GetType().Name}'.");
+        
+        // Set the value.
+        ((MemoryBlockReference)variable).Set(context, parsedValue);
+    }
 
     /// <summary>
     /// Converts the specified value into a type that is compatible with the variable.
@@ -72,6 +83,24 @@ public static class VariableExtensions
         var genericType = variable.GetType().GenericTypeArguments.FirstOrDefault();
         var converterOptions = new ObjectConverterOptions(SerializerOptions);
         return genericType == null ? value : value?.ConvertTo(genericType, converterOptions);
+    }
+    
+    /// <summary>
+    /// Converts the specified value into a type that is compatible with the variable.
+    /// </summary>
+    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
+    public static bool TryParseValue(this Variable variable, object? value, out object? parsedValue)
+    {
+        try
+        {
+            parsedValue = variable.ParseValue(value);
+            return true;
+        }
+        catch
+        {
+            parsedValue = null;
+            return false;
+        }
     }
 
     /// <summary>
