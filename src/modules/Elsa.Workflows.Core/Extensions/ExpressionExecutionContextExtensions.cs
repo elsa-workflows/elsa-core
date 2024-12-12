@@ -41,6 +41,11 @@ public static class ExpressionExecutionContextExtensions
     /// The key used to store the workflow in the <see cref="ExpressionExecutionContext.TransientProperties"/> dictionary.
     /// </summary>
     public static readonly object WorkflowKey = new();
+    
+    /// <summary>
+    /// The key used to store the activity in the <see cref="ExpressionExecutionContext.TransientProperties"/> dictionary.
+    /// </summary>
+    public static readonly object ActivityKey = new();
 
     /// <summary>
     /// Creates a dictionary for the specified <see cref="WorkflowExecutionContext"/> and <see cref="ActivityExecutionContext"/>.
@@ -82,6 +87,11 @@ public static class ExpressionExecutionContextExtensions
     /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/> 
     /// </summary>
     public static bool TryGetActivityExecutionContext(this ExpressionExecutionContext context, out ActivityExecutionContext activityExecutionContext) => context.TransientProperties.TryGetValue(ActivityExecutionContextKey, out activityExecutionContext!);
+    
+    /// <summary>
+    /// Returns the <see cref="Activity"/> of the specified <see cref="ExpressionExecutionContext"/>
+    /// </summary>
+    public static IActivity GetActivity(this ExpressionExecutionContext context) => (IActivity)context.TransientProperties[ActivityKey];
 
     /// <summary>
     /// Returns the value of the specified input.

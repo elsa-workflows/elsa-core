@@ -49,6 +49,12 @@ public class CSharpOptions
         typeof(JsonNode).Namespace!, // System.Text.Json.Nodes
         typeof(IDictionary<string, object>).Namespace!, // System.Collections.Generic
     });
+    
+    /// <summary>
+    /// Disables the generation of variable wrappers. E.g. <c>Variables.MyVariable</c> will no longer be available for variables. Instead, you can only access variables using <c>Variables.Get("MyVariable")</c> and the typed <c>Variables.Get&lt;T&gt;("MyVariable")</c> function.
+    /// This is useful if your application requires the use of invalid JavaScript variable names.
+    /// </summary>
+    public bool DisableWrappers { get; set; }
 
     /// <summary>
     /// Configures the <see cref="ScriptOptions"/>.

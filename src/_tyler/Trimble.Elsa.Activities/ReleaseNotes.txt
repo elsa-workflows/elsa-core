@@ -1,0 +1,48 @@
+﻿Trimble Elsa Activities Release Notes
+=====================================
+
+1.1.13
+- Minor code clean-up and hygenie
+- Mitigated null references
+- Upgrade System.Text.Json to address security vulnerability
+
+1.1.12
+- Upgrade Elsa to 3.2.0
+
+1.1.11
+- Fault workflow on HTTP timeouts
+
+1.1.10
+- Allow matching empty strings in regex expressions
+- Add templated fault
+
+1.1.9
+- Single wrapper method for bootstrapping activities
+
+1.1.8
+- Improve error handling in HTTP activities
+- Fault workflow on critical log messages
+- Add custom regex expression handler to match variable value to regex pattern
+
+1.1.7
+- Remove generics for Token Providers for dashboard compatibility
+- Simplify Activity service configuration to be compatible with Workflow Engine
+
+1.1.5
+- Configurable token provider settings name
+
+1.0.0
+- Initial release
+
+1.1.2
+- Upgrade Elsa to 3.1.3
+
+1.1.1
+- Activity instrumentation for MS ILogger
+- Toggle logs on/off
+- Remove DebugWriteLine
+
+1.1.0
+- Elsa 3.1.2
+- HTTP Authentication through local credentials
+- Constrain FastEndpoints to 5.21.2

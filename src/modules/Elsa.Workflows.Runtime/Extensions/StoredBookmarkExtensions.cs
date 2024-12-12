@@ -1,5 +1,7 @@
+using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
 
 // ReSharper disable once CheckNamespace
@@ -29,5 +31,26 @@ public static class StoredBookmarkExtensions
     {
         var bookmarkName = ActivityTypeNameHelper.GenerateTypeName<T>();
         return bookmarks.Where(x => x.ActivityTypeName == bookmarkName);
+    }
+
+    public static IEnumerable<StoredBookmark> MapBookmarks(this WorkflowExecutionContext workflowExecutionContext, IEnumerable<Bookmark> bookmarks)
+    {
+        return bookmarks.Select(workflowExecutionContext.MapBookmark);
+    }
+    
+    public static StoredBookmark MapBookmark(this WorkflowExecutionContext workflowExecutionContext, Bookmark bookmark)
+    {
+        return new StoredBookmark
+        {
+            BookmarkId = bookmark.Id,
+            ActivityTypeName = bookmark.Name,
+            Hash = bookmark.Hash,
+            WorkflowInstanceId = workflowExecutionContext.Id,
+            CreatedAt = bookmark.CreatedAt,
+            ActivityInstanceId = bookmark.ActivityInstanceId,
+            CorrelationId = workflowExecutionContext.CorrelationId,
+            Payload = bookmark.Payload,
+            Metadata = bookmark.Metadata
+        };
     }
 }

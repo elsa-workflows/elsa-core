@@ -14,6 +14,7 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Http.Options;
+using Elsa.Kafka;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;
@@ -22,6 +23,7 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.OpenTelemetry.Middleware;
 using Elsa.Server.Web;
+using Elsa.Server.Web.Messages;
 using Elsa.Workflows;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
@@ -51,6 +53,8 @@ const bool useCaching = true;
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disable until Elsa Studio is updated to send authenticated requests to the SignalR hub. 
 const bool useAzureServiceBus = false;
+const bool useKafka = true;
+const bool disableVariableWrappers = false;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
@@ -266,11 +270,13 @@ services
             .UseJavaScript(options =>
             {
                 options.AllowClrAccess = true;
+                options.DisableWrappers = disableVariableWrappers;
                 options.ConfigureEngine(engine =>
                 {
                     engine.Execute("function greet(name) { return `Hello ${name}!`; }");
                     engine.Execute("function sayHelloWorld() { return greet('World'); }");
                 });
+                options.RegisterType<OrderReceived>();
             })
             .UsePython(python =>
             {
@@ -336,6 +342,14 @@ services
 
         if (useAzureServiceBus)
             elsa.UseAzureServiceBus(asb => asb.AzureServiceBusOptions += options => configuration.GetSection("AzureServiceBus").Bind(options));
+        
+        if (useKafka)
+        {
+            elsa.UseKafka(kafka =>
+            {
+                kafka.ConfigureOptions(options => configuration.GetSection("Kafka").Bind(options));
+            });
+        }
 
         if (useMassTransit)
         {

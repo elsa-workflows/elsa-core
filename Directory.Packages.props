@@ -14,7 +14,10 @@
     <PackageVersion Include="Azure.ResourceManager.ServiceBus" Version="1.0.1" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.13.12" />
     <PackageVersion Include="Bogus" Version="35.5.1" />
+	<PackageVersion Include="Chr.Avro.Json" Version="10.5.0" />
     <PackageVersion Include="ConfigureAwait.Fody" Version="3.3.2" />
+	<PackageVersion Include="Confluent.Kafka" Version="2.6.0" />
+	<PackageVersion Include="Confluent.SchemaRegistry.Serdes.Avro" Version="2.6.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="Cronos" Version="0.8.4" />
     <PackageVersion Include="Dapper" Version="2.1.35" />

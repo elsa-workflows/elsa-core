@@ -3,7 +3,7 @@ using Elsa.JavaScript.TypeDefinitions.Abstractions;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
 
-namespace Elsa.JavaScript.TypeDefinitions.Providers;
+namespace Elsa.JavaScript.Providers;
 
 /// <summary>
 /// Produces <see cref="FunctionDefinition"/>s for common functions.

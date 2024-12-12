@@ -293,7 +293,7 @@ public class DefaultWorkflowRuntime(
 
             var newBookmarks = workflowExecutionContext.Bookmarks.ToList();
             var diff = Diff.For(originalBookmarks, newBookmarks);
-            var bookmarkRequest = new UpdateBookmarksRequest(workflowExecutionContext.Id,
+            var bookmarkRequest = new UpdateBookmarksRequest(workflowExecutionContext, workflowExecutionContext.Id,
                 diff,
                 workflowExecutionContext.CorrelationId);
             await bookmarksPersister.PersistBookmarksAsync(bookmarkRequest);

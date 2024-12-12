@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Title>Trimble Elsa Activities</Title>
+    <Company>Viewpoint</Company>
+    <Description>The Elsa workflow engine provides UI and programmatic tools for creating and managing workflows. This project extends the Elsa core to provide additional functionality.</Description>
+    <Authors>CMS Core Services</Authors>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Azure.Messaging.ServiceBus" />
+		<PackageReference Include="Azure.ResourceManager.ServiceBus" />
+		<PackageReference Include="Chr.Avro.Json" />
+		<PackageReference Include="Confluent.Kafka" />
+		<PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+		<PackageReference Include="System.Linq.Async" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+		<ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+	</ItemGroup>
+</Project>
