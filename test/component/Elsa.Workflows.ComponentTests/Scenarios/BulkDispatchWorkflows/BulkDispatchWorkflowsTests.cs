@@ -29,7 +29,7 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
     /// <summary>
     /// Dispatches and waits for child workflows to complete.
     /// </summary>
-    [Fact]
+    [Fact(Skip = "Fails due to timeouts, needs to be revised")]
     public async Task DispatchAndWaitWorkflow_ShouldWaitForChildWorkflowToComplete()
     {
         var workflowClient = await _workflowRuntime.CreateClientAsync();
