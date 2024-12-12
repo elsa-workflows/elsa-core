@@ -68,7 +68,10 @@ public static class VariableExtensions
     {
         // Validate type compatibility.
         if (!variable.TryParseValue(value, out var parsedValue))
-            throw new InvalidCastException($"The value '{value}' is not compatible with the variable '{variable.Name}' of type '{variable.GetType().Name}'.");
+        {
+            var variableType = variable.GetVariableType();
+            throw new InvalidCastException($"The value '{value}' is not compatible with the variable '{variable.Name}' of type '{variableType.FullName}'.");
+        }
         
         // Set the value.
         ((MemoryBlockReference)variable).Set(context, parsedValue);
