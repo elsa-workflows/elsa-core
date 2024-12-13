@@ -23,7 +23,7 @@ public class MemoryKeyValueStore : IKeyValueStore
     /// <inheritdoc />
     public Task SaveAsync(SerializedKeyValuePair keyValuePair, CancellationToken cancellationToken)
     {
-        _store.Save(keyValuePair, kv => kv.Id);
+        _store.Save(keyValuePair, kv => kv.Key);
         return Task.CompletedTask;
     }
 
