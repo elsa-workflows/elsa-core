@@ -40,8 +40,8 @@ public class BackgroundActivityInvoker(
         await variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);
         activityExecutionContext.SetIsBackgroundExecution();
         await activityInvoker.InvokeAsync(activityExecutionContext);
-        await ResumeWorkflowAsync(activityExecutionContext, scheduledBackgroundActivity);
         await variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
+        await ResumeWorkflowAsync(activityExecutionContext, scheduledBackgroundActivity);
     }
 
     private async Task ResumeWorkflowAsync(ActivityExecutionContext activityExecutionContext, ScheduledBackgroundActivity scheduledBackgroundActivity)
@@ -110,7 +110,7 @@ public class BackgroundActivityInvoker(
             var driver = variableMetadata?.StorageDriverType;
 
             // We only capture output written to the workflow itself. Other drivers like blob storage, etc. will be ignored since the foreground context will be loading those.
-            if (driver != typeof(WorkflowStorageDriver) && driver != typeof(WorkflowInstanceStorageDriver))
+            if (driver != typeof(WorkflowStorageDriver) && driver != typeof(WorkflowInstanceStorageDriver) && driver != null)
                 continue;
 
             var outputValue = activityExecutionContext.Get(memoryBlockReference);
