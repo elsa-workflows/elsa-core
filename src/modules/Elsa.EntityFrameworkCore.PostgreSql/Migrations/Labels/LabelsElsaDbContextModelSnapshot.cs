@@ -41,6 +41,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Labels
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.ToTable("Labels", "Elsa");
@@ -55,6 +58,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Labels
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -67,6 +73,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Labels
 
                     b.HasIndex("LabelId")
                         .HasDatabaseName("WorkflowDefinitionLabel_LabelId");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("WorkflowDefinitionLabel_TenantId");
 
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("WorkflowDefinitionLabel_WorkflowDefinitionId");

@@ -53,6 +53,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
                         .HasColumnType("longtext")
                         .HasColumnName("Roles");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId")
@@ -62,6 +65,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_Application_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_Application_TenantId");
 
                     b.ToTable("Applications", "Elsa");
                 });
@@ -80,11 +86,17 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
                         .HasColumnType("longtext")
                         .HasColumnName("Permissions");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_Role_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_Role_TenantId");
 
                     b.ToTable("Roles", "Elsa");
                 });
@@ -111,11 +123,17 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
                         .HasColumnType("longtext")
                         .HasColumnName("Roles");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_User_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_User_TenantId");
 
                     b.ToTable("Users", "Elsa");
                 });
