@@ -13,7 +13,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Installs and configures the <see cref="TenantsFeature"/> feature.
     /// </summary>
-    public static IModule UseTenantHttpRouting(this IModule module, Action<MultitenantHttpRoutingFeature>? configure = default)
+    public static IModule UseTenantHttpRouting(this IModule module, Action<MultitenantHttpRoutingFeature>? configure = null)
     {
         module.Configure(configure);
         return module;

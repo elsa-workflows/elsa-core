@@ -1,17 +1,19 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows;
 
 /// <inheritdoc />
-public class VariablePersistenceManager(IStorageDriverManager storageDriverManager) : IVariablePersistenceManager
+public class VariablePersistenceManager(IStorageDriverManager storageDriverManager, ILogger<VariablePersistenceManager> logger) : IVariablePersistenceManager
 {
     /// <inheritdoc />
-    public async Task LoadVariablesAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<string>? excludeTags = default)
+    public async Task LoadVariablesAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<string>? excludeTags = null)
     {
         var cancellationToken = workflowExecutionContext.CancellationToken;
         var contexts = workflowExecutionContext.ActivityExecutionContexts.ToList();
+        var excludeTagsList = excludeTags?.ToList();
 
         foreach (var context in contexts)
         {
@@ -34,15 +36,21 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
                 if (driver == null)
                     continue;
 
-                if (excludeTags != null && driver.Tags.Any(excludeTags!.Contains))
+                if (excludeTagsList != null && driver.Tags.Any(excludeTagsList.Contains))
                     continue;
 
                 var id = GetStateId(variable);
                 var value = await driver.ReadAsync(id, storageDriverContext);
                 if (value == null) continue;
 
-                var parsedValue = variable.ParseValue(value);
                 register.Declare(variable);
+
+                if (!variable.TryParseValue(value, out var parsedValue))
+                {
+                    logger.LogWarning("Failed to parse value for variable {VariableId} of type {VariableType} with value {Value}", variable.Id, variable.GetVariableType().FullName, value);
+                    continue;
+                }
+
                 variable.Set(register, parsedValue);
             }
         }

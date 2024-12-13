@@ -4,7 +4,6 @@ using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
-using StoredBookmark = Elsa.Workflows.Runtime.Entities.StoredBookmark;
 using WorkflowExecutionLogRecord = Elsa.Workflows.Runtime.Entities.WorkflowExecutionLogRecord;
 
 namespace Elsa.MongoDb.Modules.Runtime;

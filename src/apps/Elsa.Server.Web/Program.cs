@@ -491,7 +491,7 @@ services
                 .UseSecretsManagement(management =>
                 {
                     management.ConfigureOptions(options => configuration.GetSection("Secrets:Management").Bind(options));
-                    if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+                    if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                         management.UseEntityFrameworkCore(ef =>
                             ef.UseSqlServer(sqlServerConnectionString)
                         );
