@@ -7,6 +7,7 @@ using Elsa.Retention.Contracts;
 using Elsa.Retention.Extensions;
 using Elsa.Retention.Jobs;
 using Elsa.Retention.Options;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -44,6 +45,7 @@ public class RetentionFeature : FeatureBase
         Services.AddScoped<IDeletionCleanupStrategy<StoredBookmark>, DeleteBookmarkStrategy>();
         Services.AddScoped<IDeletionCleanupStrategy<ActivityExecutionRecord>, DeleteActivityExecutionRecordStrategy>();
         Services.AddScoped<IDeletionCleanupStrategy<WorkflowExecutionLogRecord>, DeleteWorkflowExecutionRecordStrategy>();
+        Services.AddScoped<IDeletionCleanupStrategy<WorkflowInstance>, DeleteWorkflowInstanceStrategy>();
 
         Services.AddScoped<IRelatedEntityCollector, BookmarkCollector>();
         Services.AddScoped<IRelatedEntityCollector, ActivityExecutionRecordCollector>();
