@@ -21,20 +21,20 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
         _signalManager = Scope.ServiceProvider.GetRequiredService<SignalManager>();
     }
 
-    /// <summary>
-    /// Dispatches and waits for child workflows to complete.
-    /// </summary>
-    [Fact(Skip = "This test is flaky and needs to be fixed.")]
-    public async Task DispatchAndWaitWorkflow_ShouldWaitForChildWorkflowToComplete()
-    {
-        var workflowClient = await _workflowRuntime.CreateClientAsync();
-        await workflowClient.CreateInstanceAsync(new CreateWorkflowInstanceRequest
-        {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(GreetEmployeesWorkflow.DefinitionId, VersionOptions.Published)
-        });
-        await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
-        await _signalManager.WaitAsync<string>("Completed");
-    }
+    // /// <summary>
+    // /// Dispatches and waits for child workflows to complete.
+    // /// </summary>
+    // [Fact(Skip = "This test is flaky and needs to be fixed.")]
+    // public async Task DispatchAndWaitWorkflow_ShouldWaitForChildWorkflowToComplete()
+    // {
+    //     var workflowClient = await _workflowRuntime.CreateClientAsync();
+    //     await workflowClient.CreateInstanceAsync(new CreateWorkflowInstanceRequest
+    //     {
+    //         WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(GreetEmployeesWorkflow.DefinitionId, VersionOptions.Published)
+    //     });
+    //     await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
+    //     await _signalManager.WaitAsync<string>("Completed");
+    // }
 
     /// <summary>
     /// Individual items are sent as input to child workflows.
