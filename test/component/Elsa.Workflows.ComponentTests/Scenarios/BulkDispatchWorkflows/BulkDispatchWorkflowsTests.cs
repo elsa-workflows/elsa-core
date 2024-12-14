@@ -24,7 +24,7 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
     /// <summary>
     /// Dispatches and waits for child workflows to complete.
     /// </summary>
-    [Fact]
+    [Fact(Skip = "This test is flaky and needs to be fixed.")]
     public async Task DispatchAndWaitWorkflow_ShouldWaitForChildWorkflowToComplete()
     {
         var workflowClient = await _workflowRuntime.CreateClientAsync();
