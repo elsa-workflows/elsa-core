@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared.Activities;
 using Elsa.Workflows.Activities;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.BulkDispatchWorkflows.Workflows;
@@ -28,7 +29,8 @@ public class GreetEmployeesWorkflow : WorkflowBase
                     WorkflowDefinitionId = new(EmployeeGreetingWorkflow.DefinitionId),
                     Items = new(inputEntries),
                     WaitForCompletion = new(true)
-                }
+                },
+                new TriggerSignal("Completed")
             }
         };
     }
