@@ -44,7 +44,7 @@
       - COCKROACH_DATABASE=elsa
   
   rabbitmq:
-    image: "rabbitmq:3-management"
+    image: "rabbitmq:4-management"
     ports:
       - "15672:15672"
       - "5672:5672"
