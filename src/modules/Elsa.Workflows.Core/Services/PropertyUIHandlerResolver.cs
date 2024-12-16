@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows;
@@ -24,9 +25,12 @@ public class PropertyUIHandlerResolver(IServiceScopeFactory scopeFactory) : IPro
         using var scope = scopeFactory.CreateScope();
         var uiHintHandlers = scope.ServiceProvider.GetServices<IUIHintHandler>();
 
-        if (!string.IsNullOrWhiteSpace(inputAttribute?.UIHint))
+        var isWrapperProperty = typeof(Input).IsAssignableFrom(propertyInfo.PropertyType);
+        var wrapperPropertyType = !isWrapperProperty ? propertyInfo.PropertyType : propertyInfo.PropertyType.GenericTypeArguments[0];
+        var uiHint = ActivityDescriber.GetUIHint(wrapperPropertyType, inputAttribute);
+        if (!string.IsNullOrWhiteSpace(uiHint))
         {
-            var uiHintHandler = uiHintHandlers.FirstOrDefault(x => x.UIHint == inputAttribute.UIHint);
+            var uiHintHandler = uiHintHandlers.FirstOrDefault(x => x.UIHint == uiHint);
 
             if (uiHintHandler != null)
             {
