@@ -31,6 +31,7 @@ public class CleanupJob(
     /// <param name="cancellationToken"></param>
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
+        Console.WriteLine(DateTime.Now.ToLongTimeString());
         var collectors = GetServices(typeof(IRelatedEntityCollector), typeof(IRelatedEntityCollector<>));
         var deletedWorkflowInstances = 0L;
         
@@ -51,6 +52,10 @@ public class CleanupJob(
                 foreach (var collectorService in collectors)
                 {
                     var cleanupStrategyConcreteType = policy.CleanupStrategy.MakeGenericType(collectorService.Key);
+                    
+                    if(cleanupStrategyConcreteType == typeof(WorkflowInstance))
+                        continue;
+                    
                     var collector = collectorService.Value as IRelatedEntityCollector;
                     var cleanupService = serviceProvider.GetService(cleanupStrategyConcreteType) as ICleanupStrategy;
 
@@ -71,11 +76,15 @@ public class CleanupJob(
                         await cleanupService.Cleanup(entities);
                     }
                 }
+                
+                var cleanupWorkflowInstances = policy.CleanupStrategy.MakeGenericType(typeof(WorkflowInstance));
+                var workflowInstanceCleaner = serviceProvider.GetService(cleanupWorkflowInstances) as ICleanupStrategy<WorkflowInstance>;
 
-                deletedWorkflowInstances += await workflowInstanceStore.DeleteAsync(new WorkflowInstanceFilter
-                {
-                    Ids = page.Items.Select(x => x.Id).ToArray()
-                }, cancellationToken);
+                if (workflowInstanceCleaner == null)
+                    throw new Exception($"{policy.CleanupStrategy} has no strategy to clean WorkflowInstances");
+                
+                await workflowInstanceCleaner.Cleanup(page.Items);
+                deletedWorkflowInstances += page.Items.Count;
 
                 if (page.TotalCount <= page.Items.Count + pageArgs.Offset)
                 {

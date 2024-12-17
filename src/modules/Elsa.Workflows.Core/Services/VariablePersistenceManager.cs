@@ -22,7 +22,7 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
             foreach (var variable in variables)
             {
                 context.ExpressionExecutionContext.Memory.Declare(variable);
-                var storageDriverContext = new StorageDriverContext(context, cancellationToken);
+                var storageDriverContext = new StorageDriverContext(context, variable, cancellationToken);
                 var register = context.ExpressionExecutionContext.Memory;
                 var block = EnsureBlock(register, variable);
                 var metadata = (VariableBlockMetadata)block.Metadata!;
@@ -65,7 +65,6 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
         foreach (var context in contexts)
         {
             var variables = GetLocalVariables(context).ToList();
-            var storageDriverContext = new StorageDriverContext(context, cancellationToken);
 
             foreach (var variable in variables)
             {
@@ -78,6 +77,7 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
 
                 var id = GetStateId(variable);
                 var value = block.Value;
+                var storageDriverContext = new StorageDriverContext(context, variable, cancellationToken);
 
                 if (value == null)
                     await driver.DeleteAsync(id, storageDriverContext);
@@ -93,7 +93,6 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
         var register = context.ExpressionExecutionContext.Memory;
         var variableList = GetLocalVariables(context).ToList();
         var cancellationToken = context.CancellationToken;
-        var storageDriverContext = new StorageDriverContext(context, cancellationToken);
 
         foreach (var variable in variableList)
         {
@@ -107,6 +106,7 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
                 continue;
 
             var id = GetStateId(variable);
+            var storageDriverContext = new StorageDriverContext(context, variable, cancellationToken);
             await driver.DeleteAsync(id, storageDriverContext);
             register.Blocks.Remove(variable.Id);
         }

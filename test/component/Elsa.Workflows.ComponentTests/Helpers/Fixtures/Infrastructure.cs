@@ -13,7 +13,7 @@ public class Infrastructure : IAsyncLifetime
         .Build();
 
     public readonly RabbitMqContainer RabbitMqContainer = new RabbitMqBuilder()
-        .WithImage("rabbitmq:3-management")
+        .WithImage("rabbitmq:4-management")
         .Build();
 
     public Task InitializeAsync()

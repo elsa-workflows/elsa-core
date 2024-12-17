@@ -23,13 +23,19 @@ public partial class ActivityExecutionContext
         ClearBookmarks();
         ClearCompletionCallbacks();
         WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == NodeId);
-
-        // Add an execution log entry.
         AddExecutionLogEntry("Canceled", payload: JournalData);
-        
         await this.SendSignalAsync(new CancelSignal());
+        await CancelChildActivitiesAsync();
         
         // ReSharper disable once MethodSupportsCancellation
         await _publisher.SendAsync(new ActivityCancelled(this));
+    }
+    
+    private async Task CancelChildActivitiesAsync()
+    {
+        var childContexts = WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == this && x.CanCancelActivity()).ToList();
+
+        foreach (var childContext in childContexts)
+            await childContext.CancelActivityAsync();
     }
 }

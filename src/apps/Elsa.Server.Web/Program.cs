@@ -213,33 +213,6 @@ services
                 management.UseReadOnlyMode(useReadOnlyMode);
                 management.AddVariableTypeAndAlias<OrderReceived>("Application");
             })
-            .UseProtoActor(proto =>
-            {
-                proto
-                    .EnableMetrics()
-                    .EnableTracing();
-
-                proto.PersistenceProvider = _ =>
-                {
-                    if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
-                        return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
-                    return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
-                };
-
-                if (configuration["KUBERNETES_SERVICE_HOST"] != null)
-                {
-                    var kubernetesConfig = new KubernetesProviderConfig();
-                    var clusterProvider = new KubernetesProvider(kubernetesConfig);
-
-                    var remoteConfig = GrpcNetRemoteConfig
-                        .BindToAllInterfaces(advertisedHost: configuration["ProtoActor:AdvertisedHost"]) // Environment variable to be provided by Kubernetes using pod.status.podIP.
-                        .WithLogLevelForDeserializationErrors(LogLevel.Critical)
-                        .WithRemoteDiagnostics(true);
-
-                    proto.CreateClusterProvider = _ => clusterProvider;
-                    proto.ConfigureRemoteConfig = _ => remoteConfig;
-                }
-            })
             .UseWorkflowRuntime(runtime =>
             {
                 if (persistenceProvider == PersistenceProvider.MongoDb)
@@ -454,6 +427,37 @@ services
             {
                 if (distributedCachingTransport == DistributedCachingTransport.MassTransit) distributedCaching.UseMassTransit();
                 if (distributedCachingTransport == DistributedCachingTransport.ProtoActor) distributedCaching.UseProtoActor();
+            });
+        }
+
+        if (distributedCachingTransport == DistributedCachingTransport.ProtoActor || workflowRuntime == WorkflowRuntime.ProtoActor)
+        {
+            elsa.UseProtoActor(proto =>
+            {
+                proto
+                    .EnableMetrics()
+                    .EnableTracing();
+
+                proto.PersistenceProvider = _ =>
+                {
+                    if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
+                        return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
+                    return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+                };
+
+                if (configuration["KUBERNETES_SERVICE_HOST"] != null)
+                {
+                    var kubernetesConfig = new KubernetesProviderConfig();
+                    var clusterProvider = new KubernetesProvider(kubernetesConfig);
+
+                    var remoteConfig = GrpcNetRemoteConfig
+                        .BindToAllInterfaces(advertisedHost: configuration["ProtoActor:AdvertisedHost"]) // Environment variable to be provided by Kubernetes using pod.status.podIP.
+                        .WithLogLevelForDeserializationErrors(LogLevel.Critical)
+                        .WithRemoteDiagnostics(true);
+
+                    proto.CreateClusterProvider = _ => clusterProvider;
+                    proto.ConfigureRemoteConfig = _ => remoteConfig;
+                }
             });
         }
 

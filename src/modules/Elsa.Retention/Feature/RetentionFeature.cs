@@ -7,6 +7,7 @@ using Elsa.Retention.Contracts;
 using Elsa.Retention.Extensions;
 using Elsa.Retention.Jobs;
 using Elsa.Retention.Options;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -30,6 +31,11 @@ public class RetentionFeature : FeatureBase
     /// </summary>
     public Action<CleanupOptions> ConfigureCleanupOptions { get; set; } = _ => { };
 
+    /// <summary>
+    ///     Defines the run interval of the cleanup job
+    /// </summary>
+    public TimeSpan SweepInterval { get; set; } = TimeSpan.FromHours(4);
+
     /// <inheritdoc cref="FeatureBase" />
     public override void Apply()
     {
@@ -39,12 +45,13 @@ public class RetentionFeature : FeatureBase
         Services.AddScoped<IDeletionCleanupStrategy<StoredBookmark>, DeleteBookmarkStrategy>();
         Services.AddScoped<IDeletionCleanupStrategy<ActivityExecutionRecord>, DeleteActivityExecutionRecordStrategy>();
         Services.AddScoped<IDeletionCleanupStrategy<WorkflowExecutionLogRecord>, DeleteWorkflowExecutionRecordStrategy>();
+        Services.AddScoped<IDeletionCleanupStrategy<WorkflowInstance>, DeleteWorkflowInstanceStrategy>();
 
         Services.AddScoped<IRelatedEntityCollector, BookmarkCollector>();
         Services.AddScoped<IRelatedEntityCollector, ActivityExecutionRecordCollector>();
         Services.AddScoped<IRelatedEntityCollector, WorkflowExecutionLogRecordCollector>();
 
-        Services.AddRecurringTask<CleanupRecurringTask>(TimeSpan.FromHours(4));
+        Services.AddRecurringTask<CleanupRecurringTask>(SweepInterval);
 
         foreach (var policy in this.GetPolicies())
         {

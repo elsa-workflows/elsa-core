@@ -19,7 +19,7 @@ namespace Elsa.Expressions.Helpers;
 /// <summary>
 /// Provides options to the conversion method.
 /// </summary>
-public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = default, IWellKnownTypeRegistry? WellKnownTypeRegistry = default);
+public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = null, IWellKnownTypeRegistry? WellKnownTypeRegistry = null, bool DeserializeJsonObjectToObject = false);
 
 /// <summary>
 /// A helper that attempts many strategies to try and convert the source value into the destination type. 
@@ -77,7 +77,7 @@ public static class ObjectConverter
     public static object? ConvertTo(this object? value, Type targetType, ObjectConverterOptions? converterOptions = null)
     {
         if (value == null)
-            return default!;
+            return null;
 
         var sourceType = value.GetType();
 
@@ -104,7 +104,7 @@ public static class ObjectConverter
             return underlyingTargetType switch
             {
                 { } t when t == typeof(string) => jsonNode.ToString(),
-                { } t when t != typeof(object) => jsonNode.Deserialize(targetType, serializerOptions),
+                { } t when t != typeof(object) || converterOptions?.DeserializeJsonObjectToObject == true => jsonNode.Deserialize(targetType, serializerOptions),
                 _ => jsonNode
             };
         }

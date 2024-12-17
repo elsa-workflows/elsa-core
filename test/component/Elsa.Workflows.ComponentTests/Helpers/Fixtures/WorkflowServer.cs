@@ -77,6 +77,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 elsa.UseMassTransit(massTransit =>
                 {
                     //massTransit.UseRabbitMq(rabbitMqConnectionString);
+                    massTransit.Services.AddSingleton<WorkflowDefinitionEvents>();
                     massTransit.AddConsumer<WorkflowDefinitionEventConsumer>("elsa-test-workflow-definition-updates", true);
                 });
                 elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));
@@ -122,8 +123,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
         {
             services
                 .AddSingleton<SignalManager>()
-                .AddSingleton<WorkflowEvents>()
-                .AddSingleton<WorkflowDefinitionEvents>()
+                .AddScoped<WorkflowEvents>()
+                .AddScoped<WorkflowDefinitionEvents>()
                 .AddSingleton<TriggerChangeTokenSignalEvents>()
                 .AddScoped<IWorkflowMaterializer, TestWorkflowMaterializer>()
                 .AddNotificationHandlersFrom<WorkflowServer>()
