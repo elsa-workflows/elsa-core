@@ -275,6 +275,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddCommandHandler<CancelWorkflowsCommandHandler>()
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeBulkDispatchWorkflowActivity>()
+            .AddNotificationHandler<ResumeExecuteWorkflowActivity>()
             .AddNotificationHandler<IndexTriggers>()
             .AddNotificationHandler<CancelBackgroundActivities>()
             .AddNotificationHandler<DeleteBookmarks>()
