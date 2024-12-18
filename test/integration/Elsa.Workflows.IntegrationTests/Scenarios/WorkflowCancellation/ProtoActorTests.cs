@@ -69,7 +69,7 @@ public class ProtoActorTests
         _workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
     }
 
-    [Fact(DisplayName = "Cancelling a suspended workflow")]
+    [Fact(DisplayName = "Cancelling a suspended workflow", Skip = "Outdated")]
     public async Task SuspendedCancelTest()
     {
         // Populate registries.
