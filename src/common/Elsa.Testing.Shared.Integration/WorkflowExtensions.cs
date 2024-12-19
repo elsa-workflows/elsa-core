@@ -17,8 +17,7 @@ public static class WorkflowExtensions
         this IWorkflow workflowDefinition,
         Action<IServiceCollection>? configureServices = null,
         Action<IModule>? configureElsa = null,
-        string? instanceid = null,
-        string? definitionVersionId = null,
+        string? instanceId = null,
         TimeSpan? timeout = default)
     {
         SemaphoreSlim semaphore = new (0, 1);
@@ -62,8 +61,8 @@ public static class WorkflowExtensions
             var workflowDispatcher = host.Services.GetRequiredService<IWorkflowDispatcher>();
             var dispatchWorkflowResponse = await workflowDispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest()
             {
-                DefinitionVersionId = "sampleWorkflow",
-                InstanceId = "instanceId"
+                DefinitionVersionId = workflow.DefinitionHandle.DefinitionVersionId,
+                InstanceId = instanceId ?? Guid.NewGuid().ToString(),
             });
             dispatchWorkflowResponse.ThrowIfFailed();
 

@@ -23,9 +23,6 @@ public class Tests
 
         TestWorkflow workflow = new(workflowBuilder =>
             {
-                workflowBuilder.DefinitionId = "sampleWorkflow";
-                workflowBuilder.Id = "sampleWorkflow";
-
                 var variable1 = new Variable<int>();
                 workflowBuilder.Root = new Sequence
                 {
@@ -90,9 +87,6 @@ public class Tests
 
         TestWorkflow workflow = new(workflowBuilder =>
             {
-                workflowBuilder.DefinitionId = "sampleWorkflow";
-                workflowBuilder.Id = "sampleWorkflow";
-
                 var variable1 = new Variable<int>();
                 var variable2 = new Variable<int>();
                 workflowBuilder.Root = new Elsa.Workflows.Activities.Parallel()

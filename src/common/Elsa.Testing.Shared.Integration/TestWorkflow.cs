@@ -14,5 +14,10 @@ public class TestWorkflow : WorkflowBase
     protected override void Build(IWorkflowBuilder workflowBuilder)
     {
         _buildWorkflow(workflowBuilder);
+
+        if (string.IsNullOrEmpty(workflowBuilder.Id))
+        {
+            workflowBuilder.Id = Guid.NewGuid().ToString();
+        }
     }
 }
