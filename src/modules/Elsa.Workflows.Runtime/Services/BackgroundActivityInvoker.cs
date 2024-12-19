@@ -91,34 +91,7 @@ public class BackgroundActivityInvoker(
 
     private IDictionary<string, object> ExtractActivityOutput(ActivityExecutionContext activityExecutionContext)
     {
-        var outputDescriptors = activityExecutionContext.ActivityDescriptor.Outputs;
-        var outputValues = new Dictionary<string, object>();
-
-        foreach (var outputDescriptor in outputDescriptors)
-        {
-            var output = (Output?)outputDescriptor.ValueGetter(activityExecutionContext.Activity);
-
-            if (output == null)
-                continue;
-
-            var memoryBlockReference = output.MemoryBlockReference();
-
-            if (!activityExecutionContext.ExpressionExecutionContext.TryGetBlock(memoryBlockReference, out var memoryBlock))
-                continue;
-
-            var variableMetadata = memoryBlock.Metadata as VariableBlockMetadata;
-            var driver = variableMetadata?.StorageDriverType;
-
-            // We only capture output written to the workflow itself. Other drivers like blob storage, etc. will be ignored since the foreground context will be loading those.
-            if (driver != typeof(WorkflowStorageDriver) && driver != typeof(WorkflowInstanceStorageDriver) && driver != null)
-                continue;
-
-            var outputValue = activityExecutionContext.Get(memoryBlockReference);
-
-            if (outputValue != null)
-                outputValues[outputDescriptor.Name] = outputValue;
-        }
-
-        return outputValues;
+        var activityOutputRegister = activityExecutionContext.WorkflowExecutionContext.GetActivityOutputRegister();
+        return activityOutputRegister.FindMany(a => a.ActivityInstanceId == activityExecutionContext.Id).ToDictionary(o => o.OutputName, o => o.Value!);
     }
 }

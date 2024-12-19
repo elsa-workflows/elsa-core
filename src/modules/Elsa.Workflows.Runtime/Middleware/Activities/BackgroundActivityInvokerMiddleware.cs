@@ -122,7 +122,7 @@ public class BackgroundActivityInvokerMiddleware(
                 continue;
 
             var output = (Output?)outputDescriptor.ValueGetter(activity);
-            context.Set(output, outputEntry.Value);
+            context.Set(output, outputEntry.Value, outputDescriptor.Name);
         }
     }
 
