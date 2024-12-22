@@ -25,7 +25,7 @@ public class SignalManager
             await Task.WhenAny(taskCompletionSource.Task, Task.Delay(millisecondsTimeout, cancellationTokenSource.Token));
             cancellationTokenSource.Token.ThrowIfCancellationRequested();
             _signals.TryRemove(signal, out _);
-            return taskCompletionSource.Task.Result;
+            return await taskCompletionSource.Task;
         }
         catch (OperationCanceledException)
         {
