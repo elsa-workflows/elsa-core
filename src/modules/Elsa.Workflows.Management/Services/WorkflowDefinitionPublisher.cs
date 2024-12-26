@@ -46,7 +46,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     }
 
     /// <inheritdoc />
-    public WorkflowDefinition New(IActivity? root = default)
+    public WorkflowDefinition New(IActivity? root = null)
     {
         root ??= new Sequence();
         var id = _identityGenerator.GenerateId();
