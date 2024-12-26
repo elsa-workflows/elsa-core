@@ -77,7 +77,7 @@ public class WorkflowDefinition : VersionedEntity
     /// <summary>
     /// A textual representation of the workflow. The data is to be interpreted by the configured materializer.
     /// </summary>
-    public string StringData { get; set; } = null!;
+    public string? StringData { get; set; }
     
     /// <summary>
     /// A binary representation of the workflow. The data is to be interpreted by the configured materializer.
