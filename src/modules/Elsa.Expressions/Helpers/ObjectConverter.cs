@@ -104,6 +104,7 @@ public static class ObjectConverter
             return underlyingTargetType switch
             {
                 { } t when t == typeof(string) => jsonNode.ToString(),
+                { } t when t == typeof(ExpandoObject) => JsonSerializer.Deserialize<ExpandoObject>(jsonNode.ToJsonString()),
                 { } t when t != typeof(object) || converterOptions?.DeserializeJsonObjectToObject == true => jsonNode.Deserialize(targetType, serializerOptions),
                 _ => jsonNode
             };
