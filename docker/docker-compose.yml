@@ -23,7 +23,7 @@
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_data1:/var/lib/mysql
   
   mongodb:
     image: mongo:latest
@@ -104,6 +104,6 @@
 
 volumes:
   postgres-data:
-  mysql_data:
+  mysql_data1:
   cockroachdb-data:
   mongodb_data:
