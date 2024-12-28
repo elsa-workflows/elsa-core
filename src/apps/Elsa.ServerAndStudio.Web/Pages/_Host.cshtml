@@ -2,8 +2,8 @@
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @inject IConfiguration Configuration;
 @{
-    var baseUrl = Configuration["Hosting:BaseUrl"]!;
-    var apiUrl = Configuration["Hosting:ApiUrl"]!;
+    var baseUrl = Configuration["Hosting:BaseUrl"] ?? Configuration["Http:BaseUrl"]!; // HttpBaseUrl is for backward compatibility.
+    var apiUrl = $"{baseUrl.TrimEnd('/')}/{(Configuration["Hosting:ApiPrefix"] ?? "elsa/api").TrimStart('/')}";
 }
 
 <!DOCTYPE html>
@@ -51,8 +51,7 @@
 <script src="@baseUrl/_content/Radzen.Blazor/Radzen.Blazor.js"></script>
 <script>
     window.getClientConfig = function() { return {
-        "apiUrl": "@apiUrl",
-        "baseUrl": "@baseUrl"
+        "apiUrl": "@apiUrl"
      } };
 </script>
 <script src="@baseUrl/_framework/blazor.webassembly.js"></script>

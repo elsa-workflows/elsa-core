@@ -132,7 +132,7 @@ services
 
                 http.ConfigureHttpOptions = options =>
                 {
-                    options.BaseUrl = new Uri(configuration["Hosting:BaseUrl"]!);
+                    options.BaseUrl = new Uri(configuration["Hosting:BaseUrl"] ?? configuration["Http:BaseUrl"]!); // HttpBaseUrl is for backward compatibility.
                     options.BasePath = configuration["Http:BasePath"];
                 };
             })
