@@ -150,8 +150,8 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
 #if !NET9_0
-                        else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
-                            ef.UseMySql(mySqlConnectionString, null, opt => opt.EnablePrimitiveCollectionsSupport());
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) 
+                            ef.UseMySql(mySqlConnectionString);
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
@@ -187,7 +187,7 @@ services
                             ef.UsePostgreSql(postgresConnectionString!);
 #if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
-                            ef.UseMySql(mySqlConnectionString, null, opt => opt.EnablePrimitiveCollectionsSupport());
+                            ef.UseMySql(mySqlConnectionString);
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
@@ -233,7 +233,7 @@ services
                             ef.UsePostgreSql(postgresConnectionString!);
 #if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
-                            ef.UseMySql(mySqlConnectionString, null, opt => opt.EnablePrimitiveCollectionsSupport());
+                            ef.UseMySql(mySqlConnectionString);
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
@@ -361,7 +361,7 @@ services
                             ef.UsePostgreSql(postgresConnectionString);
 #if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
-                            ef.UseMySql(mySqlConnectionString, null, opt => opt.EnablePrimitiveCollectionsSupport());
+                            ef.UseMySql(mySqlConnectionString);
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
@@ -550,7 +550,7 @@ services
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);
 #if !NET9_0
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) 
-                                    ef.UseMySql(mySqlConnectionString, null, opt => opt.EnablePrimitiveCollectionsSupport());
+                                    ef.UseMySql(mySqlConnectionString);
 #endif
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb) ef.UsePostgreSql(cockroachDbConnectionString);
                             });

@@ -23,7 +23,9 @@ public static class DbContextOptionsBuilderExtensions
                 db
                     .MigrationsAssembly(options.GetMigrationsAssemblyName(migrationsAssembly))
                     .MigrationsHistoryTable(options.GetMigrationsHistoryTableName(), options.GetSchemaName())
-                    .SchemaBehavior(MySqlSchemaBehavior.Ignore);
+                    .SchemaBehavior(MySqlSchemaBehavior.Ignore)
+                    .EnablePrimitiveCollectionsSupport()
+                    .TranslateParameterizedCollectionsToConstants();
 
                 configure?.Invoke(db);
             });
