@@ -13,7 +13,7 @@
       - "5432:5432"
         
   mysql:
-    image: mysql:9.1.0
+    image: mysql:8.0
     container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: password
@@ -23,7 +23,7 @@
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data1:/var/lib/mysql
+      - mysql_data2:/var/lib/mysql
   
   mongodb:
     image: mongo:latest
@@ -104,6 +104,6 @@
 
 volumes:
   postgres-data:
-  mysql_data1:
+  mysql_data2:
   cockroachdb-data:
   mongodb_data:

@@ -24,10 +24,11 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "KeyValuePairs");
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_Bookmarks",
+            migrationBuilder.RenameColumn(
+                name: "BookmarkId",
                 schema: _schema.Schema,
-                table: "Bookmarks");
+                table: "Bookmarks",
+                newName: "Id");
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
@@ -74,23 +75,6 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 type: "nvarchar(450)",
                 nullable: true);
 
-            migrationBuilder.AlterColumn<string>(
-                name: "BookmarkId",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                type: "nvarchar(max)",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(450)");
-
-            migrationBuilder.AddColumn<string>(
-                name: "Id",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                type: "nvarchar(450)",
-                nullable: false,
-                defaultValue: "");
-
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
@@ -109,12 +93,6 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 name: "PK_KeyValuePairs",
                 schema: _schema.Schema,
                 table: "KeyValuePairs",
-                column: "Id");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_Bookmarks",
-                schema: _schema.Schema,
-                table: "Bookmarks",
                 column: "Id");
 
             migrationBuilder.CreateTable(
@@ -244,11 +222,6 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "KeyValuePairs");
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_Bookmarks",
-                schema: _schema.Schema,
-                table: "Bookmarks");
-
             migrationBuilder.DropIndex(
                 name: "IX_StoredBookmark_TenantId",
                 schema: _schema.Schema,
@@ -285,11 +258,6 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 table: "KeyValuePairs");
 
             migrationBuilder.DropColumn(
-                name: "Id",
-                schema: _schema.Schema,
-                table: "Bookmarks");
-
-            migrationBuilder.DropColumn(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "Bookmarks");
@@ -298,6 +266,12 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords");
+
+            migrationBuilder.RenameColumn(
+                name: "Id",
+                schema: _schema.Schema,
+                table: "Bookmarks",
+                newName: "BookmarkId");
 
             migrationBuilder.AlterColumn<string>(
                 name: "Key",
@@ -308,26 +282,11 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 oldClrType: typeof(string),
                 oldType: "nvarchar(max)");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "BookmarkId",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                type: "nvarchar(450)",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(max)");
-
             migrationBuilder.AddPrimaryKey(
                 name: "PK_KeyValuePairs",
                 schema: _schema.Schema,
                 table: "KeyValuePairs",
                 column: "Key");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_Bookmarks",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                column: "BookmarkId");
         }
     }
 }

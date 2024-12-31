@@ -24,10 +24,11 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "KeyValuePairs");
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_Bookmarks",
+            migrationBuilder.RenameColumn(
+                name: "BookmarkId",
                 schema: _schema.Schema,
-                table: "Bookmarks");
+                table: "Bookmarks",
+                newName: "Id");
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
@@ -81,26 +82,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "BookmarkId",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                type: "longtext",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "varchar(255)")
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AddColumn<string>(
-                name: "Id",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                type: "varchar(255)",
-                nullable: false,
-                defaultValue: "")
-                .Annotation("MySql:CharSet", "utf8mb4");
-
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
@@ -121,12 +102,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 name: "PK_KeyValuePairs",
                 schema: _schema.Schema,
                 table: "KeyValuePairs",
-                column: "Id");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_Bookmarks",
-                schema: _schema.Schema,
-                table: "Bookmarks",
                 column: "Id");
 
             migrationBuilder.CreateTable(
@@ -266,11 +241,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "KeyValuePairs");
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_Bookmarks",
-                schema: _schema.Schema,
-                table: "Bookmarks");
-
             migrationBuilder.DropIndex(
                 name: "IX_StoredBookmark_TenantId",
                 schema: _schema.Schema,
@@ -307,11 +277,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 table: "KeyValuePairs");
 
             migrationBuilder.DropColumn(
-                name: "Id",
-                schema: _schema.Schema,
-                table: "Bookmarks");
-
-            migrationBuilder.DropColumn(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "Bookmarks");
@@ -320,6 +285,12 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords");
+
+            migrationBuilder.RenameColumn(
+                name: "Id",
+                schema: _schema.Schema,
+                table: "Bookmarks",
+                newName: "BookmarkId");
 
             migrationBuilder.AlterColumn<string>(
                 name: "Key",
@@ -332,28 +303,11 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 .Annotation("MySql:CharSet", "utf8mb4")
                 .OldAnnotation("MySql:CharSet", "utf8mb4");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "BookmarkId",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                type: "varchar(255)",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "longtext")
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
-
             migrationBuilder.AddPrimaryKey(
                 name: "PK_KeyValuePairs",
                 schema: _schema.Schema,
                 table: "KeyValuePairs",
                 column: "Key");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_Bookmarks",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                column: "BookmarkId");
         }
     }
 }
