@@ -1,7 +1,6 @@
 using Elsa.Common;
 using Elsa.Common.Features;
 using Elsa.Common.Serialization;
-using Elsa.CSharp.Activities;
 using Elsa.Expressions.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
