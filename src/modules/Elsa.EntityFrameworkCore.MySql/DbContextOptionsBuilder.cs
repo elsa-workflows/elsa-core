@@ -14,8 +14,12 @@ public static class DbContextOptionsBuilderExtensions
     /// <summary>
     /// Configures Entity Framework Core with MySQL.
     /// </summary>
-    public static DbContextOptionsBuilder UseElsaMySql(this DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString,
-        ElsaDbContextOptions? options = default, ServerVersion? serverVersion = default, Action<MySqlDbContextOptionsBuilder>? configure = default) =>
+    public static DbContextOptionsBuilder UseElsaMySql(this DbContextOptionsBuilder builder, 
+        Assembly migrationsAssembly, 
+        string connectionString,
+        ElsaDbContextOptions? options = null, 
+        ServerVersion? serverVersion = null, 
+        Action<MySqlDbContextOptionsBuilder>? configure = null) =>
         builder
             .UseElsaDbContextOptions(options)
             .UseMySql(connectionString, serverVersion ?? ServerVersion.AutoDetect(connectionString), db =>
@@ -25,7 +29,10 @@ public static class DbContextOptionsBuilderExtensions
                     .MigrationsHistoryTable(options.GetMigrationsHistoryTableName(), options.GetSchemaName())
                     .SchemaBehavior(MySqlSchemaBehavior.Ignore)
                     .EnablePrimitiveCollectionsSupport()
-                    .TranslateParameterizedCollectionsToConstants();
+#if NET9_0
+                    .TranslateParameterizedCollectionsToConstants()
+#endif
+                    ;
 
                 configure?.Invoke(db);
             });
