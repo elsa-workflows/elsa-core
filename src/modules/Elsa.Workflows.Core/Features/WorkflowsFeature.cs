@@ -23,6 +23,7 @@ using Elsa.Workflows.Services;
 using Elsa.Workflows.UIHints.CheckList;
 using Elsa.Workflows.UIHints.Dropdown;
 using Elsa.Workflows.UIHints.JsonEditor;
+using Elsa.Workflows.UIHints.SqlEditor;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Features;
@@ -229,11 +230,13 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IUIHintHandler, DropDownUIHintHandler>()
             .AddScoped<IUIHintHandler, CheckListUIHintHandler>()
             .AddScoped<IUIHintHandler, JsonEditorUIHintHandler>()
+            .AddScoped<IUIHintHandler, SqlEditorUIHintHandler>()
 
             // UI property handlers.
             .AddScoped<IPropertyUIHandler, StaticCheckListOptionsProvider>()
             .AddScoped<IPropertyUIHandler, StaticDropDownOptionsProvider>()
             .AddScoped<IPropertyUIHandler, JsonCodeOptionsProvider>()
+            .AddScoped<IPropertyUIHandler, SqlCodeOptionsProvider>()
 
             // Logger state generators.
             .AddSingleton(WorkflowLoggerStateGenerator)
