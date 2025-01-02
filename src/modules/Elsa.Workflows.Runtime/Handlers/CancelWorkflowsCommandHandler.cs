@@ -2,7 +2,7 @@ using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Models;
 using Elsa.Workflows.Runtime.Commands;
 
-namespace Elsa.Workflows.Runtime.Distributed.Handlers;
+namespace Elsa.Workflows.Runtime.Handlers;
 
 /// <summary>
 /// Handles the <see cref="CancelWorkflowsCommand"/>.

@@ -211,6 +211,8 @@ internal class WorkflowInstance(
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
         var workflowResult = await workflowRunner.RunAsync(WorkflowGraph, WorkflowState, runWorkflowOptions, _linkedCancellationToken);
         WorkflowState = workflowResult.WorkflowState;
+        var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
+        await workflowInstanceManager.SaveAsync(WorkflowState, Context.CancellationToken);
 
         return workflowResult;
     }
