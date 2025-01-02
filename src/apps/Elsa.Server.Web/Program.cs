@@ -27,6 +27,8 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.MongoDb.Modules.Tenants;
 using Elsa.OpenTelemetry.Middleware;
+using Elsa.Retention.Extensions;
+using Elsa.Retention.Models;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Management.Tasks;
 using Elsa.Secrets.Persistence;
@@ -36,6 +38,7 @@ using Elsa.Server.Web.Filters;
 using Elsa.Server.Web.Messages;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
+using Elsa.Workflows;
 using Elsa.Workflows.Api;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management;
@@ -513,6 +516,19 @@ services
                 .UseSecretsScripting()
                 ;
         }
+        
+        elsa.UseRetention(r =>
+        {
+            r.SweepInterval = TimeSpan.FromHours(5);
+            r.AddDeletePolicy("Delete all finished workflows", sp =>
+            {
+                var filter = new RetentionWorkflowInstanceFilter
+                {
+                    WorkflowStatus = WorkflowStatus.Finished
+                };
+                return filter;
+            });
+        });
 
         if (useMultitenancy)
         {
