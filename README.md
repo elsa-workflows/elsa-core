@@ -10,7 +10,7 @@
 [![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
 [![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Elsa%20Guru-006BFF)](https://gurubase.io/g/elsa)
 
-### [For Elsa 2 Click Here](https://github.com/elsa-workflows/elsa-core/tree/2.x)
+### [For Elsa 2, Click Here](https://github.com/elsa-workflows/elsa-core/tree/2.x)
 
 ## Introduction
 Elsa is a powerful workflow library that enables workflow execution within any .NET application. Elsa allows you to define workflows in various ways, including:
