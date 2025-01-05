@@ -53,7 +53,8 @@ public class SqlQuery : Activity
     /// <see cref="DataSet"/> of queried results.
     /// </summary>
     [Output(
-        Description = "DataSet of queried results.")]
+        Description = "DataSet of queried results.",
+        IsSerializable = false)]
     public Output<DataSet?> Results { get; set; } = default!;
 
     /// <summary>
