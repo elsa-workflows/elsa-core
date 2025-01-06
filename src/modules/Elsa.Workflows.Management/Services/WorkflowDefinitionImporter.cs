@@ -36,7 +36,7 @@ namespace Elsa.Workflows.Management.Services
             // Get a workflow draft version.
             var draft = !string.IsNullOrWhiteSpace(definitionId)
                 ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest, cancellationToken)
-                : default;
+                : null;
 
             var isNew = draft == null;
 
