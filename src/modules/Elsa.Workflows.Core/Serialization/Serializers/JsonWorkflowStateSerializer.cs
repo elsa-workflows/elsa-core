@@ -138,6 +138,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
 
     public override void ApplyOptions(JsonSerializerOptions options)
     {
+        base.ApplyOptions(options);
         options.ReferenceHandler = new PerCallReferenceHandlerWrapper();
     }
 
