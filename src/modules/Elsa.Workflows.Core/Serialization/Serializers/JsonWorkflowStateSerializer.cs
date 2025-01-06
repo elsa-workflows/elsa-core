@@ -124,10 +124,14 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
         return JsonSerializer.Deserialize<T>(serializedState, options)!;
     }
 
-    public override void ApplyOptions(JsonSerializerOptions options)
+    /// <inheritdoc />
+    public override JsonSerializerOptions GetOptions()
     {
-        base.ApplyOptions(options);
-        options.ReferenceHandler = new CrossScopedReferenceHandler();
+        var options = base.GetOptions();
+        return new JsonSerializerOptions(options)
+        {
+            ReferenceHandler = new CrossScopedReferenceHandler()
+        };
     }
 
     /// <inheritdoc />

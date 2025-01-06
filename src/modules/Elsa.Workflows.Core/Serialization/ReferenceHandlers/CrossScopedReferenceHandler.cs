@@ -7,23 +7,21 @@ namespace Elsa.Workflows.Serialization.ReferenceHandlers;
 /// </summary>
 public class CrossScopedReferenceHandler : ReferenceHandler
 {
-    private static readonly AsyncLocal<CustomPreserveReferenceResolver> RootedResolverState = new();
-
-    private CustomPreserveReferenceResolver RootedResolver
-    {
-        get
-        {
-            RootedResolverState.Value ??= new CustomPreserveReferenceResolver();
-            return RootedResolverState.Value!;
-        }
-    }
+    /// <inheritdoc />
+    public CrossScopedReferenceHandler() => Reset();
+    private ReferenceResolver? _rootedResolver;
 
     /// <inheritdoc />
-    public override ReferenceResolver CreateResolver() => RootedResolver;
-
+    public override ReferenceResolver CreateResolver() => _rootedResolver!;
+    
+    /// <summary>
+    /// Resets the reference resolver.
+    /// </summary>
+    public void Reset() => _rootedResolver = new CustomPreserveReferenceResolver();
+    
     /// <summary>
     /// Gets the reference resolver.
     /// </summary>
     /// <returns>The reference resolver.</returns>
-    public ReferenceResolver GetResolver() => RootedResolver;
+    public ReferenceResolver GetResolver() => _rootedResolver!;
 }
