@@ -1,7 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Workflows.Serialization.Converters;
@@ -126,20 +124,10 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
         return JsonSerializer.Deserialize<T>(serializedState, options)!;
     }
 
-    // /// <inheritdoc />
-    // public override JsonSerializerOptions GetOptions()
-    // {
-    //     var options = base.GetOptions();
-    //     return new JsonSerializerOptions(options)
-    //     {
-    //         ReferenceHandler = new CrossScopedReferenceHandler()
-    //     };
-    // }
-
     public override void ApplyOptions(JsonSerializerOptions options)
     {
         base.ApplyOptions(options);
-        options.ReferenceHandler = new PerCallReferenceHandlerWrapper();
+        options.ReferenceHandler = new CrossScopedReferenceHandler();
     }
 
     /// <inheritdoc />
