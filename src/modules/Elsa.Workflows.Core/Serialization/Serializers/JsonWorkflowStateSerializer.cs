@@ -129,29 +129,18 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     /// <inheritdoc />
     public override JsonSerializerOptions GetOptions()
     {
-        // Bypass cached options to ensure that the reference handler is always fresh.
-        return GetOptionsInternal();
-    }
-
-    /// <inheritdoc />
-    protected override void Configure(JsonSerializerOptions options)
-    {
-        var referenceHandler = new CrossScopedReferenceHandler();
-
-        options.ReferenceHandler = referenceHandler;
-        options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-        options.PropertyNameCaseInsensitive = true;
-        options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        var options = base.GetOptions();
+        return new JsonSerializerOptions(options)
+        {
+            ReferenceHandler = new CrossScopedReferenceHandler()
+        };
     }
 
     /// <inheritdoc />
     protected override void AddConverters(JsonSerializerOptions options)
     {
-        options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(new TypeJsonConverter(_wellKnownTypeRegistry));
-        options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
         options.Converters.Add(new PolymorphicObjectConverterFactory(_wellKnownTypeRegistry));
-        options.Converters.Add(new TypeJsonConverter(_wellKnownTypeRegistry));
         options.Converters.Add(new VariableConverterFactory(_wellKnownTypeRegistry, _loggerFactory));
     }
 }
