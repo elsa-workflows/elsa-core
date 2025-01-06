@@ -25,3 +25,11 @@ public class CrossScopedReferenceHandler : ReferenceHandler
     /// <returns>The reference resolver.</returns>
     public ReferenceResolver GetResolver() => _rootedResolver!;
 }
+
+public class PerCallReferenceHandlerWrapper : ReferenceHandler
+{
+    public override ReferenceResolver CreateResolver()
+    {
+        return new CrossScopedReferenceHandler().CreateResolver();
+    }
+}
