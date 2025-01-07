@@ -53,7 +53,7 @@
         <PackageVersion Include="Humanizer.Core" Version="2.14.1"/>
         <PackageVersion Include="IronCompress" Version="1.6.3"/>
         <PackageVersion Include="JetBrains.Annotations" Version="2024.3.0"/>
-        <PackageVersion Include="Jint" Version="4.1.0"/>
+        <PackageVersion Include="Jint" Version="3.1.6"/>
         <PackageVersion Include="LinqKit.Core" Version="1.2.7"/>
         <PackageVersion Include="MailKit" Version="4.9.0"/>
         <PackageVersion Include="MassTransit" Version="8.3.4"/>
