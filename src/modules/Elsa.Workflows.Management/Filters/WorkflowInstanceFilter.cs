@@ -166,7 +166,7 @@ public class WorkflowInstanceFilter
         {
             query =
                 from instance in query
-                where instance.Name!.Contains(searchTerm)
+                where instance.Name!.ToLower().Contains(searchTerm.ToLower())
                       || instance.DefinitionVersionId.Contains(searchTerm)
                       || instance.DefinitionId.Contains(searchTerm)
                       || instance.Id.Contains(searchTerm)
