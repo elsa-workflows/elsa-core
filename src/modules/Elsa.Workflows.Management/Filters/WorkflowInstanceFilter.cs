@@ -25,6 +25,11 @@ public class WorkflowInstanceFilter
     /// Filter workflow instances that match the specified search term.
     /// </summary>
     public string? SearchTerm { get; set; }
+    
+    /// <summary>
+    /// Filter workflow instances that match the specified name.
+    /// </summary>
+    public string? Name { get; set; }
 
     /// <summary>
     /// Filter workflow instances by definition ID.
@@ -125,6 +130,7 @@ public class WorkflowInstanceFilter
         if (filter.WorkflowSubStatuses != null) query = query.Where(x => filter.WorkflowSubStatuses.Contains(x.SubStatus));
         if (filter.HasIncidents != null) query = filter.HasIncidents == true ? query.Where(x => x.IncidentCount > 0) : query.Where(x => x.IncidentCount == 0);
         if (filter.IsSystem != null) query = query.Where(x => x.IsSystem == filter.IsSystem);
+        if (filter.Name != null) query = query.Where(x => x.Name!.Contains(filter.Name, StringComparison.InvariantCultureIgnoreCase));
 
         if (TimestampFilters != null)
         {
