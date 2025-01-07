@@ -130,7 +130,7 @@ public class WorkflowInstanceFilter
         if (filter.WorkflowSubStatuses != null) query = query.Where(x => filter.WorkflowSubStatuses.Contains(x.SubStatus));
         if (filter.HasIncidents != null) query = filter.HasIncidents == true ? query.Where(x => x.IncidentCount > 0) : query.Where(x => x.IncidentCount == 0);
         if (filter.IsSystem != null) query = query.Where(x => x.IsSystem == filter.IsSystem);
-        if (filter.Name != null) query = query.Where(x => x.Name!.Contains(filter.Name, StringComparison.InvariantCultureIgnoreCase));
+        if (filter.Name != null) query = query.Where(x => x.Name!.ToLower().Contains(filter.Name.ToLower()));
 
         if (TimestampFilters != null)
         {
