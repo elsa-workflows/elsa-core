@@ -42,7 +42,7 @@ public class LocalWorkflowClient(
         };
 
         await workflowInstanceManager.CreateWorkflowInstanceAsync(workflowGraph.Workflow, options, cancellationToken);
-        return new CreateWorkflowInstanceResponse();
+        return new();
     }
 
     /// <inheritdoc />
@@ -54,7 +54,7 @@ public class LocalWorkflowClient(
         if (workflowInstance.Status != WorkflowStatus.Running)
         {
             logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that is not in the Running state. The actual state is {ActualWorkflowStatus}", workflowState.Id, workflowState.Status);
-            return new RunWorkflowInstanceResponse
+            return new()
             {
                 WorkflowInstanceId = WorkflowInstanceId,
                 Status = workflowInstance.Status,
@@ -76,7 +76,7 @@ public class LocalWorkflowClient(
 
         workflowState = workflowResult.WorkflowState;
 
-        return new RunWorkflowInstanceResponse
+        return new()
         {
             WorkflowInstanceId = WorkflowInstanceId,
             Status = workflowState.Status,
@@ -97,7 +97,7 @@ public class LocalWorkflowClient(
             ParentId = request.ParentId
         };
         await CreateInstanceAsync(createRequest, cancellationToken);
-        return await RunInstanceAsync(new RunWorkflowInstanceRequest
+        return await RunInstanceAsync(new()
         {
             Input = request.Input,
             Properties = request.Properties,
