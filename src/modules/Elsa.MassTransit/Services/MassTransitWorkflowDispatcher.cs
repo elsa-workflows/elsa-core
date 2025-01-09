@@ -30,12 +30,12 @@ public class MassTransitWorkflowDispatcher(
     : IWorkflowDispatcher
 {
     /// <inheritdoc />
-    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(request.DefinitionVersionId, cancellationToken);
 
         if (workflowGraph == null)
-            throw new Exception($"Workflow definition version with ID '{request.DefinitionVersionId}' not found");
+            throw new($"Workflow definition version with ID '{request.DefinitionVersionId}' not found");
 
         var workflowInstanceOptions = new WorkflowInstanceOptions
         {
@@ -51,7 +51,7 @@ public class MassTransitWorkflowDispatcher(
     }
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var sendEndpoint = await GetSendEndpointAsync(options);
         var serializedInput = SerializeInput(request.Input);
@@ -68,7 +68,7 @@ public class MassTransitWorkflowDispatcher(
     }
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         await DispatchTriggersAsync(request, options, cancellationToken);
         await DispatchBookmarksAsync(request, options, cancellationToken);
@@ -76,7 +76,7 @@ public class MassTransitWorkflowDispatcher(
     }
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var hash = stimulusHasher.Hash(request.ActivityTypeName, request.BookmarkPayload, request.ActivityInstanceId);
         var correlationId = request.CorrelationId;
@@ -94,7 +94,7 @@ public class MassTransitWorkflowDispatcher(
         return DispatchWorkflowResponse.Success();
     }
 
-    private async Task DispatchTriggersAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    private async Task DispatchTriggersAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var triggerHash = stimulusHasher.Hash(request.ActivityTypeName, request.BookmarkPayload);
         var triggerFilter = new TriggerFilter
@@ -133,7 +133,7 @@ public class MassTransitWorkflowDispatcher(
         await sendEndpoint.Send(message, cancellationToken);
     }
 
-    private async Task DispatchBookmarksAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    private async Task DispatchBookmarksAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var correlationId = request.CorrelationId;
         var workflowInstanceId = request.WorkflowInstanceId;
@@ -169,10 +169,10 @@ public class MassTransitWorkflowDispatcher(
         }
     }
 
-    private async Task<ISendEndpoint> GetSendEndpointAsync(DispatchWorkflowOptions? options = default)
+    private async Task<ISendEndpoint> GetSendEndpointAsync(DispatchWorkflowOptions? options = null)
     {
         var endpointName = endpointChannelFormatter.FormatEndpointName(options?.Channel);
-        var sendEndpoint = await bus.GetSendEndpoint(new Uri($"queue:{endpointName}"));
+        var sendEndpoint = await bus.GetSendEndpoint(new($"queue:{endpointName}"));
         return sendEndpoint;
     }
     
