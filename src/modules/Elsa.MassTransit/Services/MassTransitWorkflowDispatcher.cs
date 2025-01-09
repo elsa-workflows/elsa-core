@@ -127,7 +127,7 @@ public class MassTransitWorkflowDispatcher(
 
     private async Task DispatchWorkflowAsync(Workflow workflow, WorkflowInstanceOptions? workflowInstanceOptions, string? triggerActivityId, DispatchWorkflowOptions? options, CancellationToken cancellationToken)
     {
-        var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(workflow, workflowInstanceOptions, cancellationToken);
+        var workflowInstance = await workflowInstanceManager.CreateAndCommitWorkflowInstanceAsync(workflow, workflowInstanceOptions, cancellationToken);
         var sendEndpoint = await GetSendEndpointAsync(options);
         var message = DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(workflowInstance.Id, triggerActivityId);
         await sendEndpoint.Send(message, cancellationToken);

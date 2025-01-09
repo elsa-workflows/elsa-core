@@ -262,7 +262,7 @@ internal class WorkflowInstance(
 
         await using var scope = scopeFactory.CreateAsyncScope();
         var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
-        var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(workflowGraph.Workflow, workflowInstanceOptions, cancellationToken);
+        var workflowInstance = await workflowInstanceManager.CreateAndCommitWorkflowInstanceAsync(workflowGraph.Workflow, workflowInstanceOptions, cancellationToken);
         var workflowState = workflowInstance.WorkflowState;
         _workflowInstanceId = workflowState.Id;
         WorkflowGraph = workflowGraph;

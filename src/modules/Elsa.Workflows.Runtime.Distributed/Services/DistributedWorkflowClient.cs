@@ -11,7 +11,8 @@ public class DistributedWorkflowClient(
     string workflowInstanceId,
     IDistributedLockProvider distributedLockProvider,
     IOptions<DistributedLockingOptions> distributedLockingOptions,
-    IServiceProvider serviceProvider) : IWorkflowClient
+    IServiceProvider serviceProvider)
+    : IWorkflowClient
 {
     private readonly LocalWorkflowClient _localWorkflowClient = ActivatorUtilities.CreateInstance<LocalWorkflowClient>(serviceProvider, workflowInstanceId);
 
@@ -30,7 +31,7 @@ public class DistributedWorkflowClient(
 
     public async Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        var result = await WithLockAsync(async () => await _localWorkflowClient.CreateAndRunInstanceAsync(request, cancellationToken));
+        var result = await _localWorkflowClient.CreateAndRunInstanceAsync(request, cancellationToken);
         return result;
     }
 
