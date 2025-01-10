@@ -130,10 +130,16 @@ public class WorkflowInstanceManager(
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowInstance> CreateWorkflowInstanceAsync(Workflow workflow, WorkflowInstanceOptions? options = null, CancellationToken cancellationToken = default)
+    public async Task<WorkflowInstance> CreateAndCommitWorkflowInstanceAsync(Workflow workflow, WorkflowInstanceOptions? options = null, CancellationToken cancellationToken = default)
     {
-        var workflowInstance = workflowInstanceFactory.CreateWorkflowInstance(workflow, options);
+        var workflowInstance = CreateWorkflowInstance(workflow, options);
         await SaveAsync(workflowInstance, cancellationToken);
         return workflowInstance;
+    }
+
+    /// <inheritdoc />
+    public WorkflowInstance CreateWorkflowInstance(Workflow workflow, WorkflowInstanceOptions? options = null)
+    {
+        return workflowInstanceFactory.CreateWorkflowInstance(workflow, options);
     }
 }
