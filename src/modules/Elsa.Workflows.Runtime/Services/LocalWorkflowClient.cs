@@ -40,7 +40,7 @@ public class LocalWorkflowClient(
             Properties = request.Properties
         };
 
-        workflowInstanceManager.CreateWorkflowInstance(workflowGraph.Workflow, options);
+        await workflowInstanceManager.CreateAndCommitWorkflowInstanceAsync(workflowGraph.Workflow, options, cancellationToken);
         return new();
     }
 
