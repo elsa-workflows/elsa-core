@@ -2,6 +2,7 @@ using System.Text.Encodings.Web;
 using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
+using Elsa.Caching.Options;
 using Elsa.Common.DistributedHosting.DistributedLocks;
 using Elsa.Common.RecurringTasks;
 using Elsa.Common.Serialization;
@@ -80,7 +81,7 @@ const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
 const bool useTenantsFromConfiguration = false;
 const bool useAgents = false;
-const bool useSecrets = true;
+const bool useSecrets = false;
 const bool disableVariableWrappers = false;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -599,7 +600,7 @@ services.Configure<RecurringTaskOptions>(options =>
 
 services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(10));
 
-//services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
+services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.AddHealthChecks();
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
