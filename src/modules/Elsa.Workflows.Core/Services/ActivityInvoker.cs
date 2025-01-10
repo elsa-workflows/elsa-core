@@ -12,7 +12,7 @@ public class ActivityInvoker(
 {
 
     /// <inheritdoc />
-    public async Task InvokeAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, ActivityInvocationOptions? options = default)
+    public async Task InvokeAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, ActivityInvocationOptions? options = null)
     {
         // Setup an activity execution context, potentially reusing an existing one if requested.
         var existingActivityExecutionContext = options?.ExistingActivityExecutionContext;
@@ -20,7 +20,7 @@ public class ActivityInvoker(
         // Perform a lookup to make sure the activity execution context is part of the workflow execution context.
         var activityExecutionContext = existingActivityExecutionContext != null
             ? workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == existingActivityExecutionContext.Id)
-            : default;
+            : null;
 
         if (activityExecutionContext == null)
         {
