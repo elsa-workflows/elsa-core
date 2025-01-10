@@ -29,8 +29,7 @@ public class LocalWorkflowClient(
     public async Task<CreateWorkflowInstanceResponse> CreateInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var workflowDefinitionHandle = request.WorkflowDefinitionHandle;
-        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
-        if (workflowGraph == null) throw new InvalidOperationException($"Workflow with version ID {workflowDefinitionHandle} not found.");
+        var workflowGraph = await GetWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
 
         var options = new WorkflowInstanceOptions
         {
@@ -138,8 +137,7 @@ public class LocalWorkflowClient(
     public async Task<WorkflowInstance> CreateInstanceInternalAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var workflowDefinitionHandle = request.WorkflowDefinitionHandle;
-        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
-        if (workflowGraph == null) throw new InvalidOperationException($"Workflow with version ID {workflowDefinitionHandle} not found.");
+        var workflowGraph = await GetWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
 
         var options = new WorkflowInstanceOptions
         {
@@ -162,8 +160,14 @@ public class LocalWorkflowClient(
 
     private async Task<WorkflowGraph> GetWorkflowGraphAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
     {
-        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowInstance.DefinitionVersionId, cancellationToken);
-        if (workflowGraph == null) throw new InvalidOperationException($"Workflow graph with version ID {workflowInstance.DefinitionVersionId} not found.");
+        var handle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowInstance.DefinitionVersionId);
+        return await GetWorkflowGraphAsync(handle, cancellationToken);
+    }
+
+    private async Task<WorkflowGraph> GetWorkflowGraphAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken)
+    {
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(definitionHandle, cancellationToken);
+        if (workflowGraph == null) throw new InvalidOperationException($"Workflow graph with handle {definitionHandle} not found.");
         return workflowGraph;
     }
 }
