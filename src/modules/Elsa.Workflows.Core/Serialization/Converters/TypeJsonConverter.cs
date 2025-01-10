@@ -36,7 +36,7 @@ public class TypeJsonConverter : JsonConverter<Type>
         {
             var elementTypeAlias = typeAlias[..^"[]".Length];
             var elementType = _wellKnownTypeRegistry.TryGetType(elementTypeAlias, out var t) ? t : Type.GetType(elementTypeAlias)!;
-            return typeof(List<>).MakeGenericType(elementType);
+            return elementType.MakeArrayType();
         }
 
         return _wellKnownTypeRegistry.TryGetType(typeAlias, out var type) ? type : Type.GetType(typeAlias);
