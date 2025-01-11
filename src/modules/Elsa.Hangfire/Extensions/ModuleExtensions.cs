@@ -25,6 +25,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Configures Hangfire to use SQL Server storage. Only use this feature if you are not configuring Hangfire yourself.
     /// </summary>
+    [Obsolete("Configure storage directly on the HangfireFeature.")]
     public static HangfireFeature UseSqlServerStorage(this HangfireFeature feature, Action<HangfireSqlServerStorageFeature> configure)
     {
         feature.Module.Use(configure);
@@ -34,6 +35,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Configures Hangfire to use SQLite storage. Only use this feature if you are not configuring Hangfire yourself.
     /// </summary>
+    [Obsolete("Configure storage directly on the HangfireFeature.")]
     public static HangfireFeature UseSqliteStorage(this HangfireFeature feature, Action<HangfireSqliteStorageFeature> configure)
     {
         feature.Module.Use(configure);
