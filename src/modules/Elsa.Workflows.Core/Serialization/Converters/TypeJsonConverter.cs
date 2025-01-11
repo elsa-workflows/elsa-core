@@ -31,12 +31,20 @@ public class TypeJsonConverter : JsonConverter<Type>
     {
         var typeAlias = reader.GetString()!;
 
-        // Handle collection types.
+        // Handle array types.
         if (typeAlias.EndsWith("[]"))
         {
-            var elementTypeAlias = typeAlias[..^"[]".Length];
+            var elementTypeAlias = typeAlias[..^2];
             var elementType = _wellKnownTypeRegistry.TryGetType(elementTypeAlias, out var t) ? t : Type.GetType(elementTypeAlias)!;
             return elementType.MakeArrayType();
+        }
+        
+        // Handle collection types.
+        if (typeAlias.EndsWith("()"))
+        {
+            var elementTypeAlias = typeAlias[..^"()".Length];
+            var elementType = _wellKnownTypeRegistry.TryGetType(elementTypeAlias, out var t) ? t : Type.GetType(elementTypeAlias)!;
+            return typeof(List<>).MakeGenericType(elementType);
         }
 
         return _wellKnownTypeRegistry.TryGetType(typeAlias, out var type) ? type : Type.GetType(typeAlias);
@@ -45,6 +53,15 @@ public class TypeJsonConverter : JsonConverter<Type>
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, Type value, JsonSerializerOptions options)
     {
+        // Handle array types.
+        if (value.IsArray)
+        {
+            var elementType = value.GetElementType()!;
+            var elementTypeAlias = _wellKnownTypeRegistry.TryGetAlias(elementType, out var elementTypeAliasValue) ? elementTypeAliasValue : elementType.GetSimpleAssemblyQualifiedName();
+            writer.WriteStringValue($"{elementTypeAlias}[]");
+            return;
+        }
+        
         // Handle collection types.
         if (value is { IsGenericType: true, GenericTypeArguments.Length: 1 })
         {
@@ -53,7 +70,7 @@ public class TypeJsonConverter : JsonConverter<Type>
 
             if (typedEnumerable.IsAssignableFrom(value) && _wellKnownTypeRegistry.TryGetAlias(elementType, out var elementTypeAlias))
             {
-                writer.WriteStringValue($"{elementTypeAlias}[]");
+                writer.WriteStringValue($"{elementTypeAlias}()");
                 return;
             }
         }
