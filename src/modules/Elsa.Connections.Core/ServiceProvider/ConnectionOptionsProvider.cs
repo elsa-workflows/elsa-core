@@ -25,8 +25,6 @@ public class ConnectionOptionsProvider : DropDownOptionsProviderBase
 
         var connectionType = propertyInfo.GetCustomAttribute<ConnectionTypeAttribute>()?.Type;
 
-        
-
         if (connectionType == null)
             return connection;
 
@@ -34,13 +32,14 @@ public class ConnectionOptionsProvider : DropDownOptionsProviderBase
 
         foreach(var conn in connections)
             connection.Add(new SelectListItem(conn.Name, conn.Name));
-
-
-
-
-        //connection.Add(new SelectListItem("connection 2", "idConnection2"));
-        //connection.Add(new SelectListItem("connection 3", "idConnection3"));
         return connection;
-        //throw new NotImplementedException();
+    }
+
+    protected override IDictionary<string, object> GetUIPropertyAdditionalOptions()
+    {
+        return new Dictionary<string, object>
+        {
+            ["Refresh"] = true
+        };
     }
 }
