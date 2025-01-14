@@ -4,7 +4,6 @@ using Elsa.Retention.Contracts;
 using Elsa.Retention.Options;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -31,7 +30,6 @@ public class CleanupJob(
     /// <param name="cancellationToken"></param>
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        Console.WriteLine(DateTime.Now.ToLongTimeString());
         var collectors = GetServices(typeof(IRelatedEntityCollector), typeof(IRelatedEntityCollector<>));
         var deletedWorkflowInstances = 0L;
         
