@@ -16,7 +16,12 @@ public interface IVariablePersistenceManager
     Task SaveVariablesAsync(WorkflowExecutionContext context);
 
     /// <summary>
-    /// Deletes the specified variables from the <see cref="WorkflowExecutionContext"/>.
+    /// Deletes the specified variables from the <see cref="ActivityExecutionContext"/>.
     /// </summary>
     Task DeleteVariablesAsync(ActivityExecutionContext context);
+    
+    /// <summary>
+    /// Deletes the specified variables from the <see cref="WorkflowExecutionContext"/>.
+    /// </summary>
+    Task DeleteVariablesAsync(WorkflowExecutionContext context);
 }

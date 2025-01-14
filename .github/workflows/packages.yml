@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'blueberry'
+      - 'feature/*'
   release:
     types: [ prereleased, published ]
 env:

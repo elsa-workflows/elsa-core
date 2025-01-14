@@ -110,6 +110,17 @@ public class VariablePersistenceManager : IVariablePersistenceManager
         }
     }
 
+    /// <inheritdoc />
+    public async Task DeleteVariablesAsync(WorkflowExecutionContext context)
+    {
+        var activityContexts = context.ActivityExecutionContexts.ToList();
+
+        foreach (var activityContext in activityContexts)
+        {
+            await DeleteVariablesAsync(activityContext);
+        }
+    }
+
     private IEnumerable<Variable> GetLocalVariables(IExecutionContext context) => context.Variables;
 
     private MemoryBlock EnsureBlock(MemoryRegister register, Variable variable)
