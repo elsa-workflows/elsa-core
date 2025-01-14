@@ -87,7 +87,7 @@
         <PackageVersion Include="Proto.Persistence.Sqlite" Version="1.7.0"/>
         <PackageVersion Include="Proto.Persistence.SqlServer" Version="1.7.0"/>
         <PackageVersion Include="Proto.Remote" Version="1.7.0"/>
-        <PackageVersion Include="pythonnet" Version="3.0.5"/>
+        <PackageVersion Include="pythonnet" Version="3.1.0-preview2024-09-06"/>
         <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.13.1"/>
         <PackageVersion Include="Quartz.Serialization.Json" Version="3.13.1"/>
         <PackageVersion Include="Scrutor" Version="5.0.2"/>

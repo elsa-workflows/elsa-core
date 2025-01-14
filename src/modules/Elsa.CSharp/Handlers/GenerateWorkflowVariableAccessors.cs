@@ -48,7 +48,8 @@ public class GenerateWorkflowVariableAccessors(IOptions<CSharpOptions> options) 
         }
 
         sb.AppendLine("}");
-        sb.AppendLine("var Variables = new WorkflowVariablesProxy(ExecutionContext);");
+        sb.AppendLine("var Variables = new WorkflowVariablesProxy(ExecutionContext);"); // Obsolete; use Variable instead.
+        sb.AppendLine("var Variable = Variables;");
         notification.AppendScript(sb.ToString());
         return Task.CompletedTask;
     }

@@ -25,7 +25,7 @@ public class OutputProxy
     /// <param name="activityIdOrName">The ID or name of the activity that produced the output.</param>
     /// <param name="outputName">The name of the output.</param>
     /// <returns>The value of the output.</returns>
-    public object? From(string activityIdOrName, string? outputName = default) => _expressionExecutionContext.GetOutput(activityIdOrName, outputName);
+    public object? From(string activityIdOrName, string? outputName = null) => _expressionExecutionContext.GetOutput(activityIdOrName, outputName);
     
     /// <summary>
     /// Gets the value of the specified output from the specified activity.
@@ -33,7 +33,7 @@ public class OutputProxy
     /// <param name="activityIdOrName">The ID or name of the activity that produced the output.</param>
     /// <param name="outputName">The name of the output.</param>
     /// <returns>The value of the output.</returns>
-    public T? From<T>(string activityIdOrName, string? outputName = default) => Get(activityIdOrName, outputName).ConvertTo<T>();
+    public T? From<T>(string activityIdOrName, string? outputName = null) => From(activityIdOrName, outputName).ConvertTo<T>();
 
     /// <summary>
     /// Gets the value of the specified output.
@@ -42,7 +42,7 @@ public class OutputProxy
     /// <param name="outputName">The name of the output.</param>
     /// <returns>The value of the output.</returns>
     [Obsolete("Use From instead.")]
-    public object? Get(string activityIdOrName, string? outputName = default) => From(activityIdOrName, outputName);
+    public object? Get(string activityIdOrName, string? outputName = null) => From(activityIdOrName, outputName);
     
     /// <summary>
     /// Gets the value of the specified output.
@@ -51,7 +51,7 @@ public class OutputProxy
     /// <param name="outputName">The name of the output.</param>
     /// <returns>The value of the output.</returns>
     [Obsolete("Use From instead.")]
-    public T? Get<T>(string activityIdOrName, string? outputName = default) => From<T>(activityIdOrName, outputName);
+    public T? Get<T>(string activityIdOrName, string? outputName = null) => From<T>(activityIdOrName, outputName);
     
     /// <summary>
     /// Gets the result of the last activity that executed.
