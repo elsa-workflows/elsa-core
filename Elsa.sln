@@ -395,8 +395,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Api", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Persistence", "src\modules\Elsa.Connections.Persistence\Elsa.Connections.Persistence.csproj", "{9C2764B2-8BA4-4184-9B75-C426A593C815}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Models", "src\modules\Elsa.Connections.Models\Elsa.Connections.Models.csproj", "{FB1A962B-1299-4B35-9F53-3683BBD3426C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -845,10 +843,6 @@ Global
 		{9C2764B2-8BA4-4184-9B75-C426A593C815}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9C2764B2-8BA4-4184-9B75-C426A593C815}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9C2764B2-8BA4-4184-9B75-C426A593C815}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FB1A962B-1299-4B35-9F53-3683BBD3426C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FB1A962B-1299-4B35-9F53-3683BBD3426C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FB1A962B-1299-4B35-9F53-3683BBD3426C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FB1A962B-1299-4B35-9F53-3683BBD3426C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -998,7 +992,6 @@ Global
 		{7F620A88-E1CE-4D73-A21A-DE5A5B538BA8} = {FFC2EE94-ABD1-4D22-A325-A53F80CC097E}
 		{FD22E2B0-E164-4881-9DD4-4E429D178FB9} = {FFC2EE94-ABD1-4D22-A325-A53F80CC097E}
 		{9C2764B2-8BA4-4184-9B75-C426A593C815} = {FFC2EE94-ABD1-4D22-A325-A53F80CC097E}
-		{FB1A962B-1299-4B35-9F53-3683BBD3426C} = {FFC2EE94-ABD1-4D22-A325-A53F80CC097E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
