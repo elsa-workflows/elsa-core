@@ -23,8 +23,8 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
             Name = "JsonVariable"
         };
 
-        string jsonString = "{\"name\": \"John\", \"age\": 30}";
-        JsonElement jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
+        var jsonString = "{\"name\": \"John\", \"age\": 30}";
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
         jsonVariable.Set(expressionExecutionContext, jsonElement);
         var script = "getVariable('JsonVariable').age";
@@ -42,8 +42,8 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
             Name = "JsonVariable"
         };
 
-        string jsonString = "[1, 2, 3, 4, 5, 6]";
-        JsonElement jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
+        var jsonString = "[1, 2, 3, 4, 5, 6]";
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
         jsonVariable.Set(expressionExecutionContext, jsonElement);
         var script = "getVariable('JsonVariable')[3]";
@@ -61,8 +61,8 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
             Name = "JsonVariable"
         };
 
-        string jsonString = "\"I'm just a string\"";
-        JsonElement jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
+        var jsonString = "\"I'm just a string\"";
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
         jsonVariable.Set(expressionExecutionContext, jsonElement);
         var script = "getVariable('JsonVariable')";
@@ -80,8 +80,8 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
             Name = "JsonVariable"
         };
 
-        string jsonString = "false";
-        JsonElement jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
+        var jsonString = "false";
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
         jsonVariable.Set(expressionExecutionContext, jsonElement);
         var script = "getVariable('JsonVariable')";
@@ -99,7 +99,7 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
             Name = "JsonVariable"
         };
 
-        string jsonString = @"
+        var jsonString = @"
         {
             ""name"": ""John Doe"",
             ""age"": 35,
@@ -128,7 +128,7 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
             ""isEmployed"": true,
             ""contact"": { ""email"": ""john.doe@example.com"", ""phone"": ""555-1234"" }
         }";
-        JsonElement jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
         jsonVariable.Set(expressionExecutionContext, jsonElement);
 
