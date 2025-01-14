@@ -49,7 +49,8 @@ public class GenerateWorkflowInputAccessors(IOptions<CSharpOptions> options) : I
         }
 
         sb.AppendLine("}");
-        sb.AppendLine("var Inputs = new WorkflowInputsProxy(ExecutionContext);");
+        sb.AppendLine("var Inputs = new WorkflowInputsProxy(ExecutionContext);"); // Obsolete; use Input instead.
+        sb.AppendLine("var Input = Inputs;");
         notification.AppendScript(sb.ToString());
         return Task.CompletedTask;
     }

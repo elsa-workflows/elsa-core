@@ -369,6 +369,12 @@ services
                     // Make sure to configure the path to the python DLL. E.g. /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
                     // alternatively, you can set the PYTHONNET_PYDLL environment variable.
                     configuration.GetSection("Scripting:Python").Bind(options);
+                    
+                    options.AddScript(sb =>
+                    {
+                        sb.AppendLine("def greet():");
+                        sb.AppendLine("    return \"Hello, welcome to Python!\"");
+                    });
                 };
             })
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
