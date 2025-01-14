@@ -123,27 +123,11 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
     /// <inheritdoc />
     public async Task DeleteVariablesAsync(WorkflowExecutionContext context)
     {
-        var cancellationToken = context.CancellationTokens.ApplicationCancellationToken;
         var activityContexts = context.ActivityExecutionContexts.ToList();
 
         foreach (var activityContext in activityContexts)
         {
-            var variables = GetLocalVariables(activityContext).ToList();
-
-            foreach (var variable in variables)
-            {
-                var block = variable.GetBlock(activityContext.ExpressionExecutionContext);
-                var metadata = (VariableBlockMetadata)block.Metadata!;
-                var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
-
-                if (driver == null)
-                    continue;
-                
-                var id = GetStateId(variable);
-                var storageDriverContext = new StorageDriverContext(activityContext, variable, cancellationToken);
-
-                await driver.DeleteAsync(id, storageDriverContext);
-            }
+            await DeleteVariablesAsync(activityContext);
         }
     }
 
