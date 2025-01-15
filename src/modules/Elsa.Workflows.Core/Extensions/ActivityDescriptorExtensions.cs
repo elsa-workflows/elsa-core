@@ -1,5 +1,6 @@
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
+using System.Collections;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -43,6 +44,22 @@ public static class ActivityDescriptorExtensions
         return inputLookup;
     }
     
+    /// <summary>
+    /// Returns each collection of input from the specified activity.
+    /// </summary>
+    public static IDictionary<string, ICollection?> GetCollectionOfInputProperties(this ActivityDescriptor activityDescriptor, IActivity activity)
+    {
+        return activityDescriptor.Inputs.Where(x => x.IsCollectionOfInput).ToDictionary(x => x.Name, x => (ICollection?)x.ValueGetter(activity));
+    }
+
+    /// <summary>
+    /// Returns each dictionary with input value from the specified activity.
+    /// </summary>
+    public static IDictionary<string, IDictionary?> GetDictionaryWithValueOfInputProperties(this ActivityDescriptor activityDescriptor, IActivity activity)
+    {
+        return activityDescriptor.Inputs.Where(x => x.IsDictionaryWithValueOfInput).ToDictionary(x => x.Name, x => (IDictionary?)x.ValueGetter(activity));
+    }
+
     /// <summary>
     /// Returns each input descriptor from the specified activity.
     /// </summary>
