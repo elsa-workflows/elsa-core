@@ -88,7 +88,7 @@ public static class WorkflowExecutionContextExtensions
                 : WorkflowExecutionContext.Noop;
 
         // Store the bookmark to resume in the context.
-        workflowExecutionContext.ResumedBookmarkContext = new ResumedBookmarkContext(bookmark);
+        workflowExecutionContext.ResumedBookmarkContext = new(bookmark);
         logger.LogDebug("Scheduled activity {ActivityId} to resume from bookmark {BookmarkId}", bookmarkedActivity.Id, bookmark.Id);
 
         return workItem;
