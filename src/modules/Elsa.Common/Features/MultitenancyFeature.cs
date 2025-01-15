@@ -40,6 +40,9 @@ public class MultitenancyFeature(IModule module) : FeatureBase(module)
             .AddSingleton<ITenantFinder, DefaultTenantFinder>()
             .AddSingleton<ITenantService, DefaultTenantService>()
             
+            // Order is important: Startup task first, then background and recurring tasks.
+            .AddSingleton<ITenantActivatedEvent, RunStartupTasks>()
+            
             .AddSingleton<RunBackgroundTasks>()
             .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<RunBackgroundTasks>())
             .AddSingleton<ITenantDeactivatedEvent>(sp => sp.GetRequiredService<RunBackgroundTasks>())
@@ -48,7 +51,6 @@ public class MultitenancyFeature(IModule module) : FeatureBase(module)
             .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<StartRecurringTasks>())
             .AddSingleton<ITenantDeactivatedEvent>(sp => sp.GetRequiredService<StartRecurringTasks>())
             
-            .AddSingleton<ITenantActivatedEvent, RunStartupTasks>()
             .AddSingleton<RecurringTaskScheduleManager>()
             .AddSingleton<TenantEventsManager>()
             .AddScoped<DefaultTenantsProvider>()
