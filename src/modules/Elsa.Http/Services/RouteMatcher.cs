@@ -12,13 +12,11 @@ public class RouteMatcher : IRouteMatcher
     /// <inheritdoc />
     public RouteValueDictionary? Match(string routeTemplate, string route)
     {
-        var normalizedRoute = route.NormalizeRoute();
-        var normalizedRouteTemplate = routeTemplate.NormalizeRoute();
-        var template = TemplateParser.Parse(normalizedRouteTemplate);
+        var template = TemplateParser.Parse(routeTemplate);
         var matcher = new TemplateMatcher(template, GetDefaults(template));
         var values = new RouteValueDictionary();
 
-        return matcher.TryMatch(normalizedRoute, values) ? values : null;
+        return matcher.TryMatch(route, values) ? values : null;
     }
 
     private static RouteValueDictionary GetDefaults(RouteTemplate parsedTemplate)
