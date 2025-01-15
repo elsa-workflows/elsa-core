@@ -40,9 +40,9 @@ public class TypeJsonConverter : JsonConverter<Type>
         }
         
         // Handle collection types.
-        if (typeAlias.EndsWith("()"))
+        if (typeAlias.StartsWith("List<") && typeAlias.EndsWith(">"))
         {
-            var elementTypeAlias = typeAlias[..^"()".Length];
+            var elementTypeAlias = typeAlias[5..^1];
             var elementType = _wellKnownTypeRegistry.TryGetType(elementTypeAlias, out var t) ? t : Type.GetType(elementTypeAlias)!;
             return typeof(List<>).MakeGenericType(elementType);
         }
@@ -70,7 +70,7 @@ public class TypeJsonConverter : JsonConverter<Type>
 
             if (typedEnumerable.IsAssignableFrom(value) && _wellKnownTypeRegistry.TryGetAlias(elementType, out var elementTypeAlias))
             {
-                writer.WriteStringValue($"{elementTypeAlias}()");
+                writer.WriteStringValue($"List<{elementTypeAlias}>");
                 return;
             }
         }

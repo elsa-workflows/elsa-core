@@ -23,10 +23,10 @@ namespace Elsa.Http;
 public class HttpEndpoint : Trigger<HttpRequest>
 {
     internal const string HttpContextInputKey = "HttpContext";
-    internal const string RequestPathInputKey = "RequestPath";
+    internal const string PathInputKey = "Path";
 
     /// <inheritdoc />
-    public HttpEndpoint([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public HttpEndpoint([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -38,7 +38,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         UIHint = InputUIHints.SingleLine,
         UIHandler = typeof(HttpEndpointPathUIHandler)
     )]
-    public Input<string> Path { get; set; } = default!;
+    public Input<string> Path { get; set; } = null!;
 
     /// <summary>
     /// The HTTP methods to accept.
@@ -65,37 +65,37 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// The maximum time allowed to process the request.
     /// </summary>
     [Input(Description = "The maximum time allowed to process the request.", Category = "Upload")]
-    public Input<TimeSpan?> RequestTimeout { get; set; } = default!;
+    public Input<TimeSpan?> RequestTimeout { get; set; } = null!;
 
     /// <summary>
     /// The maximum request size allowed in bytes.
     /// </summary>
     [Input(Description = "The maximum request size allowed in bytes.", Category = "Upload")]
-    public Input<long?> RequestSizeLimit { get; set; } = default!;
+    public Input<long?> RequestSizeLimit { get; set; } = null!;
 
     /// <summary>
     /// The maximum request size allowed in bytes.
     /// </summary>
     [Input(Description = "The maximum file size allowed in bytes for an individual file.", Category = "Upload")]
-    public Input<long?> FileSizeLimit { get; set; } = default!;
+    public Input<long?> FileSizeLimit { get; set; } = null!;
 
     /// <summary>
     /// The allowed file extensions,
     /// </summary>
     [Input(Description = "Only file extensions in this list are allowed. Leave empty to allow all extensions", Category = "Upload", UIHint = InputUIHints.MultiText)]
-    public Input<ICollection<string>> AllowedFileExtensions { get; set; } = default!;
+    public Input<ICollection<string>> AllowedFileExtensions { get; set; } = null!;
 
     /// <summary>
     /// The allowed file extensions,
     /// </summary>
     [Input(Description = "File extensions in this list are forbidden. Leave empty to not block any extension.", Category = "Upload", UIHint = InputUIHints.MultiText)]
-    public Input<ICollection<string>> BlockedFileExtensions { get; set; } = default!;
+    public Input<ICollection<string>> BlockedFileExtensions { get; set; } = null!;
 
     /// <summary>
     /// The allowed file extensions,
     /// </summary>
     [Input(Description = "Only MIME types in this list are allowed. Leave empty to allow all types", Category = "Upload", UIHint = InputUIHints.MultiText)]
-    public Input<ICollection<string>> AllowedMimeTypes { get; set; } = default!;
+    public Input<ICollection<string>> AllowedMimeTypes { get; set; } = null!;
 
     /// <summary>
     /// A value indicating whether to expose the "Request too large" outcome.
@@ -125,31 +125,31 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// The parsed request content, if any.
     /// </summary>
     [Output(Description = "The parsed request content, if any.")]
-    public Output<object?> ParsedContent { get; set; } = default!;
+    public Output<object?> ParsedContent { get; set; } = null!;
 
     /// <summary>
     /// The uploaded files, if any.
     /// </summary>
     [Output(Description = "The uploaded files, if any.", IsSerializable = false)]
-    public Output<IFormFile[]> Files { get; set; } = default!;
+    public Output<IFormFile[]> Files { get; set; } = null!;
 
     /// <summary>
     /// The parsed route data, if any.
     /// </summary>
     [Output(Description = "The parsed route data, if any.")]
-    public Output<IDictionary<string, object>> RouteData { get; set; } = default!;
+    public Output<IDictionary<string, object>> RouteData { get; set; } = null!;
 
     /// <summary>
     /// The querystring data, if any.
     /// </summary>
     [Output(Description = "The querystring data, if any.")]
-    public Output<IDictionary<string, object>> QueryStringData { get; set; } = default!;
+    public Output<IDictionary<string, object>> QueryStringData { get; set; } = null!;
 
     /// <summary>
     /// The headers, if any.
     /// </summary>
     [Output(Description = "The headers, if any.")]
-    public Output<IDictionary<string, object>> Headers { get; set; } = default!;
+    public Output<IDictionary<string, object>> Headers { get; set; } = null!;
 
     /// <inheritdoc />
     protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context) => GetBookmarkPayloads(context.ExpressionExecutionContext);
@@ -205,7 +205,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         context.Set(Result, request);
 
         // Read route data, if any.
-        var path = context.GetWorkflowInput<PathString>(RequestPathInputKey);
+        var path = context.GetWorkflowInput<PathString>(PathInputKey);
         var routeData = GetRouteData(httpContext, path);
         var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value!);
         var queryStringDictionary = httpContext.Request.Query.ToObjectDictionary();
