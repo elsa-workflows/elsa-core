@@ -99,7 +99,6 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
-                    Key = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false),
                     SerializedValue = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false),
                     TenantId = table.Column<string>(type: "NVARCHAR2(450)", nullable: true)
                 },

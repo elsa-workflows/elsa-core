@@ -68,6 +68,7 @@ public class Configurations :
     public void Configure(EntityTypeBuilder<SerializedKeyValuePair> builder)
     {
         builder.HasKey(x => x.Id);
+        builder.Ignore(x => x.Key);
         builder.HasIndex(x => x.TenantId, $"IX_{nameof(SerializedKeyValuePair)}_{nameof(SerializedKeyValuePair.TenantId)}");
     }
 
