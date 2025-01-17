@@ -57,22 +57,6 @@ public class V3_3 : Migration
         Delete.Column("TenantId").FromTable("ActivityExecutionRecords");
         Delete.Column("TenantId").FromTable("KeyValuePairs");
         Rename.Column("Id").OnTable("KeyValuePairs").To("Key");
-
-        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
-            .Create
-            .Table("WorkflowInboxMessages")
-            .WithColumn("Id").AsString().PrimaryKey()
-            .WithColumn("ActivityTypeName").AsString().NotNullable().Indexed()
-            .WithColumn("WorkflowInstanceId").AsString().Nullable().Indexed()
-            .WithColumn("ActivityInstanceId").AsString().Nullable().Indexed()
-            .WithColumn("CorrelationId").AsString().Nullable().Indexed()
-            .WithColumn("Hash").AsString().NotNullable().Indexed()
-            .WithColumn("SerializedBookmarkPayload").AsString(MaxValue)
-            .WithColumn("SerializedInput").AsString(MaxValue).Nullable()
-            .WithColumn("CreatedAt").AsDateTimeOffset().Indexed()
-            .WithColumn("ExpiresAt").AsDateTimeOffset().Indexed()
-            ;
-
         Delete.Table("BookmarkQueueItems");
     }
 }
