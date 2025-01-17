@@ -14,7 +14,6 @@ public class V3_3 : Migration
     /// <inheritdoc />
     public override void Up()
     {
-        Delete.Table("WorkflowInboxMessages");
         Alter.Table("Triggers").AddColumn("TenantId").AsString().Nullable();
         Alter.Table("Bookmarks").AddColumn("TenantId").AsString().Nullable();
         Alter.Table("WorkflowExecutionLogRecords").AddColumn("TenantId").AsString().Nullable();
@@ -72,21 +71,6 @@ public class V3_3 : Migration
             .WithColumn("SerializedInput").AsString(MaxValue).Nullable()
             .WithColumn("CreatedAt").AsDateTimeOffset().Indexed()
             .WithColumn("ExpiresAt").AsDateTimeOffset().Indexed()
-            ;
-
-        IfDatabase("Sqlite")
-            .Create
-            .Table("WorkflowInboxMessages")
-            .WithColumn("Id").AsString().PrimaryKey()
-            .WithColumn("ActivityTypeName").AsString().NotNullable().Indexed()
-            .WithColumn("WorkflowInstanceId").AsString().Nullable().Indexed()
-            .WithColumn("ActivityInstanceId").AsString().Nullable().Indexed()
-            .WithColumn("CorrelationId").AsString().Nullable().Indexed()
-            .WithColumn("Hash").AsString().NotNullable().Indexed()
-            .WithColumn("SerializedBookmarkPayload").AsString(MaxValue)
-            .WithColumn("SerializedInput").AsString(MaxValue).Nullable()
-            .WithColumn("CreatedAt").AsDateTime2().Indexed()
-            .WithColumn("ExpiresAt").AsDateTime2().Indexed()
             ;
 
         Delete.Table("BookmarkQueueItems");
