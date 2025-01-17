@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Description>Provides an connection framework to use connection abtraction in activities</Description>
+		<PackageTags>elsa module connection abstratction</PackageTags>
+		<RootNamespace>Elsa.Connections</RootNamespace>
+	</PropertyGroup>
+
+
+	<ItemGroup>
+		<ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
+		<ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+		<ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+	</ItemGroup>
+</Project>
