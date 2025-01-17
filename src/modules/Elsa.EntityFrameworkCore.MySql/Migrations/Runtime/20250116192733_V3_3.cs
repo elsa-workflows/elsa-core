@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_3 : Migration
@@ -19,10 +19,11 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_KeyValuePairs",
+            migrationBuilder.RenameColumn(
+                name: "Key",
                 schema: _schema.Schema,
-                table: "KeyValuePairs");
+                table: "KeyValuePairs",
+                newName: "Id");
 
             migrationBuilder.RenameColumn(
                 name: "BookmarkId",
@@ -34,78 +35,80 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "WorkflowInboxMessages",
-                type: "text",
-                nullable: true);
+                type: "longtext",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "WorkflowExecutionLogRecords",
-                type: "text",
-                nullable: true);
+                type: "varchar(255)",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "Triggers",
-                type: "text",
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "Id",
-                schema: _schema.Schema,
-                table: "KeyValuePairs",
-                type: "text",
-                nullable: false,
-                defaultValue: "");
+                type: "varchar(255)",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "KeyValuePairs",
-                type: "text",
-                nullable: true);
+                type: "varchar(255)",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "Bookmarks",
-                type: "text",
-                nullable: true);
+                type: "varchar(255)",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "text",
-                nullable: true);
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_KeyValuePairs",
-                schema: _schema.Schema,
-                table: "KeyValuePairs",
-                column: "Id");
+                type: "varchar(255)",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "BookmarkQueueItems",
                 schema: _schema.Schema,
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: true),
-                    CorrelationId = table.Column<string>(type: "text", nullable: true),
-                    BookmarkId = table.Column<string>(type: "text", nullable: true),
-                    StimulusHash = table.Column<string>(type: "text", nullable: true),
-                    ActivityInstanceId = table.Column<string>(type: "text", nullable: true),
-                    ActivityTypeName = table.Column<string>(type: "text", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    SerializedOptions = table.Column<string>(type: "text", nullable: true),
-                    TenantId = table.Column<string>(type: "text", nullable: true)
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CorrelationId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    BookmarkId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    StimulusHash = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ActivityInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ActivityTypeName = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    SerializedOptions = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TenantId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_BookmarkQueueItems", x => x.Id);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowExecutionLogRecord_TenantId",
@@ -203,11 +206,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "Triggers");
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_KeyValuePairs",
-                schema: _schema.Schema,
-                table: "KeyValuePairs");
-
             migrationBuilder.DropIndex(
                 name: "IX_SerializedKeyValuePair_TenantId",
                 schema: _schema.Schema,
@@ -239,11 +237,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 table: "Triggers");
 
             migrationBuilder.DropColumn(
-                name: "Id",
-                schema: _schema.Schema,
-                table: "KeyValuePairs");
-
-            migrationBuilder.DropColumn(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "KeyValuePairs");
@@ -261,14 +254,14 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
             migrationBuilder.RenameColumn(
                 name: "Id",
                 schema: _schema.Schema,
+                table: "KeyValuePairs",
+                newName: "Key");
+
+            migrationBuilder.RenameColumn(
+                name: "Id",
+                schema: _schema.Schema,
                 table: "Bookmarks",
                 newName: "BookmarkId");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_KeyValuePairs",
-                schema: _schema.Schema,
-                table: "KeyValuePairs",
-                column: "Key");
         }
     }
 }

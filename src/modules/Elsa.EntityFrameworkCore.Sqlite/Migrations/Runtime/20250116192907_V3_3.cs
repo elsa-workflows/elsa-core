@@ -19,9 +19,10 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_KeyValuePairs",
-                table: "KeyValuePairs");
+            migrationBuilder.RenameColumn(
+                name: "Key",
+                table: "KeyValuePairs",
+                newName: "Id");
 
             migrationBuilder.RenameColumn(
                 name: "BookmarkId",
@@ -47,13 +48,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
-                name: "Id",
-                table: "KeyValuePairs",
-                type: "TEXT",
-                nullable: false,
-                defaultValue: "");
-
-            migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 table: "KeyValuePairs",
                 type: "TEXT",
@@ -70,11 +64,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 table: "ActivityExecutionRecords",
                 type: "TEXT",
                 nullable: true);
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_KeyValuePairs",
-                table: "KeyValuePairs",
-                column: "Id");
 
             migrationBuilder.CreateTable(
                 name: "BookmarkQueueItems",
@@ -176,10 +165,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 name: "IX_StoredTrigger_TenantId",
                 table: "Triggers");
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_KeyValuePairs",
-                table: "KeyValuePairs");
-
             migrationBuilder.DropIndex(
                 name: "IX_SerializedKeyValuePair_TenantId",
                 table: "KeyValuePairs");
@@ -205,10 +190,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 table: "Triggers");
 
             migrationBuilder.DropColumn(
-                name: "Id",
-                table: "KeyValuePairs");
-
-            migrationBuilder.DropColumn(
                 name: "TenantId",
                 table: "KeyValuePairs");
 
@@ -222,13 +203,13 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
             migrationBuilder.RenameColumn(
                 name: "Id",
+                table: "KeyValuePairs",
+                newName: "Key");
+
+            migrationBuilder.RenameColumn(
+                name: "Id",
                 table: "Bookmarks",
                 newName: "BookmarkId");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_KeyValuePairs",
-                table: "KeyValuePairs",
-                column: "Key");
         }
     }
 }
