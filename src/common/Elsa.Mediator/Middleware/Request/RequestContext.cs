@@ -36,7 +36,7 @@ public class RequestContext
     public CancellationToken CancellationToken { get; init; }
     
     /// <summary>
-    /// Gets the responses from each request handler.
+    /// Gets the response the request handler.
     /// </summary>
-    public ICollection<object> Responses { get; set; } = new List<object>();
+    public object? Response { get; set; }
 }

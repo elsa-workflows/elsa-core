@@ -3,7 +3,7 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Notifications;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Management.Handlers;
+namespace Elsa.Workflows.Management.Handlers.Notification;
 
 /// <summary>
 /// Deletes workflow instances when a workflow definition or version is deleted.

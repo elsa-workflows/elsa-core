@@ -16,7 +16,6 @@ using Elsa.Http.Tasks;
 using Elsa.Http.UIHints;
 using Elsa.Workflows;
 using Elsa.Workflows.Management.Requests;
-using Elsa.Workflows.Management.Responses;
 using FluentStorage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.StaticFiles;
@@ -168,7 +167,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddHttpContextAccessor()
 
             // Handlers.
-            .AddRequestHandler<ValidateWorkflowRequestHandler, ValidateWorkflowRequest, ValidateWorkflowResponse>()
+            .AddNotificationHandler<ValidateWorkflowRequestHandler>()
             .AddNotificationHandler<UpdateRouteTable>()
 
             // Content parsers.
