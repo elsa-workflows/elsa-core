@@ -15,8 +15,11 @@
         <!-- https://github.com/dotnet/sourcelink -->
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
         <Version>2.15</Version>
+
+        <IsTrimmable>false</IsTrimmable>
+        <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+
     </PropertyGroup>
 
     <ItemGroup>

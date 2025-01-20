@@ -28,10 +28,10 @@ COPY --from=client-build /app/designer/bindings/aspnet/Elsa.Designer.Components.
 # build and publish (UseAppHost=false created platform independent binaries)
 WORKDIR /source/src/dashboards/ElsaDashboard
 RUN dotnet build "ElsaDashboard.Web.csproj" -c Release -o /app/build
-RUN dotnet publish "ElsaDashboard.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net8.0
+RUN dotnet publish "ElsaDashboard.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net9.0
 
 # move binaries into smaller base image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim AS base
 WORKDIR /app
 COPY --from=build /app/publish ./
 

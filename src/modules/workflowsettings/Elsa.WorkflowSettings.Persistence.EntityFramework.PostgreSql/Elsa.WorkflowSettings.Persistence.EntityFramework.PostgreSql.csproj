@@ -4,7 +4,7 @@
     <Import Project="..\..\..\..\configureawait.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
         <Description>
             Elsa Workflow Settings is an optional part of Elsa Workflows.
             This package provides Entity Framework Core migrations for the PostgreSql database provider.
@@ -12,30 +12,6 @@
         <PackageTags>elsa, workflow settings, efcore, postgresql, npgsql</PackageTags>
     </PropertyGroup>
     
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0'">
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="5.0.10">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="5.0.10" />
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0'">
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.1">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="6.0.1" />
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.0">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.0" />
-    </ItemGroup>
-
     <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0'">
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.1">
             <PrivateAssets>all</PrivateAssets>
@@ -44,6 +20,14 @@
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
     </ItemGroup>
     
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net9.0'">
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.2" />
+    </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Elsa.WorkflowSettings.Persistence.EntityFramework.Core\Elsa.WorkflowSettings.Persistence.EntityFramework.Core.csproj" />
   </ItemGroup>
