@@ -6,8 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Identity.Client" Version="4.59.0" />
-        <PackageReference Include="System.Text.Encodings.Web" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Identity.Client" Version="4.60.1" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
     </ItemGroup>
 
     <ItemGroup>

@@ -39,7 +39,7 @@
         <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.3.0" />
         <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="7.0.2" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.3.0" />
-        <PackageReference Include="System.Text.Encodings.Web" Version="8.0.0" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
     </ItemGroup>
 
     <ItemGroup>

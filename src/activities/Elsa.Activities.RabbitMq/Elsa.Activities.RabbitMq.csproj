@@ -17,7 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Rebus.RabbitMq" Version="9.0.1" />
+      <PackageReference Include="Rebus.RabbitMq" Version="9.4.1" />
     </ItemGroup>
 
 </Project>

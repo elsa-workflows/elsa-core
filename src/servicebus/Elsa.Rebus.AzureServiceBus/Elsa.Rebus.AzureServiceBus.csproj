@@ -17,7 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Rebus.AzureServiceBus" Version="10.0.0" />
+        <PackageReference Include="Rebus.AzureServiceBus" Version="10.2.0" />
     </ItemGroup>
 
 </Project>

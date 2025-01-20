@@ -25,9 +25,9 @@
         <PackageReference Include="NodaTime" Version="3.0.9" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
-        <PackageReference Include="Rebus" Version="8.1.0" />
+        <PackageReference Include="Rebus" Version="8.7.1" />
         <PackageReference Include="System.Linq.Async" Version="5.1.0" />
-        <PackageReference Include="System.Text.Json" Version="6.0.1" />
+        <PackageReference Include="System.Text.Json" Version="9.0.1" />
         <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
     </ItemGroup>
 

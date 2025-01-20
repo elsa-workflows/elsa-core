@@ -28,7 +28,7 @@
         <PackageReference Include="Refit" Version="6.0.94" />
         <PackageReference Include="Refit.HttpClientFactory" Version="6.0.94" />
         <PackageReference Include="Refit.Newtonsoft.Json" Version="6.0.94" />
-        <PackageReference Include="System.Text.Encodings.Web" Version="8.0.0" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
     </ItemGroup>
 
 </Project>
