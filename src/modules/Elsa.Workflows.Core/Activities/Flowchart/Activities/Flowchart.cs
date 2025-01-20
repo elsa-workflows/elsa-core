@@ -227,7 +227,7 @@ public class Flowchart : Container
 
         if (!hasPendingWork)
         {
-            var hasFaultedActivities = context.GetActiveChildren().Any(x => x.Status == ActivityStatus.Faulted);
+            var hasFaultedActivities = context.Children.Any(x => x.Status == ActivityStatus.Faulted);
 
             if (!hasFaultedActivities)
             {
