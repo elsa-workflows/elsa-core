@@ -144,7 +144,7 @@ public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedSt
         {
             var invalidationRequestToken = cacheManager.GetToken(CacheInvalidationTokenKey);
             entry.AddExpirationToken(invalidationRequestToken);
-            entry.SetAbsoluteExpiration(cacheManager.CachingOptions.Value.CacheDuration);
+            entry.SetSlidingExpiration(cacheManager.CachingOptions.Value.CacheDuration);
             return await factory();
         });
     }

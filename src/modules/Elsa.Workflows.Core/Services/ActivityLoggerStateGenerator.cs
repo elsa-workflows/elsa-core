@@ -12,7 +12,7 @@ public class ActivityLoggerStateGenerator : ILoggerStateGenerator<ActivityExecut
     /// <returns>A <see cref="Dictionary{String, Object}" /> containing the state related to the <see cref="ActivityExecutionContext"/>.</returns>
     public Dictionary<string, object> GenerateLoggerState(ActivityExecutionContext activityExecutionContext)
     {
-        return new Dictionary<string, object>
+        return new()
         {
             ["ActivityInstanceId"] = activityExecutionContext.Id
         };

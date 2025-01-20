@@ -7,7 +7,7 @@ namespace Elsa.Common.Multitenancy.EventHandlers;
 public class StartRecurringTasks(RecurringTaskScheduleManager scheduleManager, ILogger<StartRecurringTasks> logger) : ITenantActivatedEvent, ITenantDeactivatedEvent
 {
     private readonly ICollection<ScheduledTimer> _scheduledTimers = new List<ScheduledTimer>();
-    private CancellationTokenSource _cancellationTokenSource = default!;
+    private CancellationTokenSource _cancellationTokenSource = null!;
 
     public async Task TenantActivatedAsync(TenantActivatedEventArgs args)
     {
@@ -16,7 +16,7 @@ public class StartRecurringTasks(RecurringTaskScheduleManager scheduleManager, I
         var tenantScope = args.TenantScope;
         var tasks = tenantScope.ServiceProvider.GetServices<IRecurringTask>().ToList();
         var taskExecutor = tenantScope.ServiceProvider.GetRequiredService<ITaskExecutor>();
-
+        
         foreach (var task in tasks)
         {
             var schedule = scheduleManager.GetScheduleFor(task.GetType());

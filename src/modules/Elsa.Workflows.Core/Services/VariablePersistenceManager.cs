@@ -40,18 +40,26 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
                     continue;
 
                 var id = GetStateId(variable);
-                var value = await driver.ReadAsync(id, storageDriverContext);
-                if (value == null) continue;
 
-                register.Declare(variable);
-
-                if (!variable.TryParseValue(value, out var parsedValue))
+                try
                 {
-                    logger.LogWarning("Failed to parse value for variable {VariableId} of type {VariableType} with value {Value}", variable.Id, variable.GetVariableType().FullName, value);
-                    continue;
-                }
+                    var value = await driver.ReadAsync(id, storageDriverContext);
+                    if (value == null) continue;
 
-                variable.Set(register, parsedValue);
+                    register.Declare(variable);
+
+                    if (!variable.TryParseValue(value, out var parsedValue))
+                    {
+                        logger.LogWarning("Failed to parse value for variable {VariableId} of type {VariableType} with value {Value}", variable.Id, variable.GetVariableType().FullName, value);
+                        continue;
+                    }
+
+                    variable.Set(register, parsedValue);    
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "Failed to read variable {VariableId} from storage driver {StorageDriverType}", variable.Id, driver.GetType().FullName);
+                }
             }
         }
     }
@@ -109,6 +117,17 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
             var storageDriverContext = new StorageDriverContext(context, variable, cancellationToken);
             await driver.DeleteAsync(id, storageDriverContext);
             register.Blocks.Remove(variable.Id);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteVariablesAsync(WorkflowExecutionContext context)
+    {
+        var activityContexts = context.ActivityExecutionContexts.ToList();
+
+        foreach (var activityContext in activityContexts)
+        {
+            await DeleteVariablesAsync(activityContext);
         }
     }
 

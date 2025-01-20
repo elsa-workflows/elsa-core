@@ -19,7 +19,7 @@ public class DefaultWorkflowStarter(IWorkflowDefinitionService workflowDefinitio
         });
 
         if (!canStart)
-            return new StartWorkflowResponse
+            return new()
             {
                 CannotStart = true
             };
@@ -35,7 +35,7 @@ public class DefaultWorkflowStarter(IWorkflowDefinitionService workflowDefinitio
         };
 
         var runWorkflowResponse = await workflowClient.CreateAndRunInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
-        return new StartWorkflowResponse
+        return new()
         {
             CannotStart = false,
             WorkflowInstanceId = runWorkflowResponse.WorkflowInstanceId,

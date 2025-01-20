@@ -52,19 +52,22 @@ public static class ObjectConverter
     /// Attempts to convert the source value into the destination type.
     /// </summary>
     public static T? ConvertTo<T>(this object? value, ObjectConverterOptions? converterOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), converterOptions) : default;
-    
+
     private static JsonSerializerOptions? _defaultSerializerOptions;
     private static JsonSerializerOptions? _internalSerializerOptions;
-    
+
     private static JsonSerializerOptions DefaultSerializerOptions => _defaultSerializerOptions ??= new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
         ReferenceHandler = ReferenceHandler.Preserve,
-        Converters = { new JsonStringEnumConverter() },
+        Converters =
+        {
+            new JsonStringEnumConverter()
+        },
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
     };
-    
+
     private static JsonSerializerOptions InternalSerializerOptions => _internalSerializerOptions ??= new JsonSerializerOptions
     {
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
@@ -81,7 +84,7 @@ public static class ObjectConverter
 
         var sourceType = value.GetType();
 
-        if (sourceType == targetType)
+        if (targetType.IsAssignableFrom(sourceType))
             return value;
 
         var serializerOptions = converterOptions?.SerializerOptions ?? DefaultSerializerOptions;
@@ -99,11 +102,12 @@ public static class ObjectConverter
             return jsonElement.Deserialize(targetType, serializerOptions);
         }
 
-        if (value is JsonNode jsonNode)
+        if (value is JsonNode jsonNode and not JsonArray) // If the value is a JsonNode, we can convert it to the target type. If it's a JsonArray, we let the enumerable conversion logic handle it.
         {
             return underlyingTargetType switch
             {
                 { } t when t == typeof(string) => jsonNode.ToString(),
+                { } t when t == typeof(ExpandoObject) && jsonNode.GetValueKind() == JsonValueKind.Object => JsonSerializer.Deserialize<ExpandoObject>(jsonNode.ToJsonString()),
                 { } t when t != typeof(object) || converterOptions?.DeserializeJsonObjectToObject == true => jsonNode.Deserialize(targetType, serializerOptions),
                 _ => jsonNode
             };
@@ -112,13 +116,13 @@ public static class ObjectConverter
         if (underlyingSourceType == typeof(string) && !underlyingTargetType.IsPrimitive && underlyingTargetType != typeof(object))
         {
             var stringValue = (string)value;
-            
+
             if (underlyingTargetType == typeof(byte[]))
             {
                 // Byte arrays are serialized to base64, so in this case, we convert the string back to the requested target type of byte[].
                 return Convert.FromBase64String(stringValue);
             }
-            
+
             try
             {
                 var firstChar = stringValue.TrimStart().FirstOrDefault();
@@ -145,7 +149,7 @@ public static class ObjectConverter
             return ConvertAnyDateType(value, underlyingTargetType);
 
         var internalSerializerOptions = InternalSerializerOptions;
-        
+
         if (typeof(IDictionary<string, object>).IsAssignableFrom(underlyingSourceType) && underlyingTargetType.IsClass)
         {
             if (typeof(ExpandoObject) == underlyingTargetType)
@@ -188,7 +192,7 @@ public static class ObjectConverter
 
             if (underlyingSourceType == typeof(double))
                 return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int), CultureInfo.InvariantCulture));
-            
+
             if (underlyingSourceType == typeof(long))
                 return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int), CultureInfo.InvariantCulture));
         }
@@ -203,7 +207,10 @@ public static class ObjectConverter
 
             // Perhaps it's a bit of a leap, but if the input is a string and the target type is IEnumerable<string>, then let's assume the string is a comma-separated list of strings.
             if (typeof(IEnumerable<string>).IsAssignableFrom(underlyingTargetType))
-                return new[] { s };
+                return new[]
+                {
+                    s
+                };
         }
 
         if (value is IEnumerable enumerable)
@@ -246,9 +253,7 @@ public static class ObjectConverter
     {
         var dateTypes = new[]
         {
-            typeof(DateTime),
-            typeof(DateTimeOffset),
-            typeof(DateOnly)
+            typeof(DateTime), typeof(DateTimeOffset), typeof(DateOnly)
         };
 
         return dateTypes.Contains(type);

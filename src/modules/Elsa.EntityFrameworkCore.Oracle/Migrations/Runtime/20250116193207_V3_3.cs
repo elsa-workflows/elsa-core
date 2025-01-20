@@ -35,7 +35,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                     ActivityTypeVersion = table.Column<int>(type: "NUMBER(10)", nullable: false),
                     ActivityName = table.Column<string>(type: "NVARCHAR2(450)", nullable: true),
                     StartedAt = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: false),
-                    HasBookmarks = table.Column<bool>(type: "NUMBER(1)", nullable: false),
+                    HasBookmarks = table.Column<bool>(type: "BOOLEAN", nullable: false),
                     Status = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
                     CompletedAt = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: true),
                     SerializedActivityState = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
@@ -78,7 +78,6 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
-                    BookmarkId = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false),
                     ActivityTypeName = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
                     Hash = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
@@ -100,7 +99,6 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
-                    Key = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false),
                     SerializedValue = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false),
                     TenantId = table.Column<string>(type: "NVARCHAR2(450)", nullable: true)
                 },

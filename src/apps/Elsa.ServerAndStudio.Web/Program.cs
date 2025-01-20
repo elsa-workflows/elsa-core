@@ -130,7 +130,11 @@ services
                 if (useCaching)
                     http.UseCache();
 
-                http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
+                http.ConfigureHttpOptions = options =>
+                {
+                    options.BaseUrl = new Uri(configuration["Hosting:BaseUrl"] ?? configuration["Http:BaseUrl"]!); // HttpBaseUrl is for backward compatibility.
+                    options.BasePath = configuration["Http:BasePath"];
+                };
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseWebhooks(webhooks => webhooks.ConfigureSinks = options => builder.Configuration.GetSection("Webhooks:Sinks").Bind(options))

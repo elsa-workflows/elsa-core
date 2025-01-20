@@ -6,7 +6,7 @@ on:
       - 'main'
       - 'bug/*'
   release:
-    types: [ prereleased ]
+    types: [ prereleased, published ]
 env:
   base_version: '3.3.0'
   feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
@@ -99,27 +99,12 @@ jobs:
       - name: Publish to feedz.io
         run: dotnet nuget push *.nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s ${{ env.feedz_feed_source }} --skip-duplicate
 
-  publish_preview_nuget:
-    name: Publish preview to nuget.org
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    if: ${{ github.event_name == 'prereleased' && github.event.action == 'published' }}
-    steps:
-      - name: Download Packages
-        uses: actions/download-artifact@v4.1.7
-        with:
-          name: elsa-nuget-packages
-
-      - name: Publish to nuget.org
-        run: dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s ${{ env.nuget_feed_source }} --skip-duplicate
-
   publish_nuget:
     name: Publish release to nuget.org
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
+    if: ${{ github.event.action == 'published' }}
     steps:
       - name: Download Packages
         uses: actions/download-artifact@v4.1.7

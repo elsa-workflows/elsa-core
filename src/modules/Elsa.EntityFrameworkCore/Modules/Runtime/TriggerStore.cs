@@ -37,8 +37,14 @@ public class EFCoreTriggerStore(EntityStore<RuntimeElsaDbContext, StoredTrigger>
     /// <inheritdoc />
     public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
-        var filter = new TriggerFilter { Ids = removed.Select(r => r.Id).ToList() };
-        await DeleteManyAsync(filter, cancellationToken);
+        var removedList = removed.ToList();
+        
+        if(removedList.Count > 0)
+        {
+            var filter = new TriggerFilter { Ids = removedList.Select(r => r.Id).ToList() };
+            await DeleteManyAsync(filter, cancellationToken);
+        }
+        
         await store.SaveManyAsync(added, OnSaveAsync, cancellationToken);
     }
 

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_3 : Migration
@@ -19,119 +19,75 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_KeyValuePairs",
+            migrationBuilder.RenameColumn(
+                name: "Key",
                 schema: _schema.Schema,
-                table: "KeyValuePairs");
+                table: "KeyValuePairs",
+                newName: "Id");
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_Bookmarks",
+            migrationBuilder.RenameColumn(
+                name: "BookmarkId",
                 schema: _schema.Schema,
-                table: "Bookmarks");
+                table: "Bookmarks",
+                newName: "Id");
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "WorkflowInboxMessages",
-                type: "nvarchar(max)",
+                type: "text",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "WorkflowExecutionLogRecords",
-                type: "nvarchar(450)",
+                type: "text",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "Triggers",
-                type: "nvarchar(450)",
+                type: "text",
                 nullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Key",
-                schema: _schema.Schema,
-                table: "KeyValuePairs",
-                type: "nvarchar(max)",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(450)");
-
-            migrationBuilder.AddColumn<string>(
-                name: "Id",
-                schema: _schema.Schema,
-                table: "KeyValuePairs",
-                type: "nvarchar(450)",
-                nullable: false,
-                defaultValue: "");
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "KeyValuePairs",
-                type: "nvarchar(450)",
+                type: "text",
                 nullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "BookmarkId",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                type: "nvarchar(max)",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(450)");
-
-            migrationBuilder.AddColumn<string>(
-                name: "Id",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                type: "nvarchar(450)",
-                nullable: false,
-                defaultValue: "");
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "Bookmarks",
-                type: "nvarchar(450)",
+                type: "text",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "nvarchar(450)",
+                type: "text",
                 nullable: true);
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_KeyValuePairs",
-                schema: _schema.Schema,
-                table: "KeyValuePairs",
-                column: "Id");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_Bookmarks",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                column: "Id");
 
             migrationBuilder.CreateTable(
                 name: "BookmarkQueueItems",
                 schema: _schema.Schema,
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    CorrelationId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    BookmarkId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    StimulusHash = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    ActivityInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    ActivityTypeName = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    SerializedOptions = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    TenantId = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: true),
+                    CorrelationId = table.Column<string>(type: "text", nullable: true),
+                    BookmarkId = table.Column<string>(type: "text", nullable: true),
+                    StimulusHash = table.Column<string>(type: "text", nullable: true),
+                    ActivityInstanceId = table.Column<string>(type: "text", nullable: true),
+                    ActivityTypeName = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    SerializedOptions = table.Column<string>(type: "text", nullable: true),
+                    TenantId = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -234,20 +190,10 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "Triggers");
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_KeyValuePairs",
-                schema: _schema.Schema,
-                table: "KeyValuePairs");
-
             migrationBuilder.DropIndex(
                 name: "IX_SerializedKeyValuePair_TenantId",
                 schema: _schema.Schema,
                 table: "KeyValuePairs");
-
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_Bookmarks",
-                schema: _schema.Schema,
-                table: "Bookmarks");
 
             migrationBuilder.DropIndex(
                 name: "IX_StoredBookmark_TenantId",
@@ -275,19 +221,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 table: "Triggers");
 
             migrationBuilder.DropColumn(
-                name: "Id",
-                schema: _schema.Schema,
-                table: "KeyValuePairs");
-
-            migrationBuilder.DropColumn(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "KeyValuePairs");
-
-            migrationBuilder.DropColumn(
-                name: "Id",
-                schema: _schema.Schema,
-                table: "Bookmarks");
 
             migrationBuilder.DropColumn(
                 name: "TenantId",
@@ -299,35 +235,17 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "Key",
+            migrationBuilder.RenameColumn(
+                name: "Id",
                 schema: _schema.Schema,
                 table: "KeyValuePairs",
-                type: "nvarchar(450)",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(max)");
+                newName: "Key");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "BookmarkId",
+            migrationBuilder.RenameColumn(
+                name: "Id",
                 schema: _schema.Schema,
                 table: "Bookmarks",
-                type: "nvarchar(450)",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(max)");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_KeyValuePairs",
-                schema: _schema.Schema,
-                table: "KeyValuePairs",
-                column: "Key");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_Bookmarks",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                column: "BookmarkId");
+                newName: "BookmarkId");
         }
     }
 }

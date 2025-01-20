@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_3 : Migration
@@ -19,146 +19,80 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_KeyValuePairs",
+            migrationBuilder.RenameColumn(
+                name: "Key",
                 schema: _schema.Schema,
-                table: "KeyValuePairs");
+                table: "KeyValuePairs",
+                newName: "Id");
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_Bookmarks",
+            migrationBuilder.RenameColumn(
+                name: "BookmarkId",
                 schema: _schema.Schema,
-                table: "Bookmarks");
+                table: "Bookmarks",
+                newName: "Id");
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "WorkflowInboxMessages",
-                type: "longtext",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
+                type: "nvarchar(max)",
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "WorkflowExecutionLogRecords",
-                type: "varchar(255)",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
+                type: "nvarchar(450)",
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "Triggers",
-                type: "varchar(255)",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Key",
-                schema: _schema.Schema,
-                table: "KeyValuePairs",
-                type: "longtext",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "varchar(255)")
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AddColumn<string>(
-                name: "Id",
-                schema: _schema.Schema,
-                table: "KeyValuePairs",
-                type: "varchar(255)",
-                nullable: false,
-                defaultValue: "")
-                .Annotation("MySql:CharSet", "utf8mb4");
+                type: "nvarchar(450)",
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "KeyValuePairs",
-                type: "varchar(255)",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "BookmarkId",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                type: "longtext",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "varchar(255)")
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AddColumn<string>(
-                name: "Id",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                type: "varchar(255)",
-                nullable: false,
-                defaultValue: "")
-                .Annotation("MySql:CharSet", "utf8mb4");
+                type: "nvarchar(450)",
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "Bookmarks",
-                type: "varchar(255)",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
+                type: "nvarchar(450)",
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "varchar(255)",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_KeyValuePairs",
-                schema: _schema.Schema,
-                table: "KeyValuePairs",
-                column: "Id");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_Bookmarks",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                column: "Id");
+                type: "nvarchar(450)",
+                nullable: true);
 
             migrationBuilder.CreateTable(
                 name: "BookmarkQueueItems",
                 schema: _schema.Schema,
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CorrelationId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    BookmarkId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    StimulusHash = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityTypeName = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    SerializedOptions = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TenantId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    CorrelationId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    BookmarkId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    StimulusHash = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ActivityInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ActivityTypeName = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    SerializedOptions = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TenantId = table.Column<string>(type: "nvarchar(450)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_BookmarkQueueItems", x => x.Id);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowExecutionLogRecord_TenantId",
@@ -256,20 +190,10 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "Triggers");
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_KeyValuePairs",
-                schema: _schema.Schema,
-                table: "KeyValuePairs");
-
             migrationBuilder.DropIndex(
                 name: "IX_SerializedKeyValuePair_TenantId",
                 schema: _schema.Schema,
                 table: "KeyValuePairs");
-
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_Bookmarks",
-                schema: _schema.Schema,
-                table: "Bookmarks");
 
             migrationBuilder.DropIndex(
                 name: "IX_StoredBookmark_TenantId",
@@ -297,19 +221,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 table: "Triggers");
 
             migrationBuilder.DropColumn(
-                name: "Id",
-                schema: _schema.Schema,
-                table: "KeyValuePairs");
-
-            migrationBuilder.DropColumn(
                 name: "TenantId",
                 schema: _schema.Schema,
                 table: "KeyValuePairs");
-
-            migrationBuilder.DropColumn(
-                name: "Id",
-                schema: _schema.Schema,
-                table: "Bookmarks");
 
             migrationBuilder.DropColumn(
                 name: "TenantId",
@@ -321,39 +235,17 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "Key",
+            migrationBuilder.RenameColumn(
+                name: "Id",
                 schema: _schema.Schema,
                 table: "KeyValuePairs",
-                type: "varchar(255)",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "longtext")
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
+                newName: "Key");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "BookmarkId",
+            migrationBuilder.RenameColumn(
+                name: "Id",
                 schema: _schema.Schema,
                 table: "Bookmarks",
-                type: "varchar(255)",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "longtext")
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_KeyValuePairs",
-                schema: _schema.Schema,
-                table: "KeyValuePairs",
-                column: "Key");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_Bookmarks",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                column: "BookmarkId");
+                newName: "BookmarkId");
         }
     }
 }

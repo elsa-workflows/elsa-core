@@ -2,6 +2,7 @@ using System.Text.Encodings.Web;
 using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
+using Elsa.Caching.Options;
 using Elsa.Common.DistributedHosting.DistributedLocks;
 using Elsa.Common.RecurringTasks;
 using Elsa.Common.Serialization;
@@ -27,6 +28,8 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.MongoDb.Modules.Tenants;
 using Elsa.OpenTelemetry.Middleware;
+using Elsa.Retention.Extensions;
+using Elsa.Retention.Models;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Management.Tasks;
 using Elsa.Secrets.Persistence;
@@ -36,6 +39,7 @@ using Elsa.Server.Web.Filters;
 using Elsa.Server.Web.Messages;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
+using Elsa.Workflows;
 using Elsa.Workflows.Api;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management;
@@ -45,6 +49,12 @@ using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Stores;
 using Elsa.Workflows.Runtime.Tasks;
+using Hangfire;
+using Hangfire.MemoryStorage;
+using Hangfire.PostgreSql;
+using Hangfire.PostgreSql.Factories;
+using Hangfire.SqlServer;
+using Hangfire.Storage.SQLite;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
@@ -75,9 +85,9 @@ const WorkflowRuntime workflowRuntime = WorkflowRuntime.Distributed;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
-const bool useTenantsFromConfiguration = false;
+const bool useTenantsFromConfiguration = true;
 const bool useAgents = false;
-const bool useSecrets = true;
+const bool useSecrets = false;
 const bool disableVariableWrappers = false;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -129,7 +139,36 @@ services
             });
 
         if (useHangfire)
-            elsa.UseHangfire();
+        {
+            JobStorage jobStorage;
+            if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+            {
+                jobStorage = new PostgreSqlStorage(new NpgsqlConnectionFactory(postgresConnectionString, new()
+                {
+                    QueuePollInterval = TimeSpan.FromSeconds(1)
+                }));
+            }
+            else if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite)
+            {
+                jobStorage = new SQLiteStorage(sqliteConnectionString, new()
+                {
+                    QueuePollInterval = TimeSpan.FromSeconds(1)
+                });
+            }
+            else if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
+            {
+                jobStorage = new SqlServerStorage(sqlServerConnectionString, new()
+                {
+                    QueuePollInterval = TimeSpan.FromSeconds(1)
+                });
+            }
+            else
+            {
+                jobStorage = new MemoryStorage();
+            }
+            
+            elsa.UseHangfire(hangfire => hangfire.UseJobStorage(jobStorage));
+        }
 
         elsa
             .AddActivitiesFrom<Program>()
@@ -150,7 +189,7 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
 #if !NET9_0
-                        else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) 
                             ef.UseMySql(mySqlConnectionString);
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
@@ -330,6 +369,12 @@ services
                     // Make sure to configure the path to the python DLL. E.g. /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
                     // alternatively, you can set the PYTHONNET_PYDLL environment variable.
                     configuration.GetSection("Scripting:Python").Bind(options);
+                    
+                    options.AddScript(sb =>
+                    {
+                        sb.AppendLine("def greet():");
+                        sb.AppendLine("    return \"Hello, welcome to Python!\"");
+                    });
                 };
             })
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
@@ -513,6 +558,19 @@ services
                 .UseSecretsScripting()
                 ;
         }
+        
+        elsa.UseRetention(r =>
+        {
+            r.SweepInterval = TimeSpan.FromHours(5);
+            r.AddDeletePolicy("Delete all finished workflows", sp =>
+            {
+                var filter = new RetentionWorkflowInstanceFilter
+                {
+                    WorkflowStatus = WorkflowStatus.Finished
+                };
+                return filter;
+            });
+        });
 
         if (useMultitenancy)
         {
@@ -549,7 +607,8 @@ services
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer) ef.UseSqlServer(sqlServerConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);
 #if !NET9_0
-                                if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) ef.UseMySql(mySqlConnectionString);
+                                if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) 
+                                    ef.UseMySql(mySqlConnectionString);
 #endif
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb) ef.UsePostgreSql(cockroachDbConnectionString);
                             });
@@ -582,7 +641,7 @@ services.Configure<RecurringTaskOptions>(options =>
 
 services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(10));
 
-//services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
+services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.AddHealthChecks();
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));

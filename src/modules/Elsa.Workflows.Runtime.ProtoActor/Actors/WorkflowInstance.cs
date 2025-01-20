@@ -161,7 +161,9 @@ internal class WorkflowInstance(
         await using var scope = scopeFactory.CreateAsyncScope();
         var serviceProvider = scope.ServiceProvider;
         var workflowCanceler = serviceProvider.GetRequiredService<IWorkflowCanceler>();
-        _workflowState = await workflowCanceler.CancelWorkflowAsync(WorkflowGraph, WorkflowState, Context.CancellationToken);
+        WorkflowState = await workflowCanceler.CancelWorkflowAsync(WorkflowGraph, WorkflowState, Context.CancellationToken);
+        var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
+        await workflowInstanceManager.SaveAsync(WorkflowState, Context.CancellationToken);
     }
 
     public override async Task<ExportWorkflowStateResponse> ExportState()
@@ -179,6 +181,9 @@ internal class WorkflowInstance(
         var workflowState = mappers.WorkflowStateJsonMapper.Map(request.SerializedWorkflowState);
         await EnsureStateAsync();
         WorkflowState = workflowState;
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
+        await workflowInstanceManager.SaveAsync(WorkflowState, Context.CancellationToken);
     }
 
     private async Task<RunWorkflowResult> RunAsync(RunWorkflowOptions runWorkflowOptions)
@@ -211,6 +216,8 @@ internal class WorkflowInstance(
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
         var workflowResult = await workflowRunner.RunAsync(WorkflowGraph, WorkflowState, runWorkflowOptions, _linkedCancellationToken);
         WorkflowState = workflowResult.WorkflowState;
+        var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
+        await workflowInstanceManager.SaveAsync(WorkflowState, Context.CancellationToken);
 
         return workflowResult;
     }
@@ -255,7 +262,7 @@ internal class WorkflowInstance(
 
         await using var scope = scopeFactory.CreateAsyncScope();
         var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
-        var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(workflowGraph.Workflow, workflowInstanceOptions, cancellationToken);
+        var workflowInstance = await workflowInstanceManager.CreateAndCommitWorkflowInstanceAsync(workflowGraph.Workflow, workflowInstanceOptions, cancellationToken);
         var workflowState = workflowInstance.WorkflowState;
         _workflowInstanceId = workflowState.Id;
         WorkflowGraph = workflowGraph;

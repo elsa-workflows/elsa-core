@@ -310,6 +310,7 @@ public class WorkflowRuntimeFeature : FeatureBase
 
             // Domain handlers.
             .AddCommandHandler<DispatchWorkflowCommandHandler>()
+            .AddCommandHandler<CancelWorkflowsCommandHandler>()
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeBulkDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeExecuteWorkflowActivity>()

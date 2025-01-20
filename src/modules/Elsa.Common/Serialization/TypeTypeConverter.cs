@@ -18,7 +18,7 @@ public class TypeTypeConverter : TypeConverter
         {
             if (TypeAliasRegistry.GetType(stringValue) is { } type)
                 return type;
-            return Type.GetType(stringValue);
+            return Type.GetType(stringValue) ?? throw new InvalidOperationException($"Type '{stringValue}' not found.");
         }
         return base.ConvertFrom(context, culture, value);
     }

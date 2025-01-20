@@ -49,7 +49,9 @@ internal abstract class EndpointBase<T>(
         };
         
         var startResponse = await workflowStarter.StartWorkflowAsync(startRequest, cancellationToken);
-        HttpContext.Response.Headers.Append("x-elsa-workflow-cannot-start", startResponse.CannotStart.ToString());
+        
+        if(!HttpContext.Response.HasStarted)
+            HttpContext.Response.Headers.Append("x-elsa-workflow-cannot-start", startResponse.CannotStart.ToString());
         
         if (startResponse.CannotStart)
         {
@@ -61,8 +63,9 @@ internal abstract class EndpointBase<T>(
         
         // Write the workflow instance ID to the response header.
         // This allows clients to read the header even if the workflow writes a response body
-        // (in which case, we can't transmit a JSON body that includes the instance ID). 
-        HttpContext.Response.Headers.Append("x-elsa-workflow-instance-id", instanceId);
+        // (in which case, we can't transmit a JSON body that includes the instance ID).
+        if(!HttpContext.Response.HasStarted)
+            HttpContext.Response.Headers.Append("x-elsa-workflow-instance-id", instanceId);
         
         var workflowClient = await workflowRuntime.CreateClientAsync(instanceId, cancellationToken);
 
@@ -84,7 +87,7 @@ internal abstract class EndpointBase<T>(
                 if (HttpContext.Response.StatusCode == StatusCodes.Status200OK)
                 {
                     var workflowState = await workflowClient.ExportStateAsync(cancellationToken);
-                    await SendOkAsync(new Response(workflowState), cancellationToken);
+                    await SendOkAsync(new(workflowState), cancellationToken);
                 }
             }
         }
