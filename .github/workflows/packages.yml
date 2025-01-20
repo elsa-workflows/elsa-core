@@ -5,6 +5,7 @@ on:
     branches:
       - 'main'
       - 'bug/*'
+      - 'perf/*'
   release:
     types: [ prereleased, published ]
 env:

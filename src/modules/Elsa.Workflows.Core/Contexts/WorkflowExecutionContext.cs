@@ -346,7 +346,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     public IReadOnlyCollection<ActivityExecutionContext> ActivityExecutionContexts
     {
-        get => _activityExecutionContexts.ToList();
+        get => _activityExecutionContexts.AsReadOnly();
         internal set => _activityExecutionContexts = value.ToList();
     }
 

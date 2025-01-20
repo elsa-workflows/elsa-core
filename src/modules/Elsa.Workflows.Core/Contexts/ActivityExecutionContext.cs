@@ -21,6 +21,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     private readonly ISystemClock _systemClock;
     private readonly List<Bookmark> _bookmarks = [];
     private long _executionCount;
+    private ActivityExecutionContext? _parentActivityExecutionContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ActivityExecutionContext"/> class.
@@ -39,7 +40,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     {
         _systemClock = systemClock;
         WorkflowExecutionContext = workflowExecutionContext;
-        ParentActivityExecutionContext = parentActivityExecutionContext;
+        _parentActivityExecutionContext = parentActivityExecutionContext;
         ExpressionExecutionContext = expressionExecutionContext;
         Activity = activity;
         ActivityDescriptor = activityDescriptor;
@@ -84,7 +85,15 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// The parent activity execution context, if any. 
     /// </summary>
-    public ActivityExecutionContext? ParentActivityExecutionContext { get; internal set; }
+    public ActivityExecutionContext? ParentActivityExecutionContext
+    {
+        get => _parentActivityExecutionContext;
+        internal set
+        {
+            _parentActivityExecutionContext = value;
+            _parentActivityExecutionContext?.Children.Add(this);
+        }
+    }
 
     /// <summary>
     /// The expression execution context.
@@ -159,6 +168,8 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// </summary>
     /// <remarks>As of tool version 3.0, all activity Ids are already unique, so there's no need to construct a hierarchical ID</remarks>
     public string NodeId => ActivityNode.NodeId;
+    
+    public ISet<ActivityExecutionContext> Children { get; } = new HashSet<ActivityExecutionContext>();
 
     /// <summary>
     /// A list of bookmarks created by the current activity.
