@@ -83,6 +83,11 @@ jobs:
           npm install -g webpack
           npm install -g webpack-cli
           npm run build
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
       
       - name: Build Elsa
         run: dotnet build --configuration Release /p:Version=$VERSION
