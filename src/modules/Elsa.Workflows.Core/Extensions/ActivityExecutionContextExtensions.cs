@@ -202,7 +202,7 @@ public static partial class ActivityExecutionContextExtensions
     /// </summary>
     public static IEnumerable<ActivityExecutionContext> GetDescendents(this ActivityExecutionContext context)
     {
-        var children = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+        var children = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
 
         foreach (var child in children)
         {
