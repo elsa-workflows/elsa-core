@@ -30,7 +30,7 @@ public class VariableDefinitionMapper
         if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(source.TypeName, out var type))
             return null;
 
-        var valueType = source.IsArray ? typeof(ICollection<>).MakeGenericType(type) : type;
+        var valueType = source.IsArray ? type.MakeArrayType() : type;
         var variableGenericType = typeof(Variable<>).MakeGenericType(valueType);
         var variable = (Variable)Activator.CreateInstance(variableGenericType)!;
 

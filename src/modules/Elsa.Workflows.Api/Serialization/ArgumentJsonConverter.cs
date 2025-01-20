@@ -44,7 +44,7 @@ public class ArgumentJsonConverter : JsonConverter<ArgumentDefinition>
         var type = _wellKnownTypeRegistry.GetTypeOrDefault(typeName);
 
         if (isArray)
-            type = type.MakeCollectionType();
+            type = type.MakeArrayType();
 
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.RemoveWhere(x => x is ArgumentJsonConverterFactory);

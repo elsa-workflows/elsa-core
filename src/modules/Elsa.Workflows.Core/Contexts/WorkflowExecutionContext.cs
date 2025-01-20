@@ -22,7 +22,7 @@ namespace Elsa.Workflows;
 /// <param name="Child">The child <see cref="IActivity"/> being scheduled.</param>
 /// <param name="CompletionCallback">The <see cref="ActivityCompletionCallback"/> delegate to invoke when the scheduled <see cref="Child"/> activity completes.</param>
 /// <param name="Tag">An optional tag.</param>
-public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, ActivityNode Child, ActivityCompletionCallback? CompletionCallback, object? Tag = default);
+public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, ActivityNode Child, ActivityCompletionCallback? CompletionCallback, object? Tag = null);
 
 /// <summary>
 /// Provides context to the currently executing workflow.
@@ -239,7 +239,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public WorkflowSubStatus SubStatus { get; internal set; }
 
     /// The root <see cref="MemoryRegister"/> associated with the execution context.
-    public MemoryRegister MemoryRegister { get; private set; } = default!;
+    public MemoryRegister MemoryRegister { get; private set; } = null!;
 
     /// A unique ID of the execution context.
     public string Id { get; set; }
@@ -346,7 +346,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     public IReadOnlyCollection<ActivityExecutionContext> ActivityExecutionContexts
     {
-        get => _activityExecutionContexts.ToList();
+        get => _activityExecutionContexts.AsReadOnly();
         internal set => _activityExecutionContexts = value.ToList();
     }
 
@@ -406,7 +406,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// Registers a completion callback for the specified activity.
     /// </summary>
-    internal void AddCompletionCallback(ActivityExecutionContext owner, ActivityNode child, ActivityCompletionCallback? completionCallback = default, object? tag = default)
+    internal void AddCompletionCallback(ActivityExecutionContext owner, ActivityNode child, ActivityCompletionCallback? completionCallback = null, object? tag = null)
     {
         var entry = new ActivityCompletionCallbackEntry(owner, child, completionCallback, tag);
         _completionCallbackEntries.Add(entry);
@@ -420,7 +420,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         var entry = _completionCallbackEntries.FirstOrDefault(x => x.Owner == owner && x.Child == child);
 
         if (entry == null)
-            return default;
+            return null;
 
         RemoveCompletionCallback(entry);
         return entry;
@@ -449,25 +449,25 @@ public partial class WorkflowExecutionContext : IExecutionContext
                     ? FindActivityByInstanceId(handle.ActivityInstanceId)
                     : handle.ActivityHash != null
                         ? FindActivityByHash(handle.ActivityHash)
-                        : default;
+                        : null;
     }
 
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> with the specified activity ID from the workflow graph.
     /// </summary>
-    public ActivityNode? FindNodeById(string nodeId) => NodeIdLookup.TryGetValue(nodeId, out var node) ? node : default;
+    public ActivityNode? FindNodeById(string nodeId) => NodeIdLookup.TryGetValue(nodeId, out var node) ? node : null;
 
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> with the specified hash of the activity node ID from the workflow graph.
     /// </summary>
     /// <param name="hash">The hash of the activity node ID.</param>
     /// <returns>The <see cref="ActivityNode"/> with the specified hash of the activity node ID.</returns>
-    public ActivityNode? FindNodeByHash(string hash) => NodeHashLookup.TryGetValue(hash, out var node) ? node : default;
+    public ActivityNode? FindNodeByHash(string hash) => NodeHashLookup.TryGetValue(hash, out var node) ? node : null;
 
     /// Returns the <see cref="ActivityNode"/> containing the specified activity from the workflow graph.
     public ActivityNode? FindNodeByActivity(IActivity activity)
     {
-        return NodeActivityLookup.TryGetValue(activity, out var node) ? node : default;
+        return NodeActivityLookup.TryGetValue(activity, out var node) ? node : null;
     }
 
     /// Returns the <see cref="ActivityNode"/> associated with the specified activity ID.
@@ -526,7 +526,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     }
 
     /// Creates a new <see cref="ActivityExecutionContext"/> for the specified activity.
-    public async Task<ActivityExecutionContext> CreateActivityExecutionContextAsync(IActivity activity, ActivityInvocationOptions? options = default)
+    public async Task<ActivityExecutionContext> CreateActivityExecutionContextAsync(IActivity activity, ActivityInvocationOptions? options = null)
     {
         var activityDescriptor = await ActivityRegistryLookup.FindAsync(activity) ?? throw new ActivityNotFoundException(activity.Type);
         var tag = options?.Tag;
@@ -568,7 +568,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public ActivityOutputRegister GetActivityOutputRegister() => TransientProperties.GetOrAdd(ActivityOutputRegistryKey, () => new ActivityOutputRegister());
 
     /// Returns the last activity result.
-    public object? GetLastActivityResult() => TransientProperties.TryGetValue(LastActivityResultKey, out var value) ? value : default;
+    public object? GetLastActivityResult() => TransientProperties.TryGetValue(LastActivityResultKey, out var value) ? value : null;
 
     /// Adds the specified <see cref="ActivityExecutionContext"/> to the workflow execution context.
     public void AddActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Add(context);

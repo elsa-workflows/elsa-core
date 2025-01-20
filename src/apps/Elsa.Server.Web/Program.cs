@@ -49,6 +49,12 @@ using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Stores;
 using Elsa.Workflows.Runtime.Tasks;
+using Hangfire;
+using Hangfire.MemoryStorage;
+using Hangfire.PostgreSql;
+using Hangfire.PostgreSql.Factories;
+using Hangfire.SqlServer;
+using Hangfire.Storage.SQLite;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
@@ -79,7 +85,7 @@ const WorkflowRuntime workflowRuntime = WorkflowRuntime.Distributed;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
-const bool useTenantsFromConfiguration = false;
+const bool useTenantsFromConfiguration = true;
 const bool useAgents = false;
 const bool useSecrets = false;
 const bool disableVariableWrappers = false;
@@ -133,7 +139,36 @@ services
             });
 
         if (useHangfire)
-            elsa.UseHangfire();
+        {
+            JobStorage jobStorage;
+            if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+            {
+                jobStorage = new PostgreSqlStorage(new NpgsqlConnectionFactory(postgresConnectionString, new()
+                {
+                    QueuePollInterval = TimeSpan.FromSeconds(1)
+                }));
+            }
+            else if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite)
+            {
+                jobStorage = new SQLiteStorage(sqliteConnectionString, new()
+                {
+                    QueuePollInterval = TimeSpan.FromSeconds(1)
+                });
+            }
+            else if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
+            {
+                jobStorage = new SqlServerStorage(sqlServerConnectionString, new()
+                {
+                    QueuePollInterval = TimeSpan.FromSeconds(1)
+                });
+            }
+            else
+            {
+                jobStorage = new MemoryStorage();
+            }
+            
+            elsa.UseHangfire(hangfire => hangfire.UseJobStorage(jobStorage));
+        }
 
         elsa
             .AddActivitiesFrom<Program>()
@@ -334,6 +369,12 @@ services
                     // Make sure to configure the path to the python DLL. E.g. /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
                     // alternatively, you can set the PYTHONNET_PYDLL environment variable.
                     configuration.GetSection("Scripting:Python").Bind(options);
+                    
+                    options.AddScript(sb =>
+                    {
+                        sb.AppendLine("def greet():");
+                        sb.AppendLine("    return \"Hello, welcome to Python!\"");
+                    });
                 };
             })
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)

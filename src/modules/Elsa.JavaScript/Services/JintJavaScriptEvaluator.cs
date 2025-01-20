@@ -91,7 +91,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
     private void ConfigureObjectConverters(Jint.Options options)
     {
-        options.Interop.ObjectConverters.AddRange([new ByteArrayConverter(), new EnumToStringConverter()]);
+        options.Interop.ObjectConverters.AddRange([new ByteArrayConverter(), new EnumToStringConverter(), new JsonElementConverter()]);
     }
 
     private void ConfigureArgumentGetters(Engine engine, ExpressionEvaluatorOptions options)

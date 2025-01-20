@@ -5,7 +5,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Notifications;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Management.Handlers;
+namespace Elsa.Workflows.Management.Handlers.Notification;
 
 /// <summary>
 /// Refreshes the <see cref="IActivityRegistry"/> for the <see cref="WorkflowDefinitionActivityProvider"/> provider whenever an <see cref="WorkflowDefinition"/> is published, retracted or deleted.

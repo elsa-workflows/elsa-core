@@ -18,6 +18,7 @@ using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Handlers;
+using Elsa.Workflows.Management.Handlers.Notification;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;

@@ -206,7 +206,7 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         if (filter.Name != null) queryable = queryable.Where(x => x.Name == filter.Name);
         if (filter.Names != null) queryable = queryable.Where(x => filter.Names.Contains(x.Name!));
         if (filter.UsableAsActivity != null) queryable = queryable.Where(x => EF.Property<bool>(x, "UsableAsActivity") == filter.UsableAsActivity);
-        if (!string.IsNullOrWhiteSpace(filter.SearchTerm)) queryable = queryable.Where(x => x.Name!.Contains(filter.SearchTerm) || x.Description!.Contains(filter.SearchTerm) || x.Id.Contains(filter.SearchTerm) || x.DefinitionId.Contains(filter.SearchTerm));
+        if (!string.IsNullOrWhiteSpace(filter.SearchTerm)) queryable = queryable.Where(x => x.Name!.ToLower().Contains(filter.SearchTerm.ToLower()) || x.Description!.ToLower().Contains(filter.SearchTerm.ToLower()) || x.Id.Contains(filter.SearchTerm) || x.DefinitionId.Contains(filter.SearchTerm));
 
         // TEMP: IsSystem may be null when upgrading from older versions of Elsa to 3.2. See issue #5366.
         // In a future version, we should remove this check and simply do queryable.Where(x => x.IsSystem == filter.IsSystem).

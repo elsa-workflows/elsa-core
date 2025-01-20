@@ -1,27 +1,20 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Management.Requests;
 
 namespace Elsa.Workflows.Management.Services;
 
 /// <inheritdoc />
-public class WorkflowValidator : IWorkflowValidator
+public class WorkflowValidator(INotificationSender notificationSender) : IWorkflowValidator
 {
-    private readonly IRequestSender _requestSender;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WorkflowValidator"/> class.
-    /// </summary>
-    public WorkflowValidator(IRequestSender requestSender)
-    {
-        _requestSender = requestSender;
-    }
-    
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowValidationError>> ValidateAsync(Workflow workflow, CancellationToken cancellationToken = default)
     {
-        var responses = await _requestSender.SendAsync(new ValidateWorkflowRequest(workflow), cancellationToken);
-        return responses.SelectMany(r => r.ValidationErrors).ToList();
+        var validationErrors = new List<WorkflowValidationError>();
+        var notification = new WorkflowDefinitionValidating(workflow, validationErrors);
+        await notificationSender.SendAsync(notification, cancellationToken);
+        return validationErrors;
     }
 }

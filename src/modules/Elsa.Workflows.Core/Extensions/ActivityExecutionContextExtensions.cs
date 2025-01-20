@@ -25,13 +25,13 @@ public static partial class ActivityExecutionContextExtensions
     /// <summary>
     /// Attempts to get a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
     /// </summary>
-    public static bool TryGetWorkflowInput<T>(this ActivityExecutionContext context, string key, out T value, JsonSerializerOptions? serializerOptions = default)
+    public static bool TryGetWorkflowInput<T>(this ActivityExecutionContext context, string key, out T value, JsonSerializerOptions? serializerOptions = null)
     {
         var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
 
         if (context.WorkflowInput.TryGetValue(key, out var v))
         {
-            value = v.ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
+            value = v.ConvertTo<T>(new(serializerOptions, wellKnownTypeRegistry))!;
             return true;
         }
 
@@ -42,15 +42,15 @@ public static partial class ActivityExecutionContextExtensions
     /// <summary>
     /// Gets a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
     /// </summary>
-    public static T GetWorkflowInput<T>(this ActivityExecutionContext context, JsonSerializerOptions? serializerOptions = default) => context.GetWorkflowInput<T>(typeof(T).Name, serializerOptions);
+    public static T GetWorkflowInput<T>(this ActivityExecutionContext context, JsonSerializerOptions? serializerOptions = null) => context.GetWorkflowInput<T>(typeof(T).Name, serializerOptions);
 
     /// <summary>
     /// Gets a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
     /// </summary>
-    public static T GetWorkflowInput<T>(this ActivityExecutionContext context, string key, JsonSerializerOptions? serializerOptions = default)
+    public static T GetWorkflowInput<T>(this ActivityExecutionContext context, string key, JsonSerializerOptions? serializerOptions = null)
     {
         var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
-        return context.WorkflowInput[key].ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
+        return context.WorkflowInput[key].ConvertTo<T>(new(serializerOptions, wellKnownTypeRegistry))!;
     }
 
     /// <summary>
@@ -61,7 +61,7 @@ public static partial class ActivityExecutionContextExtensions
     /// <exception cref="Exception">Thrown when the specified activity does not implement <see cref="IActivityWithResult"/>.</exception>
     public static void SetResult(this ActivityExecutionContext context, object? value)
     {
-        var activity = context.Activity as IActivityWithResult ?? throw new Exception($"Cannot set result on activity {context.Activity.Id} because it does not implement {nameof(IActivityWithResult)}.");
+        var activity = context.Activity as IActivityWithResult ?? throw new($"Cannot set result on activity {context.Activity.Id} because it does not implement {nameof(IActivityWithResult)}.");
         context.Set(activity.Result, value, "Result");
     }
 
@@ -79,7 +79,7 @@ public static partial class ActivityExecutionContextExtensions
     /// <param name="storageDriverType">The type of storage driver to use for the variable.</param>
     /// <param name="configure">A callback to configure the memory block.</param>
     /// <returns>The created <see cref="Variable"/>.</returns>
-    public static Variable CreateVariable(this ActivityExecutionContext context, string name, object? value, Type? storageDriverType = default, Action<MemoryBlock>? configure = default) =>
+    public static Variable CreateVariable(this ActivityExecutionContext context, string name, object? value, Type? storageDriverType = null, Action<MemoryBlock>? configure = null) =>
         context.ExpressionExecutionContext.CreateVariable(name, value, storageDriverType, configure);
 
     /// <summary>
@@ -90,7 +90,7 @@ public static partial class ActivityExecutionContextExtensions
     /// <param name="value">The value of the variable.</param>
     /// <param name="configure">A callback to configure the memory block.</param>
     /// <returns>The created <see cref="Variable"/>.</returns>
-    public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value, Action<MemoryBlock>? configure = default) =>
+    public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value, Action<MemoryBlock>? configure = null) =>
         context.ExpressionExecutionContext.SetVariable(name, value, configure);
 
     /// <summary>
@@ -194,50 +194,6 @@ public static partial class ActivityExecutionContextExtensions
         {
             yield return current;
             current = current.ParentActivityExecutionContext;
-        }
-    }
-
-    /// <summary>
-    /// Returns a flattened list of the current context's descendants.
-    /// </summary>
-    public static IEnumerable<ActivityExecutionContext> GetDescendents(this ActivityExecutionContext context)
-    {
-        var children = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
-
-        foreach (var child in children)
-        {
-            yield return child;
-
-            foreach (var descendent in GetDescendents(child))
-                yield return descendent;
-        }
-    }
-
-    /// <summary>
-    /// Returns a flattened list of the current context's immediate active children.
-    /// </summary>
-    public static IEnumerable<ActivityExecutionContext> GetActiveChildren(this ActivityExecutionContext context) =>
-        context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
-
-    /// <summary>
-    /// Returns a flattened list of the current context's immediate children.
-    /// </summary>
-    public static IEnumerable<ActivityExecutionContext> GetChildren(this ActivityExecutionContext context) =>
-        context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
-
-    /// <summary>
-    /// Returns a flattened list of the current context's descendants.
-    /// </summary>
-    public static IEnumerable<ActivityExecutionContext> GetDescendants(this ActivityExecutionContext context)
-    {
-        var children = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
-
-        foreach (var child in children)
-        {
-            yield return child;
-
-            foreach (var descendant in child.GetDescendants())
-                yield return descendant;
         }
     }
 

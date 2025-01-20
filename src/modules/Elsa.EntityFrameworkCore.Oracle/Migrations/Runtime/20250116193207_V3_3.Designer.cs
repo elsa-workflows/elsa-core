@@ -5,104 +5,106 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Oracle.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20241231122946_V3_3")]
+    [Migration("20250116193207_V3_3")]
     partial class V3_3
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
+            modelBuilder
+                .HasDefaultSchema("Elsa")
+                .HasAnnotation("ProductVersion", "8.0.11")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+
+            OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Key")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("SerializedValue")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex(new[] { "TenantId" }, "IX_SerializedKeyValuePair_TenantId");
 
-                    b.ToTable("KeyValuePairs");
+                    b.ToTable("KeyValuePairs", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.ActivityExecutionRecord", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityName")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<int>("ActivityTypeVersion")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("NUMBER(10)");
 
                     b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<bool>("HasBookmarks")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("BOOLEAN");
 
                     b.Property<string>("SerializedActivityState")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedActivityStateCompressionAlgorithm")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedException")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedOutputs")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedProperties")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<DateTimeOffset>("StartedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.HasKey("Id");
 
@@ -142,40 +144,40 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.HasIndex("ActivityType", "ActivityTypeVersion")
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType_ActivityTypeVersion");
 
-                    b.ToTable("ActivityExecutionRecords");
+                    b.ToTable("ActivityExecutionRecords", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueItem", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityInstanceId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityTypeName")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("BookmarkId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("CorrelationId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<string>("SerializedOptions")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("StimulusHash")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("WorkflowInstanceId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.HasKey("Id");
 
@@ -195,43 +197,43 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_BookmarkQueueItem_WorkflowInstanceId");
 
-                    b.ToTable("BookmarkQueueItems");
+                    b.ToTable("BookmarkQueueItems", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityInstanceId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityTypeName")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("CorrelationId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<string>("Hash")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("SerializedMetadata")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.HasKey("Id");
 
@@ -251,38 +253,38 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
 
-                    b.ToTable("Bookmarks");
+                    b.ToTable("Bookmarks", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredTrigger", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("Hash")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("WorkflowDefinitionVersionId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.HasKey("Id");
 
@@ -301,77 +303,77 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
-                    b.ToTable("Triggers");
+                    b.ToTable("Triggers", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowExecutionLogRecord", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityInstanceId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityName")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<int>("ActivityTypeVersion")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("NUMBER(10)");
 
                     b.Property<string>("EventName")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Message")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("ParentActivityInstanceId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<long>("Sequence")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("NUMBER(19)");
 
                     b.Property<string>("SerializedActivityState")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("Source")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("WorkflowDefinitionVersionId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<int>("WorkflowVersion")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("NUMBER(10)");
 
                     b.HasKey("Id");
 
@@ -426,45 +428,45 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.HasIndex("Timestamp", "Sequence")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp_Sequence");
 
-                    b.ToTable("WorkflowExecutionLogRecords");
+                    b.ToTable("WorkflowExecutionLogRecords", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowInboxMessage", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityInstanceId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("ActivityTypeName")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("CorrelationId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<string>("Hash")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("SerializedBookmarkPayload")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedInput")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("WorkflowInstanceId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.HasKey("Id");
 
@@ -482,7 +484,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_WorkflowInboxMessage_WorkflowInstanceId");
 
-                    b.ToTable("WorkflowInboxMessages");
+                    b.ToTable("WorkflowInboxMessages", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

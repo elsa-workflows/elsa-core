@@ -6,24 +6,10 @@ namespace Elsa.Mediator.Middleware.Request.Components;
 /// <summary>
 /// A middleware component that invokes request handlers.
 /// </summary>
-public class RequestHandlerInvokerMiddleware : IRequestMiddleware
+public class RequestHandlerInvokerMiddleware(
+    RequestMiddlewareDelegate next,
+    IEnumerable<IRequestHandler> requestHandlers) : IRequestMiddleware
 {
-    private readonly RequestMiddlewareDelegate _next;
-    private readonly IEnumerable<IRequestHandler> _requestHandlers;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RequestHandlerInvokerMiddleware"/> class.
-    /// </summary>
-    /// <param name="next">The next middleware in the pipeline.</param>
-    /// <param name="requestHandlers"></param>
-    public RequestHandlerInvokerMiddleware(
-        RequestMiddlewareDelegate next,
-        IEnumerable<IRequestHandler> requestHandlers)
-    {
-        _next = next;
-        _requestHandlers = requestHandlers;
-    }
-
     /// <inheritdoc />
     public async ValueTask InvokeAsync(RequestContext context)
     {
@@ -33,22 +19,26 @@ public class RequestHandlerInvokerMiddleware : IRequestMiddleware
         var requestType = request.GetType();
         var responseType = context.ResponseType;
         var handlerType = typeof(IRequestHandler<,>).MakeGenericType(requestType, responseType);
-        var handlers = _requestHandlers.Where(x => handlerType.IsInstanceOfType(x)).ToArray();
+        var handlers = requestHandlers.Where(x => handlerType.IsInstanceOfType(x)).ToArray();
+        
+        if (handlers.Length == 0)
+            throw new InvalidOperationException($"There is no handler to handle the {requestType.FullName} request");
 
-        foreach (var handler in handlers)
-        {
-            var handleMethod = handlerType.GetMethod("HandleAsync")!;
-            var cancellationToken = context.CancellationToken;
-            var task = (Task)handleMethod.Invoke(handler, new object?[] { request, cancellationToken })!;
-            await task;
+        if (handlers.Length > 1)
+            throw new InvalidOperationException($"Multiple handlers were found to handle the {requestType.FullName} request");
 
-            // Get result of task.
-            var taskWithReturnType = typeof(Task<>).MakeGenericType(responseType);
-            var resultProperty = taskWithReturnType.GetProperty(nameof(Task<object>.Result))!;
-            context.Responses.Add(resultProperty.GetValue(task)!);
-        }
+        var handler = handlers.First();
+        var handleMethod = handlerType.GetMethod("HandleAsync")!;
+        var cancellationToken = context.CancellationToken;
+        var task = (Task)handleMethod.Invoke(handler, [request, cancellationToken])!;
+        await task;
+
+        // Get result of task.
+        var taskWithReturnType = typeof(Task<>).MakeGenericType(responseType);
+        var resultProperty = taskWithReturnType.GetProperty(nameof(Task<object>.Result))!;
+        context.Response = resultProperty.GetValue(task)!;
 
         // Invoke next middleware.
-        await _next(context);
+        await next(context);
     }
 }

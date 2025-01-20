@@ -71,12 +71,12 @@ public class ActivityVisitor : IActivityVisitor
 
                 if (childNode == null)
                 {
-                    childNode = new ActivityNode(activity, activityPort.PortName);
+                    childNode = new(activity, activityPort.PortName);
                     collectedNodes.Add(childNode);
                 }
 
-                childNode.Parents.Add(pair.Node);
-                pair.Node.Children.Add(childNode);
+                childNode.AddParent(pair.Node);
+                pair.Node.AddChild(childNode);
                 collectedActivities.Add(activity);
                 await VisitRecursiveAsync((childNode, activity), visitorContext, cancellationToken);
             }
