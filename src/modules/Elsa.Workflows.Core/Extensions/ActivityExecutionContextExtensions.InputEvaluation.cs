@@ -139,7 +139,7 @@ public static partial class ActivityExecutionContextExtensions
             if (dictionaryWithValueOfInput != null)
             {
                 // create a temporary dictionary of values - this will be serialized and added to context.ActivityState below
-                var mapOfValues = new Dictionary<object, object?>();
+                var mapOfValues = new Dictionary<string, object?>();
                 foreach (DictionaryEntry entry in dictionaryWithValueOfInput)
                 {
                     Input? wrappedInput = entry.Value as Input;
@@ -156,7 +156,7 @@ public static partial class ActivityExecutionContextExtensions
                         context.ExpressionExecutionContext.Set(memoryReference, currentValue!);
                     }
 
-                    mapOfValues.Add(entry.Key, currentValue);
+                    mapOfValues.Add((string)entry.Key, currentValue);
                 }
                 value = mapOfValues;
             }

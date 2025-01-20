@@ -144,7 +144,7 @@ public class ActivityDescriber : IActivityDescriber
         }
 
         Type[] genericTypes = propertyInfo.PropertyType.GenericTypeArguments;
-        if (genericTypes.Length != 2 || !type.IsAssignableFrom(genericTypes[1]))
+        if (genericTypes.Length != 2 || genericTypes[0] != typeof(string)|| !type.IsAssignableFrom(genericTypes[1]))
         {
             return false;
         }
