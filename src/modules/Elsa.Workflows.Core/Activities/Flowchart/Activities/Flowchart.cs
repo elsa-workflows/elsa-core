@@ -96,8 +96,8 @@ public class Flowchart : Container
     {
         var workflowExecutionContext = context.WorkflowExecutionContext;
         var activityIds = Activities.Select(x => x.Id).ToList();
-        var descendantContexts = context.GetDescendents().Where(x => x.ParentActivityExecutionContext == context);
-        var hasRunningActivityInstances = descendantContexts.Where(x => activityIds.Contains(x.Activity.Id)).Any(x => x.Status == ActivityStatus.Running);
+        var children = context.Children;
+        var hasRunningActivityInstances = children.Where(x => activityIds.Contains(x.Activity.Id)).Any(x => x.Status == ActivityStatus.Running);
 
         var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(workItem =>
         {
