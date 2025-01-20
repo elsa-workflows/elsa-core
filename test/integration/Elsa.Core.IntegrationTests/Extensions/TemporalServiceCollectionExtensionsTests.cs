@@ -12,14 +12,14 @@ namespace Elsa.Core.IntegrationTests.Extensions
     public class TemporalServiceCollectionExtensionsTests
     {
         [Theory(DisplayName = "Starting a hosted app which uses only AddCommonTemporalActivities should throw InvalidOperationException because of the missing impl"), AutoMoqData]
-        public void AddCommonTemporalActivitiesThrowsDuringStartupIfNoTemporalImplementationPresent([WithCommonTemporalActivities] ElsaHostBuilderBuilder hostBuilderBuilder)
+        public async Task AddCommonTemporalActivitiesThrowsDuringStartupIfNoTemporalImplementationPresent([WithCommonTemporalActivities] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
 
             var cancellationSource = new CancellationTokenSource();
             try
             {
-                Assert.ThrowsAsync<InvalidOperationException>(() => StartAppAndAllowToRun(hostBuilder, cancellationToken: cancellationSource.Token));
+                await Assert.ThrowsAsync<InvalidOperationException>(() => StartAppAndAllowToRun(hostBuilder, cancellationToken: cancellationSource.Token));
             }
             finally
             {

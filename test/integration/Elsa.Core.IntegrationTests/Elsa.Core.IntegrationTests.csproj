@@ -1,36 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Autofixture" Version="4.17.0" />
-        <PackageReference Include="Autofixture.AutoMoq" Version="4.17.0" />
-        <PackageReference Include="autofixture.xunit2" Version="4.17.0" />
+        <PackageReference Include="Autofixture" Version="4.18.1" />
+        <PackageReference Include="Autofixture.AutoMoq" Version="4.18.1" />
+        <PackageReference Include="autofixture.xunit2" Version="4.18.1" />
         <PackageReference Include="Moq" Version="4.16.1" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
         <PackageReference Include="NodaTime.Testing" Version="3.0.9" />
-        <PackageReference Include="System.Text.Encodings.Web" Version="8.0.0" />
-        <PackageReference Include="xunit" Version="2.4.1" />
-        <PackageReference Include="XunitXml.TestLogger" Version="3.0.66" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+        <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
+        <PackageReference Include="xunit" Version="2.9.3" />
+        <PackageReference Include="XunitXml.TestLogger" Version="5.0.0" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="coverlet.collector" Version="3.1.0">
+        <PackageReference Include="coverlet.collector" Version="3.1.2">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="YesSql.Core" Version="3.0.7" />
         <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.7" />
         <PackageReference Include="YesSql.Provider.PostgreSql" Version="3.0.7" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.1" />
         <PackageReference Include="Hangfire.AspNetCore" Version="1.8.5" />
         <PackageReference Include="Hangfire.InMemory" Version="0.5.1" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.1" />
     </ItemGroup>
 
     <ItemGroup>

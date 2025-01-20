@@ -14,8 +14,8 @@
 
     <ItemGroup>
 <!--        <PackageReference Include="Microsoft.Azure.ServiceBus" Version="5.1.3" />-->
-        <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.5.1" />
-        <PackageReference Include="Microsoft.Azure.Management.ServiceBus.Fluent" Version="1.38.0" />
+        <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.18.2" />
+        <PackageReference Include="Microsoft.Azure.Management.ServiceBus.Fluent" Version="1.38.1" />
     </ItemGroup>
 
     <ItemGroup>

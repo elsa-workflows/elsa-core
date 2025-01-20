@@ -1,6 +1,6 @@
 # This dockerfile requires that all NPM packages there installed and build. 
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0-bookworm-slim-amd64 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim-amd64 AS build
 WORKDIR /source
 
 # restore packages
@@ -15,10 +15,10 @@ COPY *.props ./
 # build and publish (UseAppHost=false created platform independent binaries)
 WORKDIR /source/src/samples/dashboard/aspnetcore/ElsaDashboard.Samples.AspNetCore.Monolith
 RUN dotnet build "ElsaDashboard.Samples.AspNetCore.Monolith.csproj" -c Release -o /app/build
-RUN dotnet publish "ElsaDashboard.Samples.AspNetCore.Monolith.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net8.0
+RUN dotnet publish "ElsaDashboard.Samples.AspNetCore.Monolith.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net9.0
 
 # move binaries into smaller base image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim AS base
 WORKDIR /app
 COPY --from=build /app/publish ./
 

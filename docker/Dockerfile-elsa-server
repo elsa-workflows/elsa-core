@@ -15,7 +15,7 @@ RUN dotnet build "Elsa.Samples.Server.Host.csproj" -c Release -o /app/build
 RUN dotnet publish "Elsa.Samples.Server.Host.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore
 
 # move binaries into smaller base image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim AS base
 WORKDIR /app
 COPY --from=build /app/publish ./
 

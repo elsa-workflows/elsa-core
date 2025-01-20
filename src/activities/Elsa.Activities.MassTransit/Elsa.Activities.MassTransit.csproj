@@ -16,10 +16,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="MassTransit" Version="8.0.9" />
+      <PackageReference Include="MassTransit" Version="8.3.4" />
       <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1" />
-      <PackageReference Include="MassTransit.Quartz" Version="8.0.9" />
-      <PackageReference Include="MassTransit.RabbitMQ" Version="8.0.9" />
+      <PackageReference Include="MassTransit.Quartz" Version="8.3.4" />
+      <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.4" />
     </ItemGroup>
 
     <ItemGroup>

@@ -16,7 +16,7 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="NodaTime" Version="3.0.9" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
-        <PackageReference Include="Refit" Version="6.0.94" />
+        <PackageReference Include="Refit" Version="8.0.0" />
         <PackageReference Include="Refit.HttpClientFactory" Version="6.0.94" />
         <PackageReference Include="Refit.Newtonsoft.Json" Version="6.0.94" />
     </ItemGroup>
