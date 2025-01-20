@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
@@ -15,15 +15,12 @@
       <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.MySql\Elsa.Persistence.EntityFramework.MySql.csproj" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0'">
-      <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0'">
-      <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
-    </ItemGroup>
-
     <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0'">
         <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
     </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net9.0'">
+        <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
+    </ItemGroup>
+
 </Project>

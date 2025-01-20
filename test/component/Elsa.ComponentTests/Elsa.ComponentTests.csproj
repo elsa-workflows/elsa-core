@@ -1,36 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="AutoFixture" Version="4.17.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.1"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0"/>
-        <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0"/>
-        <PackageReference Include="xunit" Version="2.4.1"/>
-        <PackageReference Include="XunitXml.TestLogger" Version="3.0.66"/>
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+        <PackageReference Include="AutoFixture" Version="4.18.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.1" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
+        <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
+        <PackageReference Include="xunit" Version="2.9.3" />
+        <PackageReference Include="XunitXml.TestLogger" Version="5.0.0" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="coverlet.collector" Version="3.1.0">
+        <PackageReference Include="coverlet.collector" Version="3.1.2">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\src\clients\Elsa.Client\Elsa.Client.csproj"/>
-        <ProjectReference Include="..\..\..\src\samples\server\Elsa.Samples.Server.Host\Elsa.Samples.Server.Host.csproj"/>
-        <ProjectReference Include="..\..\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj"/>
+        <ProjectReference Include="..\..\..\src\clients\Elsa.Client\Elsa.Client.csproj" />
+        <ProjectReference Include="..\..\..\src\samples\server\Elsa.Samples.Server.Host\Elsa.Samples.Server.Host.csproj" />
+        <ProjectReference Include="..\..\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Assets"/>
+        <Folder Include="Assets" />
     </ItemGroup>
 
     <ItemGroup>
