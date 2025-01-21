@@ -388,7 +388,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence.Ent
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Kafka", "src\modules\Elsa.Kafka\Elsa.Kafka.csproj", "{BF934627-F531-44FB-BEC2-ECA801FF31E7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Command", "src\scripting\Elsa.Command\Elsa.Command.csproj", "{E302FEE1-17B5-4CCE-B072-F543A00E4D39}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.CommandExecuter", "src\scripting\Elsa.Command\Elsa.CommandExecuter.csproj", "{E302FEE1-17B5-4CCE-B072-F543A00E4D39}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

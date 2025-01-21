@@ -5,14 +5,14 @@ using Elsa.Features.Services;
 namespace Elsa.Extensions;
 
 /// <summary>
-/// Adds extensions to <see cref="IModule"/> that installs the <see cref="CommandFeature"/> feature.
+/// Adds extensions to <see cref="IModule"/> that installs the <see cref="CommandExecuterFeature"/> feature.
 /// </summary>
 public static class ModuleExtensions
 {
     /// <summary>
-    /// Setup the <see cref="CommandFeature"/> feature.
+    /// Setup the <see cref="CommandExecuterFeature"/> feature.
     /// </summary>
-    public static IModule UseCommandExecuter(this IModule module, Action<CommandFeature>? configure = default)
+    public static IModule UseCommandExecuter(this IModule module, Action<CommandExecuterFeature>? configure = default)
     {
         module.Configure(configure);
         return module;

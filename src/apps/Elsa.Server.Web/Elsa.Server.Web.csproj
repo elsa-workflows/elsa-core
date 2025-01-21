@@ -50,7 +50,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.WorkflowContexts\Elsa.WorkflowContexts.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
-        <ProjectReference Include="..\..\scripting\Elsa.Command\Elsa.Command.csproj" />
+        <ProjectReference Include="..\..\scripting\Elsa.Command\Elsa.CommandExecuter.csproj" />
     </ItemGroup>
 
     <ItemGroup>

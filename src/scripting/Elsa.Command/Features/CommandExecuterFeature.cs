@@ -12,10 +12,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Command.Features;
 [DependsOn(typeof(MediatorFeature))]
-public class CommandFeature : FeatureBase
+public class CommandExecuterFeature : FeatureBase
 {
     /// <inheritdoc />
-    public CommandFeature(IModule module) : base(module)
+    public CommandExecuterFeature(IModule module) : base(module)
     {
 
     }
@@ -30,10 +30,10 @@ public class CommandFeature : FeatureBase
         //    ;
 
         // Handlers.
-        Services.AddNotificationHandlersFrom<CommandFeature>();
+        Services.AddNotificationHandlersFrom<CommandExecuterFeature>();
 
         // Activities.
-        Module.AddActivitiesFrom<CommandFeature>();
+        Module.AddActivitiesFrom<CommandExecuterFeature>();
 
         // UI property handlers.
      //   Services.AddScoped<IPropertyUIHandler, RunCSharpOptionsProvider>();
