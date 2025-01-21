@@ -17,7 +17,7 @@ public class WorkflowCommandProvider : DropDownOptionsProviderBase
         var commandTypes = AppDomain.CurrentDomain.GetAssemblies()
             .Where(x => !x.IsDynamic)
            .SelectMany(x => x.GetExportedTypes())
-            .Where(x => x.IsClass && !x.IsAbstract && !x.IsGenericType && typeof(WorkFlowCommand).IsAssignableFrom(x))
+            .Where(x => x.IsClass && !x.IsAbstract && !x.IsGenericType && typeof(ElsaWorkFlowCommand).IsAssignableFrom(x))
             .Select(x => new SelectListItem(Regex.Replace(x.Name, "([A-Z]{1,2}|[0-9]+)", " $1").TrimStart(), x.FullName))
             .OrderBy(e => e.Text).ToList();
         return new ValueTask<ICollection<SelectListItem>>(commandTypes);

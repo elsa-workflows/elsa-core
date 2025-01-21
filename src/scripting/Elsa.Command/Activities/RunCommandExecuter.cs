@@ -32,9 +32,8 @@ public class RunCommandExecuter : Activity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var constructorsPotentialValues = new Dictionary<string, object?>();
-        constructorsPotentialValues.Add(nameof(WorkFlowCommand.WorkflowIntanceId), context.WorkflowExecutionContext.ParentWorkflowInstanceId);
-        constructorsPotentialValues.Add(nameof(WorkFlowCommand.WorkflowCorrelationId), context.WorkflowExecutionContext.CorrelationId);
-        constructorsPotentialValues.Add(nameof(WorkFlowCommand.WorkflowContextId), context.WorkflowExecutionContext.Id);
+        constructorsPotentialValues.Add(nameof(ElsaWorkFlowCommand.WorkflowIntanceId), context.WorkflowExecutionContext.Id);
+        constructorsPotentialValues.Add(nameof(ElsaWorkFlowCommand.WorkflowCorrelationId), context.WorkflowExecutionContext.CorrelationId);
 
         if (Payload != null)
         {
