@@ -119,7 +119,7 @@ public static class ExpressionExecutionContextExtensions
     public static Variable? GetVariable(this ExpressionExecutionContext context, string name, bool localScopeOnly = false)
     {
         var block = context.GetVariableBlock(name, localScopeOnly);
-        return block?.Metadata is VariableBlockMetadata metadata ? metadata.Variable : default;
+        return block?.Metadata is VariableBlockMetadata metadata ? metadata.Variable : null;
     }
 
     private static MemoryBlock? GetVariableBlock(this ExpressionExecutionContext context, string name, bool localScopeOnly = false)
@@ -138,7 +138,7 @@ public static class ExpressionExecutionContextExtensions
     /// Creates a named variable in the context.
     /// </summary>
     public static Variable CreateVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = null,
-        Action<MemoryBlock>? configure = default)
+        Action<MemoryBlock>? configure = null)
     {
         var existingVariable = context.GetVariable(name, localScopeOnly: true);
 
@@ -173,7 +173,7 @@ public static class ExpressionExecutionContextExtensions
     /// <summary>
     /// Sets the value of a named variable in the context.
     /// </summary>
-    public static Variable SetVariable<T>(this ExpressionExecutionContext context, string name, T? value, Action<MemoryBlock>? configure = default)
+    public static Variable SetVariable<T>(this ExpressionExecutionContext context, string name, T? value, Action<MemoryBlock>? configure = null)
     {
         var variable = context.GetVariable(name);
 
@@ -193,7 +193,7 @@ public static class ExpressionExecutionContextExtensions
     /// <summary>
     /// Sets the output to the specified value.
     /// </summary>
-    public static void Set(this ExpressionExecutionContext context, Output? output, object? value, Action<MemoryBlock>? configure = default)
+    public static void Set(this ExpressionExecutionContext context, Output? output, object? value, Action<MemoryBlock>? configure = null)
     {
         if (output != null)
         {
@@ -412,11 +412,11 @@ public static class ExpressionExecutionContextExtensions
         // Otherwise, return the input.
         var workflowExecutionContext = context.GetWorkflowExecutionContext();
         var input = workflowExecutionContext.Input;
-        return input.TryGetValue(name, out var value) ? value : default;
+        return input.TryGetValue(name, out var value) ? value : null;
     }
 
     /// <summary>
-    /// Returns the value of the specified input.
+    /// Returns the value of the specified output.
     /// </summary>
     /// <param name="context"></param>
     /// <param name="activityIdOrName">The ID or name of the activity.</param>
@@ -433,9 +433,9 @@ public static class ExpressionExecutionContextExtensions
             throw new InvalidOperationException("Activity not found.");
 
         var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
-        var outputRecordCandidates = outputRegister.FindMany(x => x.ActivityId == activity.Id && x.OutputName == outputName).ToList();
+        var outputRecordCandidates = outputRegister.FindMany(activity.Id, outputName);
         var containerIds = activityExecutionContext.GetAncestors().Select(x => x.Id).ToList();
-        var filteredOutputRecordCandidates = outputRecordCandidates.Where(x => containerIds.Contains(x.ContainerId)).ToList();
+        var filteredOutputRecordCandidates = outputRecordCandidates.Where(x => containerIds.Contains(x.ContainerId));
         var outputRecord = filteredOutputRecordCandidates.FirstOrDefault();
         return outputRecord?.Value;
     }

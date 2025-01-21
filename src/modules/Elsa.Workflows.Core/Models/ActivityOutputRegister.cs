@@ -5,8 +5,7 @@ namespace Elsa.Workflows.Models;
 /// </summary>
 public class ActivityOutputRegister
 {
-    private readonly List<ActivityOutputRecord> _records = new();
-    private readonly Dictionary<string, ActivityOutputRecord> _recordsByActivityIdAndOutputName = new();
+    private readonly Dictionary<string, List<ActivityOutputRecord>> _recordsByActivityIdAndOutputName = new();
     private readonly Dictionary<string, ActivityOutputRecord> _recordsByActivityInstanceIdAndOutputName = new();
 
     /// <summary>
@@ -46,16 +45,28 @@ public class ActivityOutputRegister
             outputName = outputDescriptor.Name;
 
         var record = new ActivityOutputRecord(containerId, activityId, activityInstanceId, outputName, outputValue);
-
-        _records.Add(record);
-        _recordsByActivityIdAndOutputName[CreateActivityIdLookupKey(activityId, outputName)] = record;
+        
         _recordsByActivityInstanceIdAndOutputName[CreateActivityInstanceIdLookupKey(activityInstanceId, outputName)] = record;
+        
+        var scopedRecordsKey = CreateActivityIdLookupKey(activityId, outputName);
+
+        if(!_recordsByActivityIdAndOutputName.TryGetValue(scopedRecordsKey, out var scopedRecords))
+        {
+            scopedRecords = new();
+            _recordsByActivityIdAndOutputName[scopedRecordsKey] = scopedRecords;
+        }
+        
+        scopedRecords.Add(record);
     }
 
     /// <summary>
-    /// Finds all output records matching the specified predicate.
+    ///  Finds all output records for the specified activity ID and output name.
     /// </summary>
-    public IEnumerable<ActivityOutputRecord> FindMany(Func<ActivityOutputRecord, bool> predicate) => _records.Where(predicate);
+    public IEnumerable<ActivityOutputRecord> FindMany(string activityId, string? outputName = null)
+    {
+        var key = CreateActivityIdLookupKey(activityId, outputName);
+        return _recordsByActivityIdAndOutputName.TryGetValue(key, out var records) ? records : Enumerable.Empty<ActivityOutputRecord>();
+    }
 
     /// <summary>
     /// Gets the output value for the specified activity ID.
@@ -65,10 +76,10 @@ public class ActivityOutputRegister
     /// <returns>The output value.</returns>
     public object? FindOutputByActivityId(string activityId, string? outputName = null)
     {
-        var key = CreateActivityIdLookupKey(activityId, outputName ?? DefaultOutputName);
-        return !_recordsByActivityIdAndOutputName.TryGetValue(key, out var record) 
+        var key = CreateActivityIdLookupKey(activityId, outputName);
+        return !_recordsByActivityIdAndOutputName.TryGetValue(key, out var records) 
             ? null 
-            : record.Value;
+            : records.FirstOrDefault();
     }
 
     /// <summary>
@@ -79,12 +90,12 @@ public class ActivityOutputRegister
     /// <returns>The output value.</returns>
     public object? FindOutputByActivityInstanceId(string activityInstanceId, string? outputName = null)
     {
-        var key = $"{activityInstanceId}:{outputName ?? DefaultOutputName}";
+        var key = CreateActivityInstanceIdLookupKey(activityInstanceId, outputName);
         return !_recordsByActivityInstanceIdAndOutputName.TryGetValue(key, out var record) 
             ? null 
             : record.Value;
     }
     
-    private string CreateActivityIdLookupKey(string activityId, string outputName) => $"{activityId}:{outputName}";
+    private string CreateActivityIdLookupKey(string activityId, string? outputName) => $"{activityId}:{outputName ?? DefaultOutputName}";
     private string CreateActivityInstanceIdLookupKey(string activityInstanceId, string? outputName) => $"{activityInstanceId}:{outputName ?? DefaultOutputName}";
 }
