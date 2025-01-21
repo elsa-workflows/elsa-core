@@ -143,7 +143,7 @@ public static class ExpressionExecutionContextExtensions
         var existingVariable = context.GetVariable(name, localScopeOnly: true);
 
         if (existingVariable != null)
-            throw new Exception($"Variable {name} already exists in the context.");
+            throw new($"Variable {name} already exists in the context.");
 
         var variable = new Variable(name, value)
         {
@@ -464,7 +464,7 @@ public static class ExpressionExecutionContextExtensions
             foreach (var output in activityDescriptor.Outputs)
             {
                 var outputPascalName = output.Name.Pascalize();
-                yield return new ActivityOutputs(activity.Id, activityIdPascalName, [
+                yield return new(activity.Id, activityIdPascalName, [
                     outputPascalName
                 ]);
             }
@@ -508,7 +508,7 @@ public static class ExpressionExecutionContextExtensions
             {
                 var inputPascalName = inputEntry.Key.Pascalize();
                 var inputValue = inputEntry.Value;
-                yield return new WorkflowInput(inputPascalName, inputValue);
+                yield return new(inputPascalName, inputValue);
             }
         }
         else
@@ -522,7 +522,7 @@ public static class ExpressionExecutionContextExtensions
 
                 var variable = variableBlockMetadata.Variable;
                 var variablePascalName = variable.Name.Pascalize();
-                yield return new WorkflowInput(variablePascalName, block.Value);
+                yield return new(variablePascalName, block.Value);
             }
         }
     }
