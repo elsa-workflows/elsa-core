@@ -351,6 +351,7 @@ services
                 options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
                 options.AppendScript("string SayHelloWorld() => Greet(\"World\");");
             })
+            .UseCommandExecuter()
             .UseJavaScript(options =>
             {
                 options.AllowClrAccess = true;
