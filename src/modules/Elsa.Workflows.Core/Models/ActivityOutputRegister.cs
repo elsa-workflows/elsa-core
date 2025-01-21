@@ -5,7 +5,9 @@ namespace Elsa.Workflows.Models;
 /// </summary>
 public class ActivityOutputRegister
 {
-    private readonly ICollection<ActivityOutputRecord> _records = new List<ActivityOutputRecord>();
+    private readonly List<ActivityOutputRecord> _records = new();
+    private readonly Dictionary<string, ActivityOutputRecord> _recordsByActivityIdAndOutputName = new();
+    private readonly Dictionary<string, ActivityOutputRecord> _recordsByActivityInstanceIdAndOutputName = new();
 
     /// <summary>
     /// The default output name.
@@ -19,7 +21,7 @@ public class ActivityOutputRegister
     /// <param name="outputValue">The output value.</param>
     public void Record(ActivityExecutionContext activityExecutionContext, object? outputValue)
     {
-        Record(activityExecutionContext, default, outputValue);
+        Record(activityExecutionContext, null, outputValue);
     }
 
     /// <summary>
@@ -39,13 +41,15 @@ public class ActivityOutputRegister
         // Inspect the output descriptor to see if the specified output name matches any PropertyInfo's name.
         // If so, use that descriptor's name instead.
         var outputDescriptor = activityExecutionContext.ActivityDescriptor.Outputs.FirstOrDefault(x => x.PropertyInfo?.Name == outputName);
-        
+
         if (outputDescriptor != null)
             outputName = outputDescriptor.Name;
 
         var record = new ActivityOutputRecord(containerId, activityId, activityInstanceId, outputName, outputValue);
 
         _records.Add(record);
+        _recordsByActivityIdAndOutputName[CreateActivityIdLookupKey(activityId, outputName)] = record;
+        _recordsByActivityInstanceIdAndOutputName[CreateActivityInstanceIdLookupKey(activityInstanceId, outputName)] = record;
     }
 
     /// <summary>
@@ -59,10 +63,12 @@ public class ActivityOutputRegister
     /// <param name="activityId">The activity ID.</param>
     /// <param name="outputName">Name of the output.</param>
     /// <returns>The output value.</returns>
-    public object? FindOutputByActivityId(string activityId, string? outputName = default)
+    public object? FindOutputByActivityId(string activityId, string? outputName = null)
     {
-        var record = _records.LastOrDefault(x => x.ActivityId == activityId && x.OutputName == (outputName ?? DefaultOutputName));
-        return record?.Value;
+        var key = CreateActivityIdLookupKey(activityId, outputName ?? DefaultOutputName);
+        return !_recordsByActivityIdAndOutputName.TryGetValue(key, out var record) 
+            ? null 
+            : record.Value;
     }
 
     /// <summary>
@@ -71,9 +77,14 @@ public class ActivityOutputRegister
     /// <param name="activityInstanceId">The activity instance ID.</param>
     /// <param name="outputName"></param>
     /// <returns>The output value.</returns>
-    public object? FindOutputByActivityInstanceId(string activityInstanceId, string? outputName = default)
+    public object? FindOutputByActivityInstanceId(string activityInstanceId, string? outputName = null)
     {
-        var record = _records.LastOrDefault(x => x.ActivityInstanceId == activityInstanceId && x.OutputName == (outputName ?? DefaultOutputName));
-        return record?.Value;
+        var key = $"{activityInstanceId}:{outputName ?? DefaultOutputName}";
+        return !_recordsByActivityInstanceIdAndOutputName.TryGetValue(key, out var record) 
+            ? null 
+            : record.Value;
     }
+    
+    private string CreateActivityIdLookupKey(string activityId, string outputName) => $"{activityId}:{outputName}";
+    private string CreateActivityInstanceIdLookupKey(string activityInstanceId, string? outputName) => $"{activityInstanceId}:{outputName ?? DefaultOutputName}";
 }
