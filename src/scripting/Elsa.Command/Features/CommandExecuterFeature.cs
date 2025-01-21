@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Elsa.CommandExecuter.Providers;
 using Elsa.Common.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Command.Features;
@@ -23,19 +25,9 @@ public class CommandExecuterFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        //// C# services.
-        //Services
-        //    .AddExpressionDescriptorProvider<CSharpExpressionDescriptorProvider>()
-        //    .AddScoped<ICSharpEvaluator, CSharpEvaluator>()
-        //    ;
 
-        // Handlers.
         Services.AddNotificationHandlersFrom<CommandExecuterFeature>();
-
-        // Activities.
         Module.AddActivitiesFrom<CommandExecuterFeature>();
-
-        // UI property handlers.
-     //   Services.AddScoped<IPropertyUIHandler, RunCSharpOptionsProvider>();
+        Services.AddScoped<IPropertyUIHandler, WorkflowCommandProvider>();
     }
 }
