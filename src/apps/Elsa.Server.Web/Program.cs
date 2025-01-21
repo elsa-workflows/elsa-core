@@ -3,6 +3,7 @@ using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
 using Elsa.Caching.Options;
+using Elsa.CommandExecuter.Contracts;
 using Elsa.Common.DistributedHosting.DistributedLocks;
 using Elsa.Common.RecurringTasks;
 using Elsa.Common.Serialization;
@@ -21,6 +22,8 @@ using Elsa.Identity.Multitenancy;
 using Elsa.Kafka;
 using Elsa.Kafka.Factories;
 using Elsa.MassTransit.Extensions;
+using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Models;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;
 using Elsa.MongoDb.Modules.Identity;
@@ -166,7 +169,7 @@ services
             {
                 jobStorage = new MemoryStorage();
             }
-            
+
             elsa.UseHangfire(hangfire => hangfire.UseJobStorage(jobStorage));
         }
 
@@ -370,7 +373,7 @@ services
                     // Make sure to configure the path to the python DLL. E.g. /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
                     // alternatively, you can set the PYTHONNET_PYDLL environment variable.
                     configuration.GetSection("Scripting:Python").Bind(options);
-                    
+
                     options.AddScript(sb =>
                     {
                         sb.AppendLine("def greet():");
@@ -559,7 +562,7 @@ services
                 .UseSecretsScripting()
                 ;
         }
-        
+
         elsa.UseRetention(r =>
         {
             r.SweepInterval = TimeSpan.FromHours(5);
@@ -631,6 +634,8 @@ services
 
 // Obfuscate HTTP request headers.
 services.AddActivityStateFilter<HttpRequestAuthenticationHeaderFilter>();
+builder.Services.AddCommandHandlersFrom<CreateOrderCommandHandler>();
+
 
 // Optionally configure recurring tasks using alternative schedules.
 services.Configure<RecurringTaskOptions>(options =>
@@ -708,4 +713,30 @@ public partial class Program
     /// Set by the test runner to configure the module for testing.
     /// </summary>
     public static Action<IModule>? ConfigureForTest { get; set; }
+}
+
+public class CreateOrderCommand : WorkFlowCommand
+{
+    public string CustomerName { get; set; }
+    public DateTime OrderDate { get; set; }
+}
+
+public class SendOTPCommand : WorkFlowCommand
+{
+    public string CustomerName { get; set; }
+    public DateTime OrderDate { get; set; }
+}
+public class PushNotificationCommand : WorkFlowCommand
+{
+    public string CustomerName { get; set; }
+    public DateTime OrderDate { get; set; }
+}
+
+public class CreateOrderCommandHandler : ICommandHandler<CreateOrderCommand>
+{
+    public async Task<Unit> HandleAsync(CreateOrderCommand command, CancellationToken cancellationToken)
+    {
+
+        return new Unit();
+    }
 }
