@@ -45,17 +45,17 @@ public class ActivityOutputRegister
             outputName = outputDescriptor.Name;
 
         var record = new ActivityOutputRecord(containerId, activityId, activityInstanceId, outputName, outputValue);
-        
+
         _recordsByActivityInstanceIdAndOutputName[CreateActivityInstanceIdLookupKey(activityInstanceId, outputName)] = record;
-        
+
         var scopedRecordsKey = CreateActivityIdLookupKey(activityId, outputName);
 
-        if(!_recordsByActivityIdAndOutputName.TryGetValue(scopedRecordsKey, out var scopedRecords))
+        if (!_recordsByActivityIdAndOutputName.TryGetValue(scopedRecordsKey, out var scopedRecords))
         {
             scopedRecords = new();
             _recordsByActivityIdAndOutputName[scopedRecordsKey] = scopedRecords;
         }
-        
+
         scopedRecords.Add(record);
     }
 
@@ -77,8 +77,8 @@ public class ActivityOutputRegister
     public object? FindOutputByActivityId(string activityId, string? outputName = null)
     {
         var key = CreateActivityIdLookupKey(activityId, outputName);
-        return !_recordsByActivityIdAndOutputName.TryGetValue(key, out var records) 
-            ? null 
+        return !_recordsByActivityIdAndOutputName.TryGetValue(key, out var records)
+            ? null
             : records.FirstOrDefault()?.Value;
     }
 
@@ -91,11 +91,11 @@ public class ActivityOutputRegister
     public object? FindOutputByActivityInstanceId(string activityInstanceId, string? outputName = null)
     {
         var key = CreateActivityInstanceIdLookupKey(activityInstanceId, outputName);
-        return !_recordsByActivityInstanceIdAndOutputName.TryGetValue(key, out var record) 
-            ? null 
+        return !_recordsByActivityInstanceIdAndOutputName.TryGetValue(key, out var record)
+            ? null
             : record.Value;
     }
-    
+
     private string CreateActivityIdLookupKey(string activityId, string? outputName) => $"{activityId}:{outputName ?? DefaultOutputName}";
     private string CreateActivityInstanceIdLookupKey(string activityInstanceId, string? outputName) => $"{activityInstanceId}:{outputName ?? DefaultOutputName}";
 }
