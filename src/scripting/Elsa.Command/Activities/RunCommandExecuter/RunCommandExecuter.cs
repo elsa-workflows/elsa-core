@@ -8,7 +8,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;
 using Elsa.Extensions;
 using Elsa.CommandExecuter.Contracts;
-namespace Elsa.Command.Activities;
+namespace Elsa.Command.Activities.RunCommandExecuter;
 
 [Activity("Elsa", "Scripting", "Runs a command predefined from the code base", DisplayName = "Run C# Command")]
 public class RunCommandExecuter : Activity
@@ -40,10 +40,11 @@ public class RunCommandExecuter : Activity
             var payloadItems = JsonSerializer.Deserialize<Dictionary<string, object>>(Payload.Get(context));
             TypeUtils.AddRangeOrOverwrite(constructorsPotentialValues, payloadItems);
         }
+
         var commandType = TypeUtils.GetType(Command.Get(context));
         var commandProperties = commandType.GetProperties();
- 
         var commandInstance = Activator.CreateInstance(commandType);
+
         foreach (var prop in commandProperties)
         {
             var variable = constructorsPotentialValues.FirstOrDefault(x => x.Key.Equals(prop.Name, StringComparison.OrdinalIgnoreCase));
@@ -53,7 +54,7 @@ public class RunCommandExecuter : Activity
 
             object paramValue = null;
 
-            if (variable.Value is System.Text.Json.JsonElement jsonElement)
+            if (variable.Value is JsonElement jsonElement)
             {
                 paramValue = HandleJsonElementValue(jsonElement, prop.PropertyType);
             }
@@ -72,7 +73,7 @@ public class RunCommandExecuter : Activity
 
 
     // in case of having a complex object
-    private static object HandleJsonElementValue(System.Text.Json.JsonElement jsonElement, Type propertyType)
+    private static object HandleJsonElementValue(JsonElement jsonElement, Type propertyType)
     {
         if (propertyType == typeof(DateOnly))
         {
@@ -94,5 +95,4 @@ public class RunCommandExecuter : Activity
             propertyType
         );
     }
-
 }
