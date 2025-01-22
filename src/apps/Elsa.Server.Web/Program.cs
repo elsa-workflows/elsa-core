@@ -634,8 +634,6 @@ services
 
 // Obfuscate HTTP request headers.
 services.AddActivityStateFilter<HttpRequestAuthenticationHeaderFilter>();
-builder.Services.AddCommandHandlersFrom<CreateOrderCommandHandler>();
-
 
 // Optionally configure recurring tasks using alternative schedules.
 services.Configure<RecurringTaskOptions>(options =>
@@ -713,30 +711,4 @@ public partial class Program
     /// Set by the test runner to configure the module for testing.
     /// </summary>
     public static Action<IModule>? ConfigureForTest { get; set; }
-}
-
-public class CreateOrderCommand : WorkFlowCommand
-{
-    public string CustomerName { get; set; }
-    public DateTime OrderDate { get; set; }
-}
-
-public class SendOTPCommand : WorkFlowCommand
-{
-    public string CustomerName { get; set; }
-    public DateTime OrderDate { get; set; }
-}
-public class PushNotificationCommand : WorkFlowCommand
-{
-    public string CustomerName { get; set; }
-    public DateTime OrderDate { get; set; }
-}
-
-public class CreateOrderCommandHandler : ICommandHandler<CreateOrderCommand>
-{
-    public async Task<Unit> HandleAsync(CreateOrderCommand command, CancellationToken cancellationToken)
-    {
-
-        return new Unit();
-    }
 }

@@ -10,5 +10,4 @@ public class ElsaWorkFlowCommand : ICommand
 {
     public string WorkflowIntanceId { get; internal set; }
     public string WorkflowCorrelationId { get; internal set; }
-    public Dictionary<string, object> WrokflowInputs { get; internal set; }
 }
