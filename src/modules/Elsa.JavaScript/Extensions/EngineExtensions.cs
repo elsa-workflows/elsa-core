@@ -24,12 +24,12 @@ public static class EngineExtensions
 
     internal static void SyncVariablesContainer(this Engine engine, IOptions<JintOptions> options, string name, object? value)
     {
-        if (!options.Value.DisableWrappers)
-        {
-            // To ensure both variable accessor syntaxes work, we need to update the variables container in the engine as well as the context to keep them in sync.
-            var variablesContainer = (IDictionary<string, object?>)engine.GetValue("variables").ToObject()!;
-            variablesContainer[name] = ObjectConverterHelper.ProcessVariableValue(engine, value);
-            engine.SetValue("variables", variablesContainer);
-        }
+        if (options.Value.DisableWrappers || options.Value.DisableVariableCopying)
+            return;
+
+        // To ensure both variable accessor syntaxes work, we need to update the variables container in the engine as well as the context to keep them in sync.
+        var variablesContainer = (IDictionary<string, object?>)engine.GetValue("variables").ToObject()!;
+        variablesContainer[name] = ObjectConverterHelper.ProcessVariableValue(engine, value);
+        engine.SetValue("variables", variablesContainer);
     }
 }
