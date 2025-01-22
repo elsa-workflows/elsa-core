@@ -1,4 +1,5 @@
 using System.Dynamic;
+using System.Text.RegularExpressions;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Extensions;
@@ -8,7 +9,6 @@ using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
 using JetBrains.Annotations;
-using Jint;
 using Jint.Native;
 using Microsoft.Extensions.Options;
 
@@ -18,12 +18,14 @@ namespace Elsa.JavaScript.Handlers;
 /// A handler that configures the Jint engine with workflow variables.
 /// </summary>
 [UsedImplicitly]
-public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INotificationHandler<EvaluatingJavaScript>, INotificationHandler<EvaluatedJavaScript>
+public partial class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INotificationHandler<EvaluatingJavaScript>, INotificationHandler<EvaluatedJavaScript>
 {
+    private bool IsEnabled => options.Value is { DisableWrappers: false, DisableVariableCopying: false };
+
     /// <inheritdoc />
     public Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
-        if (options.Value.DisableWrappers)
+        if (!IsEnabled)
             return Task.CompletedTask;
 
         CopyVariablesIntoEngine(notification);
@@ -32,7 +34,7 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
 
     public Task HandleAsync(EvaluatedJavaScript notification, CancellationToken cancellationToken)
     {
-        if (options.Value.DisableWrappers)
+        if (!IsEnabled)
             return Task.CompletedTask;
 
         CopyVariablesIntoWorkflowExecutionContext(notification);
@@ -60,7 +62,8 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
     {
         var engine = notification.Engine;
         var context = notification.Context;
-        var variableNames = context.GetVariableNamesInScope().FilterInvalidVariableNames().ToList();
+        var expression = notification.Expression;
+        var variableNames = GetUsedVariableNames(context, expression).ToList();
         var variablesContainer = (IDictionary<string, object?>)new ExpandoObject();
 
         foreach (var variableName in variableNames)
@@ -71,6 +74,17 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
         }
 
         engine.SetValue("variables", variablesContainer);
+    }
+
+    private IEnumerable<string> GetUsedVariableNames(ExpressionExecutionContext context, string expression)
+    {
+        var variableNames = context.GetVariableNamesInScope().FilterInvalidVariableNames();
+
+        var variableNamesInScript = ExtractVariableNamesRegex().Matches(expression)
+            .Select(m => m.Groups[1].Value)
+            .ToList();
+        
+        return variableNames.Where(x => variableNamesInScript.Contains(x));
     }
 
     private IEnumerable<string> GetInputNames(ExpressionExecutionContext context)
@@ -95,4 +109,7 @@ public class ConfigureEngineWithVariables(IOptions<JintOptions> options) : INoti
             activityExecutionContext = activityExecutionContext.ParentActivityExecutionContext;
         }
     }
+
+    [GeneratedRegex(@"variables\.(\w+)(?:\.\w+)*")]
+    private static partial Regex ExtractVariableNamesRegex();
 }
