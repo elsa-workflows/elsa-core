@@ -47,7 +47,7 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
     /// </summary>
     [Input(Description = "The input to send to the workflow.")]
     public Input<IDictionary<string, object>?> Input { get; set; } = null!;
-    
+
     /// <summary>
     /// True to wait for the child workflow to complete before completing this activity. If not set, the child workflow will be executed until it either completes or goes idle before this activity completes.
     /// </summary>
@@ -59,14 +59,14 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
     {
         var waitForCompletion = WaitForCompletion.Get(context);
         var result = await ExecuteWorkflowAsync(context, waitForCompletion);
-        
-        if(!waitForCompletion || result.Status == WorkflowStatus.Finished)
+
+        if (!waitForCompletion || result.Status == WorkflowStatus.Finished)
         {
             context.SetResult(result);
             await context.CompleteActivityAsync();
             return;
         }
-        
+
         // Since the child workflow is still running, we need to wait for it to complete using a bookmark.
         var bookmarkOptions = new CreateBookmarkArgs
         {
@@ -85,7 +85,7 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
 
         if (workflowGraph == null)
             throw new($"No published version of workflow definition with ID {workflowDefinitionId} found.");
-        
+
         var parentInstanceId = context.WorkflowExecutionContext.Id;
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
         var correlationId = CorrelationId.GetOrDefault(context);
@@ -95,12 +95,13 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
         {
             ["ParentInstanceId"] = parentInstanceId
         };
-        
-        if(waitForCompletion)
+
+        // If we need to wait for the child workflow to complete, set the property. This will be used by the ResumeExecuteWorkflowActivity to resume the parent workflow.
+        if (waitForCompletion)
             properties["WaitForCompletion"] = true;
-        
+
         input["ParentInstanceId"] = parentInstanceId;
-        
+
         var options = new RunWorkflowOptions
         {
             ParentWorkflowInstanceId = parentInstanceId,
@@ -121,7 +122,7 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
 
         return info;
     }
-    
+
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
