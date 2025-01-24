@@ -104,19 +104,18 @@ public class BulkDispatchWorkflows : Activity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var waitForCompletion = WaitForCompletion.GetOrDefault(context);
-        var items = context.GetItemSource<object>(Items);
-        var dispatchedInstancesCount = 0;
+        var items = await context.GetItemSource<object>(Items).ToListAsync(context.CancellationToken);
+        var count = items.Count;
 
-        await foreach (var item in items)
-        {
-            await DispatchChildWorkflowAsync(context, item);
-            dispatchedInstancesCount++;
-        }
+        // Dispatch the child workflows.
+        foreach (var item in items)
+            await DispatchChildWorkflowAsync(context, item, waitForCompletion);
 
-        context.SetProperty(DispatchedInstancesCountKey, dispatchedInstancesCount);
+        // Store the number of dispatched instances for tracking.
+        context.SetProperty(DispatchedInstancesCountKey, count);
 
         // If we need to wait for the child workflows to complete (if any), create a bookmark.
-        if (waitForCompletion && dispatchedInstancesCount > 0)
+        if (waitForCompletion && count > 0)
         {
             var workflowInstanceId = context.WorkflowExecutionContext.Id;
             var bookmarkOptions = new CreateBookmarkArgs
@@ -125,11 +124,12 @@ public class BulkDispatchWorkflows : Activity
                 Stimulus = new BulkDispatchWorkflowsStimulus(workflowInstanceId)
                 {
                     ParentInstanceId = context.WorkflowExecutionContext.Id,
-                    ScheduledInstanceIdsCount = dispatchedInstancesCount
+                    ScheduledInstanceIdsCount = count
                 },
                 IncludeActivityInstanceId = false,
                 AutoBurn = false,
             };
+
             context.CreateBookmark(bookmarkOptions);
         }
         else
@@ -139,9 +139,15 @@ public class BulkDispatchWorkflows : Activity
         }
     }
 
-    private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, object item)
+    private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, object item, bool waitForCompletion)
     {
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
+        var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published);
+
+        if (workflowGraph == null)
+            throw new($"No published version of workflow definition with ID {workflowDefinitionId} found.");
+
         var parentInstanceId = context.WorkflowExecutionContext.Id;
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
         var channelName = ChannelName.GetOrDefault(context);
@@ -150,6 +156,9 @@ public class BulkDispatchWorkflows : Activity
         {
             ["ParentInstanceId"] = parentInstanceId
         };
+
+        if (waitForCompletion)
+            properties["WaitForCompletion"] = true;
 
         var itemDictionary = new Dictionary<string, object>
         {
@@ -168,12 +177,6 @@ public class BulkDispatchWorkflows : Activity
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
-        var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published);
-
-        if (workflowGraph == null)
-            throw new Exception($"No published version of workflow definition with ID {workflowDefinitionId} found.");
-
         var correlationId = CorrelationIdFunction != null ? await evaluator.EvaluateAsync<string>(CorrelationIdFunction!, context.ExpressionExecutionContext, evaluatorOptions) : null;
         var instanceId = identityGenerator.GenerateId();
         var request = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)

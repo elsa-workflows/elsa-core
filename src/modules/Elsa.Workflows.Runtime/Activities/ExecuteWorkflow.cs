@@ -19,7 +19,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
 {
     /// <inheritdoc />
-    public ExecuteWorkflow([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public ExecuteWorkflow([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -31,7 +31,7 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
         Description = "The definition ID of the workflow to execute.",
         UIHint = InputUIHints.WorkflowDefinitionPicker
     )]
-    public Input<string> WorkflowDefinitionId { get; set; } = default!;
+    public Input<string> WorkflowDefinitionId { get; set; } = null!;
 
     /// <summary>
     /// The correlation ID to associate the workflow with. 
@@ -40,33 +40,33 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
         DisplayName = "Correlation ID",
         Description = "The correlation ID to associate the workflow with."
     )]
-    public Input<string?> CorrelationId { get; set; } = default!;
+    public Input<string?> CorrelationId { get; set; } = null!;
 
     /// <summary>
     /// The input to send to the workflow.
     /// </summary>
     [Input(Description = "The input to send to the workflow.")]
-    public Input<IDictionary<string, object>?> Input { get; set; } = default!;
-    
+    public Input<IDictionary<string, object>?> Input { get; set; } = null!;
+
     /// <summary>
     /// True to wait for the child workflow to complete before completing this activity. If not set, the child workflow will be executed until it either completes or goes idle before this activity completes.
     /// </summary>
     [Input(Description = "Wait for the child workflow to complete before completing this activity.")]
-    public Input<bool> WaitForCompletion { get; set; } = default!;
+    public Input<bool> WaitForCompletion { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var result = await ExecuteWorkflowAsync(context);
         var waitForCompletion = WaitForCompletion.Get(context);
-        
-        if(!waitForCompletion || result.Status == WorkflowStatus.Finished)
+        var result = await ExecuteWorkflowAsync(context, waitForCompletion);
+
+        if (!waitForCompletion || result.Status == WorkflowStatus.Finished)
         {
             context.SetResult(result);
             await context.CompleteActivityAsync();
             return;
         }
-        
+
         // Since the child workflow is still running, we need to wait for it to complete using a bookmark.
         var bookmarkOptions = new CreateBookmarkArgs
         {
@@ -77,23 +77,36 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
         context.CreateBookmark(bookmarkOptions);
     }
 
-    private async ValueTask<ExecuteWorkflowResult> ExecuteWorkflowAsync(ActivityExecutionContext context)
+    private async ValueTask<ExecuteWorkflowResult> ExecuteWorkflowAsync(ActivityExecutionContext context, bool waitForCompletion)
     {
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
-        var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
-        var correlationId = CorrelationId.GetOrDefault(context);
-        var workflowInvoker = context.GetRequiredService<IWorkflowInvoker>();
-        var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
         var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published, context.CancellationToken);
 
         if (workflowGraph == null)
-            throw new Exception($"No published version of workflow definition with ID {workflowDefinitionId} found.");
+            throw new($"No published version of workflow definition with ID {workflowDefinitionId} found.");
+
+        var parentInstanceId = context.WorkflowExecutionContext.Id;
+        var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
+        var correlationId = CorrelationId.GetOrDefault(context);
+        var workflowInvoker = context.GetRequiredService<IWorkflowInvoker>();
+        var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
+        var properties = new Dictionary<string, object>
+        {
+            ["ParentInstanceId"] = parentInstanceId
+        };
+
+        // If we need to wait for the child workflow to complete, set the property. This will be used by the ResumeExecuteWorkflowActivity to resume the parent workflow.
+        if (waitForCompletion)
+            properties["WaitForCompletion"] = true;
+
+        input["ParentInstanceId"] = parentInstanceId;
 
         var options = new RunWorkflowOptions
         {
-            ParentWorkflowInstanceId = context.WorkflowExecutionContext.Id,
+            ParentWorkflowInstanceId = parentInstanceId,
             Input = input,
+            Properties = properties,
             CorrelationId = correlationId,
             WorkflowInstanceId = identityGenerator.GenerateId()
         };
@@ -109,7 +122,7 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
 
         return info;
     }
-    
+
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
