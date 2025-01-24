@@ -75,7 +75,8 @@ internal class Execute : ElsaEndpoint<Request, Response>
         };
 
         // Write the workflow instance ID to the response header. This allows clients to read the header even if the workflow writes a response body. 
-        HttpContext.Response.Headers.Append("x-elsa-workflow-instance-id", instanceId);
+        if(!HttpContext.Response.HasStarted)
+            HttpContext.Response.Headers.Append("x-elsa-workflow-instance-id", instanceId);
 
         // Start the workflow.
         var result = await _workflowRuntime.StartWorkflowAsync(definitionId, startWorkflowOptions);
