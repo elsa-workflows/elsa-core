@@ -34,7 +34,7 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
             variable.Value = value;
         }).OnFailure(ex =>
         {
-            logger.LogWarning(ex, "Failed to convert variable value.");
+            logger.LogWarning(ex, "Failed to convert the default value {DefaultValue} of variable {VariableName} to its type {VariableType}. Default value will not be set.", source.Value, source.Name, valueType);
         });
         variable.StorageDriverType = !string.IsNullOrEmpty(source.StorageDriverTypeName) ? Type.GetType(source.StorageDriverTypeName) : null;
 
