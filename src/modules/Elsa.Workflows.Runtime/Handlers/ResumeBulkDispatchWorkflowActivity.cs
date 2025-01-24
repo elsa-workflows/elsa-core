@@ -21,11 +21,12 @@ internal class ResumeBulkDispatchWorkflowActivity(IBookmarkQueue bookmarkQueue, 
         if (workflowState.Status != WorkflowStatus.Finished)
             return;
 
-        var parentInstanceId = workflowState.Properties.TryGetValue("ParentInstanceId", out var parentInstanceIdValue) ? parentInstanceIdValue.ToString() : default;
-
-        if (string.IsNullOrWhiteSpace(parentInstanceId))
+        var waitForCompletion = workflowState.Properties.TryGetValue("WaitForCompletion", out var waitForCompletionValue) && (bool)waitForCompletionValue;
+        
+        if (!waitForCompletion)
             return;
-
+        
+        var parentInstanceId = (string)workflowState.Properties["ParentInstanceId"];
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<BulkDispatchWorkflows>();
         var stimulus = new BulkDispatchWorkflowsStimulus(parentInstanceId);
         var stimulusHash = stimulusHasher.Hash(activityTypeName, stimulus);
