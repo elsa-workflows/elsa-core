@@ -1,5 +1,5 @@
 ---
-name: Performance Improvement
+name: Performance
 about: Suggest a performance enhancement for this project
 title: ""
 type: Performance
