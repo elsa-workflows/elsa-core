@@ -18,10 +18,16 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
     /// </summary>
     public Variable? Map(VariableDefinition source)
     {
-        if (!wellKnownTypeRegistry.TryGetTypeOrDefault(source.TypeName, out var type))
+        var aliasedType = wellKnownTypeRegistry.TryGetType(source.TypeName, out var aliasedTypeValue) ? aliasedTypeValue : null;
+        var type = aliasedType ?? Type.GetType(source.TypeName);
+        
+        if(type == null)
+        {
+            logger.LogWarning("Failed to resolve the type {TypeName} of variable {VariableName}. Variable will not be mapped.", source.TypeName, source.Name);
             return null;
+        }
 
-        var valueType = source.IsArray ? type.MakeArrayType() : type;
+        var valueType = aliasedType ?? (source.IsArray ? type.MakeArrayType() : type);
         var variableGenericType = typeof(Variable<>).MakeGenericType(valueType);
         var variable = (Variable)Activator.CreateInstance(variableGenericType)!;
 
@@ -58,15 +64,20 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
     {
         var variableType = source.GetType();
         var valueType = variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object);
+        var valueTypeAlias = wellKnownTypeRegistry.TryGetAlias(valueType, out var alias) ? alias : null;
+        var value = source.Value;
+        var serializedValue = value.Format();
+        var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
+        
+        if(valueTypeAlias != null)
+            return new(source.Id, source.Name, valueTypeAlias, false, serializedValue, storageDriverTypeName);
+        
         var isArray = valueType.IsArray;
         var isCollection = valueType.IsCollectionType();
         var elementValueType = isArray ? valueType.GetElementType() : isCollection ? valueType.GenericTypeArguments[0] : valueType; 
-        var value = source.Value;
-        var valueTypeAlias = wellKnownTypeRegistry.GetAliasOrDefault(elementValueType);
-        var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
-        var serializedValue = value.Format();
-
-        return new(source.Id, source.Name, valueTypeAlias, isArray, serializedValue, storageDriverTypeName);
+        var elementTypeAlias = wellKnownTypeRegistry.GetAliasOrDefault(elementValueType);
+        
+        return new(source.Id, source.Name, elementTypeAlias, isArray, serializedValue, storageDriverTypeName);
     }
 
     /// <summary>
