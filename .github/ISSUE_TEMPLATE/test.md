@@ -1,8 +1,8 @@
 ---
 name: Test Improvement
 about: Suggest improvements or additions to tests for this project
-title: "[TEST] "
-labels: test
+title: ""
+type: Test
 assignees: ''
 
 ---
