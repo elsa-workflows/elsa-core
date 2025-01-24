@@ -52,12 +52,12 @@ public class WorkflowState
     /// Collected bookmarks.
     /// </summary>
     [NotMapped]
-    public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+    public IList<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
 
     /// <summary>
     /// A collection of incidents that may have occurred during execution.
     /// </summary>
-    public ICollection<ActivityIncident> Incidents { get; set; } = new List<ActivityIncident>();
+    public IList<ActivityIncident> Incidents { get; set; } = new List<ActivityIncident>();
 
     /// <summary>
     /// Gets or sets the value indicating whether the workflow is a system workflow.

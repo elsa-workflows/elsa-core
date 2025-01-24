@@ -13,17 +13,17 @@ public class BookmarkQueueProcessor(IBookmarkQueueStore store, IBookmarkResumer 
     {
         var batchSize = 50;
         var offset = 0;
-
+        
         while (!cancellationToken.IsCancellationRequested)
         {
             var pageArgs = PageArgs.FromRange(offset, batchSize);
             var page = await store.PageAsync(pageArgs, new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending), cancellationToken);
-
+        
             await ProcessPageAsync(page, cancellationToken);
-
+        
             if (page.Items.Count < batchSize)
                 break;
-
+        
             offset += batchSize;
         }
     }

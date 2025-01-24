@@ -2,7 +2,7 @@ namespace Elsa.Workflows.Runtime;
 
 public class BookmarkQueueSignaler : IBookmarkQueueSignaler
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private TaskCompletionSource<object?> _tcs = new();
 
     public async Task AwaitAsync(CancellationToken cancellationToken)
@@ -37,7 +37,7 @@ public class BookmarkQueueSignaler : IBookmarkQueueSignaler
         lock (_lock)
         {
             // Reset the TCS for the next wait
-            _tcs = new TaskCompletionSource<object?>();
+            _tcs = new();
         }
     }
 }

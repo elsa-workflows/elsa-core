@@ -19,18 +19,48 @@ public class DeleteSchedules(ITriggerScheduler triggerScheduler, IBookmarkSchedu
 {
     async Task INotificationHandler<BookmarksDeleting>.HandleAsync(BookmarksDeleting notification, CancellationToken cancellationToken)
     {
+        if (notification.Bookmarks.Count == 0)
+            return;
+
         var ids = notification.Bookmarks.Select(x => x.Id).ToList();
-        var bookmarks = await bookmarkStore.FindManyAsync(new BookmarkFilter { BookmarkIds = ids }, cancellationToken);
+        var bookmarks = await bookmarkStore.FindManyAsync(new()
+        {
+            BookmarkIds = ids
+        }, cancellationToken);
         await bookmarkScheduler.UnscheduleAsync(bookmarks, cancellationToken);
     }
 
-    async Task INotificationHandler<WorkflowDefinitionDeleting>.HandleAsync(WorkflowDefinitionDeleting notification, CancellationToken cancellationToken) => await RemoveSchedulesAsync(new TriggerFilter { WorkflowDefinitionId = notification.DefinitionId }, cancellationToken);
-    async Task INotificationHandler<WorkflowDefinitionsDeleting>.HandleAsync(WorkflowDefinitionsDeleting notification, CancellationToken cancellationToken) => await RemoveSchedulesAsync(new TriggerFilter { WorkflowDefinitionIds = notification.DefinitionIds }, cancellationToken);
+    async Task INotificationHandler<WorkflowDefinitionDeleting>.HandleAsync(WorkflowDefinitionDeleting notification, CancellationToken cancellationToken)
+    {
+        await RemoveSchedulesAsync(new()
+        {
+            WorkflowDefinitionId = notification.DefinitionId
+        }, cancellationToken);
+    }
 
-    async Task INotificationHandler<WorkflowDefinitionVersionDeleting>.HandleAsync(WorkflowDefinitionVersionDeleting notification, CancellationToken cancellationToken) =>
-        await RemoveSchedulesAsync(new TriggerFilter { WorkflowDefinitionVersionId = notification.WorkflowDefinition.Id }, cancellationToken);
+    async Task INotificationHandler<WorkflowDefinitionsDeleting>.HandleAsync(WorkflowDefinitionsDeleting notification, CancellationToken cancellationToken)
+    {
+        await RemoveSchedulesAsync(new()
+        {
+            WorkflowDefinitionIds = notification.DefinitionIds
+        }, cancellationToken);
+    }
 
-    async Task INotificationHandler<WorkflowDefinitionVersionsDeleting>.HandleAsync(WorkflowDefinitionVersionsDeleting notification, CancellationToken cancellationToken) => await RemoveSchedulesAsync(new TriggerFilter { WorkflowDefinitionVersionIds = notification.Ids }, cancellationToken);
+    async Task INotificationHandler<WorkflowDefinitionVersionDeleting>.HandleAsync(WorkflowDefinitionVersionDeleting notification, CancellationToken cancellationToken)
+    {
+        await RemoveSchedulesAsync(new()
+        {
+            WorkflowDefinitionVersionId = notification.WorkflowDefinition.Id
+        }, cancellationToken);
+    }
+
+    async Task INotificationHandler<WorkflowDefinitionVersionsDeleting>.HandleAsync(WorkflowDefinitionVersionsDeleting notification, CancellationToken cancellationToken)
+    {
+        await RemoveSchedulesAsync(new()
+        {
+            WorkflowDefinitionVersionIds = notification.Ids
+        }, cancellationToken);
+    }
 
     private async Task RemoveSchedulesAsync(TriggerFilter filter, CancellationToken cancellationToken)
     {

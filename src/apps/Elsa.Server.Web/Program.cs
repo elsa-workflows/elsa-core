@@ -89,7 +89,7 @@ const bool useTenantsFromConfiguration = true;
 const bool useAgents = false;
 const bool useSecrets = false;
 const bool disableVariableWrappers = false;
-const bool disableVariableCopying = false;
+const bool disableVariableCopying = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

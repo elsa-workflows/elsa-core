@@ -287,7 +287,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public ICollection<Bookmark> OriginalBookmarks { get; set; }
 
     /// A collection of collected bookmarks during workflow execution. 
-    public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+    public IList<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
 
     /// A diff between the original bookmarks and the current bookmarks.
     public Diff<Bookmark> BookmarksDiff => Diff.For(OriginalBookmarks, Bookmarks);
@@ -314,7 +314,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// A collection of incidents that may have occurred during execution.
     /// </summary>
-    public ICollection<ActivityIncident> Incidents { get; set; }
+    public IList<ActivityIncident> Incidents { get; set; }
 
     /// <summary>
     /// The current <see cref="ExecuteActivityDelegate"/> delegate to invoke when executing the next activity.

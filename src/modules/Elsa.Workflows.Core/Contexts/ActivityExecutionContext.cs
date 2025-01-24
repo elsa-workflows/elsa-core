@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using Elsa.Common;
 using Elsa.Expressions.Helpers;
@@ -19,7 +18,6 @@ namespace Elsa.Workflows;
 public partial class ActivityExecutionContext : IExecutionContext, IDisposable
 {
     private readonly ISystemClock _systemClock;
-    private readonly List<Bookmark> _bookmarks = [];
     private long _executionCount;
     private ActivityExecutionContext? _parentActivityExecutionContext;
 
@@ -174,7 +172,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// A list of bookmarks created by the current activity.
     /// </summary>
-    public IReadOnlyCollection<Bookmark> Bookmarks => new ReadOnlyCollection<Bookmark>(_bookmarks);
+    public IEnumerable<Bookmark> Bookmarks => WorkflowExecutionContext.Bookmarks.Where(x => x.ActivityInstanceId == Id);
 
     /// <summary>
     /// The number of times this <see cref="ActivityExecutionContext"/> has executed.
@@ -357,13 +355,19 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// Adds each bookmark to the list of bookmarks.
     /// </summary>
     /// <param name="bookmarks">The bookmarks to add.</param>
-    public void AddBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);
+    public void AddBookmarks(IEnumerable<Bookmark> bookmarks)
+    {
+        WorkflowExecutionContext.Bookmarks.AddRange(bookmarks);
+    }
 
     /// <summary>
     /// Adds a bookmark to the list of bookmarks.
     /// </summary>
     /// <param name="bookmark">The bookmark to add.</param>
-    public void AddBookmark(Bookmark bookmark) => _bookmarks.Add(bookmark);
+    public void AddBookmark(Bookmark bookmark)
+    {
+        WorkflowExecutionContext.Bookmarks.Add(bookmark);
+    }
 
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time.
@@ -467,7 +471,10 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// Clear all bookmarks.
     /// </summary>
-    public void ClearBookmarks() => _bookmarks.Clear();
+    public void ClearBookmarks()
+    {
+        WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityInstanceId == Id);
+    }
 
     /// <summary>
     /// Returns a property value associated with the current activity context. 

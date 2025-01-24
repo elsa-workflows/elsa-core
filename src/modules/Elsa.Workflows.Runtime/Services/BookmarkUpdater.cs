@@ -18,6 +18,10 @@ public class BookmarkUpdater(IBookmarkManager bookmarkManager, IBookmarkStore bo
     private async Task RemoveBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken)
     {
         var matchingIds = bookmarks.Select(x => x.Id).ToList();
+        
+        if (matchingIds.Count == 0)
+            return;
+        
         var filter = new BookmarkFilter
         {
             BookmarkIds = matchingIds,

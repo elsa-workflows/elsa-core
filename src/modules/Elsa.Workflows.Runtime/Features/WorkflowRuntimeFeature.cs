@@ -195,11 +195,6 @@ public class WorkflowRuntimeFeature : FeatureBase
         {
             workflows.CommitStateHandler = sp => sp.GetRequiredService<StoreCommitStateHandler>();
         });
-
-        Services.Configure<RecurringTaskOptions>(options =>
-        {
-            options.Schedule.ConfigureTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10));
-        });
     }
 
     /// <inheritdoc />
@@ -257,6 +252,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
             .AddScoped<IBookmarkResumer, BookmarkResumer>()
             .AddScoped<IBookmarkQueue, StoreBookmarkQueue>()
+            //.AddScoped<IBookmarkQueue, DirectBookmarkQueue>()
             .AddScoped<ITriggerInvoker, TriggerInvoker>()
             .AddScoped<IWorkflowCanceler, WorkflowCanceler>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
@@ -296,8 +292,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             
             // Startup tasks, background tasks, and recurring tasks.
             .AddStartupTask<PopulateRegistriesStartupTask>()
-            .AddRecurringTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromMinutes(1))
-            .AddRecurringTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10))
+            .AddRecurringTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(30))
+            .AddRecurringTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(30))
 
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)

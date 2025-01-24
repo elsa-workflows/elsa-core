@@ -25,10 +25,10 @@ public class BookmarkQueueWorker : IBookmarkQueueWorker
     {
         if (_running)
             return;
-
+        
         _cts = new();
         _running = true;
-
+        
         _ = Task.Run(AwaitSignalAsync);
     }
 
@@ -39,7 +39,7 @@ public class BookmarkQueueWorker : IBookmarkQueueWorker
             _running = false;
             _cts.Cancel();
         }
-
+        
         _cts.Dispose();
     }
 
