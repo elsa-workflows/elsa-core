@@ -23,9 +23,8 @@ internal class ResumeExecuteWorkflowActivity(IBookmarkQueue bookmarkQueue, IStim
             return;
 
         var props = workflowState.Properties;
-        
         var waitForCompletion = props.TryGetValue("WaitForCompletion", out var waitForCompletionValue) && (bool)waitForCompletionValue;
-        
+
         if (!waitForCompletion)
             return;
 
