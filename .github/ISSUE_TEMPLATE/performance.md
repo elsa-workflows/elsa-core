@@ -1,8 +1,8 @@
 ---
 name: Performance Improvement
 about: Suggest a performance enhancement for this project
-title: "[PERF] "
-labels: performance
+title: ""
+type: Performance
 assignees: ''
 
 ---
