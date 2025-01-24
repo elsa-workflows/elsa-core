@@ -58,8 +58,9 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
     {
         var variableType = source.GetType();
         var valueType = variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object);
-        var isArray = valueType.IsCollectionType();
-        var elementValueType = isArray ? valueType.GenericTypeArguments[0] : valueType; 
+        var isArray = valueType.IsArray;
+        var isCollection = valueType.IsCollectionType();
+        var elementValueType = isArray ? valueType.GetElementType() : isCollection ? valueType.GenericTypeArguments[0] : valueType; 
         var value = source.Value;
         var valueTypeAlias = wellKnownTypeRegistry.GetAliasOrDefault(elementValueType);
         var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
