@@ -1,8 +1,8 @@
 ---
 name: Maintenance Task
 about: Suggest a maintenance task for this project
-title: "[CHORE] "
-labels: maintenance
+title: ""
+type: Maintenance
 assignees: ''
 
 ---
