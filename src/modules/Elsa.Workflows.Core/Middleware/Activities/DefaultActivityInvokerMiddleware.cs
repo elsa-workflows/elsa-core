@@ -47,6 +47,10 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
             context.AddExecutionLogEntry("Precondition Failed", "Cannot execute at this time");
             return;
         }
+        
+        // Conditionally commit the workflow state.
+        if(ShouldCommitWhenStarting(context))
+            await context.WorkflowExecutionContext.CommitAsync();
 
         context.TransitionTo(ActivityStatus.Running);
 
@@ -78,6 +82,10 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
             workflowExecutionContext.Bookmarks.AddRange(context.Bookmarks);
             logger.LogDebug("Added {BookmarkCount} bookmarks to the workflow execution context", context.Bookmarks.Count);
         }
+        
+        // Conditionally commit the workflow state.
+        if(ShouldCommitWhenExecuted(context))
+            await context.WorkflowExecutionContext.CommitAsync();
     }
 
     /// <summary>
@@ -110,5 +118,41 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
 
         // Evaluate input properties.
         await context.EvaluateInputPropertiesAsync();
+    }
+    
+    private bool ShouldCommitWhenStarting(ActivityExecutionContext context)
+    {
+        var behavior = context.Activity.GetCommitStateBehavior();
+        
+        if (behavior == ActivityCommitStateBehavior.Executing)
+            return true;
+
+        if (behavior == ActivityCommitStateBehavior.Default)
+        {
+            var workflowOptions = context.WorkflowExecutionContext.Workflow.Options.CommitStateOptions;
+            
+            if(workflowOptions.ActivityExecuting)
+                return true;
+        }
+        
+        return false;
+    }
+    
+    private bool ShouldCommitWhenExecuted(ActivityExecutionContext context)
+    {
+        var behavior = context.Activity.GetCommitStateBehavior();
+        
+        if (behavior == ActivityCommitStateBehavior.Executed)
+            return true;
+
+        if (behavior == ActivityCommitStateBehavior.Default)
+        {
+            var workflowOptions = context.WorkflowExecutionContext.Workflow.Options.CommitStateOptions;
+            
+            if(workflowOptions.ActivityExecuted)
+                return true;
+        }
+        
+        return false;
     }
 }

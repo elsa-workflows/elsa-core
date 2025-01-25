@@ -11,6 +11,7 @@ public static class ActivityPropertyExtensions
     private static readonly string[] CanStartWorkflowPropertyName = ["canStartWorkflow", "CanStartWorkflow"];
     private static readonly string[] RunAsynchronouslyPropertyName = ["runAsynchronously", "RunAsynchronously"];
     private static readonly string[] SourcePropertyName = ["source", "Source"];
+    private static readonly string[] CommitStateBehaviorName = ["commitStateBehavior", "CommitStateBehavior"];
 
     /// <summary>
     /// Gets a flag indicating whether this activity can be used for starting a workflow.
@@ -46,6 +47,16 @@ public static class ActivityPropertyExtensions
     /// Sets the source file and line number where this activity was instantiated, if any.
     /// </summary>
     public static void SetSource(this IActivity activity, string value) => activity.CustomProperties[SourcePropertyName[0]] = value;
+    
+    /// <summary>
+    /// Gets the commit state behavior for the specified activity.
+    /// </summary>
+    public static ActivityCommitStateBehavior GetCommitStateBehavior(this IActivity activity) => activity.CustomProperties.GetValueOrDefault(CommitStateBehaviorName, () => ActivityCommitStateBehavior.Default);
+    
+    /// <summary>
+    /// Sets the commit state behavior for the specified activity.
+    /// </summary>
+    public static void SetCommitStateBehavior(this IActivity activity, ActivityCommitStateBehavior value) => activity.CustomProperties[CommitStateBehaviorName[0]] = value;
 
     /// <summary>
     /// Sets the source file and line number where this activity was instantiated, if any.
@@ -62,7 +73,7 @@ public static class ActivityPropertyExtensions
     /// <summary>
     /// Gets the display text for the specified activity.
     /// </summary>
-    public static string? GetDisplayText(this IActivity activity) => activity.Metadata.TryGetValue("displayText", out var value) ? value.ToString() : default;
+    public static string? GetDisplayText(this IActivity activity) => activity.Metadata.TryGetValue("displayText", out var value) ? value.ToString() : null;
     
     /// <summary>
     /// Sets the display text for the specified activity.
@@ -72,7 +83,7 @@ public static class ActivityPropertyExtensions
     /// <summary>
     /// Gets the description for the specified activity.
     /// </summary>
-    public static string? GetDescription(this IActivity activity) => activity.Metadata.TryGetValue("description", out var value) ? value.ToString() : default;
+    public static string? GetDescription(this IActivity activity) => activity.Metadata.TryGetValue("description", out var value) ? value.ToString() : null;
     
     /// <summary>
     /// Sets the description for the specified activity.

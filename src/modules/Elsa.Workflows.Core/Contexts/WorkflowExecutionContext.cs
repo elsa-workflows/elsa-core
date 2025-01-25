@@ -37,6 +37,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
     private IList<ActivityExecutionContext> _activityExecutionContexts;
     private readonly IHasher _hasher;
+    private readonly ICommitStateHandler _commitStateHandler;
 
     /// <summary>
     /// Initializes a new instance of <see cref="WorkflowExecutionContext"/>.
@@ -61,6 +62,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         ActivityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
         ActivityRegistryLookup = serviceProvider.GetRequiredService<IActivityRegistryLookupService>();
         _hasher = serviceProvider.GetRequiredService<IHasher>();
+        _commitStateHandler = serviceProvider.GetRequiredService<ICommitStateHandler>();
         SubStatus = WorkflowSubStatus.Pending;
         Id = id;
         CorrelationId = correlationId;
@@ -238,6 +240,11 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// The current sub status of the workflow.
     public WorkflowSubStatus SubStatus { get; internal set; }
 
+    /// <summary>
+    /// The previous sub status of the workflow.
+    /// </summary>
+    public WorkflowSubStatus PreviousSubStatus { get; internal set; }
+    
     /// The root <see cref="MemoryRegister"/> associated with the execution context.
     public MemoryRegister MemoryRegister { get; private set; } = null!;
 
@@ -510,8 +517,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
     internal void TransitionTo(WorkflowSubStatus subStatus)
     {
         if (!ValidateStatusTransition())
-            throw new Exception($"Cannot transition from {SubStatus} to {subStatus}");
+            throw new($"Cannot transition from {SubStatus} to {subStatus}");
 
+        PreviousSubStatus = SubStatus;
         SubStatus = subStatus;
         UpdatedAt = SystemClock.UtcNow;
 
@@ -613,5 +621,10 @@ public partial class WorkflowExecutionContext : IExecutionContext
     {
         var currentMainStatus = GetMainStatus(SubStatus);
         return currentMainStatus != WorkflowStatus.Finished;
+    }
+
+    public Task CommitAsync()
+    {
+        return _commitStateHandler.CommitAsync(this, CancellationToken);
     }
 }

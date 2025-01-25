@@ -29,4 +29,9 @@ public class WorkflowOptions
     /// The type of <see cref="IIncidentStrategy"/> to use when a fault occurs in the workflow.
     /// </summary>
     public Type? IncidentStrategyType { get; set; }
+  
+    /// <summary>
+    /// The options for committing workflow state.
+    /// </summary>
+    public WorkflowCommitStateOptions CommitStateOptions { get; set; } = new();
 }

@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Shared.Models;
 
 namespace Elsa.Api.Client.Extensions;
@@ -182,4 +183,14 @@ public static class ActivityExtensions
     /// Sets a value indicating whether the specified activity can trigger the workflow.
     /// </summary>
     public static void SetRunAsynchronously(this JsonObject activity, bool value) => activity.SetProperty(JsonValue.Create(value), "customProperties", "runAsynchronously");
+    
+    /// <summary>
+    /// Gets the commit state behavior for the specified activity.
+    /// </summary>
+    public static ActivityCommitStateBehavior GetCommitStateBehavior(this JsonObject activity) => activity.TryGetProperty<ActivityCommitStateBehavior?>("customProperties", "commitStateBehavior") ?? ActivityCommitStateBehavior.Default;
+
+    /// <summary>
+    /// Sets the commit state behavior for the specified activity.
+    /// </summary>
+    public static void SetCommitStateBehavior(this JsonObject activity, ActivityCommitStateBehavior value) => activity.SetProperty(JsonValue.Create(value.ToString()), "customProperties", "commitStateBehavior");
 }
