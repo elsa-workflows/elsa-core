@@ -18,9 +18,6 @@ public static class WorkflowExecutionPipelineBuilderExtensions
         pipelineBuilder
             .Reset()
             .UseEngineExceptionHandling()
-            .UseBookmarkPersistence()
-            .UseActivityExecutionLogPersistence()
-            .UseWorkflowExecutionLogPersistence()
             .UsePersistentVariables()
             .UseExceptionHandling()
             .UseDefaultActivityScheduler();
@@ -33,15 +30,18 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     /// <summary>
     /// Installs middleware that persists bookmarks after workflow execution.
     /// </summary>
+    [Obsolete("This middleware is no longer used and will be removed in a future version. Bookmarks are now persisted through the commit state handler.")]
     public static IWorkflowExecutionPipelineBuilder UseBookmarkPersistence(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistBookmarkMiddleware>();
 
     /// <summary>
     /// Installs middleware that persists the workflow execution journal.
     /// </summary>
+    [Obsolete("This middleware is no longer used and will be removed in a future version. Execution logs are now persisted through the commit state handler.")]
     public static IWorkflowExecutionPipelineBuilder UseWorkflowExecutionLogPersistence(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistWorkflowExecutionLogMiddleware>();
 
     /// <summary>
     /// Installs middleware that persists activity execution records.
     /// </summary>
+    [Obsolete("This middleware is no longer used and will be removed in a future version. Activity state is now persisted through the commit state handler.")]
     public static IWorkflowExecutionPipelineBuilder UseActivityExecutionLogPersistence(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistActivityExecutionLogMiddleware>();
 }

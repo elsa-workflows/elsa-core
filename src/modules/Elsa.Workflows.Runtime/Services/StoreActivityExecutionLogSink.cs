@@ -15,6 +15,10 @@ public class StoreActivityExecutionLogSink(IActivityExecutionStore activityExecu
     public async Task PersistExecutionLogsAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default)
     {
         var records = await extractor.ExtractLogRecordsAsync(context).ToList();
+        
+        if(records.Count == 0)
+            return;
+        
         await activityExecutionStore.SaveManyAsync(records, cancellationToken);
         await notificationSender.SendAsync(new ActivityExecutionLogUpdated(context, records), cancellationToken);
     }

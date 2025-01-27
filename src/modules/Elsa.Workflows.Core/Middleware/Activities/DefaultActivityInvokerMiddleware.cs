@@ -49,7 +49,7 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
         }
         
         // Conditionally commit the workflow state.
-        if(ShouldCommitWhenStarting(context))
+        if(ShouldCommitWhenExecuting(context))
             await context.WorkflowExecutionContext.CommitAsync();
 
         context.TransitionTo(ActivityStatus.Running);
@@ -120,7 +120,7 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
         await context.EvaluateInputPropertiesAsync();
     }
     
-    private bool ShouldCommitWhenStarting(ActivityExecutionContext context)
+    private bool ShouldCommitWhenExecuting(ActivityExecutionContext context)
     {
         var behavior = context.Activity.GetCommitStateBehavior();
         
