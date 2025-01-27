@@ -193,7 +193,7 @@ public class WorkflowRuntimeFeature : FeatureBase
         Module.AddActivitiesFrom<WorkflowRuntimeFeature>();
         Module.Configure<WorkflowsFeature>(workflows =>
         {
-            workflows.CommitStateHandler = sp => sp.GetRequiredService<StoreCommitStateHandler>();
+            workflows.CommitStateHandler = sp => sp.GetRequiredService<DefaultCommitStateHandler>();
         });
 
         Services.Configure<RecurringTaskOptions>(options =>
@@ -267,7 +267,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
-            .AddScoped<StoreCommitStateHandler>()
+            .AddScoped<DefaultCommitStateHandler>()
 
             // Deprecated services.
             .AddScoped<IWorkflowInbox, StimulusProxyWorkflowInbox>()

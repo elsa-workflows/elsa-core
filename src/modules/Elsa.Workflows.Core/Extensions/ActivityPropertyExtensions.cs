@@ -56,7 +56,11 @@ public static class ActivityPropertyExtensions
     /// <summary>
     /// Sets the commit state behavior for the specified activity.
     /// </summary>
-    public static void SetCommitStateBehavior(this IActivity activity, ActivityCommitStateBehavior value) => activity.CustomProperties[CommitStateBehaviorName[0]] = value;
+    public static TActivity WithCommitStateBehavior<TActivity>(this TActivity activity, ActivityCommitStateBehavior value) where TActivity: IActivity
+    {
+        activity.CustomProperties[CommitStateBehaviorName[0]] = value;
+        return activity;
+    }
 
     /// <summary>
     /// Sets the source file and line number where this activity was instantiated, if any.

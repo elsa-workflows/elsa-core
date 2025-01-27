@@ -5,7 +5,7 @@ using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Runtime;
 
-public class StoreCommitStateHandler(
+public class DefaultCommitStateHandler(
     IWorkflowInstanceManager workflowInstanceManager,
     IBookmarksPersister bookmarkPersister,
     IVariablePersistenceManager variablePersistenceManager,
