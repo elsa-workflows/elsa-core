@@ -1,6 +1,5 @@
 using Elsa.Workflows.Management;
 using Microsoft.Extensions.DependencyInjection;
-using Proto.Cluster;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Services;
 
@@ -11,7 +10,12 @@ public partial class ProtoActorWorkflowRuntime(
     IServiceProvider serviceProvider, 
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowActivationStrategyEvaluator workflowActivationStrategyEvaluator,
-    Cluster cluster,
+    IStimulusSender stimulusSender,
+    IStimulusHasher stimulusHasher,
+    ITriggerBoundWorkflowService triggerBoundWorkflowService,
+    IBookmarkBoundWorkflowService bookmarkBoundWorkflowService,
+    IBookmarkStore bookmarkStore,
+    IWorkflowInstanceStore workflowInstanceStore,
     IIdentityGenerator identityGenerator) : IWorkflowRuntime
 {
     /// <inheritdoc />
