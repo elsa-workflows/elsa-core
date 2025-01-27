@@ -30,11 +30,7 @@ public partial class LocalWorkflowRuntime
             CancellationToken = cancellationToken
         });
 
-        return new CanStartWorkflowResult(
-        {
-            CanStart = canStart,
-            InstanceId = null
-        };
+        return new(null, canStart);
     }
 
     public async Task<WorkflowExecutionResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = null)
