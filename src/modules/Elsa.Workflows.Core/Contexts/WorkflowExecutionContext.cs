@@ -239,11 +239,6 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
     /// The current sub status of the workflow.
     public WorkflowSubStatus SubStatus { get; internal set; }
-
-    /// <summary>
-    /// The previous sub status of the workflow.
-    /// </summary>
-    public WorkflowSubStatus PreviousSubStatus { get; internal set; }
     
     /// The root <see cref="MemoryRegister"/> associated with the execution context.
     public MemoryRegister MemoryRegister { get; private set; } = null!;
