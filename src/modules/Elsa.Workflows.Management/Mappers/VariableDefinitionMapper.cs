@@ -20,28 +20,33 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
     {
         var aliasedType = wellKnownTypeRegistry.TryGetType(source.TypeName, out var aliasedTypeValue) ? aliasedTypeValue : null;
         var type = aliasedType ?? Type.GetType(source.TypeName);
-        
-        if(type == null)
+
+        if (type == null)
         {
             logger.LogWarning("Failed to resolve the type {TypeName} of variable {VariableName}. Variable will not be mapped.", source.TypeName, source.Name);
             return null;
         }
 
-        var valueType = aliasedType ?? (source.IsArray ? type.MakeArrayType() : type);
+        var valueType = aliasedType is { IsArray: true } ? source.IsArray ? aliasedType.MakeArrayType() : aliasedType : source.IsArray ? type.MakeArrayType() : type;
         var variableGenericType = typeof(Variable<>).MakeGenericType(valueType);
         var variable = (Variable)Activator.CreateInstance(variableGenericType)!;
 
-        if(!string.IsNullOrEmpty(source.Id))
+        if (!string.IsNullOrEmpty(source.Id))
             variable.Id = source.Id;
-        
+
         variable.Name = source.Name;
-        source.Value?.TryConvertTo(valueType).OnSuccess(value =>
+
+        if (!string.IsNullOrWhiteSpace(source.Value))
         {
-            variable.Value = value;
-        }).OnFailure(ex =>
-        {
-            logger.LogWarning(ex, "Failed to convert the default value {DefaultValue} of variable {VariableName} to its type {VariableType}. Default value will not be set.", source.Value, source.Name, valueType);
-        });
+            source.Value?.TryConvertTo(valueType).OnSuccess(value =>
+            {
+                variable.Value = value;
+            }).OnFailure(ex =>
+            {
+                logger.LogWarning(ex, "Failed to convert the default value {DefaultValue} of variable {VariableName} to its type {VariableType}. Default value will not be set.", source.Value, source.Name, valueType);
+            });
+        }
+
         variable.StorageDriverType = !string.IsNullOrEmpty(source.StorageDriverTypeName) ? Type.GetType(source.StorageDriverTypeName) : null;
 
         return variable;
@@ -68,15 +73,16 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
         var value = source.Value;
         var serializedValue = value.Format();
         var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
-        
-        if(valueTypeAlias != null)
+
+        // Handles the case where an alias exists for an array or collection type. E.g. byte[] -> ByteArray.
+        if (valueTypeAlias != null && (valueType.IsArray || valueType.IsCollectionType()))
             return new(source.Id, source.Name, valueTypeAlias, false, serializedValue, storageDriverTypeName);
-        
+
         var isArray = valueType.IsArray;
         var isCollection = valueType.IsCollectionType();
-        var elementValueType = isArray ? valueType.GetElementType() : isCollection ? valueType.GenericTypeArguments[0] : valueType; 
+        var elementValueType = isArray ? valueType.GetElementType() : isCollection ? valueType.GenericTypeArguments[0] : valueType;
         var elementTypeAlias = wellKnownTypeRegistry.GetAliasOrDefault(elementValueType);
-        
+
         return new(source.Id, source.Name, elementTypeAlias, isArray, serializedValue, storageDriverTypeName);
     }
 
