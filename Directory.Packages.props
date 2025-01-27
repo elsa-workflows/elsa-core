@@ -184,7 +184,7 @@
         <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.1"/>
         <PackageVersion Include="Npgsql" Version="9.0.2"/>
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.3"/>
-        <PackageVersion Include="Oracle.EntityFrameworkCore" Version="8.23.70"/>
+        <PackageVersion Include="Oracle.EntityFrameworkCore" Version="9.23.60"/>
         <PackageVersion Include="Polly" Version="8.5.1"/>
         <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0-preview.2.efcore.9.0.0"/>
         <PackageVersion Include="Refit" Version="8.0.0"/>
