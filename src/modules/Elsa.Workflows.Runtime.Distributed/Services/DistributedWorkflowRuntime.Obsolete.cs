@@ -13,9 +13,9 @@ using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 using Open.Linq.AsyncExtensions;
 
-namespace Elsa.Workflows.Runtime;
+namespace Elsa.Workflows.Runtime.Distributed;
 
-public partial class LocalWorkflowRuntime
+public partial class DistributedWorkflowRuntime
 {
     public async Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = null)
     {

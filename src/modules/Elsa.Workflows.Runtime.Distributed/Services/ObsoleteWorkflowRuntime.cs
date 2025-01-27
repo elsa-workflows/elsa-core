@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
@@ -13,9 +14,18 @@ using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 using Open.Linq.AsyncExtensions;
 
-namespace Elsa.Workflows.Runtime;
+namespace Elsa.Workflows.Runtime.Distributed;
 
-public partial class LocalWorkflowRuntime
+public class ObsoleteWorkflowRuntime(
+    Func<string?, CancellationToken, Task<IWorkflowClient>> createClientAsync,
+    IWorkflowDefinitionService workflowDefinitionService,
+    IWorkflowActivationStrategyEvaluator workflowActivationStrategyEvaluator,
+    IStimulusSender stimulusSender,
+    IStimulusHasher stimulusHasher,
+    IBookmarkStore bookmarkStore,
+    IWorkflowInstanceStore workflowInstanceStore,
+    ITriggerBoundWorkflowService triggerBoundWorkflowService,
+    IBookmarkBoundWorkflowService bookmarkBoundWorkflowService)
 {
     public async Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = null)
     {
@@ -36,7 +46,7 @@ public partial class LocalWorkflowRuntime
     public async Task<WorkflowExecutionResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = null)
     {
         var cancellationToken = options?.CancellationToken ?? CancellationToken.None;
-        var client = await CreateClientAsync(options?.InstanceId, cancellationToken);
+        var client = await createClientAsync(options?.InstanceId, cancellationToken);
         var createRequest = new CreateAndRunWorkflowInstanceRequest
         {
             Properties = options?.Properties,
@@ -74,7 +84,7 @@ public partial class LocalWorkflowRuntime
     public async Task<WorkflowExecutionResult?> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeParams? options = null)
     {
         var cancellationToken = options?.CancellationToken ?? CancellationToken.None;
-        var workflowClient = await CreateClientAsync(workflowInstanceId, cancellationToken);
+        var workflowClient = await createClientAsync(workflowInstanceId, cancellationToken);
         var exists = await workflowClient.InstanceExistsAsync(cancellationToken);
 
         if (!exists)
@@ -162,7 +172,7 @@ public partial class LocalWorkflowRuntime
 
     public async Task<CancellationResult> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
-        var client = await CreateClientAsync(workflowInstanceId, cancellationToken);
+        var client = await createClientAsync(workflowInstanceId, cancellationToken);
         await client.CancelAsync(cancellationToken);
         return new(true);
     }
@@ -177,13 +187,13 @@ public partial class LocalWorkflowRuntime
 
     public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
-        var client = await CreateClientAsync(workflowInstanceId, cancellationToken);
+        var client = await createClientAsync(workflowInstanceId, cancellationToken);
         return await client.ExportStateAsync(cancellationToken);
     }
 
     public async Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var client = await CreateClientAsync(workflowState.Id, cancellationToken);
+        var client = await createClientAsync(workflowState.Id, cancellationToken);
         await client.ImportStateAsync(workflowState, cancellationToken);
     }
 

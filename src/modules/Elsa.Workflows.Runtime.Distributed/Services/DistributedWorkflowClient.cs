@@ -50,6 +50,11 @@ public class DistributedWorkflowClient(
         await _localWorkflowClient.ImportStateAsync(workflowState, cancellationToken);
     }
 
+    public async Task<bool> InstanceExistsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _localWorkflowClient.InstanceExistsAsync(cancellationToken);
+    }
+
     private async Task<R> WithLockAsync<R>(Func<Task<R>> func)
     {
         var lockKey = $"workflow-instance:{WorkflowInstanceId}";

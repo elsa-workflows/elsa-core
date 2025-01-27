@@ -30,11 +30,7 @@ public partial class ProtoActorWorkflowRuntime
             CancellationToken = cancellationToken
         });
 
-        return new CanStartWorkflowResult(
-        {
-            CanStart = canStart,
-            InstanceId = null
-        };
+        return new(null, canStart);
     }
 
     /// <inheritdoc />

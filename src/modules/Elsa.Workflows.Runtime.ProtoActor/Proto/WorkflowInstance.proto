@@ -15,5 +15,5 @@ service WorkflowInstance {
   rpc Cancel (Empty) returns (Empty);
   rpc ExportState(Empty) returns (ExportWorkflowStateResponse);
   rpc ImportState(ImportWorkflowStateRequest) returns (Empty);
-  rpc InstanceExists(Empty) returns (bool);
+  rpc InstanceExists(Empty) returns (InstanceExistsResponse);
 }
