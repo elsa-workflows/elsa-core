@@ -241,6 +241,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddNotificationHandler<DeleteWorkflowInstances>()
             .AddNotificationHandler<RefreshActivityRegistry>()
             .AddNotificationHandler<UpdateConsumingWorkflows>()
+            .AddNotificationHandler<ValidateWorkflow>()
             ;
 
         Services.Configure<ManagementOptions>(options =>
