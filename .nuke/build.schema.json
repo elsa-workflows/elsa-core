@@ -1,28 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "properties": {
-    "AnalyseCode": {
-      "type": "boolean"
-    },
-    "Configuration": {
-      "type": "string",
-      "enum": [
-        "Debug",
-        "Release"
-      ]
-    },
-    "IgnoreFailedSources": {
-      "type": "boolean",
-      "description": "Ignore unreachable sources during Restore"
-    },
-    "Solution": {
-      "type": "string",
-      "description": "Path to a solution file that is automatically loaded"
-    },
-    "Version": {
-      "type": "string"
-    }
-  },
   "definitions": {
     "Host": {
       "type": "string",
@@ -122,5 +99,34 @@
       }
     }
   },
-  "$ref": "#/definitions/NukeBuild"
+  "allOf": [
+    {
+      "properties": {
+        "AnalyseCode": {
+          "type": "boolean"
+        },
+        "Configuration": {
+          "type": "string",
+          "enum": [
+            "Debug",
+            "Release"
+          ]
+        },
+        "IgnoreFailedSources": {
+          "type": "boolean",
+          "description": "Ignore unreachable sources during Restore"
+        },
+        "Solution": {
+          "type": "string",
+          "description": "Path to a solution file that is automatically loaded"
+        },
+        "Version": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "$ref": "#/definitions/NukeBuild"
+    }
+  ]
 }
