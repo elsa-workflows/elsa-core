@@ -1,13 +1,13 @@
 ---
-name: Maintenance Task
-about: Suggest a maintenance task for this project
-title: "[CHORE] "
-labels: maintenance
+name: Task
+about: Suggest a task for this project
+title: ""
+type: Task
 assignees: ''
 
 ---
 
-## Maintenance Task Request
+## Task Request
 
 ### Task Overview
 **What maintenance task do you propose? Please describe.**

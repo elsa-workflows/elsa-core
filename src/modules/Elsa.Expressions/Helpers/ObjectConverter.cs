@@ -40,11 +40,11 @@ public static class ObjectConverter
         try
         {
             var convertedValue = value.ConvertTo(targetType, converterOptions);
-            return new Result(true, convertedValue, null);
+            return new(true, convertedValue, null);
         }
         catch (Exception e)
         {
-            return new Result(false, null, e);
+            return new(false, null, e);
         }
     }
 
@@ -56,7 +56,7 @@ public static class ObjectConverter
     private static JsonSerializerOptions? _defaultSerializerOptions;
     private static JsonSerializerOptions? _internalSerializerOptions;
 
-    private static JsonSerializerOptions DefaultSerializerOptions => _defaultSerializerOptions ??= new JsonSerializerOptions
+    private static JsonSerializerOptions DefaultSerializerOptions => _defaultSerializerOptions ??= new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
@@ -68,7 +68,7 @@ public static class ObjectConverter
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
     };
 
-    private static JsonSerializerOptions InternalSerializerOptions => _internalSerializerOptions ??= new JsonSerializerOptions
+    private static JsonSerializerOptions InternalSerializerOptions => _internalSerializerOptions ??= new()
     {
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
     };
@@ -274,20 +274,20 @@ public static class ObjectConverter
             {
                 DateTime dateTime => dateTime,
                 DateTimeOffset dateTimeOffset => dateTimeOffset.DateTime,
-                DateOnly date => new DateTime(date.Year, date.Month, date.Day),
+                DateOnly date => new(date.Year, date.Month, date.Day),
                 _ => throw new ArgumentException("Invalid value type.")
             },
             { } t when t == typeof(DateTimeOffset) => value switch
             {
-                DateTime dateTime => new DateTimeOffset(dateTime),
+                DateTime dateTime => new(dateTime),
                 DateTimeOffset dateTimeOffset => dateTimeOffset,
-                DateOnly date => new DateTimeOffset(date.Year, date.Month, date.Day, 0, 0, 0, TimeSpan.Zero),
+                DateOnly date => new(date.Year, date.Month, date.Day, 0, 0, 0, TimeSpan.Zero),
                 _ => throw new ArgumentException("Invalid value type.")
             },
             { } t when t == typeof(DateOnly) => value switch
             {
-                DateTime dateTime => new DateOnly(dateTime.Year, dateTime.Month, dateTime.Day),
-                DateTimeOffset dateTimeOffset => new DateOnly(dateTimeOffset.Year, dateTimeOffset.Month, dateTimeOffset.Day),
+                DateTime dateTime => new(dateTime.Year, dateTime.Month, dateTime.Day),
+                DateTimeOffset dateTimeOffset => new(dateTimeOffset.Year, dateTimeOffset.Month, dateTimeOffset.Day),
                 DateOnly date => date,
                 _ => throw new ArgumentException("Invalid value type.")
             },

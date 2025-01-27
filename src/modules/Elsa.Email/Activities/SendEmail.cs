@@ -84,8 +84,7 @@ public class SendEmail : Activity
     /// <summary>
     /// The activity to execute when an error occurs while trying to send the email.
     /// </summary>
-    [Port]
-    public IActivity? Error { get; set; }
+    [Port] public IActivity? Error { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -99,7 +98,10 @@ public class SendEmail : Activity
         message.From.Add(MailboxAddress.Parse(from));
         message.Subject = Subject.GetOrDefault(context) ?? "";
 
-        var bodyBuilder = new BodyBuilder { HtmlBody = Body.GetOrDefault(context) };
+        var bodyBuilder = new BodyBuilder
+        {
+            HtmlBody = Body.GetOrDefault(context)
+        };
         await AddAttachmentsAsync(context, bodyBuilder, cancellationToken);
 
         message.Body = bodyBuilder.ToMessageBody();
@@ -119,7 +121,10 @@ public class SendEmail : Activity
         catch (Exception e)
         {
             logger.LogWarning(e, "Error while sending email message");
-            context.AddExecutionLogEntry("Error", e.Message, payload: new { e.StackTrace });
+            context.AddExecutionLogEntry("Error", e.Message, payload: new
+            {
+                e.StackTrace
+            });
             await context.ScheduleActivityAsync(Error, OnErrorCompletedAsync);
         }
     }
@@ -155,38 +160,38 @@ public class SendEmail : Activity
                     await AttachLocalFileAsync(bodyBuilder, path, cancellationToken);
                     break;
                 case byte[] bytes:
-                {
-                    var fileName = $"Attachment-{++index}";
-                    bodyBuilder.Attachments.Add(fileName, bytes, ContentType.Parse("application/binary"));
-                    break;
-                }
+                    {
+                        var fileName = $"Attachment-{++index}";
+                        bodyBuilder.Attachments.Add(fileName, bytes, ContentType.Parse("application/binary"));
+                        break;
+                    }
                 case Stream stream:
-                {
-                    var fileName = $"Attachment-{++index}";
-                    await bodyBuilder.Attachments.AddAsync(fileName, stream, ContentType.Parse("application/binary"), cancellationToken);
-                    break;
-                }
+                    {
+                        var fileName = $"Attachment-{++index}";
+                        await bodyBuilder.Attachments.AddAsync(fileName, stream, ContentType.Parse("application/binary"), cancellationToken);
+                        break;
+                    }
                 case EmailAttachment emailAttachment:
-                {
-                    var fileName = emailAttachment.FileName ?? $"Attachment-{++index}";
-                    var contentType = emailAttachment.ContentType ?? "application/binary";
-                    var parsedContentType = ContentType.Parse(contentType);
+                    {
+                        var fileName = emailAttachment.FileName ?? $"Attachment-{++index}";
+                        var contentType = emailAttachment.ContentType ?? "application/binary";
+                        var parsedContentType = ContentType.Parse(contentType);
 
-                    if (emailAttachment.Content is byte[] bytes)
-                        bodyBuilder.Attachments.Add(fileName, bytes, parsedContentType);
+                        if (emailAttachment.Content is byte[] bytes)
+                            bodyBuilder.Attachments.Add(fileName, bytes, parsedContentType);
 
-                    else if (emailAttachment.Content is Stream stream)
-                        await bodyBuilder.Attachments.AddAsync(fileName, stream, parsedContentType, cancellationToken);
+                        else if (emailAttachment.Content is Stream stream)
+                            await bodyBuilder.Attachments.AddAsync(fileName, stream, parsedContentType, cancellationToken);
 
-                    break;
-                }
+                        break;
+                    }
                 default:
-                {
-                    var json = JsonSerializer.Serialize(attachmentObject);
-                    var fileName = $"Attachment-{++index}";
-                    bodyBuilder.Attachments.Add(fileName, Encoding.UTF8.GetBytes(json), ContentType.Parse("application/json"));
-                    break;
-                }
+                    {
+                        var json = JsonSerializer.Serialize(attachmentObject);
+                        var fileName = $"Attachment-{++index}";
+                        bodyBuilder.Attachments.Add(fileName, Encoding.UTF8.GetBytes(json), ContentType.Parse("application/json"));
+                        break;
+                    }
             }
         }
     }
@@ -203,7 +208,24 @@ public class SendEmail : Activity
         await bodyBuilder.Attachments.AddAsync(fileName, contentStream, ContentType.Parse(contentType), cancellationToken);
     }
 
-    private IEnumerable InterpretAttachmentsModel(object attachments) => attachments is string text ? new[] { text } : attachments is IEnumerable enumerable ? enumerable : new[] { attachments };
+    private IEnumerable InterpretAttachmentsModel(object attachments)
+    {
+        if (attachments is byte[] bytes)
+            return new[]
+            {
+                bytes
+            };
+
+        return attachments is string text
+            ? new[]
+            {
+                text
+            }
+            : attachments as IEnumerable ?? new[]
+            {
+                attachments
+            };
+    }
 
     private void SetRecipientsEmailAddresses(InternetAddressList list, IEnumerable<string>? addresses)
     {
