@@ -79,8 +79,12 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving = default,
         CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var entityList = entities.ToList();
+
+        if (entityList.Count == 0)
+            return;
+
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
 
         if (onSaving != null)
         {
@@ -162,8 +166,12 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving = default,
         CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var entityList = entities.ToList();
+
+        if (entityList.Count == 0)
+            return;
+
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
 
         if (onSaving != null)
         {

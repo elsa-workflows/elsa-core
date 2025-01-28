@@ -50,7 +50,7 @@ public static class TriggerExtensions
         var expressionInput = new Dictionary<string, object>();
         var applicationProperties = ExpressionExecutionContextExtensions.CreateTriggerIndexingPropertiesFrom(context.Workflow, expressionInput);
         applicationProperties[ExpressionExecutionContextExtensions.ActivityKey] = trigger;
-        var expressionExecutionContext = new ExpressionExecutionContext(serviceProvider, register, default, applicationProperties, cancellationToken);
+        var expressionExecutionContext = new ExpressionExecutionContext(serviceProvider, register, null, applicationProperties, null, cancellationToken);
 
         // Evaluate activity inputs before requesting trigger data.
         foreach (var namedInput in assignedInputs)

@@ -37,6 +37,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
     private IList<ActivityExecutionContext> _activityExecutionContexts;
     private readonly IHasher _hasher;
+    private readonly ICommitStateHandler _commitStateHandler;
 
     /// <summary>
     /// Initializes a new instance of <see cref="WorkflowExecutionContext"/>.
@@ -61,6 +62,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         ActivityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
         ActivityRegistryLookup = serviceProvider.GetRequiredService<IActivityRegistryLookupService>();
         _hasher = serviceProvider.GetRequiredService<IHasher>();
+        _commitStateHandler = serviceProvider.GetRequiredService<ICommitStateHandler>();
         SubStatus = WorkflowSubStatus.Pending;
         Id = id;
         CorrelationId = correlationId;
@@ -237,7 +239,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
     /// The current sub status of the workflow.
     public WorkflowSubStatus SubStatus { get; internal set; }
-
+    
     /// The root <see cref="MemoryRegister"/> associated with the execution context.
     public MemoryRegister MemoryRegister { get; private set; } = null!;
 
@@ -510,8 +512,8 @@ public partial class WorkflowExecutionContext : IExecutionContext
     internal void TransitionTo(WorkflowSubStatus subStatus)
     {
         if (!ValidateStatusTransition())
-            throw new Exception($"Cannot transition from {SubStatus} to {subStatus}");
-
+            throw new($"Cannot transition from {SubStatus} to {subStatus}");
+        
         SubStatus = subStatus;
         UpdatedAt = SystemClock.UtcNow;
 
@@ -531,20 +533,15 @@ public partial class WorkflowExecutionContext : IExecutionContext
         var activityDescriptor = await ActivityRegistryLookup.FindAsync(activity) ?? throw new ActivityNotFoundException(activity.Type);
         var tag = options?.Tag;
         var parentContext = options?.Owner;
-        var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext ?? ExpressionExecutionContext;
-        var properties = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(this, Input);
-        properties[ExpressionExecutionContextExtensions.ActivityKey] = activity;
-        var memory = new MemoryRegister();
         var now = SystemClock.UtcNow;
-        var expressionExecutionContext = new ExpressionExecutionContext(ServiceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);
         var id = IdentityGenerator.GenerateId();
-        var activityExecutionContext = new ActivityExecutionContext(id, this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, CancellationToken);
+        var activityExecutionContext = new ActivityExecutionContext(id, this, parentContext, activity, activityDescriptor, now, tag, SystemClock, CancellationToken);
         var variablesToDeclare = options?.Variables ?? Array.Empty<Variable>();
         var variableContainer = new[]
         {
             activityExecutionContext.ActivityNode
         }.Concat(activityExecutionContext.ActivityNode.Ancestors()).FirstOrDefault(x => x.Activity is IVariableContainer)?.Activity as IVariableContainer;
-        expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
+        activityExecutionContext.ExpressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
 
         if (variableContainer != null)
         {
@@ -555,11 +552,12 @@ public partial class WorkflowExecutionContext : IExecutionContext
                 activityExecutionContext.DynamicVariables.Add(variable);
 
                 // Assign the variable to the expression execution context.
-                expressionExecutionContext.CreateVariable(variable.Name, variable.Value);
+                activityExecutionContext.ExpressionExecutionContext.CreateVariable(variable.Name, variable.Value);
             }
         }
 
-        activityExecutionContext.ActivityInput = options?.Input ?? new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        var activityInput = options?.Input ?? new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        activityExecutionContext.ActivityInput.Merge(activityInput);
 
         return activityExecutionContext;
     }
@@ -613,5 +611,10 @@ public partial class WorkflowExecutionContext : IExecutionContext
     {
         var currentMainStatus = GetMainStatus(SubStatus);
         return currentMainStatus != WorkflowStatus.Finished;
+    }
+
+    public Task CommitAsync()
+    {
+        return _commitStateHandler.CommitAsync(this, CancellationToken);
     }
 }

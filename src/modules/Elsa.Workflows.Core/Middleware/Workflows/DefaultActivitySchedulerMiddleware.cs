@@ -36,6 +36,8 @@ public class DefaultActivitySchedulerMiddleware : WorkflowExecutionMiddleware
 
         context.TransitionTo(WorkflowSubStatus.Executing);
         
+        await ConditionallyCommitStateAsync(context);
+        
         while (scheduler.HasAny)
         {
             // Do not start a workflow if cancellation has been requested.
@@ -64,5 +66,13 @@ public class DefaultActivitySchedulerMiddleware : WorkflowExecutionMiddleware
         };
 
         await _activityInvoker.InvokeAsync(context, workItem.Activity, options);
+    }
+    
+    private async Task ConditionallyCommitStateAsync(WorkflowExecutionContext context)
+    {
+        var shouldCommit = context.Workflow.Options.CommitStateOptions.Starting;
+        
+        if (shouldCommit)
+            await context.CommitAsync();
     }
 }
