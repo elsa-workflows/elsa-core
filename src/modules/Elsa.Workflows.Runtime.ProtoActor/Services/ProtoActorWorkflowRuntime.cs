@@ -1,4 +1,3 @@
-using Elsa.Workflows.Runtime.Deprecated;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Services;

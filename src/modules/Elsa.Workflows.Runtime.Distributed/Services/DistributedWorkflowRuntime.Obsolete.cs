@@ -1,4 +1,3 @@
-using Elsa.Workflows.Runtime.Deprecated;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;

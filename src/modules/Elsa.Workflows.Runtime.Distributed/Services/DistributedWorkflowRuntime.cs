@@ -1,5 +1,4 @@
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Runtime.Deprecated;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Distributed;

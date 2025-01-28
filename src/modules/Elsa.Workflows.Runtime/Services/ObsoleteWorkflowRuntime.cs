@@ -14,8 +14,11 @@ using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 using Open.Linq.AsyncExtensions;
 
-namespace Elsa.Workflows.Runtime.Deprecated;
+namespace Elsa.Workflows.Runtime;
 
+/// <summary>
+/// Implements the now deprecated workflow runtime API methods. 
+/// </summary>
 public class ObsoleteWorkflowRuntime(
     Func<string?, CancellationToken, ValueTask<IWorkflowClient>> createClientAsync,
     IWorkflowDefinitionService workflowDefinitionService,
