@@ -263,7 +263,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowActivationStrategyEvaluator, DefaultWorkflowActivationStrategyEvaluator>()
             .AddScoped<IWorkflowStarter, DefaultWorkflowStarter>()
             .AddScoped<IBookmarkQueuePurger, DefaultBookmarkQueuePurger>()
-            .AddScoped<ILogRecordExtractor<ActivityExecutionRecord>, ActivityExecutionRecordExtractor>()
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
