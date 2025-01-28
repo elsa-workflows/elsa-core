@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Description>
+			Provides a Command execution provider.
+		</Description>
+		<PackageTags>elsa module executes custom made command provider.</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\modules\Elsa.Expressions\Elsa.Expressions.csproj" />
+		<ProjectReference Include="..\..\modules\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+		<ProjectReference Include="..\..\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+	</ItemGroup>
+
+
+</Project>
