@@ -27,6 +27,7 @@ public class DefaultCommitStateHandler(
         await variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
         await workflowInstanceManager.SaveAsync(workflowState, cancellationToken);
         workflowExecutionContext.ExecutionLog.Clear();
+        workflowExecutionContext.ClearCompletedActivityExecutionContexts();
         await workflowExecutionContext.ExecuteDeferredTasksAsync();
     }
 }

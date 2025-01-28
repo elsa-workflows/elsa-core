@@ -192,14 +192,14 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
 
     private static void ExtractCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        // Assert all referenced owner contexts exist.
-        var activeContexts = GetActiveActivityExecutionContexts(workflowExecutionContext.ActivityExecutionContexts).ToList();
+        // Assert that all referenced owner contexts exist.
+        var activeContexts = workflowExecutionContext.GetActiveActivityExecutionContexts().ToList();
         foreach (var completionCallback in workflowExecutionContext.CompletionCallbacks)
         {
             var ownerContext = activeContexts.FirstOrDefault(x => x == completionCallback.Owner);
 
             if (ownerContext == null)
-                throw new Exception("Lost an owner context");
+                throw new("Lost an owner context");
         }
 
         var completionCallbacks = workflowExecutionContext
@@ -220,7 +220,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
                 var parentContext = activityExecutionContext.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == parentId);
 
                 if (parentContext == null)
-                    throw new Exception("We lost a context. This could indicate a bug in a parent activity that completed before (some of) its child activities.");
+                    throw new("We lost a context. This could indicate a bug in a parent activity that completed before (some of) its child activities.");
             }
 
             var activityExecutionContextState = new ActivityExecutionContextState
@@ -241,7 +241,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         }
 
         // Only persist non-completed contexts.
-        state.ActivityExecutionContexts = GetActiveActivityExecutionContexts(workflowExecutionContext.ActivityExecutionContexts).Reverse().Select(CreateActivityExecutionContextState).ToList();
+        state.ActivityExecutionContexts = workflowExecutionContext.GetActiveActivityExecutionContexts().Reverse().Select(CreateActivityExecutionContextState).ToList();
     }
 
     private void ExtractScheduledActivities(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
@@ -259,13 +259,5 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             });
 
         state.ScheduledActivities = scheduledActivities.ToList();
-    }
-
-    private static IEnumerable<ActivityExecutionContext> GetActiveActivityExecutionContexts(IEnumerable<ActivityExecutionContext> activityExecutionContexts)
-    {
-        // Filter out completed activity execution contexts, except for the root Workflow activity context, which stores workflow-level variables.
-        // This will currently break scripts accessing activity output directly, but there's a workaround for that via variable capturing.
-        // We may ultimately restore direct output access, but in a different way.
-        return activityExecutionContexts.Where(x => !x.IsCompleted || x.ParentActivityExecutionContext == null).ToList();
     }
 }

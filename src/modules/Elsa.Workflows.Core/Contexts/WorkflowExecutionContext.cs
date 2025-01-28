@@ -579,6 +579,22 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public void RemoveActivityExecutionContext(Func<ActivityExecutionContext, bool> predicate) => _activityExecutionContexts.RemoveWhere(predicate);
 
     /// <summary>
+    /// Removes all completed activity execution contexts that have a parent activity execution context.
+    /// </summary>
+    public void ClearCompletedActivityExecutionContexts()
+    {
+        RemoveActivityExecutionContext(x => x is { IsCompleted: true, ParentActivityExecutionContext: not null });
+    }
+    
+    public IEnumerable<ActivityExecutionContext> GetActiveActivityExecutionContexts()
+    {
+        // Filter out completed activity execution contexts, except for the root Workflow activity context, which stores workflow-level variables.
+        // This will currently break scripts accessing activity output directly, but there's a workaround for that via variable capturing.
+        // We may ultimately restore direct output access, but in a different way.
+        return ActivityExecutionContexts.Where(x => !x.IsCompleted || x.ParentActivityExecutionContext == null);
+    }
+
+    /// <summary>
     /// Records the output of the specified activity into the current workflow execution context.
     /// </summary>
     /// <param name="activityExecutionContext">The <see cref="ActivityExecutionContext"/> of the activity.</param>
