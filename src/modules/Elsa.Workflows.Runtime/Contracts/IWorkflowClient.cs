@@ -42,4 +42,6 @@ public interface IWorkflowClient
     /// Imports the specified <see cref="WorkflowState"/>.
     /// </summary>
     Task ImportStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
+    
+    Task<bool> InstanceExistsAsync(CancellationToken cancellationToken = default);
 }
