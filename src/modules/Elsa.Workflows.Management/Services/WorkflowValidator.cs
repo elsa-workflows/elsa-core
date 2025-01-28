@@ -2,7 +2,6 @@ using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Notifications;
-using Elsa.Workflows.Management.Requests;
 
 namespace Elsa.Workflows.Management.Services;
 
