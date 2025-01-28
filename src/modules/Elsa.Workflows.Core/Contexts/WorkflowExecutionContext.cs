@@ -513,8 +513,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     {
         if (!ValidateStatusTransition())
             throw new($"Cannot transition from {SubStatus} to {subStatus}");
-
-        PreviousSubStatus = SubStatus;
+        
         SubStatus = subStatus;
         UpdatedAt = SystemClock.UtcNow;
 
