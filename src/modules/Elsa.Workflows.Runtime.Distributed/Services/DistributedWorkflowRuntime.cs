@@ -1,4 +1,3 @@
-using Elsa.Workflows.Management;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Distributed;
@@ -18,7 +17,7 @@ public partial class DistributedWorkflowRuntime : IWorkflowRuntime
     {
         _serviceProvider = serviceProvider;
         _identityGenerator = identityGenerator;
-        _obsoleteApi = ActivatorUtilities.CreateInstance<ObsoleteWorkflowRuntime>(serviceProvider, (Func<string?, CancellationToken, ValueTask<IWorkflowClient>>)CreateClientAsync);
+        _obsoleteApi = new(() => ObsoleteWorkflowRuntime.Create(serviceProvider, CreateClientAsync));
     }
 
     /// <inheritdoc />

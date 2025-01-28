@@ -12,6 +12,7 @@ using Elsa.Workflows.Runtime.Params;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
+using Microsoft.Extensions.DependencyInjection;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Runtime;
@@ -30,6 +31,11 @@ public class ObsoleteWorkflowRuntime(
     ITriggerBoundWorkflowService triggerBoundWorkflowService,
     IBookmarkBoundWorkflowService bookmarkBoundWorkflowService)
 {
+    public static ObsoleteWorkflowRuntime Create(IServiceProvider serviceProvider, Func<string?, CancellationToken, ValueTask<IWorkflowClient>> createClientAsync)
+    {
+        return ActivatorUtilities.CreateInstance<ObsoleteWorkflowRuntime>(serviceProvider, createClientAsync);
+    }
+    
     public async Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = null)
     {
         var cancellationToken = options?.CancellationToken ?? CancellationToken.None;

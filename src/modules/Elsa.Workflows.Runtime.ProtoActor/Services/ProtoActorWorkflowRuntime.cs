@@ -18,7 +18,7 @@ public partial class ProtoActorWorkflowRuntime : IWorkflowRuntime
     {
         _serviceProvider = serviceProvider;
         _identityGenerator = identityGenerator;
-        _obsoleteApi = ActivatorUtilities.CreateInstance<ObsoleteWorkflowRuntime>(serviceProvider, (Func<string?, CancellationToken, ValueTask<IWorkflowClient>>)CreateClientAsync);
+        _obsoleteApi = new(() => ObsoleteWorkflowRuntime.Create(serviceProvider, CreateClientAsync));
     }
 
     /// <inheritdoc />

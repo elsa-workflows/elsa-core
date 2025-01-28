@@ -65,4 +65,8 @@
         <PackageReference Include="Proto.Persistence.SqlServer"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="App_Data\" />
+    </ItemGroup>
+
 </Project>
