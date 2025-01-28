@@ -1,4 +1,4 @@
-using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime.Deprecated;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Services;
@@ -6,18 +6,22 @@ namespace Elsa.Workflows.Runtime.ProtoActor.Services;
 /// <summary>
 /// Represents a Proto.Actor implementation of the workflows runtime.
 /// </summary>
-public partial class ProtoActorWorkflowRuntime(
-    IServiceProvider serviceProvider, 
-    IWorkflowDefinitionService workflowDefinitionService,
-    IWorkflowActivationStrategyEvaluator workflowActivationStrategyEvaluator,
-    IStimulusSender stimulusSender,
-    IStimulusHasher stimulusHasher,
-    ITriggerBoundWorkflowService triggerBoundWorkflowService,
-    IBookmarkBoundWorkflowService bookmarkBoundWorkflowService,
-    IBookmarkStore bookmarkStore,
-    IWorkflowInstanceStore workflowInstanceStore,
-    IIdentityGenerator identityGenerator) : IWorkflowRuntime
+public partial class ProtoActorWorkflowRuntime : IWorkflowRuntime
 {
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IIdentityGenerator _identityGenerator;
+
+    /// <summary>
+    /// Represents a Proto.Actor implementation of the workflows runtime.
+    /// </summary>
+    public ProtoActorWorkflowRuntime(IServiceProvider serviceProvider, 
+        IIdentityGenerator identityGenerator)
+    {
+        _serviceProvider = serviceProvider;
+        _identityGenerator = identityGenerator;
+        _obsoleteApi = ActivatorUtilities.CreateInstance<ObsoleteWorkflowRuntime>(serviceProvider, (Func<string?, CancellationToken, ValueTask<IWorkflowClient>>)CreateClientAsync);
+    }
+
     /// <inheritdoc />
     public async ValueTask<IWorkflowClient> CreateClientAsync(CancellationToken cancellationToken = default)
     {
@@ -27,8 +31,8 @@ public partial class ProtoActorWorkflowRuntime(
     /// <inheritdoc />
     public ValueTask<IWorkflowClient> CreateClientAsync(string? workflowInstanceId, CancellationToken cancellationToken = default)
     {
-        workflowInstanceId ??= identityGenerator.GenerateId();
-        var client = (IWorkflowClient)ActivatorUtilities.CreateInstance(serviceProvider, typeof(ProtoActorWorkflowClient), workflowInstanceId);
+        workflowInstanceId ??= _identityGenerator.GenerateId();
+        var client = (IWorkflowClient)ActivatorUtilities.CreateInstance(_serviceProvider, typeof(ProtoActorWorkflowClient), workflowInstanceId);
         return new(client);
     }
 }

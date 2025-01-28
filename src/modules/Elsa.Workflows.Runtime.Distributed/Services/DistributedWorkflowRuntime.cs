@@ -1,4 +1,5 @@
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime.Deprecated;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Distributed;
@@ -6,18 +7,21 @@ namespace Elsa.Workflows.Runtime.Distributed;
 /// <summary>
 /// Represents a distributed workflow runtime that can create <see cref="IWorkflowClient"/> instances connected to a workflow instance.
 /// </summary>
-public partial class DistributedWorkflowRuntime(
-    IServiceProvider serviceProvider, 
-    IIdentityGenerator identityGenerator, 
-    IWorkflowDefinitionService workflowDefinitionService,
-    IWorkflowActivationStrategyEvaluator workflowActivationStrategyEvaluator,
-    IStimulusSender stimulusSender,
-    IStimulusHasher stimulusHasher,
-    IBookmarkStore bookmarkStore,
-    IWorkflowInstanceStore workflowInstanceStore,
-    ITriggerBoundWorkflowService triggerBoundWorkflowService,
-    IBookmarkBoundWorkflowService bookmarkBoundWorkflowService) : IWorkflowRuntime
+public partial class DistributedWorkflowRuntime : IWorkflowRuntime
 {
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IIdentityGenerator _identityGenerator;
+
+    /// <summary>
+    /// Represents a distributed workflow runtime that can create <see cref="IWorkflowClient"/> instances connected to a workflow instance.
+    /// </summary>
+    public DistributedWorkflowRuntime(IServiceProvider serviceProvider, IIdentityGenerator identityGenerator)
+    {
+        _serviceProvider = serviceProvider;
+        _identityGenerator = identityGenerator;
+        _obsoleteApi = ActivatorUtilities.CreateInstance<ObsoleteWorkflowRuntime>(serviceProvider, (Func<string?, CancellationToken, ValueTask<IWorkflowClient>>)CreateClientAsync);
+    }
+
     /// <inheritdoc />
     public async ValueTask<IWorkflowClient> CreateClientAsync(CancellationToken cancellationToken = default)
     {
@@ -27,8 +31,8 @@ public partial class DistributedWorkflowRuntime(
     /// <inheritdoc />
     public ValueTask<IWorkflowClient> CreateClientAsync(string? workflowInstanceId, CancellationToken cancellationToken = default)
     {
-        workflowInstanceId ??= identityGenerator.GenerateId();
-        var client = (IWorkflowClient)ActivatorUtilities.CreateInstance(serviceProvider, typeof(DistributedWorkflowClient), workflowInstanceId);
+        workflowInstanceId ??= _identityGenerator.GenerateId();
+        var client = (IWorkflowClient)ActivatorUtilities.CreateInstance(_serviceProvider, typeof(DistributedWorkflowClient), workflowInstanceId);
         return new(client);
     }
 }

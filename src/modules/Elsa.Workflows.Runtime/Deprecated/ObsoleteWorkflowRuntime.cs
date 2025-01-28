@@ -14,10 +14,10 @@ using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 using Open.Linq.AsyncExtensions;
 
-namespace Elsa.Workflows.Runtime.Distributed;
+namespace Elsa.Workflows.Runtime.Deprecated;
 
 public class ObsoleteWorkflowRuntime(
-    Func<string?, CancellationToken, Task<IWorkflowClient>> createClientAsync,
+    Func<string?, CancellationToken, ValueTask<IWorkflowClient>> createClientAsync,
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowActivationStrategyEvaluator workflowActivationStrategyEvaluator,
     IStimulusSender stimulusSender,

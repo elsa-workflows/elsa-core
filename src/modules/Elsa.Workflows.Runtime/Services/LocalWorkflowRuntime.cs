@@ -1,4 +1,4 @@
-using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime.Deprecated;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime;
@@ -8,18 +8,23 @@ namespace Elsa.Workflows.Runtime;
 /// It does not support clustering and is intended for single-node deployments only.
 /// For distributed deployments, use Proto.Actor or another distributed runtime.
 /// </summary>
-public partial class LocalWorkflowRuntime(
-    IServiceProvider serviceProvider, 
-    IIdentityGenerator identityGenerator, 
-    IWorkflowDefinitionService workflowDefinitionService,
-    IWorkflowActivationStrategyEvaluator workflowActivationStrategyEvaluator,
-    IStimulusSender stimulusSender,
-    IStimulusHasher stimulusHasher,
-    IBookmarkStore bookmarkStore,
-    IWorkflowInstanceStore workflowInstanceStore,
-    ITriggerBoundWorkflowService triggerBoundWorkflowService,
-    IBookmarkBoundWorkflowService bookmarkBoundWorkflowService) : IWorkflowRuntime
+public partial class LocalWorkflowRuntime : IWorkflowRuntime
 {
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IIdentityGenerator _identityGenerator;
+
+    /// <summary>
+    /// Represents a local implementation of the distributed runtime for running workflows.
+    /// It does not support clustering and is intended for single-node deployments only.
+    /// For distributed deployments, use Proto.Actor or another distributed runtime.
+    /// </summary>
+    public LocalWorkflowRuntime(IServiceProvider serviceProvider, IIdentityGenerator identityGenerator)
+    {
+        _serviceProvider = serviceProvider;
+        _identityGenerator = identityGenerator;
+        _obsoleteApi = ActivatorUtilities.CreateInstance<ObsoleteWorkflowRuntime>(serviceProvider, (Func<string?, CancellationToken, ValueTask<IWorkflowClient>>)CreateClientAsync);
+    }
+
     /// <inheritdoc />
     public async ValueTask<IWorkflowClient> CreateClientAsync(CancellationToken cancellationToken = default)
     {
@@ -29,8 +34,8 @@ public partial class LocalWorkflowRuntime(
     /// <inheritdoc />
     public ValueTask<IWorkflowClient> CreateClientAsync(string? workflowInstanceId, CancellationToken cancellationToken = default)
     {
-        workflowInstanceId ??= identityGenerator.GenerateId();
-        var client = (IWorkflowClient)ActivatorUtilities.CreateInstance(serviceProvider, typeof(LocalWorkflowClient), workflowInstanceId);
+        workflowInstanceId ??= _identityGenerator.GenerateId();
+        var client = (IWorkflowClient)ActivatorUtilities.CreateInstance(_serviceProvider, typeof(LocalWorkflowClient), workflowInstanceId);
         return new(client);
     }
 }
