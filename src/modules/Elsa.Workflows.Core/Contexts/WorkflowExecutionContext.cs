@@ -517,10 +517,10 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
         if (Status == WorkflowStatus.Finished)
             FinishedAt = UpdatedAt;
-        
+
         if (Status == WorkflowStatus.Finished || SubStatus == WorkflowSubStatus.Suspended)
         {
-            foreach (var registration in _cancellationRegistrations) 
+            foreach (var registration in _cancellationRegistrations)
                 registration.Dispose();
         }
     }
@@ -607,7 +607,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             WorkflowSubStatus.Suspended => WorkflowStatus.Running,
             _ => throw new ArgumentOutOfRangeException(nameof(subStatus), subStatus, null)
         };
-    
+
     // TODO: Check if we should not use the target subStatus here instead.
     private bool ValidateStatusTransition()
     {
