@@ -33,6 +33,16 @@ public class WorkflowInstanceManager(
         return await store.FindAsync(filter, cancellationToken);
     }
 
+    public async Task<bool> ExistsAsync(string instanceId, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowInstanceFilter
+        {
+            Id = instanceId
+        };
+        var count = await store.CountAsync(filter, cancellationToken);
+        return count > 0;
+    }
+
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
     {

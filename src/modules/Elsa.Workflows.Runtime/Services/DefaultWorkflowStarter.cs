@@ -12,7 +12,7 @@ public class DefaultWorkflowStarter(IWorkflowDefinitionService workflowDefinitio
     {
         var workflow = await GetWorkflowAsync(request, cancellationToken);
 
-        var canStart = await workflowActivationStrategyEvaluator.CanStartWorkflowAsync(new WorkflowActivationStrategyEvaluationContext
+        var canStart = await workflowActivationStrategyEvaluator.CanStartWorkflowAsync(new()
         {
             Workflow = workflow,
             CorrelationId = request.CorrelationId
@@ -41,6 +41,7 @@ public class DefaultWorkflowStarter(IWorkflowDefinitionService workflowDefinitio
             WorkflowInstanceId = runWorkflowResponse.WorkflowInstanceId,
             Status = runWorkflowResponse.Status,
             SubStatus = runWorkflowResponse.SubStatus,
+            Bookmarks = runWorkflowResponse.Bookmarks,
             Incidents = runWorkflowResponse.Incidents
         };
     }
@@ -56,7 +57,7 @@ public class DefaultWorkflowStarter(IWorkflowDefinitionService workflowDefinitio
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(request.WorkflowDefinitionHandle, cancellationToken);
 
         if (workflowGraph == null)
-            throw new WorkflowGraphNotFoundException($"Workflow definition not found.", request.WorkflowDefinitionHandle);
+            throw new WorkflowGraphNotFoundException("Workflow definition not found.", request.WorkflowDefinitionHandle);
 
         return workflowGraph.Workflow;
     }

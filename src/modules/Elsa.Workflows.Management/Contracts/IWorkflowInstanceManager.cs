@@ -20,7 +20,12 @@ public interface IWorkflowInstanceManager
     /// Finds the first workflow instance that matches the specified filter.
     /// </summary>
     Task<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
-    
+
+    /// <summary>
+    /// Determines whether a workflow instance with the specified ID exists.
+    /// </summary>
+    Task<bool> ExistsAsync(string instanceId, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Saves the specified workflow instance.
     /// </summary>
