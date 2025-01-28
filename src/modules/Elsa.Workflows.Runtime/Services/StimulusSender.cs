@@ -14,7 +14,6 @@ public class StimulusSender(
     IBookmarkBoundWorkflowService bookmarkBoundWorkflowService,
     IBookmarkQueue bookmarkQueue,
     IWorkflowRuntime workflowRuntime,
-    IWorkflowStarter workflowStarter,
     ITriggerInvoker triggerInvoker,
     ILogger<StimulusSender> logger) : IStimulusSender
 {
