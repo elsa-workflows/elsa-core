@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Description>Provides Activity Connection API endpoints</Description>
+		<PackageTags>elsa module activity connection abstraction api</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
+		<ProjectReference Include="..\Elsa.Connections.Persistence\Elsa.Connections.Persistence.csproj" />
+	</ItemGroup>
+</Project>
