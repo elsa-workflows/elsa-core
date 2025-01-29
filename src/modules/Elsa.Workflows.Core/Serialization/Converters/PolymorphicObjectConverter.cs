@@ -31,7 +31,7 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
         if (reader.TokenType != JsonTokenType.StartObject && reader.TokenType != JsonTokenType.StartArray)
             return ReadPrimitive(ref reader, newOptions);
 
-        var targetType = ReadType(reader);
+        var targetType = ReadType(reader, options);
         if (targetType == null)
             return ReadObject(ref reader, newOptions);
 
@@ -165,7 +165,25 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
         var newOptions = options.Clone();
         var type = value.GetType();
 
-        if (type.IsPrimitive || value is string or decimal or DateTimeOffset or DateTime or DateOnly or TimeOnly or JsonElement or Guid or TimeSpan or Uri or Version or Enum)
+        // If the type is a primitive type or an enumerable of a primitive type, serialize the value directly.
+        bool IsPrimitive(Type valueType)
+        {
+            return type.IsPrimitive
+                   || valueType == typeof(string)
+                   || valueType == typeof(decimal)
+                   || valueType == typeof(DateTimeOffset)
+                   || valueType == typeof(DateTime)
+                   || valueType == typeof(DateOnly)
+                   || valueType == typeof(TimeOnly)
+                   || valueType == typeof(JsonElement)
+                   || valueType == typeof(Guid)
+                   || valueType == typeof(TimeSpan)
+                   || valueType == typeof(Uri)
+                   || valueType == typeof(Version)
+                   || valueType.IsEnum;
+        }
+
+        if (IsPrimitive(type))
         {
             // Remove the converter so that we don't end up in an infinite loop.
             newOptions.Converters.RemoveWhere(x => x is PolymorphicObjectConverterFactory);
@@ -245,13 +263,10 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
         {
             if (shouldWriteTypeField)
             {
-                var typeOptions = newOptions.Clone();
-                typeOptions.Converters.RemoveWhere(c => c.GetType() != typeof(TypeJsonConverter));
-
-                if (typeOptions.Converters.Any())
+                if (newOptions.Converters.OfType<TypeJsonConverter>().FirstOrDefault() is { } typeJsonConverter)
                 {
-                    var typeValue = JsonSerializer.Serialize(type, typeOptions).Trim('"');
-                    writer.WriteString(TypePropertyName, typeValue);
+                    writer.WritePropertyName(TypePropertyName);
+                    typeJsonConverter.Write(writer, type, newOptions);
                 }
                 else
                 {
@@ -263,7 +278,7 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
         writer.WriteEndObject();
     }
 
-    private Type? ReadType(Utf8JsonReader reader)
+    private Type? ReadType(Utf8JsonReader reader, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
             return null;
@@ -278,7 +293,14 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
             if (reader.TokenType == JsonTokenType.PropertyName && reader.ValueTextEquals(TypePropertyName))
             {
                 reader.Read(); // Move to the value of the _type property
-                typeName = reader.GetString();
+                if (options.Converters.OfType<TypeJsonConverter>().FirstOrDefault() is { } typeJsonConverter)
+                {
+                    return typeJsonConverter.Read(ref reader, typeof(Type), options);
+                }
+                else
+                {
+                    typeName = reader.GetString();
+                }
                 break;
             }
 
@@ -308,7 +330,7 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
         }
 
         // If we found the _type property, attempt to resolve the type.
-        var targetType = typeName != null ? wellKnownTypeRegistry.TryGetType(typeName, out var type) ? type : Type.GetType(typeName) : default;
+        var targetType = typeName != null ? Type.GetType(typeName) : default;
         return targetType;
     }
 
