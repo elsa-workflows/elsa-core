@@ -239,7 +239,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
     /// The current sub status of the workflow.
     public WorkflowSubStatus SubStatus { get; internal set; }
-    
+
     /// The root <see cref="MemoryRegister"/> associated with the execution context.
     public MemoryRegister MemoryRegister { get; private set; } = null!;
 
@@ -513,7 +513,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     {
         if (!ValidateStatusTransition())
             throw new($"Cannot transition from {SubStatus} to {subStatus}");
-        
+
         SubStatus = subStatus;
         UpdatedAt = SystemClock.UtcNow;
 
@@ -572,20 +572,29 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public void AddActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Add(context);
 
     /// Removes the specified <see cref="ActivityExecutionContext"/> from the workflow execution context.
-    public void RemoveActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Remove(context);
+    public void RemoveActivityExecutionContext(ActivityExecutionContext context)
+    {
+        _activityExecutionContexts.Remove(context);
+        context.ParentActivityExecutionContext?.Children.Remove(context);
+    }
 
     /// Removes the specified <see cref="ActivityExecutionContext"/> from the workflow execution context.
     /// <param name="predicate">The predicate used to filter the activity execution contexts to remove.</param>
-    public void RemoveActivityExecutionContext(Func<ActivityExecutionContext, bool> predicate) => _activityExecutionContexts.RemoveWhere(predicate);
+    public void RemoveActivityExecutionContexts(Func<ActivityExecutionContext, bool> predicate)
+    {
+        var itemsToRemove = _activityExecutionContexts.Where(predicate).ToList();
+        foreach (var item in itemsToRemove)
+            RemoveActivityExecutionContext(item);
+    }
 
     /// <summary>
     /// Removes all completed activity execution contexts that have a parent activity execution context.
     /// </summary>
     public void ClearCompletedActivityExecutionContexts()
     {
-        RemoveActivityExecutionContext(x => x is { IsCompleted: true, ParentActivityExecutionContext: not null });
+        RemoveActivityExecutionContexts(x => x is { IsCompleted: true, ParentActivityExecutionContext: not null });
     }
-    
+
     public IEnumerable<ActivityExecutionContext> GetActiveActivityExecutionContexts()
     {
         // Filter out completed activity execution contexts, except for the root Workflow activity context, which stores workflow-level variables.

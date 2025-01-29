@@ -47,7 +47,8 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         _parentActivityExecutionContext = parentActivityExecutionContext;
         var expressionExecutionContextProps = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(workflowExecutionContext, workflowExecutionContext.Input);
         expressionExecutionContextProps[ExpressionExecutionContextExtensions.ActivityKey] = activity;
-        ExpressionExecutionContext = new(workflowExecutionContext.ServiceProvider, new(), parentActivityExecutionContext?.ExpressionExecutionContext ?? workflowExecutionContext.ExpressionExecutionContext, expressionExecutionContextProps, Taint, CancellationToken);;
+        ExpressionExecutionContext = new(workflowExecutionContext.ServiceProvider, new(), parentActivityExecutionContext?.ExpressionExecutionContext ?? workflowExecutionContext.ExpressionExecutionContext, expressionExecutionContextProps, Taint, CancellationToken);
+        ;
         Activity = activity;
         ActivityDescriptor = activityDescriptor;
         StartedAt = startedAt;
