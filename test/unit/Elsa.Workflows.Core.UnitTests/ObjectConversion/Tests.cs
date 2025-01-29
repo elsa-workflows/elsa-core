@@ -283,4 +283,21 @@ public class Tests
         Assert.Equal("Bob", secondElement["name"]?.ToString());
         Assert.Equal("25", secondElement["age"]?.ToString());
     }
+
+    [Fact]
+    public void ConvertFrom_JsonArrayToArrayOfComplextType_ReturnsArrayOfComplexType()
+    {
+        // Arrange
+        var jsonArrayString = "[{\"name\":\"Alice\",\"age\":30},{\"name\":\"Bob\",\"age\":25}]";
+        var options = new ObjectConverterOptions();
+
+        // Act
+        var result = jsonArrayString.ConvertTo<Person[]>(options);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Length);
+        Assert.Equal("Alice", result[0].Name);
+        Assert.Equal("Bob", result[1].Name);
+    }
 }
