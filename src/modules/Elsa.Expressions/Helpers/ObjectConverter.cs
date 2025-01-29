@@ -102,15 +102,29 @@ public static class ObjectConverter
             return jsonElement.Deserialize(targetType, serializerOptions);
         }
 
-        if (value is JsonNode jsonNode and not JsonArray) // If the value is a JsonNode, we can convert it to the target type. If it's a JsonArray, we let the enumerable conversion logic handle it.
+        if (value is JsonNode jsonNode)
         {
-            return underlyingTargetType switch
+            if (jsonNode is not JsonArray jsonArray)
             {
-                { } t when t == typeof(string) => jsonNode.ToString(),
-                { } t when t == typeof(ExpandoObject) && jsonNode.GetValueKind() == JsonValueKind.Object => JsonSerializer.Deserialize<ExpandoObject>(jsonNode.ToJsonString()),
-                { } t when t != typeof(object) || converterOptions?.DeserializeJsonObjectToObject == true => jsonNode.Deserialize(targetType, serializerOptions),
-                _ => jsonNode
-            };
+                return underlyingTargetType switch
+                {
+                    { } t when t == typeof(string) => jsonNode.ToString(),
+                    { } t when t == typeof(ExpandoObject) && jsonNode.GetValueKind() == JsonValueKind.Object => JsonSerializer.Deserialize<ExpandoObject>(jsonNode.ToJsonString()),
+                    { } t when t != typeof(object) || converterOptions?.DeserializeJsonObjectToObject == true => jsonNode.Deserialize(targetType, serializerOptions),
+                    _ => jsonNode
+                };
+            }
+
+            // Convert to target type if target type is an array or a generic collection.
+            if (targetType.IsArray || targetType.IsCollectionType())
+            {
+                // The element type of the source array is JsonObject. If the element type of the target array is Object then return the source array as an array of JsonObjects.
+                // Deserializing normally would return an array of JsonElement instead of JsonObject, but we want to keep JsonObject elements:
+                var targetElementType = targetType.IsArray ? targetType.GetElementType()! : targetType.GenericTypeArguments[0];
+
+                if (targetElementType != typeof(object))
+                    return jsonArray.Deserialize(targetType, serializerOptions);
+            }
         }
 
         if (underlyingSourceType == typeof(string) && !underlyingTargetType.IsPrimitive && underlyingTargetType != typeof(object))
