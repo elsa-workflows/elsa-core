@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Dynamic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
@@ -181,6 +182,22 @@ public class SendEmail : Activity
                             bodyBuilder.Attachments.Add(fileName, bytes, parsedContentType);
 
                         else if (emailAttachment.Content is Stream stream)
+                            await bodyBuilder.Attachments.AddAsync(fileName, stream, parsedContentType, cancellationToken);
+
+                        break;
+                    }
+                case ExpandoObject expandoObject:
+                    {
+                        var dictionary = new Dictionary<string, object>(expandoObject, StringComparer.OrdinalIgnoreCase);
+                        var fileName = dictionary.GetValue<string>("FileName") ?? $"Attachment-{++index}";
+                        var contentType = dictionary.GetValue<string>("ContentType") ?? "application/binary";
+                        var parsedContentType = ContentType.Parse(contentType);
+                        var content = dictionary.GetValue<object>("Content");
+
+                        if (content is byte[] bytes)
+                            bodyBuilder.Attachments.Add(fileName, bytes, parsedContentType);
+
+                        else if (content is Stream stream)
                             await bodyBuilder.Attachments.AddAsync(fileName, stream, parsedContentType, cancellationToken);
 
                         break;
