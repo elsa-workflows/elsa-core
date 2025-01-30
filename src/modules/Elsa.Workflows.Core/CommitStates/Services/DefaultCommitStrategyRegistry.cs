@@ -2,37 +2,37 @@ namespace Elsa.Workflows.CommitStates;
 
 public class DefaultCommitStrategyRegistry : ICommitStrategyRegistry
 {
-    private readonly IDictionary<string, IWorkflowCommitStrategy> _workflowStrategies = new Dictionary<string, IWorkflowCommitStrategy>();
-    private readonly IDictionary<string, IActivityCommitStrategy> _activityStrategies = new Dictionary<string, IActivityCommitStrategy>();
+    private readonly IDictionary<string, WorkflowCommitStrategyRegistration> _workflowStrategies = new Dictionary<string, WorkflowCommitStrategyRegistration>();
+    private readonly IDictionary<string, ActivityCommitStrategyRegistration> _activityStrategies = new Dictionary<string, ActivityCommitStrategyRegistration>();
 
 
-    public IEnumerable<string> ListWorkflowStrategies()
+    public IEnumerable<WorkflowCommitStrategyRegistration> ListWorkflowStrategyRegistrations()
     {
-        return _workflowStrategies.Keys;
+        return _workflowStrategies.Values;
     }
 
-    public IEnumerable<string> ListActivityStrategies()
+    public IEnumerable<ActivityCommitStrategyRegistration> ListActivityStrategyRegistrations()
     {
-        return _activityStrategies.Keys;
+        return _activityStrategies.Values;
     }
 
-    public void RegisterStrategy(string name, IWorkflowCommitStrategy strategy)
+    public void RegisterStrategy(WorkflowCommitStrategyRegistration registration)
     {
-        _workflowStrategies[name] = strategy;
+        _workflowStrategies[registration.Metadata.Name] = registration;
     }
 
-    public void RegisterStrategy(string name, IActivityCommitStrategy strategy)
+    public void RegisterStrategy(ActivityCommitStrategyRegistration registration)
     {
-        _activityStrategies[name] = strategy;
+        _activityStrategies[registration.Metadata.Name] = registration;
     }
 
     public IWorkflowCommitStrategy? FindWorkflowStrategy(string name)
     {
-        return _workflowStrategies.TryGetValue(name, out var strategy) ? strategy : null;
+        return _workflowStrategies.TryGetValue(name, out var registration) ? registration.Strategy : null;
     }
 
     public IActivityCommitStrategy? FindActivityStrategy(string name)
     {
-        return _activityStrategies.TryGetValue(name, out var strategy) ? strategy : null;
+        return _activityStrategies.TryGetValue(name, out var registration) ? registration.Strategy : null;
     }
 }

@@ -1,7 +1,7 @@
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Extensions;
-using Elsa.Workflows.CommitStates.Strategies.Activities;
+using Elsa.Workflows.CommitStates.Strategies;
 
 namespace Elsa.Server.Web;
 

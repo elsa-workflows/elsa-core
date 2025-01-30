@@ -1,7 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Workflows.CommitStates.Options;
 using Elsa.Workflows.CommitStates.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,22 +10,72 @@ public class CommitStrategiesFeature(IModule module) : FeatureBase(module)
 {
     public void RegisterStrategy(IWorkflowCommitStrategy strategy)
     {
-        RegisterStrategy(strategy.GetType().Name, strategy);
+        var registration = ObjectRegistrationFactory.Describe(strategy);
+        RegisterStrategy(registration);
     }
     
-    public void RegisterStrategy(string name, IWorkflowCommitStrategy strategy)
+    public void RegisterStrategy(string displayName, IWorkflowCommitStrategy strategy)
     {
-        Services.Configure<CommitStateOptions>(options => options.WorkflowCommitStrategies[name] = strategy);
+        var registration = ObjectRegistrationFactory.Describe(strategy);
+        registration.Metadata.DisplayName = displayName;
+        RegisterStrategy(registration);
+    }
+    
+    public void RegisterStrategy(string displayName, string description, IWorkflowCommitStrategy strategy)
+    {
+        var registration = ObjectRegistrationFactory.Describe(strategy);
+        registration.Metadata.DisplayName = displayName;
+        registration.Metadata.Description = description;
+        RegisterStrategy(registration);
+    }
+    
+    public void RegisterStrategy(string name, string displayName, string description, IWorkflowCommitStrategy strategy)
+    {
+        var registration = ObjectRegistrationFactory.Describe(strategy);
+        registration.Metadata.Name = name;
+        registration.Metadata.DisplayName = displayName;
+        registration.Metadata.Description = description;
+        RegisterStrategy(registration);
+    }
+    
+    public void RegisterStrategy(WorkflowCommitStrategyRegistration registration)
+    {
+        Services.Configure<CommitStateOptions>(options => options.WorkflowCommitStrategies[registration.Metadata.Name] = registration);
     }
     
     public void RegisterStrategy(IActivityCommitStrategy strategy)
     {
-        RegisterStrategy(strategy.GetType().Name, strategy);
+        var registration = ObjectRegistrationFactory.Describe(strategy);
+        RegisterStrategy(registration);
     }
     
-    public void RegisterStrategy(string name, IActivityCommitStrategy strategy)
+    public void RegisterStrategy(string displayName, IActivityCommitStrategy strategy)
     {
-        Services.Configure<CommitStateOptions>(options => options.ActivityCommitStrategies[name] = strategy);
+        var registration = ObjectRegistrationFactory.Describe(strategy);
+        registration.Metadata.DisplayName = displayName;
+        RegisterStrategy(registration);
+    }
+    
+    public void RegisterStrategy(string displayName, string description, IActivityCommitStrategy strategy)
+    {
+        var registration = ObjectRegistrationFactory.Describe(strategy);
+        registration.Metadata.DisplayName = displayName;
+        registration.Metadata.Description = description;
+        RegisterStrategy(registration);
+    }
+    
+    public void RegisterStrategy(string name, string displayName, string description, IActivityCommitStrategy strategy)
+    {
+        var registration = ObjectRegistrationFactory.Describe(strategy);
+        registration.Metadata.Name = name;
+        registration.Metadata.DisplayName = displayName;
+        registration.Metadata.Description = description;
+        RegisterStrategy(registration);
+    }
+    
+    public void RegisterStrategy(ActivityCommitStrategyRegistration registration)
+    {
+        Services.Configure<CommitStateOptions>(options => options.ActivityCommitStrategies[registration.Metadata.Name] = registration);
     }
     
     public override void Apply()

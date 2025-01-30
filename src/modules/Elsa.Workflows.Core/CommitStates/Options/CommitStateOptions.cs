@@ -1,7 +1,7 @@
-namespace Elsa.Workflows.CommitStates.Options;
+namespace Elsa.Workflows.CommitStates;
 
 public class CommitStateOptions
 {
-    public IDictionary<string, IWorkflowCommitStrategy> WorkflowCommitStrategies { get; set; } = new Dictionary<string, IWorkflowCommitStrategy>();
-    public IDictionary<string, IActivityCommitStrategy> ActivityCommitStrategies { get; set; } = new Dictionary<string, IActivityCommitStrategy>();
+    public IDictionary<string, WorkflowCommitStrategyRegistration> WorkflowCommitStrategies { get; set; } = new Dictionary<string, WorkflowCommitStrategyRegistration>();
+    public IDictionary<string, ActivityCommitStrategyRegistration> ActivityCommitStrategies { get; set; } = new Dictionary<string, ActivityCommitStrategyRegistration>();
 }

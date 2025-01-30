@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.CommitStates.Strategies.Workflows;
+using Elsa.Workflows.CommitStates.Strategies;
 
 namespace Elsa.Workflows.CommitStates.Serialization
 {
