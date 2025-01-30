@@ -8,72 +8,72 @@ namespace Elsa.Workflows.CommitStates;
 
 public class CommitStrategiesFeature(IModule module) : FeatureBase(module)
 {
-    public void RegisterStrategy(IWorkflowCommitStrategy strategy)
+    public void Add(IWorkflowCommitStrategy strategy)
     {
         var registration = ObjectRegistrationFactory.Describe(strategy);
-        RegisterStrategy(registration);
+        Add(registration);
     }
     
-    public void RegisterStrategy(string displayName, IWorkflowCommitStrategy strategy)
+    public void Add(string displayName, IWorkflowCommitStrategy strategy)
     {
         var registration = ObjectRegistrationFactory.Describe(strategy);
         registration.Metadata.DisplayName = displayName;
-        RegisterStrategy(registration);
+        Add(registration);
     }
     
-    public void RegisterStrategy(string displayName, string description, IWorkflowCommitStrategy strategy)
+    public void Add(string displayName, string description, IWorkflowCommitStrategy strategy)
     {
         var registration = ObjectRegistrationFactory.Describe(strategy);
         registration.Metadata.DisplayName = displayName;
         registration.Metadata.Description = description;
-        RegisterStrategy(registration);
+        Add(registration);
     }
     
-    public void RegisterStrategy(string name, string displayName, string description, IWorkflowCommitStrategy strategy)
+    public void Add(string name, string displayName, string description, IWorkflowCommitStrategy strategy)
     {
         var registration = ObjectRegistrationFactory.Describe(strategy);
         registration.Metadata.Name = name;
         registration.Metadata.DisplayName = displayName;
         registration.Metadata.Description = description;
-        RegisterStrategy(registration);
+        Add(registration);
     }
     
-    public void RegisterStrategy(WorkflowCommitStrategyRegistration registration)
+    public void Add(WorkflowCommitStrategyRegistration registration)
     {
         Services.Configure<CommitStateOptions>(options => options.WorkflowCommitStrategies[registration.Metadata.Name] = registration);
     }
     
-    public void RegisterStrategy(IActivityCommitStrategy strategy)
+    public void Add(IActivityCommitStrategy strategy)
     {
         var registration = ObjectRegistrationFactory.Describe(strategy);
-        RegisterStrategy(registration);
+        Add(registration);
     }
     
-    public void RegisterStrategy(string displayName, IActivityCommitStrategy strategy)
+    public void Add(string displayName, IActivityCommitStrategy strategy)
     {
         var registration = ObjectRegistrationFactory.Describe(strategy);
         registration.Metadata.DisplayName = displayName;
-        RegisterStrategy(registration);
+        Add(registration);
     }
     
-    public void RegisterStrategy(string displayName, string description, IActivityCommitStrategy strategy)
+    public void Add(string displayName, string description, IActivityCommitStrategy strategy)
     {
         var registration = ObjectRegistrationFactory.Describe(strategy);
         registration.Metadata.DisplayName = displayName;
         registration.Metadata.Description = description;
-        RegisterStrategy(registration);
+        Add(registration);
     }
     
-    public void RegisterStrategy(string name, string displayName, string description, IActivityCommitStrategy strategy)
+    public void Add(string name, string displayName, string description, IActivityCommitStrategy strategy)
     {
         var registration = ObjectRegistrationFactory.Describe(strategy);
         registration.Metadata.Name = name;
         registration.Metadata.DisplayName = displayName;
         registration.Metadata.Description = description;
-        RegisterStrategy(registration);
+        Add(registration);
     }
     
-    public void RegisterStrategy(ActivityCommitStrategyRegistration registration)
+    public void Add(ActivityCommitStrategyRegistration registration)
     {
         Services.Configure<CommitStateOptions>(options => options.ActivityCommitStrategies[registration.Metadata.Name] = registration);
     }

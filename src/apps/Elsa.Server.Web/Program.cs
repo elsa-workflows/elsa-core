@@ -215,19 +215,19 @@ services
                 workflows.UseCommitStrategies(strategies =>
                 {
                     // Workflow strategies.
-                    strategies.RegisterStrategy(new DefaultWorkflowStrategy());
-                    strategies.RegisterStrategy(new WorkflowExecutingWorkflowStrategy());
-                    strategies.RegisterStrategy(new WorkflowExecutedWorkflowStrategy());
-                    strategies.RegisterStrategy(new ActivityExecutingWorkflowStrategy());
-                    strategies.RegisterStrategy(new ActivityExecutedWorkflowStrategy());
-                    strategies.RegisterStrategy("Every 10 seconds", PeriodicWorkflowStrategy.Create(TimeSpan.FromSeconds(10)));
+                    strategies.Add(new DefaultWorkflowStrategy());
+                    strategies.Add(new WorkflowExecutingWorkflowStrategy());
+                    strategies.Add(new WorkflowExecutedWorkflowStrategy());
+                    strategies.Add(new ActivityExecutingWorkflowStrategy());
+                    strategies.Add(new ActivityExecutedWorkflowStrategy());
+                    strategies.Add("Every 10 seconds", PeriodicWorkflowStrategy.Create(TimeSpan.FromSeconds(10)));
 
                     // Activity strategies.
-                    strategies.RegisterStrategy(new DefaultActivityStrategy());
-                    strategies.RegisterStrategy(new CommitAlwaysActivityStrategy());
-                    strategies.RegisterStrategy(new CommitNeverActivityStrategy());
-                    strategies.RegisterStrategy(new ExecutingActivityStrategy());
-                    strategies.RegisterStrategy(new ExecutedActivityStrategy());
+                    strategies.Add(new DefaultActivityStrategy());
+                    strategies.Add(new CommitAlwaysActivityStrategy());
+                    strategies.Add(new CommitNeverActivityStrategy());
+                    strategies.Add(new ExecutingActivityStrategy());
+                    strategies.Add(new ExecutedActivityStrategy());
                 });
             })
             .UseWorkflowManagement(management =>
