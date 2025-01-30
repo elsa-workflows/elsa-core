@@ -123,7 +123,7 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
 
     private bool ShouldCommit(ActivityExecutionContext context, ActivityLifetimeEvent lifetimeEvent)
     {
-        var strategyName = context.Activity.GetCommitStateStrategy();
+        var strategyName = context.Activity.GetCommitStrategy();
         var strategy = string.IsNullOrWhiteSpace(strategyName) ? null : commitStrategyRegistry.FindActivityStrategy(strategyName);
         var commitAction = CommitAction.Default;
 

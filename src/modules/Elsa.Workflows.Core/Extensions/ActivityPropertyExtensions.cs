@@ -1,5 +1,4 @@
 using Elsa.Workflows;
-using Elsa.Workflows.CommitStates;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -12,7 +11,7 @@ public static class ActivityPropertyExtensions
     private static readonly string[] CanStartWorkflowPropertyName = ["canStartWorkflow", "CanStartWorkflow"];
     private static readonly string[] RunAsynchronouslyPropertyName = ["runAsynchronously", "RunAsynchronously"];
     private static readonly string[] SourcePropertyName = ["source", "Source"];
-    private static readonly string[] CommitStateStrategyName = ["commitStateBehavior", "CommitStateBehavior"];
+    private static readonly string[] CommitStrategyName = ["commitStrategyName", "CommitStrategyName"];
 
     /// <summary>
     /// Gets a flag indicating whether this activity can be used for starting a workflow.
@@ -52,14 +51,17 @@ public static class ActivityPropertyExtensions
     /// <summary>
     /// Gets the commit state behavior for the specified activity.
     /// </summary>
-    public static string? GetCommitStateStrategy(this IActivity activity) => activity.CustomProperties.GetValueOrDefault<string?>(CommitStateStrategyName, () => null);
+    public static string? GetCommitStrategy(this IActivity activity) => activity.CustomProperties.GetValueOrDefault<string?>(CommitStrategyName, () => null);
 
     /// <summary>
     /// Sets the commit state behavior for the specified activity.
     /// </summary>
-    public static TActivity WithCommitStateStrategy<TActivity>(this TActivity activity, string name) where TActivity : IActivity
+    public static TActivity SetCommitStrategy<TActivity>(this TActivity activity, string? name) where TActivity : IActivity
     {
-        activity.CustomProperties[CommitStateStrategyName[0]] = name;
+        if (string.IsNullOrWhiteSpace(name))
+            activity.CustomProperties.Remove(CommitStrategyName[0]);
+        else
+            activity.CustomProperties[CommitStrategyName[0]] = name;
         return activity;
     }
 

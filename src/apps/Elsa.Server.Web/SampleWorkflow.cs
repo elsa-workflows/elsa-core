@@ -14,11 +14,11 @@ public class SampleWorkflow : WorkflowBase
         {
             Activities =
             {
-                new WriteLine("Commit before executing").WithCommitStateStrategy(nameof(ExecutingActivityStrategy)),
-                new WriteLine("Commit after executing").WithCommitStateStrategy(nameof(ExecutedActivityStrategy)),
-                new WriteLine("Commit before & after executing").WithCommitStateStrategy(nameof(CommitAlwaysActivityStrategy)),
-                new WriteLine("Commit only based on the workflow commit options").WithCommitStateStrategy(nameof(DefaultActivityStrategy)),
-                new WriteLine("Never commit the workflow when this activity is about to execute or has executed").WithCommitStateStrategy(nameof(CommitNeverActivityStrategy)),
+                new WriteLine("Commit before executing").SetCommitStrategy(nameof(ExecutingActivityStrategy)),
+                new WriteLine("Commit after executing").SetCommitStrategy(nameof(ExecutedActivityStrategy)),
+                new WriteLine("Commit before & after executing").SetCommitStrategy(nameof(CommitAlwaysActivityStrategy)),
+                new WriteLine("Commit only based on the workflow commit options").SetCommitStrategy(nameof(DefaultActivityStrategy)),
+                new WriteLine("Never commit the workflow when this activity is about to execute or has executed").SetCommitStrategy(nameof(CommitNeverActivityStrategy)),
             }
         };
     }
