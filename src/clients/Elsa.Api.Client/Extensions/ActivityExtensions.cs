@@ -187,10 +187,10 @@ public static class ActivityExtensions
     /// <summary>
     /// Gets the commit state behavior for the specified activity.
     /// </summary>
-    public static ActivityCommitStateBehavior GetCommitStateBehavior(this JsonObject activity) => activity.TryGetProperty<ActivityCommitStateBehavior?>("customProperties", "commitStateBehavior") ?? ActivityCommitStateBehavior.Default;
+    public static string? GetCommitStrategy(this JsonObject activity) => activity.TryGetProperty<string?>("customProperties", "commitStrategyName");
 
     /// <summary>
     /// Sets the commit state behavior for the specified activity.
     /// </summary>
-    public static void SetCommitStateBehavior(this JsonObject activity, ActivityCommitStateBehavior value) => activity.SetProperty(JsonValue.Create(value.ToString()), "customProperties", "commitStateBehavior");
+    public static void SetCommitStrategy(this JsonObject activity, string? name) => activity.SetProperty(JsonValue.Create(name), "customProperties", "commitStrategyName");
 }

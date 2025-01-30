@@ -33,5 +33,5 @@ public class WorkflowOptions
     /// <summary>
     /// The options for committing workflow state.
     /// </summary>
-    public WorkflowCommitStateOptions CommitStateOptions { get; set; } = new();
+    public string? CommitStrategyName { get; set; }
 }
