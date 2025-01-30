@@ -37,7 +37,8 @@ public class Tests
         Assert.Equal(new[]
         {
             "Current value: Item 1, Activity result: Item 1",
-            "Current value: Item 2, Activity result: Item 2"
+            "Current value: Item 2, Activity result: Item 2",
+            "Current value: Item 3, Activity result: Item 3"
         }, lines);
     }
 }
