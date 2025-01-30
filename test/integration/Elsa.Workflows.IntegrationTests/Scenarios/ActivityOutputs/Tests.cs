@@ -24,8 +24,20 @@ public class Tests
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[]
         {
-            "The result of 4 and 6 is 10.",
-            "The last result is 10."
+            "The result of 4 and 6 is 10.", "The last result is 10."
+        }, lines);
+    }
+
+    [Fact(DisplayName = "The last activity output is returned.")]
+    public async Task Test2()
+    {
+        await _services.PopulateRegistriesAsync();
+        await _workflowRunner.RunAsync<LoopingWorkflow>();
+        var lines = _capturingTextWriter.Lines.ToList();
+        Assert.Equal(new[]
+        {
+            "Current value: Item 1, Activity result: Item 1",
+            "Current value: Item 2, Activity result: Item 2"
         }, lines);
     }
 }
