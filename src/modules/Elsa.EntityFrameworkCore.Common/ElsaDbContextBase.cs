@@ -2,6 +2,7 @@ using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore;
@@ -16,7 +17,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         EntityState.Added,
         EntityState.Modified,
     };
-    
+
     protected readonly IServiceProvider ServiceProvider;
     public string? TenantId { get; set; }
 
@@ -43,19 +44,26 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 
         // ReSharper disable once VirtualMemberCallInConstructor
         Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
-        
+
         var tenantAccessor = serviceProvider.GetService<ITenantAccessor>();
         var tenantId = tenantAccessor?.Tenant?.Id;
-        
-        if(!string.IsNullOrWhiteSpace(tenantId))
+
+        if (!string.IsNullOrWhiteSpace(tenantId))
             TenantId = tenantId;
     }
-    
+
     /// <inheritdoc/>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await OnBeforeSavingAsync(cancellationToken);
         return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+#if NET9_0_OR_GREATER
+        optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+#endif
     }
 
     /// <inheritdoc />
@@ -66,7 +74,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
             if (!Database.IsSqlite())
                 modelBuilder.HasDefaultSchema(Schema);
         }
-        
+
         var entityTypeHandlers = ServiceProvider.GetServices<IEntityModelCreatingHandler>().ToList();
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
@@ -77,7 +85,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
             }
         }
     }
-    
+
     private async Task OnBeforeSavingAsync(CancellationToken cancellationToken)
     {
         var handlers = ServiceProvider.GetServices<IEntitySavingHandler>().ToList();
