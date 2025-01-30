@@ -69,7 +69,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         
         var entityTypeHandlers = ServiceProvider.GetServices<IEntityModelCreatingHandler>().ToList();
 
-        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
         {
             foreach (var handler in entityTypeHandlers)
             {

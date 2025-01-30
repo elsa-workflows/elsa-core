@@ -99,6 +99,7 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var sqlServerConnectionString = configuration.GetConnectionString("SqlServer")!;
 var postgresConnectionString = configuration.GetConnectionString("PostgreSql")!;
+var oracleConnectionString = configuration.GetConnectionString("Oracle")!;
 var mySqlConnectionString = configuration.GetConnectionString("MySql")!;
 var cockroachDbConnectionString = configuration.GetConnectionString("CockroachDb")!;
 var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
@@ -195,6 +196,8 @@ services
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
+                            ef.UseOracle(oracleConnectionString);
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -231,6 +234,8 @@ services
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
+                            ef.UseOracle(oracleConnectionString);
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -276,7 +281,9 @@ services
                             ef.UseMySql(mySqlConnectionString);
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
-                            ef.UsePostgreSql(cockroachDbConnectionString!);
+                            ef.UsePostgreSql(cockroachDbConnectionString);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
+                            ef.UseOracle(oracleConnectionString);
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -411,7 +418,9 @@ services
                             ef.UseMySql(mySqlConnectionString);
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
-                            ef.UsePostgreSql(cockroachDbConnectionString!);
+                            ef.UsePostgreSql(cockroachDbConnectionString);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
+                            ef.UseOracle(oracleConnectionString);
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -614,6 +623,7 @@ services
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite) ef.UseSqlite(sqliteConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer) ef.UseSqlServer(sqlServerConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);
+                                if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle) ef.UseOracle(oracleConnectionString);
 #if !NET9_0
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) 
                                     ef.UseMySql(mySqlConnectionString);

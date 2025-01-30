@@ -19,7 +19,7 @@ public class SetupForOracle : IEntityModelCreatingHandler
         
         // In order to use data more than 2000 char we have to use NCLOB.
         // In Oracle, we have to explicitly say the column is NCLOB otherwise it would be considered nvarchar(2000).
-        modelBuilder.Entity<ServiceDefinition>().Property("SerializedSettings").HasColumnType("NCLOB");
-        modelBuilder.Entity<AgentDefinition>().Property("SerializedAgentConfig").HasColumnType("NCLOB");
+        modelBuilder.Entity<ServiceDefinition>().Property<string>("SerializedSettings").HasColumnType("NCLOB");
+        modelBuilder.Entity<AgentDefinition>().Property<string>("SerializedAgentConfig").HasColumnType("NCLOB");
     }
 }

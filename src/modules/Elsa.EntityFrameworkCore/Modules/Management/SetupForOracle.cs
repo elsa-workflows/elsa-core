@@ -18,8 +18,8 @@ public class SetupForOracle : IEntityModelCreatingHandler
         
         // In order to use data more than 2000 char we have to use NCLOB.
         // In Oracle, we have to explicitly say the column is NCLOB otherwise it would be considered nvarchar(2000).
-        modelBuilder.Entity<WorkflowInstance>().Property("Data").HasColumnType("NCLOB");
-        modelBuilder.Entity<WorkflowDefinition>().Property("StringData").HasColumnType("NCLOB");
-        modelBuilder.Entity<WorkflowDefinition>().Property("Data").HasColumnType("NCLOB");
+        modelBuilder.Entity<WorkflowInstance>().Property<string>("Data").HasColumnType("NCLOB");
+        modelBuilder.Entity<WorkflowDefinition>().Property<string>("StringData").HasColumnType("NCLOB");
+        modelBuilder.Entity<WorkflowDefinition>().Property<string>("Data").HasColumnType("NCLOB");
     }
 }
