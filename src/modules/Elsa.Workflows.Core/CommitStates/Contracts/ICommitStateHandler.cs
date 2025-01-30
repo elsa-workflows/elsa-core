@@ -1,6 +1,6 @@
 using Elsa.Workflows.State;
 
-namespace Elsa.Workflows;
+namespace Elsa.Workflows.CommitStates;
 
 public interface ICommitStateHandler
 {

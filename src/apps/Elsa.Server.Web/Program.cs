@@ -41,6 +41,8 @@ using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Api;
+using Elsa.Workflows.CommitStates.Strategies.Activities;
+using Elsa.Workflows.CommitStates.Strategies.Workflows;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Compression;
@@ -211,6 +213,26 @@ services
             {
                 workflows.WithDefaultWorkflowExecutionPipeline(pipeline => pipeline.UseWorkflowExecutionTracing());
                 workflows.WithDefaultActivityExecutionPipeline(pipeline => pipeline.UseActivityExecutionTracing());
+                workflows.UseCommitStrategies(strategies =>
+                {
+                    // Workflow strategies.
+                    strategies.RegisterStrategy(new DefaultWorkflowStrategy());
+                    strategies.RegisterStrategy(new WorkflowExecutingWorkflowStrategy());
+                    strategies.RegisterStrategy(new WorkflowExecutedWorkflowStrategy());
+                    strategies.RegisterStrategy(new ActivityExecutingWorkflowStrategy());
+                    strategies.RegisterStrategy(new ActivityExecutedWorkflowStrategy());
+                    strategies.RegisterStrategy("Every 10 seconds", new PeriodicWorkflowStrategy
+                    {
+                        Interval = TimeSpan.FromSeconds(10)
+                    });
+
+                    // Activity strategies.
+                    strategies.RegisterStrategy(new DefaultActivityStrategy());
+                    strategies.RegisterStrategy(new CommitAlwaysActivityStrategy());
+                    strategies.RegisterStrategy(new CommitNeverActivityStrategy());
+                    strategies.RegisterStrategy(new ExecutingActivityStrategy());
+                    strategies.RegisterStrategy(new ExecutedActivityStrategy());
+                });
             })
             .UseWorkflowManagement(management =>
             {

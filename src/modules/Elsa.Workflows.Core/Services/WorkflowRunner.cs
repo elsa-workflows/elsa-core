@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Options;

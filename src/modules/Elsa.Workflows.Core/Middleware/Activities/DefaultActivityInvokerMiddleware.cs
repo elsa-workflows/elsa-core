@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using Microsoft.Extensions.Logging;
 
@@ -19,19 +20,19 @@ public static class ActivityInvokerMiddlewareExtensions
 /// <summary>
 /// A default activity execution middleware component that evaluates the current activity's properties, executes the activity and adds any produced bookmarks to the workflow execution context.
 /// </summary>
-public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ILogger<DefaultActivityInvokerMiddleware> logger)
+public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ICommitStrategyRegistry commitStrategyRegistry, ILogger<DefaultActivityInvokerMiddleware> logger)
     : IActivityExecutionMiddleware
 {
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
-        
+
         var workflowExecutionContext = context.WorkflowExecutionContext;
 
         // Evaluate input properties.
         await EvaluateInputPropertiesAsync(context);
-        
+
         // Prevent the activity from being started if cancellation is requested.
         if (context.CancellationToken.IsCancellationRequested)
         {
@@ -39,7 +40,7 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
             context.AddExecutionLogEntry("Activity cancelled");
             return;
         }
-        
+
         // Check if the activity can be executed.
         if (!await context.Activity.CanExecuteAsync(context))
         {
@@ -47,9 +48,9 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
             context.AddExecutionLogEntry("Precondition Failed", "Cannot execute at this time");
             return;
         }
-        
+
         // Conditionally commit the workflow state.
-        if(ShouldCommitWhenExecuting(context))
+        if (ShouldCommit(context, ActivityLifetimeEvent.ActivityExecuting))
             await context.WorkflowExecutionContext.CommitAsync();
 
         context.TransitionTo(ActivityStatus.Running);
@@ -82,9 +83,9 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
             workflowExecutionContext.Bookmarks.AddRange(context.Bookmarks);
             logger.LogDebug("Added {BookmarkCount} bookmarks to the workflow execution context", context.Bookmarks.Count);
         }
-        
+
         // Conditionally commit the workflow state.
-        if(ShouldCommitWhenExecuted(context))
+        if (ShouldCommit(context, ActivityLifetimeEvent.ActivityExecuted))
             await context.WorkflowExecutionContext.CommitAsync();
     }
 
@@ -119,40 +120,41 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
         // Evaluate input properties.
         await context.EvaluateInputPropertiesAsync();
     }
-    
-    private bool ShouldCommitWhenExecuting(ActivityExecutionContext context)
-    {
-        var behavior = context.Activity.GetCommitStateBehavior();
-        
-        if (behavior == ActivityCommitStateBehavior.Executing)
-            return true;
 
-        if (behavior == ActivityCommitStateBehavior.Default)
-        {
-            var workflowOptions = context.WorkflowExecutionContext.Workflow.Options.CommitStateOptions;
-            
-            if(workflowOptions.ActivityExecuting)
-                return true;
-        }
-        
-        return false;
-    }
-    
-    private bool ShouldCommitWhenExecuted(ActivityExecutionContext context)
+    private bool ShouldCommit(ActivityExecutionContext context, ActivityLifetimeEvent lifetimeEvent)
     {
-        var behavior = context.Activity.GetCommitStateBehavior();
-        
-        if (behavior == ActivityCommitStateBehavior.Executed)
-            return true;
+        var strategyName = context.Activity.GetCommitStateStrategy();
+        var strategy = string.IsNullOrWhiteSpace(strategyName) ? null : commitStrategyRegistry.FindActivityStrategy(strategyName);
+        var commitAction = CommitAction.Default;
 
-        if (behavior == ActivityCommitStateBehavior.Default)
+        if (strategy != null)
         {
-            var workflowOptions = context.WorkflowExecutionContext.Workflow.Options.CommitStateOptions;
-            
-            if(workflowOptions.ActivityExecuted)
-                return true;
+            var strategyContext = new ActivityCommitStateStrategyContext(context, lifetimeEvent);
+            commitAction = strategy.ShouldCommit(strategyContext);
         }
+
+        switch (commitAction)
+        {
+            case CommitAction.Skip:
+                return false;
+            case CommitAction.Commit:
+                return true;
+            case CommitAction.Default:
+                {
+                    var workflowStrategyName = context.WorkflowExecutionContext.Workflow.Options.CommitStrategyName;
+                    var workflowStrategy = string.IsNullOrWhiteSpace(workflowStrategyName) ? null : commitStrategyRegistry.FindWorkflowStrategy(workflowStrategyName);
         
-        return false;
+                    if(workflowStrategy == null)
+                        return false;
+
+                    var workflowLifetimeEvent = lifetimeEvent == ActivityLifetimeEvent.ActivityExecuting ? WorkflowLifetimeEvent.ActivityExecuting : WorkflowLifetimeEvent.ActivityExecuted;
+                    var workflowCommitStateStrategyContext = new WorkflowCommitStateStrategyContext(context.WorkflowExecutionContext, workflowLifetimeEvent);
+                    commitAction = workflowStrategy.ShouldCommit(workflowCommitStateStrategyContext);
+
+                    return commitAction == CommitAction.Commit;
+                }
+            default:
+                throw new ArgumentOutOfRangeException(nameof(commitAction), commitAction, "Unknown commit action");
+        }
     }
 }
