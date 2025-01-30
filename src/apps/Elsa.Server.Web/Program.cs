@@ -167,7 +167,7 @@ services
             {
                 jobStorage = new MemoryStorage();
             }
-            
+
             elsa.UseHangfire(hangfire => hangfire.UseJobStorage(jobStorage));
         }
 
@@ -371,7 +371,7 @@ services
                     // Make sure to configure the path to the python DLL. E.g. /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
                     // alternatively, you can set the PYTHONNET_PYDLL environment variable.
                     configuration.GetSection("Scripting:Python").Bind(options);
-                    
+
                     options.AddScript(sb =>
                     {
                         sb.AppendLine("def greet():");
@@ -428,7 +428,13 @@ services
 
         if (useQuartz)
         {
-            elsa.UseQuartz(quartz => { quartz.UseSqlite(sqliteConnectionString); });
+            elsa.UseQuartz(quartz =>
+            {
+                if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite)
+                    quartz.UseSqlite(sqliteConnectionString);
+                else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+                    quartz.UsePostgreSql(postgresConnectionString);
+            });
         }
 
         if (useSignalR)
@@ -560,7 +566,7 @@ services
                 .UseSecretsScripting()
                 ;
         }
-        
+
         elsa.UseRetention(r =>
         {
             r.SweepInterval = TimeSpan.FromHours(5);
