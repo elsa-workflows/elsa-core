@@ -3,6 +3,7 @@ using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
 using Elsa.Caching.Options;
+using Elsa.CommandExecuter.Contracts;
 using Elsa.Common.DistributedHosting.DistributedLocks;
 using Elsa.Common.RecurringTasks;
 using Elsa.Common.Serialization;
@@ -21,6 +22,8 @@ using Elsa.Identity.Multitenancy;
 using Elsa.Kafka;
 using Elsa.Kafka.Factories;
 using Elsa.MassTransit.Extensions;
+using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Models;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;
 using Elsa.MongoDb.Modules.Identity;
@@ -352,6 +355,7 @@ services
                 options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
                 options.AppendScript("string SayHelloWorld() => Greet(\"World\");");
             })
+            .UseCommandExecuter()
             .UseJavaScript(options =>
             {
                 options.AllowClrAccess = true;
