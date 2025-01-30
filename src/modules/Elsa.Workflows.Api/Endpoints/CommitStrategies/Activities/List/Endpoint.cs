@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Api.Endpoints.CommitStrategies.Activities.List;
 /// This class is an implementation of an endpoint that retrieves a collection of workflow commit strategy registrations
 /// from a provided registry and returns them in a unified response.
 /// </remarks>
-internal class List(ICommitStrategyRegistry registry) : ElsaEndpointWithoutRequest<ListResponse<ActivityCommitStrategyRegistration>>
+internal class List(ICommitStrategyRegistry registry) : ElsaEndpointWithoutRequest<ListResponse<CommitStrategyDescriptor>>
 {
     public override void Configure()
     {
@@ -19,10 +19,11 @@ internal class List(ICommitStrategyRegistry registry) : ElsaEndpointWithoutReque
         ConfigurePermissions("read:commit-strategies");
     }
 
-    public override Task<ListResponse<ActivityCommitStrategyRegistration>> ExecuteAsync(CancellationToken cancellationToken)
+    public override Task<ListResponse<CommitStrategyDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
     {
-        var descriptors = registry.ListActivityStrategyRegistrations().ToList();
-        var response =new ListResponse<ActivityCommitStrategyRegistration>(descriptors);
+        var registrations = registry.ListActivityStrategyRegistrations().ToList();
+        var descriptors = CommitStrategyDescriptor.FromStrategyMetadata(registrations.Select(x => x.Metadata)).ToList();
+        var response =new ListResponse<CommitStrategyDescriptor>(descriptors);
         return Task.FromResult(response);
     }
 }
