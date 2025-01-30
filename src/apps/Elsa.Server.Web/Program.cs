@@ -214,20 +214,8 @@ services
                 workflows.WithDefaultActivityExecutionPipeline(pipeline => pipeline.UseActivityExecutionTracing());
                 workflows.UseCommitStrategies(strategies =>
                 {
-                    // Workflow strategies.
-                    strategies.Add(new DefaultWorkflowStrategy());
-                    strategies.Add(new WorkflowExecutingWorkflowStrategy());
-                    strategies.Add(new WorkflowExecutedWorkflowStrategy());
-                    strategies.Add(new ActivityExecutingWorkflowStrategy());
-                    strategies.Add(new ActivityExecutedWorkflowStrategy());
-                    strategies.Add("Every 10 seconds", PeriodicWorkflowStrategy.Create(TimeSpan.FromSeconds(10)));
-
-                    // Activity strategies.
-                    strategies.Add(new DefaultActivityStrategy());
-                    strategies.Add(new CommitAlwaysActivityStrategy());
-                    strategies.Add(new CommitNeverActivityStrategy());
-                    strategies.Add(new ExecutingActivityStrategy());
-                    strategies.Add(new ExecutedActivityStrategy());
+                    strategies.AddStandardStrategies();
+                    strategies.Add("Every 10 seconds", new PeriodicWorkflowStrategy(TimeSpan.FromSeconds(10)));
                 });
             })
             .UseWorkflowManagement(management =>

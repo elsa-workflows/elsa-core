@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Workflows.CommitStates.Strategies;
 using Elsa.Workflows.CommitStates.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,6 +9,23 @@ namespace Elsa.Workflows.CommitStates;
 
 public class CommitStrategiesFeature(IModule module) : FeatureBase(module)
 {
+    public void AddStandardStrategies()
+    {
+        // Workflow commit strategies.
+        Add(new DefaultWorkflowStrategy());
+        Add(new WorkflowExecutingWorkflowStrategy());
+        Add(new WorkflowExecutedWorkflowStrategy());
+        Add(new ActivityExecutingWorkflowStrategy());
+        Add(new ActivityExecutedWorkflowStrategy());
+        
+        // Activity commit strategies.
+        Add(new DefaultActivityStrategy());
+        Add(new CommitAlwaysActivityStrategy());
+        Add(new CommitNeverActivityStrategy());
+        Add(new ExecutingActivityStrategy());
+        Add(new ExecutedActivityStrategy());
+    }
+    
     public void Add(IWorkflowCommitStrategy strategy)
     {
         var registration = ObjectRegistrationFactory.Describe(strategy);

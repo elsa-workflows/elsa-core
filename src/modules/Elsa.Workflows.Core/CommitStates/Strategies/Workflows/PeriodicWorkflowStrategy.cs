@@ -10,13 +10,10 @@ namespace Elsa.Workflows.CommitStates.Strategies;
 /// </summary>
 [DisplayName("Periodic")]
 [Description("Determines whether a workflow state should be committed based on a specified time interval.")]
-public class PeriodicWorkflowStrategy : IWorkflowCommitStrategy
+public class PeriodicWorkflowStrategy(TimeSpan interval) : IWorkflowCommitStrategy
 {
     private static readonly object LastCommitPropertyKey = new();
-    
-    public static PeriodicWorkflowStrategy Create(TimeSpan interval) => new() { Interval = interval };
-    
-    public TimeSpan Interval { get; set; }
+    public TimeSpan Interval { get; } = interval;
 
     public CommitAction ShouldCommit(WorkflowCommitStateStrategyContext context)
     {
