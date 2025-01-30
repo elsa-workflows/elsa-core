@@ -79,7 +79,7 @@ public class ActivityOutputRegister
         var key = CreateActivityIdLookupKey(activityId, outputName);
         return !_recordsByActivityIdAndOutputName.TryGetValue(key, out var records)
             ? null
-            : records.FirstOrDefault()?.Value;
+            : records.LastOrDefault()?.Value; // Always return the last value.
     }
 
     /// <summary>
