@@ -61,6 +61,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
+        optionsBuilder.EnableSensitiveDataLogging();
 #if NET9_0_OR_GREATER
         optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
 #endif
@@ -71,8 +72,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     {
         if (!string.IsNullOrWhiteSpace(Schema))
         {
-            if (!Database.IsSqlite())
-                modelBuilder.HasDefaultSchema(Schema);
+            modelBuilder.HasDefaultSchema(Schema);
         }
 
         var entityTypeHandlers = ServiceProvider.GetServices<IEntityModelCreatingHandler>().ToList();

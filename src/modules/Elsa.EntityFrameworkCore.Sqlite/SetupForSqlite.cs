@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Elsa.EntityFrameworkCore.EntityHandlers;
+namespace Elsa.EntityFrameworkCore.Sqlite;
 
 /// <summary>
 /// Represents a class that handles entity model creation for SQLite databases.

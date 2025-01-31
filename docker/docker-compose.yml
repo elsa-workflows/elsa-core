@@ -27,16 +27,15 @@
         
   oracle:
       image: container-registry.oracle.com/database/free:latest
-      container_name: oracle
+      container_name: oracle-db
       environment:
-        ORACLE_PDB: ORCLPDB1
         ORACLE_PWD: elsa
       ports:
         - "1521:1521"
         - "5500:5500"
       volumes:
-        - oracle-data-free:/opt/oracle/oradata
-      shm_size: '1g'
+        - ./oracle-data-free1:/opt/oracle/oradata
+        - ./oracle-setup:/opt/oracle/scripts/setup
   
   mongodb:
     image: mongo:latest
@@ -128,7 +127,7 @@
 
 volumes:
   postgres-data:
-  oracle-data-free:
+  oracle-data-free1:
   mysql_data2:
   cockroachdb-data:
   mongodb_data:

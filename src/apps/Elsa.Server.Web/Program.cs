@@ -9,6 +9,7 @@ using Elsa.Common.Serialization;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
 using Elsa.DropIns.Extensions;
+using Elsa.EntityFrameworkCore;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
@@ -197,7 +198,7 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
-                            ef.UseOracle(oracleConnectionString);
+                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -235,7 +236,7 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
-                            ef.UseOracle(oracleConnectionString);
+                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -283,7 +284,7 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
-                            ef.UseOracle(oracleConnectionString);
+                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -420,7 +421,7 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
-                            ef.UseOracle(oracleConnectionString);
+                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -623,7 +624,7 @@ services
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite) ef.UseSqlite(sqliteConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer) ef.UseSqlServer(sqlServerConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);
-                                if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle) ef.UseOracle(oracleConnectionString);
+                                if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle) ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
 #if !NET9_0
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) 
                                     ef.UseMySql(mySqlConnectionString);

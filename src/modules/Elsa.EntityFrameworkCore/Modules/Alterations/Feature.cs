@@ -28,6 +28,5 @@ public class EFCoreAlterationsPersistenceFeature(IModule module) : PersistenceFe
         base.Apply();
         AddEntityStore<AlterationPlan, EFCoreAlterationPlanStore>();
         AddEntityStore<AlterationJob, EFCoreAlterationJobStore>();
-        Services.AddScoped<IEntityModelCreatingHandler, SetupForOracle>();
     }
 }

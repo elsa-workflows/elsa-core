@@ -41,6 +41,5 @@ public class EFCoreWorkflowRuntimePersistenceFeature(IModule module) : Persisten
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
         AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionStore>();
         AddStore<SerializedKeyValuePair, EFCoreKeyValueStore>();
-        Services.AddScoped<IEntityModelCreatingHandler, SetupForOracle>();
     }
 }

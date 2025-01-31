@@ -1,15 +1,14 @@
-using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.KeyValues.Entities;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Elsa.EntityFrameworkCore.Modules.Runtime;
+namespace Elsa.EntityFrameworkCore.Oracle;
 
 /// <summary>
 /// Represents a class that handles entity model creation for SQLite databases.
 /// </summary>
-public class SetupForOracle : IEntityModelCreatingHandler
+public class SetupForRuntime : IEntityModelCreatingHandler
 {
     /// <inheritdoc />
     public void Handle(ElsaDbContextBase dbContext, ModelBuilder modelBuilder, IMutableEntityType entityType)
