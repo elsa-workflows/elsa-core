@@ -31,11 +31,11 @@ public class IdentityElsaDbContext : ElsaDbContextBase
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
-        
         var config = new Configurations();
         modelBuilder.ApplyConfiguration<User>(config);
         modelBuilder.ApplyConfiguration<Application>(config);
         modelBuilder.ApplyConfiguration<Role>(config);
+        
+        base.OnModelCreating(modelBuilder);
     }
 }

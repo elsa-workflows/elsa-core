@@ -54,7 +54,7 @@ public class BookmarkQueueItem : Entity
     /// </summary>
     public BookmarkFilter CreateBookmarkFilter()
     {
-        return new BookmarkFilter
+        return new()
         {
             WorkflowInstanceId = WorkflowInstanceId,
             CorrelationId = CorrelationId,

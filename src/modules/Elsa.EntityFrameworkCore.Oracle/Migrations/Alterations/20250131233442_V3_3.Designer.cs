@@ -12,7 +12,7 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Alterations
 {
     [DbContext(typeof(AlterationsElsaDbContext))]
-    [Migration("20241212211620_V3_3")]
+    [Migration("20250131233442_V3_3")]
     partial class V3_3
     {
         /// <inheritdoc />
@@ -21,7 +21,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Alterations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.20")
+                .HasAnnotation("ProductVersion", "8.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);

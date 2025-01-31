@@ -1,10 +1,10 @@
 ﻿using System.Reflection;
-using Elsa.EntityFrameworkCore.Modules.Alterations;
-using Elsa.EntityFrameworkCore.Oracle;
-using Elsa.Extensions;
+using Elsa.EntityFrameworkCore.Modules.Management;
+using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.EntityFrameworkCore.Oracle.Configurations;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Runtime.Entities;
 using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Oracle.EntityFrameworkCore.Infrastructure;
 
 // ReSharper disable once CheckNamespace
@@ -60,11 +60,28 @@ public static class OracleProvidersExtensions
         where TDbContext : ElsaDbContextBase
         where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
     {
-        feature.Services.TryAddScopedImplementation<IEntityModelCreatingHandler, SetupForAlterations>();
-        feature.Services.TryAddScopedImplementation<IEntityModelCreatingHandler, SetupForManagement>();
-        feature.Services.TryAddScopedImplementation<IEntityModelCreatingHandler, SetupForRuntime>();
-
+        options ??= new();
+        options.Configure();
         feature.DbContextOptionsBuilder = (sp, db) => db.UseElsaOracle(migrationsAssembly, connectionStringFunc(sp), options, configure: configure);
         return (TFeature)feature;
+    }
+
+    public static ElsaDbContextOptions Configure(this ElsaDbContextOptions options)
+    {
+        var management = new Management();
+        var runtime = new Runtime();
+        
+        options.ConfigureModel<ManagementElsaDbContext>(modelBuilder => modelBuilder
+            .ApplyConfiguration<WorkflowDefinition>(management)
+            .ApplyConfiguration<WorkflowInstance>(management));
+        
+        options.ConfigureModel<RuntimeElsaDbContext>(modelBuilder => modelBuilder
+            .ApplyConfiguration<StoredTrigger>(runtime)
+            .ApplyConfiguration<WorkflowExecutionLogRecord>(runtime)
+            .ApplyConfiguration<ActivityExecutionRecord>(runtime)
+            .ApplyConfiguration<StoredBookmark>(runtime)
+            .ApplyConfiguration<WorkflowInboxMessage>(runtime));
+        
+        return options;
     }
 }
