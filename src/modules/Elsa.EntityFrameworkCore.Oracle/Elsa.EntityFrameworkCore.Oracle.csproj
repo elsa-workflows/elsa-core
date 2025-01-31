@@ -20,12 +20,5 @@
     <ItemGroup>
         <PackageReference Include="System.Formats.Asn1" />
     </ItemGroup>
-    <ItemGroup>
-      <Compile Remove="Migrations\Management\20250131185451_V3_3_2.cs" />
-      <Compile Remove="Migrations\Management\20250131185451_V3_3_2.Designer.cs" />
-    </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Migrations\" />
-    </ItemGroup>
 
 </Project>
