@@ -18,7 +18,7 @@ public class AlterationPlanParams
     public ICollection<IAlteration> Alterations { get; set; } = new List<IAlteration>();
     
     /// <summary>
-    /// The IDs of the workflow instances that this plan applies to.
+    /// The filter used to determine which workflow instances that this plan applies to.
     /// </summary>
     public AlterationWorkflowInstanceFilter Filter { get; set; } = new();
 }
