@@ -34,8 +34,8 @@
         - "1521:1521"
         - "5500:5500"
       volumes:
-        - ./oracle-data-free1:/opt/oracle/oradata
-        - ./oracle-setup:/opt/oracle/scripts/setup
+        - ./data/oracle-data:/opt/oracle/oradata
+        - ./setup/oracle-setup:/opt/oracle/scripts/setup
   
   mongodb:
     image: mongo:latest
