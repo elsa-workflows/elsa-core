@@ -57,8 +57,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
-        
         var config = new Configurations();
         modelBuilder.ApplyConfiguration<StoredTrigger>(config);
         modelBuilder.ApplyConfiguration<WorkflowExecutionLogRecord>(config);
@@ -67,5 +65,7 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<BookmarkQueueItem>(config);
         modelBuilder.ApplyConfiguration<SerializedKeyValuePair>(config);
         modelBuilder.ApplyConfiguration<WorkflowInboxMessage>(config);
+        
+        base.OnModelCreating(modelBuilder);
     }
 }

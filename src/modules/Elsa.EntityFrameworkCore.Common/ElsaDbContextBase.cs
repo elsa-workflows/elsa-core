@@ -2,6 +2,7 @@ using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore;
@@ -16,8 +17,9 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         EntityState.Added,
         EntityState.Modified,
     };
-    
-    protected readonly IServiceProvider ServiceProvider;
+
+    protected IServiceProvider ServiceProvider { get; }
+    private readonly ElsaDbContextOptions? _elsaDbContextOptions;
     public string? TenantId { get; set; }
 
     /// <summary>
@@ -39,18 +41,18 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     protected ElsaDbContextBase(DbContextOptions options, IServiceProvider serviceProvider) : base(options)
     {
         ServiceProvider = serviceProvider;
-        var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
-
-        // ReSharper disable once VirtualMemberCallInConstructor
-        Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
+        _elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
         
+        // ReSharper disable once VirtualMemberCallInConstructor
+        Schema = !string.IsNullOrWhiteSpace(_elsaDbContextOptions?.SchemaName) ? _elsaDbContextOptions.SchemaName : ElsaSchema;
+
         var tenantAccessor = serviceProvider.GetService<ITenantAccessor>();
         var tenantId = tenantAccessor?.Tenant?.Id;
-        
-        if(!string.IsNullOrWhiteSpace(tenantId))
+
+        if (!string.IsNullOrWhiteSpace(tenantId))
             TenantId = tenantId;
     }
-    
+
     /// <inheritdoc/>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -58,26 +60,33 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         return await base.SaveChangesAsync(cancellationToken);
     }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.EnableSensitiveDataLogging();
+#if NET9_0_OR_GREATER
+        optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+#endif
+    }
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        if (!string.IsNullOrWhiteSpace(Schema))
-        {
-            if (!Database.IsSqlite())
-                modelBuilder.HasDefaultSchema(Schema);
-        }
+        if (!string.IsNullOrWhiteSpace(Schema)) 
+            modelBuilder.HasDefaultSchema(Schema);
+
+        var additionalConfigurations = _elsaDbContextOptions?.GetModelConfigurations(this);
         
+        additionalConfigurations?.Invoke(modelBuilder);
+
         var entityTypeHandlers = ServiceProvider.GetServices<IEntityModelCreatingHandler>().ToList();
 
-        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
         {
-            foreach (var handler in entityTypeHandlers)
-            {
+            foreach (var handler in entityTypeHandlers) 
                 handler.Handle(this, modelBuilder, entityType);
-            }
         }
     }
-    
+
     private async Task OnBeforeSavingAsync(CancellationToken cancellationToken)
     {
         var handlers = ServiceProvider.GetServices<IEntitySavingHandler>().ToList();

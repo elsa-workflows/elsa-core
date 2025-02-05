@@ -13,7 +13,7 @@ public static class DbContextOptionsBuilderExtensions
     /// <summary>
     /// Configures Entity Framework Core with Oracle.
     /// </summary>
-    public static DbContextOptionsBuilder UseElsaOracle(this DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options = default, Action<OracleDbContextOptionsBuilder>? configure = default) =>
+    public static DbContextOptionsBuilder UseElsaOracle(this DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options = null, Action<OracleDbContextOptionsBuilder>? configure = null) =>
         builder
             .UseElsaDbContextOptions(options)
             .UseOracle(connectionString, db =>

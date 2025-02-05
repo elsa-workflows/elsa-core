@@ -24,6 +24,18 @@
       - "3306:3306"
     volumes:
       - mysql_data2:/var/lib/mysql
+        
+  oracle:
+      image: container-registry.oracle.com/database/free:latest
+      container_name: oracle-db
+      environment:
+        ORACLE_PWD: elsa
+      ports:
+        - "1521:1521"
+        - "5500:5500"
+      volumes:
+        - ./data/oracle-data:/opt/oracle/oradata
+        - ./setup/oracle-setup:/opt/oracle/scripts/setup
   
   mongodb:
     image: mongo:latest
@@ -84,7 +96,6 @@
       - ASPNETCORE_URLS=http://+:80
       - Logging__LogLevel__Default=Information
 
-
   elsa-server:
     build:
       context: ../.
@@ -116,6 +127,7 @@
 
 volumes:
   postgres-data:
+  oracle-data-free1:
   mysql_data2:
   cockroachdb-data:
   mongodb_data:
