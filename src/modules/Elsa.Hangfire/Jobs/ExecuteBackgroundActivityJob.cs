@@ -1,28 +1,22 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Runtime;
+using JetBrains.Annotations;
 
 namespace Elsa.Hangfire.Jobs;
 
 /// <summary>
 /// A job that executes a background activity.
 /// </summary>
-public class ExecuteBackgroundActivityJob
+[UsedImplicitly]
+public class ExecuteBackgroundActivityJob(IBackgroundActivityInvoker backgroundActivityInvoker, ITenantFinder tenantFinder, ITenantAccessor tenantAccessor)
 {
-    private readonly IBackgroundActivityInvoker _backgroundActivityInvoker;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ExecuteBackgroundActivityJob"/> class.
-    /// </summary>
-    /// <param name="backgroundActivityInvoker"></param>
-    public ExecuteBackgroundActivityJob(IBackgroundActivityInvoker backgroundActivityInvoker)
-    {
-        _backgroundActivityInvoker = backgroundActivityInvoker;
-    }
-    
     /// <summary>
     /// Executes the job.
     /// </summary>
-    public async Task ExecuteAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default)
+    public async Task ExecuteAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, string? tenantId, CancellationToken cancellationToken = default)
     {
-        await _backgroundActivityInvoker.ExecuteAsync(scheduledBackgroundActivity, cancellationToken);
+        var tenant = tenantId != null ? await tenantFinder.FindByIdAsync(tenantId, cancellationToken) : null;
+        using var scope = tenantAccessor.PushContext(tenant);
+        await backgroundActivityInvoker.ExecuteAsync(scheduledBackgroundActivity, cancellationToken);
     }
 }

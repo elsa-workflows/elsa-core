@@ -11,7 +11,7 @@ public class DefaultTenantAccessor : ITenantAccessor
     public Tenant? Tenant
     {
         get => CurrentTenantField.Value;
-        internal set => CurrentTenantField.Value = value;
+        private set => CurrentTenantField.Value = value;
     }
 
     public IDisposable PushContext(Tenant? tenant)
