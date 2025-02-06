@@ -6,6 +6,7 @@ on:
       - 'main'
       - 'bug/*'
       - 'perf/*'
+      - 'patch/*'
   release:
     types: [ prereleased, published ]
 env:
