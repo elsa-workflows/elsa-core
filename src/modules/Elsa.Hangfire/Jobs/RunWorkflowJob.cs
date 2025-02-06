@@ -2,6 +2,7 @@ using Elsa.Common.Multitenancy;
 using Elsa.Scheduling;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
+using Hangfire;
 
 namespace Elsa.Hangfire.Jobs;
 
@@ -18,6 +19,7 @@ public class RunWorkflowJob(IWorkflowRuntime workflowRuntime, ITenantFinder tena
     /// <param name="tenantId">The ID of the current tenant scheduling this job.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     // ReSharper disable once UnusedParameter.Global
+    [AutomaticRetry(OnAttemptsExceeded = AttemptsExceededAction.Fail)]
     public async Task ExecuteAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, string? tenantId, CancellationToken cancellationToken)
     {
         var tenant = tenantId != null ? await tenantFinder.FindByIdAsync(tenantId, cancellationToken) : null;
