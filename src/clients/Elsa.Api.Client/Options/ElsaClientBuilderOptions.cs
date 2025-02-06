@@ -11,6 +11,14 @@ namespace Elsa.Api.Client.Options;
 public class ElsaClientBuilderOptions
 {
     /// <summary>
+    /// Default options for the constructor.
+    /// </summary>
+    public ElsaClientBuilderOptions()
+    {
+        ConfigureHttpClientBuilder = builder => builder.ConfigureHttpClient(client => client.Timeout = HttpClientTimeout);
+    }
+
+    /// <summary>
     /// Gets or sets the base address of the Elsa server.
     /// </summary>
     public Uri BaseAddress { get; set; } = default!;
@@ -19,7 +27,7 @@ public class ElsaClientBuilderOptions
     /// Gets or sets the API key function to use when authenticating with the Elsa server.
     /// </summary>
     public string? ApiKey { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the http client timeout on Elsa server.
     /// </summary>
