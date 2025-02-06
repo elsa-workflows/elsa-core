@@ -13,10 +13,12 @@ public class RunWorkflowJob(IWorkflowRuntime workflowRuntime, ITenantFinder tena
     /// <summary>
     /// Executes the job.
     /// </summary>
+    /// <param name="taskName">A unique name for this job.</param>
     /// <param name="request">The workflow request.</param>
     /// <param name="tenantId">The ID of the current tenant scheduling this job.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task ExecuteAsync(ScheduleNewWorkflowInstanceRequest request, string? tenantId, CancellationToken cancellationToken)
+    // ReSharper disable once UnusedParameter.Global
+    public async Task ExecuteAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, string? tenantId, CancellationToken cancellationToken)
     {
         var tenant = tenantId != null ? await tenantFinder.FindByIdAsync(tenantId, cancellationToken) : null;
         using var scope = tenantAccessor.PushContext(tenant);
