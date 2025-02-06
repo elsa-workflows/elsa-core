@@ -42,6 +42,7 @@ using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Api;
+using Elsa.Workflows.CommitStates.Strategies;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Compression;
@@ -215,6 +216,11 @@ services
             {
                 workflows.WithDefaultWorkflowExecutionPipeline(pipeline => pipeline.UseWorkflowExecutionTracing());
                 workflows.WithDefaultActivityExecutionPipeline(pipeline => pipeline.UseActivityExecutionTracing());
+                workflows.UseCommitStrategies(strategies =>
+                {
+                    strategies.AddStandardStrategies();
+                    strategies.Add("Every 10 seconds", new PeriodicWorkflowStrategy(TimeSpan.FromSeconds(10)));
+                });
             })
             .UseWorkflowManagement(management =>
             {
