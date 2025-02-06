@@ -39,6 +39,11 @@ public class WorkflowState : Entity
     public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
 
     /// <summary>
+    /// A collection of incidents that may have occurred during execution.
+    /// </summary>
+    public ICollection<ActivityIncident> Incidents { get; set; } = new List<ActivityIncident>();
+
+    /// <summary>
     /// The serialized workflow state, if any. 
     /// </summary>
     public WorkflowFaultState? Fault { get; set; }
