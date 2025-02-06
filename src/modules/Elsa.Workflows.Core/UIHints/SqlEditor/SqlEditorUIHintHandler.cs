@@ -1,16 +1,16 @@
 using System.Reflection;
 
-namespace Elsa.Workflows.UIHints.JsonEditor;
+namespace Elsa.Workflows.UIHints.SqlEditor;
 
 /// <inheritdoc />
-public class JsonEditorUIHintHandler : IUIHintHandler
+public class SqlEditorUIHintHandler : IUIHintHandler
 {
     /// <inheritdoc />
-    public string UIHint => InputUIHints.JsonEditor;
+    public string UIHint => InputUIHints.SqlEditor;
 
     /// <inheritdoc />
     public ValueTask<IEnumerable<Type>> GetPropertyUIHandlersAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken)
     {
-        return new([typeof(JsonCodeOptionsProvider)]);
+        return new([typeof(SqlCodeOptionsProvider)]);
     }
 }

@@ -38,6 +38,11 @@ using Elsa.Server.Web;
 using Elsa.Server.Web.Extensions;
 using Elsa.Server.Web.Filters;
 using Elsa.Server.Web.Messages;
+using Elsa.Sql.Extensions;
+using Elsa.Sql.MySql;
+using Elsa.Sql.PostgreSql;
+using Elsa.Sql.Sqlite;
+using Elsa.Sql.SqlServer;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
@@ -400,6 +405,16 @@ services
 
                 if (useCaching)
                     http.UseCache();
+            })
+            .UseSql(options =>
+            {
+                options.Clients = client =>
+                {
+                    client.Register<MySqlClient>("MySql");
+                    client.Register<PostgreSqlClient>("PostgreSql");
+                    client.Register<SqliteClient>("Sqlite");
+                    client.Register<SqlServerClient>("Sql Server");
+                };
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseAlterations(alterations =>
