@@ -39,7 +39,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
     public async Task InvokeAsync(HttpContext httpContext, IServiceProvider serviceProvider)
     {
-        var path = GetPath(httpContext);
+        var path = httpContext.Request.Path.Value!.NormalizeRoute();
         var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
         var basePath = options.Value.BasePath?.ToString().NormalizeRoute();
 
@@ -61,7 +61,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
         var input = new Dictionary<string, object>
         {
             [HttpEndpoint.HttpContextInputKey] = true,
-            [HttpEndpoint.RequestPathInputKey] = path.NormalizeRoute()
+            [HttpEndpoint.PathInputKey] = path
         };
 
         var cancellationToken = httpContext.RequestAborted;
@@ -324,8 +324,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
             await response.WriteAsync(json, cancellationToken);
         }
     }
-
-    private string GetPath(HttpContext httpContext) => httpContext.Request.Path.Value!.NormalizeRoute();
 
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
     private async Task<bool> HandleMultipleWorkflowsFoundAsync(HttpContext httpContext, Func<IEnumerable<object>> workflowMatches, CancellationToken cancellationToken)

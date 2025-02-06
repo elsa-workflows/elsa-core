@@ -31,9 +31,7 @@ public class Flowchart : Container
     /// <summary>
     /// The activity to execute when the flowchart starts.
     /// </summary>
-    [Port]
-    [Browsable(false)]
-    public IActivity? Start { get; set; }
+    [Port] [Browsable(false)] public IActivity? Start { get; set; }
 
     /// <summary>
     /// A list of connections between activities.
@@ -98,8 +96,8 @@ public class Flowchart : Container
     {
         var workflowExecutionContext = context.WorkflowExecutionContext;
         var activityIds = Activities.Select(x => x.Id).ToList();
-        var descendantContexts = context.GetDescendents().Where(x => x.ParentActivityExecutionContext == context).ToList();
-        var activityExecutionContexts = descendantContexts.Where(x => activityIds.Contains(x.Activity.Id)).ToList();
+        var children = context.Children;
+        var hasRunningActivityInstances = children.Where(x => activityIds.Contains(x.Activity.Id)).Any(x => x.Status == ActivityStatus.Running);
 
         var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(workItem =>
         {
@@ -116,8 +114,6 @@ public class Flowchart : Container
 
             return ancestors.Any(x => x == context);
         });
-
-        var hasRunningActivityInstances = activityExecutionContexts.Any(x => x.Status == ActivityStatus.Running);
 
         return hasRunningActivityInstances || hasPendingWork;
     }
@@ -186,7 +182,7 @@ public class Flowchart : Container
                         var executionCount = scope.GetExecutionCount(activity);
                         var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
 
-                        if (haveInboundActivitiesExecuted) 
+                        if (haveInboundActivitiesExecuted)
                             await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
                     }
                     else
@@ -231,7 +227,7 @@ public class Flowchart : Container
 
         if (!hasPendingWork)
         {
-            var hasFaultedActivities = context.GetActiveChildren().Any(x => x.Status == ActivityStatus.Faulted);
+            var hasFaultedActivities = context.Children.Any(x => x.Status == ActivityStatus.Faulted);
 
             if (!hasFaultedActivities)
             {

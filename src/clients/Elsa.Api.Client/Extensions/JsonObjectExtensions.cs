@@ -15,52 +15,43 @@ public static class JsonObjectExtensions
     {
         return obj.ContainsKey("type") && obj.ContainsKey("id") && obj.ContainsKey("version");
     }
-    
+
     /// <summary>
     /// Serializes the specified value to a <see cref="JsonObject"/>.
     /// </summary>
     /// <param name="value">The value to serialize.</param>
     /// <param name="options">The <see cref="JsonSerializerOptions"/> to use.</param>
     /// <returns>A <see cref="JsonObject"/> representing the specified value.</returns>
-    public static JsonNode SerializeToNode(this object value, JsonSerializerOptions? options = default)
+    public static JsonNode SerializeToNode(this object value, JsonSerializerOptions? options = null)
     {
-        options ??= new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-        
+        options ??= new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
         return JsonSerializer.SerializeToNode(value, options)!;
     }
-    
+
     /// <summary>
     /// Serializes the specified value to a <see cref="JsonArray"/>.
     /// </summary>
     /// <param name="value">The value to serialize.</param>
     /// <param name="options">The <see cref="JsonSerializerOptions"/> to use.</param>
     /// <returns>A <see cref="JsonObject"/> representing the specified value.</returns>
-    public static JsonArray SerializeToArray(this object value, JsonSerializerOptions? options = default)
+    public static JsonArray SerializeToArray(this object value, JsonSerializerOptions? options = null)
     {
-        options ??= new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-        
+        options ??= new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
         return JsonSerializer.SerializeToNode(value, options)!.AsArray();
     }
-    
+
     /// <summary>
     /// Serializes the specified value to a <see cref="JsonArray"/>.
     /// </summary>
     /// <param name="value">The value to serialize.</param>
     /// <param name="options">The <see cref="JsonSerializerOptions"/> to use.</param>
     /// <returns>A <see cref="JsonObject"/> representing the specified value.</returns>
-    public static JsonArray SerializeToArray<T>(this IEnumerable<T> value, JsonSerializerOptions? options = default)
+    public static JsonArray SerializeToArray<T>(this IEnumerable<T> value, JsonSerializerOptions? options = null)
     {
-        options ??= new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-        
+        options ??= new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
         return JsonSerializer.SerializeToNode(value, options)!.AsArray();
     }
 
@@ -71,18 +62,22 @@ public static class JsonObjectExtensions
     /// <param name="options">The <see cref="JsonSerializerOptions"/> to use.</param>
     /// <typeparam name="T">The type to deserialize to.</typeparam>
     /// <returns>The deserialized value.</returns>
-    public static T Deserialize<T>(this JsonNode value, JsonSerializerOptions? options = default)
+    public static T Deserialize<T>(this JsonNode value, JsonSerializerOptions? options = null)
     {
-        options ??= new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-        
+        options ??= new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
         if (value is JsonObject jsonObject)
             return JsonSerializer.Deserialize<T>(jsonObject, options)!;
 
         if (value is JsonArray jsonArray)
             return JsonSerializer.Deserialize<T>(jsonArray, options)!;
+
+        if (typeof(T).IsEnum || (Nullable.GetUnderlyingType(typeof(T))?.IsEnum ?? false))
+        {
+            if (value.GetValueKind() == JsonValueKind.Null)
+                return default!;
+            return (T)Enum.Parse(Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T), value.ToString());
+        }
 
         if (value is JsonValue jsonValue)
             return jsonValue.GetValue<T>();
@@ -101,7 +96,7 @@ public static class JsonObjectExtensions
         model = GetPropertyContainer(model, path);
         model[path.Last()] = value?.SerializeToNode();
     }
-    
+
     /// <summary>
     /// Sets the property value of the specified model.
     /// </summary>
@@ -113,7 +108,7 @@ public static class JsonObjectExtensions
         model = GetPropertyContainer(model, path);
         model[path.Last()] = value?.SerializeToNode();
     }
-    
+
     /// <summary>
     /// Sets the property value of the specified model.
     /// </summary>
@@ -125,7 +120,7 @@ public static class JsonObjectExtensions
         model = GetPropertyContainer(model, path);
         model[path.Last()] = new JsonArray(value.Select(x => x.SerializeToNode()).ToArray());
     }
-    
+
     /// <summary>
     /// Gets the property value of the specified model.
     /// </summary>
@@ -139,12 +134,31 @@ public static class JsonObjectExtensions
         foreach (var prop in path.SkipLast(1))
         {
             if (currentModel[prop] is not JsonObject value)
-                return default;
+                return null;
 
             currentModel = value;
         }
 
         return currentModel[path.Last()];
+    }
+
+    /// <summary>
+    /// Gets the property value of the specified model.
+    /// </summary>
+    /// <param name="model">The model to get the property value from.</param>
+    /// <param name="path">The path to the property.</param>
+    /// <typeparam name="T">The type to deserialize to.</typeparam>
+    /// <returns>The property value.</returns>
+    public static T? TryGetProperty<T>(this JsonObject model, params string[] path)
+    {
+        try
+        {
+            return model.GetProperty<T>(path);
+        }
+        catch (Exception e)
+        {
+            return default;
+        }
     }
 
     /// <summary>
@@ -173,7 +187,7 @@ public static class JsonObjectExtensions
         var property = GetProperty(model, path);
         return property != null ? property.Deserialize<T>(options) : default;
     }
-    
+
     /// <summary>
     /// Returns the property container of the specified model.
     /// </summary>
@@ -190,5 +204,4 @@ public static class JsonObjectExtensions
 
         return model;
     }
-
 }

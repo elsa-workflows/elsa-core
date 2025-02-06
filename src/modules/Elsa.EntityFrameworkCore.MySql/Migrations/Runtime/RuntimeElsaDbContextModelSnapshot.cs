@@ -3,6 +3,7 @@ using System;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -17,17 +18,15 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.20")
+                .HasAnnotation("ProductVersion", "8.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
+
+            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
-
-                    b.Property<string>("Key")
-                        .IsRequired()
-                        .HasColumnType("longtext");
 
                     b.Property<string>("SerializedValue")
                         .IsRequired()
@@ -209,10 +208,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<string>("ActivityTypeName")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
-
-                    b.Property<string>("BookmarkId")
-                        .IsRequired()
-                        .HasColumnType("longtext");
 
                     b.Property<string>("CorrelationId")
                         .HasColumnType("longtext");

@@ -10,17 +10,13 @@ namespace Elsa.Hangfire.Features;
 /// Configures the Hangfire feature to use SQLite storage. If you're setting up Hangfire yourself, then you should not enable this feature.
 /// </summary>
 [DependsOn(typeof(HangfireFeature))]
-public class HangfireSqliteStorageFeature : FeatureBase
+[Obsolete("Configure storage directly on the HangfireFeature.")]
+public class HangfireSqliteStorageFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public HangfireSqliteStorageFeature(IModule module) : base(module)
-    {
-    }
-
     /// <summary>
     /// The connection string to use when connecting to SQL Server, or the name of the connection string.
     /// </summary>
-    public string NameOrConnectionString { get; set; } = default!;
+    public string NameOrConnectionString { get; set; } = null!;
     
     /// <summary>
     /// Configures the SQL Server storage options.
@@ -38,12 +34,10 @@ public class HangfireSqliteStorageFeature : FeatureBase
             };
             ConfigureSqlServerStorageOptions(storageOptions);
             
-            hangfireFeature.ConfigureHangfire = (_, cfg) =>
+            hangfireFeature.ConfigureHangfire((_, cfg) =>
             {
                 cfg.UseSQLiteStorage(NameOrConnectionString, storageOptions);
-            };
-            
-            hangfireFeature.CreateJobStorage = () => new SQLiteStorage(NameOrConnectionString, storageOptions);
+            });
         });
     }
 }

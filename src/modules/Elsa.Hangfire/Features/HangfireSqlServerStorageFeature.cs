@@ -11,18 +11,14 @@ namespace Elsa.Hangfire.Features;
 /// Configures the Hangfire feature to use SQL Server storage. If you're setting up Hangfire yourself, then you should not enable this feature.
 /// </summary>
 [DependsOn(typeof(HangfireFeature))]
-public class HangfireSqlServerStorageFeature : FeatureBase
+[Obsolete("Configure storage directly on the HangfireFeature.")]
+public class HangfireSqlServerStorageFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public HangfireSqlServerStorageFeature(IModule module) : base(module)
-    {
-    }
-
     /// <summary>
     /// The connection string to use when connecting to SQL Server, or the name of the connection string.
     /// </summary>
-    public string NameOrConnectionString { get; set; } = default!;
-    
+    public string NameOrConnectionString { get; set; } = null!;
+
     /// <summary>
     /// Configures the SQL Server storage options.
     /// </summary>
@@ -41,13 +37,11 @@ public class HangfireSqlServerStorageFeature : FeatureBase
                 UseRecommendedIsolationLevel = true
             };
             ConfigureSqlServerStorageOptions(storageOptions);
-            
-            hangfireFeature.ConfigureHangfire = (_, cfg) =>
+
+            hangfireFeature.ConfigureHangfire((_, cfg) =>
             {
                 cfg.UseSqlServerStorage(NameOrConnectionString, storageOptions);
-            };
-            
-            hangfireFeature.CreateJobStorage = () => new SqlServerStorage(NameOrConnectionString, storageOptions);
+            });
         });
     }
 }

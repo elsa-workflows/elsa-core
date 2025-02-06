@@ -108,7 +108,7 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
 
     private async Task ImportJsonStreamAsync(Stream jsonStream, CancellationToken cancellationToken)
     {
-        var json = await new StreamReader(jsonStream).ReadToEndAsync();
+        var json = await new StreamReader(jsonStream).ReadToEndAsync(cancellationToken);
         var model = _apiSerializer.Deserialize<WorkflowDefinitionModel>(json);
         await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
     }

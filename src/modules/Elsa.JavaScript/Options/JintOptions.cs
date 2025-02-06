@@ -48,6 +48,12 @@ public class JintOptions
     public bool DisableWrappers { get; set; }
     
     /// <summary>
+    /// Disables copying workflow variables into the Jint engine and copying them back into the workflow execution context.
+    /// Disabling this option will increase performance but will also prevent you from accessing workflow variables from within JavaScript expressions using the <c>variables.MyVariable</c> syntax.
+    /// </summary>
+    public bool DisableVariableCopying { get; set; }
+    
+    /// <summary>
     /// Configures the Jint engine options.
     /// </summary>
     /// <param name="configurator">A callback that is invoked when the Jint engine options are created. Use this to configure the options.</param>

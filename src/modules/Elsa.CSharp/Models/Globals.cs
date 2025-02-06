@@ -16,7 +16,6 @@ public partial class Globals
         ExpressionExecutionContext = expressionExecutionContext;
         Arguments = arguments;
         ExecutionContext = new ExecutionContextProxy(expressionExecutionContext);
-        Input = new InputProxy(expressionExecutionContext);
         Output = new OutputProxy(expressionExecutionContext);
         Outcome = new OutcomeProxy(expressionExecutionContext);
     }
@@ -30,11 +29,6 @@ public partial class Globals
     /// Provides access to activity outputs.
     /// </summary>
     public OutputProxy Output { get; set; }
-
-    /// <summary>
-    /// Provides access to workflow inputs.
-    /// </summary>
-    public InputProxy Input { get; set; }
 
     /// <summary>
     /// Gets the current execution context.

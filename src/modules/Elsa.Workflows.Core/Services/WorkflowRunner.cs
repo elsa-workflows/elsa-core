@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Options;
@@ -43,7 +44,7 @@ public class WorkflowRunner(
     public async Task<RunWorkflowResult<TResult>> RunAsync<TResult>(WorkflowBase<TResult> workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var result = await RunAsync((IWorkflow)workflow, options, cancellationToken);
-        return new RunWorkflowResult<TResult>(result.WorkflowState, result.Workflow, (TResult)result.Result!);
+        return new(result.WorkflowState, result.Workflow, (TResult)result.Result!);
     }
 
     /// <inheritdoc />
@@ -141,7 +142,7 @@ public class WorkflowRunner(
             if (!string.IsNullOrEmpty(activityHandle.ActivityInstanceId))
             {
                 var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityHandle.ActivityInstanceId)
-                                               ?? throw new Exception("No activity execution context found with the specified ID.");
+                                               ?? throw new("No activity execution context found with the specified ID.");
                 workflowExecutionContext.ScheduleActivityExecutionContext(activityExecutionContext);
             }
             else
@@ -191,6 +192,6 @@ public class WorkflowRunner(
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
         await notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
         await commitStateHandler.CommitAsync(workflowExecutionContext, workflowState, cancellationToken);
-        return new RunWorkflowResult(workflowState, workflowExecutionContext.Workflow, result);
+        return new(workflowState, workflowExecutionContext.Workflow, result);
     }
 }

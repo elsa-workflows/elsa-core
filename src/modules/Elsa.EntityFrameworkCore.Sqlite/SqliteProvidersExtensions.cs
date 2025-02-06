@@ -1,7 +1,10 @@
 ﻿using System.Reflection;
 using Elsa.EntityFrameworkCore.EntityHandlers;
+using Elsa.EntityFrameworkCore.Sqlite;
+using Elsa.Extensions;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.EntityFrameworkCore.Extensions;
@@ -65,7 +68,8 @@ public static class SqliteProvidersExtensions
         where TDbContext : ElsaDbContextBase
         where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
     {
-        feature.Module.Services.AddScoped<IEntityModelCreatingHandler, SetupForSqlite>();
+        
+        feature.Module.Services.TryAddScopedImplementation<IEntityModelCreatingHandler, SetupForSqlite>();
         feature.DbContextOptionsBuilder = (sp, db) => db.UseElsaSqlite(migrationsAssembly, connectionStringFunc(sp), options, configure: configure);
         return (TFeature)feature;
     }

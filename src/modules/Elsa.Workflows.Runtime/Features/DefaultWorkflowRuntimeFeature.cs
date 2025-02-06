@@ -8,15 +8,4 @@ namespace Elsa.Workflows.Runtime.Features;
 /// Installs the default runtime services.
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
-public class DefaultWorkflowRuntimeFeature : FeatureBase
-{
-    /// <inheritdoc />
-    public DefaultWorkflowRuntimeFeature(IModule module) : base(module)
-    {
-    }
-
-    /// <inheritdoc />
-    public override void Apply()
-    {
-    }
-}
+public class DefaultWorkflowRuntimeFeature(IModule module) : FeatureBase(module);

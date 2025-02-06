@@ -2,12 +2,14 @@ using System.Text.Encodings.Web;
 using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
+using Elsa.Caching.Options;
 using Elsa.Common.DistributedHosting.DistributedLocks;
 using Elsa.Common.RecurringTasks;
 using Elsa.Common.Serialization;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
 using Elsa.DropIns.Extensions;
+using Elsa.EntityFrameworkCore;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
@@ -27,6 +29,8 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.MongoDb.Modules.Tenants;
 using Elsa.OpenTelemetry.Middleware;
+using Elsa.Retention.Extensions;
+using Elsa.Retention.Models;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Management.Tasks;
 using Elsa.Secrets.Persistence;
@@ -41,7 +45,9 @@ using Elsa.Sql.Sqlite;
 using Elsa.Sql.SqlServer;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
+using Elsa.Workflows;
 using Elsa.Workflows.Api;
+using Elsa.Workflows.CommitStates.Strategies;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Compression;
@@ -50,6 +56,12 @@ using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Stores;
 using Elsa.Workflows.Runtime.Tasks;
+using Hangfire;
+using Hangfire.MemoryStorage;
+using Hangfire.PostgreSql;
+using Hangfire.PostgreSql.Factories;
+using Hangfire.SqlServer;
+using Hangfire.Storage.SQLite;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
@@ -80,10 +92,11 @@ const WorkflowRuntime workflowRuntime = WorkflowRuntime.Distributed;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
-const bool useTenantsFromConfiguration = false;
+const bool useTenantsFromConfiguration = true;
 const bool useAgents = false;
-const bool useSecrets = true;
+const bool useSecrets = false;
 const bool disableVariableWrappers = false;
+const bool disableVariableCopying = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -93,6 +106,7 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var sqlServerConnectionString = configuration.GetConnectionString("SqlServer")!;
 var postgresConnectionString = configuration.GetConnectionString("PostgreSql")!;
+var oracleConnectionString = configuration.GetConnectionString("Oracle")!;
 var mySqlConnectionString = configuration.GetConnectionString("MySql")!;
 var cockroachDbConnectionString = configuration.GetConnectionString("CockroachDb")!;
 var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
@@ -134,7 +148,36 @@ services
             });
 
         if (useHangfire)
-            elsa.UseHangfire();
+        {
+            JobStorage jobStorage;
+            if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+            {
+                jobStorage = new PostgreSqlStorage(new NpgsqlConnectionFactory(postgresConnectionString, new()
+                {
+                    QueuePollInterval = TimeSpan.FromSeconds(1)
+                }));
+            }
+            else if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite)
+            {
+                jobStorage = new SQLiteStorage(sqliteConnectionString, new()
+                {
+                    QueuePollInterval = TimeSpan.FromSeconds(1)
+                });
+            }
+            else if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
+            {
+                jobStorage = new SqlServerStorage(sqlServerConnectionString, new()
+                {
+                    QueuePollInterval = TimeSpan.FromSeconds(1)
+                });
+            }
+            else
+            {
+                jobStorage = new MemoryStorage();
+            }
+
+            elsa.UseHangfire(hangfire => hangfire.UseJobStorage(jobStorage));
+        }
 
         elsa
             .AddActivitiesFrom<Program>()
@@ -160,6 +203,8 @@ services
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
+                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -176,6 +221,11 @@ services
             {
                 workflows.WithDefaultWorkflowExecutionPipeline(pipeline => pipeline.UseWorkflowExecutionTracing());
                 workflows.WithDefaultActivityExecutionPipeline(pipeline => pipeline.UseActivityExecutionTracing());
+                workflows.UseCommitStrategies(strategies =>
+                {
+                    strategies.AddStandardStrategies();
+                    strategies.Add("Every 10 seconds", new PeriodicWorkflowStrategy(TimeSpan.FromSeconds(10)));
+                });
             })
             .UseWorkflowManagement(management =>
             {
@@ -196,6 +246,8 @@ services
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
+                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -241,7 +293,9 @@ services
                             ef.UseMySql(mySqlConnectionString);
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
-                            ef.UsePostgreSql(cockroachDbConnectionString!);
+                            ef.UsePostgreSql(cockroachDbConnectionString);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
+                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -321,6 +375,7 @@ services
             {
                 options.AllowClrAccess = true;
                 options.DisableWrappers = disableVariableWrappers;
+                options.DisableVariableCopying = disableVariableCopying;
                 options.RegisterType<OrderReceived>();
                 options.ConfigureEngine(engine =>
                 {
@@ -335,6 +390,12 @@ services
                     // Make sure to configure the path to the python DLL. E.g. /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
                     // alternatively, you can set the PYTHONNET_PYDLL environment variable.
                     configuration.GetSection("Scripting:Python").Bind(options);
+
+                    options.AddScript(sb =>
+                    {
+                        sb.AppendLine("def greet():");
+                        sb.AppendLine("    return \"Hello, welcome to Python!\"");
+                    });
                 };
             })
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
@@ -379,7 +440,9 @@ services
                             ef.UseMySql(mySqlConnectionString);
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
-                            ef.UsePostgreSql(cockroachDbConnectionString!);
+                            ef.UsePostgreSql(cockroachDbConnectionString);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
+                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -396,7 +459,13 @@ services
 
         if (useQuartz)
         {
-            elsa.UseQuartz(quartz => { quartz.UseSqlite(sqliteConnectionString); });
+            elsa.UseQuartz(quartz =>
+            {
+                if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite)
+                    quartz.UseSqlite(sqliteConnectionString);
+                else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+                    quartz.UsePostgreSql(postgresConnectionString);
+            });
         }
 
         if (useSignalR)
@@ -529,6 +598,19 @@ services
                 ;
         }
 
+        elsa.UseRetention(r =>
+        {
+            r.SweepInterval = TimeSpan.FromHours(5);
+            r.AddDeletePolicy("Delete all finished workflows", sp =>
+            {
+                var filter = new RetentionWorkflowInstanceFilter
+                {
+                    WorkflowStatus = WorkflowStatus.Finished
+                };
+                return filter;
+            });
+        });
+
         if (useMultitenancy)
         {
             elsa.UseTenants(tenants =>
@@ -563,6 +645,7 @@ services
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite) ef.UseSqlite(sqliteConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer) ef.UseSqlServer(sqlServerConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);
+                                if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle) ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
 #if !NET9_0
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) 
                                     ef.UseMySql(mySqlConnectionString);
@@ -598,7 +681,7 @@ services.Configure<RecurringTaskOptions>(options =>
 
 services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(10));
 
-//services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
+services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.AddHealthChecks();
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));

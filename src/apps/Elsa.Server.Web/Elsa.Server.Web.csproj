@@ -10,10 +10,14 @@
         <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.ProtoActor\Elsa.Caching.Distributed.ProtoActor.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.MySql\Elsa.EntityFrameworkCore.MySql.csproj" Condition=" '$(TargetFramework)' != 'net9.0' " />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Oracle\Elsa.EntityFrameworkCore.Oracle.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Kafka\Elsa.Kafka.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.OpenTelemetry\Elsa.OpenTelemetry.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Quartz.EntityFrameworkCore.MySql\Elsa.Quartz.EntityFrameworkCore.MySql.csproj" Condition=" '$(TargetFramework)' != 'net9.0' " />
+        <ProjectReference Include="..\..\modules\Elsa.Quartz.EntityFrameworkCore.PostgreSql\Elsa.Quartz.EntityFrameworkCore.PostgreSql.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Retention\Elsa.Retention.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Secrets.Api\Elsa.Secrets.Api.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql\Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite\Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.csproj" />
@@ -62,10 +66,20 @@
         <PackageReference Include="DistributedLock.Postgres" />
         <PackageReference Include="DistributedLock.Redis" />
         <PackageReference Include="FluentStorage.Azure.Blobs" />
+        <PackageReference Include="Azure.Identity"/>
+        <PackageReference Include="Bogus"/>
+        <PackageReference Include="DistributedLock.Postgres"/>
+        <PackageReference Include="DistributedLock.Redis"/>
+        <PackageReference Include="FluentStorage.Azure.Blobs"/>
+        <PackageReference Include="Hangfire.PostgreSql" />
         <PackageReference Include="Proto.Cluster.Kubernetes" />
         <PackageReference Include="Grpc.Net.Client" />
         <PackageReference Include="Proto.Persistence.Sqlite" />
         <PackageReference Include="Proto.Persistence.SqlServer" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="App_Data\" />
     </ItemGroup>
 
 </Project>

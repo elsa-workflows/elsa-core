@@ -102,7 +102,7 @@ public class WorkflowDefinitionFilter
         if (Name != null) queryable = queryable.Where(x => x.Name == Name);
         if (Names != null) queryable = queryable.Where(x => Names.Contains(x.Name!));
         if (UsableAsActivity != null) queryable = queryable.Where(x => x.Options.UsableAsActivity == UsableAsActivity);
-        if (!string.IsNullOrWhiteSpace(SearchTerm)) queryable = queryable.Where(x => x.Name!.Contains(SearchTerm) || x.Description!.Contains(SearchTerm) || x.Id.Contains(SearchTerm) || x.DefinitionId.Contains(SearchTerm));
+        if (!string.IsNullOrWhiteSpace(SearchTerm)) queryable = queryable.Where(x => x.Name!.ToLower().Contains(SearchTerm.ToLower()) || x.Description!.ToLower().Contains(SearchTerm.ToLower()) || x.Id.Contains(SearchTerm) || x.DefinitionId.Contains(SearchTerm));
         if (IsSystem != null) queryable = queryable.Where(x => x.IsSystem == IsSystem);
         if (IsReadonly != null) queryable = queryable.Where(x => x.IsReadonly == IsReadonly);
 

@@ -43,7 +43,7 @@ internal class Post(
 
         var draft = !string.IsNullOrWhiteSpace(definitionId)
             ? await workflowDefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest, cancellationToken)
-            : default;
+            : null;
 
         var isNew = draft == null;
 

@@ -90,8 +90,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 		docker\ElsaServer.Dockerfile = docker\ElsaServer.Dockerfile
 		docker\ElsaServerAndStudio.Dockerfile = docker\ElsaServerAndStudio.Dockerfile
 		docker\ElsaStudio.Dockerfile = docker\ElsaStudio.Dockerfile
-		docker\init-db.sh = docker\init-db.sh
 		docker\otel-collector-config.yaml = docker\otel-collector-config.yaml
+		docker\docker-compose-kafka.yml = docker\docker-compose-kafka.yml
+		docker\init-db-postgres.sh = docker\init-db-postgres.sh
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Elasticsearch", "src\modules\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj", "{3246883E-2FA7-4B4A-BDC5-99039A2869BC}"
@@ -398,6 +399,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Sql.Sqlite", "src\modules\Elsa.Sql.Sqlite\Elsa.Sql.Sqlite.csproj", "{FA5E857F-B173-4B5D-8049-B817A210DEF5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Sql.SqlServer", "src\modules\Elsa.Sql.SqlServer\Elsa.Sql.SqlServer.csproj", "{A51F9683-DA9F-45E7-82DE-1E261ACD6D68}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "oracle-setup", "oracle-setup", "{66E2E2CF-967F-4564-89E8-F46FA973C99B}"
+	ProjectSection(SolutionItems) = preProject
+		docker\oracle-setup\setup.sql = docker\oracle-setup\setup.sql
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1006,6 +1011,7 @@ Global
 		{6CC5FBC7-D3D7-4FE3-AD08-C67939BDB24D} = {A0DC5F8E-5D7F-4E8A-A5DF-B1FC31F7336E}
 		{FA5E857F-B173-4B5D-8049-B817A210DEF5} = {A0DC5F8E-5D7F-4E8A-A5DF-B1FC31F7336E}
 		{A51F9683-DA9F-45E7-82DE-1E261ACD6D68} = {A0DC5F8E-5D7F-4E8A-A5DF-B1FC31F7336E}
+		{66E2E2CF-967F-4564-89E8-F46FA973C99B} = {986E5482-0482-448C-B9E4-EC67A9474B85}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
