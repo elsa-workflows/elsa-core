@@ -20,7 +20,7 @@ public class HangfireWorkflowScheduler(
     public ValueTask ScheduleAtAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
     {
         var tenantId = tenantAccessor.Tenant?.Id;
-        backgroundJobClient.Schedule<RunWorkflowJob>(job => job.ExecuteAsync(request, tenantId, CancellationToken.None), at);
+        backgroundJobClient.Schedule<RunWorkflowJob>(job => job.ExecuteAsync(taskName, request, tenantId, CancellationToken.None), at);
         return ValueTask.CompletedTask;
     }
 
@@ -28,7 +28,7 @@ public class HangfireWorkflowScheduler(
     public ValueTask ScheduleAtAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
     {
         var tenantId = tenantAccessor.Tenant?.Id;
-        backgroundJobClient.Schedule<ResumeWorkflowJob>(job => job.ExecuteAsync(request, tenantId, CancellationToken.None), at);
+        backgroundJobClient.Schedule<ResumeWorkflowJob>(job => job.ExecuteAsync(taskName, request, tenantId, CancellationToken.None), at);
         return ValueTask.CompletedTask;
     }
 
@@ -48,7 +48,7 @@ public class HangfireWorkflowScheduler(
     public ValueTask ScheduleCronAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
     {
         var tenantId = tenantAccessor.Tenant?.Id;
-        recurringJobManager.AddOrUpdate<RunWorkflowJob>(taskName, job => job.ExecuteAsync(request, tenantId, CancellationToken.None), cronExpression);
+        recurringJobManager.AddOrUpdate<RunWorkflowJob>(taskName, job => job.ExecuteAsync(taskName, request, tenantId, CancellationToken.None), cronExpression);
         return ValueTask.CompletedTask;
     }
 
@@ -56,7 +56,7 @@ public class HangfireWorkflowScheduler(
     public ValueTask ScheduleCronAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
     {
         var tenantId = tenantAccessor.Tenant?.Id;
-        recurringJobManager.AddOrUpdate<ResumeWorkflowJob>(taskName, job => job.ExecuteAsync(request, tenantId, CancellationToken.None), cronExpression);
+        recurringJobManager.AddOrUpdate<ResumeWorkflowJob>(taskName, job => job.ExecuteAsync(taskName, request, tenantId, CancellationToken.None), cronExpression);
         return ValueTask.CompletedTask;
     }
 
