@@ -6,7 +6,7 @@ using JetBrains.Annotations;
 namespace Elsa.Alterations.Endpoints.Alterations.DryRun;
 
 /// <summary>
-/// Executes an alteration plan.
+/// Determines which workflow instances a "Submit" request would target without actually running an alteration.
 /// </summary>
 [PublicAPI]
 public class DryRun(IWorkflowInstanceFinder workflowInstanceFinder) : ElsaEndpoint<AlterationWorkflowInstanceFilter, Response>
