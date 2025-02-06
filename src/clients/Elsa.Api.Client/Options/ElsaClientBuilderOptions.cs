@@ -19,6 +19,11 @@ public class ElsaClientBuilderOptions
     /// Gets or sets the API key function to use when authenticating with the Elsa server.
     /// </summary>
     public string? ApiKey { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the http client timeout on Elsa server.
+    /// </summary>
+    public TimeSpan HttpClientTimeout { get; set; } = TimeSpan.FromSeconds(60);
 
     /// <summary>
     /// A <see cref="DelegatingHandler"/> type that can be used to authenticate with the Elsa server.
