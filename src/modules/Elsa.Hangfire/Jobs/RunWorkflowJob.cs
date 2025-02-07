@@ -3,6 +3,7 @@ using Elsa.Scheduling;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
 using Hangfire;
+using JetBrains.Annotations;
 
 namespace Elsa.Hangfire.Jobs;
 
@@ -24,6 +25,23 @@ public class RunWorkflowJob(IWorkflowRuntime workflowRuntime, ITenantFinder tena
     {
         var tenant = tenantId != null ? await tenantFinder.FindByIdAsync(tenantId, cancellationToken) : null;
         using var scope = tenantAccessor.PushContext(tenant);
+        var client = await workflowRuntime.CreateClientAsync(cancellationToken);
+        var createAndRunRequest = new CreateAndRunWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = request.WorkflowDefinitionHandle,
+            TriggerActivityId = request.TriggerActivityId,
+            CorrelationId = request.CorrelationId,
+            Input = request.Input,
+            Properties = request.Properties,
+            ParentId = request.ParentId
+        };
+        await client.CreateAndRunInstanceAsync(createAndRunRequest, cancellationToken);
+    }
+    
+    [Obsolete("Use the other overload.")]
+    [UsedImplicitly]
+    public async Task ExecuteAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, CancellationToken cancellationToken)
+    {
         var client = await workflowRuntime.CreateClientAsync(cancellationToken);
         var createAndRunRequest = new CreateAndRunWorkflowInstanceRequest
         {
