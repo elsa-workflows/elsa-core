@@ -19,4 +19,14 @@ public class ExecuteBackgroundActivityJob(IBackgroundActivityInvoker backgroundA
         using var scope = tenantAccessor.PushContext(tenant);
         await backgroundActivityInvoker.ExecuteAsync(scheduledBackgroundActivity, cancellationToken);
     }
+    
+    /// <summary>
+    /// Executes the job.
+    /// </summary>
+    [Obsolete("Use the other overload.")]
+    [UsedImplicitly]
+    public async Task ExecuteAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default)
+    {
+        await backgroundActivityInvoker.ExecuteAsync(scheduledBackgroundActivity, cancellationToken);
+    }
 }

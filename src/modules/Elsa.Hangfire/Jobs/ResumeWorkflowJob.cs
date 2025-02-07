@@ -3,6 +3,7 @@ using Elsa.Scheduling;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
 using Hangfire;
+using JetBrains.Annotations;
 
 namespace Elsa.Hangfire.Jobs;
 
@@ -24,6 +25,21 @@ public class ResumeWorkflowJob(IWorkflowRuntime workflowRuntime, ITenantFinder t
     {
         var tenant = tenantId != null ? await tenantFinder.FindByIdAsync(tenantId, cancellationToken) : null;
         using var scope = tenantAccessor.PushContext(tenant);
+        var client = await workflowRuntime.CreateClientAsync(request.WorkflowInstanceId, cancellationToken);
+        var runRequest = new RunWorkflowInstanceRequest
+        {
+            BookmarkId = request.BookmarkId,
+            ActivityHandle = request.ActivityHandle,
+            Input = request.Input,
+            Properties = request.Properties
+        };
+        await client.RunInstanceAsync(runRequest, cancellationToken);
+    }
+    
+    [Obsolete("Use the other overload.")]
+    [UsedImplicitly]
+    public async Task ExecuteAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, CancellationToken cancellationToken)
+    {
         var client = await workflowRuntime.CreateClientAsync(request.WorkflowInstanceId, cancellationToken);
         var runRequest = new RunWorkflowInstanceRequest
         {
