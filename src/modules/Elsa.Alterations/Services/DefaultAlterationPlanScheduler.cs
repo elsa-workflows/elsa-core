@@ -30,7 +30,6 @@ public class DefaultAlterationPlanScheduler : IAlterationPlanScheduler
     }
 
     /// <inheritdoc />
-    [RequiresUnreferencedCode("The type of the object to be deserialized is not known at compile time.")]
     public async Task<string> SubmitAsync(AlterationPlanParams planParams, CancellationToken cancellationToken = default)
     {
         if(string.IsNullOrWhiteSpace(planParams.Id))
