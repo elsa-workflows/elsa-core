@@ -34,6 +34,8 @@ public static class RefitSettingsHelper
         options.Converters.Add(new VersionOptionsJsonConverter());
         options.Converters.Add(new TypeJsonConverter());
         
+        configureJsonSerializerOptions?.Invoke(serviceProvider, options);
+        
         return options;
     }
 }
