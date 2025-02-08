@@ -1,7 +1,5 @@
 using Elsa.Extensions;
-using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Notifications;
 using JetBrains.Annotations;
@@ -36,9 +34,9 @@ public class DomainEvent: Activity
         // Publish the domain event
         var domainEventPayload = Payload.GetOrDefault(context);
         var domainEventNotification = new DomainEventNotification(context, domainEventId, domainEventName, domainEventPayload);
-        var dispatcher = context.GetRequiredService<INotificationSender>();
+        var dispatcher = context.GetRequiredService<IDomainEventDispatcher>();
 
-        await dispatcher.SendAsync(domainEventNotification, context.CancellationToken);
+        await dispatcher.DispatchAsync(domainEventNotification, context.CancellationToken);
         await context.CompleteActivityAsync();
     }
 }
