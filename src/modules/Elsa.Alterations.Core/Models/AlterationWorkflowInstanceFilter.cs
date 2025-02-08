@@ -11,6 +11,11 @@ namespace Elsa.Alterations.Core.Models;
 public class AlterationWorkflowInstanceFilter
 {
     /// <summary>
+    /// If the filter is empty, all records are matched.
+    /// </summary>
+    public bool EmptyFilterSelectsAll { get; set; }
+    
+    /// <summary>
     /// The IDs of the workflow instances that this plan applies to.
     /// </summary>
     public IEnumerable<string>? WorkflowInstanceIds { get; set; }

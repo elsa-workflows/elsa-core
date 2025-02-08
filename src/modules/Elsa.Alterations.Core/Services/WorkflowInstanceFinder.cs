@@ -37,9 +37,10 @@ public class WorkflowInstanceFinder(IWorkflowInstanceStore workflowInstanceStore
             Status = x.Status,
         }).ToList();
 
+        var emptyFilterSelectsAll = filter.EmptyFilterSelectsAll;
         var workflowInstanceFilterIsEmpty = WorkflowFilterIsEmpty(workflowInstanceFilter);
 
-        var workflowInstanceIds = workflowInstanceFilterIsEmpty
+        var workflowInstanceIds = workflowInstanceFilterIsEmpty && !emptyFilterSelectsAll
             ? Enumerable.Empty<string>().ToHashSet()
             : (await workflowInstanceStore.FindManyIdsAsync(workflowInstanceFilter, cancellationToken)).ToHashSet();
 
