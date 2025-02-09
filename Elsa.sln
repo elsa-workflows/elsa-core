@@ -84,14 +84,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 	ProjectSection(SolutionItems) = preProject
 		docker\.dockerignore = docker\.dockerignore
 		docker\docker-compose-datadog.yml = docker\docker-compose-datadog.yml
-		docker\docker-compose-kafka.yml = docker\docker-compose-kafka.yml
 		docker\docker-compose.yml = docker\docker-compose.yml
 		docker\ElsaServer-Datadog.Dockerfile = docker\ElsaServer-Datadog.Dockerfile
 		docker\ElsaServer.Dockerfile = docker\ElsaServer.Dockerfile
 		docker\ElsaServerAndStudio.Dockerfile = docker\ElsaServerAndStudio.Dockerfile
 		docker\ElsaStudio.Dockerfile = docker\ElsaStudio.Dockerfile
 		docker\otel-collector-config.yaml = docker\otel-collector-config.yaml
-		docker\docker-compose-kafka.yml = docker\docker-compose-kafka.yml
 		docker\init-db-postgres.sh = docker\init-db-postgres.sh
 	EndProjectSection
 EndProject
@@ -399,6 +397,7 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Sql.Sqlite", "src\modules\Elsa.Sql.Sqlite\Elsa.Sql.Sqlite.csproj", "{FA5E857F-B173-4B5D-8049-B817A210DEF5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Sql.SqlServer", "src\modules\Elsa.Sql.SqlServer\Elsa.Sql.SqlServer.csproj", "{A51F9683-DA9F-45E7-82DE-1E261ACD6D68}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "oracle-setup", "oracle-setup", "{66E2E2CF-967F-4564-89E8-F46FA973C99B}"
 	ProjectSection(SolutionItems) = preProject
 		docker\oracle-setup\setup.sql = docker\oracle-setup\setup.sql
