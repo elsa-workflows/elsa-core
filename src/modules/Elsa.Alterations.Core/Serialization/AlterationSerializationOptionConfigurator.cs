@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Alterations.Core.Contracts;
@@ -35,7 +34,7 @@ public class AlterationSerializationOptionConfigurator(IOptions<AlterationOption
 
             foreach (var alterationType in alterationTypes.ToList())
             {
-                polymorphismOptions.DerivedTypes.Add(new JsonDerivedType(alterationType, alterationType.Name));
+                polymorphismOptions.DerivedTypes.Add(new(alterationType, alterationType.Name));
             }
 
             typeInfo.PolymorphismOptions = polymorphismOptions;

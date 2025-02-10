@@ -20,7 +20,7 @@ namespace Elsa.Alterations.Activities;
 /// Submits an alteration plan for execution.
 /// </summary>
 [Browsable(false)]
-[Activity("Elsa", "Alterations", "Generates jobs for the specified Alteration Plan", Kind = ActivityKind.Job)]
+[Activity("Elsa", "Alterations", "Generates jobs for the specified Alteration Plan", Kind = ActivityKind.Task)]
 public class GenerateAlterationJobs : CodeActivity<int>
 {
     /// <inheritdoc />

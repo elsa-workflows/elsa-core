@@ -5,7 +5,7 @@ using JetBrains.Annotations;
 namespace Elsa.Alterations.Endpoints.Alterations.Run;
 
 /// <summary>
-/// Executes an alteration plan.
+/// Executes an alteration plan by targeting workflow instances by ID.
 /// </summary>
 [PublicAPI]
 public class Run : ElsaEndpoint<Request, Response>

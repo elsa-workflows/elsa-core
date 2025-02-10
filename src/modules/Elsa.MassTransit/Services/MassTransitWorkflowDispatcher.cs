@@ -36,7 +36,7 @@ public class MassTransitWorkflowDispatcher(
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
 
         if (workflowGraph == null)
-            throw new Exception($"Workflow definition with definition ID '{request.DefinitionId} and version {request.VersionOptions}' not found");
+            throw new($"Workflow definition with definition ID '{request.DefinitionId} and version {request.VersionOptions}' not found");
 
         var workflow = workflowGraph.Workflow;
         var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
@@ -178,7 +178,7 @@ public class MassTransitWorkflowDispatcher(
     private async Task<ISendEndpoint> GetSendEndpointAsync(DispatchWorkflowOptions? options = default)
     {
         var endpointName = endpointChannelFormatter.FormatEndpointName(options?.Channel);
-        var sendEndpoint = await bus.GetSendEndpoint(new Uri($"queue:{endpointName}"));
+        var sendEndpoint = await bus.GetSendEndpoint(new($"queue:{endpointName}"));
         return sendEndpoint;
     }
     

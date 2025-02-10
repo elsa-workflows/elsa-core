@@ -2,6 +2,7 @@ using Elsa.Api.Client.Options;
 using Elsa.Api.Client.Resources.ActivityDescriptorOptions.Contracts;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
 using Elsa.Api.Client.Resources.ActivityExecutions.Contracts;
+using Elsa.Api.Client.Resources.Alterations.Contracts;
 using Elsa.Api.Client.Resources.Features.Contracts;
 using Elsa.Api.Client.Resources.Identity.Contracts;
 using Elsa.Api.Client.Resources.IncidentStrategies.Contracts;
@@ -68,6 +69,7 @@ public static class DependencyInjectionExtensions
             services.AddApi<IJavaScriptApi>(builderOptions);
             services.AddApi<IExpressionDescriptorsApi>(builderOptions);
             services.AddApi<IWorkflowContextProviderDescriptorsApi>(builderOptions);
+            services.AddApi<IAlterationsApi>(builderOptions);
         });
     }
 
