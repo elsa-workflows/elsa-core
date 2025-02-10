@@ -659,7 +659,11 @@ services
                 }
             });
 
-            elsa.UseTenantHttpRouting();
+            elsa.UseTenantHttpRouting(tenantHttpRouting =>
+            {
+                // Override the tenant header name with a custom one.
+                tenantHttpRouting.WithTenantHeader("X-Company-Id");
+            });
         }
 
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
