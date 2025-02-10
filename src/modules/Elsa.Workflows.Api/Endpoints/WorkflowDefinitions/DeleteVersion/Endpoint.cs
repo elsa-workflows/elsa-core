@@ -19,9 +19,9 @@ internal class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManage
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
 
-        if (!authorizationResult.Result.Succeeded)
+        if (!authorizationResult.Succeeded)
         {
             await SendForbiddenAsync(cancellationToken);
             return;

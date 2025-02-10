@@ -72,7 +72,7 @@ public class DispatchWorkflow : Activity<object>
         var waitForCompletion = WaitForCompletion.GetOrDefault(context);
 
         // Dispatch the child workflow.
-        var instanceId = await DispatchChildWorkflowAsync(context);
+        var instanceId = await DispatchChildWorkflowAsync(context, waitForCompletion);
 
         // If we need to wait for the child workflow to complete, create a bookmark.
         if (waitForCompletion)
@@ -92,28 +92,38 @@ public class DispatchWorkflow : Activity<object>
         }
     }
 
-    private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context)
+    private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, bool waitForCompletion)
     {
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
+        var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published, context.CancellationToken);
+
+        if (workflowGraph == null)
+            throw new($"No published version of workflow definition with ID {workflowDefinitionId} found.");
+
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
         var channelName = ChannelName.GetOrDefault(context);
+        var parentInstanceId = context.WorkflowExecutionContext.Id;
+        var properties = new Dictionary<string, object>
+        {
+            ["ParentInstanceId"] = parentInstanceId
+        };
 
-        input["ParentInstanceId"] = context.WorkflowExecutionContext.Id;
+        // If we need to wait for the child workflow to complete, set the property. This will be used by the ResumeDispatchWorkflowActivity handler.
+        if (waitForCompletion)
+            properties["WaitForCompletion"] = true;
+
+        input["ParentInstanceId"] = parentInstanceId;
 
         var correlationId = CorrelationId.GetOrDefault(context);
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
-        var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published, context.CancellationToken);
-        
-        if (workflowGraph == null)
-            throw new Exception($"No published version of workflow definition with ID {workflowDefinitionId} found.");
-        
         var instanceId = identityGenerator.GenerateId();
         var request = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)
         {
-            ParentWorkflowInstanceId = context.WorkflowExecutionContext.Id,
+            ParentWorkflowInstanceId = parentInstanceId,
             Input = input,
+            Properties = properties,
             CorrelationId = correlationId,
             InstanceId = instanceId,
         };

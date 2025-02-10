@@ -115,7 +115,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             ActivityTypeVersion = source.Activity.Version,
             StartedAt = source.StartedAt,
             HasBookmarks = source.Bookmarks.Any(),
-            Status = GetAggregateStatus(source),
+            Status = source.Status,
             CompletedAt = source.CompletedAt
         };
     }
@@ -220,20 +220,9 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         }
     }
 
-    private static ActivityStatus GetAggregateStatus(ActivityExecutionContext context)
-    {
-        // If any child activity is faulted, the aggregate status is faulted.
-        var descendantContexts = context.GetDescendants().ToList();
-
-        if (descendantContexts.Any(x => x.Status == ActivityStatus.Faulted))
-            return ActivityStatus.Faulted;
-
-        return context.Status;
-    }
-
     private static IDictionary<string, object> GetPayload(ActivityExecutionContext source)
     {
-        var outcomes = source.JournalData.TryGetValue("Outcomes", out var resultValue) ? resultValue as string[] : default;
+        var outcomes = source.JournalData.TryGetValue("Outcomes", out var resultValue) ? resultValue as string[] : null;
         var payload = new Dictionary<string, object>();
 
         if (outcomes != null)
@@ -256,13 +245,13 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 
             var cachedValue = activity.GetOutput(expressionExecutionContext, x.Name);
 
-            if (cachedValue != default)
+            if (cachedValue != null)
                 return cachedValue;
 
             if (x.ValueGetter(activity) is Output output && source.TryGet(output.MemoryBlockReference(), out var outputValue))
                 return outputValue;
 
-            return default;
+            return null;
         });
 
         return outputs;

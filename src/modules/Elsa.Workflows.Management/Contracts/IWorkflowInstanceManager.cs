@@ -20,7 +20,12 @@ public interface IWorkflowInstanceManager
     /// Finds the first workflow instance that matches the specified filter.
     /// </summary>
     Task<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
-    
+
+    /// <summary>
+    /// Determines whether a workflow instance with the specified ID exists.
+    /// </summary>
+    Task<bool> ExistsAsync(string instanceId, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Saves the specified workflow instance.
     /// </summary>
@@ -105,5 +110,10 @@ public interface IWorkflowInstanceManager
     /// <summary>
     /// Instantiates and saves a new workflow instance.
     /// </summary>
-    Task<WorkflowInstance> CreateWorkflowInstanceAsync(Workflow workflow, WorkflowInstanceOptions? options = null, CancellationToken cancellationToken = default);
+    Task<WorkflowInstance> CreateAndCommitWorkflowInstanceAsync(Workflow workflow, WorkflowInstanceOptions? options = null, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Instantiates a new workflow instance.
+    /// </summary>
+    WorkflowInstance CreateWorkflowInstance(Workflow workflow, WorkflowInstanceOptions? options = null);
 }

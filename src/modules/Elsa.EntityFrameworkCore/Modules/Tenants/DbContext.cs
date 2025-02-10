@@ -19,7 +19,7 @@ public class TenantsElsaDbContext : ElsaDbContextBase
     /// <summary>
     /// The alteration plans.
     /// </summary>
-    public DbSet<Tenant> Tenants { get; set; } = default!;
+    public DbSet<Tenant> Tenants { get; set; } = null!;
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)

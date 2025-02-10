@@ -1,21 +1,31 @@
+using Cronos;
+using Microsoft.Extensions.Options;
+
 namespace Elsa.Common.RecurringTasks;
 
-public class RecurringTaskScheduleManager
+public class RecurringTaskScheduleManager(IOptions<RecurringTaskOptions> options, ISystemClock systemClock)
 {
     public IDictionary<Type, ISchedule> ScheduledTasks { get; set; } = new Dictionary<Type, ISchedule>();
     
-    public void ConfigureScheduledTask<T>(ISchedule schedule) where T : IRecurringTask
-    {
-        ConfigureScheduledTask(typeof(T), schedule);
-    }
-    
-    public void ConfigureScheduledTask(Type recurringTaskType, ISchedule schedule)
-    {
-        ScheduledTasks[recurringTaskType] = schedule;
-    }
-
     public ISchedule GetScheduleFor(Type taskType)
     {
-        return ScheduledTasks.TryGetValue(taskType, out var schedule) ? schedule : new IntervalSchedule(TimeSpan.FromMinutes(1));
+        if (!ScheduledTasks.TryGetValue(taskType, out var schedule))
+        {
+            var intervalExpression = options.Value.Schedule.ScheduledTasks.TryGetValue(taskType, out var expr) ? expr : null;
+            schedule = intervalExpression != null ? CreateSchedule(intervalExpression) : new IntervalSchedule(TimeSpan.FromMinutes(1));
+            ScheduledTasks[taskType] = schedule;
+        }
+
+        return schedule;
+    }
+    
+    private ISchedule CreateSchedule(IntervalExpression intervalExpression)
+    {
+        return intervalExpression.Type switch
+        {
+            IntervalExpressionType.Cron => new CronSchedule(systemClock, CronExpression.Parse(intervalExpression.Expression)),
+            IntervalExpressionType.Interval => new IntervalSchedule(TimeSpan.Parse(intervalExpression.Expression)),
+            _ => throw new NotSupportedException($"Interval expression type '{intervalExpression.Type}' is not supported.")
+        };
     }
 }

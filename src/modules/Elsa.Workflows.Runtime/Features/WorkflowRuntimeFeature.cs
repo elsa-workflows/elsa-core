@@ -193,7 +193,7 @@ public class WorkflowRuntimeFeature : FeatureBase
         Module.AddActivitiesFrom<WorkflowRuntimeFeature>();
         Module.Configure<WorkflowsFeature>(workflows =>
         {
-            workflows.CommitStateHandler = sp => sp.GetRequiredService<StoreCommitStateHandler>();
+            workflows.CommitStateHandler = sp => sp.GetRequiredService<DefaultCommitStateHandler>();
         });
 
         Services.Configure<RecurringTaskOptions>(options =>
@@ -263,11 +263,10 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowActivationStrategyEvaluator, DefaultWorkflowActivationStrategyEvaluator>()
             .AddScoped<IWorkflowStarter, DefaultWorkflowStarter>()
             .AddScoped<IBookmarkQueuePurger, DefaultBookmarkQueuePurger>()
-            .AddScoped<ILogRecordExtractor<ActivityExecutionRecord>, ActivityExecutionRecordExtractor>()
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
-            .AddScoped<StoreCommitStateHandler>()
+            .AddScoped<DefaultCommitStateHandler>()
 
             // Deprecated services.
             .AddScoped<IWorkflowInbox, StimulusProxyWorkflowInbox>()
@@ -310,6 +309,7 @@ public class WorkflowRuntimeFeature : FeatureBase
 
             // Domain handlers.
             .AddCommandHandler<DispatchWorkflowCommandHandler>()
+            .AddCommandHandler<CancelWorkflowsCommandHandler>()
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeBulkDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeExecuteWorkflowActivity>()

@@ -74,7 +74,8 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
     {
         var dict = new Dictionary<string, object>
         {
-            { "Content", new List<TestObject>()
+            {
+                "Content", new List<TestObject>()
                 {
                     new()
                     {
@@ -94,9 +95,10 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
     {
         var dict = new Dictionary<string, object>
         {
-            { "Content", new List<Guid>
+            {
+                "Content", new List<Guid>
                 {
-                   Guid.NewGuid()
+                    Guid.NewGuid()
                 }
             }
         };
@@ -104,6 +106,24 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
         var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonSerialized);
         var result = transformationModel["Content"];
         Assert.Equal(typeof(List<Guid>), result.GetType());
+    }
+
+    [Fact]
+    public void RoundtripPrimitiveArrays()
+    {
+        var dict = new Dictionary<string, object>
+        {
+            {
+                "Content", new[]
+                {
+                    Guid.NewGuid()
+                }
+            }
+        };
+        var jsonSerialized = SerializeUsingPayloadSerializer(dict);
+        var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonSerialized);
+        var result = transformationModel["Content"];
+        Assert.Equal(typeof(Guid[]), result.GetType());
     }
 
     private string SerializeUsingPayloadSerializer(object obj)
@@ -134,10 +154,11 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
 
         var dict = new Dictionary<string, object>
         {
-            { "StatusCode", "Created" },
-            { "Content",isArray ?
-            (type == typeof(JArray)? JArray.Parse(jsonContent):JsonArray.Parse(jsonContent)):
-            (type == typeof(JObject)? JObject.Parse(jsonContent):JsonObject.Parse(jsonContent))
+            {
+                "StatusCode", "Created"
+            },
+            {
+                "Content", isArray ? (type == typeof(JArray) ? JArray.Parse(jsonContent) : JsonArray.Parse(jsonContent)) : (type == typeof(JObject) ? JObject.Parse(jsonContent) : JsonObject.Parse(jsonContent))
             }
         };
         return dict;

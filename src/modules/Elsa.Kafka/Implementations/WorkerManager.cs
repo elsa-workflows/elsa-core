@@ -165,6 +165,10 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
     private async Task<IWorker> CreateWorkerAsync(IServiceProvider serviceProvider, ConsumerDefinition consumerDefinition, CancellationToken cancellationToken)
     {
         var factoryType = consumerDefinition.FactoryType;
+        
+        if(factoryType == null!)
+            throw new InvalidOperationException("Worker factory type not specified.");
+        
         var consumerFactory = ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, factoryType) as IConsumerFactory;
         
         if (consumerFactory == null)

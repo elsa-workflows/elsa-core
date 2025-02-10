@@ -39,11 +39,7 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase
     /// <summary>
     /// Gets or sets the callback used to configure the <see cref="DbContextOptionsBuilder"/>.
     /// </summary>
-    public Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder = (_, options) => options
-        .UseElsaDbContextOptions(default)
-        .UseSqlite("Data Source=elsa.sqlite.db;Cache=Shared;", sqlite => sqlite
-            .MigrationsAssembly("Elsa.EntityFrameworkCore.Sqlite")
-            .MigrationsHistoryTable(ElsaDbContextBase.MigrationsHistoryTable, ElsaDbContextBase.ElsaSchema));
+    public virtual Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder { get; set; } = null!;
 
     public override void ConfigureHostedServices()
     {
@@ -54,6 +50,9 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
+        if(DbContextOptionsBuilder == null)
+            throw new InvalidOperationException("The DbContextOptionsBuilder must be configured.");
+        
         if (UseContextPooling)
             Services.AddPooledDbContextFactory<TDbContext>(DbContextOptionsBuilder);
         else

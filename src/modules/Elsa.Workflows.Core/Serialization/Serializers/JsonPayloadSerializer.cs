@@ -74,7 +74,7 @@ public class JsonPayloadSerializer : IPayloadSerializer
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         };
 
         options.Converters.Add(new JsonStringEnumConverter());

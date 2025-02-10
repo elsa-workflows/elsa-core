@@ -6,11 +6,11 @@
         <Nullable>enable</Nullable>
 
         <IsPackable>false</IsPackable>
-        <IsTestProject>true</IsTestProject>
+        <OutputType>Exe</OutputType>
     </PropertyGroup>
 
     <ItemGroup>
-        <Using Include="Xunit"/>
+      <ProjectReference Include="..\..\..\src\modules\Elsa\Elsa.csproj" />
     </ItemGroup>
 
 </Project>

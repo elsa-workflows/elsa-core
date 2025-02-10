@@ -14,7 +14,6 @@ public class StimulusSender(
     IBookmarkBoundWorkflowService bookmarkBoundWorkflowService,
     IBookmarkQueue bookmarkQueue,
     IWorkflowRuntime workflowRuntime,
-    IWorkflowStarter workflowStarter,
     ITriggerInvoker triggerInvoker,
     ILogger<StimulusSender> logger) : IStimulusSender
 {
@@ -38,7 +37,7 @@ public class StimulusSender(
 
         var resumed = await ResumeExistingWorkflowsAsync(stimulusHash, metadata, cancellationToken);
         responses.AddRange(resumed);
-        return new SendStimulusResult(responses);
+        return new(responses);
     }
 
     private async Task<ICollection<RunWorkflowInstanceResponse>> TriggerNewWorkflowsAsync(string stimulusHash, StimulusMetadata? metadata = null, CancellationToken cancellationToken = default)
@@ -129,7 +128,7 @@ public class StimulusSender(
                 WorkflowInstanceId = workflowInstanceId,
                 BookmarkId = metadata?.BookmarkId,
                 StimulusHash = stimulusHash,
-                Options = new ResumeBookmarkOptions
+                Options = new()
                 {
                     Input = input,
                     Properties = properties

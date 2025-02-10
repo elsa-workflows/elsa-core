@@ -1,14 +1,13 @@
 using Elsa.Abstractions;
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
-using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Filters;
+using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Management.Requests;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.GetByDefinitionId;
 
 [PublicAPI]
-internal class GetByDefinitionId(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker linker) : ElsaEndpoint<Request>
+internal class GetByDefinitionId(IMediator mediator, IWorkflowDefinitionLinker linker) : ElsaEndpoint<Request>
 {
     public override void Configure()
     {
@@ -19,16 +18,9 @@ internal class GetByDefinitionId(IWorkflowDefinitionStore store, IWorkflowDefini
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var versionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : VersionOptions.Latest;
-
-        var filter = new WorkflowDefinitionFilter
-        {
-            DefinitionId = request.DefinitionId,
-            VersionOptions = versionOptions
-        };
-
-        var order = new WorkflowDefinitionOrder<int>(x => x.Version, OrderDirection.Descending);
-        var definition = (await store.FindManyAsync(filter, order, cancellationToken: cancellationToken)).FirstOrDefault();
-
+        var findRequest = new FindWorkflowDefinitionRequest(request.DefinitionId, versionOptions);
+        var definition = await mediator.SendAsync(findRequest, cancellationToken);
+        
         if (definition == null)
         {
             await SendNotFoundAsync(cancellationToken);

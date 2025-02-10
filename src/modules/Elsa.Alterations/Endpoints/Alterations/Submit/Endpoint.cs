@@ -8,7 +8,7 @@ using JetBrains.Annotations;
 namespace Elsa.Alterations.Endpoints.Alterations.Submit;
 
 /// <summary>
-/// Executes an alteration plan.
+/// Submits an alteration plan to be executed targeting workflow instances by a filter.
 /// </summary>
 [PublicAPI]
 public class Submit : ElsaEndpoint<AlterationPlanParams, Response>

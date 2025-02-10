@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nuke.Components" Version="9.0.3" />
+    <PackageReference Include="Nuke.Components" Version="9.0.4" />
   </ItemGroup>
 
   <!--Overridden for vulnerability reasons with dependencies referencing older versions.-->

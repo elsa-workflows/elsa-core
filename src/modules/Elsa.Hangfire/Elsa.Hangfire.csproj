@@ -8,14 +8,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Hangfire" />
-      <PackageReference Include="Hangfire.MemoryStorage" />
-      <PackageReference Include="Hangfire.Storage.SQLite" />
+        <PackageReference Include="Hangfire"/>
+        <PackageReference Include="Hangfire.MemoryStorage"/>
+        <PackageReference Include="Hangfire.Storage.SQLite"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
-      <ProjectReference Include="..\Elsa.Scheduling\Elsa.Scheduling.csproj" />
+        <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj"/>
+        <ProjectReference Include="..\Elsa.Scheduling\Elsa.Scheduling.csproj"/>
     </ItemGroup>
 
 </Project>

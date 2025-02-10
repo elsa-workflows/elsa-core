@@ -49,9 +49,9 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
     /// <inheritdoc />
     public override async Task HandleAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
-        var authorizationResult = _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = await _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
 
-        if (!authorizationResult.Result.Succeeded)
+        if (!authorizationResult.Succeeded)
         {
             await SendForbiddenAsync(cancellationToken);
             return;
@@ -108,7 +108,7 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
 
     private async Task ImportJsonStreamAsync(Stream jsonStream, CancellationToken cancellationToken)
     {
-        var json = await new StreamReader(jsonStream).ReadToEndAsync();
+        var json = await new StreamReader(jsonStream).ReadToEndAsync(cancellationToken);
         var model = _apiSerializer.Deserialize<WorkflowDefinitionModel>(json);
         await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
     }

@@ -85,6 +85,11 @@ public class ProtoActorWorkflowClient : IWorkflowClient
         await _actorClient.ImportState(request, CreateHeaders(), cancellationToken);
     }
 
+    public Task<bool> InstanceExistsAsync(CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
     private IDictionary<string, string> CreateHeaders()
     {
         var headers = new Dictionary<string, string>();

@@ -1,5 +1,4 @@
 using System.Reflection;
-using Elsa.CSharp.Activities;
 
 namespace Elsa.Workflows.UIHints.JsonEditor;
 
