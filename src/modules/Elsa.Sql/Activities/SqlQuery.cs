@@ -45,7 +45,9 @@ public class SqlQuery : Activity
     /// </summary>
     [Input(
         Description = "Query to run against the database.",
-        UIHint = InputUIHints.SqlEditor)]
+        UIHint = InputUIHints.CodeEditor,
+        UIHandler = typeof(SqlCodeOptionsProvider)
+    )]
     public Input<string?> Query { get; set; } = default!;
 
 
