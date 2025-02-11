@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
-using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Generates a unique identifier using a random long value.

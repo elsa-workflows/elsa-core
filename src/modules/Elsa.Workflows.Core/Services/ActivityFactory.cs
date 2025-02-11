@@ -1,12 +1,11 @@
 using System.Text.Json;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Humanizer;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class ActivityFactory : IActivityFactory
@@ -20,6 +19,9 @@ public class ActivityFactory : IActivityFactory
         var activityElement = context.Element;
         var activityDescriptor = context.ActivityDescriptor;
         var activity = (IActivity)context.Element.Deserialize(type, context.SerializerOptions)!;
+        var composite = activity as IComposite;
+
+        composite?.Setup();
 
         ReadSyntheticInputs(activityDescriptor, activity, activityElement, context.SerializerOptions);
         ReadSyntheticOutputs(activityDescriptor, activity, activityElement);

@@ -1,6 +1,4 @@
 using Elsa.Extensions;
-using Elsa.Scheduling.Contracts;
-using Elsa.Scheduling.Models;
 
 namespace Elsa.Scheduling.Services;
 
@@ -68,11 +66,12 @@ public class LocalScheduler : IScheduler
 
     private void RemoveScheduledTask(string name)
     {
-        if (!_scheduledTasks.TryGetValue(name, out var existingScheduledTask))
-            return;
-
-        existingScheduledTask.Cancel();
-        _scheduledTaskKeys.Remove(existingScheduledTask);
+        if (_scheduledTasks.TryGetValue(name, out var existingScheduledTask))
+        {
+            _scheduledTaskKeys.Remove(existingScheduledTask);
+            _scheduledTasks.Remove(name);
+            existingScheduledTask.Cancel();
+        }
     }
 
     private void RemoveScheduledTasks(IEnumerable<string> keys)
@@ -83,9 +82,9 @@ public class LocalScheduler : IScheduler
 
             foreach (var scheduledTask in scheduledTasks)
             {
-                scheduledTask.Cancel();
                 _scheduledTasks.RemoveWhere(x => x.Value == scheduledTask);
                 _scheduledTaskKeys.Remove(scheduledTask);
+                scheduledTask.Cancel();
             }
         }
     }

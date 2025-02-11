@@ -1,6 +1,6 @@
 using Elsa.Caching;
 
-namespace Elsa.Http.Contracts;
+namespace Elsa.Http;
 
 /// <summary>
 /// Represents a service that caches HTTP workflows and triggers.
@@ -31,4 +31,9 @@ public interface IHttpWorkflowsCacheManager
     /// Gets the key for a trigger change token.
     /// </summary>
     string GetTriggerChangeTokenKey(string bookmarkHash);
+    
+    /// <summary>
+    /// Compute the bookmark hash for a given path and method combination.
+    /// </summary>
+    string ComputeBookmarkHash(string path, string method);
 }

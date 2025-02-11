@@ -7,7 +7,6 @@ using Elsa.Workflows.Attributes;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
-using HttpHeaders = Elsa.Http.Models.HttpHeaders;
 
 namespace Elsa.Http;
 
@@ -15,34 +14,35 @@ namespace Elsa.Http;
 /// Base class for activities that send HTTP requests.
 /// </summary>
 [Output(IsSerializable = false)]
-public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
+public abstract class SendHttpRequestBase(string? source = default, int? line = default) : Activity<HttpResponseMessage>(source, line)
 {
-    /// <inheritdoc />
-    protected SendHttpRequestBase(string? source = default, int? line = default) : base(source, line)
-    {
-    }
-
     /// <summary>
     /// The URL to send the request to.
     /// </summary>
-    [Input]
-    public Input<Uri?> Url { get; set; } = default!;
+    [Input(Order = 0)] public Input<Uri?> Url { get; set; } = default!;
 
     /// <summary>
     /// The HTTP method to use when sending the request.
     /// </summary>
     [Input(
         Description = "The HTTP method to use when sending the request.",
-        Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" },
+        Options = new[]
+        {
+            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"
+        },
         DefaultValue = "GET",
-        UIHint = InputUIHints.DropDown
+        UIHint = InputUIHints.DropDown,
+        Order = 1
     )]
     public Input<string> Method { get; set; } = new("GET");
 
     /// <summary>
     /// The content to send with the request. Can be a string, an object, a byte array or a stream.
     /// </summary>
-    [Input(Description = "The content to send with the request. Can be a string, an object, a byte array or a stream.")]
+    [Input(
+        Description = "The content to send with the request. Can be a string, an object, a byte array or a stream.",
+        Order = 2
+        )]
     public Input<object?> Content { get; set; } = default!;
 
     /// <summary>
@@ -51,7 +51,8 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     [Input(
         Description = "The content type to use when sending the request.",
         UIHandler = typeof(HttpContentTypeOptionsProvider),
-        UIHint = InputUIHints.DropDown
+        UIHint = InputUIHints.DropDown,
+        Order = 3
     )]
     public Input<string?> ContentType { get; set; } = default!;
 
@@ -59,13 +60,22 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     /// The Authorization header value to send with the request.
     /// </summary>
     /// <example>Bearer {some-access-token}</example>
-    [Input(Description = "The Authorization header value to send with the request. For example: Bearer {some-access-token}", Category = "Security")]
+    [Input(
+        Description = "The Authorization header value to send with the request. For example: Bearer {some-access-token}",
+        Category = "Security",
+        CanContainSecrets = true,
+        Order = 4
+    )]
     public Input<string?> Authorization { get; set; } = default!;
 
     /// <summary>
     /// A value that allows to add the Authorization header without validation.
     /// </summary>
-    [Input(Description = "A value that allows to add the Authorization header without validation.", Category = "Security")]
+    [Input(
+        Description = "A value that allows to add the Authorization header without validation.", 
+        Category = "Security",
+        Order = 5
+    )]
     public Input<bool> DisableAuthorizationHeaderValidation { get; set; } = default!;
 
     /// <summary>
@@ -74,7 +84,8 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     [Input(
         Description = "The headers to send along with the request.",
         UIHint = InputUIHints.JsonEditor,
-        Category = "Advanced"
+        Category = "Advanced",
+        Order = 6
     )]
     public Input<HttpHeaders?> RequestHeaders { get; set; } = new(new HttpHeaders());
 
@@ -83,7 +94,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     /// </summary>
     [Output(Description = "The HTTP response status code")]
     public Output<int> StatusCode { get; set; } = default!;
-    
+
     /// <summary>
     /// The parsed content, if any.
     /// </summary>
@@ -128,10 +139,10 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         try
         {
             var response = await httpClient.SendAsync(request, cancellationToken);
-            var parsedContent = await ParseContentAsync(context, response.Content);
+            var parsedContent = await ParseContentAsync(context, response);
             var statusCode = (int)response.StatusCode;
             var responseHeaders = new HttpHeaders(response.Headers);
-            
+
             context.Set(Result, response);
             context.Set(ParsedContent, parsedContent);
             context.Set(StatusCode, statusCode);
@@ -142,28 +153,37 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         catch (HttpRequestException e)
         {
             logger.LogWarning(e, "An error occurred while sending an HTTP request");
-            context.AddExecutionLogEntry("Error", e.Message, payload: new { StackTrace = e.StackTrace });
+            context.AddExecutionLogEntry("Error", e.Message, payload: new
+            {
+                StackTrace = e.StackTrace
+            });
             context.JournalData.Add("Error", e.Message);
             await HandleRequestExceptionAsync(context, e);
         }
         catch (TaskCanceledException e)
         {
             logger.LogWarning(e, "An error occurred while sending an HTTP request");
-            context.AddExecutionLogEntry("Error", e.Message, payload: new { StackTrace = e.StackTrace });
+            context.AddExecutionLogEntry("Error", e.Message, payload: new
+            {
+                StackTrace = e.StackTrace
+            });
             context.JournalData.Add("Cancelled", true);
             await HandleTaskCanceledExceptionAsync(context, e);
         }
     }
 
-    private async Task<object?> ParseContentAsync(ActivityExecutionContext context, HttpContent httpContent)
+    private async Task<object?> ParseContentAsync(ActivityExecutionContext context, HttpResponseMessage httpResponse)
     {
+        var httpContent = httpResponse.Content;
         if (!HasContent(httpContent))
             return null;
 
         var cancellationToken = context.CancellationToken;
         var targetType = ParsedContent.GetTargetType(context);
         var contentStream = await httpContent.ReadAsStreamAsync(cancellationToken);
-        var contentType = httpContent.Headers.ContentType?.MediaType!;
+        var responseHeaders = httpResponse.Headers;
+        var contentHeaders = httpContent.Headers;
+        var contentType = contentHeaders.ContentType?.MediaType ?? "application/octet-stream";
 
         targetType ??= contentType switch
         {
@@ -171,7 +191,10 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
             _ => typeof(string)
         };
 
-        return await context.ParseContentAsync(contentStream, contentType, targetType, cancellationToken);
+        var contentHeadersDictionary = contentHeaders.ToDictionary(x => x.Key, x => x.Value.Cast<string?>().ToArray(), StringComparer.OrdinalIgnoreCase);
+        var responseHeadersDictionary = responseHeaders.ToDictionary(x => x.Key, x => x.Value.Cast<string?>().ToArray(), StringComparer.OrdinalIgnoreCase);
+        var headersDictionary = contentHeadersDictionary.Concat(responseHeadersDictionary).ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+        return await context.ParseContentAsync(contentStream, contentType, targetType, headersDictionary, cancellationToken);
     }
 
     private static bool HasContent(HttpContent httpContent) => httpContent.Headers.ContentLength > 0;

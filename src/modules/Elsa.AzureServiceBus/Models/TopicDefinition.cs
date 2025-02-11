@@ -9,4 +9,9 @@ public class TopicDefinition
     /// The topic name.
     /// </summary>
     public string Name { get; set; } = default!;
+
+    /// <summary>
+    /// The subscriptions.
+    /// </summary>
+    public ICollection<SubscriptionDefinition> Subscriptions { get; set; } = new List<SubscriptionDefinition>();
 }

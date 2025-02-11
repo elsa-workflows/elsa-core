@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-namespace Elsa.Common.Contracts;
+namespace Elsa.Common;
 
 /// <summary>
 /// Configures <see cref="JsonSerializerOptions"/> objects.

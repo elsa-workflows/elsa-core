@@ -1,4 +1,4 @@
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 
@@ -13,7 +13,7 @@ public static class ActivityRegistryExtensions
     /// <summary>
     /// Finds the activity descriptor for the specified activity.
     /// </summary>
-    public static ActivityDescriptor? Find(this IActivityRegistry activityRegistry, IActivity activity) => activityRegistry.Find(activity.Type, activity.Version);
+    public static Task<ActivityDescriptor?> FindAsync(this IActivityRegistryLookupService activityRegistry, IActivity activity) => activityRegistry.FindAsync(activity.Type, activity.Version);
 
     /// <summary>
     /// Finds the activity descriptor for the specified activity type.

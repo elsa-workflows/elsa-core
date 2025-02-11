@@ -20,6 +20,7 @@ public class HttpActivityOptions
     /// <summary>
     /// The prefix used for API routes.
     /// </summary>
+    [Obsolete("Use ElsaApiOptions from Elsa.Workflows.Api instead.")]
     public string ApiRoutePrefix { get; set; } = "elsa/api";
 
     /// <summary>
@@ -36,4 +37,10 @@ public class HttpActivityOptions
         "text/json", 
         "text/xml",
     };
+
+    /// <summary>
+    /// A boolean to opt-in if you want to call CompleteAsync() in the HttpResponse Activity
+    /// and not waiting for the end of the HttpMiddleware. 
+    /// </summary>
+    public Boolean WriteHttpResponseSynchronously { get; set; } = false;
 }

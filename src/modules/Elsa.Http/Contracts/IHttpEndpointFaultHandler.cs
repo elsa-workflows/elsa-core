@@ -1,6 +1,4 @@
-using Elsa.Http.Models;
-
-namespace Elsa.Http.Contracts;
+namespace Elsa.Http;
 
 /// <summary>
 /// Implement this to control what to return to the client in case an unhandled exception occurs while executing the workflow.

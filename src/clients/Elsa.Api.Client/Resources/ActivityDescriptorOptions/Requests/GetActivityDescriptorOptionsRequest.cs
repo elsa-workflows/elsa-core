@@ -8,5 +8,5 @@ public class GetActivityDescriptorOptionsRequest
     /// <summary>
     /// Object context use to pass custom information
     /// </summary>
-    public object? Context { get; set; } = default;
+    public object? Context { get; set; }
 }

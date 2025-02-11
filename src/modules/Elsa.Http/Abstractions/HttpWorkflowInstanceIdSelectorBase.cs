@@ -1,4 +1,3 @@
-using Elsa.Http.Contracts;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Http.Abstractions;

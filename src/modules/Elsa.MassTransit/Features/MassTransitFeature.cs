@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using System.Reflection;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
@@ -32,9 +32,13 @@ public class MassTransitFeature : FeatureBase
     {
     }
 
+    /// <summary>
     /// The number of messages to prefetch.
+    /// </summary>
     [Obsolete("PrefetchCount has been moved to be included in MassTransitOptions")]
     public int? PrefetchCount { get; set; }
+
+    public bool DisableConsumers { get; set; }
 
     /// <summary>
     /// A delegate that can be set to configure MassTransit's <see cref="IBusRegistrationConfigurator"/>. Used by transport-level features such as AzureServiceBusFeature and RabbitMqServiceBusFeature. 
@@ -118,37 +122,43 @@ public class MassTransitFeature : FeatureBase
     private void ConfigureInMemoryTransport(IBusRegistrationConfigurator configure)
     {
         var consumers = this.GetConsumers().ToList();
-        var temporaryConsumers = consumers
-            .Where(c => c.IsTemporary)
-            .ToList();
+        var temporaryConsumers = consumers.Where(c => c.IsTemporary).ToList();
 
         // Consumers need to be added before the UsingInMemory statement to prevent exceptions.
         foreach (var consumer in temporaryConsumers)
             configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
 
-        configure.UsingInMemory((context, busFactoryConfigurator) =>
+        configure.UsingInMemory((context, bus) =>
         {
             var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
 
             foreach (var consumer in temporaryConsumers)
             {
-                busFactoryConfigurator.ReceiveEndpoint(consumer.Name!, endpoint =>
+                bus.ReceiveEndpoint(consumer.Name!, endpoint =>
                 {
                     endpoint.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
                     endpoint.ConfigureConsumer(context, consumer.ConsumerType);
                 });
             }
 
-            busFactoryConfigurator.SetupWorkflowDispatcherEndpoints(context);
-            busFactoryConfigurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
-            busFactoryConfigurator.ConfigureJsonSerializerOptions(serializerOptions =>
+            if (!DisableConsumers)
+            {
+                if (Module.HasFeature<MassTransitWorkflowDispatcherFeature>())
+                    bus.SetupWorkflowDispatcherEndpoints(context);
+            }
+
+            bus.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+
+            bus.ConfigureJsonSerializerOptions(serializerOptions =>
             {
                 var serializer = context.GetRequiredService<IJsonSerializer>();
                 serializer.ApplyOptions(serializerOptions);
                 return serializerOptions;
             });
 
-            if (PrefetchCount != null) busFactoryConfigurator.PrefetchCount = PrefetchCount.Value;
+            if (PrefetchCount != null) bus.PrefetchCount = PrefetchCount.Value;
+
+            bus.ConfigureTenantMiddleware(context);
         });
     }
 }

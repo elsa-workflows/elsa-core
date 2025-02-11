@@ -1,10 +1,11 @@
-﻿using Elsa.EntityFrameworkCore.Common.Abstractions;
+﻿using Elsa.EntityFrameworkCore.Abstractions;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.EntityFrameworkCore.Modules.Tenants;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,29 +14,22 @@ using Microsoft.EntityFrameworkCore;
 namespace Elsa.EntityFrameworkCore.SqlServer;
 
 [UsedImplicitly]
-public class IdentityDbContextFactory : SqlServerDesignTimeDbContextFactory<IdentityElsaDbContext>
-{
-}
+public class IdentityDbContextFactory : SqlServerDesignTimeDbContextFactory<IdentityElsaDbContext>;
 
 [UsedImplicitly]
-public class ManagementDbContextFactory : SqlServerDesignTimeDbContextFactory<ManagementElsaDbContext>
-{
-}
+public class ManagementDbContextFactory : SqlServerDesignTimeDbContextFactory<ManagementElsaDbContext>;
 
 [UsedImplicitly]
-public class RuntimeDbContextFactory : SqlServerDesignTimeDbContextFactory<RuntimeElsaDbContext>
-{
-}
+public class RuntimeDbContextFactory : SqlServerDesignTimeDbContextFactory<RuntimeElsaDbContext>;
 
 [UsedImplicitly]
-public class LabelsDbContextFactory : SqlServerDesignTimeDbContextFactory<LabelsElsaDbContext>
-{
-}
+public class LabelsDbContextFactory : SqlServerDesignTimeDbContextFactory<LabelsElsaDbContext>;
 
 [UsedImplicitly]
-public class AlterationsDbContextFactories : SqlServerDesignTimeDbContextFactory<AlterationsElsaDbContext>
-{
-}
+public class AlterationsDbContextFactories : SqlServerDesignTimeDbContextFactory<AlterationsElsaDbContext>;
+
+[UsedImplicitly]
+public class TenantsDbContextFactories : SqlServerDesignTimeDbContextFactory<TenantsElsaDbContext>;
 
 public class SqlServerDesignTimeDbContextFactory<TDbContext> : DesignTimeDbContextFactoryBase<TDbContext> where TDbContext : DbContext
 {

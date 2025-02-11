@@ -1,10 +1,12 @@
 using System.IO.Compression;
 using Elsa.Abstractions;
-using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Requirements;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.ImportFiles;
@@ -19,18 +21,21 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
     private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
     private readonly IApiSerializer _apiSerializer;
+    private readonly IAuthorizationService _authorizationService;
 
     /// <inheritdoc />
     public ImportFiles(
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowDefinitionImporter workflowDefinitionImporter,
         WorkflowDefinitionMapper workflowDefinitionMapper,
-        IApiSerializer apiSerializer)
+        IApiSerializer apiSerializer,
+        IAuthorizationService authorizationService)
     {
         _workflowDefinitionService = workflowDefinitionService;
         _workflowDefinitionImporter = workflowDefinitionImporter;
         _workflowDefinitionMapper = workflowDefinitionMapper;
         _apiSerializer = apiSerializer;
+        _authorizationService = authorizationService;
     }
 
     /// <inheritdoc />
@@ -44,14 +49,22 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
     /// <inheritdoc />
     public override async Task HandleAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
+        var authorizationResult = await _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
+
+        if (!authorizationResult.Succeeded)
+        {
+            await SendForbiddenAsync(cancellationToken);
+            return;
+        }
+
         if (Files.Any())
         {
             var count = await ImportFilesAsync(Files, cancellationToken);
-            
+
             if (!ValidationFailed)
                 await SendOkAsync(new { Count = count }, cancellationToken);
         }
-        
+
         if (ValidationFailed)
             await SendErrorsAsync(400, cancellationToken);
     }
@@ -59,7 +72,7 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
     private async Task<int> ImportFilesAsync(IFormFileCollection files, CancellationToken cancellationToken)
     {
         var count = 0;
-        
+
         foreach (var file in files)
         {
             var fileStream = file.OpenReadStream();
@@ -89,13 +102,13 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
                 }
             }
         }
-        
+
         return count;
     }
 
     private async Task ImportJsonStreamAsync(Stream jsonStream, CancellationToken cancellationToken)
     {
-        var json = await new StreamReader(jsonStream).ReadToEndAsync();
+        var json = await new StreamReader(jsonStream).ReadToEndAsync(cancellationToken);
         var model = _apiSerializer.Deserialize<WorkflowDefinitionModel>(json);
         await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
     }

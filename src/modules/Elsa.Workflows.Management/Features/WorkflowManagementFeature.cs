@@ -2,6 +2,8 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elsa.Caching.Features;
 using Elsa.Common.Features;
 using Elsa.Expressions.Contracts;
@@ -9,13 +11,14 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Features;
+using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Handlers;
+using Elsa.Workflows.Management.Handlers.Notification;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
@@ -44,9 +47,13 @@ public class WorkflowManagementFeature : FeatureBase
     private const string PrimitivesCategory = "Primitives";
     private const string LookupsCategory = "Lookups";
     private const string DynamicCategory = "Dynamic";
+    private const string DataCategory = "Data";
+    private const string SystemCategory = "System";
 
     private string CompressionAlgorithm { get; set; } = nameof(None);
     private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
+    private bool IsReadOnlyMode { get; set; }
+
     /// <inheritdoc />
     public WorkflowManagementFeature(IModule module) : base(module)
     {
@@ -76,7 +83,13 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(TimeSpan), PrimitivesCategory, "Represents a duration of time."),
         new(typeof(IDictionary<string, string>), LookupsCategory, "A dictionary with string key and values."),
         new(typeof(IDictionary<string, object>), LookupsCategory, "A dictionary with string key and object values."),
-        new(typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation.")
+        new(typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation."),
+        new(typeof(JsonElement), DynamicCategory, "A JSON element for reading a JSON structure."),
+        new(typeof(JsonNode), DynamicCategory, "A JSON node for reading and writing a JSON structure."),
+        new(typeof(JsonObject), DynamicCategory, "A JSON object for reading and writing a JSON structure."),
+        new(typeof(byte[]), DataCategory, "A byte array."),
+        new(typeof(Stream), DataCategory, "A stream."),
+        new(typeof(LogPersistenceMode), SystemCategory, "A LogPersistenceMode enum value.")
     ];
 
     /// <summary>
@@ -96,7 +109,6 @@ public class WorkflowManagementFeature : FeatureBase
     /// <summary>
     /// Adds all types implementing <see cref="IActivity"/> to the system.
     /// </summary>
-    [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public WorkflowManagementFeature AddActivitiesFrom<TMarker>()
     {
         var activityTypes = typeof(TMarker).Assembly.GetExportedTypes()
@@ -136,10 +148,7 @@ public class WorkflowManagementFeature : FeatureBase
     /// <summary>
     /// Adds the specified variable type to the system.
     /// </summary>
-    public WorkflowManagementFeature AddVariableType(Type type, string category) => AddVariableTypes(new[]
-    {
-        type
-    }, category);
+    public WorkflowManagementFeature AddVariableType(Type type, string category) => AddVariableTypes([type], category);
 
     /// <summary>
     /// Adds the specified variable types to the system.
@@ -175,6 +184,16 @@ public class WorkflowManagementFeature : FeatureBase
         return this;
     }
 
+    /// <summary>
+    /// Enables or disables read-only mode for resources such as workflow definitions.
+    /// </summary>
+    /// <returns></returns>
+    public WorkflowManagementFeature UseReadOnlyMode(bool enabled)
+    {
+        IsReadOnlyMode = enabled;
+        return this;
+    }
+
     /// <inheritdoc />
     [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public override void Configure()
@@ -189,6 +208,9 @@ public class WorkflowManagementFeature : FeatureBase
             .AddMemoryStore<WorkflowDefinition, MemoryWorkflowDefinitionStore>()
             .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
             .AddActivityProvider<TypedActivityProvider>()
+            .AddActivityProvider<WorkflowDefinitionActivityProvider>()
+            .AddScoped<WorkflowDefinitionActivityProvider>()
+            .AddScoped<IWorkflowDefinitionActivityRegistryUpdater, WorkflowDefinitionActivityRegistryUpdater>()
             .AddScoped<IWorkflowDefinitionService, WorkflowDefinitionService>()
             .AddScoped<IWorkflowSerializer, WorkflowSerializer>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
@@ -196,6 +218,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<IWorkflowDefinitionImporter, WorkflowDefinitionImporter>()
             .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
             .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
+            .AddScoped<IWorkflowReferenceUpdater, WorkflowReferenceUpdater>()
             .AddScoped<IActivityRegistryPopulator, ActivityRegistryPopulator>()
             .AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>()
             .AddSingleton<IExpressionDescriptorProvider, DefaultExpressionDescriptorProvider>()
@@ -204,7 +227,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<IWorkflowMaterializer, ClrWorkflowMaterializer>()
             .AddScoped<IWorkflowMaterializer, JsonWorkflowMaterializer>()
             .AddScoped<IActivityResolver, WorkflowDefinitionActivityResolver>()
-            .AddActivityProvider<WorkflowDefinitionActivityProvider>()
+            .AddScoped<IWorkflowInstanceVariableManager, WorkflowInstanceVariableManager>()
             .AddScoped<WorkflowDefinitionMapper>()
             .AddSingleton<VariableDefinitionMapper>()
             .AddSingleton<WorkflowStateMapper>()
@@ -217,6 +240,8 @@ public class WorkflowManagementFeature : FeatureBase
         Services
             .AddNotificationHandler<DeleteWorkflowInstances>()
             .AddNotificationHandler<RefreshActivityRegistry>()
+            .AddNotificationHandler<UpdateConsumingWorkflows>()
+            .AddNotificationHandler<ValidateWorkflow>()
             ;
 
         Services.Configure<ManagementOptions>(options =>
@@ -229,6 +254,7 @@ public class WorkflowManagementFeature : FeatureBase
 
             options.CompressionAlgorithm = CompressionAlgorithm;
             options.LogPersistenceMode = LogPersistenceMode;
+            options.IsReadOnlyMode = IsReadOnlyMode;
         });
     }
 }

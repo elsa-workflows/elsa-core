@@ -1,5 +1,6 @@
-﻿using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+﻿using Elsa.Workflows.ComponentTests.Abstractions;
+using Elsa.Workflows.ComponentTests.Fixtures;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;

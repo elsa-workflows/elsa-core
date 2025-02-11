@@ -1,10 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Http.Models;
 
 namespace Elsa.Http.Serialization;
 
+/// <summary>
 /// A custom JSON converter for HttpHeaders that supports both single and multiple values.
+/// </summary>
 public class HttpHeadersConverter : JsonConverter<HttpHeaders>
 {
     /// <inheritdoc />

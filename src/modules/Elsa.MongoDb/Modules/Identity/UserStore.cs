@@ -9,7 +9,7 @@ namespace Elsa.MongoDb.Modules.Identity;
 /// <summary>
 /// A MongoDB implementation of <see cref="IUserStore"/>.
 /// </summary>
-public abstract class MongoUserStore(MongoDbStore<User> userMongoDbStore) : IUserStore
+public class MongoUserStore(MongoDbStore<User> userMongoDbStore) : IUserStore
 {
     /// <inheritdoc />
     public Task SaveAsync(User user, CancellationToken cancellationToken = default)
@@ -29,8 +29,8 @@ public abstract class MongoUserStore(MongoDbStore<User> userMongoDbStore) : IUse
         return userMongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
     }
 
-    private static IMongoQueryable<User> Filter(IQueryable<User> query, UserFilter filter)
+    private static IQueryable<User> Filter(IQueryable<User> query, UserFilter filter)
     {
-        return (filter.Apply(query) as IMongoQueryable<User>)!;
+        return filter.Apply(query);
     }
 }

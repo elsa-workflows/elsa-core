@@ -1,10 +1,24 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
+using System.Reflection;
+using Elsa.Agents;
+using Elsa.Alterations.Extensions;
+using Elsa.Caching;
 using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.EntityFrameworkCore.Modules.Alterations;
+using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
+using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
-using Elsa.Workflows.ComponentTests.Services;
+using Elsa.Testing.Shared.Handlers;
+using Elsa.Testing.Shared.Services;
+using Elsa.Workflows.ComponentTests.Consumers;
+using Elsa.Workflows.ComponentTests.Decorators;
+using Elsa.Workflows.ComponentTests.Materializers;
+using Elsa.Workflows.ComponentTests.WorkflowProviders;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
 using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
@@ -14,7 +28,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Refit;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
-namespace Elsa.Workflows.ComponentTests;
+namespace Elsa.Workflows.ComponentTests.Fixtures;
 
 [UsedImplicitly]
 public class WorkflowServer(Infrastructure infrastructure, string url) : WebApplicationFactory<Program>
@@ -24,7 +38,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
         var client = CreateClient();
         client.BaseAddress = new Uri(client.BaseAddress!, "/elsa/api");
         client.Timeout = TimeSpan.FromMinutes(1);
-        return RestService.For<TClient>(client, CreateRefitSettings());
+        return RestService.For<TClient>(client, CreateRefitSettings(Services));
     }
 
     public HttpClient CreateHttpWorkflowClient()
@@ -51,7 +65,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 elsa.UseDefaultAuthentication(defaultAuthentication => defaultAuthentication.UseAdminApiKey());
                 elsa.UseFluentStorageProvider(sp =>
                 {
-                    var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                    var assemblyLocation = Assembly.GetExecutingAssembly().Location;
                     var assemblyDirectory = Path.GetDirectoryName(assemblyLocation)!;
                     var workflowsDirectorySegments = new[]
                     {
@@ -62,25 +76,62 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 });
                 elsa.UseMassTransit(massTransit =>
                 {
-                    massTransit.UseRabbitMq(rabbitMqConnectionString);
+                    //massTransit.UseRabbitMq(rabbitMqConnectionString);
+                    massTransit.Services.AddSingleton<WorkflowDefinitionEvents>();
+                    massTransit.AddConsumer<WorkflowDefinitionEventConsumer>("elsa-test-workflow-definition-updates", true);
                 });
+                elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));
                 elsa.UseWorkflowManagement(management =>
                 {
                     management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
                     management.UseMassTransitDispatcher();
+                    management.UseCache();
                 });
                 elsa.UseWorkflowRuntime(runtime =>
                 {
+                    runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                    runtime.UseCache();
                     runtime.UseMassTransitDispatcher();
+                    runtime.UseDistributedRuntime();
                 });
+                elsa.UseDistributedCache(distributedCaching =>
+                {
+                    distributedCaching.UseMassTransit();
+                });
+                elsa.UseJavaScript(options =>
+                {
+                    options.AllowClrAccess = true;
+                    options.ConfigureEngine(engine =>
+                    {
+                        engine.SetValue("getStaticValue", () => StaticValueHolder.Value);
+                    });
+                });
+                elsa.UseAlterations(alterations =>
+                {
+                    alterations.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                });
+                elsa.UseHttp(http =>
+                {
+                    http.UseCache();
+                });
+                elsa.UseAgents();
+                elsa.UseAgentPersistence(feature => feature.UseEntityFrameworkCore(ef => ef.UsePostgreSql(typeof(AgentsPostgreSqlProvidersExtensions).Assembly, dbConnectionString)));
             };
         }
 
         builder.ConfigureTestServices(services =>
         {
-            services.AddSingleton<ISignalManager, SignalManager>();
-            services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
-            services.AddNotificationHandlersFrom<WorkflowServer>();
+            services
+                .AddSingleton<SignalManager>()
+                .AddScoped<WorkflowEvents>()
+                .AddScoped<WorkflowDefinitionEvents>()
+                .AddSingleton<TriggerChangeTokenSignalEvents>()
+                .AddScoped<IWorkflowMaterializer, TestWorkflowMaterializer>()
+                .AddNotificationHandlersFrom<WorkflowServer>()
+                .AddWorkflowDefinitionProvider<TestWorkflowProvider>()
+                .AddNotificationHandlersFrom<WorkflowEventHandlers>()
+                .Decorate<IChangeTokenSignaler, EventPublishingChangeTokenSignaler>()
+                ;
         });
     }
 

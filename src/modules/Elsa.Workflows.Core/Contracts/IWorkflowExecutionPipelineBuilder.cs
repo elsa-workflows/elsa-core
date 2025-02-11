@@ -1,6 +1,6 @@
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Builds a workflow execution pipeline.
@@ -31,11 +31,16 @@ public interface IWorkflowExecutionPipelineBuilder
     /// Constructs the final <see cref="WorkflowMiddlewareDelegate"/> delegate that invokes each installed middleware component.
     /// </summary>
     public WorkflowMiddlewareDelegate Build();
-
+    
     /// <summary>
     /// Clears the current pipeline.
     /// </summary>
     IWorkflowExecutionPipelineBuilder Reset();
+    
+    /// <summary>
+    /// Inserts the middleware component at the specified index.
+    /// </summary>
+    IWorkflowExecutionPipelineBuilder Insert(int index, Func<WorkflowMiddlewareDelegate, WorkflowMiddlewareDelegate> middleware);
 
     /// <summary>
     /// Replaces the middleware component at the specified index with the specified delegate.

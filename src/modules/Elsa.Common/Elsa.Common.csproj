@@ -14,12 +14,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Cronos" />
         <PackageReference Include="DistributedLock.Core" />
         <PackageReference Include="LinqKit.Core" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="System.Text.Json" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     </ItemGroup>
 
 </Project>

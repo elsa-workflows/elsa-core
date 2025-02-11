@@ -28,28 +28,43 @@ public interface IWorkflowDefinitionsApi
     /// </summary>
     /// <param name="definitionId">The definition ID of the workflow definition to get.</param>
     /// <param name="versionOptions">The version options.</param>
-    /// <param name="includeCompositeRoot">Whether to include the root activity of composite activities.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    [Get("/workflow-definitions/by-definition-id/{definitionId}?versionOptions={versionOptions}&includeCompositeRoot={includeCompositeRoot}")]
-    Task<WorkflowDefinition?> GetByDefinitionIdAsync(string definitionId, VersionOptions? versionOptions = default, bool includeCompositeRoot = false, CancellationToken cancellationToken = default);
+    [Get("/workflow-definitions/by-definition-id/{definitionId}?versionOptions={versionOptions}")]
+    Task<WorkflowDefinition?> GetByDefinitionIdAsync(string definitionId, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Gets a workflow definition by ID.
     /// </summary>
     /// <param name="id">The ID of the workflow definition to get.</param>
-    /// <param name="includeCompositeRoot">Whether to include the root activity of composite activities.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    [Get("/workflow-definitions/by-id/{id}?includeCompositeRoot={includeCompositeRoot}")]
-    Task<WorkflowDefinition?> GetByIdAsync(string id, bool includeCompositeRoot = false, CancellationToken cancellationToken = default);
+    [Get("/workflow-definitions/by-id/{id}")]
+    Task<WorkflowDefinition?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Gets a workflow definition by ID.
     /// </summary>
     /// <param name="ids">The IDs of the workflow definition versions to get.</param>
-    /// <param name="includeCompositeRoot">Whether to include the root activity of composite activities.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-definitions/many-by-id")]
-    Task<ListResponse<WorkflowDefinition>> GetManyByIdAsync([Query(CollectionFormat.Multi)]ICollection<string> ids, bool includeCompositeRoot = false, CancellationToken cancellationToken = default);
+    Task<ListResponse<WorkflowDefinition>> GetManyByIdAsync([Query(CollectionFormat.Multi)]ICollection<string> ids, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a workflow subgraph by workflow definition version ID.
+    /// </summary>
+    /// <param name="id">The ID of the workflow definition to get.</param>
+    /// <param name="parentNodeId">The node ID of the parent activity to get the subgraph for.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Get("/workflow-definitions/subgraph/{id}")]
+    Task<ActivityNode?> GetSubgraphAsync(string id, [Query]string? parentNodeId = null, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Gets a list of path segments leading to the specified child node.
+    /// </summary>
+    /// <param name="id">The ID of the workflow definition containing the specified node.</param>
+    /// <param name="childNodeId">The node ID of the child activity to get the segments for.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Get("/workflow-definitions/subgraph/segments/{id}")]
+    Task<GetPathSegmentsResponse?> GetPathSegmentsGetAsync(string id, [Query]string? childNodeId = null, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Gets the number of workflow definitions.
@@ -73,7 +88,7 @@ public interface IWorkflowDefinitionsApi
     /// <param name="request">The request containing the workflow definition to save.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/workflow-definitions")]
-    Task<WorkflowDefinition> SaveAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
+    Task<SaveWorkflowDefinitionResponse> SaveAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Deletes a workflow definition.
@@ -99,7 +114,7 @@ public interface IWorkflowDefinitionsApi
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/workflow-definitions/{definitionId}/publish")]
     [Headers(MediaTypeNames.Application.Json)]
-    Task<WorkflowDefinition> PublishAsync(string definitionId, PublishWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
+    Task<SaveWorkflowDefinitionResponse> PublishAsync(string definitionId, PublishWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retracts a workflow definition.
@@ -194,6 +209,7 @@ public interface IWorkflowDefinitionsApi
     /// <param name="definitionId">The definition ID of the workflow definition to revert.</param>
     /// <param name="version">The version to revert to.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>A summary view of the newly created workflow definition version.</returns>
     [Post("/workflow-definitions/{definitionId}/revert/{version}")]
-    Task RevertVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default);
+    Task<WorkflowDefinitionSummary> RevertVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default);
 }

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Elsa.Http.Models;
+namespace Elsa.Http;
 
 /// <summary>
 /// Represents a downloadable object.

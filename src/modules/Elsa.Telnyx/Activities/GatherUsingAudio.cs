@@ -10,7 +10,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -145,7 +145,7 @@ public class GatherUsingAudio : Activity<CallGatherEndedPayload>, IBookmarksPers
     protected override void Execute(ActivityExecutionContext context)
     {
         var callControlId = CallControlId.Get(context);
-        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallGatherEnded, callControlId), ResumeAsync);
+        context.CreateBookmark(new WebhookEventStimulus(WebhookEventTypes.CallGatherEnded, callControlId), ResumeAsync);
     }
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)

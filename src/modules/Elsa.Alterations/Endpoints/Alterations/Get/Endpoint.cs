@@ -6,7 +6,7 @@ using JetBrains.Annotations;
 namespace Elsa.Alterations.Endpoints.Alterations.Get;
 
 /// <summary>
-/// Executes an alteration plan.
+/// Gets an alteration plan and its associated jobs.
 /// </summary>
 [PublicAPI]
 public class Get : ElsaEndpointWithoutRequest<Response>

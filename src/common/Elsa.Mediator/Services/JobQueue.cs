@@ -1,46 +1,72 @@
 using System.Collections.Concurrent;
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Mediator.Services;
 
 /// <inheritdoc />
-public class JobQueue : IJobQueue
+public class JobQueue(IJobsChannel jobsChannel, ILogger<JobQueue> logger) : IJobQueue
 {
-    private readonly IJobsChannel _jobsChannel;
-    private readonly ConcurrentDictionary<string, EnqueuedJob> _jobItems;
+    private readonly ConcurrentDictionary<string, EnqueuedJob> _scheduledItems = new();
+    private readonly ConcurrentDictionary<string, EnqueuedJob> _pendingItems = new();
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="JobQueue"/> class.
-    /// </summary>
-    public JobQueue(IJobsChannel jobsChannel)
+    /// <inheritdoc />
+    public string Create(Func<CancellationToken, Task> job)
     {
-        _jobsChannel = jobsChannel;
-        _jobItems = new ConcurrentDictionary<string, EnqueuedJob>();
+        var jobItem = CreateJob(job);
+        _pendingItems.TryAdd(jobItem.JobId, jobItem);
+        return jobItem.JobId;
+    }
+
+    public void Enqueue(string jobId)
+    {
+        if (!_pendingItems.TryRemove(jobId, out var jobItem))
+        {
+            logger.LogWarning($"Job {jobId} was not found");
+            return;
+        }
+
+        _scheduledItems.TryAdd(jobItem.JobId, jobItem);
+        jobsChannel.Writer.TryWrite(jobItem);
     }
 
     /// <inheritdoc />
     public string Enqueue(Func<CancellationToken, Task> job)
     {
-        var jobId = Guid.NewGuid().ToString();
-        var cts = new CancellationTokenSource();
-        var jobItem = new EnqueuedJob(jobId, job, cts, OnJobCompleted);
-        
-        _jobItems.TryAdd(jobId, jobItem);
-        _jobsChannel.Writer.TryWrite(jobItem);
-        return jobId;
+        var jobItem = CreateJob(job);
+        _scheduledItems.TryAdd(jobItem.JobId, jobItem);
+        jobsChannel.Writer.TryWrite(jobItem);
+        return jobItem.JobId;
+    }
+
+    /// <inheritdoc />
+    public bool Dequeue(string jobId)
+    {
+        if (!_pendingItems.TryRemove(jobId, out _))
+            if (!_scheduledItems.TryRemove(jobId, out _))
+                return false;
+
+        return true;
     }
 
     /// <inheritdoc />
     public bool Cancel(string jobId)
     {
-        if (!_jobItems.TryGetValue(jobId, out var jobItem)) 
-            return false;
-        
+        if (!_pendingItems.TryGetValue(jobId, out var jobItem))
+            if (!_scheduledItems.TryGetValue(jobId, out jobItem))
+                return false;
+
         jobItem.CancellationTokenSource.Cancel();
         return true;
-
     }
-    
-    void OnJobCompleted(string completedJobId) => _jobItems.TryRemove(completedJobId, out _);
+
+    private EnqueuedJob CreateJob(Func<CancellationToken, Task> job)
+    {
+        var jobId = Guid.NewGuid().ToString();
+        var cts = new CancellationTokenSource();
+        return new EnqueuedJob(jobId, job, cts, OnJobCompleted);
+    }
+
+    void OnJobCompleted(string completedJobId) => _scheduledItems.TryRemove(completedJobId, out _);
 }

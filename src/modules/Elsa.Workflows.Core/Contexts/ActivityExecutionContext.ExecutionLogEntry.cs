@@ -13,7 +13,7 @@ public partial class ActivityExecutionContext
     /// <param name="source">The source of the activity. For example, the source file name and line number in case of composite activities.</param>
     /// <param name="payload">Any contextual data related to this event.</param>
     /// <returns>Returns the created <see cref="WorkflowExecutionLogEntry"/>.</returns>
-    public WorkflowExecutionLogEntry AddExecutionLogEntry(string eventName, string? message = default, string? source = default, object? payload = default)
+    public WorkflowExecutionLogEntry AddExecutionLogEntry(string eventName, string? message = null, string? source = null, object? payload = null)
     {
         var logEntry = new WorkflowExecutionLogEntry(
             Id,

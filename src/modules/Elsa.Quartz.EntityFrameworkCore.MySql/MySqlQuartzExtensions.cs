@@ -1,5 +1,4 @@
-﻿using Elsa.EntityFrameworkCore.Common;
-using Elsa.Quartz.EntityFrameworkCore.MySql;
+﻿using Elsa.Quartz.EntityFrameworkCore.MySql;
 using Elsa.Quartz.Features;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
@@ -18,13 +17,12 @@ public static class MySqlQuartzExtensions
     /// <summary>
     /// Configures the <see cref="QuartzFeature"/> to use the MySQL job store.
     /// </summary>
-    public static QuartzFeature UseMySql(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString, bool useClustering = true)
+    public static QuartzFeature UseMySql(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString, bool useClustering = true, bool useContextPooling = false)
     {
-        feature.Services.AddDbContextFactory<MySqlQuartzDbContext>(options =>
-        {
-            // Use MySQL migrations.
-            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), sqlServerDbContextOptionsBuilder => { sqlServerDbContextOptionsBuilder.MigrationsAssembly(typeof(MySqlQuartzDbContext).Assembly.GetName().Name); });
-        });
+        if (useContextPooling)
+            feature.Services.AddPooledDbContextFactory<MySqlQuartzDbContext>(options => UseMySql(connectionString, options));
+        else
+            feature.Services.AddDbContextFactory<MySqlQuartzDbContext>(options => UseMySql(connectionString, options));
 
         feature.ConfigureQuartz += quartz =>
         {
@@ -32,15 +30,20 @@ public static class MySqlQuartzExtensions
             {
                 store.UseNewtonsoftJsonSerializer();
                 store.UseMySqlConnector(options => options.ConnectionString = connectionString);
-                
+
                 if (useClustering)
                     store.UseClustering();
             });
         };
-
-        // Configure the Quartz hosted service to run migrations.
+        
         feature.Module.ConfigureHostedService<RunMigrationsHostedService<MySqlQuartzDbContext>>(-100);
 
         return feature;
+    }
+
+    private static void UseMySql(string connectionString, DbContextOptionsBuilder options)
+    {
+        // Use MySQL migrations.
+        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), sqlServerDbContextOptionsBuilder => { sqlServerDbContextOptionsBuilder.MigrationsAssembly(typeof(MySqlQuartzDbContext).Assembly.GetName().Name); });
     }
 }

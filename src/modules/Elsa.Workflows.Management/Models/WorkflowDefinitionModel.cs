@@ -1,4 +1,3 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
@@ -11,6 +10,7 @@ namespace Elsa.Workflows.Management.Models;
 public record WorkflowDefinitionModel(
     string Id,
     string DefinitionId,
+    string? TenantId,
     string? Name,
     string? Description,
     DateTimeOffset CreatedAt,
@@ -44,6 +44,7 @@ public record WorkflowDefinitionModel(
         default!,
         default!,
         default!,
+        default,
         default!,
         default!,
         default!,

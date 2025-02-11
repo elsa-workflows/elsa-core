@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
@@ -11,42 +11,57 @@ using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Elsa.Identity.Services;
 
-/// <inheritdoc />
-public class DefaultAccessTokenIssuer : IAccessTokenIssuer
+/// <summary>
+/// Default implementation of <see cref="IAccessTokenIssuer"/>.
+/// </summary>
+public class DefaultAccessTokenIssuer(IRoleProvider roleProvider, ISystemClock systemClock, IOptions<IdentityTokenOptions> identityTokenOptions) : IAccessTokenIssuer
 {
-    private readonly IRoleProvider _roleProvider;
-    private readonly ISystemClock _systemClock;
-    private readonly IdentityTokenOptions _identityOptions;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultAccessTokenIssuer"/> class.
-    /// </summary>
-    public DefaultAccessTokenIssuer(IRoleProvider roleProvider, ISystemClock systemClock, IOptions<IdentityTokenOptions> identityOptions)
-    {
-        _roleProvider = roleProvider;
-        _systemClock = systemClock;
-        _identityOptions = identityOptions.Value;
-    }
-
     /// <inheritdoc />
     public async ValueTask<IssuedTokens> IssueTokensAsync(User user, CancellationToken cancellationToken = default)
     {
-        var roles = (await _roleProvider.FindByIdsAsync(user.Roles, cancellationToken)).ToList();
+        var roles = (await roleProvider.FindByIdsAsync(user.Roles, cancellationToken)).ToList();
         var permissions = roles.SelectMany(x => x.Permissions).ToList();
-        var (signingKey, issuer, audience, accessTokenLifetime, refreshTokenLifetime) = _identityOptions;
+        var roleNames = roles.Select(x => x.Name).ToList();
+        var tokenOptions = identityTokenOptions.Value;
+        var signingKey = tokenOptions.SigningKey;
+        var issuer = tokenOptions.Issuer;
+        var audience = tokenOptions.Audience;
+        var accessTokenLifetime = tokenOptions.AccessTokenLifetime;
+        var refreshTokenLifetime = tokenOptions.RefreshTokenLifetime;
 
         if (string.IsNullOrWhiteSpace(signingKey)) throw new Exception("No signing key configured");
         if (string.IsNullOrWhiteSpace(issuer)) throw new Exception("No issuer configured");
         if (string.IsNullOrWhiteSpace(audience)) throw new Exception("No audience configured");
 
         var nameClaim = new Claim(JwtRegisteredClaimNames.Name, user.Name);
-        var claims = new[] { nameClaim };
+        var claims = new List<Claim>
+        {
+            nameClaim
+        };
 
-        var accessTokenExpiresAt = _systemClock.UtcNow.Add(accessTokenLifetime);
-        var refreshTokenExpiresAt = _systemClock.UtcNow.Add(refreshTokenLifetime);
-        var accessToken = JWTBearer.CreateToken(signingKey, accessTokenExpiresAt.UtcDateTime, permissions, issuer: issuer, audience: audience, claims: claims);
-        var refreshToken = JWTBearer.CreateToken(signingKey, refreshTokenExpiresAt.UtcDateTime, permissions, issuer: issuer, audience: audience, claims: claims);
+        if (!string.IsNullOrWhiteSpace(user.TenantId))
+        {
+            var tenantIdClaim = new Claim(tokenOptions.TenantIdClaimsType, user.TenantId);
+            claims.Add(tenantIdClaim);
+        }
+
+        var now = systemClock.UtcNow;
+        var accessTokenExpiresAt = now.Add(accessTokenLifetime);
+        var refreshTokenExpiresAt = now.Add(refreshTokenLifetime);
+        var accessToken = JwtBearer.CreateToken(options => ConfigureTokenOptions(options, accessTokenExpiresAt.UtcDateTime));
+        var refreshToken = JwtBearer.CreateToken(options => ConfigureTokenOptions(options, refreshTokenExpiresAt.UtcDateTime));
 
         return new IssuedTokens(accessToken, refreshToken);
+
+        void ConfigureTokenOptions(JwtCreationOptions options, DateTime expireAt)
+        {
+            options.SigningKey = signingKey;
+            options.ExpireAt = expireAt;
+            options.Issuer = issuer;
+            options.Audience = audience;
+            options.User.Claims.AddRange(claims);
+            options.User.Permissions.AddRange(permissions);
+            options.User.Roles.AddRange(roleNames);
+        }
     }
 }

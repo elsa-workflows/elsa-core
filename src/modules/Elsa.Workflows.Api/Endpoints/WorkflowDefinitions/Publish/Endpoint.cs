@@ -1,33 +1,18 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Requirements;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Management.Mappers;
-using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Publish;
 
 [PublicAPI]
-internal class Publish : ElsaEndpoint<Request, WorkflowDefinitionModel>
+internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IWorkflowDefinitionLinker linker, IAuthorizationService authorizationService)
+    : ElsaEndpoint<Request, Response>
 {
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
-    private readonly IApiSerializer _serializer;
-    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
-
-    public Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IApiSerializer serializer, WorkflowDefinitionMapper workflowDefinitionMapper)
-    {
-        _store = store;
-        _workflowDefinitionPublisher = workflowDefinitionPublisher;
-        _serializer = serializer;
-        _workflowDefinitionMapper = workflowDefinitionMapper;
-    }
-
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/publish");
@@ -42,7 +27,7 @@ internal class Publish : ElsaEndpoint<Request, WorkflowDefinitionModel>
             VersionOptions = VersionOptions.Latest
         };
 
-        var definition = await _store.FindAsync(filter, cancellationToken);
+        var definition = await store.FindAsync(filter, cancellationToken);
 
         if (definition == null)
         {
@@ -50,21 +35,18 @@ internal class Publish : ElsaEndpoint<Request, WorkflowDefinitionModel>
             return;
         }
 
-        if (definition.IsPublished)
+        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
+
+        if (!authorizationResult.Succeeded)
         {
-            AddError($"Workflow with id {request.DefinitionId} is already published");
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await SendForbiddenAsync(cancellationToken);
             return;
         }
 
-        await _workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
-
-        var response = await _workflowDefinitionMapper.MapAsync(definition, cancellationToken);
-
-        // We do not want to include composite root activities in the response.
-        var serializerOptions = _serializer.GetOptions().Clone();
-        serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
-
-        await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
+        var isPublished = definition.IsPublished;
+        var result = !isPublished ? await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken) : null;
+        var mappedDefinition = await linker.MapAsync(definition, cancellationToken);
+        var response = new Response(mappedDefinition, isPublished, result?.AffectedWorkflows.WorkflowDefinitions.Count ?? 0);
+        await SendOkAsync(response, cancellationToken);
     }
 }

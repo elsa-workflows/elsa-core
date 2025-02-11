@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

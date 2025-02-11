@@ -76,3 +76,5 @@ unlist.sh
 
 # build artifacts
 /artifacts
+
+/docker/data/

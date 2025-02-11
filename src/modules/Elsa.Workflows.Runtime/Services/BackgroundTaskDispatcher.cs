@@ -1,9 +1,8 @@
 using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Relies on the <see cref="INotificationSender"/> to publish the received request as a domain event from a background worker.

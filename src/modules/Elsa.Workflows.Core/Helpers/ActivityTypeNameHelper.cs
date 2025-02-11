@@ -1,6 +1,5 @@
 using System.Reflection;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Helpers;
 

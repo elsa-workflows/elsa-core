@@ -1,6 +1,5 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Memory;
 

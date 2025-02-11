@@ -1,4 +1,3 @@
-using Elsa.Common.Contracts;
 using Elsa.Common.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
@@ -19,6 +18,6 @@ public class SystemClockFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddScoped<ISystemClock, SystemClock>();
+        Services.AddSingleton<ISystemClock, SystemClock>();
     }
 }

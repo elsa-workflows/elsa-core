@@ -5,6 +5,8 @@ namespace Elsa.AzureServiceBus.Contracts;
 /// <summary>
 /// Provides subscription definitions to the system. 
 /// </summary>
+[Obsolete("Use AzureServiceBusOptions.Topics instead.")]
+
 public interface ISubscriptionProvider
 {
     /// <summary>

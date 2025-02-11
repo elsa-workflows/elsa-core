@@ -1,8 +1,6 @@
 using System.Security.Cryptography;
 using Elsa.Extensions;
-using Elsa.Http.Contracts;
 using Elsa.Http.Exceptions;
-using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Services;
 using Elsa.Workflows;
@@ -303,7 +301,7 @@ public class WriteFileHttpResponse : Activity
         var httpContext = httpContextAccessor.HttpContext;
 
         if (httpContext == null)
-            throw new FaultException("Cannot execute in a non-HTTP context");
+            throw new FaultException(HttpFaultCodes.NoHttpContext, HttpFaultCategories.Http, DefaultFaultTypes.System, "Cannot execute in a non-HTTP context");
 
         await WriteResponseAsync(context, httpContext);
     }

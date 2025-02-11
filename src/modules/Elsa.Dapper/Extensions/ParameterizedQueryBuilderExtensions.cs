@@ -119,6 +119,7 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery Is(this ParameterizedQuery query, string field, object? value)
     {
         if (value == null) return query;
+        if (value is DBNull) return IsNull(query, field);
         query.Sql.AppendLine(query.Dialect.And(field));
         query.Parameters.Add($"@{field}", value);
 
@@ -134,6 +135,8 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery IsNot(this ParameterizedQuery query, string field, object? value)
     {
         if (value == null) return query;
+        if (value is DBNull) return IsNotNull(query, field);
+
         query.Sql.AppendLine(query.Dialect.AndNot(field));
         query.Parameters.Add($"@{field}", value);
 
@@ -195,6 +198,30 @@ public static class ParameterizedQueryBuilderExtensions
             .ToArray();
 
         query.Sql.AppendLine(query.Dialect.And(field, fieldParamNames));
+
+        for (var i = 0; i < fieldParamNames.Length; i++)
+            query.Parameters.Add(fieldParamNames[i], valueList.ElementAt(i));
+
+        return query;
+    }
+    
+    /// <summary>
+    /// Appends a negating AND clause to the query if the value is not null.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="field">The field.</param>
+    /// <param name="values">The values.</param>
+    public static ParameterizedQuery NotIn(this ParameterizedQuery query, string field, IEnumerable<object>? values)
+    {
+        var valueList = values?.ToList();
+
+        if (valueList == null || !valueList.Any()) return query;
+
+        var fieldParamNames = valueList
+            .Select((_, index) => $"@{field}{index}")
+            .ToArray();
+
+        query.Sql.AppendLine(query.Dialect.AndNot(field, fieldParamNames));
 
         for (var i = 0; i < fieldParamNames.Length; i++)
             query.Parameters.Add(fieldParamNames[i], valueList.ElementAt(i));
@@ -385,6 +412,35 @@ public static class ParameterizedQueryBuilderExtensions
         {
             var value = record.GetType().GetProperty(field)?.GetValue(record);
             query.Parameters.Add($"@{getParameterName(field)}", value);
+        }
+
+        return query;
+    }
+    
+    /// <summary>
+    /// Appends a statement that updates a record.
+    /// </summary>
+    public static ParameterizedQuery Update(this ParameterizedQuery query, string table, object record, string primaryKeyField, Func<string, string>? getParameterName = default)
+    {
+        var fields = record.GetType().GetProperties()
+            .Where(x => x.CanRead && x.Name != primaryKeyField)
+            .Select(x => x.Name)
+            .ToArray();
+
+        getParameterName ??= x => x;
+        query.Sql.AppendLine(query.Dialect.Update(table, primaryKeyField, fields, getParameterName));
+
+        var primaryKeyValue = record.GetType().GetProperty(primaryKeyField)?.GetValue(record);
+        query.Parameters.Add($"@{getParameterName(primaryKeyField)}", primaryKeyValue);
+
+        var recordType = record.GetType();
+        foreach (var field in fields)
+        {
+            var prop = recordType.GetProperty(field)!;
+            var propType = prop.PropertyType;
+            var value = prop.GetValue(record);
+            var dbType = value == null ? GetDbType(propType) : default;
+            query.Parameters.Add($"@{getParameterName(field)}", value, dbType);
         }
 
         return query;

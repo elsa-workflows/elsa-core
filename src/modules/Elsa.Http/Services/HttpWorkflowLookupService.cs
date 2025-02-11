@@ -1,8 +1,7 @@
-using Elsa.Http.Contracts;
-using Elsa.Http.Models;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Open.Linq.AsyncExtensions;
@@ -45,6 +44,10 @@ public class HttpWorkflowLookupService(ITriggerStore triggerStore, IWorkflowDefi
     private async Task<WorkflowGraph?> FindWorkflowGraphAsync(StoredTrigger trigger, CancellationToken cancellationToken)
     {
         var workflowDefinitionVersionId = trigger.WorkflowDefinitionVersionId;
-        return await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionVersionId, cancellationToken);
+        var filter = new WorkflowDefinitionFilter
+        {
+            Id = workflowDefinitionVersionId
+        };
+        return await workflowDefinitionService.FindWorkflowGraphAsync(filter, cancellationToken);
     }
 }

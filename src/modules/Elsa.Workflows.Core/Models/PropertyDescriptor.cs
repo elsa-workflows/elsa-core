@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Models;
 
@@ -12,13 +11,13 @@ public abstract class PropertyDescriptor
     /// <summary>
     /// The name.
     /// </summary>
-    public string Name { get; set; } = default!;
+    public string Name { get; set; } = null!;
 
     /// <summary>
     /// The .NET type.
     /// </summary>
     [JsonPropertyName("typeName")]
-    public Type Type { get; set; } = default!;
+    public Type Type { get; set; } = null!;
 
     /// <summary>
     /// The user friendly name of the input. Used by UI tools.
@@ -54,13 +53,13 @@ public abstract class PropertyDescriptor
     /// Returns the value of the input property for the specified activity.
     /// </summary>
     [JsonIgnore]
-    public Func<IActivity, object?> ValueGetter { get; set; } = default!;
+    public Func<IActivity, object?> ValueGetter { get; set; } = null!;
     
     /// <summary>
     /// Sets the value of the input property for the specified activity.
     /// </summary>
     [JsonIgnore]
-    public Action<IActivity, object?> ValueSetter { get; set; } = default!;
+    public Action<IActivity, object?> ValueSetter { get; set; } = null!;
     
     /// <summary>
     /// The source of the property, if any.

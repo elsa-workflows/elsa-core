@@ -6,10 +6,8 @@ using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Helpers;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Telnyx.Handlers;
 
@@ -17,17 +15,8 @@ namespace Elsa.Telnyx.Handlers;
 /// Triggers all workflows starting with or blocked on a <see cref="CallAnswered"/> activity.
 /// </summary>
 [PublicAPI]
-internal class TriggerCallBridgedActivities : INotificationHandler<TelnyxWebhookReceived>
+internal class TriggerCallBridgedActivities(IStimulusSender stimulusSender) : INotificationHandler<TelnyxWebhookReceived>
 {
-    private readonly IWorkflowInbox _workflowInbox;
-    private readonly ILogger _logger;
-
-    public TriggerCallBridgedActivities(IWorkflowInbox workflowInbox, ILogger<TriggerCallBridgedActivities> logger)
-    {
-        _workflowInbox = workflowInbox;
-        _logger = logger;
-    }
-
     public async Task HandleAsync(TelnyxWebhookReceived notification, CancellationToken cancellationToken)
     {
         var webhook = notification.Webhook;
@@ -48,13 +37,13 @@ internal class TriggerCallBridgedActivities : INotificationHandler<TelnyxWebhook
 
         foreach (var activityTypeName in activityTypeNames)
         {
-            await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+            var stimulus = new WebhookEventStimulus(WebhookEventTypes.CallBridged, callControlId);
+            var metadata = new StimulusMetadata
             {
-                ActivityTypeName = activityTypeName,
-                BookmarkPayload = new WebhookEventBookmarkPayload(WebhookEventTypes.CallBridged, callControlId),
                 WorkflowInstanceId = workflowInstanceId,
                 Input = input
-            }, cancellationToken);
+            };
+            await stimulusSender.SendAsync(activityTypeName, stimulus, metadata, cancellationToken);
         }
     }
 }

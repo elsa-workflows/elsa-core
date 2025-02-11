@@ -7,10 +7,8 @@ using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Abstractions;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Telnyx.Handlers;
 
@@ -18,17 +16,8 @@ namespace Elsa.Telnyx.Handlers;
 /// Triggers all workflows starting with or blocked on a <see cref="WebhookEvent"/> activity.
 /// </summary>
 [PublicAPI]
-internal class TriggerWebhookActivities : INotificationHandler<TelnyxWebhookReceived>
+internal class TriggerWebhookActivities(IStimulusSender stimulusSender) : INotificationHandler<TelnyxWebhookReceived>
 {
-    private readonly IWorkflowInbox _workflowInbox;
-    private readonly ILogger _logger;
-
-    public TriggerWebhookActivities(IWorkflowInbox workflowInbox, ILogger<TriggerWebhookActivities> logger)
-    {
-        _workflowInbox = workflowInbox;
-        _logger = logger;
-    }
-
     public async Task HandleAsync(TelnyxWebhookReceived notification, CancellationToken cancellationToken)
     {
         var webhook = notification.Webhook;
@@ -41,15 +30,15 @@ internal class TriggerWebhookActivities : INotificationHandler<TelnyxWebhookRece
 
         var workflowInstanceId = ((Payload)webhook.Data.Payload).GetClientStatePayload()?.WorkflowInstanceId;
         var callControlId = (webhook.Data.Payload as CallPayload)?.CallControlId;
-        var bookmarkPayloadWithCallControl = new WebhookEventBookmarkPayload(eventType, callControlId);
+        var stimulus = new WebhookEventStimulus(eventType, callControlId);
         var input = new Dictionary<string, object>().AddInput(webhook);
-        
-        await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+
+        var metadata = new StimulusMetadata
         {
-            ActivityTypeName = activityType,
-            BookmarkPayload = bookmarkPayloadWithCallControl,
+            Input = input,
             WorkflowInstanceId = workflowInstanceId,
-            Input = input
-        }, cancellationToken);
+
+        };
+        await stimulusSender.SendAsync(activityType, stimulus, metadata, cancellationToken);
     }
 }

@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: trace-lens-dashboard
+spec:
+  type: LoadBalancer
+  selector:
+    app: trace-lens
+  ports:
+    - name: dashboard
+      port: 7001
+      targetPort: 5001
+  # OTEL collector port is internal-only, avoid exposing it via LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trace-lens-collector
+spec:
+  selector:
+    app: trace-lens
+  ports:
+    - name: otel-collector
+      port: 4317
+      targetPort: 4317

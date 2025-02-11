@@ -4,7 +4,6 @@ using System.Reflection;
 using Elsa.Abstractions;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Workflows.Contracts;
 using Humanizer;
 
 namespace Elsa.Workflows.Api.Endpoints.IncidentStrategies.List;
@@ -12,15 +11,8 @@ namespace Elsa.Workflows.Api.Endpoints.IncidentStrategies.List;
 /// <summary>
 /// Returns list of available <see cref="IIncidentStrategy" /> implementations.
 /// </summary>
-internal class List : ElsaEndpointWithoutRequest<ListResponse<IncidentStrategyDescriptor>>
+internal class List(IEnumerable<IIncidentStrategy> strategies) : ElsaEndpointWithoutRequest<ListResponse<IncidentStrategyDescriptor>>
 {
-    private readonly IEnumerable<IIncidentStrategy> _strategies;
-
-    public List(IEnumerable<IIncidentStrategy> strategies)
-    {
-        _strategies = strategies;
-    }
-
     public override void Configure()
     {
         Get("/descriptors/incident-strategies");
@@ -29,7 +21,7 @@ internal class List : ElsaEndpointWithoutRequest<ListResponse<IncidentStrategyDe
 
     public override Task<ListResponse<IncidentStrategyDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
     {
-        var descriptors = _strategies.Select(IncidentStrategyDescriptor.FromStrategy).OrderBy(x => x.DisplayName).ToList();
+        var descriptors = strategies.Select(IncidentStrategyDescriptor.FromStrategy).OrderBy(x => x.DisplayName).ToList();
         var response =new ListResponse<IncidentStrategyDescriptor>(descriptors);
         return Task.FromResult(response);
     }

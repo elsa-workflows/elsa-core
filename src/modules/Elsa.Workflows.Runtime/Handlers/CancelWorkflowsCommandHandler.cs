@@ -1,7 +1,6 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Models;
 using Elsa.Workflows.Runtime.Commands;
-using Elsa.Workflows.Runtime.Contracts;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
@@ -13,7 +12,9 @@ public class CancelWorkflowsCommandHandler(IWorkflowRuntime workflowRuntime) : I
     /// <inheritdoc />
     public async Task<Unit> HandleAsync(CancelWorkflowsCommand command, CancellationToken cancellationToken)
     {
-        await workflowRuntime.CancelWorkflowAsync(command.Request.WorkflowInstanceId, cancellationToken);
+        var workflowInstanceId = command.Request.WorkflowInstanceId;
+        var workflowClient = await workflowRuntime.CreateClientAsync(workflowInstanceId, cancellationToken);
+        await workflowClient.CancelAsync(cancellationToken);
         
         return Unit.Instance;
     }

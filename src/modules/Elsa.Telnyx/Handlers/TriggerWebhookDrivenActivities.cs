@@ -5,10 +5,9 @@ using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Abstractions;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
 
 namespace Elsa.Telnyx.Handlers;
@@ -17,17 +16,9 @@ namespace Elsa.Telnyx.Handlers;
 /// Resumes all workflows blocked on activities that are waiting for a given webhook.
 /// </summary>
 [PublicAPI]
-internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebhookReceived>
+internal class TriggerWebhookDrivenActivities(IStimulusSender stimulusSender, IActivityRegistry activityRegistry)
+    : INotificationHandler<TelnyxWebhookReceived>
 {
-    private readonly IWorkflowInbox _workflowInbox;
-    private readonly IActivityRegistry _activityRegistry;
-
-    public TriggerWebhookDrivenActivities(IWorkflowInbox workflowInbox, IActivityRegistry activityRegistry)
-    {
-        _workflowInbox = workflowInbox;
-        _activityRegistry = activityRegistry;
-    }
-
     public async Task HandleAsync(TelnyxWebhookReceived notification, CancellationToken cancellationToken)
     {
         var webhook = notification.Webhook;
@@ -40,21 +31,21 @@ internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebho
         var clientStatePayload = ((Payload)webhook.Data.Payload).GetClientStatePayload();
         var activityInstanceId = clientStatePayload?.ActivityInstanceId;
         var workflowInstanceId = clientStatePayload?.WorkflowInstanceId;
-        var bookmarkPayloadWithCallControl = new WebhookEventBookmarkPayload(eventType, callControlId);
+        var bookmarkPayloadWithCallControl = new WebhookEventStimulus(eventType, callControlId);
 
         foreach (var activityDescriptor in activityDescriptors)
         {
-            await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+            var metadata = new StimulusMetadata
             {
-                ActivityTypeName = activityDescriptor.TypeName,
-                BookmarkPayload = bookmarkPayloadWithCallControl,
                 WorkflowInstanceId = workflowInstanceId,
                 ActivityInstanceId = activityInstanceId,
                 Input = input
-            }, cancellationToken);
+            };
+            
+            await stimulusSender.SendAsync(activityDescriptor.TypeName, bookmarkPayloadWithCallControl, metadata, cancellationToken);
         }
     }
 
     private IEnumerable<ActivityDescriptor> FindActivityDescriptors(string eventType) =>
-        _activityRegistry.FindMany(descriptor => descriptor.GetAttribute<WebhookDrivenAttribute>()?.EventTypes.Contains(eventType) == true);
+        activityRegistry.FindMany(descriptor => descriptor.GetAttribute<WebhookDrivenAttribute>()?.EventTypes.Contains(eventType) == true);
 }

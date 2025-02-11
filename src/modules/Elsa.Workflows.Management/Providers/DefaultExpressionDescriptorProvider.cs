@@ -32,20 +32,7 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
             deserialize: context =>
             {
                 var elementValue = context.JsonElement.TryGetProperty("value", out var v) ? v : default;
-
-                var value = (object?)(elementValue.ValueKind switch
-                {
-                    JsonValueKind.String => elementValue.GetString(),
-                    JsonValueKind.Number => elementValue.GetDecimal(),
-                    JsonValueKind.True => true,
-                    JsonValueKind.False => false,
-                    JsonValueKind.Undefined => null,
-                    JsonValueKind.Null => null,
-                    JsonValueKind.Object => elementValue.GetRawText(),
-                    JsonValueKind.Array => elementValue.GetRawText(),
-                    _ => v.GetRawText()
-                });
-
+                var value = elementValue.GetValue();
                 return new Expression("Literal", value);
             });
     }
@@ -62,13 +49,25 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
         return CreateDescriptor<VariableExpressionHandler>(
             "Variable",
             "Variable",
-            isBrowsable: false,
+            isBrowsable: true,
             memoryBlockReferenceFactory: () => new Variable(),
             deserialize: context =>
             {
                 var valueElement = context.JsonElement.TryGetProperty("value", out var v) ? v : default;
-                var value = valueElement.Deserialize(context.MemoryBlockType, context.Options);
-                return new Expression("Variable", value);
+                var valueString = valueElement.GetValue()?.ToString();
+
+                if (string.IsNullOrWhiteSpace(valueString))
+                    return new Expression("Variable", null);
+
+                try
+                {
+                    var value = JsonSerializer.Deserialize(valueString, context.MemoryBlockType, context.Options);
+                    return new Expression("Variable", value);
+                }
+                catch (Exception)
+                {
+                    return new Expression("Variable", null);
+                }
             }
         );
     }
@@ -93,7 +92,7 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
             MemoryBlockReferenceFactory = memoryBlockReferenceFactory ?? (() => new MemoryBlockReference())
         };
 
-        if (deserialize != null) 
+        if (deserialize != null)
             descriptor.Deserialize = deserialize;
 
         if (monacoLanguage != null)

@@ -80,8 +80,8 @@ public class MongoLabelStore : ILabelStore
         return await _labelMongoDbStore.DeleteWhereAsync(x => idList.Contains(x.Id), cancellationToken);
     }
 
-    private static IMongoQueryable<Label> Paginate(IMongoQueryable<Label> queryable, PageArgs pageArgs)
+    private static IQueryable<Label> Paginate(IQueryable<Label> queryable, PageArgs pageArgs)
     {
-        return (queryable.Paginate(pageArgs) as IMongoQueryable<Label>)!;
+        return queryable.Paginate(pageArgs);
     }
 }

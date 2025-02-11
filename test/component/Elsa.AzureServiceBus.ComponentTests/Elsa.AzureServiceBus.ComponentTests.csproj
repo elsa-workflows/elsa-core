@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Azure.Messaging.ServiceBus"/>
+        <PackageReference Include="JetBrains.Annotations" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\src\apps\Elsa.Server.Web\Elsa.Server.Web.csproj" />
+      <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Component\Elsa.Testing.Shared.Component.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql\Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.AzureServiceBus\Elsa.AzureServiceBus.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+    </ItemGroup>
+
+</Project>

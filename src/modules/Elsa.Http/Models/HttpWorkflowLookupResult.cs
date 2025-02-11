@@ -1,7 +1,7 @@
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
 
-namespace Elsa.Http.Models;
+namespace Elsa.Http;
 
 /// <summary>
 /// Represents the result of a workflow lookup.

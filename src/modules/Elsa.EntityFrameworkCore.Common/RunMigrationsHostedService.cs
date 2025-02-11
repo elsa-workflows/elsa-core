@@ -2,7 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Elsa.EntityFrameworkCore.Common;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// Executes EF Core migrations using the specified <see cref="DbContext"/> type.
@@ -26,7 +26,6 @@ public class RunMigrationsHostedService<TDbContext> : IHostedService where TDbCo
         var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TDbContext>>();
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         await dbContext.Database.MigrateAsync(cancellationToken);
-        await dbContext.DisposeAsync();
     }
 
     /// <inheritdoc />

@@ -1,5 +1,5 @@
-using Elsa.Common.Contracts;
-using Elsa.Scheduling.Contracts;
+using Elsa.Common;
+using Elsa.Scheduling;
 using Quartz;
 
 namespace Elsa.Quartz.Services;

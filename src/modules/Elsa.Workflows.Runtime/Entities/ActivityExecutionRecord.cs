@@ -1,3 +1,4 @@
+using Elsa.Common;
 using Elsa.Common.Entities;
 using Elsa.Workflows.State;
 
@@ -6,7 +7,7 @@ namespace Elsa.Workflows.Runtime.Entities;
 /// <summary>
 /// Represents a single activity execution of an activity instance.
 /// </summary>
-public class ActivityExecutionRecord : Entity
+public class ActivityExecutionRecord : Entity, ILogRecord
 {
     /// <summary>
     /// Gets or sets the workflow instance ID.
@@ -41,7 +42,7 @@ public class ActivityExecutionRecord : Entity
     /// <summary>
     /// The state of the activity at the time this record is created or last updated.
     /// </summary>
-    public IDictionary<string, object>? ActivityState { get; set; }
+    public IDictionary<string, object?>? ActivityState { get; set; }
     
     /// <summary>
     /// Any additional payload associated with the log record.

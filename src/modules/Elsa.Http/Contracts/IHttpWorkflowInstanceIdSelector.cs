@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Http.Contracts;
+namespace Elsa.Http;
 
 /// <summary>
 /// Provides a way to select the workflow instance ID for a request.

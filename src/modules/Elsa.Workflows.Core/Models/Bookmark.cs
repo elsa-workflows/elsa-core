@@ -23,16 +23,16 @@ public record Bookmark(
     object? Payload,
     string ActivityId,
     string ActivityNodeId,
-    string ActivityInstanceId,
+    string? ActivityInstanceId,
     DateTimeOffset CreatedAt,
     bool AutoBurn = true,
-    string? CallbackMethodName = default,
+    string? CallbackMethodName = null,
     bool AutoComplete = true,
-    IDictionary<string, string>? Metadata = default)
+    IDictionary<string, string>? Metadata = null)
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public Bookmark() : this("", "", "",  null, "", "", "", default, default)
+    public Bookmark() : this("", "", "",  null, "", "", "", default, false)
     {
     }
 }

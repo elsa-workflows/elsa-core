@@ -1,9 +1,9 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Services;
 using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class WorkflowStateExtractor : IWorkflowStateExtractor
@@ -41,7 +41,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
     }
 
     /// <inheritdoc />
-    public WorkflowExecutionContext Apply(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
+    public async Task<WorkflowExecutionContext> ApplyAsync(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
     {
         workflowExecutionContext.Id = state.Id;
         workflowExecutionContext.CorrelationId = state.CorrelationId;
@@ -55,7 +55,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         workflowExecutionContext.FinishedAt = state.FinishedAt;
         ApplyInput(state, workflowExecutionContext);
         ApplyProperties(state, workflowExecutionContext);
-        ApplyActivityExecutionContexts(state, workflowExecutionContext);
+        await ApplyActivityExecutionContextsAsync(state, workflowExecutionContext);
         ApplyCompletionCallbacks(state, workflowExecutionContext);
         ApplyScheduledActivities(state, workflowExecutionContext);
         return workflowExecutionContext;
@@ -71,7 +71,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
     private IDictionary<string, object> GetPersistableInput(WorkflowExecutionContext workflowExecutionContext)
     {
         // TODO: This is a temporary solution. We need to find a better way to handle this.
-        var persistableInput = workflowExecutionContext.Workflow.Inputs.Where(x => x.StorageDriverType == typeof(WorkflowStorageDriver)).ToList();
+        var persistableInput = workflowExecutionContext.Workflow.Inputs.Where(x => x.StorageDriverType == typeof(WorkflowStorageDriver) || x.StorageDriverType == typeof(WorkflowInstanceStorageDriver)).ToList();
         var input = workflowExecutionContext.Input;
         var filteredInput = new Dictionary<string, object>();
 
@@ -96,10 +96,10 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             workflowExecutionContext.Properties[property.Key] = property.Value;
     }
 
-    private static void ApplyActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static async Task ApplyActivityExecutionContextsAsync(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        var activityExecutionContexts = state.ActivityExecutionContexts
-            .Select(CreateActivityExecutionContext)
+        var activityExecutionContexts = (await Task.WhenAll(
+                state.ActivityExecutionContexts.Select(async item => await CreateActivityExecutionContextAsync(item))))
             .Where(x => x != null)
             .Select(x => x!)
             .ToList();
@@ -128,7 +128,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
         return;
 
-        ActivityExecutionContext? CreateActivityExecutionContext(ActivityExecutionContextState activityExecutionContextState)
+        async Task<ActivityExecutionContext?> CreateActivityExecutionContextAsync(ActivityExecutionContextState activityExecutionContextState)
         {
             var activity = workflowExecutionContext.FindActivityByNodeId(activityExecutionContextState.ScheduledActivityNodeId);
 
@@ -137,10 +137,13 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
                 return null;
 
             var properties = activityExecutionContextState.Properties;
-            var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
+            var activityExecutionContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(activity);
             activityExecutionContext.Id = activityExecutionContextState.Id;
-            activityExecutionContext.Properties = properties;
-            activityExecutionContext.ActivityState = activityExecutionContextState.ActivityState ?? new Dictionary<string, object>();
+            activityExecutionContext.Properties.Merge(properties);
+            
+            if(activityExecutionContextState.ActivityState != null)
+                activityExecutionContext.ActivityState.Merge(activityExecutionContextState.ActivityState);
+            
             activityExecutionContext.TransitionTo(activityExecutionContextState.Status);
             activityExecutionContext.StartedAt = activityExecutionContextState.StartedAt;
             activityExecutionContext.CompletedAt = activityExecutionContextState.CompletedAt;
@@ -189,14 +192,14 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
 
     private static void ExtractCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        // Assert all referenced owner contexts exist.
-        var activeContexts = GetActiveActivityExecutionContexts(workflowExecutionContext.ActivityExecutionContexts).ToList();
+        // Assert that all referenced owner contexts exist.
+        var activeContexts = workflowExecutionContext.GetActiveActivityExecutionContexts().ToList();
         foreach (var completionCallback in workflowExecutionContext.CompletionCallbacks)
         {
             var ownerContext = activeContexts.FirstOrDefault(x => x == completionCallback.Owner);
 
             if (ownerContext == null)
-                throw new Exception("Lost an owner context");
+                throw new("Lost an owner context");
         }
 
         var completionCallbacks = workflowExecutionContext
@@ -217,7 +220,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
                 var parentContext = activityExecutionContext.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == parentId);
 
                 if (parentContext == null)
-                    throw new Exception("We lost a context. This could indicate a bug in a parent activity that completed before (some of) its child activities.");
+                    throw new("We lost a context. This could indicate a bug in a parent activity that completed before (some of) its child activities.");
             }
 
             var activityExecutionContextState = new ActivityExecutionContextState
@@ -238,7 +241,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         }
 
         // Only persist non-completed contexts.
-        state.ActivityExecutionContexts = GetActiveActivityExecutionContexts(workflowExecutionContext.ActivityExecutionContexts).Reverse().Select(CreateActivityExecutionContextState).ToList();
+        state.ActivityExecutionContexts = workflowExecutionContext.GetActiveActivityExecutionContexts().Reverse().Select(CreateActivityExecutionContextState).ToList();
     }
 
     private void ExtractScheduledActivities(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
@@ -256,13 +259,5 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             });
 
         state.ScheduledActivities = scheduledActivities.ToList();
-    }
-
-    private static IEnumerable<ActivityExecutionContext> GetActiveActivityExecutionContexts(IEnumerable<ActivityExecutionContext> activityExecutionContexts)
-    {
-        // Filter out completed activity execution contexts.
-        // This will currently break scripts accessing activity output directly, but there's a workaround for that via variable capturing.
-        // We may ultimately restore direct output access, but in a different way.
-        return activityExecutionContexts.Where(x => !x.IsCompleted).ToList();
     }
 }

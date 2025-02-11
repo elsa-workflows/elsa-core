@@ -8,7 +8,7 @@ using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Maps variables to and from <see cref="VariableModel"/> instances.
@@ -59,7 +59,7 @@ public class VariableMapper
             .OnSuccess(value => variable.Value = value)
             .OnFailure(e => _logger.LogWarning("Failed to convert {SourceValue} to {TargetType}", source.Value, type.Name));
 
-        variable.StorageDriverType = !string.IsNullOrEmpty(source.StorageDriverTypeName) ? Type.GetType(source.StorageDriverTypeName) : default;
+        variable.StorageDriverType = !string.IsNullOrEmpty(source.StorageDriverTypeName) ? Type.GetType(source.StorageDriverTypeName) : null;
 
         return variable;
     }
@@ -76,6 +76,6 @@ public class VariableMapper
         var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
         var serializedValue = value.Format();
 
-        return new VariableModel(source.Id, source.Name, valueTypeAlias, serializedValue, storageDriverTypeName);
+        return new(source.Id, source.Name, valueTypeAlias, serializedValue, storageDriverTypeName);
     }
 }

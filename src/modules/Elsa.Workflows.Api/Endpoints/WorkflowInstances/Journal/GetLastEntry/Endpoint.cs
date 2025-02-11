@@ -1,6 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
@@ -12,16 +12,8 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Journal.GetLastEntry;
 /// Return the last log entry for the specified workflow instance and activity ID.
 /// </summary>
 [PublicAPI]
-public class Get : ElsaEndpoint<Request, WorkflowExecutionLogRecord>
+public class Get(IWorkflowExecutionLogStore store) : ElsaEndpoint<Request, WorkflowExecutionLogRecord>
 {
-    private readonly IWorkflowExecutionLogStore _store;
-
-    /// <inheritdoc />
-    public Get(IWorkflowExecutionLogStore store)
-    {
-        _store = store;
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -36,7 +28,7 @@ public class Get : ElsaEndpoint<Request, WorkflowExecutionLogRecord>
         {
             WorkflowInstanceId = request.WorkflowInstanceId,
             ActivityId = request.ActivityId,
-            EventNames = new[] { "Started", "Completed", "Faulted" }
+            EventNames = ["Started", "Completed", "Faulted"]
         };
 
         var sort = new WorkflowExecutionLogRecordOrder<DateTimeOffset>(
@@ -44,7 +36,7 @@ public class Get : ElsaEndpoint<Request, WorkflowExecutionLogRecord>
             OrderDirection.Descending
         );
 
-        var entry = await _store.FindAsync(filter, sort, cancellationToken);
+        var entry = await store.FindAsync(filter, sort, cancellationToken);
 
         if (entry == null)
         {

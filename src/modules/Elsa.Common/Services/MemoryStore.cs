@@ -10,6 +10,11 @@ namespace Elsa.Common.Services;
 public class MemoryStore<TEntity>
 {
     private IDictionary<string, TEntity> Entities { get; set; } = new ConcurrentDictionary<string, TEntity>();
+    
+    /// <summary>
+    /// Gets a queryable of all entities.
+    /// </summary>
+    public IQueryable<TEntity> Queryable => Entities.Values.AsQueryable();
 
     /// <summary>
     /// Adds an entity.
@@ -46,6 +51,13 @@ public class MemoryStore<TEntity>
         foreach (var entity in entities)
             Save(entity, idAccessor);
     }
+    
+    /// <summary>
+    /// Updates an entity.
+    /// </summary>
+    /// <param name="entity">The entity to update.</param>
+    /// <param name="idAccessor">A function that returns the ID of the entity.</param>
+    public void Update(TEntity entity, Func<TEntity, string> idAccessor) => Entities[idAccessor(entity)] = entity;
 
     /// <summary>
     /// Finds an entity matching the specified predicate.
@@ -112,7 +124,7 @@ public class MemoryStore<TEntity>
         foreach (var entry in entries)
             Entities.Remove(entry);
 
-        return entries.LongCount();
+        return entries.Count;
     }
 
     /// <summary>

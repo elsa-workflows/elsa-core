@@ -2,7 +2,7 @@ using Elsa.Common.Models;
 
 namespace Elsa.Models;
 
-public class PagedListResponse<T>
+public record PagedListResponse<T>: LinkedResource
 {
     public PagedListResponse()
     {
@@ -16,4 +16,6 @@ public class PagedListResponse<T>
 
     public ICollection<T> Items { get; set; } = default!;
     public long TotalCount { get; set; }
+    
+    public static PagedListResponse<T> From(Page<T> page) => new(page);
 }

@@ -1,7 +1,5 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
@@ -38,7 +36,7 @@ namespace Elsa.Workflows.Management.Services
             // Get a workflow draft version.
             var draft = !string.IsNullOrWhiteSpace(definitionId)
                 ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest, cancellationToken)
-                : default;
+                : null;
 
             var isNew = draft == null;
 

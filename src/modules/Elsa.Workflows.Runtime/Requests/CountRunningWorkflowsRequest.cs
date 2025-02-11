@@ -3,6 +3,7 @@ namespace Elsa.Workflows.Runtime.Requests;
 /// <summary>
 /// Contains arguments to use for counting the number of workflow instances.
 /// </summary>
+[Obsolete("This type is obsolete. Use the new CreateClientAsync methods of IWorkflowRuntime instead.")]
 public class CountRunningWorkflowsRequest
 {
     /// <summary>

@@ -4,7 +4,6 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Signals;
 using Elsa.Workflows.UIHints;
@@ -38,7 +37,7 @@ public class Complete : Activity, ITerminalNode
 
     /// <inheritdoc />
     public Complete(Func<ExpressionExecutionContext, string> outcome, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(context => new[] { outcome(context) }, source, line)
+        : this(context => [outcome(context)], source, line)
     {
     }
 

@@ -1,5 +1,6 @@
 using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Options;
+using JetBrains.Annotations;
 using MassTransit;
 using Microsoft.Extensions.Options;
 
@@ -8,15 +9,13 @@ namespace Elsa.MassTransit.ConsumerDefinitions;
 /// <summary>
 /// Configures the endpoint for <see cref="DispatchWorkflowRequestConsumer"/>
 /// </summary>
+[UsedImplicitly]
 public class DispatchWorkflowRequestConsumerDefinition : ConsumerDefinition<DispatchWorkflowRequestConsumer>
 {
-    private readonly IOptions<MassTransitWorkflowDispatcherOptions> _options;
-
     /// <inheritdoc />
     public DispatchWorkflowRequestConsumerDefinition(IOptions<MassTransitWorkflowDispatcherOptions> options)
     {
-        _options = options;
-        ConcurrentMessageLimit = _options.Value.ConcurrentMessageLimit;
+        ConcurrentMessageLimit = options.Value.ConcurrentMessageLimit;
     }
 
     /// <inheritdoc />

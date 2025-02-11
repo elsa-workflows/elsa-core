@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Elsa.Identity.Constants;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -36,6 +37,12 @@ public class IdentityTokenOptions
     public TimeSpan RefreshTokenLifetime { get; set; } = TimeSpan.FromHours(2);
     
     /// <summary>
+    /// Gets or sets the claim type that hold the tenant ID in the user's claims.
+    /// If not set, <see cref="CustomClaimTypes.TenantId" /> will be used
+    /// </summary>
+    public string TenantIdClaimsType { get; set; } = CustomClaimTypes.TenantId;
+    
+    /// <summary>
     /// Creates a new <see cref="SecurityKey"/> from the <see cref="SigningKey"/>.
     /// </summary>
     /// <returns></returns>
@@ -61,17 +68,5 @@ public class IdentityTokenOptions
     private static bool ValidateLifetime(DateTime? notBefore, DateTime? expires, SecurityToken securityToken, TokenValidationParameters validationParameters)
     {
         return expires != null && expires > DateTime.UtcNow;
-    }
-
-    /// <summary>
-    /// Deconstructor.
-    /// </summary>
-    internal void Deconstruct(out string signingKey, out string issuer, out string audience, out TimeSpan accessTokenLifetime, out TimeSpan refreshTokenLifetime)
-    {
-        signingKey = SigningKey;
-        issuer = Issuer;
-        audience = Audience;
-        accessTokenLifetime = AccessTokenLifetime;
-        refreshTokenLifetime = RefreshTokenLifetime;
     }
 }

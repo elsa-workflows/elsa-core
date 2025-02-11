@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
 
@@ -10,13 +10,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Using Include="Xunit"/>
+        <Using Include="Xunit" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\src\bundles\Elsa.Server.Web\Elsa.Server.Web.csproj"/>
+        <ProjectReference Include="..\..\..\src\apps\Elsa.Server.Web\Elsa.Server.Web.csproj"/>
         <ProjectReference Include="..\..\..\src\clients\Elsa.Api.Client\Elsa.Api.Client.csproj"/>
-        <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj"/>
+        <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Component\Elsa.Testing.Shared.Component.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql\Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -27,9 +29,6 @@
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="Scenarios\WorkflowCompletion\fork.json">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="Scenarios\HttpWorkflows\http-hello-world.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="Scenarios\LogPersistenceModes\input-output-logging-1.json">
@@ -54,6 +53,39 @@
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="Scenarios\CachingAndWorkflowDefinitionActivity\Workflows\workflow-definition-parent.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowActivities\Workflows\CacheInvalidation_Child.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowActivities\Workflows\CacheInvalidation_Parent.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowActivities\Workflows\CacheInvalidation_Childv2.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowJsonStructures\main.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowJsonStructures\sub.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowDefinitionRefresh\dynamic-endpoint-http-workflow.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowDefinitionReload\http-workflow.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowDefinitionReload\Workflows\http-workflow.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\HttpWorkflows\Workflows\http-hello-world.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\InputOutput\Workflows\consumer.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\InputOutput\Workflows\provider.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>

@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Provides an EF Core migrations for SQL Server for the Agents Persistence module.</Description>
+        <PackageTags>elsa module agents semantic kernel llm ai persistence efcore entity framework core sqlserver</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Agents.Persistence.EntityFrameworkCore\Elsa.Agents.Persistence.EntityFrameworkCore.csproj" />
+        <ProjectReference Include="..\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj" />
+    </ItemGroup>
+
+</Project>

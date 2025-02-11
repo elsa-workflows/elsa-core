@@ -2,9 +2,8 @@ using System.IO.Compression;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Models;
-using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -110,7 +109,7 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
 
     private async Task ImportSingleWorkflowInstanceAsync(ExportedWorkflowState model, CancellationToken cancellationToken)
     {
-        var workflowState = await _workflowStateSerializer.DeserializeAsync(model.WorkflowState, cancellationToken);
+        var workflowState = _workflowStateSerializer.Deserialize(model.WorkflowState);
         await _workflowInstanceManager.SaveAsync(workflowState, cancellationToken);
 
         if (model.Bookmarks != null)
@@ -130,20 +129,31 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
                 var payload = _payloadSerializer.Deserialize<object>(payloadElement);
                 var metadata = _payloadSerializer.Deserialize<IDictionary<string, string>>(metadataElement);
 
-                return new StoredBookmark(bookmarkId, activityTypeName, hash, workflowInstanceId, createdAt, activityInstanceId, correlationId, payload, metadata);
+                return new StoredBookmark
+                {
+                    Id = bookmarkId,
+                    ActivityTypeName = activityTypeName,
+                    Hash = hash,
+                    WorkflowInstanceId = workflowInstanceId,
+                    CreatedAt = createdAt,
+                    ActivityInstanceId = activityInstanceId,
+                    CorrelationId = correlationId,
+                    Payload = payload,
+                    Metadata = metadata
+                };
             }).ToList();
             await _bookmarkStore.SaveManyAsync(bookmarks, cancellationToken);
         }
         
         if (model.ActivityExecutionRecords != null)
         {
-            var activityExecutionRecords = await _safeSerializer.DeserializeAsync<ICollection<ActivityExecutionRecord>>(model.ActivityExecutionRecords.Value, cancellationToken);
+            var activityExecutionRecords = _safeSerializer.Deserialize<ICollection<ActivityExecutionRecord>>(model.ActivityExecutionRecords.Value);
             await _activityExecutionStore.SaveManyAsync(activityExecutionRecords, cancellationToken);
         }
         
         if (model.WorkflowExecutionLogRecords != null)
         {
-            var workflowExecutionLogRecords = await _safeSerializer.DeserializeAsync<ICollection<WorkflowExecutionLogRecord>>(model.WorkflowExecutionLogRecords.Value, cancellationToken);
+            var workflowExecutionLogRecords = _safeSerializer.Deserialize<ICollection<WorkflowExecutionLogRecord>>(model.WorkflowExecutionLogRecords.Value);
             await _workflowExecutionLogStore.SaveManyAsync(workflowExecutionLogRecords, cancellationToken);
         }
     }

@@ -35,7 +35,7 @@ public static class ModuleExtensions
     }
     
     /// <summary>
-    /// Register type <see cref="T"/> with the specified alias.
+    /// Register type <typeparamref name="T"/> with the specified alias.
     /// </summary>
     /// <param name="module">The module.</param>
     /// <param name="alias">The alias.</param>

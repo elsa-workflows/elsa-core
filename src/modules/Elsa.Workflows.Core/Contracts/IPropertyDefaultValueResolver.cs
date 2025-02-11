@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Resolves default values for a property.

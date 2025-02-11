@@ -1,4 +1,3 @@
-using Elsa.Http.Contracts;
 using Elsa.Http.Options;
 
 namespace Elsa.Http.Contexts;

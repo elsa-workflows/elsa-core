@@ -1,5 +1,4 @@
 using Elsa.Workflows.Activities.Flowchart.Models;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Activities.Flowchart.Extensions;
 
@@ -13,10 +12,10 @@ public static class ConnectionsExtensions
     /// </summary>
     public static IEnumerable<Connection> Descendants(this ICollection<Connection> connections, IActivity parent)
     {
-        var visitedActivities = new HashSet<IActivity>();
-        return connections.Descendants(parent, visitedActivities);
+        var visitedConnections = new HashSet<Connection>();
+        return connections.Descendants(parent, visitedConnections);
     }
-    
+
     /// <summary>
     /// Returns all ancestor connections of the specified parent activity.
     /// </summary>
@@ -42,7 +41,7 @@ public static class ConnectionsExtensions
 
         return filteredConnections;
     }
-    
+
     /// <summary>
     /// Returns all "left" ancestor connections of the specified activity. "Left" means "not a descendant of the activity".
     /// </summary>
@@ -59,27 +58,27 @@ public static class ConnectionsExtensions
     /// Returns all inbound activities of the specified activity.
     /// </summary>
     public static IEnumerable<IActivity> InboundActivities(this ICollection<Connection> connections, IActivity activity) => connections.InboundConnections(activity).Select(x => x.Source.Activity);
-    
+
     /// <summary>
     /// Returns all "left" inbound activities of the specified activity. "Left" means "not a descendant of the activity".
     /// </summary>
     public static IEnumerable<IActivity> LeftInboundActivities(this ICollection<Connection> connections, IActivity activity) => connections.LeftInboundConnections(activity).Select(x => x.Source.Activity);
-    
+
     /// <summary>
     /// Returns all "left" ancestor activities of the specified activity. "Left" means "not a descendant of the activity".
     /// </summary>
     public static IEnumerable<IActivity> LeftAncestorActivities(this ICollection<Connection> connections, IActivity activity) => connections.LeftAncestorConnections(activity).Select(x => x.Source.Activity);
 
-    private static IEnumerable<Connection> Descendants(this ICollection<Connection> connections, IActivity parent, ISet<IActivity> visitedActivities)
+    private static IEnumerable<Connection> Descendants(this ICollection<Connection> connections, IActivity parent, ISet<Connection> visitedConnections)
     {
-        var children = connections.Where(x => parent == x.Source.Activity && !visitedActivities.Contains(x.Target.Activity)).ToList();
+        var children = connections.Where(x => parent == x.Source.Activity && !visitedConnections.Contains(x)).ToList();
 
         foreach (var child in children)
         {
-            visitedActivities.Add(child.Target.Activity);
+            visitedConnections.Add(child);
             yield return child;
 
-            var descendants = connections.Descendants(child.Target.Activity, visitedActivities).ToList();
+            var descendants = connections.Descendants(child.Target.Activity, visitedConnections).ToList();
 
             foreach (var descendant in descendants)
             {
@@ -87,7 +86,7 @@ public static class ConnectionsExtensions
             }
         }
     }
-    
+
     private static IEnumerable<Connection> Ancestors(this ICollection<Connection> connections, IActivity activity, ISet<IActivity> visitedActivities)
     {
         var parents = connections.Where(x => activity == x.Target.Activity && !visitedActivities.Contains(x.Source.Activity)).ToList();

@@ -3,7 +3,6 @@ using Elsa.Dsl.Models;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.HostedServices;
 using Elsa.Workflows.Management.Options;
 using JetBrains.Annotations;

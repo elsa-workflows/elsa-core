@@ -1,4 +1,3 @@
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Identity.Entities;
@@ -13,13 +12,8 @@ namespace Elsa.EntityFrameworkCore.Modules.Identity;
 /// </summary>
 [DependsOn(typeof(IdentityFeature))]
 [PublicAPI]
-public class EFCoreIdentityPersistenceFeature : PersistenceFeatureBase<IdentityElsaDbContext>
+public class EFCoreIdentityPersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreIdentityPersistenceFeature, IdentityElsaDbContext>(module)
 {
-    /// <inheritdoc />
-    public EFCoreIdentityPersistenceFeature(IModule module) : base(module)
-    {
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -35,7 +29,6 @@ public class EFCoreIdentityPersistenceFeature : PersistenceFeatureBase<IdentityE
     public override void Apply()
     {
         base.Apply();
-
         AddEntityStore<User, EFCoreUserStore>();
         AddEntityStore<Application, EFCoreApplicationStore>();
         AddEntityStore<Role, EFCoreRoleStore>();

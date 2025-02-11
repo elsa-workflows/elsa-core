@@ -19,7 +19,7 @@ internal class RunAlterationsMiddleware(WorkflowMiddlewareDelegate next, IEnumer
     {
         var alterations = (IEnumerable<IAlteration>)(context.TransientProperties.GetValue(AlterationsPropertyKey) ?? throw new InvalidOperationException("No alterations found in the transient properties."));
         var log = (AlterationLog)(context.TransientProperties.GetValue(AlterationsLogPropertyKey) ?? throw new InvalidOperationException("No alteration log found in the transient properties."));
-        await RunAsync(context, alterations, log, context.CancellationTokens.ApplicationCancellationToken);
+        await RunAsync(context, alterations, log, context.CancellationToken);
     }
 
     private async Task RunAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<IAlteration> alterations, AlterationLog log, CancellationToken cancellationToken = default)
@@ -50,5 +50,9 @@ internal class RunAlterationsMiddleware(WorkflowMiddlewareDelegate next, IEnumer
         // Execute commit handlers.
         foreach (var commitAction in commitActions)
             await commitAction();
+
+        // Add alteration logs to the workflow execution log.
+        foreach (var alterationLogEntry in log.LogEntries)
+            workflowExecutionContext.AddExecutionLogEntry(alterationLogEntry.EventName ?? alterationLogEntry.Message, alterationLogEntry.Message);
     }
 }

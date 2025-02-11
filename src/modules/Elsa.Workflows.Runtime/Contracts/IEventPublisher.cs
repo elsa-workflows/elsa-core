@@ -1,7 +1,6 @@
 using Elsa.Workflows.Runtime.Activities;
-using Elsa.Workflows.Runtime.Results;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Publishes events using the workflow runtime, effectively triggering all <see cref="Event"/> activities.
@@ -9,12 +8,7 @@ namespace Elsa.Workflows.Runtime.Contracts;
 public interface IEventPublisher
 {
     /// <summary>
-    /// Synchronously publishes the specified event using the workflow runtime, effectively triggering all <see cref="Event"/> activities matching the provided event name.
+    /// Publishes the specified event.
     /// </summary>
-    Task<ICollection<WorkflowExecutionResult>> PublishAsync(string eventName, string? correlationId = default, string? workflowInstanceId = default, string? activityInstanceId = default, object? payload = default, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Asynchronously publishes the specified event using the workflow dispatcher.
-    /// </summary>
-    Task DispatchAsync(string eventName, string? correlationId = default, string? workflowInstanceId = default, string? activityInstanceId = default, object? payload = default, CancellationToken cancellationToken = default);
+    Task PublishAsync(string eventName, string? correlationId = default, string? workflowInstanceId = default, string? activityInstanceId = default, object? payload = default, CancellationToken cancellationToken = default);
 }

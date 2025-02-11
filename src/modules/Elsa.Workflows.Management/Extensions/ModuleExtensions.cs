@@ -1,6 +1,6 @@
 using Elsa.Features.Services;
+using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Features;
 
 // ReSharper disable once CheckNamespace
@@ -14,7 +14,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Adds the workflow management feature to the specified module. 
     /// </summary>
-    public static IModule UseWorkflowManagement(this IModule module, Action<WorkflowManagementFeature>? configure = default)
+    public static IModule UseWorkflowManagement(this IModule module, Action<WorkflowManagementFeature>? configure = null)
     {
         module.Configure<WorkflowManagementFeature>(management =>
         {
@@ -27,7 +27,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Adds the default workflow management feature to the specified module. 
     /// </summary>
-    public static WorkflowManagementFeature UseWorkflowDefinitions(this WorkflowManagementFeature feature, Action<WorkflowDefinitionsFeature>? configure = default)
+    public static WorkflowManagementFeature UseWorkflowDefinitions(this WorkflowManagementFeature feature, Action<WorkflowDefinitionsFeature>? configure = null)
     {
         feature.Module.Configure(configure);
         return feature;
@@ -36,7 +36,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Adds the workflow instance feature to workflow management module. 
     /// </summary>
-    public static WorkflowManagementFeature UseWorkflowInstances(this WorkflowManagementFeature feature, Action<WorkflowInstancesFeature>? configure = default)
+    public static WorkflowManagementFeature UseWorkflowInstances(this WorkflowManagementFeature feature, Action<WorkflowInstancesFeature>? configure = null)
     {
         feature.Module.Configure(configure);
         return feature;
@@ -45,7 +45,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Adds the Elsa DSL integration feature.
     /// </summary>
-    public static WorkflowManagementFeature UseDslIntegration(this WorkflowManagementFeature feature, Action<DslIntegrationFeature>? configure = default)
+    public static WorkflowManagementFeature UseDslIntegration(this WorkflowManagementFeature feature, Action<DslIntegrationFeature>? configure = null)
     {
         feature.Module.Configure(configure);
         return feature;
@@ -84,7 +84,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Adds caching stores feature to the workflow management feature.
     /// </summary>
-    public static WorkflowManagementFeature UseCache(this WorkflowManagementFeature feature, Action<CachingWorkflowDefinitionsFeature>? configure = default)
+    public static WorkflowManagementFeature UseCache(this WorkflowManagementFeature feature, Action<CachingWorkflowDefinitionsFeature>? configure = null)
     {
         feature.Module.Configure(configure);
         return feature;

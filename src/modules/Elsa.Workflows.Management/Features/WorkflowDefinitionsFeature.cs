@@ -1,6 +1,9 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Handlers.Request;
+using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Stores;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,10 +23,14 @@ public class WorkflowDefinitionsFeature : FeatureBase
     /// The factory to create new instances of <see cref="IWorkflowDefinitionStore"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowDefinitionStore>();
+    public Func<Type> FindWorkflowDefinitionHandler { get; set; } = () => typeof(FindWorkflowDefinitionHandler);
 
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddScoped(WorkflowDefinitionStore);
+        Services
+            .AddScoped(WorkflowDefinitionStore)
+            .AddScoped(typeof(IRequestHandler), FindWorkflowDefinitionHandler())
+            ;
     }
 }

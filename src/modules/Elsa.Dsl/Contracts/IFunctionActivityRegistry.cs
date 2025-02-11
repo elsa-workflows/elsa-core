@@ -1,5 +1,5 @@
 using Elsa.Dsl.Models;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 
 namespace Elsa.Dsl.Contracts;
 
@@ -22,12 +22,12 @@ public interface IFunctionActivityRegistry
     /// </summary>
     /// <param name="descriptor">The descriptor that describes the function.</param>
     void RegisterFunction(FunctionActivityDescriptor descriptor);
-    
+
     /// <summary>
     /// Resolves a function to an activity that can be invoked from a DSL script.
     /// </summary>
     /// <param name="functionName">The name of the function.</param>
     /// <param name="arguments">The arguments that are passed to the function.</param>
     /// <returns>An activity that can be invoked from a DSL script.</returns>
-    IActivity ResolveFunction(string functionName, IEnumerable<object?>? arguments = default);
+    Task<IActivity> ResolveFunctionAsync(string functionName, IEnumerable<object?>? arguments = default);
 }

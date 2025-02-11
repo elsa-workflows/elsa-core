@@ -1,138 +1,147 @@
+using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
+using Elsa.Quartz.Contracts;
 using Elsa.Quartz.Jobs;
-using Elsa.Scheduling.Contracts;
-using Elsa.Scheduling.Services;
-using Elsa.Workflows.Runtime.Requests;
+using Elsa.Scheduling;
 using Quartz;
+using IScheduler = Quartz.IScheduler;
 
 namespace Elsa.Quartz.Services;
 
 /// <summary>
-/// An implementation of <see cref="Scheduling.Contracts.IWorkflowScheduler"/> that uses Quartz.NET.
+/// An implementation of <see cref="IWorkflowScheduler"/> that uses Quartz.NET.
 /// </summary>
-public class QuartzWorkflowScheduler : IWorkflowScheduler
+internal class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, IJsonSerializer jsonSerializer, ITenantAccessor tenantAccessor, IJobKeyProvider jobKeyProvider) : IWorkflowScheduler
 {
-    private readonly ISchedulerFactory _schedulerFactory;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultWorkflowScheduler"/> class.
-    /// </summary>
-    public QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory)
-    {
-        _schedulerFactory = schedulerFactoryFactory;
-    }
-
     /// <inheritdoc />
-    public async ValueTask ScheduleAtAsync(string taskName, DispatchWorkflowDefinitionRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
+    public async ValueTask ScheduleAtAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
     {
-        var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+        var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
+
         var trigger = TriggerBuilder.Create()
-            .ForJob(RunWorkflowJob.JobKey)
+            .ForJob(GetRunWorkflowJobKey())
             .UsingJobData(CreateJobDataMap(request))
-            .WithIdentity(taskName)
+            .WithIdentity(GetTriggerKey(taskName))
             .StartAt(at)
             .Build();
 
-        if (!await scheduler.CheckExists(trigger.Key, cancellationToken))
-            await scheduler.ScheduleJob(trigger, cancellationToken);
+        await ScheduleJobAsync(scheduler, trigger, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask ScheduleAtAsync(string taskName, DispatchWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
+    public async ValueTask ScheduleAtAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
     {
-        var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+        var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
         var trigger = TriggerBuilder.Create()
-            .ForJob(ResumeWorkflowJob.JobKey)
+            .ForJob(GetResumeWorkflowJobKey())
             .UsingJobData(CreateJobDataMap(request))
-            .WithIdentity(taskName)
+            .WithIdentity(GetTriggerKey(taskName))
             .StartAt(at)
             .Build();
-        
-        if(!await scheduler.CheckExists(trigger.Key, cancellationToken))
-            await scheduler.ScheduleJob(trigger, cancellationToken);
+
+        await ScheduleJobAsync(scheduler, trigger, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask ScheduleRecurringAsync(string taskName, DispatchWorkflowDefinitionRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
+    public async ValueTask ScheduleRecurringAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
     {
-        var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+        var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
         var trigger = TriggerBuilder.Create()
-            .ForJob(RunWorkflowJob.JobKey)
-            .WithIdentity(taskName)
+            .WithIdentity(GetTriggerKey(taskName))
+            .ForJob(GetRunWorkflowJobKey())
             .UsingJobData(CreateJobDataMap(request))
             .StartAt(startAt)
             .WithSimpleSchedule(schedule => schedule.WithInterval(interval).RepeatForever())
             .Build();
 
-        if (!await scheduler.CheckExists(trigger.Key, cancellationToken))
-            await scheduler.ScheduleJob(trigger, cancellationToken);
+        await ScheduleJobAsync(scheduler, trigger, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask ScheduleRecurringAsync(string taskName, DispatchWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
+    public async ValueTask ScheduleRecurringAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
     {
-        var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+        var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
         var trigger = TriggerBuilder.Create()
-            .ForJob(ResumeWorkflowJob.JobKey)
-            .WithIdentity(taskName)
+            .WithIdentity(GetTriggerKey(taskName))
+            .ForJob(GetResumeWorkflowJobKey())
             .UsingJobData(CreateJobDataMap(request))
             .StartAt(startAt)
             .WithSimpleSchedule(schedule => schedule.WithInterval(interval).RepeatForever())
             .Build();
-        
-        if(!await scheduler.CheckExists(trigger.Key, cancellationToken))
-            await scheduler.ScheduleJob(trigger, cancellationToken);
+
+        await ScheduleJobAsync(scheduler, trigger, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask ScheduleCronAsync(string taskName, DispatchWorkflowDefinitionRequest request, string cronExpression, CancellationToken cancellationToken = default)
+    public async ValueTask ScheduleCronAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
     {
-        var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
-        var trigger = TriggerBuilder.Create().ForJob(RunWorkflowJob.JobKey).UsingJobData(CreateJobDataMap(request)).WithIdentity(taskName).WithCronSchedule(cronExpression).Build();
-
-        if (!await scheduler.CheckExists(trigger.Key, cancellationToken))
-            await scheduler.ScheduleJob(trigger, cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async ValueTask ScheduleCronAsync(string taskName, DispatchWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
-    {
-        var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+        var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
         var trigger = TriggerBuilder.Create()
-            .ForJob(ResumeWorkflowJob.JobKey)
             .UsingJobData(CreateJobDataMap(request))
-            .WithIdentity(taskName)
+            .ForJob(GetRunWorkflowJobKey())
+            .WithIdentity(GetTriggerKey(taskName))
+            .WithCronSchedule(cronExpression)
+            .Build();
+
+        await ScheduleJobAsync(scheduler, trigger, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask ScheduleCronAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
+    {
+        var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
+        var trigger = TriggerBuilder.Create()
+            .ForJob(GetResumeWorkflowJobKey())
+            .UsingJobData(CreateJobDataMap(request))
+            .WithIdentity(GetTriggerKey(taskName))
             .WithCronSchedule(cronExpression).Build();
-        
-        if(!await scheduler.CheckExists(trigger.Key, cancellationToken))
-            await scheduler.ScheduleJob(trigger, cancellationToken);
+
+        await ScheduleJobAsync(scheduler, trigger, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask UnscheduleAsync(string taskName, CancellationToken cancellationToken = default)
     {
-        var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
-        var triggerKey = new TriggerKey(taskName);
+        var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
+        var triggerKey = GetTriggerKey(taskName);
         await scheduler.UnscheduleJob(triggerKey, cancellationToken);
     }
+    
+    private async Task ScheduleJobAsync(IScheduler scheduler, ITrigger trigger, CancellationToken cancellationToken)
+    {
+        if (!await scheduler.CheckExists(trigger.Key, cancellationToken))
+            await scheduler.ScheduleJob(trigger, cancellationToken);
+    }
 
-    private static JobDataMap CreateJobDataMap(DispatchWorkflowDefinitionRequest request) =>
-        new JobDataMap()
-            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.InstanceId), request.InstanceId)
-            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.CorrelationId), request.CorrelationId)
-            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.DefinitionId), request.DefinitionId)
-            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.VersionOptions), request.VersionOptions.ToString())
-            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.TriggerActivityId), request.TriggerActivityId)
-            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.Input), request.Input);
+    private JobDataMap CreateJobDataMap(ScheduleNewWorkflowInstanceRequest request)
+    {
+        return new JobDataMap()
+                .AddIfNotEmpty("TenantId", tenantAccessor.Tenant?.Id)
+                .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.CorrelationId), request.CorrelationId)
+                .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.WorkflowDefinitionHandle.DefinitionVersionId), request.WorkflowDefinitionHandle.DefinitionVersionId)
+                .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.TriggerActivityId), request.TriggerActivityId)
+                .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.ParentId), request.ParentId)
+                .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.Input), request.Input)
+                .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.Properties), request.Properties)
+            ;
+    }
 
-    private static JobDataMap CreateJobDataMap(DispatchWorkflowInstanceRequest request) =>
-        new JobDataMap()
-            .AddIfNotEmpty(nameof(DispatchWorkflowInstanceRequest.InstanceId), request.InstanceId)
-            .AddIfNotEmpty(nameof(DispatchWorkflowInstanceRequest.CorrelationId), request.CorrelationId)
-            .AddIfNotEmpty(nameof(DispatchWorkflowInstanceRequest.Input), request.Input)
-            .AddIfNotEmpty(nameof(DispatchWorkflowInstanceRequest.ActivityInstanceId), request.ActivityInstanceId)
-            .AddIfNotEmpty(nameof(DispatchWorkflowInstanceRequest.ActivityId), request.ActivityId)
-            .AddIfNotEmpty(nameof(DispatchWorkflowInstanceRequest.ActivityHash), request.ActivityHash)
-            .AddIfNotEmpty(nameof(DispatchWorkflowInstanceRequest.BookmarkId), request.BookmarkId)
-            .AddIfNotEmpty(nameof(DispatchWorkflowInstanceRequest.ActivityNodeId), request.ActivityNodeId);
+    private JobDataMap CreateJobDataMap(ScheduleExistingWorkflowInstanceRequest request)
+    {
+        var serializedActivityHandle = request.ActivityHandle != null ? jsonSerializer.Serialize(request.ActivityHandle) : null;
+
+        return new JobDataMap()
+            .AddIfNotEmpty("TenantId", tenantAccessor.Tenant?.Id)
+            .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.WorkflowInstanceId), request.WorkflowInstanceId)
+            .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.Input), request.Input)
+            .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.Properties), request.Properties)
+            .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.ActivityHandle), serializedActivityHandle)
+            .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.BookmarkId), request.BookmarkId);
+    }
+
+    private JobKey GetRunWorkflowJobKey() => jobKeyProvider.GetJobKey<RunWorkflowJob>();
+    private JobKey GetResumeWorkflowJobKey() => jobKeyProvider.GetJobKey<ResumeWorkflowJob>();
+    private string GetGroupName() => jobKeyProvider.GetGroupName();
+    private TriggerKey GetTriggerKey(string taskName) => new(taskName, GetGroupName());
 }

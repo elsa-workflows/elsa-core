@@ -1,6 +1,6 @@
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Represents a workflow execution pipeline.

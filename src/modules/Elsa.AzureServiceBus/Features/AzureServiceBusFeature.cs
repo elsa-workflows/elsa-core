@@ -6,6 +6,7 @@ using Elsa.AzureServiceBus.HostedServices;
 using Elsa.AzureServiceBus.Options;
 using Elsa.AzureServiceBus.Providers;
 using Elsa.AzureServiceBus.Services;
+using Elsa.AzureServiceBus.Tasks;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
@@ -26,7 +27,7 @@ public class AzureServiceBusFeature : FeatureBase
     }
 
     /// <summary>
-    /// A value controlling whether or not queues, topics and subscriptions should be created automatically. 
+    /// A value controlling whether queues, topics and subscriptions should be created automatically. 
     /// </summary>
     public bool CreateQueuesTopicsAndSubscriptions { get; set; } = true;
 
@@ -50,8 +51,6 @@ public class AzureServiceBusFeature : FeatureBase
     {
         if (CreateQueuesTopicsAndSubscriptions)
             Module.ConfigureHostedService<CreateQueuesTopicsAndSubscriptions>();
-
-        Module.ConfigureHostedService<StartWorkers>();
     }
 
     /// <inheritdoc />
@@ -71,13 +70,16 @@ public class AzureServiceBusFeature : FeatureBase
             .AddSingleton(ServiceBusClientFactory)
             .AddSingleton<ConfigurationQueueTopicAndSubscriptionProvider>()
             .AddSingleton<IWorkerManager, WorkerManager>()
-            .AddTransient<IServiceBusInitializer, ServiceBusInitializer>();
+            .AddScoped<IServiceBusInitializer, ServiceBusInitializer>();
+        
+        // Tasks.
+        Services.AddBackgroundTask<StartWorkers>();
 
         // Definition providers.
         Services
-            .AddScoped<IQueueProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>())
-            .AddScoped<ITopicProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>())
-            .AddScoped<ISubscriptionProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>());
+            .AddSingleton<IQueueProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>())
+            .AddSingleton<ITopicProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>())
+            .AddSingleton<ISubscriptionProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>());
 
         // Handlers.
         Services.AddHandlersFrom<UpdateWorkers>();

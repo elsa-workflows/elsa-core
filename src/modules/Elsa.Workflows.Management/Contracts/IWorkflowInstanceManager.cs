@@ -1,9 +1,10 @@
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Management.Requests;
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// A service that manages workflow instances.
@@ -11,10 +12,20 @@ namespace Elsa.Workflows.Management.Contracts;
 public interface IWorkflowInstanceManager
 {
     /// <summary>
-    /// Retrieves the workflow instance with the specified ID.
+    /// Finds the workflow instance with the specified ID.
     /// </summary>
-    Task<WorkflowInstance?> FindByIdAsync(string id, CancellationToken cancellationToken = default);
+    Task<WorkflowInstance?> FindByIdAsync(string instanceId, CancellationToken cancellationToken = default);
     
+    /// <summary>
+    /// Finds the first workflow instance that matches the specified filter.
+    /// </summary>
+    Task<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Determines whether a workflow instance with the specified ID exists.
+    /// </summary>
+    Task<bool> ExistsAsync(string instanceId, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Saves the specified workflow instance.
     /// </summary>
@@ -35,6 +46,40 @@ public interface IWorkflowInstanceManager
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>The workflow instance that was saved.</returns>
     Task<WorkflowInstance> SaveAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Saves the specified workflow instance.
+    /// </summary>
+    Task CreateAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Maps the specified workflow state to a workflow instance and saves it.
+    /// </summary>
+    /// <param name="workflowState">The workflow state to map to a workflow instance.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The workflow instance that was saved.</returns>
+    Task<WorkflowInstance> CreateAsync(WorkflowState workflowState, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Extracts the workflow state from the specified workflow execution context, maps it to a workflow instance and saves it.
+    /// </summary>
+    /// <param name="workflowExecutionContext">The workflow execution context to extract the workflow state from.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The workflow instance that was saved.</returns>
+    Task<WorkflowInstance> CreateAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Updates the specified workflow instance.
+    /// </summary>
+    Task UpdateAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Maps the specified workflow state to a workflow instance and updates it.
+    /// </summary>
+    /// <param name="workflowState">The workflow state to map to a workflow instance.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The workflow instance that was saved.</returns>
+    Task<WorkflowInstance> UpdateAsync(WorkflowState workflowState, CancellationToken cancellationToken);
 
     /// <summary>
     /// Deletes the first workflow instance that matches the specified filter.
@@ -60,10 +105,15 @@ public interface IWorkflowInstanceManager
     /// <summary>
     /// Serializes the specified workflow state.
     /// </summary>
-    Task<string> SerializeWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
+    string SerializeWorkflowState(WorkflowState workflowState);
     
     /// <summary>
     /// Instantiates and saves a new workflow instance.
     /// </summary>
-    Task<WorkflowInstance> CreateWorkflowInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
+    Task<WorkflowInstance> CreateAndCommitWorkflowInstanceAsync(Workflow workflow, WorkflowInstanceOptions? options = null, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Instantiates a new workflow instance.
+    /// </summary>
+    WorkflowInstance CreateWorkflowInstance(Workflow workflow, WorkflowInstanceOptions? options = null);
 }

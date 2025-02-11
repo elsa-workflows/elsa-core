@@ -1,5 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Scheduling.Bookmarks;
@@ -28,7 +28,7 @@ public class StartAt : Trigger
     public StartAt(Input<DateTimeOffset> dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => DateTime = dateTime;
 
     /// <inheritdoc />
-    public StartAt(Func<ExpressionExecutionContext, DateTimeOffset> dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+    public StartAt(Func<ExpressionExecutionContext, DateTimeOffset> dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
         : this(new Input<DateTimeOffset>(dateTime), source, line)
     {
     }
@@ -41,29 +41,30 @@ public class StartAt : Trigger
     }
 
     /// <inheritdoc />
-    public StartAt(Func<ValueTask<DateTimeOffset>> dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+    public StartAt(Func<ValueTask<DateTimeOffset>> dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
         : this(new Input<DateTimeOffset>(dateTime), source, line)
     {
     }
 
     /// <inheritdoc />
-    public StartAt(Func<DateTimeOffset> dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+    public StartAt(Func<DateTimeOffset> dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
         : this(new Input<DateTimeOffset>(dateTime), source, line)
     {
     }
 
     /// <inheritdoc />
-    public StartAt(DateTimeOffset dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => 
+    public StartAt(DateTimeOffset dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
         DateTime = new Input<DateTimeOffset>(dateTime);
 
     /// <inheritdoc />
-    public StartAt(Variable<DateTimeOffset> dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => 
+    public StartAt(Variable<DateTimeOffset> dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
         DateTime = new Input<DateTimeOffset>(dateTime);
 
     /// <summary>
     /// The timestamp at which the workflow should be triggered.
     /// </summary>
-    [Input] public Input<DateTimeOffset> DateTime { get; set; } = default!;
+    [Input]
+    public Input<DateTimeOffset> DateTime { get; set; } = default!;
 
     /// <inheritdoc />
     protected override object GetTriggerPayload(TriggerIndexingContext context)
@@ -73,27 +74,29 @@ public class StartAt : Trigger
     }
 
     /// <inheritdoc />
-    protected override void Execute(ActivityExecutionContext context)
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        // If external input was received, it means this activity got triggered and does not need to create a bookmark.
-        if (context.TryGetWorkflowInput<DateTimeOffset>(InputKey, out _)) 
+        if (context.IsTriggerOfWorkflow())
+        {
+            await context.CompleteActivityAsync();
             return;
-        
-        // No external input received, so create a bookmark.
+        }
+
         var executeAt = context.ExpressionExecutionContext.Get(DateTime);
         var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();
         var now = clock.UtcNow;
         var logger = context.GetRequiredService<ILogger<StartAt>>();
 
+        context.JournalData.Add("Executed At", now);
+        
         if (executeAt <= now)
         {
-            logger.LogDebug("Scheduled trigger time lies in the past ('{Delta}'). Skipping scheduling", now - executeAt);
-            context.JournalData.Add("Executed At", now);
+            logger.LogDebug("Scheduled trigger time lies in the past ('{Delta}'). Completing immediately", now - executeAt);
+            await context.CompleteActivityAsync();
             return;
         }
 
         var payload = new StartAtPayload(executeAt);
-
         context.CreateBookmark(payload);
     }
 

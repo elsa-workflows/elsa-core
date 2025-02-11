@@ -1,0 +1,16 @@
+name: 'Close stale issues and PRs'
+on:
+  schedule:
+    - cron: '30 1 * * *'
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          stale-issue-message: 'Hi there! This issue has been marked as stale due to inactivity. If this is still relevant or needs further discussion, please let us know. Otherwise, it will be closed in 7 days. Thank you for your understanding.'
+          close-issue-message: 'This issue has been automatically closed due to prolonged inactivity. If you still encounter this problem or have further questions, please feel free to reopen the issue or create a new one. Thank you for your contributions!'
+          days-before-stale: 30
+          days-before-close: 7
+          any-of-labels: 'awaiting-feedback,awaiting-answers,needs-more-info,needs-demo,needs-repro'

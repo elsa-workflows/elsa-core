@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          imagePullPolicy: Always
+          image: postgres:latest
+          # command: ["-c", "max_connections=2000"]
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: init-db
+              mountPath: /docker-entrypoint-initdb.d/init-db.sh
+              subPath: init-db.sh
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "elsa"
+            - name: POSTGRES_PASSWORD
+              value: "elsa"
+            - name: POSTGRES_DB
+              value: "elsa"
+              
+      volumes:
+        - name: postgres-data
+          emptyDir: {}
+        - name: init-db
+          configMap:
+            name: init-db-config

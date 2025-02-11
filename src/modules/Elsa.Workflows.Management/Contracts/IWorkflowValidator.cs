@@ -1,7 +1,7 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Models;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Validates a workflow definition.

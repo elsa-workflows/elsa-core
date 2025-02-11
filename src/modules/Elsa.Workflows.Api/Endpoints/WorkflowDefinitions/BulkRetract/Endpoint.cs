@@ -1,23 +1,18 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Requirements;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkRetract;
 
 [PublicAPI]
-internal class BulkRetract : ElsaEndpoint<Request, Response>
+internal class BulkRetract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IAuthorizationService authorizationService)
+    : ElsaEndpoint<Request, Response>
 {
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
-
-    public BulkRetract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher)
-    {
-        _store = store;
-        _workflowDefinitionPublisher = workflowDefinitionPublisher;
-    }
-
     public override void Configure()
     {
         Post("/bulk-actions/retract/workflow-definitions/by-definition-ids");
@@ -26,13 +21,22 @@ internal class BulkRetract : ElsaEndpoint<Request, Response>
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
+        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
+
+        if (!authorizationResult.Succeeded)
+        {
+            await SendForbiddenAsync(cancellationToken);
+            return null!;
+        }
+
         var retracted = new List<string>();
         var notFound = new List<string>();
         var notPublished = new List<string>();
+        var skipped = new List<string>();
 
         foreach (var definitionId in request.DefinitionIds)
         {
-            var definitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter
+            var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter
             {
                 DefinitionId = definitionId,
                 VersionOptions = VersionOptions.LatestOrPublished
@@ -51,10 +55,16 @@ internal class BulkRetract : ElsaEndpoint<Request, Response>
                 continue;
             }
 
-            await _workflowDefinitionPublisher.RetractAsync(published, cancellationToken);
+            if (published.IsReadonly)
+            {
+                skipped.Add(definitionId);
+                continue;
+            }
+
+            await workflowDefinitionPublisher.RetractAsync(published, cancellationToken);
             retracted.Add(definitionId);
         }
 
-        return new Response(retracted, notPublished, notFound);
+        return new Response(retracted, notPublished, notFound, skipped);
     }
 }

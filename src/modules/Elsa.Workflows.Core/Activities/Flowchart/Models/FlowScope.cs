@@ -1,9 +1,8 @@
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Activities.Flowchart.Models;
 
-internal class FlowScope
+public class FlowScope
 {
     [JsonConstructor]
     public FlowScope()
@@ -45,6 +44,11 @@ internal class FlowScope
         return state;
 
     }
+
+    public bool ContainsActivity(IActivity activity)
+    {
+        return Activities.ContainsKey(activity.Id);
+    }
     
     public void RegisterActivityExecution(IActivity activity)
     {
@@ -74,4 +78,12 @@ internal class FlowScope
     public long GetExecutionCount(IActivity activity) => Activities.ContainsKey(activity.Id) ? Activities[activity.Id].ExecutionCount : 0;
 
     public void Clear() => Activities.Clear();
+    
+    public void Remove(IActivity activity)
+    {
+        if (Activities.ContainsKey(activity.Id))
+        {
+            Activities.Remove(activity.Id);
+        } 
+    }
 }

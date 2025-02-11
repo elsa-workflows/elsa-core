@@ -112,6 +112,16 @@ public interface ISqlDialect
     /// <param name="getParamName">An optional function to get the parameter name.</param>
     /// <returns>The query.</returns>
     string Insert(string table, string[] fields, Func<string, string>? getParamName = default);
+    
+    /// <summary>
+    /// Builds an UPDATE query.
+    /// </summary>
+    /// <param name="table">The table.</param>
+    /// <param name="primaryKeyField">The primary key field.</param>
+    /// <param name="fields">The fields.</param>
+    /// <param name="getParamName">An optional function to get the parameter name.</param>
+    /// <returns>The query.</returns>
+    string Update(string table, string primaryKeyField, string[] fields, Func<string, string>? getParamName = default);
 
     /// <summary>
     /// Builds an UPSERT query.

@@ -12,7 +12,7 @@ public class WorkflowDefinition : VersionedEntity
     /// <summary>
     /// The logical ID of the workflow. This ID is the same across versions. 
     /// </summary>
-    public string DefinitionId { get; set; } = default!;
+    public string DefinitionId { get; set; } = null!;
     
     /// <summary>
     /// The name of the workflow.
@@ -67,13 +67,13 @@ public class WorkflowDefinition : VersionedEntity
     /// <summary>
     /// The name of the workflow materializer to interpret the <see cref="StringData"/> or <see cref="BinaryData"/>.
     /// </summary>
-    public string MaterializerName { get; set; } = default!;
+    public string MaterializerName { get; set; } = null!;
 
     /// <summary>
     /// Provider-specific data.
     /// </summary>
     public string? MaterializerContext { get; set; }
-    
+
     /// <summary>
     /// A textual representation of the workflow. The data is to be interpreted by the configured materializer.
     /// </summary>
@@ -98,6 +98,5 @@ public class WorkflowDefinition : VersionedEntity
     /// <summary>
     /// Creates and returns a shallow copy of the workflow definition.
     /// </summary>
-    /// <returns></returns>
     public WorkflowDefinition ShallowClone() => (WorkflowDefinition)MemberwiseClone();
 }

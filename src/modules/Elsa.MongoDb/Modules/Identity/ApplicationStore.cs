@@ -31,8 +31,8 @@ public class MongoApplicationStore(MongoDbStore<Application> applicationMongoDbS
         return applicationMongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
     }
 
-    private static IMongoQueryable<Application> Filter(IQueryable<Application> query, ApplicationFilter filter)
+    private static IQueryable<Application> Filter(IQueryable<Application> query, ApplicationFilter filter)
     {
-        return (filter.Apply(query) as IMongoQueryable<Application>)!;
+        return filter.Apply(query);
     }
 }

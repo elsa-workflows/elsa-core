@@ -1,36 +1,22 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Builders;
 
 /// <inheritdoc />
-public class WorkflowBuilder : IWorkflowBuilder
+public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphService identityGraphService, IActivityRegistry activityRegistry, IIdentityGenerator identityGenerator)
+    : IWorkflowBuilder
 {
-    private readonly IActivityVisitor _activityVisitor;
-    private readonly IIdentityGraphService _identityGraphService;
-    private readonly IActivityRegistry _activityRegistry;
-    private readonly IIdentityGenerator _identityGenerator;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphService identityGraphService, IActivityRegistry activityRegistry, IIdentityGenerator identityGenerator)
-    {
-        _activityVisitor = activityVisitor;
-        _identityGraphService = identityGraphService;
-        _activityRegistry = activityRegistry;
-        _identityGenerator = identityGenerator;
-        Result = new Variable();
-    }
-
     /// <inheritdoc />
     public string? Id { get; set; }
 
     /// <inheritdoc />
     public string? DefinitionId { get; set; }
+
+    /// <inheritdoc />
+    public string? TenantId { get; set; }
 
     /// <inheritdoc />
     public int Version { get; set; } = 1;
@@ -63,7 +49,7 @@ public class WorkflowBuilder : IWorkflowBuilder
     public ICollection<string> Outcomes { get; set; } = new List<string>();
 
     /// <inheritdoc />
-    public Variable? Result { get; set; }
+    public Variable? Result { get; set; } = new();
 
     /// <inheritdoc />
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
@@ -75,6 +61,13 @@ public class WorkflowBuilder : IWorkflowBuilder
     public IWorkflowBuilder WithDefinitionId(string definitionId)
     {
         DefinitionId = definitionId;
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IWorkflowBuilder WithTenantId(string tenantId)
+    {
+        TenantId = tenantId;
         return this;
     }
 
@@ -130,14 +123,7 @@ public class WorkflowBuilder : IWorkflowBuilder
     /// <inheritdoc />
     public InputDefinition WithInput<T>(string name, string? description = default)
     {
-        return WithInput(inputDefinition =>
-        {
-            inputDefinition.Name = name;
-            inputDefinition.Type = typeof(T);
-
-            if (description != null)
-                inputDefinition.Description = description;
-        });
+        return WithInput(name, typeof(T), description);
     }
 
     /// <inheritdoc />
@@ -180,6 +166,46 @@ public class WorkflowBuilder : IWorkflowBuilder
         return this;
     }
 
+    public OutputDefinition WithOutput<T>(string name, string? description = default)
+    {
+        return WithOutput(name, typeof(T), description);
+    }
+
+    public OutputDefinition WithOutput(string name, Type type, string? description = default)
+    {
+        return WithOutput(outputDefinition =>
+        {
+            outputDefinition.Name = name;
+            outputDefinition.Type = type;
+
+            if (description != null)
+                outputDefinition.Description = description;
+        });
+    }
+
+    public OutputDefinition WithOutput(string name, Type type, Action<OutputDefinition>? setup = default)
+    {
+        return WithOutput(outputDefinition =>
+        {
+            outputDefinition.Name = name;
+            outputDefinition.Type = type;
+            setup?.Invoke(outputDefinition);
+        });
+    }
+
+    public OutputDefinition WithOutput(Action<OutputDefinition> setup)
+    {
+        var outputDefinition = new OutputDefinition();
+        setup(outputDefinition);
+        return WithOutput(outputDefinition);
+    }
+
+    public OutputDefinition WithOutput(OutputDefinition outputDefinition)
+    {
+        Outputs.Add(outputDefinition);
+        return outputDefinition;
+    }
+
     /// <inheritdoc />
     public IWorkflowBuilder WithCustomProperty(string name, object value)
     {
@@ -216,10 +242,11 @@ public class WorkflowBuilder : IWorkflowBuilder
     /// <inheritdoc />
     public async Task<Workflow> BuildWorkflowAsync(CancellationToken cancellationToken = default)
     {
-        var definitionId = DefinitionId ?? _identityGenerator.GenerateId();
-        var id = Id ?? _identityGenerator.GenerateId();
+        var definitionId = string.IsNullOrEmpty(DefinitionId) ? string.Empty : DefinitionId;
+        var id = string.IsNullOrEmpty(Id) ? string.Empty : Id;
+        var tenantId = string.IsNullOrEmpty(TenantId) ? null : TenantId;
         var root = Root ?? new Sequence();
-        var identity = new WorkflowIdentity(definitionId, Version, id);
+        var identity = new WorkflowIdentity(definitionId, Version, id, tenantId);
         var publication = WorkflowPublication.LatestAndPublished;
         var name = string.IsNullOrEmpty(Name) ? definitionId : Name;
         var workflowMetadata = new WorkflowMetadata(name, Description);
@@ -232,15 +259,15 @@ public class WorkflowBuilder : IWorkflowBuilder
             workflow.Result = new Output<object>(Result);
         }
 
-        var graph = await _activityVisitor.VisitAsync(workflow, cancellationToken);
+        var graph = await activityVisitor.VisitAsync(workflow, cancellationToken);
         var nodes = graph.Flatten().ToList();
 
         // Register all activity types first. The identity graph service will need to know about all activity types.
         var distinctActivityTypes = nodes.Select(x => x.Activity.GetType()).Distinct().ToList();
-        await _activityRegistry.RegisterAsync(distinctActivityTypes, cancellationToken);
+        await activityRegistry.RegisterAsync(distinctActivityTypes, cancellationToken);
 
         // Assign identities to all activities.
-        _identityGraphService.AssignIdentities(nodes);
+        await identityGraphService.AssignIdentitiesAsync(nodes);
 
         // Give unnamed variables in each variable container a predictable name.
         var variableContainers = nodes.Where(x => x.Activity is IVariableContainer).Select(x => (IVariableContainer)x.Activity).ToList();

@@ -34,10 +34,10 @@ public class CallAnswered : Activity<CallAnsweredPayload>
 
         foreach (var callControlId in callControlIds)
         {
-            var payload = new CallAnsweredBookmarkPayload(callControlId);
+            var payload = new CallAnsweredStimulus(callControlId);
             context.CreateBookmark(new CreateBookmarkArgs
             {
-                Payload = payload,
+                Stimulus = payload,
                 Callback = Resume,
                 BookmarkName = Type,
                 IncludeActivityInstanceId = false

@@ -1,6 +1,6 @@
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Represents a provider of activity descriptors, which can be used from activity pickers.

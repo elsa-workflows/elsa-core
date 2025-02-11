@@ -1,8 +1,7 @@
-using Elsa.Common.Contracts;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -62,9 +61,13 @@ public static class WorkflowExecutionContextExtensions
     {
         // Get the activity execution context that owns the bookmark.
         var bookmarkedActivityContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == bookmark.ActivityInstanceId);
+        var logger = workflowExecutionContext.GetRequiredService<ILogger<WorkflowExecutionContext>>();
 
         if (bookmarkedActivityContext == null)
+        {
+            logger.LogWarning("Could not find activity execution context with ID {ActivityInstanceId} for bookmark {BookmarkId}", bookmark.ActivityInstanceId, bookmark.Id);
             return null;
+        }
 
         var bookmarkedActivity = bookmarkedActivityContext.Activity;
 
@@ -85,7 +88,8 @@ public static class WorkflowExecutionContextExtensions
                 : WorkflowExecutionContext.Noop;
 
         // Store the bookmark to resume in the context.
-        workflowExecutionContext.ResumedBookmarkContext = new ResumedBookmarkContext(bookmark);
+        workflowExecutionContext.ResumedBookmarkContext = new(bookmark);
+        logger.LogDebug("Scheduled activity {ActivityId} to resume from bookmark {BookmarkId}", bookmarkedActivity.Id, bookmark.Id);
 
         return workItem;
     }

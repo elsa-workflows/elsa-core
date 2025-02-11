@@ -19,7 +19,7 @@ public static class ApplicationProviderExtensions
     /// <returns>The application with the specified client ID.</returns>
     public static async Task<Application?> FindByClientIdAsync(this IApplicationProvider applicationProvider, string clientId, CancellationToken cancellationToken = default)
     {
-        var filter = new ApplicationFilter()
+        var filter = new ApplicationFilter
         {
             ClientId = clientId
         };
