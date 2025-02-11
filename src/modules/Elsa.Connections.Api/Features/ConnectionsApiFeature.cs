@@ -1,7 +1,7 @@
-using Elsa.Connections.Api.Services;
-using Elsa.Connections.Contracts;
 using Elsa.Connections.Models;
+using Elsa.Connections.Persistence.Contracts;
 using Elsa.Connections.Persistence.Features;
+using Elsa.Connections.Persistence.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -27,11 +27,7 @@ public class ConnectionsApiFeature(IModule module) : FeatureBase(module)
     public override void Apply()
     {
         
-        Services.AddSingleton<IConnectionRepository, InMemoryConnectionRepository>();
 
-        Services
-              
-              .AddMemoryStore<ConnectionConfigurationMetadataModel, InMemoryConnectionRepository>();
 
     }
 }

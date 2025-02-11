@@ -5,6 +5,9 @@ using Elsa.Workflows.UIHints.Dropdown;
 
 namespace Elsa.Connections.UIHints;
 
+/// <summary>
+/// UIHint Handler that use DropDown for Connection Property
+/// </summary>
 public class ConnexionDropDownUIHintHandler : IUIHintHandler
 {
     /// <inheritdoc />

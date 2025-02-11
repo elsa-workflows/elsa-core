@@ -1,10 +1,10 @@
 ﻿using Elsa.Abstractions;
-using Elsa.Connections.Contracts;
+using Elsa.Connections.Persistence.Contracts;
 
 
 namespace Elsa.Connections.Api.Endpoints.Delete;
 
-public class Endpoint(IConnectionRepository store) : ElsaEndpointWithoutRequest
+public class Endpoint(IConnectionStore store) : ElsaEndpoint<Request>
 {
     public override void Configure()
     {
@@ -12,12 +12,17 @@ public class Endpoint(IConnectionRepository store) : ElsaEndpointWithoutRequest
         AllowAnonymous();
     }
 
-    public override async Task<object?> HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(Request req, CancellationToken ct)
     {
-        var configurationId = Route<string>("id");
-        await store.DeleteConnectionConfigurationAsync(configurationId, ct);
-        await SendOkAsync();
+        var entity = await store.GetAsync(req.Id);
 
-        return null;
+        if (entity == null)
+        {
+            await SendNotFoundAsync(ct);
+            return;
+        }
+        
+        await store.DeleteAsync(entity, ct);
+        await SendOkAsync();
     }
 }

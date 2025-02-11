@@ -12,7 +12,7 @@ public class ConnectionProperties<T> where T : class, new()
     {
     }
 
-    public string ConnectionName { get; set; }
+    public string? ConnectionName { get; set; }
 
     [JsonIgnore]
     public T Properties { get; set; } = new T();

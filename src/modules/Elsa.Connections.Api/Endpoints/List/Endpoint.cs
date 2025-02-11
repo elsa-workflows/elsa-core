@@ -2,13 +2,15 @@
 using System.Text.Json.Nodes;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Connections.Contracts;
+using Elsa.Connections.Api.Extensions;
 using Elsa.Connections.Models;
+using Elsa.Connections.Persistence.Contracts;
+using Elsa.Connections.Persistence.Entities;
 using Elsa.Models;
 
 namespace Elsa.Connections.Api.Endpoints.List;
 
-public class Endpoint(IConnectionRepository store) : ElsaEndpointWithoutRequest<PagedListResponse<ConnectionConfigurationMetadataModel>>
+public class Endpoint(IConnectionStore store) : ElsaEndpointWithoutRequest<PagedListResponse<ConnectionModel>>
 {
     public override void Configure()
     {
@@ -16,9 +18,10 @@ public class Endpoint(IConnectionRepository store) : ElsaEndpointWithoutRequest<
         AllowAnonymous();
     }
 
-    public override async Task<PagedListResponse<ConnectionConfigurationMetadataModel>> ExecuteAsync(CancellationToken ct)
+    public override async Task<PagedListResponse<ConnectionModel>> ExecuteAsync(CancellationToken ct)
     {
-        var config = await store.GetConnectionsAsync();
-        return new PagedListResponse<ConnectionConfigurationMetadataModel>(Page.Of(config, config.Count()));
+        var entities = await store.ListAsync();
+        var models = entities.Select(x => x.ToModel()).ToList();
+        return new PagedListResponse<ConnectionModel>(Page.Of(models, models.Count()));
     }
 }

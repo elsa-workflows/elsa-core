@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Elsa.Connections.Attributes;
 using Elsa.Connections.Contracts;
-using Elsa.Connections.Features;
 using Elsa.Connections.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;

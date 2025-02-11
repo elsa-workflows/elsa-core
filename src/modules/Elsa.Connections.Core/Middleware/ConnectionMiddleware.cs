@@ -1,32 +1,35 @@
-﻿using System.Reflection;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Elsa.Connections.Attributes;
-using Elsa.Connections.Contracts;
 using Elsa.Connections.Models;
+using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Pipelines.ActivityExecution;
-using Elsa.Workflows.UIHints.Dropdown;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
+using Elsa.Connections.Core.Extensions;
+using Elsa.Connections.Converters;
+using Elsa.Connections.Persistence.Contracts;
 
 namespace Elsa.Connections.Middleware;
 
 /// <summary>
-/// Adds extension methods to <see cref="ExecutionLogMiddleware"/>.
-/// </summary>
-public static class ConnectionMiddlewareExtensions
-{
-    /// <summary>
-    /// Installs the <see cref="ConnectionMiddleware"/> component in the activity execution pipeline.
-    /// </summary>
-    public static IActivityExecutionPipelineBuilder UseConnectionMiddleware(this IActivityExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<ConnectionMiddleware>();
-}
-
-/// <summary>
-/// An activity execution middleware component that extracts execution details as <see cref="WorkflowExecutionLogEntry"/> objects.
+/// An activity execution middleware component that inject connection property from Connection Name.
 /// </summary>
 [UsedImplicitly]
-public class ConnectionMiddleware(ActivityMiddlewareDelegate next, IConnectionRepository connectionStore) : IActivityExecutionMiddleware
+public class ConnectionMiddleware(ActivityMiddlewareDelegate next
+    , IConnectionStore connectionStore
+    ,ILogger<ConnectionMiddleware> logger) 
+    : IActivityExecutionMiddleware
 {
+    private static JsonSerializerOptions? _serializerOptions;
+    private readonly ILogger<ConnectionMiddleware> _logger = logger;
+
+    private static JsonSerializerOptions SerializerOptions =>
+        _serializerOptions ??= new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        }.WithConverters(new Int32Converter());
+
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
@@ -45,22 +48,23 @@ public class ConnectionMiddleware(ActivityMiddlewareDelegate next, IConnectionRe
 
                 var connectionName = (string)inputValue?.ConnectionName;
 
-                //Get connection from store, if exist,
-                var connectionConfiguration = await connectionStore.GetConnectionAsync(connectionName);
-                if (connectionConfiguration != null)
+                if (connectionName == null)
+                    LogConnectionExtensions.LogConnectionIsNull(_logger);
+                else
                 {
-                    var options = new JsonSerializerOptions
+                    //Get connection from store, if exist,
+                    var connectionConfiguration = await connectionStore.FindAsync(new Persistence.Filters.ConnectionDefinitionFilter() { Name = connectionName });
+                    if (connectionConfiguration != null)
                     {
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    };
-                    options.Converters.Add(new Int32Converter());
+                        dynamic deserializedjson =
+                            JsonSerializer.Deserialize(connectionConfiguration.ConnectionConfiguration, propertyType, SerializerOptions);
 
-                    dynamic deserializedjson =
-                        JsonSerializer.Deserialize(connectionConfiguration.ConnectionConfiguration, propertyType, options);
+                        inputValue.Properties = deserializedjson;
 
-                    inputValue.Properties = deserializedjson;
-
-                    input.ValueSetter(context.Activity, inputValue);
+                        input.ValueSetter(context.Activity, inputValue);
+                    }
+                    else
+                        LogConnectionExtensions.LogConnectionNotFound(_logger, connectionName);
                 }
             }
         }
@@ -71,31 +75,5 @@ public class ConnectionMiddleware(ActivityMiddlewareDelegate next, IConnectionRe
     private static bool IsActivityBookmarked(ActivityExecutionContext context)
     {
         return context.WorkflowExecutionContext.Bookmarks.Any(b => b.ActivityNodeId.Equals(context.ActivityNode.NodeId));
-    }
-}
-
-public class Int32Converter : System.Text.Json.Serialization.JsonConverter<int>
-{
-    public override int Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-    {
-        if (reader.TokenType == JsonTokenType.String)
-        {
-            string stringValue = reader.GetString();
-            if (int.TryParse(stringValue, out int value))
-            {
-                return value;
-            }
-        }
-        else if (reader.TokenType == JsonTokenType.Number)
-        {
-            return reader.GetInt32();
-        }
-
-        throw new JsonException();
-    }
-
-    public override void Write(Utf8JsonWriter writer, int value, JsonSerializerOptions options)
-    {
-        writer.WriteNumberValue(value);
     }
 }

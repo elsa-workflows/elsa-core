@@ -1,15 +1,15 @@
 ﻿using System.Reflection;
 using Elsa.Connections.Attributes;
-using Elsa.Connections.Contracts;
+using Elsa.Connections.Persistence.Contracts;
 using Elsa.Workflows.UIHints.Dropdown;
 
 namespace Elsa.Connections.ServiceProvider;
 
 public class ConnectionOptionsProvider : DropDownOptionsProviderBase
 {
-    private readonly IConnectionRepository _store;
+    private readonly IConnectionStore _store;
 
-    public ConnectionOptionsProvider(IConnectionRepository store)
+    public ConnectionOptionsProvider(IConnectionStore store)
     {
         _store = store;
     }
@@ -28,7 +28,7 @@ public class ConnectionOptionsProvider : DropDownOptionsProviderBase
         if (connectionType == null)
             return connection;
 
-        var connections = await _store.GetConnectionsFromTypeAsync(connectionType.ToString());
+        var connections = await _store.FindManyAsync(new Persistence.Filters.ConnectionDefinitionFilter() { Type = connectionType.ToString() });
 
         foreach(var conn in connections)
             connection.Add(new SelectListItem(conn.Name, conn.Name));

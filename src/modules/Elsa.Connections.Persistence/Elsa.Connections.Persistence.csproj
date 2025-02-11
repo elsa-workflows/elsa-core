@@ -7,7 +7,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
-		<ProjectReference Include="..\Elsa.Connections.Core\Elsa.Connections.Core.csproj" />
+		<ProjectReference Include="..\Elsa.Connections.Models\Elsa.Connections.Models.csproj" />
 	</ItemGroup>
 
 </Project>

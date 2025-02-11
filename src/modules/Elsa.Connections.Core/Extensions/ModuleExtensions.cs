@@ -1,5 +1,8 @@
 using Elsa.Connections.Features;
+using Elsa.Connections.Middleware;
 using Elsa.Features.Services;
+using Elsa.Workflows;
+using Elsa.Workflows.Pipelines.ActivityExecution;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -16,4 +19,15 @@ public static class ModuleExtensions
     {
         return module.Use(configure);
     }
+}
+
+/// <summary>
+/// Adds extension methods to <see cref="ConnectionMiddleware"/>.
+/// </summary>
+public static class ConnectionMiddlewareExtensions
+{
+    /// <summary>
+    /// Installs the <see cref="ConnectionMiddleware"/> component in the activity execution pipeline.
+    /// </summary>
+    public static IActivityExecutionPipelineBuilder UseConnectionMiddleware(this IActivityExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<ConnectionMiddleware>();
 }

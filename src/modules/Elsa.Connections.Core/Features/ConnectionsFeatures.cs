@@ -15,6 +15,7 @@ using Elsa.Workflows.Features;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Elsa.Connections.Middleware;
+using Elsa.Connections.Models;
 
 namespace Elsa.Connections.Features;
 
@@ -69,12 +70,4 @@ public class ConnectionsFeatures(IModule module) : FeatureBase(module)
         return this;
     }
 
-}
-
-public class ConnectionOptions
-{
-    /// <summary>
-    /// A collection of connection types that are available to the system.
-    /// </summary>
-    public HashSet<Type> ConnectionTypes { get; set; } = new();
 }
