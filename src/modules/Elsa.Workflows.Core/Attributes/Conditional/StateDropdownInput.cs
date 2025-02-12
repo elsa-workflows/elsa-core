@@ -1,31 +1,16 @@
-﻿using Elsa.Workflows.Attributes.Conditional;
+﻿using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;
-using Newtonsoft.Json;
 
 namespace Elsa.Workflows.Attributes.Conditional;
 
 [AttributeUsage(AttributeTargets.Property)]
-public class StateDropdownInput : Input
+public class StateDropdownInput : InputAttribute
 {
-    public List<string> Ids { get; set; } = new();
     public StateDropdownInput(string[] states) : base()
     {
-        Init();
-        ParseDynamicStates(states);
-        Description = JsonConvert.SerializeObject(new
-        {
-            Mode = "Dynamic",
-            InputType = InputType,
-            Description = UIDescription,
-            Ids,
-            Options
-        });
-    }
-
-    private void Init()
-    {
         UIHint = InputUIHints.DropDown;
-        InputType = "StateDropdown";
+        InputType = InputType.StateDropdown;
+        ParseDynamicStates(states);
     }
 
     public void ParseDynamicStates(string[] states)
@@ -65,7 +50,10 @@ public class StateDropdownInput : Input
         }
 
         Options = options;
-        UIDescription = descriptions;
-        Ids = ids;
+        DropDownStates = new DropDownStates{
+            Descriptions = descriptions,
+            Ids = ids,
+            Options = options
+        };
     }
 }

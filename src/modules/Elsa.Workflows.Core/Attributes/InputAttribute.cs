@@ -1,3 +1,5 @@
+using Elsa.Workflows.Models;
+
 namespace Elsa.Workflows.Attributes;
 
 /// <summary>
@@ -98,4 +100,10 @@ public class InputAttribute : Attribute
     /// A set of <see cref="IPropertyUIHandler"/> types that can be used to customize the UI for this property.
     /// </summary>
     public Type[]? UIHandlers { get; set; }
+
+    public string[]? ShowForStates { get; set; }
+
+    public InputType InputType { get; set; } = InputType.Generic;
+
+    public DropDownStates? DropDownStates { get; set; }
 }

@@ -160,7 +160,7 @@ public class ActivityDescriber : IActivityDescriber
         
         var uiSpecification = await _propertyUIHandlerResolver.GetUIPropertiesAsync(propertyInfo, null, cancellationToken);
 
-        return new InputDescriptor
+        var inputDescriptor = new InputDescriptor
         (
             inputAttribute?.Name ?? propertyInfo.Name,
             wrappedPropertyType,
@@ -183,6 +183,21 @@ public class ActivityDescriber : IActivityDescriber
             propertyInfo,
             uiSpecification
         );
+
+        if (inputAttribute is null)
+            return inputDescriptor;
+
+        if (inputAttribute.InputType == InputType.Generic)
+            return inputDescriptor;
+        
+        var conditionalDescriptor = new ConditionalDescriptor{
+            ShowForStates = inputAttribute!.ShowForStates ?? [],
+            InputType = inputAttribute.InputType,
+            DropDownStates = inputAttribute.DropDownStates,
+        };
+        inputDescriptor.ConditionalDescriptor = conditionalDescriptor;
+
+        return inputDescriptor;
     }
 
     /// <inheritdoc />

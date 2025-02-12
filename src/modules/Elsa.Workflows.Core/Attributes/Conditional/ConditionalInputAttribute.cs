@@ -1,24 +1,11 @@
-﻿using Elsa.Workflows.Attributes.Conditional;
-using Newtonsoft.Json;
-
-
-namespace Elsa.Workflows.Attributes.Conditional;
+﻿namespace Elsa.Workflows.Attributes.Conditional;
 
 [AttributeUsage(AttributeTargets.Property)]
-public class ConditionalInput : Input
+public class ConditionalInput : InputAttribute
 {
-    public ConditionalInput(string[] showForStates, string description = "") : base([description])
+    public ConditionalInput(string[] showForStates) : base()
     {
-        InputType = "ConditionalInput";
+        InputType = InputType.ConditionalInput;
         ShowForStates = showForStates;
-        Description = JsonConvert.SerializeObject(
-            new
-            {
-                InputType = InputType,
-                Description = UIDescription,
-                ShowForStates
-            }
-        );
     }
-    public string[] ShowForStates { get; set; } = ["Default"];
 }
