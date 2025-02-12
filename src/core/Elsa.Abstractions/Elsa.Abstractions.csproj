@@ -16,7 +16,7 @@
     <ItemGroup>
         <PackageReference Include="DistributedLock.Core" Version="1.0.4" />
         <PackageReference Include="LinqKit.Core" Version="1.2.5" />
-        <PackageReference Include="MediatR" Version="12.0.1" />
+        <PackageReference Include="MediatR" Version="12.4.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.1" />
