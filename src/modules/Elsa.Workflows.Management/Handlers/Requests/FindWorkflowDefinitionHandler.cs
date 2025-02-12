@@ -10,12 +10,7 @@ public class FindWorkflowDefinitionHandler(IWorkflowDefinitionStore store) : IRe
 {
     public async Task<WorkflowDefinition?> HandleAsync(FindWorkflowDefinitionRequest request, CancellationToken cancellationToken)
     {
-        var filter = new WorkflowDefinitionFilter
-        {
-            DefinitionId = request.DefinitionId,
-            VersionOptions = request.VersionOptions
-        };
-
+        var filter = request.Handle.ToFilter();
         var order = new WorkflowDefinitionOrder<int>(x => x.Version, OrderDirection.Descending);
         var definition = (await store.FindManyAsync(filter, order, cancellationToken: cancellationToken)).FirstOrDefault();
         return definition;

@@ -1,6 +1,6 @@
-using Elsa.Common.Models;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Management.Requests;
 
@@ -9,4 +9,4 @@ namespace Elsa.Workflows.Management.Requests;
 /// </summary>
 /// <param name="DefinitionId">The ID of the workflow definition.</param>
 /// <param name="VersionOptions">The version options.</param>
-public record FindWorkflowDefinitionRequest(string DefinitionId, VersionOptions VersionOptions) : IRequest<WorkflowDefinition?>;
+public record FindWorkflowDefinitionRequest(WorkflowDefinitionHandle Handle) : IRequest<WorkflowDefinition?>;
