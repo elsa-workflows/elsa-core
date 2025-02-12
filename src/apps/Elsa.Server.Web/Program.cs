@@ -91,7 +91,7 @@ const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.Distributed;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
-const bool useMultitenancy = false;
+const bool useMultitenancy = true;
 const bool useTenantsFromConfiguration = true;
 const bool useAgents = false;
 const bool useSecrets = false;
@@ -662,7 +662,7 @@ services
             elsa.UseTenantHttpRouting(tenantHttpRouting =>
             {
                 // Override the tenant header name with a custom one.
-                tenantHttpRouting.WithTenantHeader("X-Company-Id");
+                tenantHttpRouting.WithTenantHeader("X-Tenant-ID");
             });
         }
 

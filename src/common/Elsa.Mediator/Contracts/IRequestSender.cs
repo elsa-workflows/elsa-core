@@ -12,5 +12,5 @@ public interface IRequestSender
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <typeparam name="T">The type of the response.</typeparam>
     /// <returns>The response.</returns>
-    Task<T?> SendAsync<T>(IRequest<T> request, CancellationToken cancellationToken = default);
+    Task<T> SendAsync<T>(IRequest<T> request, CancellationToken cancellationToken = default);
 }

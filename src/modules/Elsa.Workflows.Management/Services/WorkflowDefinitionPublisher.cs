@@ -1,11 +1,9 @@
 using Elsa.Common;
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
+using Elsa.Workflows.Management.Commands;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Notifications;
@@ -18,9 +16,9 @@ public class WorkflowDefinitionPublisher(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowDefinitionStore workflowDefinitionStore,
     IWorkflowValidator workflowValidator,
-    INotificationSender notificationSender,
     IIdentityGenerator identityGenerator,
     IActivitySerializer activitySerializer,
+    IMediator mediator,
     ISystemClock systemClock)
     : IWorkflowDefinitionPublisher
 {
@@ -48,13 +46,8 @@ public class WorkflowDefinitionPublisher(
     /// <inheritdoc />
     public async Task<PublishWorkflowDefinitionResult> PublishAsync(string definitionId, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter
-        {
-            DefinitionId = definitionId,
-            VersionOptions = VersionOptions.Latest
-        };
-        var definition = await workflowDefinitionStore.FindAsync(filter, cancellationToken);
-
+        var definition = await mediator.SendAsync(new FindWorkflowDefinitionRequest(definitionId, VersionOptions.Latest), cancellationToken);
+        
         if (definition == null)
             return new(false, new List<WorkflowValidationError>
             {
@@ -73,47 +66,37 @@ public class WorkflowDefinitionPublisher(
         if (validationErrors.Any())
             return new(false, validationErrors, new([]));
 
-        await notificationSender.SendAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
+        await mediator.SendAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
         var definitionId = definition.DefinitionId;
 
         // Reset current latest and published definitions.
-        var filter = new WorkflowDefinitionFilter
-        {
-            DefinitionId = definitionId,
-            VersionOptions = VersionOptions.LatestOrPublished
-        };
-        var publishedWorkflows = await workflowDefinitionStore.FindManyAsync(filter, cancellationToken);
+        var publishedWorkflows = await mediator.SendAsync(new FindLatestOrPublishedWorkflowDefinitionsRequest(definitionId), cancellationToken);
 
         foreach (var publishedAndOrLatestWorkflow in publishedWorkflows)
         {
             var isPublished = publishedAndOrLatestWorkflow.IsPublished;
             publishedAndOrLatestWorkflow.IsPublished = false;
             publishedAndOrLatestWorkflow.IsLatest = false;
-            await workflowDefinitionStore.SaveAsync(publishedAndOrLatestWorkflow, cancellationToken);
+            await mediator.SendAsync(new SaveWorkflowDefinitionCommand(publishedAndOrLatestWorkflow), cancellationToken);
 
             if (isPublished)
-                await notificationSender.SendAsync(new WorkflowDefinitionVersionRetracted(publishedAndOrLatestWorkflow), cancellationToken);
+                await mediator.SendAsync(new WorkflowDefinitionVersionRetracted(publishedAndOrLatestWorkflow), cancellationToken);
         }
 
-        // Save the new published definition.
+        // Save the newly published definition.
         definition.IsPublished = true;
         definition = Initialize(definition);
-        await workflowDefinitionStore.SaveAsync(definition, cancellationToken);
+        await mediator.SendAsync(new SaveWorkflowDefinitionCommand(definition), cancellationToken);
 
         var affectedWorkflows = new AffectedWorkflows(new List<WorkflowDefinition>());
-        await notificationSender.SendAsync(new WorkflowDefinitionPublished(definition, affectedWorkflows), cancellationToken);
+        await mediator.SendAsync(new WorkflowDefinitionPublished(definition, affectedWorkflows), cancellationToken);
         return new(true, validationErrors, affectedWorkflows);
     }
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> RetractAsync(string definitionId, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter
-        {
-            DefinitionId = definitionId,
-            VersionOptions = VersionOptions.Published
-        };
-        var definition = await workflowDefinitionStore.FindAsync(filter, cancellationToken);
+        var definition = await mediator.SendAsync(new FindWorkflowDefinitionRequest(definitionId, VersionOptions.Published), cancellationToken);
 
         if (definition == null)
             return null;
@@ -129,26 +112,19 @@ public class WorkflowDefinitionPublisher(
 
         definition.IsPublished = false;
 
-        await notificationSender.SendAsync(new WorkflowDefinitionRetracting(definition), cancellationToken);
-        await workflowDefinitionStore.SaveAsync(definition, cancellationToken);
-        await notificationSender.SendAsync(new WorkflowDefinitionRetracted(definition), cancellationToken);
+        await mediator.SendAsync(new WorkflowDefinitionRetracting(definition), cancellationToken);
+        await mediator.SendAsync(new SaveWorkflowDefinitionCommand(definition), cancellationToken);
+        await mediator.SendAsync(new WorkflowDefinitionRetracted(definition), cancellationToken);
         return definition;
     }
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> GetDraftAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter
-        {
-            DefinitionId = definitionId,
-            VersionOptions = versionOptions
-        };
-        var order = new WorkflowDefinitionOrder<int>(x => x.Version, OrderDirection.Descending);
-        var lastVersion = await workflowDefinitionStore.FindLastVersionAsync(new()
-        {
-            DefinitionId = definitionId
-        }, cancellationToken);
-        var definition = await workflowDefinitionStore.FindAsync(filter, order, cancellationToken) ?? lastVersion;
+        var findLastVersionRequest = new FindLastVersionOfWorkflowDefinitionRequest(definitionId);
+        var lastVersion = await mediator.SendAsync(findLastVersionRequest, cancellationToken);
+        var findRequest = new FindWorkflowDefinitionRequest(definitionId, versionOptions);
+        var definition = await mediator.SendAsync(findRequest, cancellationToken) ?? lastVersion;
 
         if (definition == null!)
             return null;
@@ -172,11 +148,7 @@ public class WorkflowDefinitionPublisher(
     {
         var draft = definition;
         var definitionId = definition.DefinitionId;
-        var filter = new WorkflowDefinitionFilter
-        {
-            DefinitionId = definitionId
-        };
-        var lastVersion = await workflowDefinitionStore.FindLastVersionAsync(filter, cancellationToken);
+        var lastVersion = await mediator.SendAsync(new FindLastVersionOfWorkflowDefinitionRequest(definitionId), cancellationToken);
 
         draft.Version = draft.Id == lastVersion?.Id ? lastVersion.Version : lastVersion?.Version + 1 ?? 1;
         draft.IsLatest = true;
@@ -184,15 +156,13 @@ public class WorkflowDefinitionPublisher(
 
         await workflowDefinitionStore.SaveAsync(draft, cancellationToken);
 
-        if (lastVersion is null)
-        {
-            await notificationSender.SendAsync(new WorkflowDefinitionCreated(definition), cancellationToken);
-        }
+        if (lastVersion is null) 
+            await mediator.SendAsync(new WorkflowDefinitionCreated(definition), cancellationToken);
 
         if (lastVersion is { IsPublished: true, IsLatest: true })
         {
             lastVersion.IsLatest = false;
-            await workflowDefinitionStore.SaveAsync(lastVersion, cancellationToken);
+            await mediator.SendAsync(new SaveWorkflowDefinitionCommand(lastVersion), cancellationToken);
         }
 
         return draft;
