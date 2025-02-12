@@ -15,7 +15,7 @@ public class Endpoint(IConnectionStore store) : ElsaEndpointWithoutRequest<Paged
     public override void Configure()
     {
         Get("/connection-configuration");
-        AllowAnonymous();
+        ConfigurePermissions($"{Constants.PermissionsNamespace}:read");
     }
 
     public override async Task<PagedListResponse<ConnectionModel>> ExecuteAsync(CancellationToken ct)

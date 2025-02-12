@@ -22,7 +22,7 @@ public class List(IConnectionDescriptorRegistry registry) : ElsaEndpointWithoutR
     public override void Configure()
     {
         Get("/connection-configuration/descriptors");
-        AllowAnonymous();
+        ConfigurePermissions($"{Constants.PermissionsNamespace}/descriptor:read");
     }
 
     public override Task<PagedListResponse<ConnectionDescriptor>> ExecuteAsync(CancellationToken ct)

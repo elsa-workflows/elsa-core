@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Elsa.Connections.Models;
 using Elsa.Connections.Persistence.Entities;
+using Elsa.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,7 +14,9 @@ public class Configurations : IEntityTypeConfiguration<ConnectionDefinition>
 {
     public void Configure(EntityTypeBuilder<ConnectionDefinition> builder)
     {
+        builder.Property(x => x.ConnectionConfiguration).HasJsonValueConversion();
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(ConnectionDefinition)}_{nameof(ConnectionDefinition.Name)}");
         builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(ConnectionDefinition)}_{nameof(ConnectionDefinition.TenantId)}");
+
     }
 }

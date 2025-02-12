@@ -1,13 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <Folder Include="Configs\" />
-  </ItemGroup>
+	<PropertyGroup>
+		<Description>Provides models that can be shared between the API and API clients</Description>
+		<PackageTags>elsa module connections api</PackageTags>
+		<RootNamespace>Elsa.Connections</RootNamespace>
+	</PropertyGroup>
 
 </Project>

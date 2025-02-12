@@ -9,7 +9,7 @@ public class Endpoint(IConnectionStore store) : ElsaEndpoint<Request>
     public override void Configure()
     {
         Delete("/connection-configuration/{id}");
-        AllowAnonymous();
+        ConfigurePermissions($"{Constants.PermissionsNamespace}:delete");
     }
 
     public override async Task HandleAsync(Request req, CancellationToken ct)
