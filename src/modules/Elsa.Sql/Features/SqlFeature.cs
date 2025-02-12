@@ -1,6 +1,7 @@
 ﻿using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Sql.Activities;
 using Elsa.Sql.Contracts;
 using Elsa.Sql.Factory;
 using Elsa.Sql.Implimentations;
@@ -51,7 +52,10 @@ public class SqlFeature : FeatureBase
             })
             .AddSingleton<ISqlClientFactory, SqlClientFactory>()
 
+            // Providers
+            .AddScoped<IPropertyUIHandler, SqlCodeOptionsProvider>()
             .AddScoped<IPropertyUIHandler, SqlClientsDropDownProvider>()
             .AddScoped<ISqlClientNamesProvider, SqlClientNamesProvider>();
+
     }
 }

@@ -21,6 +21,5 @@ public static class InputUIHints
     public const string OutputPicker = "output-picker";
     public const string OutcomePicker = "outcome-picker";
     public const string JsonEditor = "json-editor";
-    public const string SqlEditor = "sql-editor";
     public const string DynamicOutcomes = "dynamic-outcomes";
 }
