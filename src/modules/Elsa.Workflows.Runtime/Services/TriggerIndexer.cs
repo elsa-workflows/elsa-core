@@ -68,7 +68,7 @@ public class TriggerIndexer : ITriggerIndexer
 
             if (workflowGraph == null)
                 continue;
-            
+
             await DeleteTriggersAsync(workflowGraph.Workflow, cancellationToken);
         }
     }
@@ -109,7 +109,7 @@ public class TriggerIndexer : ITriggerIndexer
     {
         return await GetTriggersInternalAsync(workflow, cancellationToken).ToListAsync(cancellationToken);
     }
-    
+
     private async Task DeleteTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
     {
         var emptyTriggerList = new List<StoredTrigger>(0);
@@ -158,13 +158,13 @@ public class TriggerIndexer : ITriggerIndexer
         var cancellationToken = context.CancellationToken;
         var triggerTypeName = trigger.Type;
         var triggerDescriptor = _activityRegistry.Find(triggerTypeName, trigger.Version);
-        
+
         if (triggerDescriptor == null)
         {
             _logger.LogWarning("Could not find activity descriptor for activity type {ActivityType}", triggerTypeName);
             return new List<StoredTrigger>(0);
         }
-        
+
         var expressionExecutionContext = await trigger.CreateExpressionExecutionContextAsync(triggerDescriptor, _serviceProvider, context, _expressionEvaluator, _logger);
         var triggerIndexingContext = new TriggerIndexingContext(context, expressionExecutionContext, trigger, cancellationToken);
         var triggerData = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
@@ -179,7 +179,7 @@ public class TriggerIndexer : ITriggerIndexer
             WorkflowDefinitionVersionId = workflow.Identity.Id,
             Name = triggerTypeName,
             ActivityId = trigger.Id,
-            Hash = _hasher.Hash(triggerTypeName, payload),
+            Hash = _hasher.Hash(activityTypeName: null, payload),
             Payload = payload
         });
 
