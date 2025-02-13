@@ -6,7 +6,7 @@ public class SingleJoinWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
     {
-        builder.Root = new Flowchart
+        builder.Root = new Elsa.Workflows.Activities.Flowchart.Activities.Flowchart
         {
             Activities =
             {
