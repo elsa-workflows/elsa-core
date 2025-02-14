@@ -11,9 +11,9 @@ public class TaskReporter(IBookmarkQueue bookmarkQueue, IStimulusHasher stimulus
     private static readonly string ActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<RunTask>();
     
     /// <inheritdoc />
-    public async Task ReportCompletionAsync(string taskId, object? result = default, CancellationToken cancellationToken = default)
+    public async Task ReportCompletionAsync(string taskId, object? result = null, CancellationToken cancellationToken = default)
     {
-        var stimulus = new RunTaskStimulus(taskId, default!);
+        var stimulus = new RunTaskStimulus(taskId, null!);
 
         var input = new Dictionary<string, object>
         {
@@ -24,7 +24,7 @@ public class TaskReporter(IBookmarkQueue bookmarkQueue, IStimulusHasher stimulus
         {
             ActivityTypeName = ActivityTypeName,
             StimulusHash = stimulusHasher.Hash(ActivityTypeName, stimulus),
-            Options = new ResumeBookmarkOptions
+            Options = new()
             {
                 Input = input
             }

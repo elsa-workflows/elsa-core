@@ -41,8 +41,8 @@ namespace Elsa.Workflows.Management.Features;
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(WorkflowDefinitionsFeature))]
 [DependsOn(typeof(WorkflowInstancesFeature))]
-[PublicAPI]
-public class WorkflowManagementFeature : FeatureBase
+[UsedImplicitly]
+public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
 {
     private const string PrimitivesCategory = "Primitives";
     private const string LookupsCategory = "Lookups";
@@ -55,11 +55,6 @@ public class WorkflowManagementFeature : FeatureBase
     private string CompressionAlgorithm { get; set; } = nameof(None);
     private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
     private bool IsReadOnlyMode { get; set; }
-
-    /// <inheritdoc />
-    public WorkflowManagementFeature(IModule module) : base(module)
-    {
-    }
 
     /// <summary>
     /// A set of activity types to make available to the system. 
