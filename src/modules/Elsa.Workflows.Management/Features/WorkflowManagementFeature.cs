@@ -50,6 +50,8 @@ public class WorkflowManagementFeature : FeatureBase
     private const string DataCategory = "Data";
     private const string SystemCategory = "System";
 
+    private Func<IServiceProvider, IWorkflowDefinitionPublisher> _workflowDefinitionPublisher = sp => ActivatorUtilities.CreateInstance<WorkflowDefinitionPublisher>(sp);
+
     private string CompressionAlgorithm { get; set; } = nameof(None);
     private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
     private bool IsReadOnlyMode { get; set; }
@@ -194,6 +196,12 @@ public class WorkflowManagementFeature : FeatureBase
         return this;
     }
 
+    public WorkflowManagementFeature WithWorkflowDefinitionPublisher(Func<IServiceProvider, IWorkflowDefinitionPublisher> workflowDefinitionPublisher)
+    {
+        _workflowDefinitionPublisher = workflowDefinitionPublisher;
+        return this;
+    }
+
     /// <inheritdoc />
     [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public override void Configure()
@@ -214,7 +222,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<IWorkflowDefinitionService, WorkflowDefinitionService>()
             .AddScoped<IWorkflowSerializer, WorkflowSerializer>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
-            .AddScoped<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
+            .AddScoped(_workflowDefinitionPublisher)
             .AddScoped<IWorkflowDefinitionImporter, WorkflowDefinitionImporter>()
             .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
             .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()

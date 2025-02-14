@@ -44,6 +44,28 @@ public class WorkflowDefinitionPublisher(
         };
     }
 
+    public Task<WorkflowDefinition> NewAsync(IActivity? root = null, CancellationToken cancellationToken = default)
+    {
+        root ??= new Sequence();
+        var id = identityGenerator.GenerateId();
+        var definitionId = identityGenerator.GenerateId();
+        const int version = 1;
+
+        var workflowDefinition = new WorkflowDefinition
+        {
+            Id = id,
+            DefinitionId = definitionId,
+            Version = version,
+            IsLatest = true,
+            IsPublished = false,
+            CreatedAt = systemClock.UtcNow,
+            StringData = activitySerializer.Serialize(root),
+            MaterializerName = JsonWorkflowMaterializer.MaterializerName
+        };
+        
+        return Task.FromResult(workflowDefinition);
+    }
+
     /// <inheritdoc />
     public async Task<PublishWorkflowDefinitionResult> PublishAsync(string definitionId, CancellationToken cancellationToken = default)
     {
