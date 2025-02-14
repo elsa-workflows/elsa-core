@@ -1,5 +1,3 @@
-using Elsa.Workflows.Models;
-
 namespace Elsa.Workflows.Attributes;
 
 /// <summary>
@@ -101,9 +99,14 @@ public class InputAttribute : Attribute
     /// </summary>
     public Type[]? UIHandlers { get; set; }
 
+    /// <summary>
+    /// A set of states for which this input should be shown
+    /// </summary>
     public string[]? ShowForStates { get; set; }
 
-    public InputType InputType { get; set; } = InputType.Generic;
-
-    public DropDownStates? DropDownStates { get; set; }
+    /// <summary>
+    /// The type of the input. 
+    /// To differentiate between state dropdown, conditional input and normal input
+    /// </summary>
+    public InputType InputType { get; set; } = InputType.Default;
 }

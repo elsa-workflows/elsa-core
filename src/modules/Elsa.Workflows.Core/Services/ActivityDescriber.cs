@@ -187,16 +187,15 @@ public class ActivityDescriber : IActivityDescriber
         if (inputAttribute is null)
             return inputDescriptor;
 
-        if (inputAttribute.InputType == InputType.Generic)
+        if (inputAttribute.InputType == InputType.Default)
             return inputDescriptor;
         
         var conditionalDescriptor = new ConditionalDescriptor{
-            ShowForStates = inputAttribute!.ShowForStates ?? [],
+            ShowForStates = inputAttribute.ShowForStates ?? [],
             InputType = inputAttribute.InputType,
-            DropDownStates = inputAttribute.DropDownStates,
+            DropDownStates = inputAttribute.Options as List<string>        
         };
         inputDescriptor.ConditionalDescriptor = conditionalDescriptor;
-
         return inputDescriptor;
     }
 
