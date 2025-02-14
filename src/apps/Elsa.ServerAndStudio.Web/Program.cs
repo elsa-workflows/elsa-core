@@ -197,6 +197,7 @@ services
 
         elsa.UseConnections(
             configure=> configure.AddConnectionsFrom<Program>());
+        elsa.UseConnectionPersistence(ef=> ef.UseEntityFrameworkCore(f=>f.UseSqlite()));
         elsa.UseConnectionsApi();
     });
 
