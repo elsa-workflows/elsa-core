@@ -39,7 +39,19 @@ public class RabbitMqServiceBusFeature : FeatureBase
     /// <summary>
     /// Configures the RabbitMQ bus.
     /// </summary>
+    /// <remarks>This method is being marked as obsolete in favor of the ConfigureTransportBus which will provide additional access to the <see cref="IBusRegistrationContext"/></remarks>
+    [Obsolete("Use ConfigureTransportBus instead which provides a reference to IBusRegistrationContext.")]
     public Action<IRabbitMqBusFactoryConfigurator>? ConfigureServiceBus { get; set; }
+
+    /// <summary>
+    /// Configures the RabbitMQ bus within MassTransit for additional transport level components or features.
+    /// This action provides access to the <see cref="IBusRegistrationContext"/> and <see cref="IRabbitMqBusFactoryConfigurator"/>.
+    /// </summary>
+    /// <remarks>
+    /// Use this action to configure advanced settings and features for the RabbitMQ bus, such as middleware 
+    /// or additional endpoints. This action will run in addition to the Elsa required configuration.
+    /// </remarks>
+    public Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator> ConfigureTransportBus { get; set; }
 
     /// <inheritdoc />
     public override void Configure()
@@ -69,6 +81,7 @@ public class RabbitMqServiceBusFeature : FeatureBase
                     configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
 
                     ConfigureServiceBus?.Invoke(configurator);
+                    ConfigureTransportBus?.Invoke(context, configurator);
 
                     foreach (var consumer in temporaryConsumers)
                     {
