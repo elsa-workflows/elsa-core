@@ -18,6 +18,7 @@ public class StoreBookmarkQueue(
         var filter = new BookmarkFilter
         {
             BookmarkId = item.BookmarkId,
+            CorrelationId = item.CorrelationId,
             Hash = item.StimulusHash,
             WorkflowInstanceId = item.WorkflowInstanceId,
             ActivityTypeName = item.ActivityTypeName
@@ -39,6 +40,7 @@ public class StoreBookmarkQueue(
             Id = identityGenerator.GenerateId(),
             WorkflowInstanceId = item.WorkflowInstanceId,
             BookmarkId = item.BookmarkId,
+            CorrelationId = item.CorrelationId,
             StimulusHash = item.StimulusHash,
             ActivityInstanceId = item.ActivityInstanceId,
             ActivityTypeName = item.ActivityTypeName,
