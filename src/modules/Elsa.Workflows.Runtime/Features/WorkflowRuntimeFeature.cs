@@ -29,12 +29,9 @@ namespace Elsa.Workflows.Runtime.Features;
 /// Installs and configures workflow runtime features.
 /// </summary>
 [DependsOn(typeof(SystemClockFeature))]
-public class WorkflowRuntimeFeature : FeatureBase
+public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public WorkflowRuntimeFeature(IModule module) : base(module)
-    {
-    }
+    private bool _enableWorkflowInboxCleanupJob = true;
 
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
 
@@ -126,11 +123,29 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A delegate to configure the <see cref="WorkflowInboxCleanupOptions"/>.
     /// </summary>
     public Action<WorkflowInboxCleanupOptions> WorkflowInboxCleanupOptions { get; set; } = _ => { };
-    
+
     /// <summary>
     /// A delegate to configure the <see cref="WorkflowDispatcherOptions"/>.
     /// </summary>
     public Action<WorkflowDispatcherOptions> WorkflowDispatcherOptions { get; set; } = _ => { };
+
+    /// <summary>
+    /// Enables the workflow inbox cleanup job. 
+    /// </summary>
+    public WorkflowRuntimeFeature EnableWorkflowInboxCleanupJob()
+    {
+        _enableWorkflowInboxCleanupJob = true;
+        return this;
+    }
+
+    /// <summary>
+    /// Disables the workflow inbox cleanup job.
+    /// </summary>
+    public WorkflowRuntimeFeature DisableWorkflowInboxCleanupJob()
+    {
+        _enableWorkflowInboxCleanupJob = false;
+        return this;
+    }
 
     /// <summary>
     /// Register the specified workflow type.
@@ -188,7 +203,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     public override void ConfigureHostedServices()
     {
         Module.ConfigureHostedService<PopulateRegistriesHostedService>();
-        Module.ConfigureHostedService<WorkflowInboxCleanupHostedService>();
+        if (_enableWorkflowInboxCleanupJob) Module.ConfigureHostedService<WorkflowInboxCleanupHostedService>();
     }
 
     /// <inheritdoc />
@@ -240,7 +255,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
             .AddScoped<ILogRecordExtractor<ActivityExecutionRecord>, ActivityExecutionRecordExtractor>()
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
-            
+
             // Stores.
             .AddScoped(BookmarkStore)
             .AddScoped(TriggerStore)
