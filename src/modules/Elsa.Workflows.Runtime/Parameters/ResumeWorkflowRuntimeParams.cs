@@ -5,6 +5,7 @@ namespace Elsa.Workflows.Runtime.Parameters;
 /// <summary>
 /// Options for resuming workflows.
 /// </summary>
+[Obsolete("This type is obsolete. Use the new CreateClientAsync methods of IWorkflowRuntime instead.")]
 public class ResumeWorkflowRuntimeParams
 {
     public string? CorrelationId { get; set; }

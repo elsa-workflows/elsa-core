@@ -8,4 +8,4 @@ namespace Elsa.Workflows.Runtime.Notifications;
 /// </summary>
 /// <param name="WorkflowExecutionContext">The workflow execution context.</param>
 /// <param name="Records">The activity execution records.</param>
-public record ActivityExecutionLogUpdated(WorkflowExecutionContext WorkflowExecutionContext, List<ActivityExecutionRecord> Records) : INotification;
+public record ActivityExecutionLogUpdated(WorkflowExecutionContext WorkflowExecutionContext, ICollection<ActivityExecutionRecord> Records) : INotification;

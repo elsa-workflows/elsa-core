@@ -96,6 +96,11 @@ public class LocalWorkflowClient(
         await workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
     }
 
+    public Task<bool> InstanceExistsAsync(CancellationToken cancellationToken = default)
+    {
+        return workflowInstanceManager.ExistsAsync(workflowInstanceId, cancellationToken);
+    }
+
     private async Task<RunWorkflowInstanceResponse> RunInstanceAsync(WorkflowInstance workflowInstance, RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var workflowState = workflowInstance.WorkflowState;

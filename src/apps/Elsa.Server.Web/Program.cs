@@ -9,6 +9,7 @@ using Elsa.Common.Serialization;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
 using Elsa.DropIns.Extensions;
+using Elsa.EntityFrameworkCore;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
@@ -37,10 +38,16 @@ using Elsa.Server.Web;
 using Elsa.Server.Web.Extensions;
 using Elsa.Server.Web.Filters;
 using Elsa.Server.Web.Messages;
+using Elsa.Sql.Extensions;
+using Elsa.Sql.MySql;
+using Elsa.Sql.PostgreSql;
+using Elsa.Sql.Sqlite;
+using Elsa.Sql.SqlServer;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Api;
+using Elsa.Workflows.CommitStates.Strategies;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Compression;
@@ -99,6 +106,7 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var sqlServerConnectionString = configuration.GetConnectionString("SqlServer")!;
 var postgresConnectionString = configuration.GetConnectionString("PostgreSql")!;
+var oracleConnectionString = configuration.GetConnectionString("Oracle")!;
 var mySqlConnectionString = configuration.GetConnectionString("MySql")!;
 var cockroachDbConnectionString = configuration.GetConnectionString("CockroachDb")!;
 var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
@@ -167,7 +175,7 @@ services
             {
                 jobStorage = new MemoryStorage();
             }
-            
+
             elsa.UseHangfire(hangfire => hangfire.UseJobStorage(jobStorage));
         }
 
@@ -195,6 +203,8 @@ services
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
+                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -211,6 +221,11 @@ services
             {
                 workflows.WithDefaultWorkflowExecutionPipeline(pipeline => pipeline.UseWorkflowExecutionTracing());
                 workflows.WithDefaultActivityExecutionPipeline(pipeline => pipeline.UseActivityExecutionTracing());
+                workflows.UseCommitStrategies(strategies =>
+                {
+                    strategies.AddStandardStrategies();
+                    strategies.Add("Every 10 seconds", new PeriodicWorkflowStrategy(TimeSpan.FromSeconds(10)));
+                });
             })
             .UseWorkflowManagement(management =>
             {
@@ -231,6 +246,8 @@ services
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
+                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -276,7 +293,9 @@ services
                             ef.UseMySql(mySqlConnectionString);
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
-                            ef.UsePostgreSql(cockroachDbConnectionString!);
+                            ef.UsePostgreSql(cockroachDbConnectionString);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
+                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -371,7 +390,7 @@ services
                     // Make sure to configure the path to the python DLL. E.g. /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
                     // alternatively, you can set the PYTHONNET_PYDLL environment variable.
                     configuration.GetSection("Scripting:Python").Bind(options);
-                    
+
                     options.AddScript(sb =>
                     {
                         sb.AppendLine("def greet():");
@@ -386,6 +405,16 @@ services
 
                 if (useCaching)
                     http.UseCache();
+            })
+            .UseSql(options =>
+            {
+                options.Clients = client =>
+                {
+                    client.Register<MySqlClient>("MySql");
+                    client.Register<PostgreSqlClient>("PostgreSql");
+                    client.Register<SqliteClient>("Sqlite");
+                    client.Register<SqlServerClient>("Sql Server");
+                };
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseAlterations(alterations =>
@@ -411,7 +440,9 @@ services
                             ef.UseMySql(mySqlConnectionString);
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
-                            ef.UsePostgreSql(cockroachDbConnectionString!);
+                            ef.UsePostgreSql(cockroachDbConnectionString);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
+                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -428,7 +459,13 @@ services
 
         if (useQuartz)
         {
-            elsa.UseQuartz(quartz => { quartz.UseSqlite(sqliteConnectionString); });
+            elsa.UseQuartz(quartz =>
+            {
+                if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite)
+                    quartz.UseSqlite(sqliteConnectionString);
+                else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+                    quartz.UsePostgreSql(postgresConnectionString);
+            });
         }
 
         if (useSignalR)
@@ -560,7 +597,7 @@ services
                 .UseSecretsScripting()
                 ;
         }
-        
+
         elsa.UseRetention(r =>
         {
             r.SweepInterval = TimeSpan.FromHours(5);
@@ -608,6 +645,7 @@ services
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite) ef.UseSqlite(sqliteConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer) ef.UseSqlServer(sqlServerConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);
+                                if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle) ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
 #if !NET9_0
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) 
                                     ef.UseMySql(mySqlConnectionString);
@@ -621,7 +659,11 @@ services
                 }
             });
 
-            elsa.UseTenantHttpRouting();
+            elsa.UseTenantHttpRouting(tenantHttpRouting =>
+            {
+                // Override the tenant header name with a custom one.
+                tenantHttpRouting.WithTenantHeader("X-Company-Id");
+            });
         }
 
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));

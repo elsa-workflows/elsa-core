@@ -70,6 +70,6 @@ internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
                 updatedConsumers.AddRange(result.AffectedWorkflows.WorkflowDefinitions.Select(x => x.DefinitionId));
         }
 
-        return new Response(published, alreadyPublished, notFound, skipped, updatedConsumers);
+        return new(published, alreadyPublished, notFound, skipped, updatedConsumers);
     }
 }

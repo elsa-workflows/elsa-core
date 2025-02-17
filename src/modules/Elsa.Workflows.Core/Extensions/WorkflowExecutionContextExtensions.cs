@@ -14,7 +14,7 @@ public static class WorkflowExecutionContextExtensions
     /// <summary>
     /// Schedules the workflow for execution.
     /// </summary>
-    public static ActivityWorkItem ScheduleWorkflow(this WorkflowExecutionContext workflowExecutionContext, IDictionary<string, object>? input = default)
+    public static ActivityWorkItem ScheduleWorkflow(this WorkflowExecutionContext workflowExecutionContext, IDictionary<string, object>? input = null)
     {
         var workflow = workflowExecutionContext.Workflow;
         var workItem = new ActivityWorkItem(workflow, input: input);
@@ -25,7 +25,7 @@ public static class WorkflowExecutionContextExtensions
     /// <summary>
     /// Schedules the root activity of the workflow.
     /// </summary>
-    public static ActivityWorkItem ScheduleRoot(this WorkflowExecutionContext workflowExecutionContext, IDictionary<string, object>? input = default)
+    public static ActivityWorkItem ScheduleRoot(this WorkflowExecutionContext workflowExecutionContext, IDictionary<string, object>? input = null)
     {
         var workflow = workflowExecutionContext.Workflow;
         var workItem = new ActivityWorkItem(workflow.Root, input: input);
@@ -36,7 +36,7 @@ public static class WorkflowExecutionContextExtensions
     /// <summary>
     /// Schedules the specified activity of the workflow.
     /// </summary>
-    public static ActivityWorkItem ScheduleActivity(this WorkflowExecutionContext workflowExecutionContext, IActivity activity, IDictionary<string, object>? input = default)
+    public static ActivityWorkItem ScheduleActivity(this WorkflowExecutionContext workflowExecutionContext, IActivity activity, IDictionary<string, object>? input = null)
     {
         var workItem = new ActivityWorkItem(activity, input: input);
         workflowExecutionContext.Scheduler.Schedule(workItem);
@@ -46,7 +46,7 @@ public static class WorkflowExecutionContextExtensions
     /// <summary>
     /// Schedules the specified activity execution context of the workflow.
     /// </summary>
-    public static ActivityWorkItem ScheduleActivityExecutionContext(this WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, IDictionary<string, object>? input = default)
+    public static ActivityWorkItem ScheduleActivityExecutionContext(this WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, IDictionary<string, object>? input = null)
     {
         var workItem = new ActivityWorkItem(activityExecutionContext.Activity, input: input, existingActivityExecutionContext: activityExecutionContext);
         workflowExecutionContext.Scheduler.Schedule(workItem);
@@ -57,7 +57,7 @@ public static class WorkflowExecutionContextExtensions
     /// Schedules the activity of the specified bookmark.
     /// </summary>
     /// <returns>The created work item, or <c>null</c> if the specified bookmark doesn't exist in the <see cref="WorkflowExecutionContext"/></returns> 
-    public static ActivityWorkItem? ScheduleBookmark(this WorkflowExecutionContext workflowExecutionContext, Bookmark bookmark, IDictionary<string, object>? input = default)
+    public static ActivityWorkItem? ScheduleBookmark(this WorkflowExecutionContext workflowExecutionContext, Bookmark bookmark, IDictionary<string, object>? input = null)
     {
         // Get the activity execution context that owns the bookmark.
         var bookmarkedActivityContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == bookmark.ActivityInstanceId);
@@ -101,7 +101,7 @@ public static class WorkflowExecutionContextExtensions
         this WorkflowExecutionContext workflowExecutionContext,
         ActivityNode activityNode,
         ActivityExecutionContext owner,
-        ScheduleWorkOptions? options = default)
+        ScheduleWorkOptions? options = null)
     {
         // Validate that the specified activity is part of the workflow.
         if (!workflowExecutionContext.NodeActivityLookup.ContainsKey(activityNode.Activity))

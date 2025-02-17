@@ -34,6 +34,5 @@ public class EFCoreAgentPersistenceFeature(IModule module) : PersistenceFeatureB
         AddEntityStore<ApiKeyDefinition, EFCoreApiKeyStore>();
         AddEntityStore<ServiceDefinition, EFCoreServiceStore>();
         AddEntityStore<AgentDefinition, EFCoreAgentStore>();
-        Services.AddScoped<IEntityModelCreatingHandler, SetupForOracle>();
     }
 }

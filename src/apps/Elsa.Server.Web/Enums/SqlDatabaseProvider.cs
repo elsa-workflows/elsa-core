@@ -6,5 +6,6 @@ public enum SqlDatabaseProvider
     Sqlite,
     MySql,
     PostgreSql,
+    Oracle,
     CockroachDb
 }

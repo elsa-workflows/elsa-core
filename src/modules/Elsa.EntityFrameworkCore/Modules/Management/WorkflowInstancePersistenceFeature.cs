@@ -10,6 +10,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 /// Configures the <see cref="WorkflowInstancesFeature"/> feature with an Entity Framework Core persistence provider.
 /// </summary>
 [DependsOn(typeof(WorkflowManagementFeature))]
+[DependsOn(typeof(WorkflowInstancesFeature))]
 public class EFCoreWorkflowInstancePersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreWorkflowInstancePersistenceFeature, ManagementElsaDbContext>(module)
 {
     /// <inheritdoc />
@@ -23,6 +24,5 @@ public class EFCoreWorkflowInstancePersistenceFeature(IModule module) : Persiste
     {
         base.Apply();
         AddEntityStore<WorkflowInstance, EFCoreWorkflowInstanceStore>();
-        Services.AddScoped<IEntityModelCreatingHandler, SetupForOracle>();
     }
 }

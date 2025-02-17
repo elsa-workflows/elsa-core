@@ -184,20 +184,6 @@ public static partial class ActivityExecutionContextExtensions
     }
 
     /// <summary>
-    /// Returns a flattened list of the current context's ancestors.
-    /// </summary>
-    public static IEnumerable<ActivityExecutionContext> GetAncestors(this ActivityExecutionContext context)
-    {
-        var current = context.ParentActivityExecutionContext;
-
-        while (current != null)
-        {
-            yield return current;
-            current = current.ParentActivityExecutionContext;
-        }
-    }
-
-    /// <summary>
     /// Send a signal up the current hierarchy of ancestors.
     /// </summary>
     public static async ValueTask SendSignalAsync(this ActivityExecutionContext context, object signal)
@@ -313,6 +299,68 @@ public static partial class ActivityExecutionContextExtensions
         }
 
         return null;
+    }
+    
+    /// <summary>
+    /// Returns a flattened list of the current context's ancestors.
+    /// </summary>
+    public static IEnumerable<ActivityExecutionContext> GetAncestors(this ActivityExecutionContext context)
+    {
+        var current = context.ParentActivityExecutionContext;
+
+        while (current != null)
+        {
+            yield return current;
+            current = current.ParentActivityExecutionContext;
+        }
+    }
+
+    /// <summary>
+    /// Returns a flattened list of the current context's descendants.
+    /// </summary>
+    public static IEnumerable<ActivityExecutionContext> GetDescendents(this ActivityExecutionContext context)
+    {
+        var children = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+
+        foreach (var child in children)
+        {
+            yield return child;
+
+            foreach (var descendent in GetDescendents(child))
+                yield return descendent;
+        }
+    }
+
+    /// <summary>
+    /// Returns a flattened list of the current context's immediate active children.
+    /// </summary>
+    public static IEnumerable<ActivityExecutionContext> GetActiveChildren(this ActivityExecutionContext context)
+    {
+        return context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
+    }
+
+    /// <summary>
+    /// Returns a flattened list of the current context's immediate children.
+    /// </summary>
+    public static IEnumerable<ActivityExecutionContext> GetChildren(this ActivityExecutionContext context)
+    {
+        return context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
+    }
+
+    /// <summary>
+    /// Returns a flattened list of the current context's descendants.
+    /// </summary>
+    public static IEnumerable<ActivityExecutionContext> GetDescendants(this ActivityExecutionContext context)
+    {
+        var children = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+
+        foreach (var child in children)
+        {
+            yield return child;
+
+            foreach (var descendant in child.GetDescendants())
+                yield return descendant;
+        }
     }
 
     internal static bool GetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties.TryGetValue<bool>("HasEvaluatedProperties", out var value) && value;

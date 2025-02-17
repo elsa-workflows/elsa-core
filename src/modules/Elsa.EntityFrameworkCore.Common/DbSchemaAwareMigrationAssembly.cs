@@ -10,17 +10,14 @@ namespace Elsa.EntityFrameworkCore;
 /// <summary>
 /// Class That enable Schema change for Migration
 /// </summary>
-public class DbSchemaAwareMigrationAssembly : MigrationsAssembly
+public class DbSchemaAwareMigrationAssembly(
+    ICurrentDbContext currentContext,
+    IDbContextOptions options,
+    IMigrationsIdGenerator idGenerator,
+    IDiagnosticsLogger<DbLoggerCategory.Migrations> logger)
+    : MigrationsAssembly(currentContext, options, idGenerator, logger)
 {
-    private readonly DbContext _context;
-
-    public DbSchemaAwareMigrationAssembly(ICurrentDbContext currentContext,
-        IDbContextOptions options, IMigrationsIdGenerator idGenerator,
-        IDiagnosticsLogger<DbLoggerCategory.Migrations> logger)
-        : base(currentContext, options, idGenerator, logger)
-    {
-        _context = currentContext.Context;
-    }
+    private readonly DbContext _context = currentContext.Context;
 
     public override Migration CreateMigration(TypeInfo migrationClass, string activeProvider)
     {

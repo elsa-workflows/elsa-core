@@ -28,7 +28,6 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         string id,
         WorkflowExecutionContext workflowExecutionContext,
         ActivityExecutionContext? parentActivityExecutionContext,
-        ExpressionExecutionContext expressionExecutionContext,
         IActivity activity,
         ActivityDescriptor activityDescriptor,
         DateTimeOffset startedAt,
@@ -37,9 +36,15 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         CancellationToken cancellationToken)
     {
         _systemClock = systemClock;
+        Properties = new ChangeTrackingDictionary<string, object>(Taint);
+        ActivityState = new ChangeTrackingDictionary<string, object>(Taint);
+        ActivityInput = new ChangeTrackingDictionary<string, object>(Taint);
         WorkflowExecutionContext = workflowExecutionContext;
         _parentActivityExecutionContext = parentActivityExecutionContext;
-        ExpressionExecutionContext = expressionExecutionContext;
+        var expressionExecutionContextProps = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(workflowExecutionContext, workflowExecutionContext.Input);
+        expressionExecutionContextProps[ExpressionExecutionContextExtensions.ActivityKey] = activity;
+        ExpressionExecutionContext = new(workflowExecutionContext.ServiceProvider, new(), parentActivityExecutionContext?.ExpressionExecutionContext ?? workflowExecutionContext.ExpressionExecutionContext, expressionExecutionContextProps, Taint, CancellationToken);
+        ;
         Activity = activity;
         ActivityDescriptor = activityDescriptor;
         StartedAt = startedAt;
@@ -132,7 +137,18 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// The current status of the activity.
     /// </summary>
-    public ActivityStatus Status { get; private set; }
+    public ActivityStatus Status
+    {
+        get => _status;
+        private set
+        {
+            if (value == _status)
+                return;
+
+            _status = value;
+            Taint();
+        }
+    }
 
     /// <summary>
     /// Sets the current status of the activity.
@@ -145,10 +161,18 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// Gets or sets the exception that occurred during the activity execution, if any.
     /// </summary>
-    public Exception? Exception { get; set; }
+    public Exception? Exception
+    {
+        get => _exception;
+        set
+        {
+            _exception = value;
+            Taint();
+        }
+    }
 
     /// <inheritdoc />
-    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> Properties { get; private set; }
 
     /// <summary>
     /// A transient dictionary of values that can be associated with this activity execution context.
@@ -166,7 +190,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// </summary>
     /// <remarks>As of tool version 3.0, all activity Ids are already unique, so there's no need to construct a hierarchical ID</remarks>
     public string NodeId => ActivityNode.NodeId;
-    
+
     public ISet<ActivityExecutionContext> Children { get; } = new HashSet<ActivityExecutionContext>();
 
     /// <summary>
@@ -187,18 +211,23 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// A dictionary of inputs for the current activity.
     /// </summary>
-    public IDictionary<string, object> ActivityInput { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> ActivityInput { get; private set; }
 
     /// <summary>
     /// Journal data will be added to the workflow execution log for the "Executed" event.  
     /// </summary>
     // ReSharper disable once CollectionNeverQueried.Global
-    public IDictionary<string, object?> JournalData { get; } = new Dictionary<string, object?>();
+    public IDictionary<string, object> JournalData { get; } = new Dictionary<string, object>();
 
     /// <summary>
     /// Stores the evaluated inputs, serialized, for the current activity for historical purposes.
     /// </summary>
-    public IDictionary<string, object?> ActivityState { get; set; } = new Dictionary<string, object?>();
+    public IDictionary<string, object> ActivityState { get; }
+
+    /// <summary>
+    /// Indicates whether the state of the current activity execution context has been modified.
+    /// </summary>
+    public bool IsDirty { get; private set; }
 
     /// <summary>
     /// Schedules the specified activity to be executed.
@@ -358,6 +387,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     public void AddBookmarks(IEnumerable<Bookmark> bookmarks)
     {
         WorkflowExecutionContext.Bookmarks.AddRange(bookmarks);
+        Taint();
     }
 
     /// <summary>
@@ -367,6 +397,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     public void AddBookmark(Bookmark bookmark)
     {
         WorkflowExecutionContext.Bookmarks.Add(bookmark);
+        Taint();
     }
 
     /// <summary>
@@ -474,6 +505,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     public void ClearBookmarks()
     {
         WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityInstanceId == Id);
+        Taint();
     }
 
     /// <summary>
@@ -681,7 +713,22 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         WorkflowExecutionContext.RemoveCompletionCallbacks(entriesToRemove);
     }
 
-    internal void IncrementExecutionCount() => _executionCount++;
+    public void Taint()
+    {
+        if (!IsDirty)
+            IsDirty = true;
+    }
+
+    public void ClearTaint()
+    {
+        if (IsDirty)
+            IsDirty = false;
+    }
+
+    internal void IncrementExecutionCount()
+    {
+        _executionCount++;
+    }
 
     private MemoryBlock? GetMemoryBlock(MemoryBlockReference locationBlockReference)
     {

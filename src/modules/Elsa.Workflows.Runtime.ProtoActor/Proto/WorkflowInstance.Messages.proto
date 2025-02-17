@@ -85,3 +85,7 @@ message ExportWorkflowStateResponse {
 message ImportWorkflowStateRequest {
   Json SerializedWorkflowState = 1;
 }
+
+message InstanceExistsResponse {
+  bool Exists = 1;
+}

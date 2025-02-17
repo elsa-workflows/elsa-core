@@ -97,10 +97,10 @@ public class DispatchWorkflow : Activity<object>
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
         var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published, context.CancellationToken);
-        
+
         if (workflowGraph == null)
             throw new($"No published version of workflow definition with ID {workflowDefinitionId} found.");
-        
+
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
         var channelName = ChannelName.GetOrDefault(context);
         var parentInstanceId = context.WorkflowExecutionContext.Id;
@@ -108,8 +108,9 @@ public class DispatchWorkflow : Activity<object>
         {
             ["ParentInstanceId"] = parentInstanceId
         };
-        
-        if(waitForCompletion)
+
+        // If we need to wait for the child workflow to complete, set the property. This will be used by the ResumeDispatchWorkflowActivity handler.
+        if (waitForCompletion)
             properties["WaitForCompletion"] = true;
 
         input["ParentInstanceId"] = parentInstanceId;
@@ -117,8 +118,6 @@ public class DispatchWorkflow : Activity<object>
         var correlationId = CorrelationId.GetOrDefault(context);
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
-        
-        
         var instanceId = identityGenerator.GenerateId();
         var request = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)
         {

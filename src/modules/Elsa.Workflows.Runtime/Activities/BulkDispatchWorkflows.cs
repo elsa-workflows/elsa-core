@@ -107,6 +107,13 @@ public class BulkDispatchWorkflows : Activity
         var items = await context.GetItemSource<object>(Items).ToListAsync(context.CancellationToken);
         var count = items.Count;
 
+        // Dispatch the child workflows.
+        foreach (var item in items)
+            await DispatchChildWorkflowAsync(context, item, waitForCompletion);
+
+        // Store the number of dispatched instances for tracking.
+        context.SetProperty(DispatchedInstancesCountKey, count);
+
         // If we need to wait for the child workflows to complete (if any), create a bookmark.
         if (waitForCompletion && count > 0)
         {
@@ -122,8 +129,7 @@ public class BulkDispatchWorkflows : Activity
                 IncludeActivityInstanceId = false,
                 AutoBurn = false,
             };
-            
-            // Create bookmarks first.
+
             context.CreateBookmark(bookmarkOptions);
             
             // Dispatch workflows afterwards.
@@ -155,7 +161,7 @@ public class BulkDispatchWorkflows : Activity
 
         if (workflowGraph == null)
             throw new($"No published version of workflow definition with ID {workflowDefinitionId} found.");
-        
+
         var parentInstanceId = context.WorkflowExecutionContext.Id;
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
         var channelName = ChannelName.GetOrDefault(context);
@@ -166,6 +172,9 @@ public class BulkDispatchWorkflows : Activity
         };
         
         if(waitForCompletion)
+            properties["WaitForCompletion"] = true;
+
+        if (waitForCompletion)
             properties["WaitForCompletion"] = true;
 
         var itemDictionary = new Dictionary<string, object>

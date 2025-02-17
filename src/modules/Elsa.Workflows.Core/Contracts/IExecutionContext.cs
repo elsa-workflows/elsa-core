@@ -31,5 +31,5 @@ public interface IExecutionContext
     /// <summary>
     /// A dictionary of values that can be associated with this activity execution context.
     /// </summary>
-    public IDictionary<string, object> Properties { get; set; }
+    public IDictionary<string, object> Properties { get; }
 }

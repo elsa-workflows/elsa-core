@@ -41,7 +41,7 @@ internal class WorkflowInstance(
 
     public override Task OnStarted()
     {
-        _linkedTokenSource = new CancellationTokenSource();
+        _linkedTokenSource = new();
         _linkedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(Context.CancellationToken, _linkedTokenSource.Token).Token;
         return Task.CompletedTask;
     }
@@ -61,7 +61,7 @@ internal class WorkflowInstance(
             if (result.IsFaulted)
                 onError(result.Exception.Message);
             else
-                respond(new CreateWorkflowInstanceResponse());
+                respond(new());
         });
 
         return Task.CompletedTask;
@@ -170,7 +170,7 @@ internal class WorkflowInstance(
     {
         await EnsureStateAsync();
         var json = mappers.WorkflowStateJsonMapper.Map(WorkflowState);
-        return new ExportWorkflowStateResponse
+        return new()
         {
             SerializedWorkflowState = json
         };
@@ -186,12 +186,21 @@ internal class WorkflowInstance(
         await workflowInstanceManager.SaveAsync(WorkflowState, Context.CancellationToken);
     }
 
+    public override Task<InstanceExistsResponse> InstanceExists()
+    {
+        var exists = _workflowInstanceId != null;
+        return Task.FromResult(new InstanceExistsResponse
+        {
+            Exists = exists
+        });
+    }
+
     private async Task<RunWorkflowResult> RunAsync(RunWorkflowOptions runWorkflowOptions)
     {
         if (_isRunning)
         {
             _queuedRunWorkflowOptions.Enqueue(runWorkflowOptions);
-            return new RunWorkflowResult(null!, null!, null);
+            return new(null!, null!, null);
         }
 
         _isRunning = true;

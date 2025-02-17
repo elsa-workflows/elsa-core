@@ -22,6 +22,8 @@ public record RunWorkflowInstanceResponse
     /// </summary>
     public WorkflowSubStatus SubStatus { get; set; }
 
+    public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+
     /// <summary>
     /// Any incidents that occurred during the execution of the workflow instance.
     /// </summary>
