@@ -5,6 +5,7 @@ on:
     branches:
       - 'blueberry'
       - 'feature/*'
+      - 'enh/*'
   release:
     types: [ prereleased, published ]
 env:
