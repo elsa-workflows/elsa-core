@@ -37,6 +37,13 @@ public class MemoryActivityExecutionStore : IActivityExecutionStore
     }
 
     /// <inheritdoc />
+    public Task AddManyAsync(IEnumerable<ActivityExecutionRecord> records, CancellationToken cancellationToken = default)
+    {
+        _store.AddMany(records, x => x.Id);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
     public Task<ActivityExecutionRecord?> FindAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
     {
         var result = _store.Query(query => Filter(query, filter)).FirstOrDefault();

@@ -10,4 +10,9 @@ public interface ILogRecordStore<in T> where T : ILogRecord
     /// If a record does not already exist, it is added to the store; if it does exist, its existing entry is updated.
     /// </remarks>
     Task SaveManyAsync(IEnumerable<T> records, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds a collection of log records to the store.
+    /// </summary>
+    Task AddManyAsync(IEnumerable<T> records, CancellationToken cancellationToken = default);
 }
