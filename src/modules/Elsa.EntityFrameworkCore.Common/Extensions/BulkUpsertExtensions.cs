@@ -1,5 +1,3 @@
-
-
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -81,7 +79,7 @@ public static class BulkUpsertExtensions
             await dbContext.Database.ExecuteSqlRawAsync(sql, parameters, cancellationToken);
         }
     }
-    
+
     private static (string, object[]) GenerateSqlServerUpsert<TEntity>(
         DbContext dbContext,
         IList<TEntity> entities,
@@ -107,7 +105,7 @@ public static class BulkUpsertExtensions
 
         var parameters = new List<object>();
         var parameterCount = 0;
-        
+
         for (var i = 0; i < entities.Count; i++)
         {
             var entity = entities[i];
