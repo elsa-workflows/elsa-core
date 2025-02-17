@@ -106,15 +106,16 @@ public static class BulkUpsertExtensions
         mergeSql.AppendLine("USING (VALUES");
 
         var parameters = new List<object>();
+        var parameterCount = 0;
+        
         for (var i = 0; i < entities.Count; i++)
         {
             var entity = entities[i];
             var values = new List<string>();
 
-            for (var j = 0; j < props.Count; j++)
+            foreach (var property in props)
             {
-                var property = props[j];
-                var paramName = $"@p{i}_{j}";
+                var paramName = $"{{{parameterCount++}}}";
 
                 // If it's a shadow property, retrieve value via Entry(..).Property(..)
                 object? value = property.IsShadowProperty()
@@ -160,6 +161,7 @@ public static class BulkUpsertExtensions
 
         var sb = new StringBuilder();
         var parameters = new List<object>();
+        var parameterCount = 0;
 
         sb.Append($"INSERT INTO \"{tableName}\" ({string.Join(", ", columnNames.Select(c => $"\"{c}\""))}) VALUES ");
 
@@ -168,10 +170,9 @@ public static class BulkUpsertExtensions
             var entity = entities[i];
             var placeholders = new List<string>();
 
-            for (var j = 0; j < props.Count; j++)
+            foreach (var property in props)
             {
-                var property = props[j];
-                var paramName = $"@p{i}_{j}";
+                var paramName = $"{{{parameterCount++}}}";
 
                 object? value = property.IsShadowProperty()
                     ? dbContext.Entry(entity).Property(property.Name).CurrentValue
@@ -276,6 +277,7 @@ public static class BulkUpsertExtensions
 
         var sb = new StringBuilder();
         var parameters = new List<object>();
+        var parameterCount = 0;
 
         sb.Append($"INSERT INTO `{tableName}` ({string.Join(", ", columnNames.Select(c => $"`{c}`"))}) VALUES ");
 
@@ -284,10 +286,9 @@ public static class BulkUpsertExtensions
             var entity = entities[i];
             var placeholders = new List<string>();
 
-            for (var j = 0; j < props.Count; j++)
+            foreach (var property in props)
             {
-                var property = props[j];
-                var paramName = $"@p{i}_{j}";
+                var paramName = $"{{{parameterCount++}}}";
 
                 object? value = property.IsShadowProperty()
                     ? dbContext.Entry(entity).Property(property.Name).CurrentValue
@@ -337,6 +338,7 @@ public static class BulkUpsertExtensions
 
         var sb = new StringBuilder();
         var parameters = new List<object>();
+        var parameterCount = 0;
 
         sb.AppendLine($"MERGE INTO {fullName} Target");
         sb.AppendLine("USING (SELECT");
@@ -346,10 +348,9 @@ public static class BulkUpsertExtensions
             var entity = entities[i];
             var lineParts = new List<string>();
 
-            for (var j = 0; j < props.Count; j++)
+            foreach (var property in props)
             {
-                var property = props[j];
-                var paramName = $":p{i}_{j}";
+                var paramName = $"{{{parameterCount++}}}";
 
                 object? value = property.IsShadowProperty()
                     ? dbContext.Entry(entity).Property(property.Name).CurrentValue
