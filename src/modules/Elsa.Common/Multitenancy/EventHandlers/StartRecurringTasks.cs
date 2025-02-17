@@ -12,7 +12,7 @@ public class StartRecurringTasks(RecurringTaskScheduleManager scheduleManager, I
     public async Task TenantActivatedAsync(TenantActivatedEventArgs args)
     {
         var cancellationToken = args.CancellationToken;
-        _cancellationTokenSource = new CancellationTokenSource();
+        _cancellationTokenSource = new();
         var tenantScope = args.TenantScope;
         var tasks = tenantScope.ServiceProvider.GetServices<IRecurringTask>().ToList();
         var taskExecutor = tenantScope.ServiceProvider.GetRequiredService<ITaskExecutor>();
