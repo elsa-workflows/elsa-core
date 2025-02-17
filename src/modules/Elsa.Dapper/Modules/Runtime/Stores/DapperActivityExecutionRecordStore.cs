@@ -52,8 +52,8 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
     /// <inheritdoc />
     public async Task AddManyAsync(IEnumerable<ActivityExecutionRecord> records, CancellationToken cancellationToken = default)
     {
-        var mappedRecords = records.Select(Map).ToList();
-        await store.AddManyAsync(mappedRecords, cancellationToken);
+        var mappedRecords = records.Select(x => Map(x, cancellationToken));
+        await _store.AddManyAsync(mappedRecords, cancellationToken);
     }
 
     /// <inheritdoc />
