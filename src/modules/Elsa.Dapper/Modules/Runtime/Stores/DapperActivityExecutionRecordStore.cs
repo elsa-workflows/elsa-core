@@ -50,6 +50,13 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
     }
 
     /// <inheritdoc />
+    public async Task AddManyAsync(IEnumerable<ActivityExecutionRecord> records, CancellationToken cancellationToken = default)
+    {
+        var mappedRecords = records.Select(x => Map(x, cancellationToken));
+        await _store.AddManyAsync(mappedRecords, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<ActivityExecutionRecord?> FindAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
     {
         var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);

@@ -29,6 +29,12 @@ public class MongoActivityExecutionLogStore(MongoDbStore<ActivityExecutionRecord
     }
 
     /// <inheritdoc />
+    public Task AddManyAsync(IEnumerable<ActivityExecutionRecord> records, CancellationToken cancellationToken = default)
+    {
+        return mongoDbStore.AddManyAsync(records, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public Task<ActivityExecutionRecord?> FindAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
     {
         return mongoDbStore.FindAsync(queryable => Filter(queryable, filter), cancellationToken);
