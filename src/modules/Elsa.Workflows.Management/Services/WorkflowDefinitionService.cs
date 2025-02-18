@@ -1,8 +1,6 @@
 using Elsa.Common.Models;
-using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Management.Services;
@@ -11,7 +9,6 @@ namespace Elsa.Workflows.Management.Services;
 public class WorkflowDefinitionService(
     IWorkflowDefinitionStore workflowDefinitionStore,
     IWorkflowGraphBuilder workflowGraphBuilder,
-    IMediator mediator,
     Func<IEnumerable<IWorkflowMaterializer>> materializers)
     : IWorkflowDefinitionService
 {
@@ -45,7 +42,8 @@ public class WorkflowDefinitionService(
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionHandle handle, CancellationToken cancellationToken = default)
     {
-        return await mediator.SendAsync(new FindWorkflowDefinitionRequest(handle), cancellationToken);
+        var filter = handle.ToFilter();
+        return await workflowDefinitionStore.FindAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />

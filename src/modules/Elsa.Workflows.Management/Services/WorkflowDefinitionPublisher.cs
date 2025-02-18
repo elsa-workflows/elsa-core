@@ -1,13 +1,13 @@
 using Elsa.Common;
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Management.Commands;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Notifications;
-using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Management.Services;
@@ -69,8 +69,8 @@ public class WorkflowDefinitionPublisher(
     /// <inheritdoc />
     public async Task<PublishWorkflowDefinitionResult> PublishAsync(string definitionId, CancellationToken cancellationToken = default)
     {
-        var handle = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest);
-        var definition = await mediator.SendAsync(new FindWorkflowDefinitionRequest(handle), cancellationToken);
+        var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
+        var definition = await workflowDefinitionStore.FindAsync(filter, cancellationToken);
         
         if (definition == null)
             return new(false, new List<WorkflowValidationError>
@@ -94,14 +94,18 @@ public class WorkflowDefinitionPublisher(
         var definitionId = definition.DefinitionId;
 
         // Reset current latest and published definitions.
-        var publishedWorkflows = await mediator.SendAsync(new FindLatestOrPublishedWorkflowDefinitionsRequest(definitionId), cancellationToken);
+        var publishedWorkflows = await workflowDefinitionStore.FindManyAsync(new()
+        {
+            DefinitionId = definitionId,
+            VersionOptions = VersionOptions.LatestOrPublished
+        }, cancellationToken);
 
         foreach (var publishedAndOrLatestWorkflow in publishedWorkflows)
         {
             var isPublished = publishedAndOrLatestWorkflow.IsPublished;
             publishedAndOrLatestWorkflow.IsPublished = false;
             publishedAndOrLatestWorkflow.IsLatest = false;
-            await mediator.SendAsync(new SaveWorkflowDefinitionCommand(publishedAndOrLatestWorkflow), cancellationToken);
+            await workflowDefinitionStore.SaveAsync(publishedAndOrLatestWorkflow, cancellationToken);
 
             if (isPublished)
                 await mediator.SendAsync(new WorkflowDefinitionVersionRetracted(publishedAndOrLatestWorkflow), cancellationToken);
@@ -110,7 +114,7 @@ public class WorkflowDefinitionPublisher(
         // Save the newly published definition.
         definition.IsPublished = true;
         definition = Initialize(definition);
-        await mediator.SendAsync(new SaveWorkflowDefinitionCommand(definition), cancellationToken);
+        await workflowDefinitionStore.SaveAsync(definition, cancellationToken);
 
         var affectedWorkflows = new AffectedWorkflows(new List<WorkflowDefinition>());
         await mediator.SendAsync(new WorkflowDefinitionPublished(definition, affectedWorkflows), cancellationToken);
@@ -120,8 +124,8 @@ public class WorkflowDefinitionPublisher(
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> RetractAsync(string definitionId, CancellationToken cancellationToken = default)
     {
-        var handle = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Published);
-        var definition = await mediator.SendAsync(new FindWorkflowDefinitionRequest(handle), cancellationToken);
+        var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Published).ToFilter();
+        var definition = await workflowDefinitionStore.FindAsync(filter, cancellationToken);
 
         if (definition == null)
             return null;
@@ -138,7 +142,7 @@ public class WorkflowDefinitionPublisher(
         definition.IsPublished = false;
 
         await mediator.SendAsync(new WorkflowDefinitionRetracting(definition), cancellationToken);
-        await mediator.SendAsync(new SaveWorkflowDefinitionCommand(definition), cancellationToken);
+        await workflowDefinitionStore.SaveAsync(definition, cancellationToken);
         await mediator.SendAsync(new WorkflowDefinitionRetracted(definition), cancellationToken);
         return definition;
     }
@@ -146,11 +150,17 @@ public class WorkflowDefinitionPublisher(
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> GetDraftAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        var findLastVersionRequest = new FindLastVersionOfWorkflowDefinitionRequest(definitionId);
-        var lastVersion = await mediator.SendAsync(findLastVersionRequest, cancellationToken);
-        var handle = WorkflowDefinitionHandle.ByDefinitionId(definitionId, versionOptions);
-        var findRequest = new FindWorkflowDefinitionRequest(handle);
-        var definition = await mediator.SendAsync(findRequest, cancellationToken) ?? lastVersion;
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionId = definitionId,
+            VersionOptions = versionOptions
+        };
+        var order = new WorkflowDefinitionOrder<int>(x => x.Version, OrderDirection.Descending);
+        var lastVersion = await workflowDefinitionStore.FindLastVersionAsync(new()
+        {
+            DefinitionId = definitionId
+        }, cancellationToken);
+        var definition = await workflowDefinitionStore.FindAsync(filter, order, cancellationToken) ?? lastVersion;
 
         if (definition == null!)
             return null;
@@ -174,13 +184,17 @@ public class WorkflowDefinitionPublisher(
     {
         var draft = definition;
         var definitionId = definition.DefinitionId;
-        var lastVersion = await mediator.SendAsync(new FindLastVersionOfWorkflowDefinitionRequest(definitionId), cancellationToken);
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionId = definitionId
+        };
+        var lastVersion = await workflowDefinitionStore.FindLastVersionAsync(filter, cancellationToken);
 
         draft.Version = draft.Id == lastVersion?.Id ? lastVersion.Version : lastVersion?.Version + 1 ?? 1;
         draft.IsLatest = true;
         draft = Initialize(draft);
 
-        await mediator.SendAsync(new SaveWorkflowDefinitionCommand(draft), cancellationToken);
+        await workflowDefinitionStore.SaveAsync(draft, cancellationToken);
 
         if (lastVersion is null) 
             await mediator.SendAsync(new WorkflowDefinitionCreated(definition), cancellationToken);
@@ -188,7 +202,7 @@ public class WorkflowDefinitionPublisher(
         if (lastVersion is { IsPublished: true, IsLatest: true })
         {
             lastVersion.IsLatest = false;
-            await mediator.SendAsync(new SaveWorkflowDefinitionCommand(lastVersion), cancellationToken);
+            await workflowDefinitionStore.SaveAsync(lastVersion, cancellationToken);
         }
 
         return draft;
