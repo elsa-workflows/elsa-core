@@ -2,7 +2,7 @@ using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Notifications;
 
-namespace Elsa.Workflows.Management.Handlers.Notification;
+namespace Elsa.Workflows.Management.Handlers.Notifications;
 
 /// <summary>
 /// Updates consuming workflows when a workflow definition is published.

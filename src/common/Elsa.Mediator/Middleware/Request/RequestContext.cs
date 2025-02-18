@@ -34,9 +34,9 @@ public class RequestContext
     /// Gets the cancellation token.
     /// </summary>
     public CancellationToken CancellationToken { get; init; }
-    
+
     /// <summary>
     /// Gets the response the request handler.
     /// </summary>
-    public object? Response { get; set; }
+    public object Response { get; set; } = null!;
 }

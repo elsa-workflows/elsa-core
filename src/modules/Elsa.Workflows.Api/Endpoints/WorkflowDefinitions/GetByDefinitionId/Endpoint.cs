@@ -1,13 +1,13 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Management.Requests;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.GetByDefinitionId;
 
 [PublicAPI]
-internal class GetByDefinitionId(IMediator mediator, IWorkflowDefinitionLinker linker) : ElsaEndpoint<Request>
+internal class GetByDefinitionId(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker linker) : ElsaEndpoint<Request>
 {
     public override void Configure()
     {
@@ -18,8 +18,8 @@ internal class GetByDefinitionId(IMediator mediator, IWorkflowDefinitionLinker l
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var versionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : VersionOptions.Latest;
-        var findRequest = new FindWorkflowDefinitionRequest(request.DefinitionId, versionOptions);
-        var definition = await mediator.SendAsync(findRequest, cancellationToken);
+        var filter = WorkflowDefinitionHandle.ByDefinitionId(request.DefinitionId, versionOptions).ToFilter();
+        var definition = await store.FindAsync(filter, cancellationToken);
         
         if (definition == null)
         {

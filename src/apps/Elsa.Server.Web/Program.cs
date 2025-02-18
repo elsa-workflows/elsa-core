@@ -662,7 +662,7 @@ services
             elsa.UseTenantHttpRouting(tenantHttpRouting =>
             {
                 // Override the tenant header name with a custom one.
-                tenantHttpRouting.WithTenantHeader("X-Company-Id");
+                tenantHttpRouting.WithTenantHeader("X-Tenant-ID");
             });
         }
 

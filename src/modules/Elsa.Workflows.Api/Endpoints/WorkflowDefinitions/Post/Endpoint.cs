@@ -50,7 +50,7 @@ internal class Post(
         // Create a new workflow in case no existing definition was found.
         if (isNew)
         {
-            draft = workflowDefinitionPublisher.New();
+            draft = await workflowDefinitionPublisher.NewAsync(cancellationToken: cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(definitionId))
                 draft.DefinitionId = definitionId;

@@ -15,7 +15,6 @@ using Elsa.Http.Services;
 using Elsa.Http.Tasks;
 using Elsa.Http.UIHints;
 using Elsa.Workflows;
-using Elsa.Workflows.Management.Requests;
 using FluentStorage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.StaticFiles;

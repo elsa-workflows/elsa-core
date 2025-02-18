@@ -17,7 +17,16 @@ public interface IWorkflowDefinitionPublisher
     /// </summary>
     /// <param name="root">Optionally provide the root activity. If not specified, <see cref="Sequence" /> will be used/></param>
     /// <returns>The new workflow definition.</returns>
-    WorkflowDefinition New(IActivity? root = default);
+    [Obsolete( "Use NewAsync instead.", error: false)]
+    WorkflowDefinition New(IActivity? root = null);
+    
+    /// <summary>
+    /// Creates a new workflow definition.
+    /// </summary>
+    /// <param name="root">Optionally provide the root activity. If not specified, <see cref="Sequence" /> will be used/></param>
+    /// <param name="cancellationToken">A cancellation token</param>
+    /// <returns>The new workflow definition.</returns>
+    Task<WorkflowDefinition> NewAsync(IActivity? root = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Publishes a workflow definition.
