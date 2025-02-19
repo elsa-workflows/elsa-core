@@ -89,8 +89,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 		docker\ElsaServer.Dockerfile = docker\ElsaServer.Dockerfile
 		docker\ElsaServerAndStudio.Dockerfile = docker\ElsaServerAndStudio.Dockerfile
 		docker\ElsaStudio.Dockerfile = docker\ElsaStudio.Dockerfile
-		docker\otel-collector-config.yaml = docker\otel-collector-config.yaml
 		docker\init-db-postgres.sh = docker\init-db-postgres.sh
+		docker\otel-collector-config.yaml = docker\otel-collector-config.yaml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Elasticsearch", "src\modules\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj", "{3246883E-2FA7-4B4A-BDC5-99039A2869BC}"
@@ -402,6 +402,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "oracle-setup", "oracle-setu
 	ProjectSection(SolutionItems) = preProject
 		docker\oracle-setup\setup.sql = docker\oracle-setup\setup.sql
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.FileManagement", "src\modules\Elsa.FileManagement\Elsa.FileManagement.csproj", "{8C2469AA-7104-458C-B789-F4BF4AFA3417}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -859,6 +861,10 @@ Global
 		{A51F9683-DA9F-45E7-82DE-1E261ACD6D68}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A51F9683-DA9F-45E7-82DE-1E261ACD6D68}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A51F9683-DA9F-45E7-82DE-1E261ACD6D68}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C2469AA-7104-458C-B789-F4BF4AFA3417}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C2469AA-7104-458C-B789-F4BF4AFA3417}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C2469AA-7104-458C-B789-F4BF4AFA3417}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C2469AA-7104-458C-B789-F4BF4AFA3417}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1011,6 +1017,7 @@ Global
 		{FA5E857F-B173-4B5D-8049-B817A210DEF5} = {A0DC5F8E-5D7F-4E8A-A5DF-B1FC31F7336E}
 		{A51F9683-DA9F-45E7-82DE-1E261ACD6D68} = {A0DC5F8E-5D7F-4E8A-A5DF-B1FC31F7336E}
 		{66E2E2CF-967F-4564-89E8-F46FA973C99B} = {986E5482-0482-448C-B9E4-EC67A9474B85}
+		{8C2469AA-7104-458C-B789-F4BF4AFA3417} = {B818988E-639C-4E6E-85C1-B231BCAD9DAB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
 using WebhooksCore.Options;
+using Elsa.Retention.Extensions;
+using Elsa.Sql.Extensions;
 
 const bool useMassTransit = true;
 const bool useProtoActor = true;
@@ -153,6 +155,18 @@ services
                     ef.UseMySql(mySqlConnectionString);
 #endif
             }))
+            .UseRetention()
+            .UseScheduling()
+            .UseSql()
+            .UseFileStorage()
+            .UseHangfire()
+
+            .AddActivity<CopyFileOrDirectory>()
+            .AddActivity<CreateDirectory>()
+            .AddActivity<DeleteFileOrDirectory>()
+            .AddActivity<FileOrFolderExists>()
+            .AddActivity<ReadFileContent>()
+            .AddActivity<WriteToFile>()
             .UseAgentActivities()
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>();
