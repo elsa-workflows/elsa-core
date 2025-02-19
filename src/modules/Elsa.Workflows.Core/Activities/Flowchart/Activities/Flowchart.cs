@@ -26,6 +26,9 @@ public class Flowchart : Container
         OnSignalReceived<ScheduleActivityOutcomes>(OnScheduleOutcomesAsync);
         OnSignalReceived<ScheduleChildActivity>(OnScheduleChildActivityAsync);
         OnSignalReceived<CancelSignal>(OnActivityCanceledAsync);
+
+        OnSignalReceived<BreakSignal>(OnBreakSignalReceived);
+        OnSignalReceived<EndSignal>(OnEndSignalReceived);
     }
 
     /// <summary>
@@ -138,6 +141,14 @@ public class Flowchart : Container
         var completedActivityContext = context.ChildContext;
         var completedActivity = completedActivityContext.Activity;
         var result = context.Result;
+
+        bool isBreaking = flowchartContext.GetIsBreaking();
+        bool isEnding = flowchartContext.GetIsEnding();
+        if (isBreaking || isEnding) 
+        {
+            await flowchartContext.CompleteActivityAsync();
+            return;
+        }
 
         // If the complete activity's status is anything but "Completed", do not schedule its outbound activities.
         var scheduleChildren = completedActivityContext.Status == ActivityStatus.Completed;
@@ -280,5 +291,17 @@ public class Flowchart : Container
     private async ValueTask OnActivityCanceledAsync(CancelSignal signal, SignalContext context)
     {
         await CompleteIfNoPendingWorkAsync(context.ReceiverActivityExecutionContext);
+    }
+
+    private void OnBreakSignalReceived(BreakSignal signal, SignalContext context)
+    {
+        context.ReceiverActivityExecutionContext.SetIsBreaking();
+    }
+
+    private void OnEndSignalReceived(EndSignal signal, SignalContext context)
+    {
+        // Prevent bubbling.
+        context.StopPropagation();
+        context.ReceiverActivityExecutionContext.SetIsEnding();
     }
 }

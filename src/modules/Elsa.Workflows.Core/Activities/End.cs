@@ -15,4 +15,9 @@ public class End : CodeActivity, ITerminalNode
     public End([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
+    
+    protected async override ValueTask ExecuteAsync(ActivityExecutionContext context)
+    {
+        await context.SendSignalAsync(new EndSignal());
+    }
 }
