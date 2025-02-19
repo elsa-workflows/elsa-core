@@ -44,7 +44,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         ActivityState = new ChangeTrackingDictionary<string, object>(Taint);
         ActivityInput = new ChangeTrackingDictionary<string, object>(Taint);
         WorkflowExecutionContext = workflowExecutionContext;
-        _parentActivityExecutionContext = parentActivityExecutionContext;
+        ParentActivityExecutionContext = parentActivityExecutionContext;
         var expressionExecutionContextProps = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(workflowExecutionContext, workflowExecutionContext.Input);
         expressionExecutionContextProps[ExpressionExecutionContextExtensions.ActivityKey] = activity;
         ExpressionExecutionContext = new(workflowExecutionContext.ServiceProvider, new(), parentActivityExecutionContext?.ExpressionExecutionContext ?? workflowExecutionContext.ExpressionExecutionContext, expressionExecutionContextProps, Taint, CancellationToken);

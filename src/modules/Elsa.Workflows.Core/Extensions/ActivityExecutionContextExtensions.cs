@@ -254,7 +254,7 @@ public static partial class ActivityExecutionContextExtensions
             return;
 
         // Select all child contexts.
-        var childContexts = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+        var childContexts = context.Children.ToList();
 
         foreach (var childContext in childContexts)
             await CancelActivityAsync(childContext);
@@ -320,7 +320,7 @@ public static partial class ActivityExecutionContextExtensions
     /// </summary>
     public static IEnumerable<ActivityExecutionContext> GetDescendents(this ActivityExecutionContext context)
     {
-        var children = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+        var children = context.Children.ToList();
 
         foreach (var child in children)
         {
@@ -336,7 +336,7 @@ public static partial class ActivityExecutionContextExtensions
     /// </summary>
     public static IEnumerable<ActivityExecutionContext> GetActiveChildren(this ActivityExecutionContext context)
     {
-        return context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
+        return context.Children;
     }
 
     /// <summary>
@@ -344,7 +344,7 @@ public static partial class ActivityExecutionContextExtensions
     /// </summary>
     public static IEnumerable<ActivityExecutionContext> GetChildren(this ActivityExecutionContext context)
     {
-        return context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
+        return context.Children;
     }
 
     /// <summary>
@@ -352,7 +352,7 @@ public static partial class ActivityExecutionContextExtensions
     /// </summary>
     public static IEnumerable<ActivityExecutionContext> GetDescendants(this ActivityExecutionContext context)
     {
-        var children = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+        var children = context.Children.ToList();
 
         foreach (var child in children)
         {
