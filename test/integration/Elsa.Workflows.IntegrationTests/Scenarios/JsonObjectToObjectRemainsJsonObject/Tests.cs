@@ -22,7 +22,7 @@ public class JsonObjectJintTests
     public async Task Test1()
     {
         await _services.PopulateRegistriesAsync();
-        await _workflowRunner.RunAsync<TestWorkflow>();
+        await _workflowRunner.RunAsync<Workflows.TestWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Baz" }, lines);
     }
