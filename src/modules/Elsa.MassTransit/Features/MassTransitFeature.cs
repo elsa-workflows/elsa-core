@@ -89,6 +89,7 @@ public class MassTransitFeature : FeatureBase
     /// <summary>
     /// Adds MassTransit to the service container and registers all collected assemblies for discovery of consumers.
     /// </summary>
+    /// <param name="busConfigurator">The bus configurator used to configure the MassTransit Bus.</param>
     private void AddMassTransit(Action<IBusRegistrationConfigurator> busConfigurator)
     {
         // For each message type, create a concrete WorkflowMessageConsumer<T>.
@@ -119,6 +120,10 @@ public class MassTransitFeature : FeatureBase
         });
     }
 
+    /// <summary>
+    /// Configures MassTransit to use the in-memory transport when no other transport has been configured.
+    /// </summary>
+    /// <param name="configure"><see cref="IBusRegistrationConfigurator"/> reference to the MassTransit bus to configure for and in-memory transport</param>
     private void ConfigureInMemoryTransport(IBusRegistrationConfigurator configure)
     {
         var consumers = this.GetConsumers().ToList();
@@ -131,6 +136,7 @@ public class MassTransitFeature : FeatureBase
         configure.UsingInMemory((context, bus) =>
         {
             var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
+            var busOptions = context.GetRequiredService<IOptions<MassTransitOptions>>().Value;
 
             foreach (var consumer in temporaryConsumers)
             {
@@ -156,7 +162,7 @@ public class MassTransitFeature : FeatureBase
                 return serializerOptions;
             });
 
-            if (PrefetchCount != null) bus.PrefetchCount = PrefetchCount.Value;
+            if (busOptions.PrefetchCount.HasValue) bus.PrefetchCount = busOptions.PrefetchCount.Value;
 
             bus.ConfigureTenantMiddleware(context);
         });
