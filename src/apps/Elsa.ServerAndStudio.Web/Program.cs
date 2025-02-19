@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
 using WebhooksCore.Options;
+using Elsa.Connections.Middleware;
 
 const bool useMassTransit = true;
 const bool useProtoActor = true;
@@ -193,6 +194,11 @@ services
                 if (distributedCachingTransport == DistributedCachingTransport.MassTransit) distributedCaching.UseMassTransit();
             });
         }
+
+        elsa.UseConnections(
+            configure=> configure.AddConnectionsFrom<Program>());
+        elsa.UseConnectionPersistence(ef=> ef.UseEntityFrameworkCore(f=>f.UseSqlite()));
+        elsa.UseConnectionsApi();
     });
 
 services.Configure<WebhookSinksOptions>(options => configuration.GetSection("Webhooks").Bind(options));
