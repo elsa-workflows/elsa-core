@@ -31,8 +31,6 @@ namespace Elsa.Workflows.Runtime.Features;
 [DependsOn(typeof(SystemClockFeature))]
 public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 {
-    private bool _enableWorkflowInboxCleanupJob = true;
-
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
 
     /// <summary>
@@ -134,7 +132,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     /// </summary>
     public WorkflowRuntimeFeature EnableWorkflowInboxCleanupJob()
     {
-        _enableWorkflowInboxCleanupJob = true;
+        Services.Configure<WorkflowInboxCleanupOptions>(options => { options.IsEnabled = true; });
         return this;
     }
 
@@ -143,7 +141,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     /// </summary>
     public WorkflowRuntimeFeature DisableWorkflowInboxCleanupJob()
     {
-        _enableWorkflowInboxCleanupJob = false;
+        Services.Configure<WorkflowInboxCleanupOptions>(options => { options.IsEnabled = false; });
         return this;
     }
 
@@ -203,7 +201,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     public override void ConfigureHostedServices()
     {
         Module.ConfigureHostedService<PopulateRegistriesHostedService>();
-        if (_enableWorkflowInboxCleanupJob) Module.ConfigureHostedService<WorkflowInboxCleanupHostedService>();
+        Module.ConfigureHostedService<WorkflowInboxCleanupHostedService>();
     }
 
     /// <inheritdoc />
