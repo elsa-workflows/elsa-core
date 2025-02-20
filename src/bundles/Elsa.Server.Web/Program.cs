@@ -322,6 +322,7 @@ services
                     alterations.UseMassTransitDispatcher();
                 }
             })
+            .UseOpenTelemetry()
             .UseWorkflowContexts();
 
         if (useQuartz)
