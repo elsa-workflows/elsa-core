@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Elsa.Common;
+using Elsa.OpenTelemetry.Contracts;
 using Elsa.OpenTelemetry.Helpers;
+using Elsa.OpenTelemetry.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using JetBrains.Annotations;
@@ -40,14 +42,13 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
         {
             span.AddEvent(new("Faulted", tags: CreateStatusTags(context)));
             span.SetStatus(ActivityStatusCode.Error);
-            span.SetTag("error", true);
             span.SetTag("activityInstance.hasIncidents", true);
 
-            var errorMessage = string.IsNullOrWhiteSpace(context.Exception?.Message) ? "Unknown error" : context.Exception.Message;
-            span.SetTag("error.message", errorMessage);
+            var errorSpanHandlers = context.GetServices<IErrorSpanHandler>();
+            var errorSpanHandlerContext = new ErrorSpanContext(span, context.Exception);
             
-            if (!string.IsNullOrEmpty(context.Exception?.StackTrace))
-                span.SetTag("error.stackTrace", context.Exception.StackTrace);
+            foreach (var handler in errorSpanHandlers) 
+                handler.Handle(errorSpanHandlerContext);
         }
         else
         {
