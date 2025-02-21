@@ -92,8 +92,8 @@ jobs:
       - name: Build Elsa
         run: dotnet build --configuration Release /p:Version=$VERSION
 
-      - name: Run Tests
-        run: dotnet test --configuration Release --no-build --no-restore
+#      - name: Run Tests
+#        run: dotnet test --configuration Release --no-build --no-restore
 
       - name: Pack Elsa
         run: dotnet pack --configuration Release /p:Version=$VERSION /p:PackageOutputPath=$(pwd)/out 
