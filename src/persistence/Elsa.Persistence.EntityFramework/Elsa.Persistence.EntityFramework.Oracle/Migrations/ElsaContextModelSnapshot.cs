@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
+#nullable disable
+
 namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
 {
     [DbContext(typeof(ElsaContext))]
@@ -16,9 +18,10 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("ProductVersion", "5.0.10")
-                .HasAnnotation("Oracle:ValueGenerationStrategy", OracleValueGenerationStrategy.IdentityColumn);
+                .HasAnnotation("ProductVersion", "8.0.1")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+
+            OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.Models.Bookmark", b =>
                 {
@@ -82,7 +85,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                     b.HasIndex("Hash", "CorrelationId", "TenantId")
                         .HasDatabaseName("IX_Bookmark_Hash_CorrelationId_TenantId");
 
-                    b.ToTable("Bookmarks");
+                    b.ToTable("Bookmarks", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Models.Trigger", b =>
@@ -140,7 +143,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                     b.HasIndex("ActivityType", "TenantId", "Hash")
                         .HasDatabaseName("IX_Trigger_ActivityType_TenantId_Hash");
 
-                    b.ToTable("Triggers");
+                    b.ToTable("Triggers", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Models.WorkflowDefinition", b =>
@@ -215,7 +218,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_WorkflowDefinition_DefinitionId_VersionId");
 
-                    b.ToTable("WorkflowDefinitions");
+                    b.ToTable("WorkflowDefinitions", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Models.WorkflowExecutionLogRecord", b =>
@@ -270,7 +273,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowInstanceId");
 
-                    b.ToTable("WorkflowExecutionLogRecords");
+                    b.ToTable("WorkflowExecutionLogRecords", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Models.WorkflowInstance", b =>
@@ -373,7 +376,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                     b.HasIndex("WorkflowStatus", "DefinitionId", "Version")
                         .HasDatabaseName("IX_WorkflowInstance_WorkflowStatus_DefinitionId_Version");
 
-                    b.ToTable("WorkflowInstances");
+                    b.ToTable("WorkflowInstances", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

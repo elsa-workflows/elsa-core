@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
+#nullable disable
+
 namespace Elsa.WorkflowSettings.Persistence.EntityFramework.MySql.Migrations
 {
     [DbContext(typeof(WorkflowSettingsContext))]
@@ -14,8 +16,8 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.MySql.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("Relational:MaxIdentifierLength", 64)
-                .HasAnnotation("ProductVersion", "5.0.6");
+                .HasAnnotation("ProductVersion", "8.0.1")
+                .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("Elsa.WorkflowSettings.Models.WorkflowSetting", b =>
                 {
@@ -23,12 +25,14 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.MySql.Migrations
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("Key")
+                        .IsRequired()
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("Value")
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("WorkflowBlueprintId")
+                        .IsRequired()
                         .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
@@ -42,7 +46,7 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.MySql.Migrations
                     b.HasIndex("WorkflowBlueprintId")
                         .HasDatabaseName("IX_WorkflowSetting_WorkflowBlueprintId");
 
-                    b.ToTable("WorkflowSettings");
+                    b.ToTable("WorkflowSettings", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

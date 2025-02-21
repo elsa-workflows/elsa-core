@@ -2,6 +2,7 @@
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql.Migrations
 {
     [DbContext(typeof(WorkflowSettingsContext))]
-    partial class WorkflowSettingsContextModelSnapshot : ModelSnapshot
+    [Migration("20250221175322_Update215")]
+    partial class Update215
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

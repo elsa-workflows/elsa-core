@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
+#nullable disable
+
 namespace Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer.Migrations
 {
     [DbContext(typeof(WorkflowSettingsContext))]
@@ -15,9 +17,10 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("ProductVersion", "5.0.6")
-                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                .HasAnnotation("ProductVersion", "8.0.1")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.WorkflowSettings.Models.WorkflowSetting", b =>
                 {
@@ -25,12 +28,14 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Key")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Value")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("WorkflowBlueprintId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
@@ -44,7 +49,7 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer.Migrations
                     b.HasIndex("WorkflowBlueprintId")
                         .HasDatabaseName("IX_WorkflowSetting_WorkflowBlueprintId");
 
-                    b.ToTable("WorkflowSettings");
+                    b.ToTable("WorkflowSettings", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

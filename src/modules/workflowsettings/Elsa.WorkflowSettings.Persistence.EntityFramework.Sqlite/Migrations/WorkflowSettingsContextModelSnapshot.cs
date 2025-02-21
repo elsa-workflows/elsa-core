@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
+#nullable disable
+
 namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Sqlite.Migrations
 {
     [DbContext(typeof(WorkflowSettingsContext))]
@@ -14,7 +16,7 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Sqlite.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "5.0.6");
+                .HasAnnotation("ProductVersion", "8.0.1");
 
             modelBuilder.Entity("Elsa.WorkflowSettings.Models.WorkflowSetting", b =>
                 {
@@ -22,12 +24,14 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Key")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Value")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowBlueprintId")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -41,7 +45,7 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Sqlite.Migrations
                     b.HasIndex("WorkflowBlueprintId")
                         .HasDatabaseName("IX_WorkflowSetting_WorkflowBlueprintId");
 
-                    b.ToTable("WorkflowSettings");
+                    b.ToTable("WorkflowSettings", "Elsa");
                 });
 #pragma warning restore 612, 618
         }
