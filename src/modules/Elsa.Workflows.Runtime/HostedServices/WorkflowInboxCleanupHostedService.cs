@@ -32,6 +32,12 @@ public class WorkflowInboxCleanupHostedService : BackgroundService
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (!_options.Value.IsEnabled)
+        {
+            _logger.LogInformation("Expired workflow inbox messages cleanup service is disabled");
+            return;
+        }
+
         while (!stoppingToken.IsCancellationRequested)
         {
             _logger.LogInformation("Entering expired workflow inbox messages cleanup service loop");

@@ -14,4 +14,9 @@ public class WorkflowInboxCleanupOptions
     /// The number of messages to clean up per sweep.
     /// </summary>
     public int BatchSize { get; set; } = 1000;
+
+    /// <summary>
+    /// Whether the workflow inbox cleanup is enabled.
+    /// </summary>
+    public bool IsEnabled { get; set; } = true;
 }
