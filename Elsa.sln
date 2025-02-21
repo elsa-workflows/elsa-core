@@ -264,8 +264,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github", "github", "{3BF2C5
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\publish-latest-dashboard-and-server-docker.yml = .github\workflows\publish-latest-dashboard-and-server-docker.yml
 		.github\workflows\publish-latest-dashboard-docker.yml = .github\workflows\publish-latest-dashboard-docker.yml
-		.github\workflows\publish-latest-designer-npm.yml = .github\workflows\publish-latest-designer-npm.yml
 		.github\workflows\publish-latest-server-docker.yml = .github\workflows\publish-latest-server-docker.yml
+		.github\workflows\publish-latest-elsa.yml = .github\workflows\publish-latest-elsa.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.SignalApi", "src\samples\aspnet\Elsa.Samples.SignalApi\Elsa.Samples.SignalApi.csproj", "{3E2423CF-50E6-4D2B-8749-17B1EF540FE4}"

@@ -44,7 +44,7 @@ jobs:
         if: ${{ github.event_name == 'release' }}
 
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
       
       - name: Setup Node
         uses: actions/setup-node@v3
@@ -70,7 +70,7 @@ jobs:
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
 
       - name: Upload Designer Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: designer-npm-package
           path: src/designer/elsa-workflows-studio/elsa-*.tgz
@@ -100,7 +100,7 @@ jobs:
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
 
       - name: Upload Elsa Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: elsa-nuget-package
           path: out/*nupkg
@@ -113,7 +113,7 @@ jobs:
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
       - name: Download NPM Package
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: designer-npm-package
 
@@ -133,7 +133,7 @@ jobs:
     if: ${{ github.event_name == 'release' }}
     steps:
       - name: Download NPM Package
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: designer-npm-package
 
@@ -153,7 +153,7 @@ jobs:
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
       - name: Download Nuget Packages
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: elsa-nuget-package
       
@@ -167,7 +167,7 @@ jobs:
     if: ${{ github.event_name == 'release' }}
     steps:
       - name: Download Nuget Packages
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: elsa-nuget-package
       
