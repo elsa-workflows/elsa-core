@@ -90,7 +90,7 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
         
         // Mark activity as executed.
         context.IsExecuting = false;
-        context.WorkflowExecutionContext.IsExecuting = true;
+        context.WorkflowExecutionContext.IsExecuting = false;
 
         // Conditionally commit the workflow state.
         if (ShouldCommit(context, ActivityLifetimeEvent.ActivityExecuted))
