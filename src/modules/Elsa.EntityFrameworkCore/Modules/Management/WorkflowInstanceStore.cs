@@ -150,6 +150,16 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         return await _store.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
     }
 
+    public async Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default)
+    {
+        var entity = new WorkflowInstance
+        {
+            Id = workflowInstanceId,
+            UpdatedAt = value
+        };
+        await _store.UpdatePartialAsync(entity, [x => x.UpdatedAt], cancellationToken);
+    }
+
     /// <inheritdoc />
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)

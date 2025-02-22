@@ -160,6 +160,16 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
         return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
 
+    public async Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default)
+    {
+        var record = new WorkflowInstanceRecord
+        {
+            Id = workflowInstanceId,
+            UpdatedAt = value
+        };
+        await store.UpdateAsync(record, [x => x.UpdatedAt], cancellationToken);
+    }
+
     private void ApplyFilter(ParameterizedQuery query, WorkflowInstanceFilter filter)
     {
         query
@@ -190,7 +200,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceRecord> source)
     {
-        return source.Select( Map);
+        return source.Select(Map);
     }
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]

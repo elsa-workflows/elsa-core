@@ -17,6 +17,7 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     public static IWorkflowExecutionPipelineBuilder UseDefaultPipeline(this IWorkflowExecutionPipelineBuilder pipelineBuilder) =>
         pipelineBuilder
             .Reset()
+            .UseWorkflowHeartbeat()
             .UseEngineExceptionHandling()
             .UsePersistentVariables()
             .UseExceptionHandling()
@@ -26,6 +27,8 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     /// Installs middleware that persists the workflow instance before and after workflow execution.
     /// </summary>
     public static IWorkflowExecutionPipelineBuilder UsePersistentVariables(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistentVariablesMiddleware>();
+    
+    public static IWorkflowExecutionPipelineBuilder UseWorkflowHeartbeat(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<WorkflowHeartbeatMiddleware>();
 
     /// <summary>
     /// Installs middleware that persists bookmarks after workflow execution.
