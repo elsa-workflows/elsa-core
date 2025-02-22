@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
-public class WorkflowHeartbeatMiddleware(WorkflowMiddlewareDelegate next, IOptions<RuntimeOptions> options, ILogger<WorkflowHeartbeatMiddleware> logger, ILoggerFactory loggerFactory) : WorkflowExecutionMiddleware(next)
+public class WorkflowHeartbeatMiddleware(WorkflowMiddlewareDelegate next, IOptions<RuntimeOptions> options, ISystemClock systemClock, ILogger<WorkflowHeartbeatMiddleware> logger, ILoggerFactory loggerFactory) : WorkflowExecutionMiddleware(next)
 {
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
@@ -21,9 +21,8 @@ public class WorkflowHeartbeatMiddleware(WorkflowMiddlewareDelegate next, IOptio
     private async Task UpdateTimestampAsync(WorkflowExecutionContext context)
     {
         var workflowInstanceStore = context.GetRequiredService<IWorkflowInstanceStore>();
-        var clock = context.GetRequiredService<ISystemClock>();
         var workflowInstanceId = context.Id;
-        await workflowInstanceStore.UpdateUpdatedTimestampAsync(workflowInstanceId, clock.UtcNow, context.CancellationToken);
+        await workflowInstanceStore.UpdateUpdatedTimestampAsync(workflowInstanceId, systemClock.UtcNow, context.CancellationToken);
     }
 
     private class WorkflowHeartbeat : IDisposable
