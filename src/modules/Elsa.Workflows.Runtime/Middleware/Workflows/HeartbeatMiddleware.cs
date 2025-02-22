@@ -28,24 +28,24 @@ public class WorkflowHeartbeatMiddleware(WorkflowMiddlewareDelegate next, IOptio
     private class WorkflowHeartbeat : IDisposable
     {
         private readonly Timer _timer;
-        private readonly Func<Task> _pulseAction;
+        private readonly Func<Task> _heartbeatAction;
         private readonly TimeSpan _interval;
         private readonly ILogger<WorkflowHeartbeat> _logger;
 
-        public WorkflowHeartbeat(Func<Task> pulseAction, TimeSpan interval, ILoggerFactory loggerFactory)
+        public WorkflowHeartbeat(Func<Task> heartbeatAction, TimeSpan interval, ILoggerFactory loggerFactory)
         {
-            _pulseAction = pulseAction;
+            _heartbeatAction = heartbeatAction;
             _interval = interval;
             _logger = loggerFactory.CreateLogger<WorkflowHeartbeat>();
-            _timer = new(GeneratePulseAsync, null, _interval, Timeout.InfiniteTimeSpan);
+            _timer = new(GenerateHeartbeatAsync, null, _interval, Timeout.InfiniteTimeSpan);
         }
 
-        private async void GeneratePulseAsync(object? state)
+        private async void GenerateHeartbeatAsync(object? state)
         {
             try
             {
-                _logger.LogDebug("Generating pulse");
-                await _pulseAction();
+                _logger.LogDebug("Generating heartbeat");
+                await _heartbeatAction();
                 _timer.Change(_interval, Timeout.InfiniteTimeSpan);
             }
             catch (Exception ex)
