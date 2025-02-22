@@ -11,8 +11,8 @@ public class WorkflowHeartbeatGeneratorFactory(IOptions<RuntimeOptions> options,
 {
     public HeartbeatGenerator CreateHeartbeatGenerator(WorkflowExecutionContext context)
     {
-        var livenessThreshold = options.Value.InactivityThreshold;
-        var heartbeatInterval = TimeSpan.FromTicks((long)(livenessThreshold.Ticks * 0.6));
+        var inactivityThreshold = options.Value.InactivityThreshold;
+        var heartbeatInterval = TimeSpan.FromTicks((long)(inactivityThreshold.Ticks * 0.6));
         logger.LogDebug("Workflow heartbeat interval: {Interval}", heartbeatInterval);
         return new(async () => await UpdateTimestampAsync(context), heartbeatInterval, loggerFactory);
     }
