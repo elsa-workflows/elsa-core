@@ -157,8 +157,20 @@ public class WorkflowRunner(
         }
         else
         {
-            // Nothing was scheduled. Schedule the workflow itself.
-            workflowExecutionContext.ScheduleWorkflow();
+            // Check if there are any leaf nodes in the Pending state.
+            var pendingActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => x.Status == ActivityStatus.Pending).ToList();
+
+            if( pendingActivityExecutionContexts.Count > 0)
+            {
+                // Schedule the pending activities.
+                foreach (var pendingActivityExecutionContext in pendingActivityExecutionContexts)
+                    workflowExecutionContext.ScheduleActivityExecutionContext(pendingActivityExecutionContext);
+            }
+            else
+            {
+                // Nothing was scheduled. Schedule the workflow itself.
+                workflowExecutionContext.ScheduleWorkflow();
+            }
         }
 
         return await RunAsync(workflowExecutionContext);

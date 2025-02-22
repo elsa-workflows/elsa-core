@@ -681,8 +681,10 @@ services.Configure<RecurringTaskOptions>(options =>
     options.Schedule.ConfigureTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(300));
     options.Schedule.ConfigureTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(300));
     options.Schedule.ConfigureTask<UpdateExpiredSecretsRecurringTask>(TimeSpan.FromHours(4));
+    options.Schedule.ConfigureTask<RestartInterruptedWorkflowsTask>(TimeSpan.FromSeconds(15));
 });
 
+services.Configure<RuntimeOptions>(options => { options.WorkflowLivenessThreshold = TimeSpan.FromSeconds(15); });
 services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(10));
 
 services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
