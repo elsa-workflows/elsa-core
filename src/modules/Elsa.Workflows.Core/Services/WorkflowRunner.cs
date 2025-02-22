@@ -158,7 +158,7 @@ public class WorkflowRunner(
         else
         {
             // Check if there are any leaf nodes in the Pending state.
-            var pendingActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => x.Status == ActivityStatus.Pending).ToList();
+            var pendingActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => x.IsExecuting).ToList();
 
             if( pendingActivityExecutionContexts.Count > 0)
             {

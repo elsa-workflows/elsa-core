@@ -157,7 +157,35 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
             Id = workflowInstanceId,
             UpdatedAt = value
         };
-        await _store.UpdatePartialAsync(entity, [x => x.UpdatedAt], cancellationToken);
+
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        dbContext.Attach(entity);
+        dbContext.Entry(entity).Property(x => x.UpdatedAt).IsModified = true;
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException e)
+        {
+            foreach (var entry in e.Entries)
+            {
+                var proposedValues = entry.CurrentValues;
+                var databaseValues = await entry.GetDatabaseValuesAsync(cancellationToken);
+                
+                if(databaseValues == null)
+                    continue;
+                
+                var updatedAtProperty = entry.Metadata.GetProperty(nameof(WorkflowInstance.UpdatedAt));
+                var proposedValue = (DateTimeOffset)proposedValues[updatedAtProperty]!;
+                var databaseValue = (DateTimeOffset)databaseValues[updatedAtProperty]!;
+
+                if (proposedValue > databaseValue)
+                    proposedValues[updatedAtProperty] = proposedValue;
+
+                entry.OriginalValues.SetValues(databaseValues);
+            }
+        }
     }
 
     /// <inheritdoc />
