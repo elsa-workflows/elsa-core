@@ -21,6 +21,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             ParentWorkflowInstanceId = workflowExecutionContext.ParentWorkflowInstanceId,
             Status = workflowExecutionContext.Status,
             SubStatus = workflowExecutionContext.SubStatus,
+            IsExecuting = workflowExecutionContext.IsExecuting,
             Bookmarks = workflowExecutionContext.Bookmarks,
             ExecutionLogSequence = workflowExecutionContext.ExecutionLogSequence,
             Input = GetPersistableInput(workflowExecutionContext),
@@ -47,6 +48,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         workflowExecutionContext.CorrelationId = state.CorrelationId;
         workflowExecutionContext.ParentWorkflowInstanceId = state.ParentWorkflowInstanceId;
         workflowExecutionContext.SubStatus = state.SubStatus;
+        workflowExecutionContext.IsExecuting = state.IsExecuting;
         workflowExecutionContext.Bookmarks = state.Bookmarks;
         workflowExecutionContext.Output = state.Output;
         workflowExecutionContext.ExecutionLogSequence = state.ExecutionLogSequence;

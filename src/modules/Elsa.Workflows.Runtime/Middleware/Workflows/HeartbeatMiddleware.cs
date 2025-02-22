@@ -1,62 +1,12 @@
-using Elsa.Common;
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
-using Elsa.Workflows.Runtime.Options;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
-public class WorkflowHeartbeatMiddleware(WorkflowMiddlewareDelegate next, IOptions<RuntimeOptions> options, ISystemClock systemClock, ILogger<WorkflowHeartbeatMiddleware> logger, ILoggerFactory loggerFactory) : WorkflowExecutionMiddleware(next)
+public class WorkflowHeartbeatMiddleware(WorkflowMiddlewareDelegate next, WorkflowHeartbeatGeneratorFactory workflowHeartbeatGeneratorFactory) : WorkflowExecutionMiddleware(next)
 {
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
-        var livenessThreshold = options.Value.InactivityThreshold;
-        var heartbeatInterval = TimeSpan.FromTicks((long)(livenessThreshold.Ticks * 0.6));
-        logger.LogDebug("Workflow heartbeat interval: {Interval}", heartbeatInterval);
-        using var heartbeat = new WorkflowHeartbeat(async () => await UpdateTimestampAsync(context), heartbeatInterval, loggerFactory);
+        using var heartbeat = workflowHeartbeatGeneratorFactory.CreateHeartbeatGenerator(context);
         await Next(context);
-    }
-
-    private async Task UpdateTimestampAsync(WorkflowExecutionContext context)
-    {
-        var workflowInstanceStore = context.GetRequiredService<IWorkflowInstanceStore>();
-        var workflowInstanceId = context.Id;
-        await workflowInstanceStore.UpdateUpdatedTimestampAsync(workflowInstanceId, systemClock.UtcNow, context.CancellationToken);
-    }
-
-    private class WorkflowHeartbeat : IDisposable
-    {
-        private readonly Timer _timer;
-        private readonly Func<Task> _heartbeatAction;
-        private readonly TimeSpan _interval;
-        private readonly ILogger<WorkflowHeartbeat> _logger;
-
-        public WorkflowHeartbeat(Func<Task> heartbeatAction, TimeSpan interval, ILoggerFactory loggerFactory)
-        {
-            _heartbeatAction = heartbeatAction;
-            _interval = interval;
-            _logger = loggerFactory.CreateLogger<WorkflowHeartbeat>();
-            _timer = new(GenerateHeartbeatAsync, null, _interval, Timeout.InfiniteTimeSpan);
-        }
-
-        private async void GenerateHeartbeatAsync(object? state)
-        {
-            try
-            {
-                _logger.LogDebug("Generating heartbeat");
-                await _heartbeatAction();
-                _timer.Change(_interval, Timeout.InfiniteTimeSpan);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while generating a workflow heartbeat.");
-            }
-        }
-
-        public void Dispose()
-        {
-            _timer.Dispose();
-        }
     }
 }

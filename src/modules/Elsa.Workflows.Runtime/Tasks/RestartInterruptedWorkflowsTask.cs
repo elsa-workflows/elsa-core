@@ -40,7 +40,7 @@ public class RestartInterruptedWorkflowsTask(
         var cutoffTimestamp = now - livenessThreshold;
         return new()
         {
-            WorkflowSubStatus = WorkflowSubStatus.Executing,
+            IsExecuting = true,
             BeforeLastUpdated = cutoffTimestamp
         };
     }

@@ -18,6 +18,7 @@ public class BackgroundActivityInvoker(
     IWorkflowDefinitionService workflowDefinitionService,
     IVariablePersistenceManager variablePersistenceManager,
     IActivityInvoker activityInvoker,
+    WorkflowHeartbeatGeneratorFactory workflowHeartbeatGeneratorFactory,
     IServiceProvider serviceProvider,
     ILogger<BackgroundActivityInvoker> logger)
     : IBackgroundActivityInvoker
@@ -37,10 +38,13 @@ public class BackgroundActivityInvoker(
         var activityNodeId = scheduledBackgroundActivity.ActivityNodeId;
         var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.NodeId == activityNodeId);
 
-        await variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);
-        activityExecutionContext.SetIsBackgroundExecution();
-        await activityInvoker.InvokeAsync(activityExecutionContext);
-        await variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
+        using (workflowHeartbeatGeneratorFactory.CreateHeartbeatGenerator(workflowExecutionContext))
+        {
+            await variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);
+            activityExecutionContext.SetIsBackgroundExecution();
+            await activityInvoker.InvokeAsync(activityExecutionContext);
+            await variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
+        }
         await ResumeWorkflowAsync(activityExecutionContext, scheduledBackgroundActivity);
     }
 

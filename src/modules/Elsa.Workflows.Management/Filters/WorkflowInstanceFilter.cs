@@ -92,6 +92,11 @@ public class WorkflowInstanceFilter
     public ICollection<WorkflowSubStatus>? WorkflowSubStatuses { get; set; }
 
     /// <summary>
+    /// Filter workflow instances by whether they are executing.
+    /// </summary>
+    public bool? IsExecuting { get; set; }
+
+    /// <summary>
     /// Filter workflow instances by whether they have incidents.
     /// </summary>
     public bool? HasIncidents { get; set; }
@@ -133,6 +138,7 @@ public class WorkflowInstanceFilter
         if (filter.WorkflowSubStatus != null) query = query.Where(x => x.SubStatus == filter.WorkflowSubStatus);
         if (filter.WorkflowStatuses != null) query = query.Where(x => filter.WorkflowStatuses.Contains(x.Status));
         if (filter.WorkflowSubStatuses != null) query = query.Where(x => filter.WorkflowSubStatuses.Contains(x.SubStatus));
+        if (filter.IsExecuting != null) query = query.Where(x => x.IsExecuting == filter.IsExecuting);
         if (filter.HasIncidents != null) query = filter.HasIncidents == true ? query.Where(x => x.IncidentCount > 0) : query.Where(x => x.IncidentCount == 0);
         if (filter.IsSystem != null) query = query.Where(x => x.IsSystem == filter.IsSystem);
         if (filter.Name != null) query = query.Where(x => x.Name!.ToLower().Contains(filter.Name.ToLower()));

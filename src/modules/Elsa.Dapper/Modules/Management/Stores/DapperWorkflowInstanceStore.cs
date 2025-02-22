@@ -187,6 +187,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
             .In(nameof(WorkflowInstance.CorrelationId), filter.CorrelationIds)
             .In(nameof(WorkflowInstance.Status), filter.WorkflowStatuses?.Select(x => x.ToString()))
             .In(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatuses?.Select(x => x.ToString()))
+            .Is(nameof(WorkflowInstance.IsExecuting), filter.IsExecuting)
             .AndWorkflowInstanceSearchTerm(filter.SearchTerm);
     }
 
@@ -213,7 +214,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     private WorkflowInstance Map(WorkflowInstanceRecord source)
     {
         var workflowState = workflowStateSerializer.Deserialize(source.WorkflowState);
-        return new WorkflowInstance
+        return new()
         {
             Id = source.Id,
             DefinitionId = source.DefinitionId,
@@ -228,6 +229,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
             FinishedAt = source.FinishedAt,
             Status = Enum.Parse<WorkflowStatus>(source.Status),
             SubStatus = Enum.Parse<WorkflowSubStatus>(source.SubStatus),
+            IsExecuting = source.IsExecuting,
             CorrelationId = source.CorrelationId,
             TenantId = source.TenantId
         };
@@ -237,7 +239,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     private WorkflowInstanceRecord Map(WorkflowInstance source)
     {
         var workflowState = workflowStateSerializer.Serialize(source.WorkflowState);
-        return new WorkflowInstanceRecord
+        return new()
         {
             Id = source.Id,
             DefinitionId = source.DefinitionId,
@@ -252,6 +254,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
             FinishedAt = source.FinishedAt,
             Status = source.Status.ToString(),
             SubStatus = source.SubStatus.ToString(),
+            IsExecuting = source.IsExecuting,
             CorrelationId = source.CorrelationId,
             TenantId = source.TenantId
         };

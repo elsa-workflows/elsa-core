@@ -265,9 +265,9 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowRestarter, DefaultWorkflowRestarter>()
             .AddScoped<IBookmarkQueuePurger, DefaultBookmarkQueuePurger>()
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
-            
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
             .AddScoped<DefaultCommitStateHandler>()
+            .AddScoped<WorkflowHeartbeatGeneratorFactory>()
 
             // Deprecated services.
             .AddScoped<IWorkflowInbox, StimulusProxyWorkflowInbox>()

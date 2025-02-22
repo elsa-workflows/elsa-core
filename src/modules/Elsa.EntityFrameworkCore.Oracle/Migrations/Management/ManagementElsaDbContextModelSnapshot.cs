@@ -145,6 +145,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Management
                     b.Property<int>("IncidentCount")
                         .HasColumnType("NUMBER(10)");
 
+                    b.Property<bool>("IsExecuting")
+                        .HasColumnType("BOOLEAN");
+
                     b.Property<bool>("IsSystem")
                         .HasColumnType("BOOLEAN");
 
@@ -184,6 +187,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Management
 
                     b.HasIndex("FinishedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FinishedAt");
+
+                    b.HasIndex("IsExecuting")
+                        .HasDatabaseName("IX_WorkflowInstance_IsExecuting");
 
                     b.HasIndex("IsSystem")
                         .HasDatabaseName("IX_WorkflowInstance_IsSystem");
