@@ -45,6 +45,7 @@ public class WorkflowHeartbeatMiddleware(WorkflowMiddlewareDelegate next, IOptio
         {
             try
             {
+                _logger.LogDebug("Generating pulse");
                 await _pulseAction();
                 _timer.Change(_interval, Timeout.InfiniteTimeSpan);
             }
