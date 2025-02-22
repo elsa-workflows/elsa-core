@@ -11,7 +11,7 @@ public class WorkflowHeartbeatMiddleware(WorkflowMiddlewareDelegate next, IOptio
 {
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
-        var livenessThreshold = options.Value.WorkflowLivenessThreshold;
+        var livenessThreshold = options.Value.InactivityThreshold;
         var heartbeatInterval = TimeSpan.FromTicks((long)(livenessThreshold.Ticks * 0.6));
         logger.LogDebug("Workflow heartbeat interval: {Interval}", heartbeatInterval);
         using var heartbeat = new WorkflowHeartbeat(async () => await UpdateTimestampAsync(context), heartbeatInterval, loggerFactory);

@@ -35,7 +35,7 @@ public class RestartInterruptedWorkflowsTask(
 
     private WorkflowInstanceFilter CreateWorkflowInstanceFilter()
     {
-        var livenessThreshold = options.Value.WorkflowLivenessThreshold;
+        var livenessThreshold = options.Value.InactivityThreshold;
         var now = systemClock.UtcNow;
         var cutoffTimestamp = now - livenessThreshold;
         return new()

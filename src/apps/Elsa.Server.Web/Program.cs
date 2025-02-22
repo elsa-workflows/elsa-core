@@ -681,13 +681,13 @@ services.Configure<RecurringTaskOptions>(options =>
     options.Schedule.ConfigureTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(300));
     options.Schedule.ConfigureTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(300));
     options.Schedule.ConfigureTask<UpdateExpiredSecretsRecurringTask>(TimeSpan.FromHours(4));
-    options.Schedule.ConfigureTask<RestartInterruptedWorkflowsTask>(TimeSpan.FromSeconds(15));
+    options.Schedule.ConfigureTask<RestartInterruptedWorkflowsTask>(TimeSpan.FromMinutes(1));
 });
 
-services.Configure<RuntimeOptions>(options => { options.WorkflowLivenessThreshold = TimeSpan.FromSeconds(15); });
+services.Configure<RuntimeOptions>(options => { options.InactivityThreshold = TimeSpan.FromMinutes(1); });
 services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(10));
-
 services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
+
 services.AddHealthChecks();
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));

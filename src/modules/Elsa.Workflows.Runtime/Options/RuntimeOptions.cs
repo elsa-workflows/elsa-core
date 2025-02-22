@@ -21,7 +21,7 @@ public class RuntimeOptions
     /// A separate heartbeat process will ensure the <see cref="WorkflowInstance.UpdatedAt"/> is updated before this threshold.
     /// If the workflow instance got removed from memory, e.g. because of an application shutdown, the LastUpdated field will eventually exceed the liveness threshold and therefore be considered to be interrupted.
     /// </remarks>
-    public TimeSpan WorkflowLivenessThreshold { get; set; } = TimeSpan.FromMinutes(5);
+    public TimeSpan InactivityThreshold { get; set; } = TimeSpan.FromMinutes(5);
 
     /// <summary>
     /// The number of workflow instances to restart in a single batch.
