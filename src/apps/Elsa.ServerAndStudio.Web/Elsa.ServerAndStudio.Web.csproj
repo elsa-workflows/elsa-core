@@ -16,6 +16,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Connections.Api\Elsa.Connections.Api.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Connections.Core\Elsa.Connections.Core.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite\Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Connections.Persistence.EntityFrameworkCore\Elsa.Connections.Persistence.EntityFrameworkCore.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.JavaScript.Libraries\Elsa.JavaScript.Libraries.csproj" />

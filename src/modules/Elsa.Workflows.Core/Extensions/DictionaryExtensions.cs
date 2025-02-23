@@ -57,7 +57,7 @@ public static class DictionaryExtensions
     public static T? GetValueOrDefault<T>(this IDictionary<string, object> dictionary, string key, Func<T?> defaultValueFactory) => TryGetValue<T>(dictionary, key, out var value) ? value : defaultValueFactory();
     public static T? GetValueOrDefault<T>(this IDictionary<string, object> dictionary, IEnumerable<string> keys, Func<T?> defaultValueFactory) => TryGetValue<T>(dictionary, keys, out var value) ? value : defaultValueFactory();
     public static T? GetValueOrDefault<T>(this IDictionary<string, object> dictionary, string key) => GetValueOrDefault<T>(dictionary, key, () => default);
-    public static object? GetValueOrDefault(this IDictionary<string, object> dictionary, string key) => GetValueOrDefault<object>(dictionary, key, () => default);
+    public static object? GetValueOrDefault(this IDictionary<string, object> dictionary, string key) => GetValueOrDefault<object>(dictionary, key, () => null);
     
     public static T GetOrAdd<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key, Func<T> valueFactory)
     {

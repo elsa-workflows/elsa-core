@@ -403,6 +403,20 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "oracle-setup", "oracle-setu
 		docker\oracle-setup\setup.sql = docker\oracle-setup\setup.sql
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "connections", "connections", "{9DF81143-2F39-4CFB-9DA3-902279010622}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Models", "src\modules\Elsa.Connections.Models\Elsa.Connections.Models.csproj", "{75E08B0E-A41A-425C-9DCA-155505CE41CD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Api", "src\modules\Elsa.Connections.Api\Elsa.Connections.Api.csproj", "{BD120D97-4862-469E-B2CF-4109F7F21C20}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Core", "src\modules\Elsa.Connections.Core\Elsa.Connections.Core.csproj", "{8A3443F3-D40E-44B9-9805-B4CB7A3F022C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Persistence", "src\modules\Elsa.Connections.Persistence\Elsa.Connections.Persistence.csproj", "{FA2B2B44-7E3E-444B-A157-7526B376E9CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Persistence.EntityFrameworkCore", "src\modules\Elsa.Connections.Persistence.EntityFrameworkCore\Elsa.Connections.Persistence.EntityFrameworkCore.csproj", "{DF0CA7E2-F5DF-40ED-91B6-748767084FC7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite", "src\modules\Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite\Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite.csproj", "{DB20B168-CD90-41F2-BE08-3D8C6F142459}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -859,6 +873,30 @@ Global
 		{A51F9683-DA9F-45E7-82DE-1E261ACD6D68}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A51F9683-DA9F-45E7-82DE-1E261ACD6D68}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A51F9683-DA9F-45E7-82DE-1E261ACD6D68}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75E08B0E-A41A-425C-9DCA-155505CE41CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75E08B0E-A41A-425C-9DCA-155505CE41CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75E08B0E-A41A-425C-9DCA-155505CE41CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75E08B0E-A41A-425C-9DCA-155505CE41CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD120D97-4862-469E-B2CF-4109F7F21C20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD120D97-4862-469E-B2CF-4109F7F21C20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD120D97-4862-469E-B2CF-4109F7F21C20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD120D97-4862-469E-B2CF-4109F7F21C20}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A3443F3-D40E-44B9-9805-B4CB7A3F022C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A3443F3-D40E-44B9-9805-B4CB7A3F022C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A3443F3-D40E-44B9-9805-B4CB7A3F022C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A3443F3-D40E-44B9-9805-B4CB7A3F022C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA2B2B44-7E3E-444B-A157-7526B376E9CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA2B2B44-7E3E-444B-A157-7526B376E9CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA2B2B44-7E3E-444B-A157-7526B376E9CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA2B2B44-7E3E-444B-A157-7526B376E9CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF0CA7E2-F5DF-40ED-91B6-748767084FC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF0CA7E2-F5DF-40ED-91B6-748767084FC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF0CA7E2-F5DF-40ED-91B6-748767084FC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF0CA7E2-F5DF-40ED-91B6-748767084FC7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB20B168-CD90-41F2-BE08-3D8C6F142459}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB20B168-CD90-41F2-BE08-3D8C6F142459}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB20B168-CD90-41F2-BE08-3D8C6F142459}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB20B168-CD90-41F2-BE08-3D8C6F142459}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1011,6 +1049,13 @@ Global
 		{FA5E857F-B173-4B5D-8049-B817A210DEF5} = {A0DC5F8E-5D7F-4E8A-A5DF-B1FC31F7336E}
 		{A51F9683-DA9F-45E7-82DE-1E261ACD6D68} = {A0DC5F8E-5D7F-4E8A-A5DF-B1FC31F7336E}
 		{66E2E2CF-967F-4564-89E8-F46FA973C99B} = {986E5482-0482-448C-B9E4-EC67A9474B85}
+		{9DF81143-2F39-4CFB-9DA3-902279010622} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{75E08B0E-A41A-425C-9DCA-155505CE41CD} = {9DF81143-2F39-4CFB-9DA3-902279010622}
+		{BD120D97-4862-469E-B2CF-4109F7F21C20} = {9DF81143-2F39-4CFB-9DA3-902279010622}
+		{8A3443F3-D40E-44B9-9805-B4CB7A3F022C} = {9DF81143-2F39-4CFB-9DA3-902279010622}
+		{FA2B2B44-7E3E-444B-A157-7526B376E9CA} = {9DF81143-2F39-4CFB-9DA3-902279010622}
+		{DF0CA7E2-F5DF-40ED-91B6-748767084FC7} = {9DF81143-2F39-4CFB-9DA3-902279010622}
+		{DB20B168-CD90-41F2-BE08-3D8C6F142459} = {9DF81143-2F39-4CFB-9DA3-902279010622}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
