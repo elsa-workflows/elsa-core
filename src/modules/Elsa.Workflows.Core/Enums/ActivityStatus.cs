@@ -11,7 +11,7 @@ public enum ActivityStatus
     Pending,
     
     /// <summary>
-    /// The activity is in the Running state. Note that event if an activity is running, it may not be executing.
+    /// The activity is in the Running state. While in this state, the activity is not necessarily being actively executed. This state represents a logical status rather than a physical action.
     /// </summary>
     Running,
     

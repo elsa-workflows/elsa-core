@@ -19,7 +19,7 @@ public class RunWorkflowInstanceResponseMapper(
     public ProtoRunWorkflowInstanceResponse Map(RunWorkflowResult source)
     {
         if(source.WorkflowState == null!)
-            return new ProtoRunWorkflowInstanceResponse();
+            return new();
         
         var response = new ProtoRunWorkflowInstanceResponse
         {

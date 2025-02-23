@@ -12,6 +12,7 @@ namespace Elsa.Retention;
 [UsedImplicitly]
 public class CleanupRecurringTask(CleanupJob job) : RecurringTask
 {
+    /// <inheritdoc />
     public override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await job.ExecuteAsync(stoppingToken);

@@ -170,4 +170,12 @@ public interface IWorkflowInstanceStore
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The number of deleted workflow instances.</returns>
     ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates the "LastUpdated" timestamp of a workflow instance.
+    /// </summary>
+    /// <param name="workflowInstanceId">The unique identifier of the workflow instance.</param>
+    /// <param name="value">The new timestamp value to set.</param>
+    /// <param name="cancellationToken">The cancellation token to observe during the operation.</param>
+    Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default);
 }

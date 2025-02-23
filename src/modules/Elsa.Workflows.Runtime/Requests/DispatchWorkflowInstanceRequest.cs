@@ -28,7 +28,7 @@ public class DispatchWorkflowInstanceRequest
     /// <summary>
     /// The ID of the workflow instance to dispatch.
     /// </summary>
-    public string InstanceId { get; init; } = default!;
+    public string InstanceId { get; init; } = null!;
     
     /// <summary>
     /// The ID of the bookmark to resume.

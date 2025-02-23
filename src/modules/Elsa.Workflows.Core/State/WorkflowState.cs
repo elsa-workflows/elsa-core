@@ -49,6 +49,11 @@ public class WorkflowState
     public WorkflowSubStatus SubStatus { get; set; }
     
     /// <summary>
+    /// Gets or sets a value indicating whether the workflow instance is actively executing. 
+    /// </summary>
+    public bool IsExecuting { get; set; }
+    
+    /// <summary>
     /// Collected bookmarks.
     /// </summary>
     [NotMapped]

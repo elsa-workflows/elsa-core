@@ -73,6 +73,6 @@ public static class PropertyAccessorExtensions
             : expression.Body is UnaryExpression unaryExpression
                 ? unaryExpression.Operand is MemberExpression unaryMemberExpression
                     ? unaryMemberExpression.Member as PropertyInfo
-                    : default
-                : default;
+                    : null
+                : null;
 }

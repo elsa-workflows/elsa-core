@@ -133,6 +133,29 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
 
         await collection.BulkWriteAsync(writes, cancellationToken: cancellationToken);
     }
+    
+    public async Task UpdatePartialAsync(
+        string id,
+        IDictionary<string, object> updatedFields,
+        string primaryKey = nameof(Entity.Id),
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(id))
+            throw new ArgumentNullException(nameof(id));
+
+        if (updatedFields == null || updatedFields.Count == 0)
+            throw new ArgumentException("No fields to update were provided.", nameof(updatedFields));
+
+        var filter = Builders<TDocument>.Filter.Eq(primaryKey, id);
+        var updateDefinition = Builders<TDocument>.Update.Combine(
+            updatedFields.Select(field => Builders<TDocument>.Update.Set(field.Key, field.Value))
+        );
+
+        var updateResult = await collection.UpdateOneAsync(filter, updateDefinition, cancellationToken: cancellationToken);
+
+        if (updateResult.MatchedCount == 0)
+            throw new InvalidOperationException($"No document found with ID '{id}'.");
+    }
 
     /// <summary>
     /// Finds the document matching the specified predicate

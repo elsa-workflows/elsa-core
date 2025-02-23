@@ -3,6 +3,7 @@ using System;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -17,8 +18,10 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.20")
+                .HasAnnotation("ProductVersion", "8.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
+
+            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowDefinition", b =>
                 {
@@ -142,6 +145,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                     b.Property<int>("IncidentCount")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsExecuting")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<bool>("IsSystem")
                         .HasColumnType("tinyint(1)");
 
@@ -181,6 +187,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
 
                     b.HasIndex("FinishedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FinishedAt");
+
+                    b.HasIndex("IsExecuting")
+                        .HasDatabaseName("IX_WorkflowInstance_IsExecuting");
 
                     b.HasIndex("IsSystem")
                         .HasDatabaseName("IX_WorkflowInstance_IsSystem");

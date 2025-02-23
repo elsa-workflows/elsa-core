@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.20")
+                .HasAnnotation("ProductVersion", "8.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -145,6 +145,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<int>("IncidentCount")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsExecuting")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsSystem")
                         .HasColumnType("boolean");
 
@@ -184,6 +187,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
                     b.HasIndex("FinishedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FinishedAt");
+
+                    b.HasIndex("IsExecuting")
+                        .HasDatabaseName("IX_WorkflowInstance_IsExecuting");
 
                     b.HasIndex("IsSystem")
                         .HasDatabaseName("IX_WorkflowInstance_IsSystem");

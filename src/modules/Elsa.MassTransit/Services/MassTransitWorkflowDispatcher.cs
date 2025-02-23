@@ -54,7 +54,6 @@ public class MassTransitWorkflowDispatcher(
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var sendEndpoint = await GetSendEndpointAsync(options);
-        var serializedInput = SerializeInput(request.Input);
 
         await sendEndpoint.Send(new DispatchWorkflowInstance(request.InstanceId)
         {

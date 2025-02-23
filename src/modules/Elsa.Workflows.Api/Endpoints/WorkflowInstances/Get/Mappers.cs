@@ -20,6 +20,7 @@ internal class WorkflowInstanceMapper : ResponseMapper<WorkflowInstanceModel, Wo
         WorkflowState = e.WorkflowState,
         Status = e.Status,
         SubStatus = e.SubStatus,
+        IsExecuting = e.IsExecuting,
         CorrelationId = e.CorrelationId,
         Name = e.Name,
         IncidentCount = e.IncidentCount,

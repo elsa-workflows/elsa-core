@@ -48,7 +48,6 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         var expressionExecutionContextProps = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(workflowExecutionContext, workflowExecutionContext.Input);
         expressionExecutionContextProps[ExpressionExecutionContextExtensions.ActivityKey] = activity;
         ExpressionExecutionContext = new(workflowExecutionContext.ServiceProvider, new(), parentActivityExecutionContext?.ExpressionExecutionContext ?? workflowExecutionContext.ExpressionExecutionContext, expressionExecutionContextProps, Taint, CancellationToken);
-        ;
         Activity = activity;
         ActivityDescriptor = activityDescriptor;
         StartedAt = startedAt;
@@ -83,6 +82,17 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// Returns true if the activity execution context has completed.
     /// </summary>
     public bool IsCompleted => Status is ActivityStatus.Completed or ActivityStatus.Canceled;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the activity is actively executing. 
+    /// </summary>
+    /// <remarks>
+    /// This flag is set to <c>true</c> immediately before the activity begins execution 
+    /// and is set to <c>false</c> once the execution is completed. 
+    /// It can be used to determine if an activity was in-progress in case of unexpected 
+    /// application termination, allowing the system to retry execution upon restarting. 
+    /// </remarks>
+    public bool IsExecuting { get; set; }
 
     /// <summary>
     /// The workflow execution context. 
