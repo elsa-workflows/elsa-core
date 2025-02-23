@@ -84,7 +84,6 @@ const bool useZipCompression = false;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
-const bool useAzureServiceBus = false;
 const bool useKafka = false;
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated requests.
@@ -544,15 +543,7 @@ services
                 }
             });
         }
-
-        if (useAzureServiceBus)
-        {
-            elsa.UseAzureServiceBus(azureServiceBusConnectionString, asb =>
-            {
-                asb.AzureServiceBusOptions = options => configuration.GetSection("AzureServiceBus").Bind(options);
-            });
-        }
-
+        
         if (useKafka)
         {
             elsa.UseKafka(kafka =>
