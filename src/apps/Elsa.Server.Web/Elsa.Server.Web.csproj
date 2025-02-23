@@ -28,6 +28,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Sql.SqlServer\Elsa.Sql.SqlServer.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Sql\Elsa.Sql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Webhooks\Elsa.Webhooks.csproj" />
         <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\common\Elsa.DropIns\Elsa.DropIns.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Alterations.MassTransit\Elsa.Alterations.MassTransit.csproj" />
