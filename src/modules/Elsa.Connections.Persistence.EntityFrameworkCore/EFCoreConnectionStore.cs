@@ -22,7 +22,7 @@ public class EFCoreConnectionStore(EntityStore<ConnectionDbContext, ConnectionDe
         return store.UpdateAsync(entity, cancellationToken);
     }
 
-    public Task<ConnectionDefinition> GetAsync(string id, CancellationToken cancellationToken = default)
+    public Task<ConnectionDefinition?> GetAsync(string id, CancellationToken cancellationToken = default)
     {
         var filter = new ConnectionDefinitionFilter
         {
@@ -32,7 +32,7 @@ public class EFCoreConnectionStore(EntityStore<ConnectionDbContext, ConnectionDe
         return FindAsync(filter, cancellationToken);
     }
 
-    public Task<ConnectionDefinition> FindAsync(ConnectionDefinitionFilter filter, CancellationToken cancellationToken = default)
+    public Task<ConnectionDefinition?> FindAsync(ConnectionDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         return store.FindAsync(filter.Apply, cancellationToken);
     }

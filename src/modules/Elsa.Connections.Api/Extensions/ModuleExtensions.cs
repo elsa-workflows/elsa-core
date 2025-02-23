@@ -10,7 +10,7 @@ namespace Elsa.Extensions;
 public static class ModuleExtensions
 {
     /// <summary>
-    /// Installs the Semantic Kernel API feature.
+    /// Installs the Connections API feature.
     /// </summary>
     public static IModule UseConnectionsApi(this IModule module, Action<ConnectionsApiFeature>? configure = null)
     {

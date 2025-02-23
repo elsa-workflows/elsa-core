@@ -7,8 +7,6 @@ public class PropertyAttributeFilter : ActivityStateFilterBase
 {
     protected override ActivityStateFilterResult OnExecute(ActivityStateFilterContext context)
     {
-        var activityExecutionContext = context.ActivityExecutionContext;
-        var activity = activityExecutionContext.Activity;
         var inputDescriptor = context.InputDescriptor;
 
         if (Attribute.IsDefined(inputDescriptor.PropertyInfo, typeof(NoLogAttribute)))
@@ -21,7 +19,7 @@ public class PropertyAttributeFilter : ActivityStateFilterBase
             var maskedValue = $"**** see connection information for {contextValue} ****";
             return Filtered(maskedValue);
         }
-        else
-            return ActivityStateFilterResult.Pass();
+
+        return ActivityStateFilterResult.Pass();
     }
 }

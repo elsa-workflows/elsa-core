@@ -37,22 +37,19 @@ public class Endpoint(IConnectionStore store) : ElsaEndpoint<ConnectionInputMode
         entity.Name = model.Name;
         entity.Description = model.Description;
         entity.ConnectionConfiguration = model.ConnectionConfiguration;
-
-
+        
         await store.UpdateAsync(entity, ct);
-
         return entity.ToModel();
     }
 
     private async Task<bool> IsNameDuplicateAsync(string name, string id, CancellationToken cancellationToken)
     {
-        var entities = await store.FindAsync(new ConnectionDefinitionFilter
+        var entities = await store.FindAsync(new()
         {
             NotId = id,
             Name = name
-        });
+        }, cancellationToken);
 
-        return !(entities == null);
+        return entities != null;
     }
 }
-

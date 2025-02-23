@@ -19,6 +19,7 @@ public interface IConnectionDescriptorRegistry
     /// Removes an activity descriptor from the registry.
     /// </summary>
     /// <param name="connectionType">The type of the connection.</param>
+    /// <param name="descriptor"></param>
     void Remove(Type connectionType, ActivityDescriptor descriptor);
 
     /// <summary>
@@ -27,7 +28,7 @@ public interface IConnectionDescriptorRegistry
     /// <returns>All connection descriptors in the registry.</returns>
     IEnumerable<ConnectionDescriptor> ListAll();
 
-    Type Get(string type);
+    Type? Get(string type);
 
     /// <summary>
     /// Get the Input Descriptors for an connection
@@ -35,5 +36,5 @@ public interface IConnectionDescriptorRegistry
     /// <param name="activityType">The type of the connectn</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<IEnumerable<InputDescriptor>> GetConnectionDescriptor(string activityType, CancellationToken cancellationToken = default);
+    Task<IEnumerable<InputDescriptor>> GetConnectionDescriptorAsync(string activityType, CancellationToken cancellationToken = default);
 }

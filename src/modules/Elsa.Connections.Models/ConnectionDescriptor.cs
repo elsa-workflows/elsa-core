@@ -1,3 +1,3 @@
 ﻿namespace Elsa.Connections.Models;
 
-public record ConnectionDescriptor(string type, string description, string @namespace, string providerName);
+public record ConnectionDescriptor(string Type, string? Description, string? Namespace, string? ProviderName);

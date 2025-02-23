@@ -1,7 +1,6 @@
 ﻿using Elsa.Abstractions;
 using Elsa.Connections.Persistence.Contracts;
 
-
 namespace Elsa.Connections.Api.Endpoints.Delete;
 
 public class Endpoint(IConnectionStore store) : ElsaEndpoint<Request>
@@ -14,7 +13,7 @@ public class Endpoint(IConnectionStore store) : ElsaEndpoint<Request>
 
     public override async Task HandleAsync(Request req, CancellationToken ct)
     {
-        var entity = await store.GetAsync(req.Id);
+        var entity = await store.GetAsync(req.Id, ct);
 
         if (entity == null)
         {
@@ -23,6 +22,6 @@ public class Endpoint(IConnectionStore store) : ElsaEndpoint<Request>
         }
         
         await store.DeleteAsync(entity, ct);
-        await SendOkAsync();
+        await SendOkAsync(ct);
     }
 }

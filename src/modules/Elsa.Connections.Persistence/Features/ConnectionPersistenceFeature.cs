@@ -1,12 +1,9 @@
-using Elsa.Common.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
-using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Elsa.Connections.Persistence.Contracts;
 using Elsa.Connections.Persistence.Services;
-using Elsa.Connections.Models;
 using Elsa.Connections.Persistence.Entities;
 
 namespace Elsa.Connections.Persistence.Features;

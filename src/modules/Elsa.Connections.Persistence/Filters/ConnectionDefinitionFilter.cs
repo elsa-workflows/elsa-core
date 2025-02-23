@@ -1,17 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Elsa.Connections.Models;
-using Elsa.Connections.Persistence.Entities;
+﻿using Elsa.Connections.Persistence.Entities;
 
 namespace Elsa.Connections.Persistence.Filters;
 public class ConnectionDefinitionFilter
 {
     public string? Id { get; set; }
     public string? Name { get; set; }
-
     public string? NotId { get; set; }
     public string? Type { get; set; }
 

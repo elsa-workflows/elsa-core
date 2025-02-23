@@ -1,13 +1,9 @@
-using Elsa.Connections.Models;
-using Elsa.Connections.Persistence.Contracts;
 using Elsa.Connections.Persistence.Features;
-using Elsa.Connections.Persistence.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Connections.Api.Features;
 
@@ -22,12 +18,5 @@ public class ConnectionsApiFeature(IModule module) : FeatureBase(module)
     public override void Configure()
     {
         Module.AddFastEndpointsAssembly<ConnectionsApiFeature>();
-    }
-
-    public override void Apply()
-    {
-        
-
-
     }
 }

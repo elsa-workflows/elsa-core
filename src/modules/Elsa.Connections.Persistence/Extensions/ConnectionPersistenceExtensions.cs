@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Elsa.Connections.Persistence.Features;
+﻿using Elsa.Connections.Persistence.Features;
 using Elsa.Features.Services;
 
-
+// ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
 /// <summary>

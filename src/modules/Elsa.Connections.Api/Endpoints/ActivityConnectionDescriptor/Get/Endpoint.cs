@@ -15,12 +15,15 @@ public class Endpoint(IConnectionDescriptorRegistry store) : ElsaEndpointWithout
     public override async Task HandleAsync(CancellationToken ct)
     {
         var type = Route<string>("ActivityType");
-        var config = await store.GetConnectionDescriptor(type);
-
-        if (config == null)
-            await SendNotFoundAsync();
-        else
-            await SendOkAsync(config);
-
+        
+        if (string.IsNullOrWhiteSpace(type))
+        {
+            AddError("ActivityType is required");
+            await SendErrorsAsync(cancellation: ct);
+            return;
+        }
+        
+        var config = await store.GetConnectionDescriptorAsync(type, ct);
+        await SendOkAsync(config, ct);
     }
 }

@@ -16,11 +16,10 @@ public class Endpoint(IConnectionStore store) : ElsaEndpoint<Request,ConnectionM
     public override async Task<ConnectionModel> ExecuteAsync(Request req, CancellationToken ct)
     {
         var entity = await store.FindAsync(
-            new Persistence.Filters.ConnectionDefinitionFilter
+            new()
             {
                 Id = req.Id
-            }
-            );
+            }, ct);
 
         if (entity == null) 
         {

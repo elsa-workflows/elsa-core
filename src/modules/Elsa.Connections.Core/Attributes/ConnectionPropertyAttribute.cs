@@ -1,15 +1,8 @@
 ﻿namespace Elsa.Connections.Attributes;
 
-public class ConnectionPropertyAttribute : Attribute
+public class ConnectionPropertyAttribute(string ns, string displayName, string? description = null) : Attribute
 {
-    public ConnectionPropertyAttribute(string @namespace, string displayName, string? description= default)
-    {
-        Namespace = @namespace;
-        DisplayName = displayName;
-        Description = description;
-
-    }
-    public string? Namespace { get; set; }
-    public string? Description { get; set; }
-    public string? DisplayName { get; set; }
+    public string? Namespace { get; set; } = ns;
+    public string? Description { get; set; } = description;
+    public string? DisplayName { get; set; } = displayName;
 }

@@ -1,5 +1,5 @@
 ﻿// ReSharper disable once CheckNamespace
-using Elsa.Connections.Middleware;
+
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Connections.Core.Extensions;

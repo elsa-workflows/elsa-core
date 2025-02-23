@@ -5,7 +5,6 @@ using Elsa.Connections.Persistence.Filters;
 using Elsa.Workflows;
 using Elsa.Connections.Persistence.Entities;
 using Elsa.Connections.Api.Extensions;
-using static FastEndpoints.Ep;
 
 namespace Elsa.Connections.Api.Endpoints.Add;
 
@@ -23,7 +22,7 @@ public class Endpoint(IConnectionStore store, IIdentityGenerator identityGenerat
 
         if (!isNameUnique)
         {
-            AddError("An connection already exists with the specified name");
+            AddError("A connection already exists with the specified name");
             await SendErrorsAsync(cancellation: ct);
             return null!;
         }
@@ -37,7 +36,7 @@ public class Endpoint(IConnectionStore store, IIdentityGenerator identityGenerat
             ConnectionConfiguration = model.ConnectionConfiguration,
         };
         await store.AddAsync(newEntity, ct);
-        await SendOkAsync();
+        await SendOkAsync(ct);
 
         return newEntity.ToModel();
     }

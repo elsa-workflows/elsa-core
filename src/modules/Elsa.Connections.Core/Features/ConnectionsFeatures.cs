@@ -43,7 +43,7 @@ public class ConnectionsFeatures(IModule module) : FeatureBase(module)
         Services.AddSingleton<IConnectionDescriptorRegistry, ConnectionRegistry>();
 
         //UIHints
-        Services.AddScoped<IUIHintHandler, ConnexionDropDownUIHintHandler>();
+        Services.AddScoped<IUIHintHandler, ConnectionDropDownUIHintHandler>();
 
         Services.Configure<ConnectionOptions>(options =>
         {

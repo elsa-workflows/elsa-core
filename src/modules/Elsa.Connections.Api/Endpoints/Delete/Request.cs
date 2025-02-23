@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Elsa.Connections.Api.Endpoints.Delete;
+
 public class Request
-{    [Required] public string Id { get; set; } = default!;
+{
+    [Required] public string Id { get; set; } = null!;
 }
