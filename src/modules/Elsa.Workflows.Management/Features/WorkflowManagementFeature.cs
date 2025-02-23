@@ -18,7 +18,7 @@ using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Handlers;
-using Elsa.Workflows.Management.Handlers.Notification;
+using Elsa.Workflows.Management.Handlers.Notifications;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
@@ -41,8 +41,8 @@ namespace Elsa.Workflows.Management.Features;
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(WorkflowDefinitionsFeature))]
 [DependsOn(typeof(WorkflowInstancesFeature))]
-[PublicAPI]
-public class WorkflowManagementFeature : FeatureBase
+[UsedImplicitly]
+public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
 {
     private const string PrimitivesCategory = "Primitives";
     private const string LookupsCategory = "Lookups";
@@ -50,14 +50,11 @@ public class WorkflowManagementFeature : FeatureBase
     private const string DataCategory = "Data";
     private const string SystemCategory = "System";
 
+    private Func<IServiceProvider, IWorkflowDefinitionPublisher> _workflowDefinitionPublisher = sp => ActivatorUtilities.CreateInstance<WorkflowDefinitionPublisher>(sp);
+
     private string CompressionAlgorithm { get; set; } = nameof(None);
     private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
     private bool IsReadOnlyMode { get; set; }
-
-    /// <inheritdoc />
-    public WorkflowManagementFeature(IModule module) : base(module)
-    {
-    }
 
     /// <summary>
     /// A set of activity types to make available to the system. 
@@ -194,6 +191,12 @@ public class WorkflowManagementFeature : FeatureBase
         return this;
     }
 
+    public WorkflowManagementFeature WithWorkflowDefinitionPublisher(Func<IServiceProvider, IWorkflowDefinitionPublisher> workflowDefinitionPublisher)
+    {
+        _workflowDefinitionPublisher = workflowDefinitionPublisher;
+        return this;
+    }
+
     /// <inheritdoc />
     [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public override void Configure()
@@ -214,7 +217,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<IWorkflowDefinitionService, WorkflowDefinitionService>()
             .AddScoped<IWorkflowSerializer, WorkflowSerializer>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
-            .AddScoped<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
+            .AddScoped(_workflowDefinitionPublisher)
             .AddScoped<IWorkflowDefinitionImporter, WorkflowDefinitionImporter>()
             .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
             .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()

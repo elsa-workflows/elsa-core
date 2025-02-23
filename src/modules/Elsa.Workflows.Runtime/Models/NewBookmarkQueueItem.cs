@@ -25,6 +25,11 @@ public class NewBookmarkQueueItem
     public string? ActivityInstanceId { get; set; }
 
     /// <summary>
+    /// The correlation ID that is associated with the bookmark if any.
+    /// </summary>
+    public string? CorrelationId { get; set; }
+
+    /// <summary>
     /// The type name of the activity associated with the bookmark.
     /// </summary>
     public string? ActivityTypeName { get; set; }

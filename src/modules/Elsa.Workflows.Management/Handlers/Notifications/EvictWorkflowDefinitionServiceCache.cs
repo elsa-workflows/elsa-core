@@ -2,7 +2,7 @@ using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Notifications;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Management.Handlers.Notification;
+namespace Elsa.Workflows.Management.Handlers.Notifications;
 
 /// <summary>
 /// A workflow definition notifications handler for evicting the cache of the workflow definition service.

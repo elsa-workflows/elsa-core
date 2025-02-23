@@ -3,7 +3,7 @@ using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Management.Handlers.Notification;
+namespace Elsa.Workflows.Management.Handlers.Notifications;
 
 public class ValidateWorkflow : INotificationHandler<WorkflowDefinitionValidating>
 {

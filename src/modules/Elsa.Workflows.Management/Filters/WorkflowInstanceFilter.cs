@@ -134,7 +134,7 @@ public class WorkflowInstanceFilter
 
         if (TimestampFilters != null)
         {
-            foreach (TimestampFilter timestampFilter in TimestampFilters)
+            foreach (var timestampFilter in TimestampFilters)
             {
                 var column = timestampFilter.Column;
                 var timestamp = timestampFilter.Timestamp;

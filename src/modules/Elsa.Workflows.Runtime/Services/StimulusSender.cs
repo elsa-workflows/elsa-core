@@ -127,6 +127,7 @@ public class StimulusSender(
             {
                 WorkflowInstanceId = workflowInstanceId,
                 BookmarkId = metadata?.BookmarkId,
+                CorrelationId = metadata?.CorrelationId,
                 StimulusHash = stimulusHash,
                 Options = new()
                 {

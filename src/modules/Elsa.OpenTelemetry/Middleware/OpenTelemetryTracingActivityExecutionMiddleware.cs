@@ -32,13 +32,13 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
         span.SetTag("activityExecution.startTimeUtc", span.StartTimeUtc);
         span.SetTag("tenantId", context.WorkflowExecutionContext.Workflow.Identity.TenantId);
         
-        span.AddEvent(new ActivityEvent("Executing", tags: CreateStatusTags(context)));
+        span.AddEvent(new("Executing", tags: CreateStatusTags(context)));
         
         await next(context);
 
         if (context.Status == ActivityStatus.Faulted)
         {
-            span.AddEvent(new ActivityEvent("Faulted", tags: CreateStatusTags(context)));
+            span.AddEvent(new("Faulted", tags: CreateStatusTags(context)));
             span.SetStatus(ActivityStatusCode.Error);
             span.SetTag("error", true);
             span.SetTag("activityInstance.hasIncidents", true);
@@ -51,7 +51,7 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
         }
         else
         {
-            span.AddEvent(new ActivityEvent("Executed", tags: CreateStatusTags(context)));
+            span.AddEvent(new("Executed", tags: CreateStatusTags(context)));
             span.SetStatus(ActivityStatusCode.Ok);
         }
         
@@ -62,7 +62,7 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
     
     private ActivityTagsCollection CreateStatusTags(ActivityExecutionContext context)
     {
-        return new ActivityTagsCollection(new Dictionary<string, object?>
+        return new(new Dictionary<string, object?>
         {
             ["activityInstance.status"] = context.Status.ToString()
         });

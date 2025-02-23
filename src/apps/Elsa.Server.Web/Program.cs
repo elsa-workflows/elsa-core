@@ -481,7 +481,7 @@ services
 
                 if (massTransitBroker == MassTransitBroker.AzureServiceBus)
                 {
-                    massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
+                    massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureTransportBus = (context, bus) =>
                     {
                         bus.PrefetchCount = 50;
                         bus.LockDuration = TimeSpan.FromMinutes(5);
@@ -493,7 +493,7 @@ services
 
                 if (massTransitBroker == MassTransitBroker.RabbitMq)
                 {
-                    massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
+                    massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureTransportBus = (context, bus) =>
                     {
                         bus.PrefetchCount = 50;
                         bus.Durable = true;
@@ -662,7 +662,7 @@ services
             elsa.UseTenantHttpRouting(tenantHttpRouting =>
             {
                 // Override the tenant header name with a custom one.
-                tenantHttpRouting.WithTenantHeader("X-Company-Id");
+                tenantHttpRouting.WithTenantHeader("X-Tenant-ID");
             });
         }
 

@@ -41,13 +41,13 @@ public class DefaultMediator : IMediator
     }
 
     /// <inheritdoc />
-    public async Task<T?> SendAsync<T>(IRequest<T> request, CancellationToken cancellationToken = default)
+    public async Task<T> SendAsync<T>(IRequest<T> request, CancellationToken cancellationToken = default)
     {
         var responseType = typeof(T);
         var context = new RequestContext(request, responseType, cancellationToken);
         await _requestPipeline.ExecuteAsync(context);
 
-        return (T?)context.Response;
+        return (T)context.Response;
     }
 
     /// <inheritdoc />
