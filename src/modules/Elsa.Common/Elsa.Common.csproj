@@ -18,8 +18,4 @@
         <PackageReference Include="LinqKit.Core" />
     </ItemGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="System.Text.Json" />
-    </ItemGroup>
-
 </Project>
