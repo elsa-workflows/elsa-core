@@ -128,7 +128,6 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
 
     private async Task TrySendAsync(ActivityExecutionContext context)
     {
-        
         var logger = (ILogger)context.GetRequiredService(typeof(ILogger<>).MakeGenericType(GetType()));
         var httpClientFactory = context.GetRequiredService<IHttpClientFactory>();
         var httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequestBase));
@@ -244,7 +243,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
             var factory = SelectContentWriter(contentType, factories);
             request.Content = factory.CreateHttpContent(content, contentType);
         }
-        
+
         return request;
     }
 
