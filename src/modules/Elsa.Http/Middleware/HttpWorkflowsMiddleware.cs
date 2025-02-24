@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
@@ -368,10 +368,29 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
         return await httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, workflow, bookmarkPayload.Policy));
     }
 
-    private string ComputeBookmarkHash(IServiceProvider serviceProvider, string path, string method)
+    private static string ComputeBookmarkHash(IServiceProvider serviceProvider, string path, string method)
     {
         var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
         var bookmarkHasher = serviceProvider.GetRequiredService<IStimulusHasher>();
-        return bookmarkHasher.Hash(activityTypeName: null, bookmarkPayload);
+        var httpEndpointActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
+        var newHash = bookmarkHasher.Hash(activityTypeName: null, bookmarkPayload);
+        var legacyHash = bookmarkHasher.Hash(activityTypeName: httpEndpointActivityTypeName, bookmarkPayload); // Backward compatible
+
+        if (WorkflowExists(serviceProvider, newHash))
+            return newHash;
+
+        return legacyHash; // Fallback for old workflows
+
+    }
+
+    private static bool WorkflowExists(IServiceProvider serviceProvider, string hash)
+    {
+        var triggerStore = serviceProvider.GetRequiredService<ITriggerStore>();
+        var bookmarkStore = serviceProvider.GetRequiredService<IBookmarkStore>();
+
+        var triggerExists = triggerStore.FindManyAsync(new TriggerFilter { Hash = hash }, CancellationToken.None).Result.Any();
+        var bookmarkExists = bookmarkStore.FindManyAsync(new BookmarkFilter { Hash = hash }, CancellationToken.None).Result.Any();
+
+        return triggerExists || bookmarkExists;
     }
 }

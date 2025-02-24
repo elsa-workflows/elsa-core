@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
@@ -179,7 +179,7 @@ public class TriggerIndexer : ITriggerIndexer
             WorkflowDefinitionVersionId = workflow.Identity.Id,
             Name = triggerTypeName,
             ActivityId = trigger.Id,
-            Hash = _hasher.Hash(activityTypeName: null, payload),
+            Hash = _hasher.Hash(triggerTypeName.StartsWith("Elsa.") ? triggerTypeName : null, payload),
             Payload = payload
         });
 
