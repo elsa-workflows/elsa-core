@@ -71,6 +71,7 @@
         <PackageReference Include="DistributedLock.Redis" />
         <PackageReference Include="FluentStorage.Azure.Blobs" />
         <PackageReference Include="Hangfire.PostgreSql" />
+        <PackageReference Include="OpenTelemetry.Exporter.Console" />
         <PackageReference Include="Proto.Cluster.Kubernetes" />
         <PackageReference Include="Grpc.Net.Client" />
         <PackageReference Include="Proto.Persistence.Sqlite" />
