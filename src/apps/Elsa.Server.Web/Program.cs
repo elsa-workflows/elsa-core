@@ -68,6 +68,8 @@ using Medallion.Threading.Postgres;
 using Medallion.Threading.Redis;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
+using OpenTelemetry;
+using OpenTelemetry.Trace;
 using Proto.Cluster.Kubernetes;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
@@ -119,6 +121,14 @@ var sqlDatabaseProvider = Enum.Parse<SqlDatabaseProvider>(configuration["Databas
 // Optionally create type aliases for easier configuration.
 TypeAliasRegistry.RegisterAlias("OrderReceivedProducerFactory", typeof(GenericProducerFactory<string, OrderReceived>));
 TypeAliasRegistry.RegisterAlias("OrderReceivedConsumerFactory", typeof(GenericConsumerFactory<string, OrderReceived>));
+
+// Configure OpenTelemetry Tracing
+using var tracerProvider = Sdk.CreateTracerProviderBuilder()
+    .AddSource("Elsa.Workflows") // Match your ActivitySource name here
+    .SetSampler(new AlwaysOnSampler()) // Always record traces for testing
+    .AddConsoleExporter() // Export spans to the console (optional)
+    .Build();
+
 
 // Add Elsa services.
 services
@@ -454,6 +464,7 @@ services
                     alterations.UseMassTransitDispatcher();
                 }
             })
+            .UseOpenTelemetry()
             .UseWorkflowContexts();
 
         if (useQuartz)
