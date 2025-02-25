@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
@@ -7,6 +8,7 @@ using Elsa.Workflows.Attributes;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
+using Polly;
 using HttpHeaders = Elsa.Http.Models.HttpHeaders;
 
 namespace Elsa.Http;
@@ -25,8 +27,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     /// <summary>
     /// The URL to send the request to.
     /// </summary>
-    [Input]
-    public Input<Uri?> Url { get; set; } = default!;
+    [Input] public Input<Uri?> Url { get; set; } = default!;
 
     /// <summary>
     /// The HTTP method to use when sending the request.
@@ -82,6 +83,11 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     public Input<HttpHeaders?> RequestHeaders { get; set; } = new(new HttpHeaders());
 
     /// <summary>
+    /// Indicates whether resiliency mechanisms should be enabled for the HTTP request.
+    /// </summary>
+    public Input<bool> EnableResiliency { get; set; } = default!;
+
+    /// <summary>
     /// The HTTP response status code
     /// </summary>
     [Output(Description = "The HTTP response status code")]
@@ -122,15 +128,15 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
 
     private async Task TrySendAsync(ActivityExecutionContext context)
     {
-        var request = PrepareRequest(context);
         var logger = (ILogger)context.GetRequiredService(typeof(ILogger<>).MakeGenericType(GetType()));
         var httpClientFactory = context.GetRequiredService<IHttpClientFactory>();
         var httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequestBase));
         var cancellationToken = context.CancellationToken;
+        var resiliencyEnabled = EnableResiliency.GetOrDefault(context, () => false);
 
         try
         {
-            var response = await httpClient.SendAsync(request, cancellationToken);
+            var response = await SendRequestAsync();
             var parsedContent = await ParseContentAsync(context, response);
             var statusCode = (int)response.StatusCode;
             var responseHeaders = new HttpHeaders(response.Headers);
@@ -147,7 +153,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
             logger.LogWarning(e, "An error occurred while sending an HTTP request");
             context.AddExecutionLogEntry("Error", e.Message, payload: new
             {
-                StackTrace = e.StackTrace
+                e.StackTrace
             });
             context.JournalData.Add("Error", e.Message);
             await HandleRequestExceptionAsync(context, e);
@@ -157,10 +163,29 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
             logger.LogWarning(e, "An error occurred while sending an HTTP request");
             context.AddExecutionLogEntry("Error", e.Message, payload: new
             {
-                StackTrace = e.StackTrace
+                e.StackTrace
             });
             context.JournalData.Add("Cancelled", true);
             await HandleTaskCanceledExceptionAsync(context, e);
+        }
+
+        return;
+
+        async Task<HttpResponseMessage> SendRequestAsync()
+        {
+            if (resiliencyEnabled)
+            {
+                var pipeline = BuildResiliencyPipeline(context);
+                return await pipeline.ExecuteAsync(async ct => await SendRequestAsyncCore(ct), cancellationToken);
+            }
+
+            return await SendRequestAsyncCore();
+        }
+
+        async Task<HttpResponseMessage> SendRequestAsyncCore(CancellationToken ct = default)
+        {
+            var request = PrepareRequest(context);
+            return await httpClient.SendAsync(request, ct);
         }
     }
 
@@ -195,7 +220,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     {
         var method = Method.GetOrDefault(context) ?? "GET";
         var url = Url.Get(context);
-        var request = new HttpRequestMessage(new HttpMethod(method), url);
+        var request = new HttpRequestMessage(new(method), url);
         var headers = context.GetHeaders(RequestHeaders);
         var authorization = Authorization.GetOrDefault(context);
         var addAuthorizationWithoutValidation = DisableAuthorizationHeaderValidation.GetOrDefault(context);
@@ -229,5 +254,46 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
 
         var parsedContentType = new System.Net.Mime.ContentType(contentType);
         return factories.FirstOrDefault(httpContentFactory => httpContentFactory.SupportedContentTypes.Any(c => c == parsedContentType.MediaType)) ?? new JsonContentFactory();
+    }
+
+    private ResiliencePipeline<HttpResponseMessage> BuildResiliencyPipeline(ActivityExecutionContext context)
+    {
+        var pipelineBuilder = new ResiliencePipelineBuilder<HttpResponseMessage>()
+            .AddRetry(new()
+            {
+                ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                    .Handle<TimeoutException>() // Specific timeout exception
+                    .Handle<HttpRequestException>(ex => IsTransientStatusCode(ex.StatusCode)) // Network errors or transient HTTP codes
+                    .HandleResult(response => IsTransientStatusCode(response.StatusCode)),
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromSeconds(Math.Min(Random.Shared.NextDouble() * 2, 8)), // Jittered delay capped at 8 secs
+                BackoffType = DelayBackoffType.Exponential
+            })
+            .AddCircuitBreaker(new()
+            {
+                FailureRatio = 0.5,
+                SamplingDuration = TimeSpan.FromSeconds(30),
+                MinimumThroughput = 10,
+                BreakDuration = TimeSpan.FromSeconds(60)
+            })
+            .AddTimeout(TimeSpan.FromSeconds(60)); // Outer timeout
+
+        return pipelineBuilder.Build();
+    }
+
+    // Helper method to identify transient status codes.
+    private static bool IsTransientStatusCode(HttpStatusCode? statusCode)
+    {
+        if (!statusCode.HasValue) return true; // No status code (e.g., network failure) is worth retrying
+        return statusCode switch
+        {
+            HttpStatusCode.RequestTimeout => true, // 408
+            HttpStatusCode.TooManyRequests => true, // 429
+            HttpStatusCode.InternalServerError => true, // 500
+            HttpStatusCode.BadGateway => true, // 502
+            HttpStatusCode.ServiceUnavailable => true, // 503
+            HttpStatusCode.GatewayTimeout => true, // 504
+            _ => false
+        };
     }
 }
