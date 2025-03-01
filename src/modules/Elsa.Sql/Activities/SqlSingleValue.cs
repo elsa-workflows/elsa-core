@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Sql.Contracts;
 using Elsa.Sql.UIHints;
@@ -40,14 +41,15 @@ public class SqlSingleValue : Activity
     public Input<string?> ConnectionString { get; set; } = default!;
 
     /// <summary>
-    /// Query to run against the database.
+    /// Command to run against the database.
     /// </summary>
     [Input(
         Description = "Query to run against the database.",
         UIHint = InputUIHints.CodeEditor,
-        UIHandler = typeof(SqlCodeOptionsProvider)
+        UIHandler = typeof(SqlCodeOptionsProvider)//,
+                                                  //ExpressionCategories = [ExpressionCategories.Query.Sql]
     )]
-    public Input<string?> Query { get; set; } = default!;
+    public Input<string?> Command { get; set; } = default!;
 
 
     /// <summary>
@@ -57,15 +59,28 @@ public class SqlSingleValue : Activity
         Description = "Command result.")]
     public Output<object?> Result { get; set; } = default!;
 
+
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        var command = Command.GetOrDefault(context);
+
+        // If no command was specified, there's nothing to do.
+        if (string.IsNullOrWhiteSpace(command))
+            return;
+
+        // Get and execute the SQL evaluator.
+        var evaluator = context.GetRequiredService<ISqlEvaluator>();
+        var evaluatedQuery = await evaluator.EvaluateAsync(command, context.ExpressionExecutionContext, new ExpressionEvaluatorOptions(), context.CancellationToken);
+
+        // Create client
         var factory = context.GetRequiredService<ISqlClientFactory>();
         var client = factory.CreateClient(Client.GetOrDefault(context), ConnectionString.GetOrDefault(context));
 
-        var result = await client.ExecuteScalarAsync(Query.GetOrDefault(context));
+        // Execute command
+        var result = await client.ExecuteScalarAsync(evaluatedQuery);
         context.Set(Result, result);
 
         await CompleteAsync(context);
