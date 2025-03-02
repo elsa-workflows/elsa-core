@@ -262,11 +262,12 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
             .AddScoped<IWorkflowActivationStrategyEvaluator, DefaultWorkflowActivationStrategyEvaluator>()
             .AddScoped<IWorkflowStarter, DefaultWorkflowStarter>()
+            .AddScoped<IWorkflowRestarter, DefaultWorkflowRestarter>()
             .AddScoped<IBookmarkQueuePurger, DefaultBookmarkQueuePurger>()
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
-            
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
             .AddScoped<DefaultCommitStateHandler>()
+            .AddScoped<WorkflowHeartbeatGeneratorFactory>()
 
             // Deprecated services.
             .AddScoped<IWorkflowInbox, StimulusProxyWorkflowInbox>()
@@ -297,6 +298,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddStartupTask<PopulateRegistriesStartupTask>()
             .AddRecurringTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromMinutes(1))
             .AddRecurringTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10))
+            .AddRecurringTask<RestartInterruptedWorkflowsTask>(TimeSpan.FromMinutes(5)) // Same default as the workflow liveness threshold.
 
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)

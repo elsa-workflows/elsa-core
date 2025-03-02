@@ -226,6 +226,24 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
     }
 
     /// <summary>
+    /// Updates specific properties of an entity in the database.
+    /// </summary>
+    /// <param name="entity">The entity to update.</param>
+    /// <param name="properties">An array of expressions indicating the properties to update.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task UpdatePartialAsync(TEntity entity, Expression<Func<TEntity, object>>[] properties, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
+        dbContext.Attach(entity);
+
+        foreach (var property in properties) 
+            dbContext.Entry(entity).Property(property).IsModified = true;
+        
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
     /// Finds the entity matching the specified predicate.
     /// </summary>
     /// <param name="predicate">The predicate to use.</param>

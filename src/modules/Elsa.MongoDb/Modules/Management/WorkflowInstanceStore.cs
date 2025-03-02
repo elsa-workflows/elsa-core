@@ -123,6 +123,16 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
         return await mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
     }
 
+    public async Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default)
+    {
+        var props = new Dictionary<string, object>
+        {
+            [nameof(WorkflowInstance.UpdatedAt)] = value
+        };
+
+        await mongoDbStore.UpdatePartialAsync(workflowInstanceId, props, cancellationToken: cancellationToken);
+    }
+
     /// <inheritdoc />
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {

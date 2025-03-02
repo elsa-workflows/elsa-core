@@ -3,6 +3,11 @@ namespace Elsa.Workflows.Attributes;
 [AttributeUsage(AttributeTargets.Class)]
 public class ActivityAttribute : Attribute
 {
+    public ActivityAttribute()
+    {
+        // Default constructor.
+    }
+    
     public ActivityAttribute(string @namespace, string? category, string? description = default)
     {
         Namespace = @namespace;
