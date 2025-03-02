@@ -68,6 +68,8 @@ using Medallion.Threading.Postgres;
 using Medallion.Threading.Redis;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
+using OpenTelemetry;
+using OpenTelemetry.Trace;
 using Proto.Cluster.Kubernetes;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
@@ -84,7 +86,6 @@ const bool useZipCompression = false;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
-const bool useAzureServiceBus = false;
 const bool useKafka = false;
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated requests.
@@ -120,6 +121,14 @@ var sqlDatabaseProvider = Enum.Parse<SqlDatabaseProvider>(configuration["Databas
 // Optionally create type aliases for easier configuration.
 TypeAliasRegistry.RegisterAlias("OrderReceivedProducerFactory", typeof(GenericProducerFactory<string, OrderReceived>));
 TypeAliasRegistry.RegisterAlias("OrderReceivedConsumerFactory", typeof(GenericConsumerFactory<string, OrderReceived>));
+
+// Configure OpenTelemetry Tracing
+using var tracerProvider = Sdk.CreateTracerProviderBuilder()
+    .AddSource("Elsa.Workflows") // Match your ActivitySource name here
+    .SetSampler(new AlwaysOnSampler()) // Always record traces for testing
+    .AddConsoleExporter() // Export spans to the console (optional)
+    .Build();
+
 
 // Add Elsa services.
 services
@@ -455,6 +464,7 @@ services
                     alterations.UseMassTransitDispatcher();
                 }
             })
+            .UseOpenTelemetry()
             .UseWorkflowContexts();
 
         if (useQuartz)
@@ -544,15 +554,7 @@ services
                 }
             });
         }
-
-        if (useAzureServiceBus)
-        {
-            elsa.UseAzureServiceBus(azureServiceBusConnectionString, asb =>
-            {
-                asb.AzureServiceBusOptions = options => configuration.GetSection("AzureServiceBus").Bind(options);
-            });
-        }
-
+        
         if (useKafka)
         {
             elsa.UseKafka(kafka =>
@@ -665,7 +667,8 @@ services
                 tenantHttpRouting.WithTenantHeader("X-Tenant-ID");
             });
         }
-
+        
+        elsa.UseWebhooks(webhooks => webhooks.ConfigureSinks += options => builder.Configuration.GetSection("Webhooks").Bind(options));
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();
         elsa.AddFastEndpointsAssembly<Program>();

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Elsa.Extensions;
 
 namespace Elsa.Workflows.UIHints.Dropdown;
 
@@ -21,6 +22,8 @@ public abstract class DropDownOptionsProviderBase : IPropertyUIHandler
             [InputUIHints.DropDown] = props
         };
 
+        options.AddRange(GetUIPropertyAdditionalOptions());
+
         return options;
     }
 
@@ -28,4 +31,13 @@ public abstract class DropDownOptionsProviderBase : IPropertyUIHandler
     /// Implement this to provide items to the dropdown list.
     /// </summary>
     protected abstract ValueTask<ICollection<SelectListItem>> GetItemsAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Override this to provide additional options to the list
+    /// </summary>
+    /// <returns></returns>
+    protected virtual IDictionary<string, object> GetUIPropertyAdditionalOptions()
+    {
+        return new Dictionary<String, object>();
+    }
 }

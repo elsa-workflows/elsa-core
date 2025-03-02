@@ -3,7 +3,6 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Webhooks.ActivityProviders;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using WebhooksCore;
 using WebhooksCore.Options;
 
@@ -12,15 +11,11 @@ namespace Elsa.Webhooks.Features;
 /// <summary>
 /// Installs and configures webhook services.
 /// </summary>
-public class WebhooksFeature : FeatureBase
+public class WebhooksFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public WebhooksFeature(IModule module) : base(module)
-    {
-    }
-
-    public Action<IOptions<WebhookSinksOptions>> ConfigureSinks { get; set; } = options => { };
-    public Action<IHttpClientBuilder> ConfigureHttpClient { get; set; } = builder => { };
+    public Action<WebhookSinksOptions> ConfigureSinks { get; set; } = _ => { };
+    public Action<WebhookSourcesOptions> ConfigureSources { get; set; } = _ => { };
+    public Action<IHttpClientBuilder> ConfigureHttpClient { get; set; } = _ => { };
 
     /// <summary>
     /// Registers the specified webhook with <see cref="WebhookSinksOptions"/>
@@ -45,8 +40,7 @@ public class WebhooksFeature : FeatureBase
     /// </summary>
     public WebhooksFeature RegisterSinks(params WebhookSink[] sinks)
     {
-        Services.Configure(ConfigureSinks);
-        Services.Configure<WebhookSinksOptions>(options => options.Sinks.AddRange(sinks));
+        ConfigureSinks += options => options.Sinks.AddRange(sinks);
         return this;
     }
     
@@ -60,7 +54,7 @@ public class WebhooksFeature : FeatureBase
     /// </summary>
     public WebhooksFeature RegisterWebhookSources(params WebhookSource[] sources)
     {
-        Services.Configure<WebhookSourcesOptions>(options => options.Sources.AddRange(sources));
+        ConfigureSources += options => options.Sources.AddRange(sources);
         return this;
     }
 
@@ -74,8 +68,12 @@ public class WebhooksFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
+        Services.Configure(ConfigureSinks);
+        Services.Configure(ConfigureSources);
+        
         Services
             .AddWebhooksCore(ConfigureHttpClient)
-            .AddActivityProvider<WebhookEventActivityProvider>();
+            .AddActivityProvider<WebhookEventActivityProvider>()
+            .AddNotificationHandlersFrom<WebhooksFeature>();
     }
 }
