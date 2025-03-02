@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Workflows.Memory;
-using Elsa.Workflows.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Serialization.Converters;

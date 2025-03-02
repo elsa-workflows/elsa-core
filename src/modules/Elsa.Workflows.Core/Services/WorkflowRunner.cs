@@ -1,14 +1,14 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class WorkflowRunner(
@@ -19,11 +19,13 @@ public class WorkflowRunner(
     IWorkflowGraphBuilder workflowGraphBuilder,
     IIdentityGenerator identityGenerator,
     INotificationSender notificationSender,
+    ILoggerStateGenerator<WorkflowExecutionContext> loggerStateGenerator,
+    ICommitStateHandler commitStateHandler,
     ILogger<WorkflowRunner> logger)
     : IWorkflowRunner
 {
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync(IActivity activity, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(IActivity activity, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var workflow = Workflow.FromActivity(activity);
         var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
@@ -31,7 +33,7 @@ public class WorkflowRunner(
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync(IWorkflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(IWorkflow workflow, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var builder = workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync(workflow, cancellationToken);
@@ -39,16 +41,14 @@ public class WorkflowRunner(
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult<TResult>> RunAsync<TResult>(WorkflowBase<TResult> workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult<TResult>> RunAsync<TResult>(WorkflowBase<TResult> workflow, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var result = await RunAsync((IWorkflow)workflow, options, cancellationToken);
-        return new RunWorkflowResult<TResult>(result.WorkflowState, result.Workflow, (TResult)result.Result!);
+        return new(result.WorkflowState, result.Workflow, (TResult)result.Result!);
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync<T>(
-        RunWorkflowOptions? options = default,
-        CancellationToken cancellationToken = default) where T : IWorkflow, new()
+    public async Task<RunWorkflowResult> RunAsync<T>(RunWorkflowOptions? options = null, CancellationToken cancellationToken = default) where T : IWorkflow, new()
     {
         var builder = workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
@@ -56,7 +56,7 @@ public class WorkflowRunner(
     }
 
     /// <inheritdoc />
-    public async Task<TResult> RunAsync<T, TResult>(RunWorkflowOptions? options = default, CancellationToken cancellationToken = default) where T : WorkflowBase<TResult>, new()
+    public async Task<TResult> RunAsync<T, TResult>(RunWorkflowOptions? options = null, CancellationToken cancellationToken = default) where T : WorkflowBase<TResult>, new()
     {
         var builder = workflowBuilderFactory.CreateBuilder();
         var workflow = await builder.BuildWorkflowAsync<T>(cancellationToken);
@@ -65,7 +65,7 @@ public class WorkflowRunner(
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         // Set up a workflow execution context.
         var instanceId = options?.WorkflowInstanceId ?? identityGenerator.GenerateId();
@@ -82,7 +82,7 @@ public class WorkflowRunner(
             parentWorkflowInstanceId,
             input,
             properties,
-            default,
+            null,
             triggerActivityId,
             cancellationToken);
 
@@ -93,23 +93,23 @@ public class WorkflowRunner(
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
         return await RunAsync(workflowGraph, options, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
         return await RunAsync(workflowGraph, workflowState, options, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
-        // Create workflow execution context.
+        // Create a workflow execution context.
         var input = options?.Input;
         var properties = options?.Properties;
         var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
@@ -123,7 +123,7 @@ public class WorkflowRunner(
             parentWorkflowInstanceId,
             input,
             properties,
-            default,
+            null,
             triggerActivityId,
             cancellationToken);
 
@@ -142,7 +142,7 @@ public class WorkflowRunner(
             if (!string.IsNullOrEmpty(activityHandle.ActivityInstanceId))
             {
                 var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityHandle.ActivityInstanceId)
-                                               ?? throw new Exception("No activity execution context found with the specified ID.");
+                                               ?? throw new("No activity execution context found with the specified ID.");
                 workflowExecutionContext.ScheduleActivityExecutionContext(activityExecutionContext);
             }
             else
@@ -157,23 +157,30 @@ public class WorkflowRunner(
         }
         else
         {
-            // Nothing was scheduled. Schedule the workflow itself.
-            workflowExecutionContext.ScheduleWorkflow();
+            // Check if there are any interrupted activities.
+            var interruptedActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => x.IsExecuting).ToList();
+
+            if( interruptedActivityExecutionContexts.Count > 0)
+            {
+                // Schedule the interrupted activities.
+                foreach (var pendingActivityExecutionContext in interruptedActivityExecutionContexts)
+                    workflowExecutionContext.ScheduleActivityExecutionContext(pendingActivityExecutionContext);
+            }
+            else
+            {
+                // Nothing was scheduled. Schedule the workflow itself.
+                workflowExecutionContext.ScheduleWorkflow();
+            }
         }
 
         return await RunAsync(workflowExecutionContext);
     }
 
-
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
-        var workflowInstanceId = workflowExecutionContext.Id;
-        var logContext = new Dictionary<string, object>
-        {
-            ["WorkflowInstanceId"] = workflowInstanceId
-        };
-        using var loggingScope = logger.BeginScope(logContext);
+        var loggerState = loggerStateGenerator.GenerateLoggerState(workflowExecutionContext);
+        using var loggingScope = logger.BeginScope(loggerState);
         var workflow = workflowExecutionContext.Workflow;
         var cancellationToken = workflowExecutionContext.CancellationToken;
 
@@ -196,6 +203,7 @@ public class WorkflowRunner(
 
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
         await notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
-        return new RunWorkflowResult(workflowState, workflowExecutionContext.Workflow, result);
+        await commitStateHandler.CommitAsync(workflowExecutionContext, workflowState, cancellationToken);
+        return new(workflowState, workflowExecutionContext.Workflow, result);
     }
 }

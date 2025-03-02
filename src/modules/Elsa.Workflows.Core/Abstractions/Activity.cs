@@ -2,9 +2,9 @@ using System.Diagnostics;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Behaviors;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows;
@@ -73,8 +73,16 @@ public abstract class Activity : IActivity, ISignalHandler
         get => this.GetRunAsynchronously();
         set => this.SetRunAsynchronously(value);
     }
+    
+    [JsonIgnore]
+    public string? CommitStrategy
+    {
+        get => this.GetCommitStrategy();
+        set => this.SetCommitStrategy(value);
+    }
 
     /// <inheritdoc />
+    [JsonConverter(typeof(PolymorphicObjectConverterFactory))]
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
     
     /// <inheritdoc />
@@ -82,6 +90,7 @@ public abstract class Activity : IActivity, ISignalHandler
     public IDictionary<string, object> SyntheticProperties { get; set; } = new Dictionary<string, object>();
     
     /// <inheritdoc />
+    [JsonConverter(typeof(PolymorphicObjectConverterFactory))]
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
 
     /// <summary>

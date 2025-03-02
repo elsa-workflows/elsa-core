@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Stores all activity descriptors available to the system.
@@ -90,5 +90,10 @@ public interface IActivityRegistry : IActivityProvider
     /// <param name="activityProviders">The activity providers used to retrieve the descriptors.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task RefreshDescriptors(IEnumerable<IActivityProvider> activityProviders, CancellationToken cancellationToken = default);
+    Task RefreshDescriptorsAsync(IEnumerable<IActivityProvider> activityProviders, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Refreshes the activity descriptors in the registry by querying the specified activity provider.
+    /// </summary>
+    Task RefreshDescriptorsAsync(IActivityProvider activityProvider, CancellationToken cancellationToken = default);
 }

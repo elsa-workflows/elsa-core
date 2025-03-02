@@ -1,5 +1,4 @@
 using System.Reflection;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.UIHints.CheckList;
 
@@ -12,6 +11,6 @@ public class CheckListUIHintHandler : IUIHintHandler
     /// <inheritdoc />
     public ValueTask<IEnumerable<Type>> GetPropertyUIHandlersAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken)
     {
-        return new(new[] { typeof(StaticCheckListOptionsProvider) });
+        return new([typeof(StaticCheckListOptionsProvider)]);
     }
 }

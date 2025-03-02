@@ -1,6 +1,5 @@
 using Elsa.Expressions.Models;
-using Elsa.Http.Contracts;
-using Elsa.Http.Models;
+using Elsa.Http;
 using Elsa.Http.Options;
 using Elsa.SasTokens.Contracts;
 using Microsoft.Extensions.Options;

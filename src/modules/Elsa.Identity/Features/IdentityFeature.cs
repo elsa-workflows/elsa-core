@@ -1,5 +1,6 @@
 using AspNetCore.Authentication.ApiKey;
 using Elsa.Common.Features;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -7,7 +8,7 @@ using Elsa.Features.Services;
 using Elsa.Framework.Tenants;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
-using Elsa.Identity.MultiTenancy;
+using Elsa.Identity.Multitenancy;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
@@ -17,7 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Identity.Features;
 
 /// <summary>
-/// Provides identity feature to authenticate & authorize API requests.
+/// Provides identity feature to authenticate &amp; authorize API requests.
 /// </summary>
 [DependsOn(typeof(SystemClockFeature))]
 [PublicAPI]
@@ -178,8 +179,8 @@ public class IdentityFeature : FeatureBase
 
         // Tenant resolution strategies.
         Services
-            .AddScoped<ITenantResolutionStrategy, ClaimsTenantResolver>()
-            .AddScoped<ITenantResolutionStrategy, CurrentUserTenantResolver>();
+            .AddScoped<ITenantResolver, ClaimsTenantResolver>()
+            .AddScoped<ITenantResolver, CurrentUserTenantResolver>();
 
         // Services.
         Services

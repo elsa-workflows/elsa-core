@@ -14,6 +14,7 @@ public static class InputUIHints
     public const string DropDown = "dropdown";
     public const string MultiText = "multitext";
     public const string CodeEditor = "code-editor";
+    public const string ExpressionEditor = "expression-editor";
     public const string VariablePicker = "variable-picker";
     public const string TypePicker = "type-picker";
     public const string WorkflowDefinitionPicker = "workflow-definition-picker";

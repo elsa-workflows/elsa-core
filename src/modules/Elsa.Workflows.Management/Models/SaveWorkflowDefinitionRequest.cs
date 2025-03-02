@@ -8,7 +8,7 @@
         /// <summary>
         /// The workflow definition to save.
         /// </summary>
-        public WorkflowDefinitionModel Model { get; set; } = default!;
+        public WorkflowDefinitionModel Model { get; set; } = null!;
 
         /// <summary>
         /// Whether the workflow definition should be published.

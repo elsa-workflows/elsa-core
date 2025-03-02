@@ -9,4 +9,9 @@ public class SingleLineProps
     /// Gets or sets adornment text.
     /// </summary>
     public string? AdornmentText { get; set; }
+
+    /// <summary>
+    /// Gets or sets enabling or disabling the copy adornment.
+    /// </summary>
+    public bool EnableCopyAdornment { get; set; } = false;
 }

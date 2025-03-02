@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Runtime;
 /// <summary>
 /// Represents a store of <see cref="WorkflowExecutionLogRecord"/>.
 /// </summary>
-public interface IWorkflowExecutionLogStore
+public interface IWorkflowExecutionLogStore : ILogRecordStore<WorkflowExecutionLogRecord>
 {
     /// <summary>
     /// Adds the specified <see cref="WorkflowExecutionLogRecord"/> to te persistence store.
@@ -27,14 +27,6 @@ public interface IWorkflowExecutionLogStore
     /// If the record does not already exist, it is added to the store; if it does exist, its existing entry is updated.
     /// </remarks>
     Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Adds or updates the specified set of <see cref="WorkflowExecutionLogRecord"/> objects in the persistence store.
-    /// </summary>
-    /// <remarks>
-    /// If a record does not already exist, it is added to the store; if it does exist, its existing entry is updated.
-    /// </remarks>
-    Task SaveManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns the first workflow execution log record matching the specified filter.

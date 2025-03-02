@@ -3,7 +3,6 @@ using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
@@ -14,7 +13,7 @@ using Elsa.Workflows.Runtime.Notifications;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class TriggerIndexer : ITriggerIndexer
@@ -24,6 +23,7 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly ITriggerStore _triggerStore;
+    private readonly IActivityRegistry _activityRegistry;
     private readonly INotificationSender _notificationSender;
     private readonly IServiceProvider _serviceProvider;
     private readonly IStimulusHasher _hasher;
@@ -38,6 +38,7 @@ public class TriggerIndexer : ITriggerIndexer
         IExpressionEvaluator expressionEvaluator,
         IIdentityGenerator identityGenerator,
         ITriggerStore triggerStore,
+        IActivityRegistry activityRegistry,
         INotificationSender notificationSender,
         IServiceProvider serviceProvider,
         IStimulusHasher hasher,
@@ -47,6 +48,7 @@ public class TriggerIndexer : ITriggerIndexer
         _expressionEvaluator = expressionEvaluator;
         _identityGenerator = identityGenerator;
         _triggerStore = triggerStore;
+        _activityRegistry = activityRegistry;
         _notificationSender = notificationSender;
         _serviceProvider = serviceProvider;
         _hasher = hasher;
@@ -84,7 +86,7 @@ public class TriggerIndexer : ITriggerIndexer
         // Get current triggers
         var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.DefinitionId, cancellationToken).ToList();
 
-        // Collect new triggers **if workflow is published**.
+        // Collect new triggers **if the workflow is published**.
         var newTriggers = workflow.Publication.IsPublished
             ? await GetTriggersInternalAsync(workflow, cancellationToken).ToListAsync(cancellationToken)
             : new List<StoredTrigger>(0);
@@ -154,11 +156,18 @@ public class TriggerIndexer : ITriggerIndexer
     {
         var workflow = context.Workflow;
         var cancellationToken = context.CancellationToken;
-        var expressionExecutionContext = await trigger.CreateExpressionExecutionContextAsync(_serviceProvider, context, _expressionEvaluator, _logger);
-
+        var triggerTypeName = trigger.Type;
+        var triggerDescriptor = _activityRegistry.Find(triggerTypeName, trigger.Version);
+        
+        if (triggerDescriptor == null)
+        {
+            _logger.LogWarning("Could not find activity descriptor for activity type {ActivityType}", triggerTypeName);
+            return new List<StoredTrigger>(0);
+        }
+        
+        var expressionExecutionContext = await trigger.CreateExpressionExecutionContextAsync(triggerDescriptor, _serviceProvider, context, _expressionEvaluator, _logger);
         var triggerIndexingContext = new TriggerIndexingContext(context, expressionExecutionContext, trigger, cancellationToken);
         var triggerData = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
-        var triggerTypeName = trigger.Type;
 
         // If no trigger payloads were returned, create a null payload.
         if (!triggerData.Any()) triggerData.Add(null!);

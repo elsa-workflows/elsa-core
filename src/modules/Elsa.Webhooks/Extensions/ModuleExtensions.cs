@@ -12,7 +12,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Enables and configures the <see cref="WebhooksFeature"/> feature.
     /// </summary>
-    public static IModule UseWebhooks(this IModule module, Action<WebhooksFeature>? configure = default)
+    public static IModule UseWebhooks(this IModule module, Action<WebhooksFeature>? configure = null)
     {
         module.Configure(configure);
         return module;

@@ -4,6 +4,7 @@ using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 
@@ -38,15 +39,20 @@ internal class RevertVersion(IWorkflowDefinitionManager workflowDefinitionManage
             return;
         }
 
-        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
 
-        if (!authorizationResult.Result.Succeeded)
+        if (!authorizationResult.Succeeded)
         {
             await SendForbiddenAsync(cancellationToken);
             return;
         }
 
-        await workflowDefinitionManager.RevertVersionAsync(definitionId, version, cancellationToken);
-        await SendOkAsync(cancellationToken);
+        var newDefinition = await workflowDefinitionManager.RevertVersionAsync(definitionId, version, cancellationToken);
+        var newDefinitionSummary = WorkflowDefinitionSummary.FromDefinition(newDefinition);
+
+        await SendCreatedAtAsync("GetWorkflowDefinitionById", new
+        {
+            id = newDefinition.Id
+        }, newDefinitionSummary, cancellation: cancellationToken);
     }
 }

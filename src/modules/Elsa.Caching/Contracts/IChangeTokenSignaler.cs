@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Primitives;
+using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Caching;
 
@@ -11,7 +11,7 @@ public interface IChangeTokenSignaler
     /// Gets a change token for the specified key.
     /// </summary>
     IChangeToken GetToken(string key);
-
+    
     /// <summary>
     /// Triggers the change token for the specified key.
     /// </summary>

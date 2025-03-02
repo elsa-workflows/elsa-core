@@ -2,7 +2,7 @@ using Elsa.Framework.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class ActivityExecutionStatsService : IActivityExecutionStatsService

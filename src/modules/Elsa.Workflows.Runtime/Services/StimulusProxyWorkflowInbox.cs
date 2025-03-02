@@ -1,5 +1,4 @@
-using Elsa.Framework.System;
-using Elsa.Workflows.Contracts;
+using Elsa.Common;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
@@ -11,7 +10,7 @@ using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Represents a proxy for sending stimulus to the workflow runtime while <see cref="IWorkflowInbox"/> is being deprecated.

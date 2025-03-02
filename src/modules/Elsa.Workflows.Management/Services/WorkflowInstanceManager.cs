@@ -1,7 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -32,6 +31,16 @@ public class WorkflowInstanceManager(
     public async Task<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         return await store.FindAsync(filter, cancellationToken);
+    }
+
+    public async Task<bool> ExistsAsync(string instanceId, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowInstanceFilter
+        {
+            Id = instanceId
+        };
+        var count = await store.CountAsync(filter, cancellationToken);
+        return count > 0;
     }
 
     /// <inheritdoc />
@@ -131,10 +140,16 @@ public class WorkflowInstanceManager(
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowInstance> CreateWorkflowInstanceAsync(Workflow workflow, WorkflowInstanceOptions? options = null, CancellationToken cancellationToken = default)
+    public async Task<WorkflowInstance> CreateAndCommitWorkflowInstanceAsync(Workflow workflow, WorkflowInstanceOptions? options = null, CancellationToken cancellationToken = default)
     {
-        var workflowInstance = workflowInstanceFactory.CreateWorkflowInstance(workflow, options);
+        var workflowInstance = CreateWorkflowInstance(workflow, options);
         await SaveAsync(workflowInstance, cancellationToken);
         return workflowInstance;
+    }
+
+    /// <inheritdoc />
+    public WorkflowInstance CreateWorkflowInstance(Workflow workflow, WorkflowInstanceOptions? options = null)
+    {
+        return workflowInstanceFactory.CreateWorkflowInstance(workflow, options);
     }
 }

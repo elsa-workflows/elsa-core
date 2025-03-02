@@ -1,7 +1,8 @@
-using Elsa.Framework.System;
+using Elsa.Common;
 using Elsa.Mediator.Contracts;
 using Elsa.Scheduling.Commands;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Timer = System.Timers.Timer;
 
 namespace Elsa.Scheduling.ScheduledTasks;
@@ -9,11 +10,12 @@ namespace Elsa.Scheduling.ScheduledTasks;
 /// <summary>
 /// A task that is scheduled to execute at a specific instant.
 /// </summary>
-public class ScheduledSpecificInstantTask : IScheduledTask
+public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
 {
     private readonly ITask _task;
     private readonly ISystemClock _systemClock;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<ScheduledSpecificInstantTask> _logger;
     private readonly DateTimeOffset _startAt;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private Timer? _timer;
@@ -21,11 +23,12 @@ public class ScheduledSpecificInstantTask : IScheduledTask
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledSpecificInstantTask"/>.
     /// </summary>
-    public ScheduledSpecificInstantTask(ITask task, DateTimeOffset startAt, ISystemClock systemClock, IServiceScopeFactory scopeFactory)
+    public ScheduledSpecificInstantTask(ITask task, DateTimeOffset startAt, ISystemClock systemClock, IServiceScopeFactory scopeFactory, ILogger<ScheduledSpecificInstantTask> logger)
     {
         _task = task;
         _systemClock = systemClock;
         _scopeFactory = scopeFactory;
+        _logger = logger;
         _startAt = startAt;
         _cancellationTokenSource = new CancellationTokenSource();
 
@@ -55,7 +58,23 @@ public class ScheduledSpecificInstantTask : IScheduledTask
 
             var cancellationToken = _cancellationTokenSource.Token;
             if (!cancellationToken.IsCancellationRequested)
-                await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+            {
+                try
+                {
+                    await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error scheduled task");
+                }
+                
+            }
         };
+    }
+
+    void IDisposable.Dispose()
+    {
+        _cancellationTokenSource.Dispose();
+        _timer?.Dispose();
     }
 }

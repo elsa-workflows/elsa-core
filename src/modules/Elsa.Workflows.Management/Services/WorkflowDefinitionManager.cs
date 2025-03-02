@@ -1,6 +1,5 @@
 using Elsa.Common.Models;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Notifications;
@@ -80,7 +79,7 @@ public class WorkflowDefinitionManager(
     {
         if (definitionToDelete.IsPublished)
         {
-            throw new Exception("Published version cannot be deleted before retracting it");
+            await _workflowPublisher.RetractAsync(definitionToDelete, cancellationToken);
         }
 
         await notificationSender.SendAsync(new WorkflowDefinitionVersionDeleting(definitionToDelete), cancellationToken);

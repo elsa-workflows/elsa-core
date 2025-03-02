@@ -38,7 +38,7 @@ public class MongoBookmarkStore : IBookmarkStore
     /// <inheritdoc />
     public async ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _mongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
+        return await _mongoDbStore.FindAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -53,8 +53,8 @@ public class MongoBookmarkStore : IBookmarkStore
         return await _mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, filter.TenantAgnostic, cancellationToken);
     }
 
-    private IMongoQueryable<StoredBookmark> Filter(IMongoQueryable<StoredBookmark> queryable, BookmarkFilter filter)
+    private IQueryable<StoredBookmark> Filter(IQueryable<StoredBookmark> queryable, BookmarkFilter filter)
     {
-        return (filter.Apply(queryable) as IMongoQueryable<StoredBookmark>)!;
+        return filter.Apply(queryable);
     }
 }

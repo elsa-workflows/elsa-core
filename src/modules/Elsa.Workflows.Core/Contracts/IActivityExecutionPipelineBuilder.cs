@@ -1,6 +1,6 @@
 using Elsa.Workflows.Pipelines.ActivityExecution;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Builds an activity execution pipeline.
@@ -18,6 +18,11 @@ public interface IActivityExecutionPipelineBuilder
     /// <param name="middleware">The middleware delegate to install.</param>
     /// <returns>The current <see cref="IActivityExecutionPipelineBuilder"/>.</returns>
     IActivityExecutionPipelineBuilder Use(Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate> middleware);
+    
+    /// <summary>
+    /// Inserts the middleware component at the specified index.
+    /// </summary>
+    IActivityExecutionPipelineBuilder Insert(int index, Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate> middleware);
     
     /// <summary>
     /// Constructs the final <see cref="ActivityMiddlewareDelegate"/> delegate that invokes each installed middleware component.

@@ -1,4 +1,4 @@
-using Elsa.Framework.System;
+using Elsa.Common;
 using Elsa.Scheduling;
 using Quartz;
 

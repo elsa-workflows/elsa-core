@@ -204,6 +204,30 @@ public static class ParameterizedQueryBuilderExtensions
 
         return query;
     }
+    
+    /// <summary>
+    /// Appends a negating AND clause to the query if the value is not null.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="field">The field.</param>
+    /// <param name="values">The values.</param>
+    public static ParameterizedQuery NotIn(this ParameterizedQuery query, string field, IEnumerable<object>? values)
+    {
+        var valueList = values?.ToList();
+
+        if (valueList == null || !valueList.Any()) return query;
+
+        var fieldParamNames = valueList
+            .Select((_, index) => $"@{field}{index}")
+            .ToArray();
+
+        query.Sql.AppendLine(query.Dialect.AndNot(field, fieldParamNames));
+
+        for (var i = 0; i < fieldParamNames.Length; i++)
+            query.Parameters.Add(fieldParamNames[i], valueList.ElementAt(i));
+
+        return query;
+    }
 
     public static ParameterizedQuery StartsWith(this ParameterizedQuery query, string field, bool startsWith, string? value)
     {
@@ -403,6 +427,21 @@ public static class ParameterizedQueryBuilderExtensions
             .Select(x => x.Name)
             .ToArray();
 
+        return Update(query, table, record, primaryKeyField, fields, getParameterName);
+    }
+
+    /// <summary>
+    /// Constructs an UPDATE query for the specified table and applies the provided record, primaryKeyField, and specified fields.
+    /// </summary>
+    /// <param name="query">The query being built.</param>
+    /// <param name="table">The name of the table to update.</param>
+    /// <param name="record">The object containing the values to be updated.</param>
+    /// <param name="primaryKeyField">The name of the primary key field to identify the record.</param>
+    /// <param name="fields">An array of field names to include in the update statement.</param>
+    /// <param name="getParameterName">An optional function to customize parameter names for the query.</param>
+    /// <returns>Returns the updated instance of <see cref="ParameterizedQuery"/>.</returns>
+    public static ParameterizedQuery Update(this ParameterizedQuery query, string table, object record, string primaryKeyField, string[] fields, Func<string, string>? getParameterName = default)
+    {
         getParameterName ??= x => x;
         query.Sql.AppendLine(query.Dialect.Update(table, primaryKeyField, fields, getParameterName));
 

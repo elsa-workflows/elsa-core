@@ -1,25 +1,24 @@
 using System.Text.Json;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Services;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// An activity invoker that invokes activities detached from the workflow. This is useful for invoking activities from a background worker.
 /// </summary>
 public class BackgroundActivityInvoker(
-    IBookmarkResumer bookmarkResumer,
+    IBookmarkQueue bookmarkQueue,
     IWorkflowInstanceManager workflowInstanceManager,
     IWorkflowDefinitionService workflowDefinitionService,
     IVariablePersistenceManager variablePersistenceManager,
     IActivityInvoker activityInvoker,
+    WorkflowHeartbeatGeneratorFactory workflowHeartbeatGeneratorFactory,
     IServiceProvider serviceProvider,
     ILogger<BackgroundActivityInvoker> logger)
     : IBackgroundActivityInvoker
@@ -31,17 +30,21 @@ public class BackgroundActivityInvoker(
     {
         var workflowInstanceId = scheduledBackgroundActivity.WorkflowInstanceId;
         var workflowInstance = await workflowInstanceManager.FindByIdAsync(workflowInstanceId, cancellationToken);
-        if (workflowInstance == null) throw new Exception("Workflow instance not found");
+        if (workflowInstance == null) throw new("Workflow instance not found");
         var workflowState = workflowInstance.WorkflowState;
         var workflow = await workflowDefinitionService.FindWorkflowGraphAsync(workflowInstance.DefinitionVersionId, cancellationToken);
-        if (workflow == null) throw new Exception("Workflow definition not found");
+        if (workflow == null) throw new("Workflow definition not found");
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(serviceProvider, workflow, workflowState, cancellationToken: cancellationToken);
         var activityNodeId = scheduledBackgroundActivity.ActivityNodeId;
         var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.NodeId == activityNodeId);
 
-        await variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);
-        activityExecutionContext.SetIsBackgroundExecution();
-        await activityInvoker.InvokeAsync(activityExecutionContext);
+        using (workflowHeartbeatGeneratorFactory.CreateHeartbeatGenerator(workflowExecutionContext))
+        {
+            await variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);
+            activityExecutionContext.SetIsBackgroundExecution();
+            await activityInvoker.InvokeAsync(activityExecutionContext);
+            await variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
+        }
         await ResumeWorkflowAsync(activityExecutionContext, scheduledBackgroundActivity);
     }
 
@@ -77,16 +80,17 @@ public class BackgroundActivityInvoker(
         if (outcomes != null) properties[outcomesKey] = outcomes;
         if (completed != null) properties[completedKey] = completed;
 
-        var bookmarkFilter = new BookmarkFilter
-        {
-            BookmarkId = scheduledBackgroundActivity.BookmarkId,
-            WorkflowInstanceId = workflowInstanceId
-        };
         var resumeBookmarkOptions = new ResumeBookmarkOptions
         {
-            Properties = properties
+            Properties = properties,
         };
-        await bookmarkResumer.ResumeAsync(bookmarkFilter, resumeBookmarkOptions, cancellationToken);
+        var enqueuedBookmark = new NewBookmarkQueueItem
+        {
+            WorkflowInstanceId = workflowInstanceId,
+            BookmarkId = scheduledBackgroundActivity.BookmarkId,
+            Options = resumeBookmarkOptions
+        };
+        await bookmarkQueue.EnqueueAsync(enqueuedBookmark, cancellationToken);
     }
 
     private IDictionary<string, object> ExtractActivityOutput(ActivityExecutionContext activityExecutionContext)
@@ -110,7 +114,7 @@ public class BackgroundActivityInvoker(
             var driver = variableMetadata?.StorageDriverType;
 
             // We only capture output written to the workflow itself. Other drivers like blob storage, etc. will be ignored since the foreground context will be loading those.
-            if (driver != typeof(WorkflowStorageDriver))
+            if (driver != typeof(WorkflowStorageDriver) && driver != typeof(WorkflowInstanceStorageDriver) && driver != null)
                 continue;
 
             var outputValue = activityExecutionContext.Get(memoryBlockReference);

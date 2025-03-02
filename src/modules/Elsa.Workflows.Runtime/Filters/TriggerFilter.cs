@@ -73,4 +73,9 @@ public class TriggerFilter
         if (Hash != null) queryable = queryable.Where(x => x.Hash == Hash);
         return queryable;
     }
+
+    public static TriggerFilter ByNames(IEnumerable<string> names) => new()
+    {
+        Names = names.ToList()
+    };
 }

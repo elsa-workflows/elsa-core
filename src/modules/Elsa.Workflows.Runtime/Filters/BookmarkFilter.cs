@@ -81,4 +81,9 @@ public class BookmarkFilter
 
         return query;
     }
+
+    public static BookmarkFilter ByActivityTypeNames(IEnumerable<string> activityTypeNames) => new()
+    {
+        ActivityTypeNames = activityTypeNames.ToList()
+    };
 }

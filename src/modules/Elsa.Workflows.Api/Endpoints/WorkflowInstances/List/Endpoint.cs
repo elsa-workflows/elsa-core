@@ -38,6 +38,7 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
         {
             IsSystem = request.IsSystem,
             SearchTerm = request.SearchTerm,
+            Name = request.Name,
             DefinitionId = request.DefinitionId,
             DefinitionIds = request.DefinitionIds?.Any() == true ? request.DefinitionIds : null,
             Version = request.Version,

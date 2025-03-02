@@ -1,9 +1,8 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class WorkflowInvoker(IWorkflowGraphBuilder workflowGraphBuilder, IWorkflowRunner workflowRunner) : IWorkflowInvoker

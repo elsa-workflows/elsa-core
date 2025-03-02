@@ -1,10 +1,7 @@
 using System.Text.Json;
-using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.Workflows.Management.Services;
 
@@ -14,7 +11,7 @@ namespace Elsa.Workflows.Management.Services;
 public class WorkflowSerializer(IApiSerializer apiSerializer, WorkflowDefinitionMapper workflowDefinitionMapper) : IWorkflowSerializer
 {
     private JsonSerializerOptions? _writeOptions;
-    
+
     /// <inheritdoc />
     public string Serialize(Workflow workflow)
     {
@@ -29,14 +26,13 @@ public class WorkflowSerializer(IApiSerializer apiSerializer, WorkflowDefinition
         var model = apiSerializer.Deserialize<WorkflowDefinitionModel>(serializedWorkflow);
         return workflowDefinitionMapper.Map(model);
     }
-    
+
     private JsonSerializerOptions GetWriteOptionsInternal()
     {
-        if(_writeOptions != null)
+        if (_writeOptions != null)
             return _writeOptions;
-        
-        var options = apiSerializer.GetOptions().Clone();
-        options.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+
+        var options = apiSerializer.GetOptions();
         return _writeOptions = options;
     }
 }

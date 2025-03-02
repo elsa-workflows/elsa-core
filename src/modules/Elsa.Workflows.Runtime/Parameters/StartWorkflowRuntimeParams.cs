@@ -5,6 +5,7 @@ namespace Elsa.Workflows.Runtime.Parameters;
 /// <summary>
 /// Represents parameters for starting a workflow.
 /// </summary>
+[Obsolete("This type is obsolete. Use the new CreateClientAsync methods of IWorkflowRuntime instead.")]
 public class StartWorkflowRuntimeParams
 {
     public string? CorrelationId { get; set; }

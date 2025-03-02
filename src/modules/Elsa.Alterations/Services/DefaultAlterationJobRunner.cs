@@ -3,7 +3,7 @@ using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Notifications;
-using Elsa.Framework.System;
+using Elsa.Common;
 using Elsa.Mediator.Contracts;
 
 namespace Elsa.Alterations.Services;

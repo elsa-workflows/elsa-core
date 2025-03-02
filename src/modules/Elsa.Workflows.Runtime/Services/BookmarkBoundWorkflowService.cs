@@ -1,12 +1,10 @@
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Options;
-using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class BookmarkBoundWorkflowService(IWorkflowMatcher workflowMatcher, IWorkflowInstanceManager workflowInstanceManager, ILogger<BookmarkBoundWorkflowService> logger) : IBookmarkBoundWorkflowService
+public class BookmarkBoundWorkflowService(IWorkflowMatcher workflowMatcher) : IBookmarkBoundWorkflowService
 {
     /// <inheritdoc />
     public async Task<IEnumerable<BookmarkBoundWorkflow>> FindManyAsync(string activityTypeName, object stimulus, FindBookmarkOptions? options = null, CancellationToken cancellationToken = default)

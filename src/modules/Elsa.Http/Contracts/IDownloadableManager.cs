@@ -1,7 +1,6 @@
-using Elsa.Http.Models;
 using Elsa.Http.Options;
 
-namespace Elsa.Http.Contracts;
+namespace Elsa.Http;
 
 /// <summary>
 /// Provides downloadables from the specified content, if supported.

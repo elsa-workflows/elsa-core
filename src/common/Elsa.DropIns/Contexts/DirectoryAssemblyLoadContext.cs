@@ -3,7 +3,7 @@ using System.Runtime.Loader;
 
 namespace Elsa.DropIns.Contexts;
 
-internal class DirectoryAssemblyLoadContext : AssemblyLoadContext
+internal sealed class DirectoryAssemblyLoadContext : AssemblyLoadContext
 {
     private readonly AssemblyDependencyResolver _resolver;
 

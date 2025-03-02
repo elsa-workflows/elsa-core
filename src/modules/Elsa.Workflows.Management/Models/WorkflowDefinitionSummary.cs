@@ -51,12 +51,12 @@ public class WorkflowDefinitionSummary
     /// <summary>
     /// The version ID of the workflow definition.
     /// </summary>
-    public string Id { get; set; } = default!;
+    public string Id { get; set; } = null!;
 
     /// <summary>
     /// The ID of the workflow definition.
     /// </summary>
-    public string DefinitionId { get; set; } = default!;
+    public string DefinitionId { get; set; } = null!;
 
     /// <summary>
     /// The name of the workflow definition.
@@ -96,7 +96,7 @@ public class WorkflowDefinitionSummary
     /// <summary>
     /// The materializer name of the workflow definition.
     /// </summary>
-    public string MaterializerName { get; set; } = default!;
+    public string MaterializerName { get; set; } = null!;
 
     /// <summary>
     /// The timestamp when the workflow definition was created.

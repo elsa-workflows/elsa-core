@@ -1,5 +1,4 @@
-﻿using Elsa.EntityFrameworkCore.Common;
-using Elsa.Quartz.EntityFrameworkCore.SqlServer;
+﻿using Elsa.Quartz.EntityFrameworkCore.SqlServer;
 using Elsa.Quartz.Features;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
@@ -18,13 +17,12 @@ public static class SqlServerQuartzExtensions
     /// <summary>
     /// Configures the <see cref="QuartzFeature"/> to use the SQL Server job store.
     /// </summary>
-    public static QuartzFeature UseSqlServer(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString, bool useClustering = true)
+    public static QuartzFeature UseSqlServer(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString, bool useClustering = true, bool useContextPooling = false)
     {
-        feature.Services.AddDbContextFactory<SqlServerQuartzDbContext>(options =>
-        {
-            // Use SQL Server migrations.
-            options.UseSqlServer(connectionString, sqlServerDbContextOptionsBuilder => { sqlServerDbContextOptionsBuilder.MigrationsAssembly(typeof(SqlServerQuartzDbContext).Assembly.GetName().Name); });
-        });
+        if (useContextPooling)
+            feature.Services.AddPooledDbContextFactory<SqlServerQuartzDbContext>(options => UseSqlServer(connectionString, options));
+        else
+            feature.Services.AddDbContextFactory<SqlServerQuartzDbContext>(options => UseSqlServer(connectionString, options));
 
         feature.ConfigureQuartz += quartz =>
         {
@@ -35,7 +33,6 @@ public static class SqlServerQuartzExtensions
                 {
                     options.ConnectionString = connectionString;
                     options.TablePrefix = "[quartz].qrtz_";
-
                 });
 
                 if (useClustering)
@@ -43,9 +40,14 @@ public static class SqlServerQuartzExtensions
             });
         };
 
-        // Configure the Quartz hosted service to run migrations.
         feature.Module.ConfigureHostedService<RunMigrationsHostedService<SqlServerQuartzDbContext>>(-100);
 
         return feature;
+    }
+
+    private static void UseSqlServer(string connectionString, DbContextOptionsBuilder options)
+    {
+        // Use SQL Server migrations.
+        options.UseSqlServer(connectionString, sqlServerDbContextOptionsBuilder => { sqlServerDbContextOptionsBuilder.MigrationsAssembly(typeof(SqlServerQuartzDbContext).Assembly.GetName().Name); });
     }
 }

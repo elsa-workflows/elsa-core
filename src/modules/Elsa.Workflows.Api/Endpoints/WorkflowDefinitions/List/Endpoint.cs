@@ -33,7 +33,7 @@ internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker li
     {
         var versionOptions = string.IsNullOrWhiteSpace(request.VersionOptions) ? default(VersionOptions?) : VersionOptions.FromString(request.VersionOptions);
 
-        return new WorkflowDefinitionFilter
+        return new()
         {
             IsSystem = request.IsSystem,
             VersionOptions = versionOptions,

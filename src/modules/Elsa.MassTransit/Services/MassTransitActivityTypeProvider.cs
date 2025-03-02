@@ -5,7 +5,6 @@ using Elsa.MassTransit.Activities;
 using Elsa.MassTransit.Options;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
@@ -62,6 +61,7 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
 
         return new()
         {
+            Name = typeName,
             TypeName = fullTypeName,
             Version = 1,
             DisplayName = displayName,
@@ -103,6 +103,7 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
 
         return new()
         {
+            Name = typeName,
             TypeName = fullTypeName,
             Version = 1,
             DisplayName = displayName,

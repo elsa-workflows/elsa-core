@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using Xunit.Abstractions;
@@ -70,6 +69,63 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
         CompareJsonsObjects(expected, result);
     }
 
+    [Fact]
+    public void RoundtripComplexEnumerableObject()
+    {
+        var dict = new Dictionary<string, object>
+        {
+            {
+                "Content", new List<TestObject>()
+                {
+                    new()
+                    {
+                        Data = "Hello World"
+                    }
+                }
+            }
+        };
+        var jsonSerialized = SerializeUsingPayloadSerializer(dict);
+        var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonSerialized);
+        var result = transformationModel["Content"];
+        Assert.Equal(typeof(List<TestObject>), result.GetType());
+    }
+
+    [Fact]
+    public void RoundtripPrimitiveCollections()
+    {
+        var dict = new Dictionary<string, object>
+        {
+            {
+                "Content", new List<Guid>
+                {
+                    Guid.NewGuid()
+                }
+            }
+        };
+        var jsonSerialized = SerializeUsingPayloadSerializer(dict);
+        var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonSerialized);
+        var result = transformationModel["Content"];
+        Assert.Equal(typeof(List<Guid>), result.GetType());
+    }
+
+    [Fact]
+    public void RoundtripPrimitiveArrays()
+    {
+        var dict = new Dictionary<string, object>
+        {
+            {
+                "Content", new[]
+                {
+                    Guid.NewGuid()
+                }
+            }
+        };
+        var jsonSerialized = SerializeUsingPayloadSerializer(dict);
+        var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonSerialized);
+        var result = transformationModel["Content"];
+        Assert.Equal(typeof(Guid[]), result.GetType());
+    }
+
     private string SerializeUsingPayloadSerializer(object obj)
     {
         var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
@@ -94,14 +150,15 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
     {
         var isArray = type == typeof(JsonArray) || type == typeof(JArray);
 
-        var jsonContent = isArray ? "[{\"path\":\"folder1\",\"command\":\"add\"}]": "{\"file1\":{\"script\":[{\"path\":\"folder1\",\"command\":\"add\"}]} }";
+        var jsonContent = isArray ? "[{\"path\":\"folder1\",\"command\":\"add\"}]" : "{\"file1\":{\"script\":[{\"path\":\"folder1\",\"command\":\"add\"}]} }";
 
         var dict = new Dictionary<string, object>
         {
-            { "StatusCode", "Created" },
-            { "Content",isArray ? 
-            (type == typeof(JArray)? JArray.Parse(jsonContent):JsonArray.Parse(jsonContent)):
-            (type == typeof(JObject)? JObject.Parse(jsonContent):JsonObject.Parse(jsonContent))
+            {
+                "StatusCode", "Created"
+            },
+            {
+                "Content", isArray ? (type == typeof(JArray) ? JArray.Parse(jsonContent) : JsonArray.Parse(jsonContent)) : (type == typeof(JObject) ? JObject.Parse(jsonContent) : JsonObject.Parse(jsonContent))
             }
         };
         return dict;
@@ -109,7 +166,8 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
 
     private string GetExpected(Type type)
     {
-        if (type == typeof(JsonArray) || type == typeof(JArray)) {
+        if (type == typeof(JsonArray) || type == typeof(JArray))
+        {
             return "[{\"path\":\"folder1\",\"command\":\"add\"}]";
         }
         else
@@ -119,4 +177,9 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
     }
 
     private static string? NormalizeNewlines(string? input) => input?.Replace("\r\n", "\n").Replace("\\r\\n", "\\n");
+}
+
+public class TestObject
+{
+    public string? Data { get; set; }
 }

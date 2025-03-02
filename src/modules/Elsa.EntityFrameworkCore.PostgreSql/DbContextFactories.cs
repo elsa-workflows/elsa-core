@@ -1,10 +1,11 @@
-﻿using Elsa.EntityFrameworkCore.Common.Abstractions;
+﻿using Elsa.EntityFrameworkCore.Abstractions;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.EntityFrameworkCore.Modules.Tenants;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,29 +14,22 @@ using Microsoft.EntityFrameworkCore;
 namespace Elsa.EntityFrameworkCore.PostgreSql;
 
 [UsedImplicitly]
-public class IdentityDbContextFactory : PostgreSqlDesignTimeDbContextFactory<IdentityElsaDbContext>
-{
-}
+public class IdentityDbContextFactory : PostgreSqlDesignTimeDbContextFactory<IdentityElsaDbContext>;
 
 [UsedImplicitly]
-public class ManagementDbContextFactory : PostgreSqlDesignTimeDbContextFactory<ManagementElsaDbContext>
-{
-}
+public class ManagementDbContextFactory : PostgreSqlDesignTimeDbContextFactory<ManagementElsaDbContext>;
 
 [UsedImplicitly]
-public class RuntimeDbContextFactory : PostgreSqlDesignTimeDbContextFactory<RuntimeElsaDbContext>
-{
-}
+public class RuntimeDbContextFactory : PostgreSqlDesignTimeDbContextFactory<RuntimeElsaDbContext>;
 
 [UsedImplicitly]
-public class LabelsDbContextFactory : PostgreSqlDesignTimeDbContextFactory<LabelsElsaDbContext>
-{
-}
+public class LabelsDbContextFactory : PostgreSqlDesignTimeDbContextFactory<LabelsElsaDbContext>;
 
 [UsedImplicitly]
-public class AlterationsDbContextFactories : PostgreSqlDesignTimeDbContextFactory<AlterationsElsaDbContext>
-{
-}
+public class AlterationsDbContextFactories : PostgreSqlDesignTimeDbContextFactory<AlterationsElsaDbContext>;
+
+[UsedImplicitly]
+public class TenantsDbContextFactories : PostgreSqlDesignTimeDbContextFactory<TenantsElsaDbContext>;
 
 public class PostgreSqlDesignTimeDbContextFactory<TDbContext> : DesignTimeDbContextFactoryBase<TDbContext> where TDbContext : DbContext
 {

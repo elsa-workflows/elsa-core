@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Dynamic;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elsa.Extensions;
 
 namespace Elsa.Expressions.Options;
@@ -10,7 +12,7 @@ namespace Elsa.Expressions.Options;
 public class ExpressionOptions
 {
     private readonly IDictionary<string, Type> _aliasTypeDictionary = new Dictionary<string, Type>();
-
+    
     /// <summary>
     /// Initializes a new instance of the <see cref="ExpressionOptions"/> class.
     /// </summary>
@@ -28,29 +30,30 @@ public class ExpressionOptions
         this.AddTypeAlias<bool>("Boolean");
         this.AddTypeAlias<decimal>("Decimal");
         this.AddTypeAlias<double>("Double");
-        this.AddTypeAlias<Guid>("Guid");
-        this.AddTypeAlias<DateTime>("DateTime");
-        this.AddTypeAlias<DateTimeOffset>("DateTimeOffset");
-        this.AddTypeAlias<TimeSpan>("TimeSpan");
-        this.AddTypeAlias<ExpandoObject>("ExpandoObject");
+        this.AddTypeAlias<byte[]>("ByteArray");
+        this.AddTypeAlias<Guid>();
+        this.AddTypeAlias<DateTime>();
+        this.AddTypeAlias<DateTimeOffset>();
+        this.AddTypeAlias<TimeSpan>();
+        this.AddTypeAlias<Stream>();
         this.AddTypeAlias<ExpandoObject>("JSON");
+        this.AddTypeAlias<JsonElement>();
+        this.AddTypeAlias<JsonNode>();
+        this.AddTypeAlias<JsonObject>();
         this.AddTypeAlias<IDictionary<string, string>>("StringDictionary");
-        this.AddTypeAlias<IDictionary<string, string>>("StringMap");
-        this.AddTypeAlias<IDictionary<string, object>>("ObjectMap");
         this.AddTypeAlias<IDictionary<string, object>>("ObjectDictionary");
+        this.AddTypeAlias<Dictionary<string, string>>("StringMap");
+        this.AddTypeAlias<Dictionary<string, object>>("ObjectMap");
     }
-
+    
     /// <summary>
     /// Gets the type alias dictionary.
     /// </summary>
     public IDictionary<string, Type> AliasTypeDictionary { get; set; }
-
+    
     /// <summary>
-    /// Registers a well known type alias.
+    /// Registers a well-known type alias.
     /// </summary>
-    /// <param name="type">The type.</param>
-    /// <param name="alias">The alias.</param>
-    /// <returns>The options.</returns>
     public ExpressionOptions RegisterTypeAlias(Type type, string alias)
     {
         _aliasTypeDictionary[alias] = type;

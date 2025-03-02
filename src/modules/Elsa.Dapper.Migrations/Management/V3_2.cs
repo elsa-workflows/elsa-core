@@ -13,14 +13,10 @@ public class V3_2 : Migration
     /// <inheritdoc />
     public override void Up()
     {
-        Alter.Table("WorkflowDefinitions").AddColumn("TenantId").AsString().Nullable();
-        Alter.Table("WorkflowInstances").AddColumn("TenantId").AsString().Nullable();
     }
 
     /// <inheritdoc />
     public override void Down()
     {
-        Delete.Column("TenantId").FromTable("WorkflowDefinitions");
-        Delete.Column("TenantId").FromTable("WorkflowInstances");
     }
 }

@@ -2,14 +2,11 @@ using System.IO.Compression;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Serialization.Converters;
 using Humanizer;
 using JetBrains.Annotations;
 
@@ -21,8 +18,8 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Export;
 [UsedImplicitly]
 internal class Export : ElsaEndpoint<Request>
 {
-    private readonly IWorkflowDefinitionStore _store;
     private readonly IApiSerializer _serializer;
+    private readonly IWorkflowDefinitionStore _store;
     private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
 
     /// <inheritdoc />
@@ -57,7 +54,10 @@ internal class Export : ElsaEndpoint<Request>
 
     private async Task DownloadMultipleWorkflowsAsync(ICollection<string> ids, CancellationToken cancellationToken)
     {
-        var definitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter { Ids = ids }, cancellationToken: cancellationToken)).ToList();
+        List<WorkflowDefinition> definitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter
+        {
+            Ids = ids
+        }, cancellationToken)).ToList();
 
         if (!definitions.Any())
         {
@@ -72,7 +72,7 @@ internal class Export : ElsaEndpoint<Request>
             foreach (var definition in definitions)
             {
                 var model = await CreateWorkflowModelAsync(definition, cancellationToken);
-                var binaryJson = SerializeWorkflowDefinition(model);
+                var binaryJson = await SerializeWorkflowDefinitionAsync(model, cancellationToken);
                 var fileName = GetFileName(model);
                 var entry = zipArchive.CreateEntry(fileName, CompressionLevel.Optimal);
                 await using var entryStream = entry.Open();
@@ -88,7 +88,11 @@ internal class Export : ElsaEndpoint<Request>
     private async Task DownloadSingleWorkflowAsync(string definitionId, string? versionOptions, CancellationToken cancellationToken)
     {
         var parsedVersionOptions = string.IsNullOrEmpty(versionOptions) ? VersionOptions.Latest : VersionOptions.FromString(versionOptions);
-        var definition = (await _store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = parsedVersionOptions }, cancellationToken: cancellationToken)).FirstOrDefault();
+        WorkflowDefinition? definition = (await _store.FindManyAsync(new WorkflowDefinitionFilter
+        {
+            DefinitionId = definitionId,
+            VersionOptions = parsedVersionOptions
+        }, cancellationToken)).FirstOrDefault();
 
         if (definition == null)
         {
@@ -97,7 +101,7 @@ internal class Export : ElsaEndpoint<Request>
         }
 
         var model = await CreateWorkflowModelAsync(definition, cancellationToken);
-        var binaryJson = SerializeWorkflowDefinition(model);
+        var binaryJson = await SerializeWorkflowDefinitionAsync(model, cancellationToken);
         var fileName = GetFileName(model);
 
         await SendBytesAsync(binaryJson, fileName, cancellation: cancellationToken);
@@ -111,14 +115,25 @@ internal class Export : ElsaEndpoint<Request>
         return fileName;
     }
 
-    private byte[] SerializeWorkflowDefinition(WorkflowDefinitionModel model)
+    private async Task<byte[]> SerializeWorkflowDefinitionAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
-        var serializerOptions = _serializer.GetOptions().Clone();
+        var serializerOptions = _serializer.GetOptions();
+        var document = JsonSerializer.SerializeToDocument(model, serializerOptions);
+        var rootElement = document.RootElement;
 
-        // Exclude composite activities from being serialized.
-        serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+        using var output = new MemoryStream();
+        await using var writer = new Utf8JsonWriter(output);
 
-        var binaryJson = JsonSerializer.SerializeToUtf8Bytes(model, serializerOptions);
+        writer.WriteStartObject();
+        writer.WriteString("$schema", "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json");
+
+        foreach (var property in rootElement.EnumerateObject())
+            property.WriteTo(writer);
+
+        writer.WriteEndObject();
+
+        await writer.FlushAsync(cancellationToken);
+        var binaryJson = output.ToArray();
         return binaryJson;
     }
 

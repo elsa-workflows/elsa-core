@@ -1,4 +1,4 @@
-using Elsa.Http.Contracts;
+using Elsa.Http;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 

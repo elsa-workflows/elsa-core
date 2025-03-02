@@ -1,5 +1,5 @@
-using Elsa.Framework.System;
-using Elsa.Workflows.Contracts;
+using Elsa.Common;
+using Elsa.Extensions;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.State;
@@ -21,45 +21,47 @@ public static class ExceptionHandlingMiddlewareExtensions
 /// <summary>
 /// Catches any exceptions thrown by downstream components and transitions the workflow into the faulted state.
 /// </summary>
-public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
+public class ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncidentStrategyResolver incidentStrategyResolver, ISystemClock systemClock, ILogger<ExceptionHandlingMiddleware> logger)
+    : IActivityExecutionMiddleware
 {
-    private readonly ActivityMiddlewareDelegate _next;
-    private readonly IIncidentStrategyResolver _incidentStrategyResolver;
-    private readonly ISystemClock _systemClock;
-    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncidentStrategyResolver incidentStrategyResolver, ISystemClock systemClock, ILogger<ExceptionHandlingMiddleware> logger)
-    {
-        _next = next;
-        _incidentStrategyResolver = incidentStrategyResolver;
-        _systemClock = systemClock;
-        _logger = logger;
-    }
-
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
         try
         {
-            await _next(context);
+            await next(context);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "An exception was caught from a downstream middleware component");
-            context.Exception = e;
-            context.TransitionTo(ActivityStatus.Faulted);
-
-            var activity = context.Activity;
-            var exceptionState = ExceptionState.FromException(e);
-            var now = _systemClock.UtcNow;
-            var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, exceptionState, now);
-            context.WorkflowExecutionContext.Incidents.Add(incident);
-
-            var strategy = await _incidentStrategyResolver.ResolveStrategyAsync(context);
-            strategy.HandleIncident(context);
+            logger.LogWarning(e, "An exception was caught from a downstream middleware component");
+            LogExceptionAndTransition(context, e);
+            FaultAncestors(context);
+            await HandleIncidentAsync(context);
         }
+    }
+
+    private void LogExceptionAndTransition(ActivityExecutionContext context, Exception e)
+    {
+        context.Exception = e;
+        context.TransitionTo(ActivityStatus.Faulted);
+        var activity = context.Activity;
+        var exceptionState = ExceptionState.FromException(e);
+        var now = systemClock.UtcNow;
+        var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, exceptionState, now);
+        context.WorkflowExecutionContext.Incidents.Add(incident);
+    }
+
+    private async Task HandleIncidentAsync(ActivityExecutionContext context)
+    {
+        var strategy = await incidentStrategyResolver.ResolveStrategyAsync(context);
+        strategy.HandleIncident(context);
+    }
+
+    private static void FaultAncestors(ActivityExecutionContext context)
+    {
+        var ancestors = context.GetAncestors();
+
+        foreach (var ancestor in ancestors)
+            ancestor.TransitionTo(ActivityStatus.Faulted);
     }
 }

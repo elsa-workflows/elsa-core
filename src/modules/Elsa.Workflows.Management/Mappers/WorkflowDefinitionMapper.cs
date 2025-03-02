@@ -1,6 +1,6 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 
@@ -35,9 +35,9 @@ public class WorkflowDefinitionMapper
         var root = _activitySerializer.Deserialize(source.StringData!);
 
         return new(
-            new WorkflowIdentity(source.DefinitionId, source.Version, source.Id, source.TenantId),
-            new WorkflowPublication(source.IsLatest, source.IsPublished),
-            new WorkflowMetadata(source.Name, source.Description, source.CreatedAt, source.ToolVersion),
+            new(source.DefinitionId, source.Version, source.Id, source.TenantId),
+            new(source.IsLatest, source.IsPublished),
+            new(source.Name, source.Description, source.CreatedAt, source.ToolVersion),
             source.Options,
             root,
             source.Variables,
@@ -67,9 +67,9 @@ public class WorkflowDefinitionMapper
 #pragma warning restore CS0618
 
         return new(
-            new WorkflowIdentity(source.DefinitionId, source.Version, source.Id, source.TenantId),
-            new WorkflowPublication(source.IsLatest, source.IsPublished),
-            new WorkflowMetadata(source.Name, source.Description, source.CreatedAt, source.ToolVersion),
+            new(source.DefinitionId, source.Version, source.Id, source.TenantId),
+            new(source.IsLatest, source.IsPublished),
+            new(source.Name, source.Description, source.CreatedAt, source.ToolVersion),
             options,
             root,
             variables,
@@ -80,6 +80,38 @@ public class WorkflowDefinitionMapper
             source.IsReadonly,
             source.IsSystem);
     }
+    
+    public WorkflowDefinition MapToWorkflowDefinition(WorkflowDefinitionModel source)
+    {
+        var root = source.Root!;
+        var variables = _variableDefinitionMapper.Map(source.Variables).ToList();
+        var options = source.Options ?? new WorkflowOptions();
+        var stringData = _activitySerializer.Serialize(root);
+
+        return new()
+        {
+            IsPublished = source.IsPublished,
+            Description = source.Description,
+            Id = source.Id,
+            Inputs = source.Inputs ?? [],
+            Name = source.Name,
+            Options = options,
+            Outcomes = source.Outcomes ?? [],
+            Outputs = source.Outputs ?? [],
+            Variables = variables,
+            Version = source.Version,
+            CreatedAt = source.CreatedAt,
+            CustomProperties = source.CustomProperties ?? new Dictionary<string, object>(),
+            DefinitionId = source.DefinitionId,
+            IsLatest = source.IsLatest,
+            IsReadonly = source.IsReadonly,
+            IsSystem = source.IsSystem,
+            TenantId = source.TenantId,
+            ToolVersion = source.ToolVersion,
+            StringData = stringData,
+            MaterializerName = JsonWorkflowMaterializer.MaterializerName
+        };
+    }
 
     /// <summary>
     /// Maps many <see cref="WorkflowDefinition"/>s to many <see cref="WorkflowDefinitionModel"/>s.
@@ -87,8 +119,10 @@ public class WorkflowDefinitionMapper
     /// <param name="source">The source <see cref="WorkflowDefinition"/>s.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>The mapped <see cref="WorkflowDefinitionModel"/>s.</returns>
-    public async Task<IEnumerable<WorkflowDefinitionModel>> MapAsync(IEnumerable<WorkflowDefinition> source, CancellationToken cancellationToken = default) =>
-        await Task.WhenAll(source.Select(async x => await MapAsync(x, cancellationToken)));
+    public async Task<IEnumerable<WorkflowDefinitionModel>> MapAsync(IEnumerable<WorkflowDefinition> source, CancellationToken cancellationToken = default)
+    {
+        return await Task.WhenAll(source.Select(async x => await MapAsync(x, cancellationToken)));
+    }
 
     /// <summary>
     /// Maps a <see cref="WorkflowDefinition"/> to a <see cref="Workflow"/>.

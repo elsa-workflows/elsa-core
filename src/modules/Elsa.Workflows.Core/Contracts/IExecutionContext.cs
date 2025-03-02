@@ -1,7 +1,7 @@
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Memory;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Provides a common interface to access the current execution context.
@@ -31,5 +31,5 @@ public interface IExecutionContext
     /// <summary>
     /// A dictionary of values that can be associated with this activity execution context.
     /// </summary>
-    public IDictionary<string, object> Properties { get; set; }
+    public IDictionary<string, object> Properties { get; }
 }

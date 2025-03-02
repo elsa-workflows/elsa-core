@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using Elsa.EntityFrameworkCore.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
@@ -15,15 +14,25 @@ public static class DbContextOptionsBuilderExtensions
     /// <summary>
     /// Configures Entity Framework Core with MySQL.
     /// </summary>
-    public static DbContextOptionsBuilder UseElsaMySql(this DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options = default, Action<MySqlDbContextOptionsBuilder>? configure = default) =>
+    public static DbContextOptionsBuilder UseElsaMySql(this DbContextOptionsBuilder builder, 
+        Assembly migrationsAssembly, 
+        string connectionString,
+        ElsaDbContextOptions? options = null, 
+        ServerVersion? serverVersion = null, 
+        Action<MySqlDbContextOptionsBuilder>? configure = null) =>
         builder
             .UseElsaDbContextOptions(options)
-            .UseMySql(connectionString, ServerVersion.Create(7, 0, 14, ServerType.MySql), db =>
+            .UseMySql(connectionString, serverVersion ?? ServerVersion.AutoDetect(connectionString), db =>
             {
                 db
                     .MigrationsAssembly(options.GetMigrationsAssemblyName(migrationsAssembly))
                     .MigrationsHistoryTable(options.GetMigrationsHistoryTableName(), options.GetSchemaName())
-                    .SchemaBehavior(MySqlSchemaBehavior.Ignore);
+                    .SchemaBehavior(MySqlSchemaBehavior.Ignore)
+                    .EnablePrimitiveCollectionsSupport()
+#if NET9_0
+                    .TranslateParameterizedCollectionsToConstants()
+#endif
+                    ;
 
                 configure?.Invoke(db);
             });

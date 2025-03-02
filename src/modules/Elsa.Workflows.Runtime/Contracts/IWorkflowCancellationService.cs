@@ -11,7 +11,7 @@ public interface IWorkflowCancellationService
     /// Cancels a workflow instance.
     /// </summary>
     /// <remarks>Also cancels all children</remarks>
-    Task<int> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
+    Task<bool> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cancels workflow executions with the specified workflow instance ID.

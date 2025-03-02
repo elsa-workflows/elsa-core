@@ -1,44 +1,25 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
-using Humanizer;
-using Microsoft.Extensions.Logging;
+using Elsa.Workflows.Serialization.Helpers;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
 /// (De)serializes objects of type <see cref="IActivity"/>.
 /// </summary>
-public class ActivityJsonConverter : JsonConverter<IActivity>
+public class ActivityJsonConverter(
+    IActivityRegistry activityRegistry,
+    IActivityFactory activityFactory,
+    IExpressionDescriptorRegistry expressionDescriptorRegistry,
+    ActivityWriter activityWriter,
+    IServiceProvider serviceProvider)
+    : JsonConverter<IActivity>
 {
-    private readonly IActivityRegistry _activityRegistry;
-    private readonly IActivityFactory _activityFactory;
-    private readonly IExpressionDescriptorRegistry _expressionDescriptorRegistry;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<ActivityJsonConverter> _logger;
-    private JsonSerializerOptions? _options;
-
-    /// <inheritdoc />
-    public ActivityJsonConverter(
-        IActivityRegistry activityRegistry,
-        IActivityFactory activityFactory,
-        IExpressionDescriptorRegistry expressionDescriptorRegistry,
-        IServiceProvider serviceProvider,
-        ILogger<ActivityJsonConverter> logger)
-    {
-        _activityRegistry = activityRegistry;
-        _activityFactory = activityFactory;
-        _expressionDescriptorRegistry = expressionDescriptorRegistry;
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-    }
-
     /// <inheritdoc />
     public override IActivity Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -56,14 +37,14 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             activityTypeName = GetActivityDetails(activityRoot, out activityTypeVersion, out activityDescriptor);
         }
 
-        var newOptions = GetClonedOptions(options);
+        var clonedOptions = GetClonedOptions(options);
 
         // If the activity type is not found, create a NotFoundActivity instead.
         if (activityDescriptor == null)
         {
-            var notFoundActivityDescriptor = _activityRegistry.Find<NotFoundActivity>()!;
-            var notFoundContext = new ActivityConstructorContext(notFoundActivityDescriptor, activityRoot, newOptions);
-            var notFoundActivity = (NotFoundActivity)_activityFactory.Create(typeof(NotFoundActivity), notFoundContext);
+            var notFoundActivityDescriptor = activityRegistry.Find<NotFoundActivity>()!;
+            var notFoundContext = new ActivityConstructorContext(notFoundActivityDescriptor, activityRoot, clonedOptions);
+            var notFoundActivity = (NotFoundActivity)activityFactory.Create(typeof(NotFoundActivity), notFoundContext);
 
             notFoundActivity.Type = notFoundActivityTypeName;
             notFoundActivity.Version = 1;
@@ -75,7 +56,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             return notFoundActivity;
         }
 
-        var context = new ActivityConstructorContext(activityDescriptor, activityRoot, newOptions);
+        var context = new ActivityConstructorContext(activityDescriptor, activityRoot, clonedOptions);
         var activity = activityDescriptor.Constructor(context);
         return activity;
     }
@@ -83,96 +64,13 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, IActivity value, JsonSerializerOptions options)
     {
-        var newOptions = GetClonedOptions(options);
+        var clonedOptions = GetClonedOptions(options);
+        var activityDescriptor = activityRegistry.Find(value.Type, value.Version);
 
-        // Write to a JsonObject so that we can add additional information.
-        var activityModel = JsonSerializer.SerializeToNode(value, value.GetType(), newOptions)!;
-        var activityDescriptor = _activityRegistry.Find(value.Type, value.Version);
+        // Give the activity descriptor a chance to customize the serializer options.
+        clonedOptions = activityDescriptor?.ConfigureSerializerOptions?.Invoke(clonedOptions) ?? clonedOptions;
 
-        if (activityDescriptor != null)
-            WriteSyntheticProperties(activityModel, value, activityDescriptor, newOptions);
-        else
-            _logger.LogWarning("Activity descriptor for activity {ActivityType} with version {ActivityVersion} not found. Skipping serialization of synthetic properties", value.Type, value.Version);
-
-        // Send the model to the writer.
-        JsonSerializer.Serialize(writer, activityModel, newOptions);
-    }
-
-    private void WriteSyntheticProperties(JsonNode activityModel, IActivity value, ActivityDescriptor activityDescriptor, JsonSerializerOptions newOptions)
-    {
-        var syntheticInputs = activityDescriptor.Inputs.Where(x => x.IsSynthetic).ToList();
-        var syntheticOutputs = activityDescriptor.Outputs.Where(x => x.IsSynthetic).ToList();
-
-        // Write synthetic inputs. 
-        foreach (var inputDescriptor in syntheticInputs)
-        {
-            var inputName = inputDescriptor.Name;
-            var propertyName = inputName.Camelize();
-
-            if (!value.SyntheticProperties.TryGetValue(inputName, out var inputValue))
-                continue;
-
-            var input = (Input?)inputValue;
-
-            if (input == null)
-            {
-                activityModel[propertyName] = null;
-                continue;
-            }
-
-            var expression = input.Expression;
-            var expressionType = expression?.Type;
-            var inputType = input.Type;
-            var memoryReferenceId = input.MemoryBlockReference().Id;
-            var expressionDescriptor = expressionType != null ? _expressionDescriptorRegistry.Find(expressionType) : default;
-
-            if (expressionDescriptor == null)
-                throw new Exception($"Syntax descriptor with expression type {expressionType} not found in registry");
-
-            var inputModel = new
-            {
-                TypeName = inputType,
-                Expression = expression,
-                MemoryReference = new
-                {
-                    Id = memoryReferenceId
-                }
-            };
-
-            activityModel[propertyName] = JsonSerializer.SerializeToNode(inputModel, inputModel.GetType(), newOptions);
-        }
-
-        // Write synthetic outputs. 
-        foreach (var outputDescriptor in syntheticOutputs)
-        {
-            var outputName = outputDescriptor.Name;
-            var propertyName = outputName.Camelize();
-
-            if (!value.SyntheticProperties.TryGetValue(outputName, out var outputValue))
-                continue;
-
-            var output = (Output?)outputValue;
-
-            if (output == null)
-            {
-                activityModel[propertyName] = null;
-                continue;
-            }
-
-            var outputType = outputDescriptor.Type;
-            var memoryReferenceId = output.MemoryBlockReference().Id;
-
-            var outputModel = new
-            {
-                TypeName = outputType,
-                MemoryReference = new
-                {
-                    Id = memoryReferenceId
-                }
-            };
-
-            activityModel[propertyName] = JsonSerializer.SerializeToNode(outputModel, outputModel.GetType(), newOptions);
-        }
+        activityWriter.WriteActivity(writer, value, clonedOptions);
     }
 
     private string GetActivityDetails(JsonElement activityRoot, out int activityTypeVersion, out ActivityDescriptor? activityDescriptor)
@@ -188,7 +86,8 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         if (activityRoot.TryGetProperty("workflowDefinitionVersionId", out var workflowDefinitionVersionIdElement))
         {
             var workflowDefinitionVersionId = workflowDefinitionVersionIdElement.GetString();
-            activityDescriptor = _activityRegistry.Find(x => x.CustomProperties.TryGetValue("WorkflowDefinitionVersionId", out var value) && (string?)value == workflowDefinitionVersionId);
+            activityDescriptor = activityRegistry.Find(x =>
+                x.CustomProperties.TryGetValue("WorkflowDefinitionVersionId", out var value) && (string?)value == workflowDefinitionVersionId);
             activityTypeVersion = activityDescriptor?.Version ?? 0;
         }
 
@@ -196,28 +95,25 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         if (activityDescriptor == null && activityRoot.TryGetProperty("version", out var activityVersionElement))
         {
             activityTypeVersion = activityVersionElement.GetInt32();
-            activityDescriptor = _activityRegistry.Find(activityTypeName, activityTypeVersion);
+            activityDescriptor = activityRegistry.Find(activityTypeName, activityTypeVersion);
         }
 
         // If the activity type version is not specified, use the latest version of the activity descriptor.
         if (activityDescriptor == null)
         {
-            activityDescriptor = _activityRegistry.Find(activityTypeName);
+            activityDescriptor = activityRegistry.Find(activityTypeName);
             activityTypeVersion = activityDescriptor?.Version ?? 0;
         }
 
         return activityTypeName;
     }
-    
+
     private JsonSerializerOptions GetClonedOptions(JsonSerializerOptions options)
     {
-        if(_options != null)
-            return _options;
-        
-        var newOptions = new JsonSerializerOptions(options);
-        newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
-        newOptions.Converters.Add(new OutputJsonConverterFactory(_serviceProvider));
-        newOptions.Converters.Add(new ExpressionJsonConverterFactory(_expressionDescriptorRegistry));
-        return _options = newOptions;
+        var clonedOptions = new JsonSerializerOptions(options);
+        clonedOptions.Converters.Add(new InputJsonConverterFactory(serviceProvider));
+        clonedOptions.Converters.Add(new OutputJsonConverterFactory(serviceProvider));
+        clonedOptions.Converters.Add(new ExpressionJsonConverterFactory(expressionDescriptorRegistry));
+        return clonedOptions;
     }
 }

@@ -1,14 +1,14 @@
 using Elsa.Abstractions;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
-using Elsa.Framework.System;
-using Elsa.Workflows.Contracts;
+using Elsa.Common;
+using Elsa.Workflows;
 using JetBrains.Annotations;
 
 namespace Elsa.Alterations.Endpoints.Alterations.Submit;
 
 /// <summary>
-/// Executes an alteration plan.
+/// Submits an alteration plan to be executed targeting workflow instances by a filter.
 /// </summary>
 [PublicAPI]
 public class Submit : ElsaEndpoint<AlterationPlanParams, Response>

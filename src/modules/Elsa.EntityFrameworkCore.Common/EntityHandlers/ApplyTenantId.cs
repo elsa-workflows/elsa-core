@@ -1,8 +1,7 @@
-using Elsa.EntityFrameworkCore.Common.Contracts;
-using Elsa.Framework.Entities;
+using Elsa.Common.Entities;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-namespace Elsa.EntityFrameworkCore.Common.EntityHandlers;
+namespace Elsa.EntityFrameworkCore.EntityHandlers;
 
 /// <summary>
 /// Represents a handler for applying the tenant ID to an entity before saving changes.

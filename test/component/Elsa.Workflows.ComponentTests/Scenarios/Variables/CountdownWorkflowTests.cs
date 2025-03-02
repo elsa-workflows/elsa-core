@@ -1,5 +1,7 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
+using Elsa.Workflows.ComponentTests.Abstractions;
+using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.ComponentTests.Scenarios.Variables.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
@@ -7,7 +9,6 @@ using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Messages;
-using Elsa.Workflows.Services;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -49,10 +50,8 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
             {
                 BookmarkId = bookmark.Id,
             };
-            runResponse = await workflowClient.RunInstanceAsync(runRequest);
-
-            if (runResponse == null)
-                break;
+            
+            await workflowClient.RunInstanceAsync(runRequest);
 
             createdBookmarks = await bookmarkStore.FindManyAsync(new BookmarkFilter
             {
@@ -64,8 +63,8 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
         }
     }
 
-    private IDictionary<string, object> GetVariablesDictionary(ActivityExecutionContextState context)
+    private VariablesDictionary GetVariablesDictionary(ActivityExecutionContextState context)
     {
-        return context.Properties.GetOrAdd(WorkflowStorageDriver.VariablesDictionaryStateKey, () => new Dictionary<string, object>());
+        return context.Properties.GetOrAdd(WorkflowInstanceStorageDriver.VariablesDictionaryStateKey, () => new VariablesDictionary());
     }
 }

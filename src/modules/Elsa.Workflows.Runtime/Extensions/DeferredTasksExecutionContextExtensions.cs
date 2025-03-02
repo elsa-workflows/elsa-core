@@ -9,16 +9,20 @@ public static class DeferredTasksExecutionContextExtensions
 {
     private static readonly object DeferredTasksKey = new();
 
+    /// <summary>
     /// Defers the execution of a task within the workflow execution context.
     /// Deferred tasks are executed right after bookmarks have been persisted.
+    /// </summary>
     public static void DeferTask(this WorkflowExecutionContext context, Func<Task> task)
     {
         var deferredTasks = context.GetDeferredTasksInternal();
         deferredTasks.Add(task);
     }
     
+    /// <summary>
     /// Defers the execution of a task within the workflow execution context.
     /// Deferred tasks are executed right after bookmarks have been persisted.
+    /// </summary>
     public static void DeferTask(this ActivityExecutionContext context, Action task)
     {
         context.DeferTask(() =>
@@ -28,15 +32,19 @@ public static class DeferredTasksExecutionContextExtensions
         });
     }
 
+    /// <summary>
     /// Defers the execution of a task within the workflow execution context.
     /// Deferred tasks are executed right after bookmarks have been persisted.
+    /// </summary>
     public static void DeferTask(this ActivityExecutionContext context, Func<Task> task)
     {
         context.WorkflowExecutionContext.DeferTask(task);
     }
 
+    /// <summary>
     /// Executes all deferred tasks within the workflow execution context.
-    internal static async Task ExecuteDeferredTasksAsync(this WorkflowExecutionContext context)
+    /// </summary>
+    public static async Task ExecuteDeferredTasksAsync(this WorkflowExecutionContext context)
     {
         var deferredTasks = context.GetDeferredTasksInternal();
         var tasks = deferredTasks.Select(x => x()).ToList();

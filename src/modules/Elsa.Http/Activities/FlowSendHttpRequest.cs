@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
 
@@ -26,7 +25,8 @@ public class FlowSendHttpRequest : SendHttpRequestBase, IActivityPropertyDefault
     [Input(
         Description = "A list of expected status codes to handle.",
         UIHint = InputUIHints.MultiText,
-        DefaultValueProvider = typeof(FlowSendHttpRequest)
+        DefaultValueProvider = typeof(FlowSendHttpRequest),
+        Order = 5.1f
     )]
     public Input<ICollection<int>> ExpectedStatusCodes { get; set; } = default!;
 

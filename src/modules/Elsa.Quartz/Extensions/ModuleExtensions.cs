@@ -18,7 +18,7 @@ public static class ModuleExtensions
     {
         return module.Use(configure);
     }
-    
+
     /// <summary>
     /// Installs a Quartz.NET implementation for <see cref="IWorkflowScheduler"/>.
     /// </summary>

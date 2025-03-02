@@ -2,9 +2,8 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Workflows.Runtime.Distributed.Handlers;
-using Elsa.Workflows.Runtime.Distributed.Services;
 using Elsa.Workflows.Runtime.Features;
+using Elsa.Workflows.Runtime.Handlers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Distributed.Features;
@@ -25,13 +24,16 @@ public class DistributedRuntimeFeature : FeatureBase
         Module.UseWorkflowRuntime(runtime =>
         {
             runtime.WorkflowRuntime = sp => sp.GetRequiredService<DistributedWorkflowRuntime>();
+            runtime.BookmarkQueueWorker = sp => sp.GetRequiredService<DistributedBookmarkQueueWorker>();
         });
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddScoped<DistributedWorkflowRuntime>();
-        Services.AddCommandHandler<CancelWorkflowsCommandHandler>();
+        Services
+            .AddScoped<DistributedWorkflowRuntime>()
+            .AddScoped<DistributedBookmarkQueueWorker>()
+            .AddCommandHandler<CancelWorkflowsCommandHandler>();
     }
 }

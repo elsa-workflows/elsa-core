@@ -5,7 +5,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Requests;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class WorkflowCancellationService(
@@ -15,7 +15,7 @@ public class WorkflowCancellationService(
     : IWorkflowCancellationService
 {
     /// <inheritdoc />
-    public async Task<int> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+    public async Task<bool> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
         var filter = new WorkflowInstanceFilter
         {
@@ -23,12 +23,11 @@ public class WorkflowCancellationService(
         };
         var instance = await workflowInstanceStore.FindAsync(filter, cancellationToken);
 
-        return instance == null
-            ? 0
-            : await CancelWorkflows(new List<WorkflowInstance>
-            {
-                instance
-            }, cancellationToken);
+        if(instance == null)
+            return false;
+            
+        await CancelWorkflows([instance], cancellationToken);
+        return true;
     }
 
     /// <inheritdoc />

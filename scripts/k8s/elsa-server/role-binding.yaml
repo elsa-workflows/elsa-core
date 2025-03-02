@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: proto-cluster
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: proto-cluster
+subjects:
+  - kind: ServiceAccount
+    name: proto-cluster # this is the service account that should have the role applied

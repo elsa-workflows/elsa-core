@@ -58,6 +58,11 @@ internal class ActivityExecutionRecordRecord : Record
     public string? SerializedException { get; set; }
 
     /// <summary>
+    /// Any properties provided by the activity.
+    /// </summary>
+    public string? SerializedProperties { get; set; }
+
+    /// <summary>
     /// Gets or sets the time at which the activity execution began.
     /// </summary>
     public DateTimeOffset StartedAt { get; set; }

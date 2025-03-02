@@ -1,4 +1,4 @@
-namespace Elsa.Framework.System.Services;
+namespace Elsa.Common.Services;
 
 /// <inheritdoc />
 public class SystemClock : ISystemClock

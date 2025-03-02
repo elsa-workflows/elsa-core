@@ -1,9 +1,10 @@
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Notifications;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Default implementation of <see cref="IBookmarkManager"/>.
@@ -20,9 +21,19 @@ public class DefaultBookmarkManager(IBookmarkStore bookmarkStore, INotificationS
         await notificationSender.SendAsync(new BookmarksDeleted(bookmarks), cancellationToken);
 
         if (logger.IsEnabled(LogLevel.Debug))
+        {
             foreach (var bookmark in bookmarks)
                 logger.LogDebug("Deleted bookmark {BookmarkId} for workflow {WorkflowInstanceId}", bookmark.Id, bookmark.WorkflowInstanceId);
+        }
 
         return count;
+    }
+
+    /// <inheritdoc />
+    public async Task SaveAsync(StoredBookmark bookmark, CancellationToken cancellationToken = default)
+    {
+        await notificationSender.SendAsync(new BookmarkSaving(bookmark), cancellationToken);
+        await bookmarkStore.SaveAsync(bookmark, cancellationToken);
+        await notificationSender.SendAsync(new BookmarkSaved(bookmark), cancellationToken);
     }
 }

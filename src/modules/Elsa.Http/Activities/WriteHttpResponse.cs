@@ -2,7 +2,6 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
-using Elsa.Http.Models;
 using Elsa.Http.UIHints;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
@@ -72,7 +71,6 @@ public class WriteHttpResponse : Activity
         {
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
-
             context.CreateBookmark(OnResumeAsync, BookmarkMetadata.HttpCrossBoundary);
             return;
         }
@@ -137,7 +135,7 @@ public class WriteHttpResponse : Activity
             }
         }
 
-        //Check if the configuration is set to flush immediatly the response to the caller.
+        // Check if the configuration is set to flush immediatly the response to the caller.
         var options = context.GetRequiredService<IOptions<HttpActivityOptions>>();
         if (options.Value.WriteHttpResponseSynchronously)
             await response.CompleteAsync();

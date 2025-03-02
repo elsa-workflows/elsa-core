@@ -26,7 +26,7 @@ public class WorkflowExecutionLogRecordFilter
     /// The IDs of the workflow instances.
     /// </summary>
     public ICollection<string>? WorkflowInstanceIds { get; set; }
-
+    
     /// <summary>
     /// The ID of the parent activity instance.
     /// </summary>
@@ -46,12 +46,22 @@ public class WorkflowExecutionLogRecordFilter
     /// The node ID of the activity.
     /// </summary>
     public string? ActivityNodeId { get; set; }
-
+    
     /// <summary>
     /// The node IDs of the activities.
     /// </summary>
     public ICollection<string>? ActivityNodeIds { get; set; }
-
+    
+    /// <summary>
+    /// The activity type to exclude.
+    /// </summary>
+    public string? ExcludeActivityType { get; set; }
+    
+    /// <summary>
+    /// The activity types to exclude.
+    /// </summary>
+    public ICollection<string>? ExcludeActivityTypes { get; set; }
+    
     /// <summary>
     /// The name of the event.
     /// </summary>
@@ -61,7 +71,7 @@ public class WorkflowExecutionLogRecordFilter
     /// Match all of these event names.
     /// </summary>
     public ICollection<string>? EventNames { get; set; }
-
+    
     /// <summary>
     /// Applies the filter to the specified queryable.
     /// </summary>
@@ -79,6 +89,8 @@ public class WorkflowExecutionLogRecordFilter
         if (filter.ActivityNodeIds != null) queryable = queryable.Where(x => filter.ActivityNodeIds.Contains(x.ActivityNodeId));
         if (filter.EventName != null) queryable = queryable.Where(x => x.EventName == filter.EventName);
         if (filter.EventNames != null) queryable = queryable.Where(x => filter.EventNames.Contains(x.EventName!));
+        if(filter.ExcludeActivityType != null) queryable = queryable.Where(x => x.ActivityType != filter.ExcludeActivityType);
+        if(filter.ExcludeActivityTypes != null) queryable = queryable.Where(x => !filter.ExcludeActivityTypes.Contains(x.ActivityType));
         
         return queryable;
     }

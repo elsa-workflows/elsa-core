@@ -1,18 +1,18 @@
+using Elsa.Common.DistributedHosting;
 using Elsa.Workflows.Runtime.Messages;
-using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.State;
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Workflows.Runtime.Distributed.Services;
+namespace Elsa.Workflows.Runtime.Distributed;
 
 public class DistributedWorkflowClient(
     string workflowInstanceId,
     IDistributedLockProvider distributedLockProvider,
     IOptions<DistributedLockingOptions> distributedLockingOptions,
-    IServiceProvider serviceProvider) : IWorkflowClient
+    IServiceProvider serviceProvider)
+    : IWorkflowClient
 {
     private readonly LocalWorkflowClient _localWorkflowClient = ActivatorUtilities.CreateInstance<LocalWorkflowClient>(serviceProvider, workflowInstanceId);
 
@@ -31,7 +31,7 @@ public class DistributedWorkflowClient(
 
     public async Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        var result = await WithLockAsync(async () => await _localWorkflowClient.CreateAndRunInstanceAsync(request, cancellationToken));
+        var result = await _localWorkflowClient.CreateAndRunInstanceAsync(request, cancellationToken);
         return result;
     }
 
@@ -48,6 +48,11 @@ public class DistributedWorkflowClient(
     public async Task ImportStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
         await _localWorkflowClient.ImportStateAsync(workflowState, cancellationToken);
+    }
+
+    public async Task<bool> InstanceExistsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _localWorkflowClient.InstanceExistsAsync(cancellationToken);
     }
 
     private async Task<R> WithLockAsync<R>(Func<Task<R>> func)

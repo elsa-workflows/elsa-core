@@ -10,7 +10,11 @@ public class SerializedKeyValuePair : Entity
     /// <summary>
     /// Gets or sets the key.
     /// </summary>
-    public string Key => Id;
+    public string Key
+    {
+        get => Id;
+        set => Id = value;
+    }
 
     /// <summary>
     /// Gets or sets the serialized value.

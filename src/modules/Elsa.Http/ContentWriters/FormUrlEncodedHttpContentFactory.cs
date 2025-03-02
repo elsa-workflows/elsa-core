@@ -9,13 +9,20 @@ namespace Elsa.Http.ContentWriters;
 public class FormUrlEncodedHttpContentFactory : IHttpContentFactory
 {
     /// <inheritdoc />
-    public IEnumerable<string> SupportedContentTypes => new[] { "application/x-www-form-urlencoded" };
+    public IEnumerable<string> SupportedContentTypes => ["application/x-www-form-urlencoded"];
 
     /// <inheritdoc />
     public HttpContent CreateHttpContent(object content, string? contentType = null) => new FormUrlEncodedContent(GetContentAsDictionary(content));
 
-    private static Dictionary<string, string> GetContentAsDictionary(object content) =>
-        (content is string or JsonObject
-            ? JsonSerializer.Deserialize<Dictionary<string, string>>(JsonSerializer.Serialize(content))
-            : (Dictionary<string, string>)Convert.ChangeType(content, typeof(Dictionary<string, string>)))!;
+    private static IDictionary<string, string> GetContentAsDictionary(object content)
+    {
+        if (content is IDictionary<string, object> dictionary)
+            return dictionary.ToDictionary(x => x.Key, x => x.Value.ToString() ?? string.Empty);
+
+        if (content is string or JsonObject)
+            return JsonSerializer.Deserialize<Dictionary<string, string>>(JsonSerializer.Serialize(content));
+
+        var jsonElement = JsonSerializer.SerializeToElement(content);
+        return jsonElement.EnumerateObject().ToDictionary(x => x.Name, x => x.Value.ToString());
+    }
 }

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Http.Serialization;
 
-namespace Elsa.Http.Models;
+namespace Elsa.Http;
 
 /// <summary>
 /// Represents the headers of an HTTP message.
@@ -25,6 +25,13 @@ public class HttpHeaders : Dictionary<string, string[]>
 
     /// <inheritdoc />
     public HttpHeaders(HttpResponseHeaders source)
+    {
+        foreach (var item in source)
+            Add(item.Key, item.Value.ToArray());
+    }
+
+    /// <inheritdoc />
+    public HttpHeaders(HttpContentHeaders source)
     {
         foreach (var item in source)
             Add(item.Key, item.Value.ToArray());

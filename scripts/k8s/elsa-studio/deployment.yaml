@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elsa-studio-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elsa-studio
+  template:
+    metadata:
+      labels:
+        app: elsa-studio
+    spec:
+      containers:
+        - name: elsa-studio
+          imagePullPolicy: Never
+          image: elsa-studio:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+            - name: "ELSASERVER__URL"
+              value: "http://localhost:8001/elsa/api"

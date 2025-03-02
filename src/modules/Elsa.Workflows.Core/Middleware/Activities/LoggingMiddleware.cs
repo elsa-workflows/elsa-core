@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using Microsoft.Extensions.Logging;
 

@@ -1,6 +1,4 @@
-using Elsa.Workflows.Contracts;
-
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 public class StandardOutStreamProvider : IStandardOutStreamProvider
 {

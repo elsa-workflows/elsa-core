@@ -1,40 +1,27 @@
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Features;
 using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 
 /// <summary>
 /// Configures the <see cref="WorkflowInstancesFeature"/> and <see cref="WorkflowDefinitionsFeature"/> features with an Entity Framework Core persistence provider.
 /// </summary>
-[DependsOn(typeof(WorkflowManagementFeature))]
-[DependsOn(typeof(WorkflowInstancesFeature))]
-[DependsOn(typeof(WorkflowDefinitionsFeature))]
+[DependsOn(typeof(EFCoreWorkflowInstancePersistenceFeature))]
+[DependsOn(typeof(EFCoreWorkflowDefinitionPersistenceFeature))]
 [PublicAPI]
-public class WorkflowManagementPersistenceFeature : PersistenceFeatureBase<WorkflowManagementPersistenceFeature, ManagementElsaDbContext>
+public class WorkflowManagementPersistenceFeature(IModule module) : PersistenceFeatureBase<WorkflowManagementPersistenceFeature, ManagementElsaDbContext>(module)
 {
-    /// <inheritdoc />
-    public WorkflowManagementPersistenceFeature(IModule module) : base(module)
+    public override Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder
     {
-    }
-
-    /// <inheritdoc />
-    public override void Configure()
-    {
-        Module.Configure<WorkflowInstancesFeature>(feature => feature.WorkflowInstanceStore = sp => sp.GetRequiredService<EFCoreWorkflowInstanceStore>());
-        Module.Configure<WorkflowDefinitionsFeature>(feature => feature.WorkflowDefinitionStore = sp => sp.GetRequiredService<EFCoreWorkflowDefinitionStore>());
-    }
-
-    /// <inheritdoc />
-    public override void Apply()
-    {
-        base.Apply();
-
-        AddEntityStore<WorkflowInstance, EFCoreWorkflowInstanceStore>();
-        AddEntityStore<WorkflowDefinition, EFCoreWorkflowDefinitionStore>();
+        get => base.DbContextOptionsBuilder;
+        set
+        {
+            base.DbContextOptionsBuilder = value;
+            Module.Configure<EFCoreWorkflowDefinitionPersistenceFeature>(x => x.DbContextOptionsBuilder = value);
+            Module.Configure<EFCoreWorkflowInstancePersistenceFeature>(x => x.DbContextOptionsBuilder = value);
+        }
     }
 }

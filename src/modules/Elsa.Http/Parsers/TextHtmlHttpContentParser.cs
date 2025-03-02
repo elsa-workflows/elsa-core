@@ -1,4 +1,4 @@
-﻿using Elsa.Http.Contracts;
+﻿using Elsa.Http.Contexts;
 
 namespace Elsa.Http.Parsers;
 
@@ -12,11 +12,12 @@ public class TextHtmlHttpContentParser : IHttpContentParser
     public int Priority => 0;
 
     /// <inheritdoc />
-    public bool GetSupportsContentType(string contentType) => contentType.Contains("text/html", StringComparison.InvariantCultureIgnoreCase);
+    public bool GetSupportsContentType(HttpResponseParserContext context) => context.ContentType.Contains("text/html", StringComparison.InvariantCultureIgnoreCase);
 
     /// <inheritdoc />
-    public async Task<object> ReadAsync(Stream content, Type? returnType, CancellationToken cancellationToken)
+    public async Task<object> ReadAsync(HttpResponseParserContext context)
     {
+        var content = context.Content;
         using var reader = new StreamReader(content, leaveOpen: true);
         var stringContent = await reader.ReadToEndAsync();
         return stringContent;

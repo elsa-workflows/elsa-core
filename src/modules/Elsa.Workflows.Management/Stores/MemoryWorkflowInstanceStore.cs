@@ -154,6 +154,20 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         return ValueTask.FromResult(count);
     }
 
+    /// <inheritdoc />
+    public async Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default)
+    {
+        var workflowInstance = await FindAsync(new()
+        {
+            Id = workflowInstanceId
+        }, cancellationToken);
+        
+        if (workflowInstance == null)
+            throw new InvalidOperationException($"Workflow instance with ID '{workflowInstanceId}' does not exist.");
+        
+        workflowInstance.UpdatedAt = value;
+    }
+
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Management.Filters.WorkflowInstanceFilter.Apply(IQueryable<WorkflowInstance>)")]

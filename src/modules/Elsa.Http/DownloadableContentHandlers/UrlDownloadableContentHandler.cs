@@ -1,7 +1,5 @@
 using Elsa.Http.Abstractions;
 using Elsa.Http.Contexts;
-using Elsa.Http.Contracts;
-using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Microsoft.AspNetCore.StaticFiles;
 

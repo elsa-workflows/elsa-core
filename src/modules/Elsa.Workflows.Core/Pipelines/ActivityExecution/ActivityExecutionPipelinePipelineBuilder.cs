@@ -1,27 +1,24 @@
-using Elsa.Workflows.Contracts;
-
 namespace Elsa.Workflows.Pipelines.ActivityExecution;
 
 /// <inheritdoc />
-public class ActivityExecutionPipelinePipelineBuilder : IActivityExecutionPipelineBuilder
+public class ActivityExecutionPipelinePipelineBuilder(IServiceProvider serviceProvider) : IActivityExecutionPipelineBuilder
 {
     private readonly IList<Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate>> _components = new List<Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate>>();
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ActivityExecutionPipelinePipelineBuilder"/> class.
-    /// </summary>
-    public ActivityExecutionPipelinePipelineBuilder(IServiceProvider serviceProvider)
-    {
-        ServiceProvider = serviceProvider;
-    }
-
     /// <inheritdoc />
-    public IServiceProvider ServiceProvider { get; }
+    public IServiceProvider ServiceProvider { get; } = serviceProvider;
 
     /// <inheritdoc />
     public IActivityExecutionPipelineBuilder Use(Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate> middleware)
     {
         _components.Add(middleware);
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IActivityExecutionPipelineBuilder Insert(int index, Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate> middleware)
+    {
+        _components.Insert(index, middleware);
         return this;
     }
 

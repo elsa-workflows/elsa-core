@@ -51,9 +51,9 @@ public class MongoAlterationPlanStore : IAlterationPlanStore
         await _mongoDbStore.SaveAsync(document, cancellationToken);
     }
 
-    private static IMongoQueryable<AlterationPlanDocument> Filter(IMongoQueryable<AlterationPlanDocument> queryable, AlterationPlanFilter filter)
+    private static IQueryable<AlterationPlanDocument> Filter(IQueryable<AlterationPlanDocument> queryable, AlterationPlanFilter filter)
     {
-        return (Apply(queryable, filter) as IMongoQueryable<AlterationPlanDocument>)!;
+        return Apply(queryable, filter);
     }
 
     private static IQueryable<AlterationPlanDocument> Apply(IQueryable<AlterationPlanDocument> queryable, AlterationPlanFilter filter)

@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 
@@ -18,7 +17,8 @@ public class SingletonStrategy(IWorkflowInstanceStore workflowInstanceStore) : I
     {
         var filter = new WorkflowInstanceFilter
         {
-            DefinitionId = context.Workflow.Identity.DefinitionId
+            DefinitionId = context.Workflow.Identity.DefinitionId,
+            WorkflowStatus = WorkflowStatus.Running
         };
 
         var count = await workflowInstanceStore.CountAsync(filter);

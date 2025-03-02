@@ -10,17 +10,17 @@ public class StoredBookmark : Entity
     /// <summary>
     /// The name of the activity type associated with the bookmark.
     /// </summary>
-    public string ActivityTypeName { get; set; } = default!;
+    public string ActivityTypeName { get; set; } = null!;
 
     /// <summary>
     /// The hash of the bookmark.
     /// </summary>
-    public string Hash { get; set; } = default!;
+    public string Hash { get; set; } = null!;
 
     /// <summary>
     /// The ID of the workflow instance associated with the bookmark.
     /// </summary>
-    public string WorkflowInstanceId { get; set; } = default!;
+    public string WorkflowInstanceId { get; set; } = null!;
 
     /// <summary>
     /// The ID of the activity instance associated with the bookmark.

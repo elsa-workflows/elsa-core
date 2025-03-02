@@ -2,6 +2,7 @@ using Elsa.Caching.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.Stores;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,7 +22,12 @@ public class CachingWorkflowRuntimeFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        // Decorators.
-        Services.Decorate<ITriggerStore, CachingTriggerStore>();
+        Services
+            // Decorators.
+            .Decorate<ITriggerStore, CachingTriggerStore>()
+
+            // Handlers.
+            .AddNotificationHandler<InvalidateTriggersCache>()
+            .AddNotificationHandler<InvalidateWorkflowsCache>();
     }
 }

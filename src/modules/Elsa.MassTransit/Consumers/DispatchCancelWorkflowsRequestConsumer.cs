@@ -16,7 +16,6 @@ public class DispatchCancelWorkflowsRequestConsumer(IWorkflowRuntime workflowRun
     {
         var cancellationToken = context.CancellationToken;
         var request = context.Message;
-
         var client = await workflowRuntime.CreateClientAsync(request.WorkflowInstanceId, cancellationToken);
         await client.CancelAsync(cancellationToken);
     }

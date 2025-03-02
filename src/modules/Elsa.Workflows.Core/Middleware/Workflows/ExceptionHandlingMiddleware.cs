@@ -1,5 +1,4 @@
-using Elsa.Framework.System;
-using Elsa.Workflows.Contracts;
+using Elsa.Common;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.State;

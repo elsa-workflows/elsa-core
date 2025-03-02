@@ -1,11 +1,10 @@
 using System.Linq.Expressions;
-using Elsa.EntityFrameworkCore.Common.Contracts;
-using Elsa.Framework.Entities;
+using Elsa.Common.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query;
 
-namespace Elsa.EntityFrameworkCore.Common.EntityHandlers;
+namespace Elsa.EntityFrameworkCore.EntityHandlers;
 
 /// <summary>
 /// Represents a class that applies a filter to set the TenantId for entities.

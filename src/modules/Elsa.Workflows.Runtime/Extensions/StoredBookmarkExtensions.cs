@@ -1,4 +1,4 @@
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Entities;
 
@@ -17,8 +17,7 @@ public static class StoredBookmarkExtensions
     /// <typeparam name="T">The type of the Data property.</typeparam>
     /// <returns>The Data property of the stored bookmark as a strongly-typed object.</returns>
     public static T GetPayload<T>(this StoredBookmark storedBookmark) => (T)storedBookmark.Payload!;
-    
-    
+
     /// <summary>
     /// Filters the specified set of stored bookmarks by the specified activity type.
     /// </summary>

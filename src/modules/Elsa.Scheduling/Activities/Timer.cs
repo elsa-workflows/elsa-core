@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
+using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Framework.System;
 using Elsa.Scheduling.Bookmarks;

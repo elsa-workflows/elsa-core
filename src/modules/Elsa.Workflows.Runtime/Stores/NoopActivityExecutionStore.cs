@@ -16,6 +16,11 @@ public class NoopActivityExecutionStore : IActivityExecutionStore
         return Task.CompletedTask;
     }
 
+    public Task AddManyAsync(IEnumerable<ActivityExecutionRecord> records, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
     public Task<ActivityExecutionRecord?> FindAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
     {
         return Task.FromResult<ActivityExecutionRecord?>(null);

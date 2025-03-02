@@ -1,10 +1,9 @@
-using Elsa.EntityFrameworkCore.Common.Contracts;
-using Elsa.EntityFrameworkCore.Common.EntityHandlers;
+using Elsa.EntityFrameworkCore.EntityHandlers;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.EntityFrameworkCore.Common;
+namespace Elsa.EntityFrameworkCore;
 
 /// <inheritdoc />
 public class CommonPersistenceFeature(IModule module) : FeatureBase(module)

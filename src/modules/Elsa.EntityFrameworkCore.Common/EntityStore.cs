@@ -1,19 +1,16 @@
-using Elsa.Framework.Entities;
+using Elsa.Common.Entities;
+using Microsoft.EntityFrameworkCore;
 
-namespace Elsa.EntityFrameworkCore.Common;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// A generic repository class around EF Core for accessing entities that inherit from <see cref="Entity"/>.
 /// </summary>
 /// <typeparam name="TDbContext">The type of the database context.</typeparam>
 /// <typeparam name="TEntity">The type of the entity.</typeparam>
-public class EntityStore<TDbContext, TEntity> : Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase where TEntity : Entity, new()
+public class EntityStore<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextFactory, IServiceProvider serviceProvider) 
+    : Store<TDbContext, TEntity>(dbContextFactory, serviceProvider) where TDbContext : DbContext where TEntity : Entity, new()
 {
-    /// <inheritdoc />
-    public EntityStore(IServiceProvider serviceProvider) : base(serviceProvider)
-    {
-    }
-
     /// <summary>
     /// Saves the entity.
     /// </summary>

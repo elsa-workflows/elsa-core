@@ -1,3 +1,5 @@
+using Elsa.Common.Entities;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -5,7 +7,7 @@ using Elsa.Framework.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.EntityFrameworkCore.Common;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// Base class for features that require Entity Framework Core.
@@ -38,26 +40,29 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase
     /// <summary>
     /// Gets or sets the callback used to configure the <see cref="DbContextOptionsBuilder"/>.
     /// </summary>
-    public Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder = (_, options) => options
-        .UseElsaDbContextOptions(default)
-        .UseSqlite("Data Source=elsa.sqlite.db;Cache=Shared;", sqlite => sqlite
-            .MigrationsAssembly("Elsa.EntityFrameworkCore.Sqlite")
-            .MigrationsHistoryTable(ElsaDbContextBase.MigrationsHistoryTable, ElsaDbContextBase.ElsaSchema));
+    public virtual Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder { get; set; } = null!;
 
-    /// <inheritdoc />
     public override void ConfigureHostedServices()
     {
         if (RunMigrations)
-            Module.ConfigureHostedService<RunMigrationsHostedService<TDbContext>>(-100); // Migrations need to run before other hosted services that depend on DB access.
+            ConfigureMigrations();
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
+        if(DbContextOptionsBuilder == null)
+            throw new InvalidOperationException("The DbContextOptionsBuilder must be configured.");
+        
         if (UseContextPooling)
             Services.AddPooledDbContextFactory<TDbContext>(DbContextOptionsBuilder);
         else
             Services.AddDbContextFactory<TDbContext>(DbContextOptionsBuilder, DbContextFactoryLifetime);
+    }
+
+    protected virtual void ConfigureMigrations()
+    {
+        Services.AddStartupTask<RunMigrationsStartupTask<TDbContext>>();
     }
 
     /// <summary>

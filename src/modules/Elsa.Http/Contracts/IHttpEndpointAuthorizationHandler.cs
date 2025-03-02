@@ -1,6 +1,4 @@
-using Elsa.Http.Models;
-
-namespace Elsa.Http.Contracts;
+namespace Elsa.Http;
 
 /// <summary>
 /// A handler that is invoked when authorizing an inbound HTTP request.

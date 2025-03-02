@@ -29,7 +29,7 @@ internal class Request
     /// The size of the page to get.
     /// </summary>
     public int? PageSize { get; set; }
-
+    
     /// <summary>
     /// The number of records to skip.
     /// </summary>
@@ -44,6 +44,8 @@ internal class Request
 internal class JournalFilter
 {
     public ICollection<string>? ActivityIds { get; set; }
+    public ICollection<string>? ActivityNodeIds { get; set; }
+    public ICollection<string>? ExcludedActivityTypes { get; set; }
     public ICollection<string>? EventNames { get; set; }
 }
 

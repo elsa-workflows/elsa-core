@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Text.Unicode;
-using Elsa.Common.Contracts;
 using Elsa.Common.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -67,7 +66,7 @@ public abstract class ConfigurableSerializer
     /// <summary>
     /// Creates a new instance of <see cref="JsonSerializerOptions"/>.
     /// </summary>
-    private JsonSerializerOptions CreateOptionsInternal()
+    private static JsonSerializerOptions CreateOptionsInternal()
     {
         var options = new JsonSerializerOptions
         {
@@ -80,6 +79,7 @@ public abstract class ConfigurableSerializer
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
         options.Converters.Add(new IntegerJsonConverter());
+        options.Converters.Add(new BigIntegerJsonConverter());
         options.Converters.Add(new DecimalJsonConverter());
 
         return options;

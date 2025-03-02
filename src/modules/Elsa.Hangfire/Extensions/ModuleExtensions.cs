@@ -21,25 +21,27 @@ public static class ModuleExtensions
     {
         return module.Use(configure);
     }
-    
+
     /// <summary>
     /// Configures Hangfire to use SQL Server storage. Only use this feature if you are not configuring Hangfire yourself.
     /// </summary>
+    [Obsolete("Configure storage directly on the HangfireFeature.")]
     public static HangfireFeature UseSqlServerStorage(this HangfireFeature feature, Action<HangfireSqlServerStorageFeature> configure)
     {
         feature.Module.Use(configure);
         return feature;
     }
-    
+
     /// <summary>
     /// Configures Hangfire to use SQLite storage. Only use this feature if you are not configuring Hangfire yourself.
     /// </summary>
+    [Obsolete("Configure storage directly on the HangfireFeature.")]
     public static HangfireFeature UseSqliteStorage(this HangfireFeature feature, Action<HangfireSqliteStorageFeature> configure)
     {
         feature.Module.Use(configure);
         return feature;
     }
-    
+
     /// <summary>
     /// Installs a Hangfire implementation for <see cref="IWorkflowScheduler"/>.
     /// </summary>
@@ -48,7 +50,7 @@ public static class ModuleExtensions
         feature.Module.Use(configure);
         return feature;
     }
-    
+
     /// <summary>
     /// Installs a Hangfire implementation for <see cref="IWorkflowScheduler"/>.
     /// </summary>

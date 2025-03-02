@@ -1,11 +1,11 @@
-using Elsa.Framework.Tenants;
+using Elsa.Common.Multitenancy;
 
 namespace Elsa.Tenants;
 
 /// <summary>
 /// Represents a pipeline builder of tenant resolution strategies.
 /// </summary>
-public interface ITenantResolutionPipelineBuilder
+public interface ITenantResolverPipelineBuilder
 {
     /// <summary>
     /// Contains strategies for resolving tenants.
@@ -15,21 +15,21 @@ public interface ITenantResolutionPipelineBuilder
     /// <summary>
     /// Appends a new strategy to the pipeline. The last appended strategy will be the first to be executed.
     /// </summary>
-    ITenantResolutionPipelineBuilder Append<T>() where T : ITenantResolutionStrategy;
+    ITenantResolverPipelineBuilder Append<T>() where T : ITenantResolver;
     
     /// <summary>
     /// Appends a new strategy to the pipeline. The last appended strategy will be the first to be executed.
     /// </summary>
-    ITenantResolutionPipelineBuilder Append(Type resolverType);
+    ITenantResolverPipelineBuilder Append(Type resolverType);
     
     /// <summary>
     /// Clears the pipeline.
     /// </summary>
-    ITenantResolutionPipelineBuilder Clear();
+    ITenantResolverPipelineBuilder Clear();
     
     /// <summary>
     /// Builds the pipeline.
     /// </summary>
-    IEnumerable<ITenantResolutionStrategy> Build(IServiceProvider serviceProvider);
+    IEnumerable<ITenantResolver> Build(IServiceProvider serviceProvider);
     
 }
