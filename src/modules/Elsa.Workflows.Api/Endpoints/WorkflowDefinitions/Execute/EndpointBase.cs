@@ -43,6 +43,7 @@ internal abstract class EndpointBase<T>(
         {
             Workflow = workflowGraph.Workflow,
             CorrelationId = request.CorrelationId,
+            Name = request.Name,
             Input = request.GetInputAsDictionary(),
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle
