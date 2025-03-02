@@ -35,6 +35,7 @@ public class LocalWorkflowClient(
         {
             WorkflowInstanceId = WorkflowInstanceId,
             CorrelationId = request.CorrelationId,
+            Name = request.Name,
             ParentWorkflowInstanceId = request.ParentId,
             Input = request.Input,
             Properties = request.Properties
@@ -58,6 +59,7 @@ public class LocalWorkflowClient(
         {
             Properties = request.Properties,
             CorrelationId = request.CorrelationId,
+            Name = request.Name,
             Input = request.Input,
             WorkflowDefinitionHandle = request.WorkflowDefinitionHandle,
             ParentId = request.ParentId
@@ -148,6 +150,7 @@ public class LocalWorkflowClient(
         {
             WorkflowInstanceId = WorkflowInstanceId,
             CorrelationId = request.CorrelationId,
+            Name = request.Name,
             ParentWorkflowInstanceId = request.ParentId,
             Input = request.Input,
             Properties = request.Properties

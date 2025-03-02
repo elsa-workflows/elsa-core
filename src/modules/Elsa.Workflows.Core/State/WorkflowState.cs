@@ -11,17 +11,17 @@ public class WorkflowState
     /// <summary>
     /// Gets or sets the ID.
     /// </summary>
-    public string Id { get; set; } = default!;
+    public string Id { get; set; } = null!;
 
     /// <summary>
     /// The workflow definition ID.
     /// </summary>
-    public string DefinitionId { get; set; } = default!;
+    public string DefinitionId { get; set; } = null!;
 
     /// <summary>
     /// The workflow definition version ID.
     /// </summary>
-    public string DefinitionVersionId { get; set; } = default!;
+    public string DefinitionVersionId { get; set; } = null!;
 
     /// <summary>
     /// The workflow definition version.
@@ -37,6 +37,11 @@ public class WorkflowState
     /// The correlation ID of the workflow, if any.
     /// </summary>
     public string? CorrelationId { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the name of the workflow instance.
+    /// </summary>
+    public string? Name { get; set; }
 
     /// <summary>
     /// The status of the workflow.
