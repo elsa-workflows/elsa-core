@@ -41,6 +41,14 @@ internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasReg
         yield return CreateFunctionDefinition(builder => builder
             .Name("setCorrelationId")
             .Parameter("value", "string"));
+        
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("getWorkflowInstanceName")
+            .ReturnType("string"));
+        
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("setWorkflowInstanceName")
+            .Parameter("value", "string"));
 
         yield return CreateFunctionDefinition(builder => builder
             .Name("setVariable")
