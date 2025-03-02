@@ -46,8 +46,7 @@ public class SqlCommand : Activity
     [Input(
         Description = "Command to run against the database.",
         UIHint = InputUIHints.CodeEditor,
-        UIHandler = typeof(SqlCodeOptionsProvider)//,
-                                                  //ExpressionCategories = [ExpressionCategories.Query.Sql]
+        UIHandler = typeof(SqlCodeOptionsProvider)
     )]
     public Input<string?> Command { get; set; } = default!;
 
