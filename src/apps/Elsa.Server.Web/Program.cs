@@ -1,5 +1,4 @@
 using System.Text.Encodings.Web;
-using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
 using Elsa.Caching.Options;
@@ -94,7 +93,6 @@ const DistributedCachingTransport distributedCachingTransport = DistributedCachi
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
 const bool useTenantsFromConfiguration = true;
-const bool useAgents = false;
 const bool useSecrets = false;
 const bool disableVariableWrappers = false;
 const bool disableVariableCopying = false;
@@ -213,7 +211,8 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
-                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
+                            ef.UseOracle(oracleConnectionString, new()
+                                { SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -256,7 +255,8 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
-                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
+                            ef.UseOracle(oracleConnectionString, new()
+                                { SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -304,7 +304,8 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
-                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
+                            ef.UseOracle(oracleConnectionString, new()
+                                { SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -354,7 +355,7 @@ services
                                 return new RedisDistributedSynchronizationProvider(database);
                             }
                         case "File":
-                            return new FileDistributedSynchronizationProvider(new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "locks")));
+                            return new FileDistributedSynchronizationProvider(new(Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "locks")));
                         case "Noop":
                         default:
                             return new NoopDistributedSynchronizationProvider();
@@ -451,7 +452,8 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
-                            ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
+                            ef.UseOracle(oracleConnectionString, new()
+                                { SchemaName = "ELSA"});
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -536,7 +538,7 @@ services
                 {
                     if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                         return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
-                    return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+                    return new SqliteProvider(new(sqliteConnectionString));
                 };
 
                 if (configuration["KUBERNETES_SERVICE_HOST"] != null)
@@ -562,18 +564,7 @@ services
                 kafka.ConfigureOptions(options => configuration.GetSection("Kafka").Bind(options));
             });
         }
-
-        if (useAgents)
-        {
-            elsa
-                .UseAgentActivities()
-                .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite(sp => sp.GetSqliteConnectionString())))
-                .UseAgentsApi()
-                ;
-
-            services.Configure<AgentsOptions>(options => builder.Configuration.GetSection("Agents").Bind(options));
-        }
-
+        
         if (useSecrets)
         {
             elsa
@@ -647,7 +638,8 @@ services
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite) ef.UseSqlite(sqliteConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer) ef.UseSqlServer(sqlServerConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);
-                                if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle) ef.UseOracle(oracleConnectionString, new ElsaDbContextOptions{ SchemaName = "ELSA"});
+                                if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle) ef.UseOracle(oracleConnectionString, new()
+                                    { SchemaName = "ELSA"});
 #if !NET9_0
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) 
                                     ef.UseMySql(mySqlConnectionString);
