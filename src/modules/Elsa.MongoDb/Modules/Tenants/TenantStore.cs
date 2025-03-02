@@ -1,8 +1,9 @@
-using Elsa.Common.Multitenancy;
+using Elsa.Framework.Tenants;
 using Elsa.Identity.Contracts;
 using Elsa.MongoDb.Common;
 using Elsa.Tenants;
 using JetBrains.Annotations;
+using Tenant = Elsa.Common.Multitenancy.Tenant;
 
 namespace Elsa.MongoDb.Modules.Tenants;
 

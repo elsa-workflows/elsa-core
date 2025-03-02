@@ -1,5 +1,5 @@
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Framework.Entities;
 
 namespace Elsa.Dapper.Contracts;
 

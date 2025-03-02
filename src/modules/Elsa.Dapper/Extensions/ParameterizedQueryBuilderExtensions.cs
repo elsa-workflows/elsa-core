@@ -1,10 +1,10 @@
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Dapper.Models;
 using Elsa.Extensions;
+using Elsa.Framework.Entities;
 using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Extensions;

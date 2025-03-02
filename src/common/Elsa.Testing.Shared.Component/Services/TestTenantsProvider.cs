@@ -1,4 +1,5 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Framework.Tenants;
 using JetBrains.Annotations;
 
 namespace Elsa.Testing.Shared.Services;

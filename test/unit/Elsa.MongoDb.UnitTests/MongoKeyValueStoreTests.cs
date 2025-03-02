@@ -1,4 +1,4 @@
-﻿using Elsa.Common.Multitenancy;
+using Elsa.Common.Multitenancy;
 using Elsa.KeyValues.Entities;
 using Elsa.MongoDb.Common;
 using Elsa.MongoDb.Modules.Runtime;
