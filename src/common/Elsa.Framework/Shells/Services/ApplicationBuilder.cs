@@ -6,9 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Framework.Builders;
 
-public class ElsaBuilder
+public class ApplicationBuilder
 {
-    public ElsaBuilder()
+    public ApplicationBuilder()
     {
         ApplicationShell = AddShell();
     }

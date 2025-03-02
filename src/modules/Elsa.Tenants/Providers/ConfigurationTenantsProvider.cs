@@ -1,9 +1,11 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Framework.Tenants;
 using Elsa.Tenants.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Tenant = Elsa.Common.Multitenancy.Tenant;
 
 namespace Elsa.Tenants.Providers;
 

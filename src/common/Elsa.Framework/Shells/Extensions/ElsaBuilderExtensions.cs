@@ -6,19 +6,19 @@ namespace Elsa.Extensions;
 
 public static class ElsaBuilderExtensions
 {
-    public static ShellBuilder AddShell(this ElsaBuilder elsaBuilder, string id)
+    public static ShellBuilder AddShell(this ApplicationBuilder applicationBuilder, string id)
     {
-        return elsaBuilder.AddShell(id, []);
+        return applicationBuilder.AddShell(id, []);
     }
 
-    public static ShellBuilder AddShell(this ElsaBuilder elsaBuilder, params Type[] features)
+    public static ShellBuilder AddShell(this ApplicationBuilder applicationBuilder, params Type[] features)
     {
-        return elsaBuilder.AddShell(null, features);
+        return applicationBuilder.AddShell(null, features);
     }
 
-    public static ShellBuilder AddShell(this ElsaBuilder elsaBuilder, string? id, params Type[] features)
+    public static ShellBuilder AddShell(this ApplicationBuilder applicationBuilder, string? id, params Type[] features)
     {
-        var shellBuilder = elsaBuilder.AddShell();
+        var shellBuilder = applicationBuilder.AddShell();
         if (id != null) shellBuilder.WithId(id);
         shellBuilder.AddFeatures(features);
         return shellBuilder;

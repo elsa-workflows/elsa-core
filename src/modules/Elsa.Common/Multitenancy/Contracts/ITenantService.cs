@@ -1,3 +1,5 @@
+using Elsa.Framework.Tenants;
+
 namespace Elsa.Common.Multitenancy;
 
 public interface ITenantService

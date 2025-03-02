@@ -3,13 +3,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Framework.Shells.Builders;
 
-public class ShellBuilder(ElsaBuilder elsaBuilder)
+public class ShellBuilder(ApplicationBuilder applicationBuilder)
 {
     private string _id = Guid.NewGuid().ToString();
     private readonly ISet<Type> _features = new HashSet<Type>();
 
     public string Id => _id;
-    public ElsaBuilder ElsaBuilder { get; } = elsaBuilder;
+    public ApplicationBuilder ApplicationBuilder { get; } = applicationBuilder;
 
     public ShellBuilder AddFeature<TFeature>() where TFeature : IShellFeature
     {

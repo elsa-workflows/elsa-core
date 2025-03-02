@@ -3,11 +3,12 @@ using Elsa.DummyModule.Features;
 using Elsa.Extensions;
 using Elsa.Framework.Builders;
 using Elsa.Framework.Shells;
+using ApplicationBuilder = Elsa.Framework.Builders.ApplicationBuilder;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
-var elsaBuilder= new ElsaBuilder();
+var elsaBuilder= new ApplicationBuilder();
 var appShellBuilder = elsaBuilder.ApplicationShell;
 var tenant1Builder = elsaBuilder.AddShell("Tenant1");
 appShellBuilder.AddFeature<Dummy1Feature>();

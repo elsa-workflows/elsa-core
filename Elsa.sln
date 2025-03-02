@@ -389,6 +389,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Framework.AspNetCore",
 EndProject
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Framework", "src\common\Elsa.Framework\Elsa.Framework.csproj", "{51A9FF3A-4017-4BB4-9544-602037A7FF95}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ModularServer.Web", "src\apps\Elsa.ModularServer.Web\Elsa.ModularServer.Web.csproj", "{12536C83-8148-45C4-AF30-385AC9596CF0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DummyModule", "src\modules\Elsa.DummyModule\Elsa.DummyModule.csproj", "{76868D4A-6AAF-4C29-A02C-C6D8EF0B5C8F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -841,6 +846,14 @@ Global
 		{5FAD4C34-5854-4F7B-A10A-E16EE988BE7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5FAD4C34-5854-4F7B-A10A-E16EE988BE7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5FAD4C34-5854-4F7B-A10A-E16EE988BE7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{12536C83-8148-45C4-AF30-385AC9596CF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12536C83-8148-45C4-AF30-385AC9596CF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12536C83-8148-45C4-AF30-385AC9596CF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12536C83-8148-45C4-AF30-385AC9596CF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76868D4A-6AAF-4C29-A02C-C6D8EF0B5C8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76868D4A-6AAF-4C29-A02C-C6D8EF0B5C8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76868D4A-6AAF-4C29-A02C-C6D8EF0B5C8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76868D4A-6AAF-4C29-A02C-C6D8EF0B5C8F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -991,6 +1004,8 @@ Global
 		{5CF613F6-FA3B-4C06-8498-59F1D433D8BB} = {F06B9573-DF68-4606-866C-A7546A10A05A}
 		{CB7A3A50-E843-4AE0-A0DB-B3D6F11FF853} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
 		{5FAD4C34-5854-4F7B-A10A-E16EE988BE7A} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{12536C83-8148-45C4-AF30-385AC9596CF0} = {D92BEAB2-60D6-4BB4-885A-6BA681C6CCF1}
+		{76868D4A-6AAF-4C29-A02C-C6D8EF0B5C8F} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

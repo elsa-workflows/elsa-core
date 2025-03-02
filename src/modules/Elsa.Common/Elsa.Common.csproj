@@ -22,10 +22,4 @@
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Contexts\" />
-      <Folder Include="Enums\" />
-      <Folder Include="Results\" />
-    </ItemGroup>
-
 </Project>
