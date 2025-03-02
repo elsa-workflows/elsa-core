@@ -59,7 +59,7 @@ public class DefaultRuntimeTests
 
         const string workflowDefinitionId = nameof(SimpleSuspendedWorkflow);
         var workflowClient = await _workflowRuntime.CreateClientAsync();
-        await workflowClient.CreateInstanceAsync(new CreateWorkflowInstanceRequest
+        await workflowClient.CreateInstanceAsync(new()
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(workflowDefinitionId, VersionOptions.Published)
         });

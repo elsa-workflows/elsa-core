@@ -29,6 +29,7 @@ public class DefaultWorkflowStarter(IWorkflowDefinitionService workflowDefinitio
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflow.Identity.Id),
             CorrelationId = request.CorrelationId,
+            Name = request.Name,
             Input = request.Input,
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle,

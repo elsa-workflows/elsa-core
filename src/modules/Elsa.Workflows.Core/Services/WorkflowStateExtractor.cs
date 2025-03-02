@@ -18,6 +18,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             DefinitionVersionId = workflowExecutionContext.Workflow.Identity.Id,
             DefinitionVersion = workflowExecutionContext.Workflow.Identity.Version,
             CorrelationId = workflowExecutionContext.CorrelationId,
+            Name = workflowExecutionContext.Name,
             ParentWorkflowInstanceId = workflowExecutionContext.ParentWorkflowInstanceId,
             Status = workflowExecutionContext.Status,
             SubStatus = workflowExecutionContext.SubStatus,
@@ -45,6 +46,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
     {
         workflowExecutionContext.Id = state.Id;
         workflowExecutionContext.CorrelationId = state.CorrelationId;
+        workflowExecutionContext.Name = state.Name;
         workflowExecutionContext.ParentWorkflowInstanceId = state.ParentWorkflowInstanceId;
         workflowExecutionContext.SubStatus = state.SubStatus;
         workflowExecutionContext.Bookmarks = state.Bookmarks;

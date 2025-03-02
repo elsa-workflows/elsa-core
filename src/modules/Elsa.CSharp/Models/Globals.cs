@@ -1,11 +1,13 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using JetBrains.Annotations;
 
 namespace Elsa.CSharp.Models;
 
 /// <summary>
 /// Provides access to global objects, such as the workflow execution context.
 /// </summary>
+[UsedImplicitly]
 public partial class Globals
 {
     /// <summary>
@@ -15,9 +17,9 @@ public partial class Globals
     {
         ExpressionExecutionContext = expressionExecutionContext;
         Arguments = arguments;
-        ExecutionContext = new ExecutionContextProxy(expressionExecutionContext);
-        Output = new OutputProxy(expressionExecutionContext);
-        Outcome = new OutcomeProxy(expressionExecutionContext);
+        ExecutionContext = new(expressionExecutionContext);
+        Output = new(expressionExecutionContext);
+        Outcome = new(expressionExecutionContext);
     }
 
     /// <summary>
@@ -47,6 +49,15 @@ public partial class Globals
     {
         get => ExpressionExecutionContext.GetWorkflowExecutionContext().CorrelationId;
         set => ExpressionExecutionContext.GetWorkflowExecutionContext().CorrelationId = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the name of the current workflow instance.
+    /// </summary>
+    public string? WorkflowInstanceName
+    {
+        get => ExpressionExecutionContext.GetWorkflowExecutionContext().Name;
+        set => ExpressionExecutionContext.GetWorkflowExecutionContext().Name = value;
     }
     
     /// <summary>

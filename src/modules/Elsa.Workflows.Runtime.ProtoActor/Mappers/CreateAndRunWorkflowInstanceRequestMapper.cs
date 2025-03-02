@@ -23,6 +23,7 @@ public class CreateAndRunWorkflowInstanceRequestMapper(WorkflowDefinitionHandleM
             WorkflowDefinitionHandle = workflowDefinitionHandleMapper.Map(source.WorkflowDefinitionHandle),
             WorkflowInstanceId = workflowInstanceId.EmptyIfNull(),
             CorrelationId = source.CorrelationId.EmptyIfNull(),
+            Name = source.Name.EmptyIfNull(),
             ParentId = source.ParentId.EmptyIfNull(),
             Input = source.Input?.SerializeInput() ?? new ProtoInput(),
             Properties = source.Properties?.SerializeProperties() ?? new ProtoProperties(),
@@ -41,8 +42,9 @@ public class CreateAndRunWorkflowInstanceRequestMapper(WorkflowDefinitionHandleM
         return new()
         {
             WorkflowDefinitionHandle = workflowDefinitionHandleMapper.Map(source.WorkflowDefinitionHandle),
-            CorrelationId = source.CorrelationId,
-            ParentId = source.ParentId,
+            CorrelationId = source.CorrelationId.NullIfEmpty(),
+            Name = source.Name.NullIfEmpty(),
+            ParentId = source.ParentId.NullIfEmpty(),
             Input = source.Input?.DeserializeInput(),
             Properties = source.Properties?.DeserializeProperties(),
             ActivityHandle = activityHandleMapper.Map(source.ActivityHandle),

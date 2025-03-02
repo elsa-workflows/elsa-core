@@ -1,5 +1,3 @@
-using Elsa.Extensions;
-using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.State;
 
@@ -16,14 +14,14 @@ public class WorkflowStateMapper
     public WorkflowInstance? Map(WorkflowState? source)
     {
         if (source == null)
-            return default;
+            return null;
 
         var workflowInstance = new WorkflowInstance();
         Apply(source, workflowInstance);
 
         return workflowInstance;
     }
-    
+
     /// <summary>
     /// Maps a workflow state to a workflow instance.
     /// </summary>
@@ -38,14 +36,12 @@ public class WorkflowStateMapper
         target.Status = source.Status;
         target.SubStatus = source.SubStatus;
         target.CorrelationId = source.CorrelationId;
+        target.Name = source.Name;
         target.IncidentCount = source.Incidents.Count;
         target.IsSystem = source.IsSystem;
         target.UpdatedAt = source.UpdatedAt;
         target.FinishedAt = source.FinishedAt;
         target.WorkflowState = source;
-        
-        if (source.Properties.TryGetValue<string>(SetName.WorkflowInstanceNameKey, out var name))
-            target.Name = name;
     }
 
     /// <summary>
@@ -54,7 +50,7 @@ public class WorkflowStateMapper
     public WorkflowState? Map(WorkflowInstance? source)
     {
         if (source == null)
-            return default;
+            return null;
 
         var workflowState = source.WorkflowState;
         workflowState.Id = source.Id;
@@ -66,12 +62,10 @@ public class WorkflowStateMapper
         workflowState.Status = source.Status;
         workflowState.SubStatus = source.SubStatus;
         workflowState.CorrelationId = source.CorrelationId;
+        workflowState.Name = source.Name;
         workflowState.UpdatedAt = source.UpdatedAt;
         workflowState.FinishedAt = source.FinishedAt;
         workflowState.IsSystem = source.IsSystem;
-
-        if (source.Name != null)
-            workflowState.Properties[SetName.WorkflowInstanceNameKey] = source.Name;
 
         return workflowState;
     }
