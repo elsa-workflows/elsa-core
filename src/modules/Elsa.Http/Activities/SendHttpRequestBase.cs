@@ -258,6 +258,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
 
     private ResiliencePipeline<HttpResponseMessage> BuildResiliencyPipeline(ActivityExecutionContext context)
     {
+        // Docs: https://www.pollydocs.org/strategies/retry
         var pipelineBuilder = new ResiliencePipelineBuilder<HttpResponseMessage>()
             .AddRetry(new()
             {
