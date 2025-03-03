@@ -269,10 +269,10 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
                 MaxRetryAttempts = 4,
                 UseJitter = false, // If enabled, adds a random value between -25% and +25% of the calculated Delay, except if BackoffType is Exponential, where a DecorrelatedJitterBackoffV2 formula is used for jitter calculation. That formula is based on Polly.Contrib.WaitAndRetry.
                 Delay = TimeSpan.FromSeconds(1),
-                BackoffType = DelayBackoffType.Exponential // Delay * 2^AttemptNumber, e.g. [ 2s, 4s, 8s, 16s ]. Total secs: 2 + 4 + 8 + 16 = 32.
+                BackoffType = DelayBackoffType.Exponential // Delay * 2^AttemptNumber, e.g. [ 2s, 4s, 8s, 16s ]. Total secs: 2 + 4 + 8 + 16 = 30
                 // If BackoffType is Exponential, then the calculated Delay is multiplied by a random value between -25% and +25% of the calculated Delay, except if BackoffType is Exponential, where a DecorrelatedJitterBackoffV2 formula is used for jitter calculation. That formula is based on Polly.Contrib.WaitAndRetry.
             })
-            .AddTimeout(TimeSpan.FromSeconds(60)); // Outer timeout. 32 secs plus grace period of 28 secs for the last attempt.
+            .AddTimeout(TimeSpan.FromSeconds(60)); // Outer timeout. 30 secs plus a grace period of 30 secs for the last attempt.
 
         return pipelineBuilder.Build();
     }
