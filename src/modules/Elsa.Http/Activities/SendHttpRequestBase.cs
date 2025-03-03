@@ -265,12 +265,13 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
                     .Handle<TimeoutException>() // Specific timeout exception
                     .Handle<HttpRequestException>(ex => IsTransientStatusCode(ex.StatusCode)) // Network errors or transient HTTP codes
                     .HandleResult(response => IsTransientStatusCode(response.StatusCode)),
-                MaxRetryAttempts = 4,
+                MaxRetryAttempts = 6,
                 UseJitter = false, // If enabled, adds a random value between -25% and +25% of the calculated Delay, except if BackoffType is Exponential, where a DecorrelatedJitterBackoffV2 formula is used for jitter calculation. That formula is based on Polly.Contrib.WaitAndRetry.
-                Delay = TimeSpan.FromSeconds(2),
-                BackoffType = DelayBackoffType.Exponential // Delay * 2^AttemptNumber, e.g. [ 4s, 8s, 16s, 32s ]. Total secs: 4 + 8 + 16 + 32 = 64s.
+                Delay = TimeSpan.FromSeconds(1),
+                BackoffType = DelayBackoffType.Exponential // Delay * 2^AttemptNumber, e.g. [ 2s, 4s, 8s, 16s, 32s, 64s ]. Total secs: 2 + 4 + 8 + 16 + 32 + 64 = 128s.
+                // If BackoffType is Exponential, then the calculated Delay is multiplied by a random value between -25% and +25% of the calculated Delay, except if BackoffType is Exponential, where a DecorrelatedJitterBackoffV2 formula is used for jitter calculation. That formula is based on Polly.Contrib.WaitAndRetry.
             })
-            .AddTimeout(TimeSpan.FromSeconds(94)); // Outer timeout. 64 secs plus grace period for the last attempt.
+            .AddTimeout(TimeSpan.FromSeconds(128 + 60)); // Outer timeout. 128 secs plus grace period for the last attempt.
 
         return pipelineBuilder.Build();
     }
