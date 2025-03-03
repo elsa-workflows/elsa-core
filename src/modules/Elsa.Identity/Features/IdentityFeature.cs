@@ -199,6 +199,7 @@ public class IdentityFeature : FeatureBase
             .AddScoped<ISecretGenerator, DefaultSecretGenerator>()
             .AddScoped<IRandomStringGenerator, DefaultRandomStringGenerator>()
             .AddScoped<DefaultApiKeyGeneratorAndParser>()
+            .AddHttpContextAccessor()
             ;
     }
 }
