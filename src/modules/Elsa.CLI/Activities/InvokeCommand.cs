@@ -1,3 +1,4 @@
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using CliWrap;
@@ -48,8 +49,7 @@ public class InvokeCommand : Activity
     /// The command to execute. This can be a CliWrap Command object or a string representing the command name.
     /// </summary>
     [Input(
-        Description = "The command to execute. Can be passed directly or as a string of the executable name.",
-        UIHint = InputUIHints.DropDown
+        Description = "The command to execute. Can be passed directly or as a string of the executable name."
     )]
     public Input<object> Command { get; set; } = default!;
 
@@ -59,7 +59,7 @@ public class InvokeCommand : Activity
     [Input(
         Description = "The arguments to pass to the command. Can be an array of strings or a single string."
     )]
-    public Input<object> Arguments { get; set; } = default!;
+    public Input<object?> Arguments { get; set; }
 
     /// <summary>
     /// The working directory to execute the command in.
@@ -67,7 +67,7 @@ public class InvokeCommand : Activity
     [Input(
         Description = "The working directory to execute the command in."
     )]
-    public Input<string> WorkingDirectory { get; set; } = default!;
+    public Input<string?> WorkingDirectory { get; set; }
 
     /// <summary>
     /// Environment variables to set for the command.
@@ -75,7 +75,7 @@ public class InvokeCommand : Activity
     [Input(
         Description = "Environment variables to set for the command as key-value pairs."
     )]
-    public Input<IDictionary<string, string>> EnvironmentVariables { get; set; } = default!;
+    public Input<IDictionary<string, string>?> EnvironmentVariables { get; set; }
 
     /// <summary>
     /// Credentials to run the command under. Format: Domain, Username, Password
@@ -83,7 +83,7 @@ public class InvokeCommand : Activity
     [Input(
         Description = "Credentials to run the command under. Format: Domain, Username, Password"
     )]
-    public Input<(string Domain, string Username, string Password)?> Credentials { get; set; } = default!;
+    public Input<NetworkCredential> Credentials { get; set; }
 
     /// <summary>
     /// The expected exit code for a successful command execution. If null, exit code validation is disabled.
@@ -283,10 +283,12 @@ public class InvokeCommand : Activity
 
         // Apply credentials if specified
         var credentials = context.Get(Credentials);
-        if (credentials.HasValue)
+        if (credentials != null)
         {
-            var (domain, username, password) = credentials.Value;
-            cmd = cmd.WithCredentials(new Credentials(username, password, domain));
+            cmd = cmd.WithCredentials(new Credentials(
+                credentials.Domain, 
+                credentials.UserName, 
+                credentials.Password));
         }
 
         return cmd;
