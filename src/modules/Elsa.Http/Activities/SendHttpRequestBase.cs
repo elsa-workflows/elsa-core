@@ -264,7 +264,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
             {
                 ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
                     .Handle<TimeoutException>() // Specific timeout exception
-                    .Handle<HttpRequestException>(ex => IsTransientStatusCode(ex.StatusCode)) // Network errors or transient HTTP codes
+                    .Handle<HttpRequestException>() // Any HTTP exception
                     .HandleResult(response => IsTransientStatusCode(response.StatusCode)),
                 MaxRetryAttempts = 4,
                 UseJitter = false, // If enabled, adds a random value between -25% and +25% of the calculated Delay, except if BackoffType is Exponential, where a DecorrelatedJitterBackoffV2 formula is used for jitter calculation. That formula is based on Polly.Contrib.WaitAndRetry.
