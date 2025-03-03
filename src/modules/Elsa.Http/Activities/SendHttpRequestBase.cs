@@ -258,6 +258,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
 
     private ResiliencePipeline<HttpResponseMessage> BuildResiliencyPipeline(ActivityExecutionContext context)
     {
+        // Docs: https://www.pollydocs.org/strategies/retry
         var pipelineBuilder = new ResiliencePipelineBuilder<HttpResponseMessage>()
             .AddRetry(new()
             {
@@ -265,18 +266,13 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
                     .Handle<TimeoutException>() // Specific timeout exception
                     .Handle<HttpRequestException>(ex => IsTransientStatusCode(ex.StatusCode)) // Network errors or transient HTTP codes
                     .HandleResult(response => IsTransientStatusCode(response.StatusCode)),
-                MaxRetryAttempts = 3,
-                Delay = TimeSpan.FromSeconds(Math.Min(Random.Shared.NextDouble() * 2, 8)), // Jittered delay capped at 8 secs
-                BackoffType = DelayBackoffType.Exponential
+                MaxRetryAttempts = 4,
+                UseJitter = false, // If enabled, adds a random value between -25% and +25% of the calculated Delay, except if BackoffType is Exponential, where a DecorrelatedJitterBackoffV2 formula is used for jitter calculation. That formula is based on Polly.Contrib.WaitAndRetry.
+                Delay = TimeSpan.FromSeconds(1),
+                BackoffType = DelayBackoffType.Exponential // Delay * 2^AttemptNumber, e.g. [ 2s, 4s, 8s, 16s ]. Total secs: 2 + 4 + 8 + 16 = 30
+                // If BackoffType is Exponential, then the calculated Delay is multiplied by a random value between -25% and +25% of the calculated Delay, except if BackoffType is Exponential, where a DecorrelatedJitterBackoffV2 formula is used for jitter calculation. That formula is based on Polly.Contrib.WaitAndRetry.
             })
-            .AddCircuitBreaker(new()
-            {
-                FailureRatio = 0.5,
-                SamplingDuration = TimeSpan.FromSeconds(30),
-                MinimumThroughput = 10,
-                BreakDuration = TimeSpan.FromSeconds(60)
-            })
-            .AddTimeout(TimeSpan.FromSeconds(60)); // Outer timeout
+            .AddTimeout(TimeSpan.FromSeconds(60)); // Outer timeout. 30 secs plus a grace period of 30 secs for the last attempt.
 
         return pipelineBuilder.Build();
     }
@@ -284,16 +280,22 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     // Helper method to identify transient status codes.
     private static bool IsTransientStatusCode(HttpStatusCode? statusCode)
     {
-        if (!statusCode.HasValue) return true; // No status code (e.g., network failure) is worth retrying
-        return statusCode switch
+        if (statusCode is null)
+        {
+            // No status code -> Assume network failure, worth retrying.
+            return true;
+        }
+
+        return statusCode.Value switch
         {
             HttpStatusCode.RequestTimeout => true, // 408
-            HttpStatusCode.TooManyRequests => true, // 429
+            HttpStatusCode.TooManyRequests => true, // 429 (if no Retry-After header is respected)
             HttpStatusCode.InternalServerError => true, // 500
             HttpStatusCode.BadGateway => true, // 502
             HttpStatusCode.ServiceUnavailable => true, // 503
             HttpStatusCode.GatewayTimeout => true, // 504
-            _ => false
+            HttpStatusCode.Conflict => true, // 409 - Can be transient in concurrency cases
+            _ => false // Other errors are not transient
         };
     }
 }
