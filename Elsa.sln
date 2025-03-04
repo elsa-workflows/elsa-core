@@ -85,8 +85,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 		docker\ElsaServer.Dockerfile = docker\ElsaServer.Dockerfile
 		docker\ElsaServerAndStudio.Dockerfile = docker\ElsaServerAndStudio.Dockerfile
 		docker\ElsaStudio.Dockerfile = docker\ElsaStudio.Dockerfile
-		docker\otel-collector-config.yaml = docker\otel-collector-config.yaml
 		docker\init-db-postgres.sh = docker\init-db-postgres.sh
+		docker\otel-collector-config.yaml = docker\otel-collector-config.yaml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Elasticsearch", "src\modules\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj", "{3246883E-2FA7-4B4A-BDC5-99039A2869BC}"
@@ -313,8 +313,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "migrations", "migrations", 
 		scripts\migrations\efcore-3.1.sh = scripts\migrations\efcore-3.1.sh
 		scripts\migrations\efcore-3.2.sh = scripts\migrations\efcore-3.2.sh
 		scripts\migrations\efcore-3.3.sh = scripts\migrations\efcore-3.3.sh
-		scripts\migrations\README.md = scripts\migrations\README.md
 		scripts\migrations\efcore-3.4.sh = scripts\migrations\efcore-3.4.sh
+		scripts\migrations\README.md = scripts\migrations\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{AA5ACF15-8647-4AC9-B9F5-73FCB92BE7E3}"
@@ -380,6 +380,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Persistence.EntityFrameworkCore", "src\modules\Elsa.Connections.Persistence.EntityFrameworkCore\Elsa.Connections.Persistence.EntityFrameworkCore.csproj", "{DF0CA7E2-F5DF-40ED-91B6-748767084FC7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite", "src\modules\Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite\Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite.csproj", "{DB20B168-CD90-41F2-BE08-3D8C6F142459}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.CLI", "src\modules\Elsa.CLI\Elsa.CLI.csproj", "{A62E4714-B2EA-4AA5-9F58-EE1C145E4635}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -805,6 +807,10 @@ Global
 		{DB20B168-CD90-41F2-BE08-3D8C6F142459}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB20B168-CD90-41F2-BE08-3D8C6F142459}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB20B168-CD90-41F2-BE08-3D8C6F142459}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A62E4714-B2EA-4AA5-9F58-EE1C145E4635}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A62E4714-B2EA-4AA5-9F58-EE1C145E4635}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A62E4714-B2EA-4AA5-9F58-EE1C145E4635}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A62E4714-B2EA-4AA5-9F58-EE1C145E4635}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -826,6 +832,7 @@ Global
 		{C9539BD8-D2AE-4A8D-8281-71A05B3FBF31} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
 		{169E2C9B-6687-427F-A278-30BF849BFEDC} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
 		{2DD5D66B-85E9-4AF9-911C-C9F963234159} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
+		{8A050229-DB79-4E0B-9AFF-7565E87F2954} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
 		{C237BA1A-3A7D-4AB2-BE09-2696F3C082A4} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
 		{80529478-A383-4FEA-B744-C71264969E9A} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
 		{39CD855E-83B1-4A96-93F7-01608211EBE3} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
@@ -947,7 +954,7 @@ Global
 		{FA2B2B44-7E3E-444B-A157-7526B376E9CA} = {9DF81143-2F39-4CFB-9DA3-902279010622}
 		{DF0CA7E2-F5DF-40ED-91B6-748767084FC7} = {9DF81143-2F39-4CFB-9DA3-902279010622}
 		{DB20B168-CD90-41F2-BE08-3D8C6F142459} = {9DF81143-2F39-4CFB-9DA3-902279010622}
-		{8A050229-DB79-4E0B-9AFF-7565E87F2954} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
+		{A62E4714-B2EA-4AA5-9F58-EE1C145E4635} = {EBD0CF78-C5D7-4B4B-94C9-C5D8C20B6F59}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
