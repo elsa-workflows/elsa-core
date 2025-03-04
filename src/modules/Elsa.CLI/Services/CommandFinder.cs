@@ -1,6 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Net.Http.Headers;
-using Microsoft.VisualBasic;
 
 namespace Elsa.CLI.Services;
 

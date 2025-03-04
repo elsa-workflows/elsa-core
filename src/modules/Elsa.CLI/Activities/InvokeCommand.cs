@@ -1,5 +1,6 @@
-using System.IO.Pipelines;
+using System.Collections;
 using System.Net;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -7,7 +8,7 @@ using CliWrap;
 using CliWrap.Buffered;
 using Elsa.CLI.Contracts;
 using Elsa.CLI.Options;
-using Elsa.Extensions;
+using Elsa.CLI.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
@@ -120,12 +121,12 @@ public class InvokeCommand : Activity
     public Input<string> SuccessfulOutputText { get; set; } = null!;
 
     /// <summary>
-    /// The timeout for the command execution. If null, no timeout is applied.
+    /// The timeout for the command execution. Accepts TimeSpan object or TimeSpan format string or int (seconds). If blank, no timeout is applied.
     /// </summary>
     [Input(
-        Description = "The timeout for the command execution. If blank, no timeout is applied."
+        Description = "The timeout for the command execution. Accepts TimeSpan object or TimeSpan format string or int (seconds). If blank, no timeout is applied."
     )]
-    public Input<TimeSpan?> Timeout { get; set; } = null!;
+    public Input<object> Timeout { get; set; } = null!;
 
     /// <summary>
     /// The CliWrap command instance that was used to invoke the CLI command.
@@ -283,19 +284,12 @@ public class InvokeCommand : Activity
 
         // Get the command to execute
         var commandInput = context.Get(Command);
-
-        if (commandInput is Command command)
+        cmd = commandInput switch
         {
-            cmd = command;
-        }
-        else if (commandInput is string stringCommand)
-        {
-            cmd = Cli.Wrap(stringCommand);
-        }
-        else
-        {
-            throw new ArgumentException("Command must be either a CliWrap Command object or a string.");
-        }
+            Command command => command,
+            string stringCommand => Cli.Wrap(stringCommand),
+            _ => throw new ArgumentException("Command must be either a CliWrap Command object or a string.")
+        };
 
         // Build standard input pipe if available
         var standardInputPipe = context.Get(StandardInputPipe);
@@ -432,16 +426,22 @@ public class InvokeCommand : Activity
     {
         var timeout = context.Get(Timeout);
 
-        if (!timeout.HasValue && _options?.DefaultTimeout is null)
+        if (timeout == null && _options?.DefaultTimeout is null)
         {
             return context.CancellationToken;
         }
 
         // Create a timeout-based cancellation token source
         var timeoutCts = new CancellationTokenSource();
-        if (timeout.HasValue)
+        if (timeout != null)
         {
-            timeoutCts.CancelAfter(timeout.Value);
+            timeoutCts.CancelAfter(timeout switch
+            {
+                TimeSpan timeSpan => timeSpan,
+                int seconds => TimeSpan.FromSeconds(seconds),
+                string str => TimeSpan.Parse(str),
+                _ => throw new ArgumentException("Timeout must be either a TimeSpan or an int.")
+            });
         }
         else if (_options?.DefaultTimeout is null)
         {
