@@ -21,5 +21,8 @@
     <ItemGroup>
         <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
     </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\modules\Elsa.Expressions\Elsa.Expressions.csproj" />
+    </ItemGroup>
 
 </Project>
