@@ -66,6 +66,7 @@ public class LocalWorkflowClient(
         return await RunInstanceAsync(workflowInstance, new()
         {
             Input = request.Input,
+            Variables = request.Variables,
             Properties = request.Properties,
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle
@@ -119,6 +120,7 @@ public class LocalWorkflowClient(
         var runWorkflowOptions = new RunWorkflowOptions
         {
             Input = request.Input,
+            Variables = request.Variables,
             Properties = request.Properties,
             BookmarkId = request.BookmarkId,
             TriggerActivityId = request.TriggerActivityId,

@@ -33,6 +33,7 @@ public class RunWorkflowJob(
                 CorrelationId = (string?)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.CorrelationId)),
                 TriggerActivityId = (string?)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.TriggerActivityId)),
                 Input = map.GetDictionary(nameof(ScheduleNewWorkflowInstanceRequest.Input)),
+                Variables = map.GetDictionary(nameof(ScheduleNewWorkflowInstanceRequest.Variables)),
                 Properties = map.GetDictionary(nameof(ScheduleNewWorkflowInstanceRequest.Properties)),
                 ParentId = (string?)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.ParentId))
             };
