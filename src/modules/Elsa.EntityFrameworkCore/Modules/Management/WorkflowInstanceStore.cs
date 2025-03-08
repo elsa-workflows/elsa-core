@@ -11,6 +11,7 @@ using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
 
@@ -26,6 +27,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly ICompressionCodecResolver _compressionCodecResolver;
     private readonly IOptions<ManagementOptions> _options;
+    private readonly ILogger<EFCoreWorkflowInstanceStore> _logger;
 
     /// <summary>
     /// Constructor.
@@ -34,12 +36,14 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         EntityStore<ManagementElsaDbContext, WorkflowInstance> store,
         IWorkflowStateSerializer workflowStateSerializer,
         ICompressionCodecResolver compressionCodecResolver,
-        IOptions<ManagementOptions> options)
+        IOptions<ManagementOptions> options,
+        ILogger<EFCoreWorkflowInstanceStore> logger)
     {
         _store = store;
         _workflowStateSerializer = workflowStateSerializer;
         _compressionCodecResolver = compressionCodecResolver;
         _options = options;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -198,12 +202,18 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         var compressionAlgorithm = (string?)managementElsaDbContext.Entry(entity).Property("DataCompressionAlgorithm").CurrentValue ?? nameof(None);
         var compressionStrategy = _compressionCodecResolver.Resolve(compressionAlgorithm);
 
-        if (!string.IsNullOrWhiteSpace(json))
+        try
         {
-            json = await compressionStrategy.DecompressAsync(json, cancellationToken);
-            data = _workflowStateSerializer.Deserialize(json);
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                json = await compressionStrategy.DecompressAsync(json, cancellationToken);
+                data = _workflowStateSerializer.Deserialize(json);
+            }
         }
-
+        catch (Exception exp)
+        {
+            _logger.LogWarning(exp, "Exception while deserializing workflow instance state: {InstanceId}. Reverting to default state", entity.Id);
+        }
         entity.WorkflowState = data;
     }
 
