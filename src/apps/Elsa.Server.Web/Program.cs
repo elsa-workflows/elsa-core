@@ -96,6 +96,7 @@ const bool useTenantsFromConfiguration = true;
 const bool useSecrets = false;
 const bool disableVariableWrappers = false;
 const bool disableVariableCopying = false;
+const bool useOtel = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -120,13 +121,15 @@ var sqlDatabaseProvider = Enum.Parse<SqlDatabaseProvider>(configuration["Databas
 TypeAliasRegistry.RegisterAlias("OrderReceivedProducerFactory", typeof(GenericProducerFactory<string, OrderReceived>));
 TypeAliasRegistry.RegisterAlias("OrderReceivedConsumerFactory", typeof(GenericConsumerFactory<string, OrderReceived>));
 
+if (useOtel)
+{
 // Configure OpenTelemetry Tracing
-using var tracerProvider = Sdk.CreateTracerProviderBuilder()
-    .AddSource("Elsa.Workflows") // Match your ActivitySource name here
-    .SetSampler(new AlwaysOnSampler()) // Always record traces for testing
-    .AddConsoleExporter() // Export spans to the console (optional)
-    .Build();
-
+    using var tracerProvider = Sdk.CreateTracerProviderBuilder()
+        .AddSource("Elsa.Workflows") // Match your ActivitySource name here
+        .SetSampler(new AlwaysOnSampler()) // Always record traces for testing
+        .AddConsoleExporter() // Export spans to the console (optional)
+        .Build();
+}
 
 // Add Elsa services.
 services
