@@ -1,4 +1,5 @@
-﻿using CliWrap;
+﻿using System.Text;
+using CliWrap;
 using CliWrap.Buffered;
 using Elsa.CLI.Contracts;
 using Microsoft.Extensions.Logging;
@@ -25,10 +26,11 @@ public class CliWrapCommandRunner : ICommandRunner
     }
 
     /// <inheritdoc />
-    public async Task<BufferedCommandResult> ExecuteCommandAsync(Command command, CancellationToken cancellationToken)
+    public async Task<BufferedCommandResult> ExecuteCommandAsync(Command command, bool executeWithGracefulExecutionToken, 
+        CancellationToken cancellationToken)
     {
         var commandName = command.TargetFilePath;
-
+        
         if (!_validator.IsCommandAllowed(commandName))
             throw new InvalidOperationException($"The command '{commandName}' is not allowed to be executed.");
 
@@ -39,7 +41,19 @@ public class CliWrapCommandRunner : ICommandRunner
 
         try
         {
-            var result = await command.ExecuteBufferedAsync(cancellationToken);
+            BufferedCommandResult result;
+
+            if (executeWithGracefulExecutionToken)
+            {
+                result = await command.ExecuteBufferedAsync(Encoding.Default, Encoding.Default,
+                    forcefulCancellationToken: CancellationToken.None, gracefulCancellationToken: cancellationToken);
+            }
+            else
+            {
+                result = await command.ExecuteBufferedAsync(Encoding.Default, Encoding.Default,
+                    forcefulCancellationToken: cancellationToken, CancellationToken.None);
+            }
+            
 
             _logger.LogInformation("Command {Command} completed with exit code {ExitCode}", commandName, result.ExitCode);
 

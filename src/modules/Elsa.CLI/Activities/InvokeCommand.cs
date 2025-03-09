@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -49,12 +48,28 @@ public class InvokeCommand : Activity
         _options = options.Value;
     }
 
+    public class CommandUIHandler(CommandFinder commandFinder) : IPropertyUIHandler
+    {
+        public ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(
+            PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default) =>
+            propertyInfo.Name switch
+            {
+                nameof(Command) => 
+                    ValueTask.FromResult<IDictionary<string, object>>(commandFinder
+                    .GetAvailableCommands()
+                    .ToDictionary(k => k, v => (object) v)),
+
+                _ => ValueTask.FromResult<IDictionary<string, object>>(null!)
+            };
+    }
+
     /// <summary>
     /// The command to execute.
     /// Can be passed directly or as a string of the executable name or a CliWrap.Command object.
     /// </summary>
     [Input(
-        Description = "The command to execute. Can be passed directly or as a string of the executable name or a CliWrap.Command object."
+        Description = "The command to execute. Can be passed directly or as a string of the executable name or a CliWrap.Command object.",
+        UIHandler = typeof(CommandUIHandler)
     )]
     public required Input<object> Command { get; set; }
 
@@ -62,9 +77,9 @@ public class InvokeCommand : Activity
     /// The arguments to pass to the command. This can be an array of strings or a single string.
     /// </summary>
     [Input(
-        Description = "The arguments to pass to the command. Can be an array of strings or a single string."
+        Description = "The arguments to pass to the command. Can be an array/collection of strings or a single string."
     )]
-    public Input<object?> Arguments { get; set; } = null!;
+    public Input<object> Arguments { get; set; } = null!;
 
     /// <summary>
     /// The working directory to execute the command in.
@@ -82,7 +97,7 @@ public class InvokeCommand : Activity
         Name = "Environment Variables",
         Description = "Environment variables to set for the command as key-value pairs."
     )]
-    public Input<IDictionary<string, string>?> EnvironmentVariables { get; set; } = null!;
+    public Input<IDictionary<string, string?>?> EnvironmentVariables { get; set; } = null!;
 
     /// <summary>
     /// Credentials to run the command under of type NetworkCredential.
@@ -127,6 +142,16 @@ public class InvokeCommand : Activity
         Description = "The timeout for the command execution. Accepts TimeSpan object or TimeSpan format string or int (seconds). If blank, no timeout is applied."
     )]
     public Input<object> Timeout { get; set; } = null!;
+
+    /// <summary>
+    /// Determines how cancellation requests are handled. When true, allows processes to shut down gracefully.
+    /// When false (default), processes are terminated immediately.
+    /// </summary>
+    [Input(
+        Name = "Graceful Cancellation",
+        Description = "When true, allows processes to shut down gracefully on its own terms. When false (default), processes are terminated immediately."
+    )]
+    public Input<bool> GracefulCancellation { get; set; } = new(false);
 
     /// <summary>
     /// The CliWrap command instance that was used to invoke the CLI command.
@@ -229,7 +254,8 @@ public class InvokeCommand : Activity
         try
         {
             var cancellationToken = GetCancellationToken(context);
-            var result = await _commandRunner.ExecuteCommandAsync(cmd, cancellationToken);
+            var gracefulCancellation = context.Get(GracefulCancellation);
+            var result = await _commandRunner.ExecuteCommandAsync(cmd, gracefulCancellation, cancellationToken);
 
             // Store outputs
             context.Set(ExecutedCommand, cmd);
@@ -280,11 +306,9 @@ public class InvokeCommand : Activity
     /// <returns>The command to be executed.</returns>
     private Command BuildCommand(ActivityExecutionContext context)
     {
-        Command cmd;
-
         // Get the command to execute
         var commandInput = context.Get(Command);
-        cmd = commandInput switch
+        var cmd = commandInput switch
         {
             Command command => command,
             string stringCommand => Cli.Wrap(stringCommand),
@@ -325,6 +349,10 @@ public class InvokeCommand : Activity
             if (arguments is string[] argsArray)
             {
                 cmd = cmd.WithArguments(argsArray);
+            }
+            else if (arguments is ICollection<string> argsCollection)
+            {
+                cmd = cmd.WithArguments(argsCollection);
             }
             else if (arguments is string argsStr)
             {
