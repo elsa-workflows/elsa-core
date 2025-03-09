@@ -44,6 +44,7 @@ public class SqlSingleValue : Activity
     /// </summary>
     [Input(
         Description = "Query to run against the database.",
+        DefaultSyntax = "Sql",
         UIHint = InputUIHints.CodeEditor,
         UIHandler = typeof(SqlCodeOptionsProvider)
     )]
