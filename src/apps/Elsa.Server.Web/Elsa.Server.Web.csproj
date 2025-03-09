@@ -4,6 +4,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Agents.Persistence.EntityFrameworkCore.MySql\Elsa.Agents.Persistence.EntityFrameworkCore.MySql.csproj" Condition=" '$(TargetFramework)' != 'net9.0' " />
         <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.ProtoActor\Elsa.Caching.Distributed.ProtoActor.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.CLI\Elsa.CLI.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.MySql\Elsa.EntityFrameworkCore.MySql.csproj" Condition=" '$(TargetFramework)' != 'net9.0' " />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Oracle\Elsa.EntityFrameworkCore.Oracle.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj" />

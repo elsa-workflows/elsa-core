@@ -15,6 +15,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.CLI\Elsa.CLI.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.CSharp\Elsa.CSharp.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj" />

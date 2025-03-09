@@ -427,6 +427,7 @@ services
                 };
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
+            .UseCommandLine(email => email.ConfigureOptions = options => configuration.GetSection("CommandLine").Bind(options))
             .UseAlterations(alterations =>
             {
                 if (persistenceProvider == PersistenceProvider.MongoDb)

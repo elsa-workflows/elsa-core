@@ -12,7 +12,6 @@ using Medallion.Threading.FileSystem;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using WebhooksCore.Options;
-using Elsa.Connections.Middleware;
 using Proto.Persistence.Sqlite;
 
 const bool useMassTransit = true;
@@ -138,6 +137,7 @@ services
                 };
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
+            .UseCommandLine(email => email.ConfigureOptions = options => configuration.GetSection("CommandLine").Bind(options))
             .UseWebhooks(webhooks => webhooks.ConfigureSinks = options => builder.Configuration.GetSection("Webhooks:Sinks").Bind(options))
             .UseWorkflowsApi()
             .AddActivitiesFrom<Program>()
