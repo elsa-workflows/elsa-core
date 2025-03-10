@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.CommitStates;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Options;
@@ -111,6 +112,7 @@ public class WorkflowRunner(
     {
         // Create a workflow execution context.
         var input = options?.Input;
+        var variables = options?.Variables;
         var properties = options?.Properties;
         var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
@@ -160,7 +162,7 @@ public class WorkflowRunner(
             // Check if there are any interrupted activities.
             var interruptedActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => x.IsExecuting).ToList();
 
-            if( interruptedActivityExecutionContexts.Count > 0)
+            if (interruptedActivityExecutionContexts.Count > 0)
             {
                 // Schedule the interrupted activities.
                 foreach (var pendingActivityExecutionContext in interruptedActivityExecutionContexts)
@@ -169,7 +171,20 @@ public class WorkflowRunner(
             else
             {
                 // Nothing was scheduled. Schedule the workflow itself.
-                workflowExecutionContext.ScheduleWorkflow();
+                var vars = variables?.Select(x => new Variable(x.Key, x.Value)).ToList();
+                workflowExecutionContext.ScheduleWorkflow(variables: vars);
+            }
+        }
+
+        // Set variables, if any.
+        if (variables != null)
+        {
+            var rootContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.ParentActivityExecutionContext == null);
+
+            if (rootContext != null)
+            {
+                foreach (var variable in variables)
+                    rootContext.SetDynamicVariable(variable.Key, variable.Value);
             }
         }
 

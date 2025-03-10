@@ -14,7 +14,7 @@ public class WorkflowInstanceFactory(IIdentityGenerator identityGenerator, ISyst
     public WorkflowState CreateWorkflowState(Workflow workflow, WorkflowInstanceOptions? options = null)
     {
         var now = systemClock.UtcNow;
-        return new WorkflowState
+        return new()
         {
             Id = string.IsNullOrEmpty(options?.WorkflowInstanceId) ? identityGenerator.GenerateId() : options.WorkflowInstanceId,
             DefinitionId = workflow.Identity.DefinitionId,
@@ -36,7 +36,7 @@ public class WorkflowInstanceFactory(IIdentityGenerator identityGenerator, ISyst
     public WorkflowInstance CreateWorkflowInstance(Workflow workflow, WorkflowInstanceOptions? options = null)
     {
         var workflowState = CreateWorkflowState(workflow, options);
-        return new WorkflowInstance
+        return new()
         {
             Id = workflowState.Id,
             ParentWorkflowInstanceId = workflowState.ParentWorkflowInstanceId,

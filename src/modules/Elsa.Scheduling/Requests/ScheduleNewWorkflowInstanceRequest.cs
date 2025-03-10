@@ -20,6 +20,11 @@ public class ScheduleNewWorkflowInstanceRequest
     public IDictionary<string, object>? Input { get; set; }
 
     /// <summary>
+    /// A collection of variables to pass to the workflow instance during scheduling.
+    /// </summary>
+    public IDictionary<string, object>? Variables { get; set; }
+
+    /// <summary>
     /// Any properties to assign to the workflow instance.
     /// </summary>
     public IDictionary<string, object>? Properties { get; set; }
