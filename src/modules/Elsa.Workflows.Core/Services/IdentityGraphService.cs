@@ -1,11 +1,10 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Humanizer;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class IdentityGraphService(IActivityVisitor activityVisitor, IActivityRegistryLookupService activityRegistryLookup, ILogger<IdentityGraphService> logger) : IIdentityGraphService

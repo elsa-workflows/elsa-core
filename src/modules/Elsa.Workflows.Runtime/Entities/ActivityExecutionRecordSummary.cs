@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
-using Elsa.Workflows.Management.Entities;
 
 namespace Elsa.Workflows.Runtime.Entities;
 

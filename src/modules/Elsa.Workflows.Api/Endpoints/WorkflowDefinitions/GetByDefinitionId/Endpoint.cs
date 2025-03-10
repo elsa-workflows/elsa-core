@@ -1,8 +1,7 @@
 using Elsa.Abstractions;
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.GetByDefinitionId;
@@ -19,16 +18,9 @@ internal class GetByDefinitionId(IWorkflowDefinitionStore store, IWorkflowDefini
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var versionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : VersionOptions.Latest;
-
-        var filter = new WorkflowDefinitionFilter
-        {
-            DefinitionId = request.DefinitionId,
-            VersionOptions = versionOptions
-        };
-
-        var order = new WorkflowDefinitionOrder<int>(x => x.Version, OrderDirection.Descending);
-        var definition = (await store.FindManyAsync(filter, order, cancellationToken: cancellationToken)).FirstOrDefault();
-
+        var filter = WorkflowDefinitionHandle.ByDefinitionId(request.DefinitionId, versionOptions).ToFilter();
+        var definition = await store.FindAsync(filter, cancellationToken);
+        
         if (definition == null)
         {
             await SendNotFoundAsync(cancellationToken);

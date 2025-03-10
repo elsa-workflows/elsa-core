@@ -1,7 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 
@@ -19,9 +19,9 @@ internal class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManage
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
 
-        if (!authorizationResult.Result.Succeeded)
+        if (!authorizationResult.Succeeded)
         {
             await SendForbiddenAsync(cancellationToken);
             return;

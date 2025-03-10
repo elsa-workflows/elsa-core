@@ -1,11 +1,10 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<IActivityDescriptorModifier> modifiers, ILogger<ActivityRegistry> logger) : IActivityRegistry
@@ -76,7 +75,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     {
         var providersDictionary = new ConcurrentDictionary<Type, ICollection<ActivityDescriptor>>();
         var activityDescriptors = new ConcurrentDictionary<(string Type, int Version), ActivityDescriptor>();
-        foreach (IActivityProvider activityProvider in activityProviders)
+        foreach (var activityProvider in activityProviders)
         {
             var descriptors = (await activityProvider.GetDescriptorsAsync(cancellationToken)).ToList();
             var providerDescriptors = new List<ActivityDescriptor>();
@@ -86,6 +85,21 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
                 Add(descriptor, activityDescriptors, providerDescriptors);
             }
         }
+        
+        Interlocked.Exchange(ref _activityDescriptors, activityDescriptors);
+        Interlocked.Exchange(ref _providedActivityDescriptors, providersDictionary);
+    }
+    
+    public async Task RefreshDescriptorsAsync(IActivityProvider activityProvider, CancellationToken cancellationToken = default)
+    {
+        var providersDictionary = new ConcurrentDictionary<Type, ICollection<ActivityDescriptor>>(_providedActivityDescriptors);
+        var activityDescriptors = new ConcurrentDictionary<(string Type, int Version), ActivityDescriptor>(_activityDescriptors);
+        var descriptors = (await activityProvider.GetDescriptorsAsync(cancellationToken)).ToList();
+        var providerDescriptors = new List<ActivityDescriptor>();
+        providersDictionary[activityProvider.GetType()] = providerDescriptors;
+        
+        foreach (var descriptor in descriptors) 
+            Add(descriptor, activityDescriptors, providerDescriptors);
         
         Interlocked.Exchange(ref _activityDescriptors, activityDescriptors);
         Interlocked.Exchange(ref _providedActivityDescriptors, providersDictionary);

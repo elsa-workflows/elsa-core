@@ -1,0 +1,66 @@
+﻿@page "/"
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@inject IConfiguration Configuration;
+@{
+    var baseUrl = Configuration["ElsaServer:Url"]!;
+    var basePath = Configuration["Hosting:BasePath"]!;
+
+    if (string.IsNullOrWhiteSpace(baseUrl))
+    {
+        baseUrl = "https://localhost:5001/elsa/api";
+    }
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>Elsa Studio 3.0</title>
+    <base href="/"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="@basePath/_content/Elsa.Studio.Shell/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="@basePath/_content/Elsa.Studio.Shell/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="@basePath/_content/Elsa.Studio.Shell/favicon-16x16.png">
+    <link rel="manifest" href="@basePath/_content/Elsa.Studio.Shell/site.webmanifest">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Grandstander:wght@100&display=swap" rel="stylesheet">
+    <link href="@basePath/_content/MudBlazor/MudBlazor.min.css" rel="stylesheet"/>
+    <link href="@basePath/_content/CodeBeam.MudBlazor.Extensions/MudExtensions.min.css" rel="stylesheet"/>
+    <link href="@basePath/_content/Radzen.Blazor/css/material-base.css" rel="stylesheet">
+    <link href="@basePath/_content/Elsa.Studio.Shell/css/shell.css" rel="stylesheet">
+    <link href="ElsaStudioWebAssembly.styles.css" rel="stylesheet">
+</head>
+
+<body>
+<div id="app">
+    <div class="loading-splash mud-container mud-container-maxwidth-false">
+        <h5 class="mud-typography mud-typography-h5 mud-primary-text my-6">Loading...</h5>
+    </div>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+<script src="@basePath/_content/BlazorMonaco/jsInterop.js"></script>
+<script src="@basePath/_content/BlazorMonaco/lib/monaco-editor/min/vs/loader.js"></script>
+<script src="@basePath/_content/BlazorMonaco/lib/monaco-editor/min/vs/editor/editor.main.js"></script>
+<script src="@basePath/_content/MudBlazor/MudBlazor.min.js"></script>
+<script src="@basePath/_content/CodeBeam.MudBlazor.Extensions/MudExtensions.min.js"></script>
+<script src="@basePath/_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+<script>
+    window.getClientConfig = function() { return {
+        "apiUrl": "@baseUrl",
+        "basePath": "@basePath"
+     } };
+</script>
+<script src="@basePath/_framework/blazor.webassembly.js"></script>
+</body>
+
+</html>

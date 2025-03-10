@@ -1,6 +1,6 @@
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Represents a service for looking up activity descriptors.

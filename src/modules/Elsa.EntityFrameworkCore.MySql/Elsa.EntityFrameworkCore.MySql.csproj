@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
         <Description>
             Provides MySQL EF Core migrations for various modules.
         </Description>
@@ -12,11 +13,6 @@
         <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
     </ItemGroup>
 
-    <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
-    <ItemGroup>
-        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
-    </ItemGroup>
-    
     <ItemGroup>
         <ProjectReference Include="..\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
     </ItemGroup>

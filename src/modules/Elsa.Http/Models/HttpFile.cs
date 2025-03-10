@@ -1,6 +1,7 @@
+using System.Net.Http.Headers;
 using System.Text.Json.Serialization;
 
-namespace Elsa.Http.Models;
+namespace Elsa.Http;
 
 /// <summary>
 /// Represents a downloadable object.
@@ -59,5 +60,25 @@ public class HttpFile
         if (Stream.CanSeek) Stream.Seek(0, SeekOrigin.Begin);
         Stream.CopyTo(memoryStream);
         return memoryStream.ToArray();
+    }
+
+    public StreamContent GetStreamContent()
+    {
+        if (Stream.CanSeek) Stream.Seek(0, SeekOrigin.Begin);
+        var content = new StreamContent(Stream);
+        
+        if (!string.IsNullOrWhiteSpace(Filename))
+        {
+            content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
+            {
+                Name = Filename,
+                FileName = Filename,
+                FileNameStar = Filename
+            };
+        }
+        
+        if (!string.IsNullOrWhiteSpace(ContentType)) content.Headers.ContentType = new MediaTypeHeaderValue(ContentType);
+        if (!string.IsNullOrWhiteSpace(ETag)) content.Headers.TryAddWithoutValidation("ETag", ETag);
+        return content;
     }
 }

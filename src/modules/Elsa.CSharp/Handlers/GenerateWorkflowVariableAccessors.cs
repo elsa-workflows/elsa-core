@@ -1,10 +1,13 @@
 using System.Text;
+using Elsa.CSharp.Extensions;
 using Elsa.CSharp.Notifications;
+using Elsa.CSharp.Options;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Humanizer;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.CSharp.Handlers;
 
@@ -12,7 +15,7 @@ namespace Elsa.CSharp.Handlers;
 /// Configures the C# evaluator with methods to access workflow variables.
 /// </summary>
 [UsedImplicitly]
-public class GenerateWorkflowVariableAccessors : INotificationHandler<EvaluatingCSharp>
+public class GenerateWorkflowVariableAccessors(IOptions<CSharpOptions> options) : INotificationHandler<EvaluatingCSharp>
 {
     /// <inheritdoc />
     public Task HandleAsync(EvaluatingCSharp notification, CancellationToken cancellationToken)
@@ -28,20 +31,25 @@ public class GenerateWorkflowVariableAccessors : INotificationHandler<Evaluating
         sb.AppendLine("\tpublic object? Get(string name) => ExecutionContext.GetVariable(name);");
         sb.AppendLine("\tpublic void Set(string name, object? value) => ExecutionContext.SetVariable(name, value);");
         sb.AppendLine();
-        foreach (var variable in variables)
+
+        if (!options.Value.DisableWrappers)
         {
-            var variableName = variable.Name.Pascalize();
-            var variableType = variable.GetVariableType();
-            var friendlyTypeName = variableType.GetFriendlyTypeName(Brackets.Angle);
-            sb.AppendLine($"\tpublic {friendlyTypeName} {variableName}");
-            sb.AppendLine("\t{");
-            sb.AppendLine($"\t\tget => Get<{friendlyTypeName}>(\"{variableName}\");");
-            sb.AppendLine($"\t\tset => Set(\"{variableName}\", value);");
-            sb.AppendLine("\t}");
+            foreach (var variable in variables.Where(x => x.Name.IsValidVariableName()))
+            {
+                var variableName = variable.Name.Pascalize();
+                var variableType = variable.GetVariableType();
+                var friendlyTypeName = variableType.GetFriendlyTypeName(Brackets.Angle);
+                sb.AppendLine($"\tpublic {friendlyTypeName} {variableName}");
+                sb.AppendLine("\t{");
+                sb.AppendLine($"\t\tget => Get<{friendlyTypeName}>(\"{variableName}\");");
+                sb.AppendLine($"\t\tset => Set(\"{variableName}\", value);");
+                sb.AppendLine("\t}");
+            }
         }
 
         sb.AppendLine("}");
-        sb.AppendLine("var Variables = new WorkflowVariablesProxy(ExecutionContext);");
+        sb.AppendLine("var Variables = new WorkflowVariablesProxy(ExecutionContext);"); // Obsolete; use Variable instead.
+        sb.AppendLine("var Variable = Variables;");
         notification.AppendScript(sb.ToString());
         return Task.CompletedTask;
     }

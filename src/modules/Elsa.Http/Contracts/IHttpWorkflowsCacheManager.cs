@@ -1,6 +1,6 @@
 using Elsa.Caching;
 
-namespace Elsa.Http.Contracts;
+namespace Elsa.Http;
 
 /// <summary>
 /// Represents a service that caches HTTP workflows and triggers.

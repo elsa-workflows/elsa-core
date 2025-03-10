@@ -1,8 +1,6 @@
 using System.ComponentModel;
-using Elsa.Common.Models;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
@@ -107,6 +105,11 @@ public class Workflow : Composite<object>, ICloneable
     /// Gets or sets a value indicating whether the workflow is a system workflow.
     /// </summary>
     public bool IsSystem { get; }
+    
+    /// <summary>
+    /// Returns the workflow definition handle.
+    /// </summary>
+    public WorkflowDefinitionHandle DefinitionHandle => WorkflowDefinitionHandle.ByDefinitionVersionId(Identity.Id);
 
     /// <summary>
     /// Constructs a new <see cref="Workflow"/> from the specified <see cref="IActivity"/>.

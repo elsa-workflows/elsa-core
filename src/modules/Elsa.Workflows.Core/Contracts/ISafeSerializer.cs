@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Serializes and deserializes activity state. Only primitive and serializable values are supported.
@@ -40,25 +40,25 @@ public interface ISafeSerializer
     /// Serializes the specified state.
     /// </summary>
     [RequiresUnreferencedCode("The type T may be trimmed.")]
-    string Serialize(object? value, CancellationToken cancellationToken = default);
+    string Serialize(object? value);
     
     /// <summary>
     /// Serializes the specified state to a <see cref="JsonElement"/> object.
     /// </summary>
     [RequiresUnreferencedCode("The type T may be trimmed.")]
-    JsonElement SerializeToElement(object? value, CancellationToken cancellationToken = default);
+    JsonElement SerializeToElement(object? value);
 
     /// <summary>
     /// Deserializes the specified state.
     /// </summary>
     [RequiresUnreferencedCode("The type T may be trimmed.")]
-    T Deserialize<T>(string json, CancellationToken cancellationToken = default);
+    T Deserialize<T>(string json);
     
     /// <summary>
     /// Deserializes the specified state.
     /// </summary>
     [RequiresUnreferencedCode("The type T may be trimmed.")]
-    T Deserialize<T>(JsonElement element, CancellationToken cancellationToken = default);
+    T Deserialize<T>(JsonElement element);
     
     /// <summary>
     /// Gets the JSON serializer options.

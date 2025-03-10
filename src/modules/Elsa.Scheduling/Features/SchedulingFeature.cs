@@ -1,8 +1,9 @@
 using Elsa.Common.Features;
+using Elsa.Common.Multitenancy;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Handlers;
 using Elsa.Scheduling.HostedServices;
 using Elsa.Scheduling.Services;
@@ -33,22 +34,21 @@ public class SchedulingFeature : FeatureBase
     public Func<IServiceProvider, ICronParser> CronParser { get; set; } = sp => sp.GetRequiredService<CronosCronParser>();
 
     /// <inheritdoc />
-    public override void ConfigureHostedServices()
-    {
-        Module.ConfigureHostedService<CreateSchedulesHostedService>();
-    }
-
-    /// <inheritdoc />
     public override void Apply()
     {
         Services
+            .AddSingleton<UpdateTenantSchedules>()
+            .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<UpdateTenantSchedules>())
+            .AddSingleton<ITenantDeactivatedEvent>(sp => sp.GetRequiredService<UpdateTenantSchedules>())
             .AddSingleton<IScheduler, LocalScheduler>()
             .AddSingleton<CronosCronParser>()
             .AddSingleton(CronParser)
             .AddScoped<ITriggerScheduler, DefaultTriggerScheduler>()
             .AddScoped<IBookmarkScheduler, DefaultBookmarkScheduler>()
             .AddScoped<DefaultWorkflowScheduler>()
+            .AddSingleton(CronParser)
             .AddScoped(WorkflowScheduler)
+            .AddBackgroundTask<CreateSchedulesBackgroundTask>()
             .AddHandlersFrom<ScheduleWorkflows>();
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());

@@ -1,6 +1,4 @@
-using Elsa.Workflows.Contracts;
-
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Populates the <see cref="IActivityRegistry"/> with activities.

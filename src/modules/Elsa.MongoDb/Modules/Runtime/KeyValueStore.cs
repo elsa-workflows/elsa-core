@@ -37,8 +37,8 @@ public class MongoKeyValueStore(MongoDbStore<SerializedKeyValuePair> keyValueMon
         return keyValueMongoDbStore.DeleteWhereAsync(x => x.Key == key, cancellationToken);
     }
 
-    private IMongoQueryable<SerializedKeyValuePair> Filter(IMongoQueryable<SerializedKeyValuePair> queryable, KeyValueFilter filter)
+    private IQueryable<SerializedKeyValuePair> Filter(IQueryable<SerializedKeyValuePair> queryable, KeyValueFilter filter)
     {
-        return (filter.Apply(queryable) as IMongoQueryable<SerializedKeyValuePair>)!;
+        return filter.Apply(queryable);
     }
 }

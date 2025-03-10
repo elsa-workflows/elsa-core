@@ -1,5 +1,4 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Mappers;
 
@@ -32,7 +31,7 @@ public class JsonWorkflowMaterializer : IWorkflowMaterializer
     public ValueTask<Workflow> MaterializeAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
     {
         var workflow = ToWorkflow(definition);
-        return new ValueTask<Workflow>(workflow);
+        return new(workflow);
     }
 
     private Workflow ToWorkflow(WorkflowDefinition definition) => _workflowDefinitionMapper.Map(definition);

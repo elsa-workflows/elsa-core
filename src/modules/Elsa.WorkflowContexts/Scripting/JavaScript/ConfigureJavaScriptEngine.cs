@@ -38,7 +38,7 @@ public class ConfigureJavaScriptEngine(ITypeAliasRegistry typeAliasRegistry, ITy
     /// <inheritdoc />
     public ValueTask<IEnumerable<TypeDefinition>> GetTypeDefinitionsAsync(TypeDefinitionContext context)
     {
-        var providerTypes = GetProviderTypes(context.Workflow);
+        var providerTypes = GetProviderTypes(context.WorkflowGraph.Workflow);
         var contextTypes = providerTypes.Select(x => x.GetWorkflowContextType());
         var typeDefinitions = contextTypes.Select(x => typeDescriber.DescribeType(x));
         return new(typeDefinitions);
@@ -47,7 +47,7 @@ public class ConfigureJavaScriptEngine(ITypeAliasRegistry typeAliasRegistry, ITy
     /// <inheritdoc />
     public ValueTask<IEnumerable<FunctionDefinition>> GetFunctionDefinitionsAsync(TypeDefinitionContext context)
     {
-        var providerTypes = GetProviderTypes(context.Workflow);
+        var providerTypes = GetProviderTypes(context.WorkflowGraph.Workflow);
         var functionDefinitions = BuildFunctionDefinitions(providerTypes);
         return new(functionDefinitions);
     }

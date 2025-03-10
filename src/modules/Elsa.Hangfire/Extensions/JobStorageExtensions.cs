@@ -23,7 +23,7 @@ public static class JobStorageExtensions
         {
             scheduledJobs = api.ScheduledJobs(skip, take);
 
-            var jobs = scheduledJobs.FindAll(x => x.Value.Job.Type == typeof(RunWorkflowJob) || x.Value.Job.Type == typeof(ResumeWorkflowJob));
+            var jobs = scheduledJobs.FindAll(x => x.Value.Job?.Type == typeof(RunWorkflowJob) || x.Value.Job?.Type == typeof(ResumeWorkflowJob));
             foreach (var job in jobs.Where(x => (string)x.Value.Job.Args[0] == name))
                 yield return job;
 
@@ -45,7 +45,7 @@ public static class JobStorageExtensions
         {
             enqueuedJobs = api.EnqueuedJobs(queueName, skip, take);
 
-            var jobs = enqueuedJobs.FindAll(x => x.Value.Job.Type == typeof(RunWorkflowJob) || x.Value.Job.Type == typeof(ResumeWorkflowJob));
+            var jobs = enqueuedJobs.FindAll(x => x.Value.Job?.Type == typeof(RunWorkflowJob) || x.Value.Job?.Type == typeof(ResumeWorkflowJob));
             foreach (var job in jobs.Where(x => (string)x.Value.Job.Args[0] == taskName))
                 yield return job;
 

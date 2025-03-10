@@ -1,4 +1,4 @@
-namespace Elsa.Http.Contracts;
+namespace Elsa.Http;
 
 /// <summary>
 /// Provides a way to convert a relative URL to an absolute URL.

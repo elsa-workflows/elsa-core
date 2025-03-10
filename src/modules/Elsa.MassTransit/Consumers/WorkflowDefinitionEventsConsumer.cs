@@ -7,7 +7,9 @@ using MassTransit;
 
 namespace Elsa.MassTransit.Consumers;
 
+/// <summary>
 /// Consumes messages related to workflow definition changes.
+/// </summary>
 [PublicAPI]
 public class WorkflowDefinitionEventsConsumer(IWorkflowDefinitionActivityRegistryUpdater workflowDefinitionActivityRegistryUpdater, INotificationSender notificationSender) :
     global::MassTransit.IConsumer<WorkflowDefinitionDeleted>,

@@ -1,13 +1,11 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class WorkflowCancellationService(
@@ -17,19 +15,21 @@ public class WorkflowCancellationService(
     : IWorkflowCancellationService
 {
     /// <inheritdoc />
-    public async Task<int> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+    public async Task<bool> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
         var filter = new WorkflowInstanceFilter
         {
             Id = workflowInstanceId
         };
         var instance = await workflowInstanceStore.FindAsync(filter, cancellationToken);
-        
-        return instance == null
-            ? 0
-            : await CancelWorkflows(new List<WorkflowInstance>{instance}, cancellationToken);
+
+        if(instance == null)
+            return false;
+            
+        await CancelWorkflows([instance], cancellationToken);
+        return true;
     }
-    
+
     /// <inheritdoc />
     public async Task<int> CancelWorkflowsAsync(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken = default)
     {
@@ -51,7 +51,7 @@ public class WorkflowCancellationService(
         };
         var instances = (await workflowInstanceStore.FindManyAsync(filter, cancellationToken)).ToList();
         var instanceIds = instances.Select(i => i.Id).ToList();
-        
+
         return await CancelWorkflowsAsync(instanceIds, cancellationToken);
     }
 
@@ -69,7 +69,7 @@ public class WorkflowCancellationService(
     private async Task<int> CancelWorkflows(IList<WorkflowInstance> workflowInstances, CancellationToken cancellationToken)
     {
         var tasks = workflowInstances.Where(i => i.Status != WorkflowStatus.Finished)
-            .Select(i => dispatcher.DispatchAsync(new DispatchCancelWorkflowsRequest
+            .Select(i => dispatcher.DispatchAsync(new DispatchCancelWorkflowRequest
             {
                 WorkflowInstanceId = i.Id
             }, cancellationToken)).ToList();
@@ -77,12 +77,11 @@ public class WorkflowCancellationService(
         var instanceIds = workflowInstances.Select(i => i.Id).ToList();
         await CancelChildWorkflowInstances(instanceIds, cancellationToken);
         await Task.WhenAll(tasks);
-        
+
         return tasks.Count;
     }
 
-    private async Task CancelChildWorkflowInstances(IEnumerable<string> workflowInstanceIds,
-        CancellationToken cancellationToken)
+    private async Task CancelChildWorkflowInstances(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken)
     {
         var tasks = new List<Task<int>>();
         var workflowInstanceIdBatches = workflowInstanceIds.Chunk(50);
@@ -90,13 +89,13 @@ public class WorkflowCancellationService(
         foreach (var workflowInstanceIdBatch in workflowInstanceIdBatches)
         {
             // Find child instances for the current workflow instance ID and cancel them.
-            // Do not check on status as their children might still be running and need to be cancelled.
+            // Do not check on status as their children might still be running and need to be canceled.
             WorkflowInstanceFilter filter = new()
             {
                 ParentWorkflowInstanceIds = workflowInstanceIdBatch.ToList()
             };
             var childInstances = (await workflowInstanceStore.FindManyAsync(filter, cancellationToken)).ToList();
-            
+
             if (childInstances.Any())
                 tasks.AddRange(CancelWorkflows(childInstances, cancellationToken));
         }

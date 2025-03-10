@@ -5,7 +5,9 @@ using Elsa.Workflows.Serialization.Helpers;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
+/// <summary>
 /// Serializes the <see cref="ActivityNode"/> type without its children. Instead, it will serialize the activity children as properties.
+/// </summary>
 public class RootActivityNodeConverter(ActivityWriter activityWriter, bool excludeChildren = false) : JsonConverter<ActivityNode>
 {
     /// <inheritdoc />

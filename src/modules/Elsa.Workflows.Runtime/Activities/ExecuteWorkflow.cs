@@ -2,12 +2,10 @@ using System.Runtime.CompilerServices;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Bookmarks;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Parameters;
+using Elsa.Workflows.Options;
+using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
@@ -49,7 +47,7 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
     /// </summary>
     [Input(Description = "The input to send to the workflow.")]
     public Input<IDictionary<string, object>?> Input { get; set; } = null!;
-    
+
     /// <summary>
     /// True to wait for the child workflow to complete before completing this activity. If not set, the child workflow will be executed until it either completes or goes idle before this activity completes.
     /// </summary>
@@ -59,60 +57,72 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var result = await ExecuteWorkflowAsync(context);
         var waitForCompletion = WaitForCompletion.Get(context);
-        
-        if(!waitForCompletion || result.Status == WorkflowStatus.Finished)
+        var result = await ExecuteWorkflowAsync(context, waitForCompletion);
+
+        if (!waitForCompletion || result.Status == WorkflowStatus.Finished)
         {
             context.SetResult(result);
             await context.CompleteActivityAsync();
             return;
         }
-        
+
         // Since the child workflow is still running, we need to wait for it to complete using a bookmark.
         var bookmarkOptions = new CreateBookmarkArgs
         {
             Callback = OnChildWorkflowCompletedAsync,
-            Payload = new ExecuteWorkflowPayload(result.WorkflowInstanceId),
+            Stimulus = new ExecuteWorkflowStimulus(result.WorkflowInstanceId),
             IncludeActivityInstanceId = false
         };
         context.CreateBookmark(bookmarkOptions);
     }
 
-    private async ValueTask<ExecuteWorkflowResult> ExecuteWorkflowAsync(ActivityExecutionContext context)
+    private async ValueTask<ExecuteWorkflowResult> ExecuteWorkflowAsync(ActivityExecutionContext context, bool waitForCompletion)
     {
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
-        var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
-        var correlationId = CorrelationId.GetOrDefault(context);
-        var workflowRuntime = context.GetRequiredService<IWorkflowRuntime>();
-        var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
         var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published, context.CancellationToken);
 
         if (workflowGraph == null)
-            throw new Exception($"No published version of workflow definition with ID {workflowDefinitionId} found.");
+            throw new($"No published version of workflow definition with ID {workflowDefinitionId} found.");
 
-        var startParams = new StartWorkflowRuntimeParams
+        var parentInstanceId = context.WorkflowExecutionContext.Id;
+        var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
+        var correlationId = CorrelationId.GetOrDefault(context);
+        var workflowInvoker = context.GetRequiredService<IWorkflowInvoker>();
+        var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
+        var properties = new Dictionary<string, object>
         {
-            InstanceId = identityGenerator.GenerateId(),
-            Input = input,
-            ParentWorkflowInstanceId = context.WorkflowExecutionContext.Id,
-            VersionOptions = VersionOptions.SpecificVersion(workflowGraph.Workflow.Identity.Version),
-            CorrelationId = correlationId,
-            CancellationTokens = context.CancellationToken,
+            ["ParentInstanceId"] = parentInstanceId
         };
-        var workflowResult = await workflowRuntime.StartWorkflowAsync(workflowGraph.Workflow.Identity.DefinitionId, startParams);
+
+        // If we need to wait for the child workflow to complete, set the property. This will be used by the ResumeExecuteWorkflowActivity to resume the parent workflow.
+        if (waitForCompletion)
+            properties["WaitForCompletion"] = true;
+
+        input["ParentInstanceId"] = parentInstanceId;
+
+        var options = new RunWorkflowOptions
+        {
+            ParentWorkflowInstanceId = parentInstanceId,
+            Input = input,
+            Properties = properties,
+            CorrelationId = correlationId,
+            WorkflowInstanceId = identityGenerator.GenerateId()
+        };
+
+        var workflowResult = await workflowInvoker.InvokeAsync(workflowGraph, options, context.CancellationToken);
         var info = new ExecuteWorkflowResult
         {
-            WorkflowInstanceId = workflowResult.WorkflowInstanceId,
-            Status = workflowResult.Status,
-            SubStatus = workflowResult.SubStatus,
-            Output = workflowResult.Output
+            WorkflowInstanceId = options.WorkflowInstanceId,
+            Status = workflowResult.WorkflowState.Status,
+            SubStatus = workflowResult.WorkflowState.SubStatus,
+            Output = workflowResult.WorkflowState.Output
         };
 
         return info;
     }
-    
+
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;

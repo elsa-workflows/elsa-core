@@ -14,7 +14,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.20");
+            modelBuilder
+                .HasDefaultSchema("Elsa")
+                .HasAnnotation("ProductVersion", "8.0.12");
 
             modelBuilder.Entity("Elsa.Labels.Entities.Label", b =>
                 {
@@ -35,9 +37,12 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
-                    b.ToTable("Labels");
+                    b.ToTable("Labels", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Labels.Entities.WorkflowDefinitionLabel", b =>
@@ -47,6 +52,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
 
                     b.Property<string>("LabelId")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowDefinitionId")
@@ -62,13 +70,16 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
                     b.HasIndex("LabelId")
                         .HasDatabaseName("WorkflowDefinitionLabel_LabelId");
 
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("WorkflowDefinitionLabel_TenantId");
+
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("WorkflowDefinitionLabel_WorkflowDefinitionId");
 
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("WorkflowDefinitionLabel_WorkflowDefinitionVersionId");
 
-                    b.ToTable("WorkflowDefinitionLabels");
+                    b.ToTable("WorkflowDefinitionLabels", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

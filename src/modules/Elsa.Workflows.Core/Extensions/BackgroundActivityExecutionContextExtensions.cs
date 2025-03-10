@@ -76,6 +76,6 @@ public static class BackgroundActivityExecutionContextExtensions
     /// <param name="activityExecutionContext"></param>
     public static IEnumerable<ScheduledActivity> GetBackgroundScheduledActivities(this ActivityExecutionContext activityExecutionContext)
     {
-        return activityExecutionContext.GetProperty<IEnumerable<ScheduledActivity>>("BackgroundScheduledActivities") ?? Enumerable.Empty<ScheduledActivity>();
+        return activityExecutionContext.GetProperty<IEnumerable<ScheduledActivity>>("BackgroundScheduledActivities") ?? [];
     }
 }

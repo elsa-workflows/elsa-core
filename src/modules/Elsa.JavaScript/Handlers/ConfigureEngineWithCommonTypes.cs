@@ -1,11 +1,14 @@
 using Elsa.Extensions;
 using Elsa.JavaScript.Notifications;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.LogPersistence;
 using JetBrains.Annotations;
 
 namespace Elsa.JavaScript.Handlers;
 
+/// <summary>
 /// A handler that configures the Jint engine with common types.
+/// </summary>
 [UsedImplicitly]
 public class ConfigureEngineWithCommonTypes : INotificationHandler<EvaluatingJavaScript>
 {
@@ -19,6 +22,8 @@ public class ConfigureEngineWithCommonTypes : INotificationHandler<EvaluatingJav
         engine.RegisterType<DateTimeOffset>();
         engine.RegisterType<TimeSpan>();
         engine.RegisterType<Guid>();
+        engine.RegisterType<Random>();
+        engine.RegisterType<LogPersistenceMode>();
         
         return Task.CompletedTask;
     }

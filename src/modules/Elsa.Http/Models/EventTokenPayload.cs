@@ -1,4 +1,4 @@
-namespace Elsa.Http.Models;
+namespace Elsa.Http;
 
 /// <summary>
 /// Represents the payload of an event, serialized as a secured token.

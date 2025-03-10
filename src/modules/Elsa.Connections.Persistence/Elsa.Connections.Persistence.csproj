@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Description>Provides Connections persistence services</Description>
+		<PackageTags>elsa module connections persistence </PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
+		<ProjectReference Include="..\Elsa.Connections.Models\Elsa.Connections.Models.csproj" />
+	</ItemGroup>
+
+</Project>

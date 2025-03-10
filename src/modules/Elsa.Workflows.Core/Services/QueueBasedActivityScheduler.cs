@@ -1,8 +1,7 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// A FIFO queue based activity scheduler.
@@ -22,7 +21,7 @@ public class QueueBasedActivityScheduler : IActivityScheduler
     public ActivityWorkItem Take() => _queue.Dequeue();
 
     /// <inheritdoc />
-    public IEnumerable<ActivityWorkItem> List() => _queue.ToList();
+    public IEnumerable<ActivityWorkItem> List() => _queue;
 
     /// <inheritdoc />
     public bool Any(Func<ActivityWorkItem, bool> predicate) => _queue.Any(predicate);

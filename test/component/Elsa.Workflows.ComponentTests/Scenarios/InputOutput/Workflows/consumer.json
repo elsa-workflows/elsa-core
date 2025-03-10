@@ -1,0 +1,98 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "4e993ab1b3d4e4a1",
+  "definitionId": "58dbd7bffa85a761",
+  "name": "Consumer",
+  "createdAt": "2024-12-04T16:49:20.593932\u002B00:00",
+  "version": 1,
+  "toolVersion": "3.3.0.0",
+  "variables": [
+    {
+      "id": "67fcb9870af4c28e",
+      "name": "Variable1",
+      "typeName": "String",
+      "isArray": false,
+      "value": "",
+      "storageDriverTypeName": "Elsa.Workflows.WorkflowInstanceStorageDriver, Elsa.Workflows.Core"
+    }
+  ],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "logPersistenceConfig": {
+      "default": {
+        "evaluationMode": "Strategy",
+        "strategyType": "Elsa.Workflows.LogPersistence.Strategies.Inherit, Elsa.Workflows.Core",
+        "expression": null
+      }
+    }
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "938f2c91bb759a6a",
+    "nodeId": "Workflow2:938f2c91bb759a6a",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "workflowDefinitionId": "780fbf96f1bb1e7e",
+        "workflowDefinitionVersionId": "640867552fc865d",
+        "latestAvailablePublishedVersion": 3,
+        "latestAvailablePublishedVersionId": "640867552fc865d",
+        "id": "8c1127e1193cd6e8",
+        "nodeId": "Workflow2:938f2c91bb759a6a:8c1127e1193cd6e8",
+        "name": "Output1",
+        "type": "Provider",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -160,
+              "y": -280
+            },
+            "size": {
+              "width": 89.6953125,
+              "height": 50
+            }
+          }
+        },
+        "input1": {
+          "typeName": "Object",
+          "expression": {
+            "type": "Literal",
+            "value": "Hello World!"
+          },
+          "memoryReference": {
+            "id": "8c1127e1193cd6e8:input-input-1"
+          }
+        },
+        "output1": {
+          "typeName": "Object",
+          "memoryReference": {
+            "id": "67fcb9870af4c28e"
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": []
+  }
+}

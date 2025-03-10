@@ -2,13 +2,12 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.MongoDb.Common;
 using Elsa.MongoDb.Helpers;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
 using MongoDB.Driver.Linq;
-using Open.Linq.AsyncExtensions;
 
 namespace Elsa.MongoDb.Modules.Runtime;
 
@@ -76,13 +75,18 @@ public class MongoActivityExecutionLogStore(MongoDbStore<ActivityExecutionRecord
         return mongoDbStore.DeleteWhereAsync<string>(queryable => Filter(queryable, filter), x => x.Id, cancellationToken);
     }
 
-    private IMongoQueryable<ActivityExecutionRecord> Filter(IMongoQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter)
+    private IQueryable<ActivityExecutionRecord> Filter(IQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter)
     {
-        return (filter.Apply(queryable) as IMongoQueryable<ActivityExecutionRecord>)!;
+        return filter.Apply(queryable);
     }
 
-    private IMongoQueryable<ActivityExecutionRecord> Order<TOrderBy>(IMongoQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordOrder<TOrderBy> order)
+    private IQueryable<ActivityExecutionRecord> Order<TOrderBy>(IQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordOrder<TOrderBy> order)
     {
-        return (queryable.OrderBy(order) as IMongoQueryable<ActivityExecutionRecord>)!;
+        return queryable.OrderBy(order);
+    }
+
+    private IQueryable<ActivityExecutionRecord> Paginate(IQueryable<ActivityExecutionRecord> queryable, PageArgs pageArgs)
+    {
+        return queryable.Paginate(pageArgs);
     }
 }

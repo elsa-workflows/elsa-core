@@ -3,10 +3,10 @@ using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Helpers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -65,7 +65,7 @@ public class ActivityJsonConverter(
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, IActivity value, JsonSerializerOptions options)
     {
-        var clonedOptions = GetClonedOptions(options);
+        var clonedOptions = GetClonedWriterOptions(options);
         var activityDescriptor = activityRegistry.Find(value.Type, value.Version);
 
         // Give the activity descriptor a chance to customize the serializer options.
@@ -115,6 +115,13 @@ public class ActivityJsonConverter(
         clonedOptions.Converters.Add(new InputJsonConverterFactory(serviceProvider));
         clonedOptions.Converters.Add(new OutputJsonConverterFactory(serviceProvider));
         clonedOptions.Converters.Add(new ExpressionJsonConverterFactory(expressionDescriptorRegistry));
+        return clonedOptions;
+    }
+    
+    private JsonSerializerOptions GetClonedWriterOptions(JsonSerializerOptions options)
+    {
+        var clonedOptions = GetClonedOptions(options);
+        clonedOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory(serviceProvider.GetRequiredService<ActivityWriter>()));
         return clonedOptions;
     }
 }

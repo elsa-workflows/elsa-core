@@ -4,7 +4,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Bookmarks;
+using Elsa.Workflows.Runtime.Stimuli;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Activities;
@@ -16,8 +16,8 @@ namespace Elsa.Workflows.Runtime.Activities;
 [UsedImplicitly]
 public class Event : Trigger<object?>
 {
-    internal const string EventPayloadWorkflowInputKey = "__EventPayloadWorkflowInput";
-    
+    internal const string EventInputWorkflowInputKey = "__EventPayloadWorkflowInput";
+
     /// <inheritdoc />
     internal Event([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
@@ -28,7 +28,7 @@ public class Event : Trigger<object?>
         : this(new Literal<string>(eventName), source, line)
     {
     }
-    
+
     /// <inheritdoc />
     public Event(Func<string> eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
         : this(new Input<string>(Expression.DelegateExpression(eventName), new MemoryBlockReference()), source, line)
@@ -62,7 +62,7 @@ public class Event : Trigger<object?>
     protected override object GetTriggerPayload(TriggerIndexingContext context)
     {
         var eventName = EventName.Get(context.ExpressionExecutionContext);
-        return new EventBookmarkPayload(eventName);
+        return new EventStimulus(eventName);
     }
 
     /// <inheritdoc />
@@ -74,15 +74,22 @@ public class Event : Trigger<object?>
         {
             var options = new CreateBookmarkArgs
             {
-                Payload = new EventBookmarkPayload(eventName),
-                IncludeActivityInstanceId = false
+                Stimulus = new EventStimulus(eventName),
+                IncludeActivityInstanceId = false,
+                Callback = CompleteInternalAsync
             };
             context.CreateBookmark(options);
             return;
         }
 
-        var input = context.GetWorkflowInput<object?>(EventPayloadWorkflowInputKey);
-        context.SetResult(input);
+        await CompleteInternalAsync(context);
+    }
+
+    private async ValueTask CompleteInternalAsync(ActivityExecutionContext context)
+    {
+        if (context.TryGetWorkflowInput<object?>(EventInputWorkflowInputKey, out var input))
+            context.SetResult(input);
+
         await context.CompleteActivityAsync();
     }
 }

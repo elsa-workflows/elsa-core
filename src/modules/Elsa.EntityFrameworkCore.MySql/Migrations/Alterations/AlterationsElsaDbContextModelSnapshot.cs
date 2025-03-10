@@ -3,6 +3,7 @@ using System;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -17,8 +18,10 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.20")
+                .HasAnnotation("ProductVersion", "8.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
+
+            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationJob", b =>
                 {
@@ -45,6 +48,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -65,6 +71,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
 
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_AlterationJob_Status");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_AlterationJob_TenantId");
 
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_AlterationJob_WorkflowInstanceId");
@@ -96,6 +105,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CompletedAt")
@@ -109,6 +121,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
 
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_AlterationPlan_Status");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_AlterationPlan_TenantId");
 
                     b.ToTable("AlterationPlans", "Elsa");
                 });

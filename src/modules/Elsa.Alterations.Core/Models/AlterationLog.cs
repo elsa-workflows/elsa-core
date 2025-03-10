@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Alterations.Core.Models;

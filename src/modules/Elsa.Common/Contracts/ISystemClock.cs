@@ -1,4 +1,4 @@
-namespace Elsa.Common.Contracts;
+namespace Elsa.Common;
 
 /// <summary>
 /// Represents a system clock.

@@ -1,0 +1,128 @@
+﻿services:
+
+  consul-agent-1: &consul-agent
+    image: consul:latest
+    networks:
+      - consul
+    command: "agent -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+  consul-agent-2:
+    <<: *consul-agent
+
+  consul-agent-3:
+    <<: *consul-agent
+
+  consul-server-1: &consul-server
+    <<: *consul-agent
+    command: "agent -server -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+  consul-server-2:
+    <<: *consul-server
+
+  consul-server-bootstrap:
+    <<: *consul-agent
+    ports:
+      - "8400:8400"
+      - "8500:8500"
+      - "8600:8600"
+      - "8600:8600/udp"
+    command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0"
+  
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - 1433:1433
+    environment:
+      MSSQL_SA_PASSWORD: "Elsa2022!"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    restart: unless-stopped
+  
+  postgres:
+    image: postgres:13.3-alpine
+    container_name: elsa3-postgres
+    environment:
+      POSTGRES_USER: elsa
+      POSTGRES_PASSWORD: elsa
+      POSTGRES_DB: elsa
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata-3:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+  
+  mysql:
+    image: arm64v8/mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'elsa'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+
+  redis:
+    image: redis:latest
+    ports:
+      - "127.0.0.1:6379:6379"
+  
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+  
+  elasticsearch:
+    image: "docker.elastic.co/elasticsearch/elasticsearch:8.5.0"
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+  kibana:
+    image: "docker.elastic.co/kibana/kibana:8.5.0"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+  
+  smtp4dev:
+    image: rnwood/smtp4dev:3.1.3-ci20211206101
+    ports:
+      - "4000:80"
+      - "2525:25"
+  
+networks:
+  consul:
+
+volumes:
+  mongodb_data:
+  pgdata-3:
+  sqlserver_data:
+  elasticsearch-data:
+    driver: local

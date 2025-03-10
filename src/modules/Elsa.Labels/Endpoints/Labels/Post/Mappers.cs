@@ -1,5 +1,5 @@
 using Elsa.Labels.Entities;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using FastEndpoints;
 
 namespace Elsa.Labels.Endpoints.Labels.Post;

@@ -4,7 +4,6 @@ using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.JavaScriptListsAndArrays;
@@ -80,7 +79,7 @@ public class Tests
         Assert.Equal(43, magicNumber);
     }
 
-    [Theory(DisplayName = "Can sort array and list properties as mutable arrays", Skip = "Not supported yet. See https://github.com/elsa-workflows/elsa-core/issues/5912")]
+    [Theory(DisplayName = "Can sort array and list properties as mutable arrays")]
     [MemberData(nameof(ArraySortEnumerableData))]
     // See also:
     //  - https://github.com/sebastienros/jint/issues/1942
@@ -90,7 +89,7 @@ public class Tests
         dynamic dynamicObject = new ExpandoObject();
         dynamicObject.Items = collection;
         var script = """
-                     const model = getModel();
+                     const model = variables.Model;
                      model.Items.sort((a, b) => a - b);
                      return model;
                      """;

@@ -1,5 +1,4 @@
-using Elsa.Common.Contracts;
-using Elsa.Workflows.Contracts;
+using Elsa.Common;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.State;
@@ -7,14 +6,20 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Middleware.Workflows;
 
+/// <summary>
 /// Adds extension methods to <see cref="ExceptionHandlingMiddleware"/>.
+/// </summary>
 public static class EngineExceptionHandlingMiddlewareExtensions
 {
+    /// <summary>
     /// Installs the <see cref="ExceptionHandlingMiddleware"/> component in the activity execution pipeline.
+    /// </summary>
     public static IWorkflowExecutionPipelineBuilder UseEngineExceptionHandling(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<EngineExceptionHandlingMiddleware>();
 }
 
+/// <summary>
 /// Catches any exceptions thrown by downstream components and transitions the workflow into the faulted state.
+/// </summary>
 public class EngineExceptionHandlingMiddleware(WorkflowMiddlewareDelegate next, ISystemClock systemClock, ILogger<EngineExceptionHandlingMiddleware> logger) : IWorkflowExecutionMiddleware
 {
     /// <inheritdoc />

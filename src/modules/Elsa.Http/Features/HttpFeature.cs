@@ -4,26 +4,22 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Http.ContentWriters;
-using Elsa.Http.Contracts;
 using Elsa.Http.DownloadableContentHandlers;
 using Elsa.Http.FileCaches;
 using Elsa.Http.Handlers;
-using Elsa.Http.HostedServices;
-using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
 using Elsa.Http.Selectors;
 using Elsa.Http.Services;
+using Elsa.Http.Tasks;
 using Elsa.Http.UIHints;
-using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Requests;
-using Elsa.Workflows.Management.Responses;
+using Elsa.Workflows;
 using FluentStorage;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Http.Features;
@@ -32,12 +28,10 @@ namespace Elsa.Http.Features;
 /// Installs services related to HTTP services and activities.
 /// </summary>
 [DependsOn(typeof(HttpJavaScriptFeature))]
-public class HttpFeature : FeatureBase
+public class HttpFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public HttpFeature(IModule module) : base(module)
-    {
-    }
+    private Func<IServiceProvider, IHttpEndpointRoutesProvider> _httpEndpointRouteProvider = sp => sp.GetRequiredService<DefaultHttpEndpointRoutesProvider>();
+    private Func<IServiceProvider, IHttpEndpointBasePathProvider> _httpEndpointBasePathProvider = sp => sp.GetRequiredService<DefaultHttpEndpointBasePathProvider>();
 
     /// <summary>
     /// A delegate to configure <see cref="HttpActivityOptions"/>.
@@ -102,14 +96,36 @@ public class HttpFeature : FeatureBase
         typeof(QueryStringHttpWorkflowInstanceIdSelector)
     };
 
+    public HttpFeature WithHttpEndpointRoutesProvider<T>() where T : IHttpEndpointRoutesProvider
+    {
+        return WithHttpEndpointRoutesProvider(sp => sp.GetRequiredService<T>());
+    }
+
+    public HttpFeature WithHttpEndpointRoutesProvider(Func<IServiceProvider, IHttpEndpointRoutesProvider> httpEndpointRouteProvider)
+    {
+        _httpEndpointRouteProvider = httpEndpointRouteProvider;
+        return this;
+    }
+    
+    public HttpFeature WithHttpEndpointBasePathProvider<T>() where T : class, IHttpEndpointBasePathProvider
+    {
+        Services.TryAddScoped<T>();
+        return WithHttpEndpointBasePathProvider(sp => sp.GetRequiredService<T>());
+    }
+    
+    public HttpFeature WithHttpEndpointBasePathProvider(Func<IServiceProvider, IHttpEndpointBasePathProvider> httpEndpointBasePathProvider)
+    {
+        _httpEndpointBasePathProvider = httpEndpointBasePathProvider;
+        return this;
+    }
+
     /// <inheritdoc />
     public override void Configure()
     {
         Module.UseWorkflowManagement(management =>
         {
-            management.AddVariableTypes(new[]
-            {
-                typeof(RouteData),
+            management.AddVariableTypes([
+                typeof(HttpRouteData),
                 typeof(HttpRequest),
                 typeof(HttpResponse),
                 typeof(HttpResponseMessage),
@@ -117,16 +133,10 @@ public class HttpFeature : FeatureBase
                 typeof(IFormFile),
                 typeof(HttpFile),
                 typeof(Downloadable)
-            }, "HTTP");
+            ], "HTTP");
 
             management.AddActivitiesFrom<HttpFeature>();
         });
-    }
-
-    /// <inheritdoc />
-    public override void ConfigureHostedServices()
-    {
-        ConfigureHostedService<UpdateRouteTableHostedService>();
     }
 
     /// <inheritdoc />
@@ -150,14 +160,13 @@ public class HttpFeature : FeatureBase
             .AddScoped<IRouteMatcher, RouteMatcher>()
             .AddScoped<IRouteTable, RouteTable>()
             .AddScoped<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
-            .AddScoped<IHttpBookmarkProcessor, HttpBookmarkProcessor>()
             .AddScoped<IRouteTableUpdater, DefaultRouteTableUpdater>()
             .AddScoped<IHttpWorkflowLookupService, HttpWorkflowLookupService>()
             .AddScoped(ContentTypeProvider)
             .AddHttpContextAccessor()
 
             // Handlers.
-            .AddRequestHandler<ValidateWorkflowRequestHandler, ValidateWorkflowRequest, ValidateWorkflowResponse>()
+            .AddNotificationHandler<ValidateWorkflowRequestHandler>()
             .AddNotificationHandler<UpdateRouteTable>()
 
             // Content parsers.
@@ -175,6 +184,8 @@ public class HttpFeature : FeatureBase
 
             // Activity property options providers.
             .AddScoped<IPropertyUIHandler, HttpContentTypeOptionsProvider>()
+            .AddScoped<IPropertyUIHandler, HttpEndpointPathUIHandler>()
+            .AddScoped(_httpEndpointBasePathProvider)
 
             // Port resolvers.
             .AddScoped<IActivityResolver, SendHttpRequestActivityResolver>()
@@ -183,8 +194,14 @@ public class HttpFeature : FeatureBase
             .AddScoped<AuthenticationBasedHttpEndpointAuthorizationHandler>()
             .AddScoped<AllowAnonymousHttpEndpointAuthorizationHandler>()
             .AddScoped<DefaultHttpEndpointFaultHandler>()
+            .AddScoped<DefaultHttpEndpointRoutesProvider>()
+            .AddScoped<DefaultHttpEndpointBasePathProvider>()
             .AddScoped(HttpEndpointWorkflowFaultHandler)
             .AddScoped(HttpEndpointAuthorizationHandler)
+            .AddScoped(_httpEndpointRouteProvider)
+            
+            // Startup tasks.
+            .AddStartupTask<UpdateRouteTableStartupTask>()
 
             // Downloadable content handlers.
             .AddScoped<IDownloadableManager, DefaultDownloadableManager>()
@@ -221,7 +238,7 @@ public class HttpFeature : FeatureBase
             options.AddTypeAlias<HttpResponse>("HttpResponse");
             options.AddTypeAlias<HttpResponseMessage>("HttpResponseMessage");
             options.AddTypeAlias<HttpHeaders>("HttpHeaders");
-            options.AddTypeAlias<RouteData>("RouteData");
+            options.AddTypeAlias<HttpRouteData>("RouteData");
             options.AddTypeAlias<IFormFile>("FormFile");
             options.AddTypeAlias<IFormFile[]>("FormFile[]");
             options.AddTypeAlias<HttpFile>("HttpFile");

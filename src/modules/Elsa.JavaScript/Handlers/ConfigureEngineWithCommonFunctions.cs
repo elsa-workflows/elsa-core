@@ -5,15 +5,20 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Text.Unicode;
 using Elsa.Extensions;
+using Elsa.JavaScript.Helpers;
 using Elsa.JavaScript.Notifications;
+using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.JavaScript.Handlers;
 
+/// <summary>
 /// A handler that configures the Jint engine with common functions.
+/// </summary>
 [UsedImplicitly]
-public class ConfigureEngineWithCommonFunctions : INotificationHandler<EvaluatingJavaScript>
+public class ConfigureEngineWithCommonFunctions(IOptions<JintOptions> options) : INotificationHandler<EvaluatingJavaScript>
 {
     private readonly JsonSerializerOptions _jsonSerializerOptions = CreateJsonSerializerOptions();
 
@@ -30,7 +35,11 @@ public class ConfigureEngineWithCommonFunctions : INotificationHandler<Evaluatin
         engine.SetValue("getWorkflowInstanceId", (Func<string>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.Id));
         engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
         engine.SetValue("getCorrelationId", (Func<string?>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId));
-        engine.SetValue("setVariable", (Action<string, object>)((name, value) => context.SetVariableInScope(name, value)));
+        engine.SetValue("setVariable", (Action<string, object>)((name, value) =>
+        {
+            engine.SyncVariablesContainer(options, name, value);
+            context.SetVariableInScope(name, value);
+        }));
         engine.SetValue("getVariable", (Func<string, object?>)(name => context.GetVariableInScope(name)));
         engine.SetValue("getInput", (Func<string, object?>)(name => context.GetInput(name)));
         engine.SetValue("getOutputFrom", (Func<string, string?, object?>)((activityIdName, outputName) => context.GetOutput(activityIdName, outputName)));

@@ -1,5 +1,5 @@
+using Elsa.Testing.Shared.Activities;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Activities;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows.Workflows;
@@ -18,7 +18,8 @@ public class DispatchAndWaitWorkflow : WorkflowBase
                 {
                     WorkflowDefinitionId = new(ChildWorkflow.DefinitionId),
                     WaitForCompletion = new (true)
-                }
+                },
+                new TriggerSignal("Completed")
             }
         };
     }

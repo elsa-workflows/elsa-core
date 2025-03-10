@@ -1,12 +1,11 @@
 using System.Diagnostics;
-using Elsa.Common.Contracts;
+using Elsa.Common;
+using Elsa.OpenTelemetry.Contracts;
 using Elsa.OpenTelemetry.Helpers;
+using Elsa.OpenTelemetry.Models;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Pipelines.ActivityExecution;
-using Elsa.Workflows.Pipelines.WorkflowExecution;
 using JetBrains.Annotations;
-using Newtonsoft.Json;
 using Activity = System.Diagnostics.Activity;
 using ActivityKind = System.Diagnostics.ActivityKind;
 
@@ -20,7 +19,7 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
         var activity = context.Activity;
-        using var span = ElsaOpenTelemetry.ActivitySource.StartActivity($"ActivityExecution", ActivityKind.Internal, Activity.Current?.Context ?? default);
+        using var span = ElsaOpenTelemetry.ActivitySource.StartActivity("ActivityExecution", ActivityKind.Internal, Activity.Current?.Context ?? default);
 
         if (span == null)
         {
@@ -33,27 +32,27 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
         span.SetTag("activity.name", activity.Name);
         span.SetTag("activityInstance.id", context.Id);
         span.SetTag("activityExecution.startTimeUtc", span.StartTimeUtc);
+        span.SetTag("tenantId", context.WorkflowExecutionContext.Workflow.Identity.TenantId);
         
-        span.AddEvent(new ActivityEvent("Executing", tags: CreateStatusTags(context)));
+        span.AddEvent(new("Executing", tags: CreateStatusTags(context)));
         
         await next(context);
 
         if (context.Status == ActivityStatus.Faulted)
         {
-            span.AddEvent(new ActivityEvent("Faulted", tags: CreateStatusTags(context)));
+            span.AddEvent(new("Faulted", tags: CreateStatusTags(context)));
             span.SetStatus(ActivityStatusCode.Error);
-            span.SetTag("error", true);
             span.SetTag("activityInstance.hasIncidents", true);
 
-            var errorMessage = string.IsNullOrWhiteSpace(context.Exception?.Message) ? "Unknown error" : context.Exception.Message;
-            span.SetTag("error.message", errorMessage);
+            var errorSpanHandlers = context.GetServices<IErrorSpanHandler>();
+            var errorSpanHandlerContext = new ErrorSpanContext(span, context.Exception);
             
-            if (!string.IsNullOrEmpty(context.Exception?.StackTrace))
-                span.SetTag("error.stackTrace", context.Exception.StackTrace);
+            foreach (var handler in errorSpanHandlers) 
+                handler.Handle(errorSpanHandlerContext);
         }
         else
         {
-            span.AddEvent(new ActivityEvent("Executed", tags: CreateStatusTags(context)));
+            span.AddEvent(new("Executed", tags: CreateStatusTags(context)));
             span.SetStatus(ActivityStatusCode.Ok);
         }
         
@@ -64,7 +63,7 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
     
     private ActivityTagsCollection CreateStatusTags(ActivityExecutionContext context)
     {
-        return new ActivityTagsCollection(new Dictionary<string, object?>
+        return new(new Dictionary<string, object?>
         {
             ["activityInstance.status"] = context.Status.ToString()
         });
@@ -77,6 +76,8 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
 [UsedImplicitly]
 public static class OpenTelemetryTracingActivityExecutionMiddlewareExtensions
 {
+    /// <summary>
     /// Installs the <see cref="OpenTelemetryTracingActivityExecutionMiddleware"/> component in the workflow execution pipeline.
+    /// </summary>
     public static IActivityExecutionPipelineBuilder UseActivityExecutionTracing(this IActivityExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.Insert<OpenTelemetryTracingActivityExecutionMiddleware>(0);
 }

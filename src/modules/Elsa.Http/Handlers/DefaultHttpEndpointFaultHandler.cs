@@ -1,6 +1,4 @@
-using Elsa.Http.Models;
 using Microsoft.AspNetCore.Http;
-using Elsa.Http.Contracts;
 using Elsa.Http.Exceptions;
 
 namespace Elsa.Http.Handlers;

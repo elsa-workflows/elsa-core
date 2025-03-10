@@ -1,9 +1,7 @@
 using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Signals;
 using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
@@ -19,7 +17,7 @@ namespace Elsa.Workflows.Activities;
 public class Fork : Activity
 {
     /// <inheritdoc />
-    public Fork([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Fork([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         // Handle break signals directly instead of using the BreakBehavior. The behavior stops propagation of the signal, which is not what we want.
         OnSignalReceived<BreakSignal>(OnBreakSignalReceived);
@@ -49,20 +47,14 @@ public class Fork : Activity
 
         if (isBreaking)
         {
-            // Remove any and all bookmarks from other branches.
-            RemoveBookmarks(targetContext);
-
-            // Signal activity completion.
             await CompleteAsync(targetContext);
-
-            // Exit.
             return;
         }
 
         var childContext = context.ChildContext;
         var completedChildActivityId = childContext.Activity.Id;
 
-        // Append activity to set of completed activities.
+        // Append activity to the set of completed activities.
         var completedActivityIds = targetContext.UpdateProperty<HashSet<string>>("Completed", set =>
         {
             set ??= new HashSet<string>();
@@ -76,35 +68,13 @@ public class Fork : Activity
         switch (joinMode)
         {
             case ForkJoinMode.WaitAny:
-            {
-                // Remove any and all bookmarks from other branches.
-                RemoveBookmarks(targetContext);
-
-                // Signal activity completion.
                 await CompleteAsync(targetContext);
-            }
                 break;
             case ForkJoinMode.WaitAll:
-            {
                 var allSet = allChildActivityIds.All(x => completedActivityIds.Contains(x));
-
-                if (allSet)
-                    // Signal activity completion.
-                    await CompleteAsync(targetContext);
-            }
+                if (allSet) await CompleteAsync(targetContext);
                 break;
         }
-    }
-
-    private void RemoveBookmarks(ActivityExecutionContext context)
-    {
-        // Find all descendants for each branch and remove them as well as any associated bookmarks.
-        var workflowExecutionContext = context.WorkflowExecutionContext;
-        var forkNode = context.ActivityNode;
-        var branchNodes = forkNode.Children;
-        var branchDescendantActivityIds = branchNodes.SelectMany(x => x.Flatten()).Select(x => x.Activity.Id).ToHashSet();
-
-        workflowExecutionContext.Bookmarks.RemoveWhere(x => branchDescendantActivityIds.Contains(x.ActivityId));
     }
 
     private void OnBreakSignalReceived(BreakSignal signal, SignalContext signalContext)

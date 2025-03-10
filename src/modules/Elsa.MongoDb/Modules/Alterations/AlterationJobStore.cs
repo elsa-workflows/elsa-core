@@ -57,7 +57,6 @@ public class MongoAlterationJobStore : IAlterationJobStore
     {
         await _mongoDbStore.SaveManyAsync(jobs.Select(i => i), cancellationToken);
     }
-
-    private static IMongoQueryable<AlterationJob> Filter(IMongoQueryable<AlterationJob> queryable, AlterationJobFilter filter) =>
-        (filter.Apply(queryable) as IMongoQueryable<AlterationJob>)!;
+    
+    private static IQueryable<AlterationJob> Filter(IQueryable<AlterationJob> queryable, AlterationJobFilter filter) => filter.Apply(queryable);
 }

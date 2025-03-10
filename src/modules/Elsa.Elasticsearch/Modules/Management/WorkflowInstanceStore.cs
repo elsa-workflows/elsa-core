@@ -1,11 +1,10 @@
 using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.Fluent;
 using Elastic.Clients.Elasticsearch.QueryDsl;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Elasticsearch.Common;
 using Elsa.Extensions;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
@@ -36,16 +35,22 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default) =>
-        await _store.SearchAsync(d => Filter(d, filter), pageArgs, cancellationToken);
+    public async ValueTask<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        return await _store.SearchAsync(d => Filter(d, filter), pageArgs, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
-        await _store.SearchAsync(d => Sort(Filter(d, filter), order), pageArgs, cancellationToken);
+    public async ValueTask<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        return await _store.SearchAsync(d => Sort(Filter(d, filter), order), pageArgs, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
-        await _store.SearchAsync(d => Filter(d, filter), cancellationToken);
+    public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.SearchAsync(d => Filter(d, filter), cancellationToken);
+    }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
@@ -78,7 +83,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var results = await _store.SearchAsync(d => SelectId( Filter(d, filter)), cancellationToken);
+        var results = await _store.SearchAsync(d => SelectId(Filter(d, filter)), cancellationToken);
         return results.Select(x => x.Id).ToList();
     }
 
@@ -111,16 +116,38 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) =>
+    public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
         await _store.SaveAsync(instance, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default) =>
+    public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveAsync(instance, cancellationToken);
+    }
+
+    public async ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveAsync(instance, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
+    {
         await _store.SaveManyAsync(instances, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
-        await _store.DeleteByQueryAsync(d => Filter(d, filter), cancellationToken);
+    public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.DeleteByQueryAsync(d => Filter(d, filter), cancellationToken);
+    }
+
+    public Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
 
     private static SearchRequestDescriptor<WorkflowInstance> Sort<TProp>(SearchRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceOrder<TProp> order)
     {
@@ -133,9 +160,20 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         return descriptor;
     }
 
-    private static SearchRequestDescriptor<WorkflowInstance> Filter(SearchRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceFilter filter) => descriptor.Query(query => Filter(query, filter));
-    private static CountRequestDescriptor<WorkflowInstance> Filter(CountRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceFilter filter) => descriptor.Query(query => Filter(query, filter));
-    private static DeleteByQueryRequestDescriptor<WorkflowInstance> Filter(DeleteByQueryRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceFilter filter) => descriptor.Query(query => Filter(query, filter));
+    private static SearchRequestDescriptor<WorkflowInstance> Filter(SearchRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceFilter filter)
+    {
+        return descriptor.Query(query => Filter(query, filter));
+    }
+
+    private static CountRequestDescriptor<WorkflowInstance> Filter(CountRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceFilter filter)
+    {
+        return descriptor.Query(query => Filter(query, filter));
+    }
+
+    private static DeleteByQueryRequestDescriptor<WorkflowInstance> Filter(DeleteByQueryRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceFilter filter)
+    {
+        return descriptor.Query(query => Filter(query, filter));
+    }
 
     private static QueryDescriptor<WorkflowInstance> Filter(QueryDescriptor<WorkflowInstance> descriptor, WorkflowInstanceFilter filter)
     {
@@ -160,12 +198,13 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
             return descriptor.MatchAll(new MatchAllQuery());
 
         return descriptor
-                .QueryString(c => c
-                    .Query(filter.SearchTerm));
+            .QueryString(c => c
+                .Query(filter.SearchTerm));
     }
 
-    private static SearchRequestDescriptor<WorkflowInstance> Summarize(SearchRequestDescriptor<WorkflowInstance> descriptor) =>
-        descriptor.Fields(
+    private static SearchRequestDescriptor<WorkflowInstance> Summarize(SearchRequestDescriptor<WorkflowInstance> descriptor)
+    {
+        return descriptor.Fields(
             field => field.Field(f => f.Id),
             field => field.Field(f => f.DefinitionId),
             field => field.Field(f => f.Status),
@@ -179,7 +218,10 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
             field => field.Field(f => f.DefinitionVersionId),
             field => field.Field(f => f.UpdatedAt)
         );
-    
-    private static SearchRequestDescriptor<WorkflowInstance> SelectId(SearchRequestDescriptor<WorkflowInstance> descriptor) =>
-        descriptor.Fields(field => field.Field(f => f.Id));
+    }
+
+    private static SearchRequestDescriptor<WorkflowInstance> SelectId(SearchRequestDescriptor<WorkflowInstance> descriptor)
+    {
+        return descriptor.Fields(field => field.Field(f => f.Id));
+    }
 }

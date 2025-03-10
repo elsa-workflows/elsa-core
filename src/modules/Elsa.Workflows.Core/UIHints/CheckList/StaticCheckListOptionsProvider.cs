@@ -1,6 +1,5 @@
 using System.Reflection;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.UIHints.CheckList;
 
@@ -26,7 +25,7 @@ public class StaticCheckListOptionsProvider : IPropertyUIHandler
 
         var props = new CheckListProps
         {
-            CheckList = new CheckList
+            CheckList = new()
             {
                 Items = selectListItems.ToList() 
             }

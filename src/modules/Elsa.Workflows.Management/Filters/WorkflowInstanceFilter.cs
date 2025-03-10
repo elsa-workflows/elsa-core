@@ -25,6 +25,11 @@ public class WorkflowInstanceFilter
     /// Filter workflow instances that match the specified search term.
     /// </summary>
     public string? SearchTerm { get; set; }
+    
+    /// <summary>
+    /// Filter workflow instances that match the specified name.
+    /// </summary>
+    public string? Name { get; set; }
 
     /// <summary>
     /// Filter workflow instances by definition ID.
@@ -87,6 +92,11 @@ public class WorkflowInstanceFilter
     public ICollection<WorkflowSubStatus>? WorkflowSubStatuses { get; set; }
 
     /// <summary>
+    /// Filter workflow instances by whether they are executing.
+    /// </summary>
+    public bool? IsExecuting { get; set; }
+
+    /// <summary>
     /// Filter workflow instances by whether they have incidents.
     /// </summary>
     public bool? HasIncidents { get; set; }
@@ -95,6 +105,11 @@ public class WorkflowInstanceFilter
     /// Filter on workflows that are system workflows.
     /// </summary>
     public bool? IsSystem { get; set; }
+
+    /// <summary>
+    /// Filter workflow instances that are older than the specified timestamp.
+    /// </summary>
+    public DateTimeOffset? BeforeLastUpdated { get; set; }
 
     /// <summary>
     /// Filter workflow instances by timestamp.
@@ -129,12 +144,15 @@ public class WorkflowInstanceFilter
         if (filter.WorkflowSubStatus != null) query = query.Where(x => x.SubStatus == filter.WorkflowSubStatus);
         if (filter.WorkflowStatuses != null) query = query.Where(x => filter.WorkflowStatuses.Contains(x.Status));
         if (filter.WorkflowSubStatuses != null) query = query.Where(x => filter.WorkflowSubStatuses.Contains(x.SubStatus));
+        if (filter.IsExecuting != null) query = query.Where(x => x.IsExecuting == filter.IsExecuting);
         if (filter.HasIncidents != null) query = filter.HasIncidents == true ? query.Where(x => x.IncidentCount > 0) : query.Where(x => x.IncidentCount == 0);
         if (filter.IsSystem != null) query = query.Where(x => x.IsSystem == filter.IsSystem);
+        if (filter.Name != null) query = query.Where(x => x.Name!.ToLower().Contains(filter.Name.ToLower()));
+        if (filter.BeforeLastUpdated != null) query = query.Where(x => x.UpdatedAt < filter.BeforeLastUpdated);
 
         if (TimestampFilters != null)
         {
-            foreach (TimestampFilter timestampFilter in TimestampFilters)
+            foreach (var timestampFilter in TimestampFilters)
             {
                 var column = timestampFilter.Column;
                 var timestamp = timestampFilter.Timestamp;
@@ -166,7 +184,7 @@ public class WorkflowInstanceFilter
         {
             query =
                 from instance in query
-                where instance.Name!.Contains(searchTerm)
+                where instance.Name!.ToLower().Contains(searchTerm.ToLower())
                       || instance.DefinitionVersionId.Contains(searchTerm)
                       || instance.DefinitionId.Contains(searchTerm)
                       || instance.Id.Contains(searchTerm)

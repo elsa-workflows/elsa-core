@@ -2,7 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Models;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
@@ -38,6 +38,7 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
         {
             IsSystem = request.IsSystem,
             SearchTerm = request.SearchTerm,
+            Name = request.Name,
             DefinitionId = request.DefinitionId,
             DefinitionIds = request.DefinitionIds?.Any() == true ? request.DefinitionIds : null,
             Version = request.Version,

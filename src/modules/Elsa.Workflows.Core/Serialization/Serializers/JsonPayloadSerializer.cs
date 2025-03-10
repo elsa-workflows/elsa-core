@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -42,6 +41,12 @@ public class JsonPayloadSerializer : IPayloadSerializer
         return Deserialize<object>(payload);
     }
 
+    public object Deserialize(string serializedData, Type type)
+    {
+        var options = GetOptions();
+        return JsonSerializer.Deserialize(serializedData, type, options)!;
+    }
+
     /// <inheritdoc />
     public object Deserialize(JsonElement payload)
     {
@@ -69,7 +74,7 @@ public class JsonPayloadSerializer : IPayloadSerializer
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         };
 
         options.Converters.Add(new JsonStringEnumConverter());

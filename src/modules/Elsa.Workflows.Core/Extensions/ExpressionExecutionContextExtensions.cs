@@ -1,17 +1,13 @@
 using System.Collections;
-using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.Unicode;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Services;
 using Humanizer;
 
 // ReSharper disable once CheckNamespace
@@ -41,6 +37,11 @@ public static class ExpressionExecutionContextExtensions
     /// The key used to store the workflow in the <see cref="ExpressionExecutionContext.TransientProperties"/> dictionary.
     /// </summary>
     public static readonly object WorkflowKey = new();
+    
+    /// <summary>
+    /// The key used to store the activity in the <see cref="ExpressionExecutionContext.TransientProperties"/> dictionary.
+    /// </summary>
+    public static readonly object ActivityKey = new();
 
     /// <summary>
     /// Creates a dictionary for the specified <see cref="WorkflowExecutionContext"/> and <see cref="ActivityExecutionContext"/>.
@@ -82,6 +83,11 @@ public static class ExpressionExecutionContextExtensions
     /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/> 
     /// </summary>
     public static bool TryGetActivityExecutionContext(this ExpressionExecutionContext context, out ActivityExecutionContext activityExecutionContext) => context.TransientProperties.TryGetValue(ActivityExecutionContextKey, out activityExecutionContext!);
+    
+    /// <summary>
+    /// Returns the <see cref="Activity"/> of the specified <see cref="ExpressionExecutionContext"/>
+    /// </summary>
+    public static IActivity GetActivity(this ExpressionExecutionContext context) => (IActivity)context.TransientProperties[ActivityKey];
 
     /// <summary>
     /// Returns the value of the specified input.
@@ -113,7 +119,7 @@ public static class ExpressionExecutionContextExtensions
     public static Variable? GetVariable(this ExpressionExecutionContext context, string name, bool localScopeOnly = false)
     {
         var block = context.GetVariableBlock(name, localScopeOnly);
-        return block?.Metadata is VariableBlockMetadata metadata ? metadata.Variable : default;
+        return block?.Metadata is VariableBlockMetadata metadata ? metadata.Variable : null;
     }
 
     private static MemoryBlock? GetVariableBlock(this ExpressionExecutionContext context, string name, bool localScopeOnly = false)
@@ -132,12 +138,12 @@ public static class ExpressionExecutionContextExtensions
     /// Creates a named variable in the context.
     /// </summary>
     public static Variable CreateVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = null,
-        Action<MemoryBlock>? configure = default)
+        Action<MemoryBlock>? configure = null)
     {
         var existingVariable = context.GetVariable(name, localScopeOnly: true);
 
         if (existingVariable != null)
-            throw new Exception($"Variable {name} already exists in the context.");
+            throw new($"Variable {name} already exists in the context.");
 
         var variable = new Variable(name, value)
         {
@@ -167,7 +173,7 @@ public static class ExpressionExecutionContextExtensions
     /// <summary>
     /// Sets the value of a named variable in the context.
     /// </summary>
-    public static Variable SetVariable<T>(this ExpressionExecutionContext context, string name, T? value, Action<MemoryBlock>? configure = default)
+    public static Variable SetVariable<T>(this ExpressionExecutionContext context, string name, T? value, Action<MemoryBlock>? configure = null)
     {
         var variable = context.GetVariable(name);
 
@@ -187,7 +193,7 @@ public static class ExpressionExecutionContextExtensions
     /// <summary>
     /// Sets the output to the specified value.
     /// </summary>
-    public static void Set(this ExpressionExecutionContext context, Output? output, object? value, Action<MemoryBlock>? configure = default)
+    public static void Set(this ExpressionExecutionContext context, Output? output, object? value, Action<MemoryBlock>? configure = null)
     {
         if (output != null)
         {
@@ -406,11 +412,11 @@ public static class ExpressionExecutionContextExtensions
         // Otherwise, return the input.
         var workflowExecutionContext = context.GetWorkflowExecutionContext();
         var input = workflowExecutionContext.Input;
-        return input.TryGetValue(name, out var value) ? value : default;
+        return input.TryGetValue(name, out var value) ? value : null;
     }
 
     /// <summary>
-    /// Returns the value of the specified input.
+    /// Returns the value of the specified output.
     /// </summary>
     /// <param name="context"></param>
     /// <param name="activityIdOrName">The ID or name of the activity.</param>
@@ -427,9 +433,9 @@ public static class ExpressionExecutionContextExtensions
             throw new InvalidOperationException("Activity not found.");
 
         var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
-        var outputRecordCandidates = outputRegister.FindMany(x => x.ActivityId == activity.Id && x.OutputName == outputName).ToList();
+        var outputRecordCandidates = outputRegister.FindMany(activity.Id, outputName);
         var containerIds = activityExecutionContext.GetAncestors().Select(x => x.Id).ToList();
-        var filteredOutputRecordCandidates = outputRecordCandidates.Where(x => containerIds.Contains(x.ContainerId)).ToList();
+        var filteredOutputRecordCandidates = outputRecordCandidates.Where(x => containerIds.Contains(x.ContainerId));
         var outputRecord = filteredOutputRecordCandidates.FirstOrDefault();
         return outputRecord?.Value;
     }
@@ -458,10 +464,9 @@ public static class ExpressionExecutionContextExtensions
             foreach (var output in activityDescriptor.Outputs)
             {
                 var outputPascalName = output.Name.Pascalize();
-                yield return new ActivityOutputs(activity.Id, activityIdPascalName, new[]
-                {
+                yield return new(activity.Id, activityIdPascalName, [
                     outputPascalName
-                });
+                ]);
             }
         }
     }
@@ -503,7 +508,7 @@ public static class ExpressionExecutionContextExtensions
             {
                 var inputPascalName = inputEntry.Key.Pascalize();
                 var inputValue = inputEntry.Value;
-                yield return new WorkflowInput(inputPascalName, inputValue);
+                yield return new(inputPascalName, inputValue);
             }
         }
         else
@@ -517,7 +522,7 @@ public static class ExpressionExecutionContextExtensions
 
                 var variable = variableBlockMetadata.Variable;
                 var variablePascalName = variable.Name.Pascalize();
-                yield return new WorkflowInput(variablePascalName, block.Value);
+                yield return new(variablePascalName, block.Value);
             }
         }
     }
@@ -542,9 +547,8 @@ public static class ExpressionExecutionContextExtensions
             return obj;
 
         var toArrayMethod = typeof(Enumerable).GetMethod("ToArray")!.MakeGenericMethod(elementType);
-        return toArrayMethod.Invoke(null, new object[]
-        {
+        return toArrayMethod.Invoke(null, [
             enumerable
-        })!;
+        ])!;
     }
 }

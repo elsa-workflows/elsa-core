@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+using Elsa.Api.Client.Resources.Alterations.Contracts;
 
 namespace Elsa.Api.Client.Resources.Alterations.Models;
 
@@ -15,7 +15,7 @@ public class AlterationPlanParams
     /// <summary>
     /// The alterations to be applied.
     /// </summary>
-    public ICollection<JsonObject> Alterations { get; set; } = new List<JsonObject>();
+    public ICollection<IAlteration> Alterations { get; set; } = new List<IAlteration>();
     
     /// <summary>
     /// The IDs of the workflow instances that this plan applies to.

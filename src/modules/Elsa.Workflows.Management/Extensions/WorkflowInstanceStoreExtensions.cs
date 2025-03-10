@@ -1,4 +1,4 @@
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 
@@ -15,6 +15,6 @@ public static class WorkflowInstanceStoreExtensions
     /// </summary>
     public static async ValueTask<WorkflowInstance?> FindAsync(this IWorkflowInstanceStore store, string id, CancellationToken cancellationToken = default)
     {
-        return await store.FindAsync(new WorkflowInstanceFilter{ Id = id }, cancellationToken);
+        return await store.FindAsync(new() { Id = id }, cancellationToken);
     }
 }

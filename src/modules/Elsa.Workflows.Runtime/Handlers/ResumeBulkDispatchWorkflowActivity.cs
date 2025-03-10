@@ -2,9 +2,8 @@ using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Runtime.Activities;
-using Elsa.Workflows.Runtime.Bookmarks;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Stimuli;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Handlers;
@@ -13,7 +12,7 @@ namespace Elsa.Workflows.Runtime.Handlers;
 /// Resumes any blocking <see cref="BulkDispatchWorkflows"/> activities when its child workflows complete.
 /// </summary>
 [PublicAPI]
-internal class ResumeBulkDispatchWorkflowActivity(IWorkflowInbox workflowInbox) : INotificationHandler<WorkflowExecuted>
+internal class ResumeBulkDispatchWorkflowActivity(IBookmarkQueue bookmarkQueue, IStimulusHasher stimulusHasher) : INotificationHandler<WorkflowExecuted>
 {
     public async Task HandleAsync(WorkflowExecuted notification, CancellationToken cancellationToken)
     {
@@ -22,13 +21,15 @@ internal class ResumeBulkDispatchWorkflowActivity(IWorkflowInbox workflowInbox) 
         if (workflowState.Status != WorkflowStatus.Finished)
             return;
 
-        var parentInstanceId = workflowState.Properties.TryGetValue("ParentInstanceId", out var parentInstanceIdValue) ? parentInstanceIdValue.ToString() : default;
-
-        if (string.IsNullOrWhiteSpace(parentInstanceId))
+        var waitForCompletion = workflowState.Properties.TryGetValue("WaitForCompletion", out var waitForCompletionValue) && (bool)waitForCompletionValue;
+        
+        if (!waitForCompletion)
             return;
-
-        var bookmark = new BulkDispatchWorkflowsBookmark(parentInstanceId);
+        
+        var parentInstanceId = (string)workflowState.Properties["ParentInstanceId"];
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<BulkDispatchWorkflows>();
+        var stimulus = new BulkDispatchWorkflowsStimulus(parentInstanceId);
+        var stimulusHash = stimulusHasher.Hash(activityTypeName, stimulus);
         var workflowInstanceId = workflowState.Id;
         var input = new Dictionary<string, object>
         {
@@ -37,14 +38,18 @@ internal class ResumeBulkDispatchWorkflowActivity(IWorkflowInbox workflowInbox) 
             ["WorkflowStatus"] = workflowState.Status,
             ["WorkflowSubStatus"] = workflowState.SubStatus,
         };
-        var message = new NewWorkflowInboxMessage
-        {
-            ActivityTypeName = activityTypeName,
-            Input = input,
-            BookmarkPayload = bookmark,
-            WorkflowInstanceId = parentInstanceId,
-        };
 
-        await workflowInbox.SubmitAsync(message, cancellationToken);
+        var resumeBookmarkOptions = new ResumeBookmarkOptions
+        {
+            Input = input
+        };
+        var bookmarkQueueItem = new NewBookmarkQueueItem
+        {
+            WorkflowInstanceId = parentInstanceId,
+            ActivityTypeName = activityTypeName,
+            StimulusHash = stimulusHash,
+            Options = resumeBookmarkOptions
+        };
+        await bookmarkQueue.EnqueueAsync(bookmarkQueueItem, cancellationToken);
     }
 }

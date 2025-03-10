@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Activities;
 

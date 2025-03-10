@@ -1,5 +1,4 @@
-﻿using Elsa.EntityFrameworkCore.Common;
-using Elsa.Quartz.EntityFrameworkCore.PostgreSql;
+﻿using Elsa.Quartz.EntityFrameworkCore.PostgreSql;
 using Elsa.Quartz.Features;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
@@ -42,7 +41,6 @@ public static class PostgreSqlQuartzExtensions
             });
         };
 
-        // Configure the Quartz hosted service to run migrations.
         feature.Module.ConfigureHostedService<RunMigrationsHostedService<PostgreSqlQuartzDbContext>>(-100);
 
         return feature;

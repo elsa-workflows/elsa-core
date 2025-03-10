@@ -1,7 +1,7 @@
 <Project>
     <PropertyGroup>
         <Authors>Elsa Workflows Community</Authors>
-        <Copyright>2023</Copyright>
+        <Copyright>2024</Copyright>
 
         <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
         <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
@@ -21,13 +21,22 @@
         <AnalysisModeDocumentation>Default</AnalysisModeDocumentation>
         <AnalysisLevelDocumentation>latest</AnalysisLevelDocumentation>
 
+        <NuGetAudit>enable</NuGetAudit>
+        <NuGetAuditMode>all</NuGetAuditMode>
+
         <!-- https://github.com/dotnet/sourcelink -->
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+
+        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     </PropertyGroup>
     <PropertyGroup>
-        <ElsaStudioVersion>3.2.1-preview.558</ElsaStudioVersion>
-        <SystemTextJsonVersion>8.0.5</SystemTextJsonVersion>
+        <NoWarn>$(NoWarn);CS0162;CS1591</NoWarn>
+        <!-- IL trimming warnings -->
+        <NoWarn>$(NoWarn);IL2026;IL2046;IL2057;IL2067;IL2070;IL2072;IL2075;IL2087;IL2091</NoWarn>
+    </PropertyGroup>
+    <PropertyGroup>
+        <ElsaStudioVersion>3.3.0-rc4</ElsaStudioVersion>
     </PropertyGroup>
 </Project>

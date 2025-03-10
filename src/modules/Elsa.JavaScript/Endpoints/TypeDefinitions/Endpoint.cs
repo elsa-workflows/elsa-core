@@ -4,7 +4,6 @@ using Elsa.Common.Models;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
@@ -45,8 +44,7 @@ internal class Get : ElsaEndpoint<Request>
             return;
         }
         
-        var workflow = workflowGraph.Workflow;
-        var typeDefinitionContext = new TypeDefinitionContext(workflow, request.ActivityTypeName, request.PropertyName, cancellationToken);
+        var typeDefinitionContext = new TypeDefinitionContext(workflowGraph, request.ActivityTypeName, request.PropertyName, cancellationToken);
         var typeDefinitions = await _typeDefinitionService.GenerateTypeDefinitionsAsync(typeDefinitionContext);
         var fileName = $"elsa.{request.WorkflowDefinitionId}.d.ts";
         var data = Encoding.UTF8.GetBytes(typeDefinitions);

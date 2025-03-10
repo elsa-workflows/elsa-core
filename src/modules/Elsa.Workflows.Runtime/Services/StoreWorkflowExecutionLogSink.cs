@@ -1,9 +1,9 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Notifications;
+using Open.Linq.AsyncExtensions;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// This implementation saves <see cref="WorkflowExecutionLogRecord"/> directly through the store.
@@ -13,8 +13,12 @@ public class StoreWorkflowExecutionLogSink(IWorkflowExecutionLogStore store, ILo
     /// <inheritdoc />
     public async Task PersistExecutionLogsAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
     {
-        var records = extractor.ExtractLogRecords(context).ToList();
-        await store.AddManyAsync(records, context.CancellationTokens.SystemCancellationToken);
-        await notificationSender.SendAsync(new WorkflowExecutionLogUpdated(context), context.CancellationTokens.SystemCancellationToken);
+        var records = await extractor.ExtractLogRecordsAsync(context).ToList();
+        
+        if(records.Count == 0)
+            return;
+        
+        await store.AddManyAsync(records, context.CancellationToken);
+        await notificationSender.SendAsync(new WorkflowExecutionLogUpdated(context), context.CancellationToken);
     }
 }

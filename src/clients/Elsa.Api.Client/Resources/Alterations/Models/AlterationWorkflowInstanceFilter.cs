@@ -1,4 +1,3 @@
-using Elsa.Api.Client.Resources.WorkflowInstances.Enums;
 using Elsa.Api.Client.Shared.Models;
 
 namespace Elsa.Api.Client.Resources.Alterations.Models;

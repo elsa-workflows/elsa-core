@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Serializes and deserializes workflow states.
@@ -23,10 +23,9 @@ public interface IWorkflowStateSerializer
     /// Serializes the specified workflow state.
     /// </summary>
     /// <param name="workflowState">The workflow state to serialize.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The serialized workflow state.</returns>
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The serialization process may require access to the type.")]
-    string Serialize(WorkflowState workflowState, CancellationToken cancellationToken = default);
+    string Serialize(WorkflowState workflowState);
 
     /// <summary>
     /// Serializes the specified workflow state.
@@ -42,10 +41,9 @@ public interface IWorkflowStateSerializer
     /// Serializes the specified workflow state.
     /// </summary>
     /// <param name="workflowState">The workflow state to serialize.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The serialized workflow state.</returns>
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The serialization process may require access to the type.")]
-    byte[] SerializeToUtfBytes(WorkflowState workflowState, CancellationToken cancellationToken = default);
+    byte[] SerializeToUtfBytes(WorkflowState workflowState);
 
     /// <summary>
     /// Serializes the specified workflow state.
@@ -61,10 +59,9 @@ public interface IWorkflowStateSerializer
     /// Serializes the specified workflow state.
     /// </summary>
     /// <param name="workflowState">The workflow state to serialize.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The serialized workflow state.</returns>
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The serialization process may require access to the type.")]
-    JsonElement SerializeToElement(WorkflowState workflowState, CancellationToken cancellationToken = default);
+    JsonElement SerializeToElement(WorkflowState workflowState);
 
     /// <summary>
     /// Serializes the specified workflow state.
@@ -80,10 +77,9 @@ public interface IWorkflowStateSerializer
     /// Serializes the specified workflow state.
     /// </summary>
     /// <param name="workflowState">The workflow state to serialize.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The serialized workflow state.</returns>
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The serialization process may require access to the type.")]
-    string Serialize(object workflowState, CancellationToken cancellationToken = default);
+    string Serialize(object workflowState);
 
     /// <summary>
     /// Deserializes the specified serialized state.
@@ -99,10 +95,9 @@ public interface IWorkflowStateSerializer
     /// Deserializes the specified serialized state.
     /// </summary>
     /// <param name="serializedState">The serialized state.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The deserialized workflow state.</returns>
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The deserialization process may require access to the type.")]
-    WorkflowState Deserialize(string serializedState, CancellationToken cancellationToken = default);
+    WorkflowState Deserialize(string serializedState);
 
     /// <summary>
     /// Deserializes the specified serialized state.
@@ -118,10 +113,9 @@ public interface IWorkflowStateSerializer
     /// Deserializes the specified serialized state.
     /// </summary>
     /// <param name="serializedState">The serialized state.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The deserialized workflow state.</returns>
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The deserialization process may require access to the type.")]
-    WorkflowState Deserialize(JsonElement serializedState, CancellationToken cancellationToken = default);
+    WorkflowState Deserialize(JsonElement serializedState);
 
     /// <summary>
     /// Deserializes the specified serialized state.
@@ -140,5 +134,5 @@ public interface IWorkflowStateSerializer
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The deserialized workflow state.</returns>
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The deserialization process may require access to the type.")]
-    T Deserialize<T>(string serializedState, CancellationToken cancellationToken = default);
+    T Deserialize<T>(string serializedState);
 }

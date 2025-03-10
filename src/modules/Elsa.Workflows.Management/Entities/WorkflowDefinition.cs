@@ -1,5 +1,4 @@
 using Elsa.Common.Entities;
-using Elsa.Common.Models;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 
@@ -13,7 +12,7 @@ public class WorkflowDefinition : VersionedEntity
     /// <summary>
     /// The logical ID of the workflow. This ID is the same across versions. 
     /// </summary>
-    public string DefinitionId { get; set; } = default!;
+    public string DefinitionId { get; set; } = null!;
     
     /// <summary>
     /// The name of the workflow.
@@ -55,7 +54,9 @@ public class WorkflowDefinition : VersionedEntity
     /// </summary>
     public ICollection<string> Outcomes { get; set; } = new List<string>();
     
+    /// <summary>
     /// Stores custom information about the workflow. Can be used to store application-specific properties to associate with the workflow.
+    /// </summary>
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
@@ -66,13 +67,13 @@ public class WorkflowDefinition : VersionedEntity
     /// <summary>
     /// The name of the workflow materializer to interpret the <see cref="StringData"/> or <see cref="BinaryData"/>.
     /// </summary>
-    public string MaterializerName { get; set; } = default!;
+    public string MaterializerName { get; set; } = null!;
 
     /// <summary>
     /// Provider-specific data.
     /// </summary>
     public string? MaterializerContext { get; set; }
-    
+
     /// <summary>
     /// A textual representation of the workflow. The data is to be interpreted by the configured materializer.
     /// </summary>

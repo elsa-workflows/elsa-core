@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Elsa.Expressions.Contracts;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Humanizer;
 

@@ -1,5 +1,5 @@
 using Elsa.MongoDb.Common;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using JetBrains.Annotations;
@@ -26,35 +26,35 @@ public class MongoBookmarkStore : IBookmarkStore
     /// <inheritdoc />
     public async ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default)
     {
-        await _mongoDbStore.SaveAsync(record, s => s.BookmarkId, cancellationToken);
+        await _mongoDbStore.SaveAsync(record, s => s.Id, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask SaveManyAsync(IEnumerable<StoredBookmark> records, CancellationToken cancellationToken)
     {
-        await _mongoDbStore.SaveManyAsync(records, nameof(StoredBookmark.BookmarkId), cancellationToken);
+        await _mongoDbStore.SaveManyAsync(records, nameof(StoredBookmark.Id), cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _mongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
+        return await _mongoDbStore.FindAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _mongoDbStore.FindManyAsync(query => Filter(query, filter), cancellationToken);
+        return await _mongoDbStore.FindManyAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.BookmarkId, cancellationToken);
+        return await _mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, filter.TenantAgnostic, cancellationToken);
     }
 
-    private IMongoQueryable<StoredBookmark> Filter(IMongoQueryable<StoredBookmark> queryable, BookmarkFilter filter)
+    private IQueryable<StoredBookmark> Filter(IQueryable<StoredBookmark> queryable, BookmarkFilter filter)
     {
-        return (filter.Apply(queryable) as IMongoQueryable<StoredBookmark>)!;
+        return filter.Apply(queryable);
     }
 }

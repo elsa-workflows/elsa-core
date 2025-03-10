@@ -10,27 +10,21 @@
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Dapper.Migrations\Elsa.Dapper.Migrations.csproj" />
         <ProjectReference Include="..\Elsa.Identity\Elsa.Identity.csproj" />
+        <ProjectReference Include="..\Elsa.Tenants\Elsa.Tenants.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <PackageReference Include="Npgsql" VersionOverride="8.0.3" />
-    </ItemGroup>
     
     <ItemGroup>
+        <PackageReference Include="Azure.Identity" />
         <PackageReference Include="Dapper" />
         <PackageReference Include="FluentMigrator" />
         <PackageReference Include="FluentMigrator.Runner" />
         <PackageReference Include="Microsoft.Data.Sqlite.Core" />
+        <PackageReference Include="Microsoft.Identity.Client" />
+        <PackageReference Include="Npgsql" />
         <PackageReference Include="System.Data.SqlClient" />
-    </ItemGroup>
-
-    <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
-    <ItemGroup>
-        <PackageReference Include="Azure.Identity" VersionOverride="1.11.4" />
-        <PackageReference Include="Microsoft.Identity.Client" VersionOverride="4.61.3" />
-        <PackageReference Include="System.Formats.Asn1" VersionOverride="8.0.1" />
+        <PackageReference Include="System.Formats.Asn1" />
     </ItemGroup>
 
 </Project>

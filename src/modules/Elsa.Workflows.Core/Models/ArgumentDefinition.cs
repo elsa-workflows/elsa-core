@@ -18,15 +18,15 @@ public abstract class ArgumentDefinition
     /// <summary>
     /// A user friendly name of the input.
     /// </summary>
-    public string DisplayName { get; set; } = default!;
+    public string DisplayName { get; set; } = string.Empty;
 
     /// <summary>
     /// A description of the input.
     /// </summary>
-    public string Description { get; set; } = default!;
+    public string Description { get; set; } = string.Empty;
 
     /// <summary>
     /// The category to which this input belongs.
     /// </summary>
-    public string Category { get; set; } = default!;
+    public string Category { get; set; } = string.Empty;
 }

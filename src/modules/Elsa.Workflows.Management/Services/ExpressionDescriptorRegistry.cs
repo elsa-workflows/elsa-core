@@ -8,7 +8,9 @@ public class ExpressionDescriptorRegistry : IExpressionDescriptorRegistry
 {
     private readonly IDictionary<string, ExpressionDescriptor> _expressionSyntaxDescriptors = new Dictionary<string, ExpressionDescriptor>();
     
+    /// <summary>
     /// Represents a registry of expression descriptors.
+    /// </summary>
     public ExpressionDescriptorRegistry(IEnumerable<IExpressionDescriptorProvider> providers)
     {
         foreach (var provider in providers)

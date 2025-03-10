@@ -1,4 +1,4 @@
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Middleware.Workflows;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Middleware.Workflows;
@@ -17,11 +17,8 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     public static IWorkflowExecutionPipelineBuilder UseDefaultPipeline(this IWorkflowExecutionPipelineBuilder pipelineBuilder) =>
         pipelineBuilder
             .Reset()
+            .UseWorkflowHeartbeat()
             .UseEngineExceptionHandling()
-            .UseBackgroundActivities()
-            .UseBookmarkPersistence()
-            .UseActivityExecutionLogPersistence()
-            .UseWorkflowExecutionLogPersistence()
             .UsePersistentVariables()
             .UseExceptionHandling()
             .UseDefaultActivityScheduler();
@@ -29,25 +26,25 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     /// <summary>
     /// Installs middleware that persists the workflow instance before and after workflow execution.
     /// </summary>
-    public static IWorkflowExecutionPipelineBuilder UseBackgroundActivities(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<ScheduleBackgroundActivitiesMiddleware>();
-    
-    /// <summary>
-    /// Installs middleware that persists the workflow instance before and after workflow execution.
-    /// </summary>
     public static IWorkflowExecutionPipelineBuilder UsePersistentVariables(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistentVariablesMiddleware>();
     
+    public static IWorkflowExecutionPipelineBuilder UseWorkflowHeartbeat(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<WorkflowHeartbeatMiddleware>();
+
     /// <summary>
     /// Installs middleware that persists bookmarks after workflow execution.
     /// </summary>
+    [Obsolete("This middleware is no longer used and will be removed in a future version. Bookmarks are now persisted through the commit state handler.")]
     public static IWorkflowExecutionPipelineBuilder UseBookmarkPersistence(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistBookmarkMiddleware>();
 
     /// <summary>
-    /// Installs middleware that persist the workflow execution journal.
+    /// Installs middleware that persists the workflow execution journal.
     /// </summary>
+    [Obsolete("This middleware is no longer used and will be removed in a future version. Execution logs are now persisted through the commit state handler.")]
     public static IWorkflowExecutionPipelineBuilder UseWorkflowExecutionLogPersistence(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistWorkflowExecutionLogMiddleware>();
-    
+
     /// <summary>
-    /// Installs middleware that persist activity execution records.
+    /// Installs middleware that persists activity execution records.
     /// </summary>
+    [Obsolete("This middleware is no longer used and will be removed in a future version. Activity state is now persisted through the commit state handler.")]
     public static IWorkflowExecutionPipelineBuilder UseActivityExecutionLogPersistence(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistActivityExecutionLogMiddleware>();
 }

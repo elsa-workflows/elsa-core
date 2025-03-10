@@ -1,8 +1,6 @@
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.IntegrationTests.Scenarios.JsonObjectToObjectRemainsJsonObject.Workflows;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.JsonObjectToObjectRemainsJsonObject;
@@ -24,7 +22,7 @@ public class JsonObjectJintTests
     public async Task Test1()
     {
         await _services.PopulateRegistriesAsync();
-        await _workflowRunner.RunAsync<TestWorkflow>();
+        await _workflowRunner.RunAsync<Workflows.TestWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Baz" }, lines);
     }

@@ -1,4 +1,4 @@
-﻿services:
+services:
   postgres:
     image: postgres:latest
     command: -c 'max_connections=2000'
@@ -33,6 +33,12 @@
       - redis
       - otel-collector
     environment:
+      DD_AGENT_HOST: datadog-agent
+      DD_ENV: development
+      DD_TRACE_DEBUG: true
+      DD_TRACE_OTEL_ENABLED: true
+      DD_SERVICE: "Elsa Server"
+      DD_VERSION: "3.3.0"
       # OpenTelemetry environment variables
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"  # Point to OpenTelemetry Collector
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"  # Use gRPC for OTLP
@@ -85,7 +91,7 @@
   datadog-agent:
     image: datadog/agent:latest
     environment:
-      DD_API_KEY: "secret api key"
+      DD_API_KEY: "<HIDDEN>"
       DD_SITE: "datadoghq.eu"
       DD_HOSTNAME: "otel-collector"
       DD_LOGS_ENABLED: "true"

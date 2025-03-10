@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Models;
 using Elsa.Common.Services;
 using Elsa.Extensions;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
@@ -128,19 +127,45 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         return ValueTask.CompletedTask;
     }
 
+    public ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        _store.Add(instance, GetId);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        _store.Update(instance, GetId);
+        return ValueTask.CompletedTask;
+    }
+
     /// <inheritdoc />
     public ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
         _store.SaveMany(instances, GetId);
         return ValueTask.CompletedTask;
     }
-    
+
     /// <inheritdoc />
     public ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         var query = Filter(_store.List().AsQueryable(), filter);
         var count = _store.DeleteMany(query, x => x.Id);
         return ValueTask.FromResult(count);
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default)
+    {
+        var workflowInstance = await FindAsync(new()
+        {
+            Id = workflowInstanceId
+        }, cancellationToken);
+        
+        if (workflowInstance == null)
+            throw new InvalidOperationException($"Workflow instance with ID '{workflowInstanceId}' does not exist.");
+        
+        workflowInstance.UpdatedAt = value;
     }
 
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;

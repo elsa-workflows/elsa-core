@@ -1,6 +1,8 @@
 ﻿using System.Net;
-using Elsa.Workflows.ComponentTests.Helpers.Services;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Testing.Shared.Services;
+using Elsa.Workflows.ComponentTests.Abstractions;
+using Elsa.Workflows.ComponentTests.Fixtures;
+using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowDefinitionRefresh;

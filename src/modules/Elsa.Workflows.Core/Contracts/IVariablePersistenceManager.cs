@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Helps managing the persistence of variables.
@@ -6,9 +6,12 @@ namespace Elsa.Workflows.Contracts;
 public interface IVariablePersistenceManager
 {
     /// <summary>
-    /// Loads the variables into the specified <see cref="WorkflowExecutionContext"/>. 
+    /// Loads the variables into the specified <see cref="WorkflowExecutionContext"/>.
     /// </summary>
-    Task LoadVariablesAsync(WorkflowExecutionContext context);
+    /// <param name="context"></param>
+    /// <param name="excludeTags"></param>
+    /// <returns></returns>
+    Task LoadVariablesAsync(WorkflowExecutionContext context, IEnumerable<string>? excludeTags = default);
 
     /// <summary>
     /// Persists all persistable variables from the specified <see cref="WorkflowExecutionContext"/>. 

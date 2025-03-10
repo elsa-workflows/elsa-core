@@ -1,5 +1,4 @@
 using Elsa.Extensions;
-using Elsa.Http.Models;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.TypeDefinitions.Builders;
 using Elsa.JavaScript.TypeDefinitions.Contracts;

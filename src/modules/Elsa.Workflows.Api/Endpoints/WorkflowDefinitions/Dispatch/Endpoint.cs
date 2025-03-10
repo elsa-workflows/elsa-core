@@ -1,17 +1,14 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Requests;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Dispatch;
 
 [UsedImplicitly]
-internal class Endpoint(IWorkflowDefinitionStore store, IWorkflowDispatcher workflowDispatcher, IIdentityGenerator identityGenerator) : ElsaEndpoint<Request, Response>
+internal class Endpoint(IWorkflowDefinitionService workflowDefinitionService, IWorkflowDispatcher workflowDispatcher, IIdentityGenerator identityGenerator) : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
     {
@@ -23,16 +20,9 @@ internal class Endpoint(IWorkflowDefinitionStore store, IWorkflowDispatcher work
     {
         var definitionId = request.DefinitionId;
         var versionOptions = request.VersionOptions ?? VersionOptions.Published;
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(definitionId, versionOptions, cancellationToken);
 
-        var exists = await store.AnyAsync(
-            new WorkflowDefinitionFilter
-            {
-                DefinitionId = definitionId,
-                VersionOptions = versionOptions
-            },
-            cancellationToken);
-
-        if (!exists)
+        if(workflowGraph == null)
         {
             await SendNotFoundAsync(cancellationToken);
             return;
@@ -48,10 +38,8 @@ internal class Endpoint(IWorkflowDefinitionStore store, IWorkflowDispatcher work
         }
 
         var instanceId = request.InstanceId ?? identityGenerator.GenerateId();
-        var dispatchRequest = new DispatchWorkflowDefinitionRequest
+        var dispatchRequest = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)
         {
-            DefinitionId = definitionId,
-            VersionOptions = versionOptions,
             Input = input as IDictionary<string, object>,
             InstanceId = instanceId,
             CorrelationId = request.CorrelationId,

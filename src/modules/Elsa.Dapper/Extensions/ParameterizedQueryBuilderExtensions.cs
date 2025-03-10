@@ -119,6 +119,7 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery Is(this ParameterizedQuery query, string field, object? value)
     {
         if (value == null) return query;
+        if (value is DBNull) return IsNull(query, field);
         query.Sql.AppendLine(query.Dialect.And(field));
         query.Parameters.Add($"@{field}", value);
 
@@ -134,6 +135,8 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery IsNot(this ParameterizedQuery query, string field, object? value)
     {
         if (value == null) return query;
+        if (value is DBNull) return IsNotNull(query, field);
+
         query.Sql.AppendLine(query.Dialect.AndNot(field));
         query.Parameters.Add($"@{field}", value);
 
@@ -409,6 +412,50 @@ public static class ParameterizedQueryBuilderExtensions
         {
             var value = record.GetType().GetProperty(field)?.GetValue(record);
             query.Parameters.Add($"@{getParameterName(field)}", value);
+        }
+
+        return query;
+    }
+    
+    /// <summary>
+    /// Appends a statement that updates a record.
+    /// </summary>
+    public static ParameterizedQuery Update(this ParameterizedQuery query, string table, object record, string primaryKeyField, Func<string, string>? getParameterName = default)
+    {
+        var fields = record.GetType().GetProperties()
+            .Where(x => x.CanRead && x.Name != primaryKeyField)
+            .Select(x => x.Name)
+            .ToArray();
+
+        return Update(query, table, record, primaryKeyField, fields, getParameterName);
+    }
+
+    /// <summary>
+    /// Constructs an UPDATE query for the specified table and applies the provided record, primaryKeyField, and specified fields.
+    /// </summary>
+    /// <param name="query">The query being built.</param>
+    /// <param name="table">The name of the table to update.</param>
+    /// <param name="record">The object containing the values to be updated.</param>
+    /// <param name="primaryKeyField">The name of the primary key field to identify the record.</param>
+    /// <param name="fields">An array of field names to include in the update statement.</param>
+    /// <param name="getParameterName">An optional function to customize parameter names for the query.</param>
+    /// <returns>Returns the updated instance of <see cref="ParameterizedQuery"/>.</returns>
+    public static ParameterizedQuery Update(this ParameterizedQuery query, string table, object record, string primaryKeyField, string[] fields, Func<string, string>? getParameterName = default)
+    {
+        getParameterName ??= x => x;
+        query.Sql.AppendLine(query.Dialect.Update(table, primaryKeyField, fields, getParameterName));
+
+        var primaryKeyValue = record.GetType().GetProperty(primaryKeyField)?.GetValue(record);
+        query.Parameters.Add($"@{getParameterName(primaryKeyField)}", primaryKeyValue);
+
+        var recordType = record.GetType();
+        foreach (var field in fields)
+        {
+            var prop = recordType.GetProperty(field)!;
+            var propType = prop.PropertyType;
+            var value = prop.GetValue(record);
+            var dbType = value == null ? GetDbType(propType) : default;
+            query.Parameters.Add($"@{getParameterName(field)}", value, dbType);
         }
 
         return query;

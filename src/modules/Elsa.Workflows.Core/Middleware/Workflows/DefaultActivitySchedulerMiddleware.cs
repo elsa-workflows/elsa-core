@@ -1,5 +1,5 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
@@ -20,27 +20,20 @@ public static class UseActivitySchedulerMiddlewareExtensions
 /// <summary>
 /// A workflow execution middleware component that executes scheduled work items.
 /// </summary>
-public class DefaultActivitySchedulerMiddleware : WorkflowExecutionMiddleware
+public class DefaultActivitySchedulerMiddleware(WorkflowMiddlewareDelegate next, IActivityInvoker activityInvoker, ICommitStrategyRegistry commitStrategyRegistry) : WorkflowExecutionMiddleware(next)
 {
-    private readonly IActivityInvoker _activityInvoker;
-
-    /// <inheritdoc />
-    public DefaultActivitySchedulerMiddleware(WorkflowMiddlewareDelegate next, IActivityInvoker activityInvoker) : base(next)
-    {
-        _activityInvoker = activityInvoker;
-    }
-
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         var scheduler = context.Scheduler;
 
         context.TransitionTo(WorkflowSubStatus.Executing);
+        await ConditionallyCommitStateAsync(context, WorkflowLifetimeEvent.WorkflowExecuting);
         
         while (scheduler.HasAny)
         {
             // Do not start a workflow if cancellation has been requested.
-            if (context.CancellationTokens.ApplicationCancellationToken.IsCancellationRequested)
+            if (context.CancellationToken.IsCancellationRequested)
                 break;
             
             var currentWorkItem = scheduler.Take();
@@ -64,6 +57,21 @@ public class DefaultActivitySchedulerMiddleware : WorkflowExecutionMiddleware
             Input = workItem.Input
         };
 
-        await _activityInvoker.InvokeAsync(context, workItem.Activity, options);
+        await activityInvoker.InvokeAsync(context, workItem.Activity, options);
+    }
+    
+    private async Task ConditionallyCommitStateAsync(WorkflowExecutionContext context, WorkflowLifetimeEvent lifetimeEvent)
+    {
+        var strategyName = context.Workflow.Options.CommitStrategyName;
+        var strategy = string.IsNullOrWhiteSpace(strategyName) ? null : commitStrategyRegistry.FindWorkflowStrategy(strategyName);
+        
+        if(strategy == null)
+            return;
+        
+        var strategyContext = new WorkflowCommitStateStrategyContext(context, lifetimeEvent);
+        var commitAction = strategy.ShouldCommit(strategyContext);
+        
+        if (commitAction is CommitAction.Commit)
+            await context.CommitAsync();
     }
 }

@@ -1,27 +1,32 @@
-﻿using System.Net.Http.Headers;
 using System.Reflection;
+using Elsa.Alterations.Extensions;
+using Elsa.Caching;
 using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.EntityFrameworkCore.Modules.Alterations;
+using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
+using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
+using Elsa.Testing.Shared.Handlers;
+using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Consumers;
-using Elsa.Workflows.ComponentTests.Helpers.Materializers;
-using Elsa.Workflows.ComponentTests.Helpers.Services;
-using Elsa.Workflows.ComponentTests.Helpers.WorkflowProviders;
-using Elsa.Workflows.ComponentTests.Services;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.ComponentTests.Decorators;
+using Elsa.Workflows.ComponentTests.Materializers;
+using Elsa.Workflows.ComponentTests.WorkflowProviders;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
 using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
 using Refit;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
-namespace Elsa.Workflows.ComponentTests;
+namespace Elsa.Workflows.ComponentTests.Fixtures;
 
 [UsedImplicitly]
 public class WorkflowServer(Infrastructure infrastructure, string url) : WebApplicationFactory<Program>
@@ -29,7 +34,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
     public TClient CreateApiClient<TClient>()
     {
         var client = CreateClient();
-        client.BaseAddress = new Uri(client.BaseAddress!, "/elsa/api");
+        client.BaseAddress = new(client.BaseAddress!, "/elsa/api");
         client.Timeout = TimeSpan.FromMinutes(1);
         return RestService.For<TClient>(client, CreateRefitSettings(Services));
     }
@@ -37,7 +42,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
     public HttpClient CreateHttpWorkflowClient()
     {
         var client = CreateClient();
-        client.BaseAddress = new Uri(client.BaseAddress!, "/workflows/");
+        client.BaseAddress = new(client.BaseAddress!, "/workflows/");
         client.Timeout = TimeSpan.FromMinutes(1);
         return client;
     }
@@ -69,10 +74,11 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 });
                 elsa.UseMassTransit(massTransit =>
                 {
-                    massTransit.UseRabbitMq(rabbitMqConnectionString);
+                    //massTransit.UseRabbitMq(rabbitMqConnectionString);
+                    massTransit.Services.AddSingleton<WorkflowDefinitionEvents>();
                     massTransit.AddConsumer<WorkflowDefinitionEventConsumer>("elsa-test-workflow-definition-updates", true);
-                    massTransit.AddConsumer<TriggerChangeTokenSignalConsumer>("elsa-test-change-token-signal", true);
                 });
+                elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));
                 elsa.UseWorkflowManagement(management =>
                 {
                     management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
@@ -81,8 +87,14 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 });
                 elsa.UseWorkflowRuntime(runtime =>
                 {
-                    runtime.UseMassTransitDispatcher();
+                    runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
                     runtime.UseCache();
+                    runtime.UseMassTransitDispatcher();
+                    runtime.UseDistributedRuntime();
+                });
+                elsa.UseDistributedCache(distributedCaching =>
+                {
+                    distributedCaching.UseMassTransit();
                 });
                 elsa.UseJavaScript(options =>
                 {
@@ -92,25 +104,35 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                         engine.SetValue("getStaticValue", () => StaticValueHolder.Value);
                     });
                 });
+                elsa.UseAlterations(alterations =>
+                {
+                    alterations.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                });
+                elsa.UseHttp(http =>
+                {
+                    http.UseCache();
+                });
             };
         }
 
         builder.ConfigureTestServices(services =>
         {
             services
-                .AddSingleton<ISignalManager, SignalManager>()
-                .AddSingleton<IWorkflowEvents, WorkflowEvents>()
-                .AddSingleton<IWorkflowDefinitionEvents, WorkflowDefinitionEvents>()
-                .AddSingleton<ITriggerChangeTokenSignalEvents, TriggerChangeTokenSignalEvents>()
+                .AddSingleton<SignalManager>()
+                .AddScoped<WorkflowEvents>()
+                .AddScoped<WorkflowDefinitionEvents>()
+                .AddSingleton<TriggerChangeTokenSignalEvents>()
                 .AddScoped<IWorkflowMaterializer, TestWorkflowMaterializer>()
                 .AddNotificationHandlersFrom<WorkflowServer>()
                 .AddWorkflowDefinitionProvider<TestWorkflowProvider>()
+                .AddNotificationHandlersFrom<WorkflowEventHandlers>()
+                .Decorate<IChangeTokenSignaler, EventPublishingChangeTokenSignaler>()
                 ;
         });
     }
 
     protected override void ConfigureClient(HttpClient client)
     {
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("ApiKey", AdminApiKeyProvider.DefaultApiKey);
+        client.DefaultRequestHeaders.Authorization = new("ApiKey", AdminApiKeyProvider.DefaultApiKey);
     }
 }

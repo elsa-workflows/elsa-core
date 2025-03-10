@@ -17,12 +17,16 @@ public static class PropertyBagExtensions
     /// <param name="key">The key of the value to retrieve.</param>
     /// <param name="defaultValue">A function that returns the default value to be returned if the key does not exist in the PropertyBag.</param>
     /// <returns>The value associated with the key, or the default value if the key does not exist.</returns>
-    public static T TryGetValueOrDefault<T>(this PropertyBag propertyBag, string key, Func<T> defaultValue)
+    public static T? TryGetValueOrDefault<T>(this PropertyBag propertyBag, string key, Func<T> defaultValue)
     {
         if (!propertyBag.TryGetValue(key, out var value))
             return defaultValue();
 
         var json = value.ToString();
+
+        if (string.IsNullOrWhiteSpace(json))
+            return defaultValue();
+
         return JsonSerializer.Deserialize<T>(json);
     }
 

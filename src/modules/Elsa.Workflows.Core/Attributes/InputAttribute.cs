@@ -1,5 +1,3 @@
-using Elsa.Workflows.Contracts;
-
 namespace Elsa.Workflows.Attributes;
 
 /// <summary>
@@ -24,9 +22,9 @@ public class InputAttribute : Attribute
     /// </summary>
     public string? DisplayName { get; set; }
 
-    // /// <summary>
-    // /// A brief description about this property for workflow tooling to use when displaying activity editors.
-    // /// </summary>
+    /// <summary>
+    /// A brief description about this property for workflow tooling to use when displaying activity editors.
+    /// </summary>
     public string? Description { get; set; }
 
     /// <summary>
@@ -38,16 +36,6 @@ public class InputAttribute : Attribute
     /// A value representing options specific to a given UI hint.
     /// </summary>
     public object? Options { get; set; }
-
-    // /// <summary>
-    // /// The type that provides options. If specified, this overrules any value specified via <see cref="Options"/>.
-    // /// </summary>
-    //public Type? OptionsProvider { get; set; }
-
-    // /// <summary>
-    // /// The method name on the activity to invoke to get options. If specified, this overrules any value specified via <see cref="Options"/> and <see cref="OptionsProvider"/>.
-    // /// </summary>
-    // public string? OptionsMethod { get; set; }
 
     /// <summary>
     /// A value to order this property by. Properties are displayed in ascending order (lower appears before higher).
@@ -94,12 +82,18 @@ public class InputAttribute : Attribute
     /// A value indicating whether this input can be serialized as part of the workflow instance,
     /// </summary>
     public bool IsSerializable { get; set; } = true;
+    
+    /// <summary>
+    /// Gets or sets a value indicating whether this input can contain secrets.
+    /// When set to true, the input will be treated as a secret and will be encrypted, masked or otherwise protected, depending on the configured policy.
+    /// </summary>
+    public bool CanContainSecrets { get; set; }
 
     /// <summary>
     /// A <see cref="IPropertyUIHandler"/> type that can be used to customize the UI for this property.
     /// </summary>
     public Type? UIHandler { get; set; }
-    
+
     /// <summary>
     /// A set of <see cref="IPropertyUIHandler"/> types that can be used to customize the UI for this property.
     /// </summary>

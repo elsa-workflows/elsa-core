@@ -1,15 +1,27 @@
-﻿using Elsa.EntityFrameworkCore.Common.Contracts;
-using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.Common.Entities;
+using Elsa.Common.Multitenancy;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.EntityFrameworkCore.Common;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// An optional base class to implement with some opinions on certain converters to install for certain DB providers.
 /// </summary>
 public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 {
+    private static readonly ISet<EntityState> ModifiedEntityStates = new HashSet<EntityState>
+    {
+        EntityState.Added,
+        EntityState.Modified,
+    };
+
+    protected IServiceProvider ServiceProvider { get; }
+    private readonly ElsaDbContextOptions? _elsaDbContextOptions;
+    public string? TenantId { get; set; }
+
     /// <summary>
     /// The default schema used by Elsa.
     /// </summary>
@@ -26,68 +38,70 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     /// <summary>
     /// Initializes a new instance of the <see cref="ElsaDbContextBase"/> class.
     /// </summary>
-    protected ElsaDbContextBase(DbContextOptions options) : base(options)
+    protected ElsaDbContextBase(DbContextOptions options, IServiceProvider serviceProvider) : base(options)
     {
-        var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
-
+        ServiceProvider = serviceProvider;
+        _elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
+        
         // ReSharper disable once VirtualMemberCallInConstructor
-        Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
+        Schema = !string.IsNullOrWhiteSpace(_elsaDbContextOptions?.SchemaName) ? _elsaDbContextOptions.SchemaName : ElsaSchema;
+
+        var tenantAccessor = serviceProvider.GetService<ITenantAccessor>();
+        var tenantId = tenantAccessor?.Tenant?.Id;
+
+        if (!string.IsNullOrWhiteSpace(tenantId))
+            TenantId = tenantId;
+    }
+
+    /// <inheritdoc/>
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await OnBeforeSavingAsync(cancellationToken);
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.EnableSensitiveDataLogging();
+#if NET9_0_OR_GREATER
+        optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+#endif
     }
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        if (!string.IsNullOrWhiteSpace(Schema))
+        if (!string.IsNullOrWhiteSpace(Schema)) 
+            modelBuilder.HasDefaultSchema(Schema);
+
+        var additionalConfigurations = _elsaDbContextOptions?.GetModelConfigurations(this);
+        
+        additionalConfigurations?.Invoke(modelBuilder);
+
+        var entityTypeHandlers = ServiceProvider.GetServices<IEntityModelCreatingHandler>().ToList();
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
         {
-            if (!Database.IsSqlite())
-                modelBuilder.HasDefaultSchema(Schema);
+            foreach (var handler in entityTypeHandlers) 
+                handler.Handle(this, modelBuilder, entityType);
         }
-
-        ApplyEntityConfigurations(modelBuilder);
-
-        if (Database.IsSqlite()) SetupForSqlite(modelBuilder);
-        if (Database.IsOracle()) SetupForOracle(modelBuilder);
     }
 
-    /// <summary>
-    /// Override this method to apply entity configurations.
-    /// </summary>
-    protected virtual void ApplyEntityConfigurations(ModelBuilder modelBuilder)
+    private async Task OnBeforeSavingAsync(CancellationToken cancellationToken)
     {
-    }
-
-    /// <summary>
-    /// Override this method to apply entity configurations.
-    /// </summary>
-    protected virtual void Configure(ModelBuilder modelBuilder)
-    {
-    }
-
-    /// <summary>
-    /// Override this method to apply entity configurations for the SQLite provider.
-    /// </summary>
-    protected virtual void SetupForSqlite(ModelBuilder modelBuilder)
-    {
-        // SQLite does not have proper support for DateTimeOffset via Entity Framework Core, see the limitations
-        // here: https://docs.microsoft.com/en-us/ef/core/providers/sqlite/limitations#query-limitations
-        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        var handlers = ServiceProvider.GetServices<IEntitySavingHandler>().ToList();
+        foreach (var entry in ChangeTracker.Entries().Where(IsModifiedEntity))
         {
-            var properties = entityType.ClrType.GetProperties().Where(p => p.PropertyType == typeof(DateTimeOffset) || p.PropertyType == typeof(DateTimeOffset?));
-
-            foreach (var property in properties)
-            {
-                modelBuilder
-                    .Entity(entityType.Name)
-                    .Property(property.Name)
-                    .HasConversion(new DateTimeOffsetToStringConverter());
-            }
+            foreach (var handler in handlers)
+                await handler.HandleAsync(this, entry, cancellationToken);
         }
     }
 
     /// <summary>
-    /// Override this method to apply entity configurations for the Oracle provider.
+    /// Determine if an entity was modified.
     /// </summary>
-    protected virtual void SetupForOracle(ModelBuilder modelBuilder)
+    private bool IsModifiedEntity(EntityEntry entityEntry)
     {
+        return ModifiedEntityStates.Contains(entityEntry.State) && entityEntry.Entity is Entity;
     }
 }

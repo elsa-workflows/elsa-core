@@ -4,7 +4,7 @@ using NuGet.Packaging;
 
 namespace Elsa.DropIns.Contexts;
 
-internal class NuGetPackageAssemblyLoadContext : AssemblyLoadContext
+internal sealed class NuGetPackageAssemblyLoadContext : AssemblyLoadContext
 {
     private readonly Dictionary<string, Assembly> _loadedAssemblies = new Dictionary<string, Assembly>();
 
@@ -12,7 +12,7 @@ internal class NuGetPackageAssemblyLoadContext : AssemblyLoadContext
     {
         var packageReader = new PackageArchiveReader(nugetPackagePath);
 
-        foreach (var dllFile in packageReader.GetFiles().Where(fileName => fileName.EndsWith(".dll")))
+        foreach (var dllFile in packageReader.GetFiles().Where(fileName => fileName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)))
         {
             using var dllStream = packageReader.GetStream(dllFile);
             using var memoryStream = new MemoryStream();
@@ -22,10 +22,12 @@ internal class NuGetPackageAssemblyLoadContext : AssemblyLoadContext
 
             _loadedAssemblies[assembly.FullName!] = assembly;
         }
+        //Closes the package reader, closing the .nupkg file
+        packageReader.Dispose();
     }
 
     protected override Assembly? Load(AssemblyName assemblyName)
     {
-        return _loadedAssemblies.TryGetValue(assemblyName.FullName, out var assembly) ? assembly : null;
+        return _loadedAssemblies.GetValueOrDefault(assemblyName.FullName);
     }
 }

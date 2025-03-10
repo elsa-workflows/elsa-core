@@ -1,6 +1,4 @@
 using Elsa.Common.Models;
-using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
@@ -21,30 +19,30 @@ public class WorkflowDefinitionService(
         var materializer = workflowMaterializers.FirstOrDefault(x => x.Name == definition.MaterializerName);
 
         if (materializer == null)
-            throw new Exception("Provider not found");
+            throw new("Provider not found");
 
         var workflow = await materializer.MaterializeAsync(definition, cancellationToken);
         return await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    public Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter
-        {
-            DefinitionId = definitionId,
-            VersionOptions = versionOptions
-        };
-        return await workflowDefinitionStore.FindAsync(filter, cancellationToken);
+        var handle = WorkflowDefinitionHandle.ByDefinitionId(definitionId, versionOptions);
+        return FindWorkflowDefinitionAsync(handle, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionVersionId, CancellationToken cancellationToken = default)
+    public Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionVersionId, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter
-        {
-            Id = definitionVersionId
-        };
+        var handle = WorkflowDefinitionHandle.ByDefinitionVersionId(definitionVersionId);
+        return FindWorkflowDefinitionAsync(handle, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionHandle handle, CancellationToken cancellationToken = default)
+    {
+        var filter = handle.ToFilter();
         return await workflowDefinitionStore.FindAsync(filter, cancellationToken);
     }
 
@@ -69,6 +67,17 @@ public class WorkflowDefinitionService(
     public async Task<WorkflowGraph?> FindWorkflowGraphAsync(string definitionVersionId, CancellationToken cancellationToken = default)
     {
         var definition = await FindWorkflowDefinitionAsync(definitionVersionId, cancellationToken);
+
+        if (definition == null)
+            return null;
+
+        return await MaterializeWorkflowAsync(definition, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkflowGraph?> FindWorkflowGraphAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken = default)
+    {
+        var definition = await FindWorkflowDefinitionAsync(definitionHandle, cancellationToken);
 
         if (definition == null)
             return null;

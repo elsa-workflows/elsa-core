@@ -5,7 +5,7 @@ using static System.Int32;
 namespace Elsa.Dapper.Migrations.Identity;
 
 /// <inheritdoc />
-[Migration(30001, "Elsa:Identity:Initial")]
+[Migration(30001, "Elsa:Identity:V3.0")]
 [PublicAPI]
 public class Initial : Migration
 {

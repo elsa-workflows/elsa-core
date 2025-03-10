@@ -1,11 +1,10 @@
 using System.Diagnostics;
 using System.Text.Json;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.OpenTelemetry.Helpers;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
@@ -40,6 +39,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         span.SetTag("workflowDefinition.version", workflow.Identity.Version);
         span.SetTag("workflowDefinition.name", workflow.WorkflowMetadata.Name);
         span.SetTag("workflowExecution.startTimeUtc", span.StartTimeUtc);
+        span.SetTag("tenantId", workflow.Identity.TenantId);
         
         if(context.TriggerActivityId != null)
         {
@@ -98,6 +98,8 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
 [UsedImplicitly]
 public static class OpenTelemetryWorkflowExecutionMiddlewareExtensions
 {
+    /// <summary>
     /// Installs the <see cref="OpenTelemetryTracingWorkflowExecutionMiddleware"/> component in the workflow execution pipeline.
+    /// </summary>
     public static IWorkflowExecutionPipelineBuilder UseWorkflowExecutionTracing(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.Insert<OpenTelemetryTracingWorkflowExecutionMiddleware>(0);
 }

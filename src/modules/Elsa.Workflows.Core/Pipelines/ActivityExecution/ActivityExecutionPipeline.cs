@@ -1,4 +1,3 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Middleware.Activities;
 
 namespace Elsa.Workflows.Pipelines.ActivityExecution;
@@ -34,6 +33,7 @@ public class ActivityExecutionPipeline : IActivityExecutionPipeline
     public async Task ExecuteAsync(ActivityExecutionContext context) => await Pipeline(context);
         
     private ActivityMiddlewareDelegate CreateDefaultPipeline() => Setup(x => x
+        .UseLogging()
         .UseExceptionHandling()
         .UseExecutionLogging()
         .UseNotifications()

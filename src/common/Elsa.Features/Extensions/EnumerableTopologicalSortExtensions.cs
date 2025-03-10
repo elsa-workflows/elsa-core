@@ -23,10 +23,8 @@ public static class EnumerableTopologicalSortExtensions
 
     private static void Visit<T>(T item, ISet<T> visited, ICollection<T> sorted, Func<T, IEnumerable<T>> dependencies, bool throwOnCycle)
     {
-        if (!visited.Contains(item))
+        if (visited.Add(item))
         {
-            visited.Add(item);
-
             foreach (var dep in dependencies(item))
                 Visit(dep, visited, sorted, dependencies, throwOnCycle);
 

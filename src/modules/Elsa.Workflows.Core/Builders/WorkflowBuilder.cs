@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 
@@ -15,6 +14,9 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
 
     /// <inheritdoc />
     public string? DefinitionId { get; set; }
+
+    /// <inheritdoc />
+    public string? TenantId { get; set; }
 
     /// <inheritdoc />
     public int Version { get; set; } = 1;
@@ -59,6 +61,13 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
     public IWorkflowBuilder WithDefinitionId(string definitionId)
     {
         DefinitionId = definitionId;
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IWorkflowBuilder WithTenantId(string tenantId)
+    {
+        TenantId = tenantId;
         return this;
     }
 
@@ -233,10 +242,11 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
     /// <inheritdoc />
     public async Task<Workflow> BuildWorkflowAsync(CancellationToken cancellationToken = default)
     {
-        var definitionId = DefinitionId ?? identityGenerator.GenerateId();
-        var id = Id ?? identityGenerator.GenerateId();
+        var definitionId = string.IsNullOrEmpty(DefinitionId) ? string.Empty : DefinitionId;
+        var id = string.IsNullOrEmpty(Id) ? string.Empty : Id;
+        var tenantId = string.IsNullOrEmpty(TenantId) ? null : TenantId;
         var root = Root ?? new Sequence();
-        var identity = new WorkflowIdentity(definitionId, Version, id);
+        var identity = new WorkflowIdentity(definitionId, Version, id, tenantId);
         var publication = WorkflowPublication.LatestAndPublished;
         var name = string.IsNullOrEmpty(Name) ? definitionId : Name;
         var workflowMetadata = new WorkflowMetadata(name, Description);

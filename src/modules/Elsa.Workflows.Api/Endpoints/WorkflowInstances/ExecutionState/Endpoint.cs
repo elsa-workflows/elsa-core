@@ -1,11 +1,13 @@
 using Elsa.Abstractions;
 using Elsa.Extensions;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.ExecutionState;
 
+/// <summary>
 /// Returns the execution state of the specified workflow instance.
+/// </summary>
 [PublicAPI]
 internal class ExecutionState(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Response>
 {

@@ -1,13 +1,12 @@
 using Elsa.Caching;
 using Elsa.Http.Bookmarks;
-using Elsa.Http.Contracts;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Helpers;
 
 namespace Elsa.Http.Services;
 
 /// <inheritdoc />
-public class HttpWorkflowsCacheManager(ICacheManager cache, IBookmarkHasher bookmarkHasher) : IHttpWorkflowsCacheManager
+public class HttpWorkflowsCacheManager(ICacheManager cache, IHasher bookmarkHasher) : IHttpWorkflowsCacheManager
 {
     /// <inheritdoc />
     public ICacheManager Cache => cache;

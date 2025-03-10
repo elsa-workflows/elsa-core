@@ -1,8 +1,6 @@
 using System.Security.Cryptography;
 using Elsa.Extensions;
-using Elsa.Http.Contracts;
 using Elsa.Http.Exceptions;
-using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Services;
 using Elsa.Workflows;

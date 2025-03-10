@@ -1,24 +1,20 @@
 using Elsa.Common.Models;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Filters;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.ImplicitJoins;
 
 public class ParallelJoinCompletesTests
 {
-    private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
 
     public ParallelJoinCompletesTests(ITestOutputHelper testOutputHelper)
     {
         _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
 
     [Fact(DisplayName = "The ParallelForEach activity completes when its Body contains a Join activity")]

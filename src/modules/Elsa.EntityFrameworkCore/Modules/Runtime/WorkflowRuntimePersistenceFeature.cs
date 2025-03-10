@@ -1,6 +1,3 @@
-using Elsa.EntityFrameworkCore.Common;
-using Elsa.EntityFrameworkCore.Common.Contracts;
-using Elsa.EntityFrameworkCore.Handlers;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.KeyValues.Entities;
@@ -15,11 +12,8 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 /// Configures the default workflow runtime to use EF Core persistence providers.
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
-public class EFCoreWorkflowRuntimePersistenceFeature(IModule module) : PersistenceFeatureBase<RuntimeElsaDbContext>(module)
+public class EFCoreWorkflowRuntimePersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreWorkflowRuntimePersistenceFeature, RuntimeElsaDbContext>(module)
 {
-    /// Delegate for determining the exception handler.
-    public Func<IServiceProvider, IDbExceptionHandler<RuntimeElsaDbContext>> DbExceptionHandler { get; set; } = _ => new RethrowDbExceptionHandler(); 
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -31,7 +25,7 @@ public class EFCoreWorkflowRuntimePersistenceFeature(IModule module) : Persisten
         {
             feature.TriggerStore = sp => sp.GetRequiredService<EFCoreTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<EFCoreBookmarkStore>();
-            feature.WorkflowInboxStore = sp => sp.GetRequiredService<EFCoreWorkflowInboxMessageStore>();
+            feature.BookmarkQueueStore = sp => sp.GetRequiredService<EFBookmarkQueueStore>();
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<EFCoreWorkflowExecutionLogStore>();
             feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<EFCoreActivityExecutionStore>();
         });
@@ -41,12 +35,9 @@ public class EFCoreWorkflowRuntimePersistenceFeature(IModule module) : Persisten
     public override void Apply()
     {
         base.Apply();
-        
-        Services.AddScoped(DbExceptionHandler);
-
         AddEntityStore<StoredTrigger, EFCoreTriggerStore>();
         AddStore<StoredBookmark, EFCoreBookmarkStore>();
-        AddEntityStore<WorkflowInboxMessage, EFCoreWorkflowInboxMessageStore>();
+        AddStore<BookmarkQueueItem, EFBookmarkQueueStore>();
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
         AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionStore>();
         AddStore<SerializedKeyValuePair, EFCoreKeyValueStore>();

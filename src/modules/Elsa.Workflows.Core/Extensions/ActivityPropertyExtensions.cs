@@ -1,5 +1,4 @@
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -9,9 +8,10 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class ActivityPropertyExtensions
 {
-    private static readonly string[] CanStartWorkflowPropertyName = {"canStartWorkflow", "CanStartWorkflow", };
-    private static readonly string[] RunAsynchronouslyPropertyName = {"runAsynchronously", "RunAsynchronously" };
-    private static readonly string[] SourcePropertyName = {"source", "Source"};
+    private static readonly string[] CanStartWorkflowPropertyName = ["canStartWorkflow", "CanStartWorkflow"];
+    private static readonly string[] RunAsynchronouslyPropertyName = ["runAsynchronously", "RunAsynchronously"];
+    private static readonly string[] SourcePropertyName = ["source", "Source"];
+    private static readonly string[] CommitStrategyName = ["commitStrategyName", "CommitStrategyName"];
 
     /// <summary>
     /// Gets a flag indicating whether this activity can be used for starting a workflow.
@@ -49,6 +49,23 @@ public static class ActivityPropertyExtensions
     public static void SetSource(this IActivity activity, string value) => activity.CustomProperties[SourcePropertyName[0]] = value;
 
     /// <summary>
+    /// Gets the commit state behavior for the specified activity.
+    /// </summary>
+    public static string? GetCommitStrategy(this IActivity activity) => activity.CustomProperties.GetValueOrDefault<string?>(CommitStrategyName, () => null);
+
+    /// <summary>
+    /// Sets the commit state behavior for the specified activity.
+    /// </summary>
+    public static TActivity SetCommitStrategy<TActivity>(this TActivity activity, string? name) where TActivity : IActivity
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            activity.CustomProperties.Remove(CommitStrategyName[0]);
+        else
+            activity.CustomProperties[CommitStrategyName[0]] = name;
+        return activity;
+    }
+
+    /// <summary>
     /// Sets the source file and line number where this activity was instantiated, if any.
     /// </summary>
     public static void SetSource(this IActivity activity, string? sourceFile, int? lineNumber)
@@ -59,22 +76,22 @@ public static class ActivityPropertyExtensions
         var source = $"{Path.GetFileName(sourceFile)}:{lineNumber}";
         activity.SetSource(source);
     }
-    
+
     /// <summary>
     /// Gets the display text for the specified activity.
     /// </summary>
-    public static string? GetDisplayText(this IActivity activity) => activity.Metadata.TryGetValue("displayText", out var value) ? value.ToString() : default;
-    
+    public static string? GetDisplayText(this IActivity activity) => activity.Metadata.TryGetValue("displayText", out var value) ? value.ToString() : null;
+
     /// <summary>
     /// Sets the display text for the specified activity.
     /// </summary>
     public static void SetDisplayText(this IActivity activity, string value) => activity.Metadata["displayText"] = value;
-    
+
     /// <summary>
     /// Gets the description for the specified activity.
     /// </summary>
-    public static string? GetDescription(this IActivity activity) => activity.Metadata.TryGetValue("description", out var value) ? value.ToString() : default;
-    
+    public static string? GetDescription(this IActivity activity) => activity.Metadata.TryGetValue("description", out var value) ? value.ToString() : null;
+
     /// <summary>
     /// Sets the description for the specified activity.
     /// </summary>

@@ -1,13 +1,11 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptors.List;
 
 [PublicAPI]
-internal class List(IActivityRegistry registry, IActivityRegistryPopulator registryPopulator, WorkflowDefinitionActivityProvider workflowDefinitionActivityProvider) : ElsaEndpointWithoutRequest<Response>
+internal class List(IActivityRegistry registry, IActivityRegistryPopulator registryPopulator) : ElsaEndpointWithoutRequest<Response>
 {
     public override void Configure()
     {

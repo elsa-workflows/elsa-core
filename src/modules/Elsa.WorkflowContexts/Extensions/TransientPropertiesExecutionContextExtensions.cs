@@ -6,7 +6,9 @@ using JetBrains.Annotations;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
+/// <summary>
 /// Adds extension methods to <see cref="WorkflowExecutionContext"/>.
+/// </summary>
 [PublicAPI]
 public static class TransientPropertiesExecutionContextExtensions
 {

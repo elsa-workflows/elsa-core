@@ -4,7 +4,7 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Represents a store of workflow instances.
@@ -138,6 +138,20 @@ public interface IWorkflowInstanceStore
     /// <param name="instance">The workflow instance.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Adds the specified <see cref="WorkflowInstance"/> in the persistence store.
+    /// </summary>
+    /// <param name="instance">The workflow instance.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Updates the specified <see cref="WorkflowInstance"/> in the persistence store.
+    /// </summary>
+    /// <param name="instance">The workflow instance.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Adds or updates the specified set of <see cref="WorkflowInstance"/> objects in the persistence store.
@@ -156,4 +170,12 @@ public interface IWorkflowInstanceStore
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The number of deleted workflow instances.</returns>
     ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates the "LastUpdated" timestamp of a workflow instance.
+    /// </summary>
+    /// <param name="workflowInstanceId">The unique identifier of the workflow instance.</param>
+    /// <param name="value">The new timestamp value to set.</param>
+    /// <param name="cancellationToken">The cancellation token to observe during the operation.</param>
+    Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default);
 }

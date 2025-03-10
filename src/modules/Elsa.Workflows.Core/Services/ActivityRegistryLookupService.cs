@@ -1,7 +1,6 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Represents a service used to lookup activity descriptors in the activity registry.

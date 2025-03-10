@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// A storage driver that stores objects in memory.
@@ -10,8 +9,10 @@ namespace Elsa.Workflows.Services;
 public class MemoryStorageDriver : IStorageDriver
 {
     private readonly IDictionary<string, object> _dictionary = new Dictionary<string, object>();
-
+    /// <inheritdoc />
     public double Priority => 0;
+    /// <inheritdoc />
+    public IEnumerable<string> Tags => [];
 
     /// <inheritdoc />
     public ValueTask WriteAsync(string id, object value, StorageDriverContext context)

@@ -1,11 +1,13 @@
 using AspNetCore.Authentication.ApiKey;
 using Elsa.Common.Features;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
+using Elsa.Identity.Multitenancy;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
@@ -15,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Identity.Features;
 
 /// <summary>
-/// Provides identity feature to authenticate & authorize API requests.
+/// Provides identity feature to authenticate &amp; authorize API requests.
 /// </summary>
 [DependsOn(typeof(SystemClockFeature))]
 [PublicAPI]
@@ -25,11 +27,6 @@ public class IdentityFeature : FeatureBase
     public IdentityFeature(IModule module) : base(module)
     {
     }
-
-    /// <summary>
-    /// Gets or sets the <see cref="IdentityOptions"/>.
-    /// </summary>
-    public Action<IdentityOptions> IdentityOptions { get; set; } = _ => { };
 
     /// <summary>
     /// Gets or sets the <see cref="IdentityTokenOptions"/>.
@@ -44,17 +41,17 @@ public class IdentityFeature : FeatureBase
         options.Realm = "Elsa Workflows";
         options.KeyName = "ApiKey";
     };
-    
+
     /// <summary>
     /// A delegate that configures the <see cref="UsersOptions"/>.
     /// </summary>
     public Action<UsersOptions> UsersOptions { get; set; } = _ => { };
-    
+
     /// <summary>
     /// A delegate that configures the <see cref="ApplicationsOptions"/>.
     /// </summary>
     public Action<ApplicationsOptions> ApplicationsOptions { get; set; } = _ => { };
-    
+
     /// <summary>
     /// A delegate that configures the <see cref="RolesOptions"/>.
     /// </summary>
@@ -79,12 +76,12 @@ public class IdentityFeature : FeatureBase
     /// A delegate that creates an instance of an implementation of <see cref="IUserProvider"/>.
     /// </summary>
     public Func<IServiceProvider, IUserProvider> UserProvider { get; set; } = sp => sp.GetRequiredService<StoreBasedUserProvider>();
-    
+
     /// <summary>
     /// A delegate that creates an instance of an implementation of <see cref="IApplicationProvider"/>.
     /// </summary>
     public Func<IServiceProvider, IApplicationProvider> ApplicationProvider { get; set; } = sp => sp.GetRequiredService<StoreBasedApplicationProvider>();
-    
+
     /// <summary>
     /// A delegate that creates an instance of an implementation of <see cref="IRoleProvider"/>.
     /// </summary>
@@ -150,7 +147,6 @@ public class IdentityFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.Configure(IdentityOptions);
         Services.Configure(TokenOptions);
         Services.Configure(ApiKeyDefaults.AuthenticationScheme, ApiKeyOptions);
         Services.Configure(UsersOptions);
@@ -168,17 +164,22 @@ public class IdentityFeature : FeatureBase
             .AddScoped<AdminUserProvider>()
             .AddScoped<StoreBasedUserProvider>()
             .AddScoped<ConfigurationBasedUserProvider>();
-        
+
         // Application providers.
         Services
             .AddScoped<StoreBasedApplicationProvider>()
             .AddScoped<ConfigurationBasedApplicationProvider>();
-        
+
         // Role providers.
         Services
             .AddScoped<AdminRoleProvider>()
             .AddScoped<StoreBasedRoleProvider>()
             .AddScoped<ConfigurationBasedRoleProvider>();
+
+        // Tenant resolution strategies.
+        Services
+            .AddScoped<ITenantResolver, ClaimsTenantResolver>()
+            .AddScoped<ITenantResolver, CurrentUserTenantResolver>();
 
         // Services.
         Services
@@ -198,6 +199,7 @@ public class IdentityFeature : FeatureBase
             .AddScoped<ISecretGenerator, DefaultSecretGenerator>()
             .AddScoped<IRandomStringGenerator, DefaultRandomStringGenerator>()
             .AddScoped<DefaultApiKeyGeneratorAndParser>()
+            .AddHttpContextAccessor()
             ;
     }
 }

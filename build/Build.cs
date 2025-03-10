@@ -10,7 +10,6 @@ using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Coverlet;
 using Nuke.Common.Tools.DotNet;
-using Nuke.Common.Tools.SonarScanner;
 using Nuke.Common.Utilities.Collections;
 using Nuke.Components;
 using Serilog;
@@ -60,10 +59,12 @@ partial class Build : NukeBuild, ITest, IPack
         {
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => x.DeleteDirectory());
             ((IHazArtifacts)this).ArtifactsDirectory.CreateOrCleanDirectory();
-            
+
             TestResultDirectory.CreateOrCleanDirectory();
         });
-    
+
+    public Configure<DotNetRestoreSettings> RestoreSettings => _ => _
+        .SetVerbosity(DotNetVerbosity.quiet);
 
     public Configure<DotNetBuildSettings> CompileSettings => _ => _
         // ensure we don't generate too much output in CI run
@@ -75,11 +76,12 @@ partial class Build : NukeBuild, ITest, IPack
         ((IHazSolution)this).Solution.AllProjects.Where(x => x.Name.EndsWith("Tests"));
 
     public Configure<DotNetTestSettings, Project> TestProjectSettings => (testSettings, project) => testSettings
-        .When(GitHubActions.Instance is not null, settings => settings.AddLoggers("GitHubActions;report-warnings=false"))
-        .When(AnalyseCode, settings => settings.SetCoverletOutputFormat(CoverletOutputFormat.opencover))
-        .When(AnalyseCode, settings => settings.EnableCollectCoverage())
-        .When(AnalyseCode, settings => settings.SetResultsDirectory(TestResultDirectory))
-        .When(AnalyseCode, settings =>  settings.SetCoverletOutput($"{TestResultDirectory}/opencoverCoverage.xml"))
-        .When(AnalyseCode, settings =>  settings.SetProcessArgumentConfigurator(args => 
-            args.Add("--collect:\"XPlat Code Coverage;Format=opencover\"")));
+        .When(_ => GitHubActions.Instance is not null, settings => settings.AddLoggers("GitHubActions;report-warnings=false"))
+        .When(_ => AnalyseCode, settings => settings
+            .SetCoverletOutputFormat(CoverletOutputFormat.opencover)
+            .EnableCollectCoverage()
+            .SetResultsDirectory(TestResultDirectory)
+            .SetCoverletOutput($"{TestResultDirectory}/opencoverCoverage.xml")
+            .AddProcessAdditionalArguments("--collect:\"XPlat Code Coverage;Format=opencover\"")
+        );
 }

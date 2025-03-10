@@ -1,15 +1,14 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class WorkflowExecutionLogRecordExtractor(IIdentityGenerator identityGenerator) : ILogRecordExtractor<WorkflowExecutionLogRecord>
 {
     /// <inheritdoc />
-    public IEnumerable<WorkflowExecutionLogRecord> ExtractLogRecords(WorkflowExecutionContext context)
+    public Task<IEnumerable<WorkflowExecutionLogRecord>> ExtractLogRecordsAsync(WorkflowExecutionContext context)
     {
-        return context.ExecutionLog.Select(x => new WorkflowExecutionLogRecord
+        var records = context.ExecutionLog.Select(x => new WorkflowExecutionLogRecord
         {
             Id = identityGenerator.GenerateId(),
             ActivityInstanceId = x.ActivityInstanceId,
@@ -31,5 +30,7 @@ public class WorkflowExecutionLogRecordExtractor(IIdentityGenerator identityGene
             Timestamp = x.Timestamp,
             Sequence = x.Sequence
         });
+        
+        return Task.FromResult(records);
     }
 }

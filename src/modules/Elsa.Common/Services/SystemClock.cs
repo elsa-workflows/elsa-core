@@ -1,5 +1,3 @@
-using Elsa.Common.Contracts;
-
 namespace Elsa.Common.Services;
 
 /// <inheritdoc />

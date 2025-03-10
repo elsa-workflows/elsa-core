@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
         <Description>
             Provides EF Core migrations for Quartz.NET.
         </Description>
@@ -12,11 +13,6 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
         <PackageReference Include="Quartz.Serialization.Json" />
-    </ItemGroup>
-    
-    <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
-    <ItemGroup>
-        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,21 +1,18 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStorePopulator
 {
-    private readonly Func<IEnumerable<IWorkflowProvider>> _workflowDefinitionProviders;
+    private readonly Func<IEnumerable<IWorkflowsProvider>> _workflowDefinitionProviders;
     private readonly ITriggerIndexer _triggerIndexer;
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IActivitySerializer _activitySerializer;
@@ -29,7 +26,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     /// Initializes a new instance of the <see cref="DefaultWorkflowDefinitionStorePopulator"/> class.
     /// </summary>
     public DefaultWorkflowDefinitionStorePopulator(
-        Func<IEnumerable<IWorkflowProvider>> workflowDefinitionProviders,
+        Func<IEnumerable<IWorkflowsProvider>> workflowDefinitionProviders,
         ITriggerIndexer triggerIndexer,
         IWorkflowDefinitionStore workflowDefinitionStore,
         IActivitySerializer activitySerializer,
@@ -158,7 +155,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         {
             DefinitionId = workflow.Identity.DefinitionId,
             Id = workflow.Identity.Id,
-            Version = workflow.Identity.Version
+            Version = workflow.Identity.Version,
+            TenantId = workflow.Identity.TenantId,
         };
 
         workflowDefinition.Description = workflow.WorkflowMetadata.Description;
