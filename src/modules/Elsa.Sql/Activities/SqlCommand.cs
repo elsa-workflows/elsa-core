@@ -44,6 +44,7 @@ public class SqlCommand : Activity
     /// </summary>
     [Input(
         Description = "Command to run against the database.",
+        DefaultSyntax = "Sql",
         UIHint = InputUIHints.CodeEditor,
         UIHandler = typeof(SqlCodeOptionsProvider)
     )]
