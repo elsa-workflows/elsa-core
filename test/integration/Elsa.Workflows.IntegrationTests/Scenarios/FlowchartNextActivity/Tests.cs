@@ -242,5 +242,74 @@ public class FlowchartNextActivityTests
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
         Assert.Equal(new[] { "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D"}, lines);
+    
+    }
+
+    [Theory(DisplayName = "Flowchart with a Join activity executed multiple times, bug 6479")]
+    [InlineData(FlowJoinMode.WaitAll)]
+    [InlineData(FlowJoinMode.WaitAny)]
+    public async Task WaitLoopBug6479Test(FlowJoinMode joinMode)
+    {
+        var workflow = new TestWorkflow(workflowBuilder =>
+        {
+            var loopVariable = new Variable<int>("LoopCount", 0);
+
+            var start = new Start();
+            var loopbackSwitch = new FlowSwitch()
+            {
+                Cases = {
+                    new FlowSwitchCase("DoLoopback", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
+                },
+                Mode = new(SwitchMode.MatchFirst)
+            };
+            var a = new WriteLine("A");
+            var incrementLoop = new SetVariable()
+            {
+                Variable = loopVariable,
+                Value = new Models.Input<object?>(new Expression("JavaScript", "getVariable('LoopCount') + 1"))
+            };
+            var join = new FlowJoin()
+            {
+                Mode = new(joinMode)
+            };
+            var b = new WriteLine("B");
+            var end = new End();
+
+
+            workflowBuilder.Root = new Flowchart
+            {
+                Variables =
+                    {
+                        loopVariable
+                    },
+                Activities =
+                    {
+                        start,
+                        loopbackSwitch,
+                        a,
+                        incrementLoop,
+                        join,
+                        b,
+                        end
+                    },
+                Connections =
+                {
+                    new(start, loopbackSwitch),
+                    new(new Endpoint(loopbackSwitch, "DoLoopback"), new Endpoint(a)),
+                    new(new Endpoint(loopbackSwitch, "DoLoopback"), new Endpoint(incrementLoop)),
+                    new(new Endpoint(loopbackSwitch, "Default"), new Endpoint(b)),
+                    new(a, join),
+                    new(incrementLoop, join),
+                    new(join, loopbackSwitch),
+                    new(b, end),
+                }
+            };
+        });
+
+        await _services.PopulateRegistriesAsync();
+        var result = await _workflowRunner.RunAsync(workflow);
+        var lines = _capturingTextWriter.Lines.ToList();
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        Assert.Equal(new[] { "A", "A", "A", "B" }, lines);
     }
 }
