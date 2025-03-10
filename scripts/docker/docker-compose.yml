@@ -1,5 +1,4 @@
-﻿version: '3.7'
-services:
+﻿services:
 
   consul-agent-1: &consul-agent
     image: consul:latest
@@ -30,14 +29,15 @@ services:
     command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0"
   
   sqlserver:
-    image: "mcr.microsoft.com/mssql/server:2019-latest"
+    image: mcr.microsoft.com/mssql/server:2022-latest
     ports:
-      - "3433:1433"
+      - 1433:1433
     environment:
-      SA_PASSWORD: "Elsa2022!"
+      MSSQL_SA_PASSWORD: "Elsa2022!"
       ACCEPT_EULA: "Y"
     volumes:
-      - c:\data\docker\sqlserver2019:/var/opt/mssql/data
+      - sqlserver_data:/var/opt/mssql
+    restart: unless-stopped
   
   postgres:
     image: postgres:13.3-alpine
@@ -123,5 +123,6 @@ networks:
 volumes:
   mongodb_data:
   pgdata-3:
+  sqlserver_data:
   elasticsearch-data:
     driver: local
