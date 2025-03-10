@@ -11,6 +11,12 @@ namespace Elsa.MongoDb.Options;
 public class MongoDbOptions
 {
     /// <summary>
+    /// The connection string or name to identify the MongoDb server or cluster.
+    /// It can be a complete connection string or a name defined in a configuration file.
+    /// </summary>
+    public string? ConnectionStringOrName { get; set; }
+    
+    /// <summary>
     /// The database name to use when connecting to the MongoDb client.
     /// </summary>
     public string? DatabaseName { get; set; }

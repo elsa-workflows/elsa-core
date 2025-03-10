@@ -1,5 +1,5 @@
 using Elsa.Abstractions;
-using Elsa.Common.Entities;
+using Elsa.Framework.Entities;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;

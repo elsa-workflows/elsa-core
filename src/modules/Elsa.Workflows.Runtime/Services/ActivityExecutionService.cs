@@ -1,4 +1,4 @@
-using Elsa.Common.Entities;
+using Elsa.Framework.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 

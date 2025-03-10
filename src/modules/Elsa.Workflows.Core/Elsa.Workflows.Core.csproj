@@ -23,6 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\common\Elsa.Framework\Elsa.Framework.csproj" />
         <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
         <ProjectReference Include="..\Elsa.Expressions\Elsa.Expressions.csproj" />
     </ItemGroup>

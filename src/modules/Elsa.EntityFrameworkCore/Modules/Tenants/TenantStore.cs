@@ -1,6 +1,7 @@
-using Elsa.Common.Multitenancy;
+using Elsa.Framework.Tenants;
 using Elsa.Tenants;
 using JetBrains.Annotations;
+using Tenant = Elsa.Common.Multitenancy.Tenant;
 
 namespace Elsa.EntityFrameworkCore.Modules.Tenants;
 

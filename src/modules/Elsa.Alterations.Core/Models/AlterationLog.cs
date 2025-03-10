@@ -7,19 +7,10 @@ namespace Elsa.Alterations.Core.Models;
 /// <summary>
 /// Represents a log of alterations.
 /// </summary>
-public class AlterationLog 
+public class AlterationLog(ISystemClock systemClock)
 {
-    private readonly ISystemClock _systemClock;
     private readonly List<AlterationLogEntry> _logEntries = new();
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AlterationLog"/> class.
-    /// </summary>
-    public AlterationLog(ISystemClock systemClock)
-    {
-        _systemClock = systemClock;
-    }
-    
     /// <summary>
     /// Gets the log entries.
     /// </summary>
