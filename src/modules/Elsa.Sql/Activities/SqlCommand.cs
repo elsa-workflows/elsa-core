@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Sql.Contracts;
 using Elsa.Sql.UIHints;
@@ -18,7 +19,7 @@ public class SqlCommand : Activity
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
-    public SqlCommand([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base (source, line)
+    public SqlCommand([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
@@ -58,15 +59,28 @@ public class SqlCommand : Activity
         Description = "The number of rows affected.")]
     public Output<int?> Result { get; set; } = default!;
 
+
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        var command = Command.GetOrDefault(context);
+
+        // If no command was specified, there's nothing to do.
+        if (string.IsNullOrWhiteSpace(command))
+            return;
+
+        // Get and execute the SQL evaluator.
+        var evaluator = context.GetRequiredService<ISqlEvaluator>();
+        var evaluatedQuery = await evaluator.EvaluateAsync(command, context.ExpressionExecutionContext, new ExpressionEvaluatorOptions(), context.CancellationToken);
+
+        // Create client
         var factory = context.GetRequiredService<ISqlClientFactory>();
         var client = factory.CreateClient(Client.GetOrDefault(context), ConnectionString.GetOrDefault(context));
 
-        var result = await client.ExecuteCommandAsync(Command.GetOrDefault(context));
+        // Execute command
+        var result = await client.ExecuteCommandAsync(evaluatedQuery);
         context.Set(Result, result);
 
         await CompleteAsync(context);

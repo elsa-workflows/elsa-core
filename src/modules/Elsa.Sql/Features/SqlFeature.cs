@@ -4,7 +4,7 @@ using Elsa.Features.Services;
 using Elsa.Sql.Activities;
 using Elsa.Sql.Contracts;
 using Elsa.Sql.Factory;
-using Elsa.Sql.Implimentations;
+using Elsa.Sql.Providers;
 using Elsa.Sql.Services;
 using Elsa.Sql.UIHints;
 using Elsa.Workflows;
@@ -44,6 +44,7 @@ public class SqlFeature : FeatureBase
     public override void Apply()
     {
         Services
+            // Services
             .AddSingleton(provider =>
             {
                 ClientStore clientRegistry = new();
@@ -51,11 +52,12 @@ public class SqlFeature : FeatureBase
                 return clientRegistry;
             })
             .AddSingleton<ISqlClientFactory, SqlClientFactory>()
+            .AddScoped<ISqlEvaluator, SqlEvaluator>()
 
             // Providers
+            .AddExpressionDescriptorProvider<SqlExpressionDescriptorProvider>()
             .AddScoped<IPropertyUIHandler, SqlCodeOptionsProvider>()
             .AddScoped<IPropertyUIHandler, SqlClientsDropDownProvider>()
             .AddScoped<ISqlClientNamesProvider, SqlClientNamesProvider>();
-
     }
 }

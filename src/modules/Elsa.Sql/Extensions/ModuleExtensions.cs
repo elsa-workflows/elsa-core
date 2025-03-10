@@ -14,7 +14,7 @@ public static class ModuleExtensions
     /// <param name="configuration"></param>
     /// <param name="configure"></param>
     /// <returns></returns>
-    public static IModule UseSql(this IModule configuration, Action<SqlFeature>? configure= default)
+    public static IModule UseSql(this IModule configuration, Action<SqlFeature>? configure = default)
     {
         configuration.Configure(configure);
         return configuration;

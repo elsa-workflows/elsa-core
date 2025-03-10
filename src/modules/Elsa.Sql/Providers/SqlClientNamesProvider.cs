@@ -2,7 +2,7 @@
 using Elsa.Sql.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Sql.Implimentations;
+namespace Elsa.Sql.Providers;
 
 /// <summary>
 /// Returns registered client names
