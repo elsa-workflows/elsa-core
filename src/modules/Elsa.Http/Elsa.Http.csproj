@@ -8,16 +8,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentStorage" />
+        <PackageReference Include="FluentStorage"/>
+        <PackageReference Include="Microsoft.Extensions.Http.Resilience"/>
+        <PackageReference Include="Microsoft.Extensions.Resilience"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Liquid\Elsa.Liquid.csproj" />
-        <ProjectReference Include="..\Elsa.SasTokens\Elsa.SasTokens.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
-        <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj" />
+        <ProjectReference Include="..\Elsa.Liquid\Elsa.Liquid.csproj"/>
+        <ProjectReference Include="..\Elsa.SasTokens\Elsa.SasTokens.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
+        <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj"/>
     </ItemGroup>
 
 </Project>

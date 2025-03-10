@@ -66,7 +66,7 @@ public class ObsoleteWorkflowRuntime(
             TriggerActivityId = options?.TriggerActivityId
         };
         var response = await client.CreateAndRunInstanceAsync(createRequest, cancellationToken);
-        return new(response.WorkflowInstanceId, response.Status, response.SubStatus, response.Bookmarks, response.Incidents);
+        return new(response.WorkflowInstanceId, response.Status, response.SubStatus, response.Bookmarks, response.Incidents, null, null);
     }
 
     public async Task<ICollection<WorkflowExecutionResult>> StartWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions? options = null)
@@ -81,7 +81,7 @@ public class ObsoleteWorkflowRuntime(
             Input = options?.Input
         };
         var result = await stimulusSender.SendAsync(activityTypeName, bookmarkPayload, metadata, cancellationToken);
-        var results = result.WorkflowInstanceResponses.Select(x => new WorkflowExecutionResult(x.WorkflowInstanceId, x.Status, x.SubStatus, x.Bookmarks, x.Incidents)).ToList();
+        var results = result.WorkflowInstanceResponses.Select(x => new WorkflowExecutionResult(x.WorkflowInstanceId, x.Status, x.SubStatus, x.Bookmarks, x.Incidents, null, null)).ToList();
         return results;
     }
 
@@ -109,7 +109,7 @@ public class ObsoleteWorkflowRuntime(
 
         var response = await workflowClient.RunInstanceAsync(runWorkflowRequest, cancellationToken);
 
-        return new(response.WorkflowInstanceId, response.Status, response.SubStatus, response.Bookmarks, response.Incidents);
+        return new(response.WorkflowInstanceId, response.Status, response.SubStatus, response.Bookmarks, response.Incidents,null, null);
     }
 
     public async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions? options = null)
@@ -124,7 +124,7 @@ public class ObsoleteWorkflowRuntime(
             Input = options?.Input
         };
         var result = await stimulusSender.SendAsync(activityTypeName, bookmarkPayload, metadata, cancellationToken);
-        var results = result.WorkflowInstanceResponses.Select(x => new WorkflowExecutionResult(x.WorkflowInstanceId, x.Status, x.SubStatus, x.Bookmarks, x.Incidents)).ToList();
+        var results = result.WorkflowInstanceResponses.Select(x => new WorkflowExecutionResult(x.WorkflowInstanceId, x.Status, x.SubStatus, x.Bookmarks, x.Incidents, null, null)).ToList();
         return results;
     }
 
@@ -140,7 +140,7 @@ public class ObsoleteWorkflowRuntime(
             Input = options?.Input
         };
         var result = await stimulusSender.SendAsync(activityTypeName, bookmarkPayload, metadata, cancellationToken);
-        var results = result.WorkflowInstanceResponses.Select(x => new WorkflowExecutionResult(x.WorkflowInstanceId, x.Status, x.SubStatus, x.Bookmarks, x.Incidents)).ToList();
+        var results = result.WorkflowInstanceResponses.Select(x => new WorkflowExecutionResult(x.WorkflowInstanceId, x.Status, x.SubStatus, x.Bookmarks, x.Incidents, null, null)).ToList();
         return new(results);
     }
 

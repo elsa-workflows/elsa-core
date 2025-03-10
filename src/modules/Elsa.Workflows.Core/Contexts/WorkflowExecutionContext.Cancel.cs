@@ -24,7 +24,7 @@ public partial class WorkflowExecutionContext
         Bookmarks.Clear();
         _completionCallbackEntries.Clear();
 
-        if (Status != WorkflowStatus.Running && SubStatus != WorkflowSubStatus.Faulted)
+        if (!CanTransitionTo(WorkflowSubStatus.Cancelled))
             return;
 
         AddExecutionLogEntry("Workflow cancelled");

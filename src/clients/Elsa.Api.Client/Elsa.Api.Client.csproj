@@ -17,4 +17,8 @@
         <PackageReference Include="Refit.HttpClientFactory" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\modules\Elsa.Expressions\Elsa.Expressions.csproj" />
+    </ItemGroup>
+
 </Project>

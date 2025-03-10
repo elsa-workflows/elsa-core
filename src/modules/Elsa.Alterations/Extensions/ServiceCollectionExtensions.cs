@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddAlteration<ModifyVariable, ModifyVariableHandler>();
         services.AddAlteration<ScheduleActivity, ScheduleActivityHandler>();
         services.AddAlteration<CancelActivity, CancelActivityHandler>();
+        services.AddAlteration<Cancel, CancelHandler>();
         services.AddNotificationHandlersFrom<AlterationsFeature>();
         return services;
     }
