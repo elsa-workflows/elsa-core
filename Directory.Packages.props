@@ -19,6 +19,7 @@
     <PackageVersion Include="Azure.ResourceManager.ServiceBus" Version="1.1.0" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="Bogus" Version="35.6.1" />
+    <PackageVersion Include="CliWrap" Version="3.8.1" />
     <PackageVersion Include="ConfigureAwait.Fody" Version="3.3.2" PrivateAssets="All" />
     <PackageVersion Include="Confluent.Kafka" Version="2.8.0" />
     <PackageVersion Include="Confluent.SchemaRegistry.Serdes.Avro" Version="2.8.0" />
