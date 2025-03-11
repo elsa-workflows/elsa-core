@@ -71,6 +71,20 @@
     expose:
       - '3306'
 
+  citusdata:
+    image: citusdata/citus:13.0
+    container_name: citus_cluster
+    environment:
+      POSTGRES_USER: citus
+      POSTGRES_PASSWORD: citus_password
+      POSTGRES_DB: citus
+    ports:
+      - "9700:5432"  # Citus uses PostgreSQL default port; 9700 avoids conflicts with other Postgres services
+    volumes:
+      - citusdata_data:/var/lib/postgresql/data
+
+  # (Other volume and network definitions)
+
   redis:
     image: redis:latest
     ports:
@@ -116,7 +130,7 @@
     ports:
       - "4000:80"
       - "2525:25"
-  
+
 networks:
   consul:
 
@@ -124,5 +138,6 @@ volumes:
   mongodb_data:
   pgdata-3:
   sqlserver_data:
+  citusdata_data:
   elasticsearch-data:
     driver: local
