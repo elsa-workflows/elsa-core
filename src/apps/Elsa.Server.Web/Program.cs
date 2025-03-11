@@ -106,6 +106,8 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var sqlServerConnectionString = configuration.GetConnectionString("SqlServer")!;
 var postgresConnectionString = configuration.GetConnectionString("PostgreSql")!;
+var citusConnectionString = configuration.GetConnectionString("Citus")!;
+var yugabyteDbConnectionString = configuration.GetConnectionString("YugabyteDb")!;
 var oracleConnectionString = configuration.GetConnectionString("Oracle")!;
 var mySqlConnectionString = configuration.GetConnectionString("MySql")!;
 var cockroachDbConnectionString = configuration.GetConnectionString("CockroachDb")!;
@@ -151,7 +153,7 @@ services
                 dapper.DbConnectionProvider = sp =>
                 {
                     if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
-                        return new SqlServerDbConnectionProvider(sqlServerConnectionString!);
+                        return new SqlServerDbConnectionProvider(sqlServerConnectionString);
                     else
                         return new SqliteDbConnectionProvider(sqliteConnectionString);
                 };
@@ -204,15 +206,19 @@ services
                     identity.UseEntityFrameworkCore(ef =>
                     {
                         if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
-                            ef.UseSqlServer(sqlServerConnectionString!);
+                            ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
-                            ef.UsePostgreSql(postgresConnectionString!);
+                            ef.UsePostgreSql(postgresConnectionString);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Citus)
+                            ef.UsePostgreSql(citusConnectionString);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.YugabyteDb)
+                            ef.UsePostgreSql(yugabyteDbConnectionString, configure: dbContextOptions => dbContextOptions.With());
 #if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) 
                             ef.UseMySql(mySqlConnectionString);
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
-                            ef.UsePostgreSql(cockroachDbConnectionString!);
+                            ef.UsePostgreSql(cockroachDbConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
                             ef.UseOracle(oracleConnectionString, new()
                                 { SchemaName = "ELSA"});
@@ -248,15 +254,19 @@ services
                     management.UseEntityFrameworkCore(ef =>
                     {
                         if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
-                            ef.UseSqlServer(sqlServerConnectionString!);
+                            ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
-                            ef.UsePostgreSql(postgresConnectionString!);
+                            ef.UsePostgreSql(postgresConnectionString);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Citus)
+                            ef.UsePostgreSql(citusConnectionString);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.YugabyteDb)
+                            ef.UsePostgreSql(yugabyteDbConnectionString);
 #if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
                             ef.UseMySql(mySqlConnectionString);
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
-                            ef.UsePostgreSql(cockroachDbConnectionString!);
+                            ef.UsePostgreSql(cockroachDbConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
                             ef.UseOracle(oracleConnectionString, new()
                                 { SchemaName = "ELSA"});
@@ -299,7 +309,11 @@ services
                             ef.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(migrationsAssembly, connectionString, null, configure => configure.CommandTimeout(60000));
                         }
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
-                            ef.UsePostgreSql(postgresConnectionString!);
+                            ef.UsePostgreSql(postgresConnectionString);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Citus)
+                            ef.UsePostgreSql(citusConnectionString);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.YugabyteDb)
+                            ef.UsePostgreSql(yugabyteDbConnectionString);
 #if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
                             ef.UseMySql(mySqlConnectionString);
@@ -448,6 +462,10 @@ services
                             ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.Citus)
+                            ef.UsePostgreSql(citusConnectionString);
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.YugabyteDb)
+                            ef.UsePostgreSql(yugabyteDbConnectionString);
 #if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
                             ef.UseMySql(mySqlConnectionString);
@@ -540,7 +558,7 @@ services
                 proto.PersistenceProvider = _ =>
                 {
                     if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
-                        return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
+                        return new SqlServerProvider(sqlServerConnectionString, true, "", "proto_actor");
                     return new SqliteProvider(new(sqliteConnectionString));
                 };
 
@@ -641,6 +659,8 @@ services
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite) ef.UseSqlite(sqliteConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer) ef.UseSqlServer(sqlServerConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);
+                                if (sqlDatabaseProvider == SqlDatabaseProvider.Citus) ef.UsePostgreSql(citusConnectionString);
+                                if (sqlDatabaseProvider == SqlDatabaseProvider.YugabyteDb) ef.UsePostgreSql(yugabyteDbConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle) ef.UseOracle(oracleConnectionString, new()
                                     { SchemaName = "ELSA"});
 #if !NET9_0

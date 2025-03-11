@@ -103,7 +103,7 @@
         <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
         <PackageVersion Include="System.Data.SqlClient" Version="4.9.0" />
         <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
-        <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.6.0-preview-02" />
+        <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.6.0-preview-03" />
         <PackageVersion Include="System.Net.Http" Version="4.3.4" />
         <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
         <PackageVersion Include="Testcontainers" Version="4.1.0" />
@@ -116,7 +116,7 @@
         <PackageVersion Include="xunit.abstractions" Version="2.0.3" />
         <PackageVersion Include="xunit.extensibility.core" Version="2.9.3" />
         <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.1" />
-        <PackageVersion Include="Yarp.ReverseProxy" Version="2.2.0" />
+        <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
         <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="8.0.1" />
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
