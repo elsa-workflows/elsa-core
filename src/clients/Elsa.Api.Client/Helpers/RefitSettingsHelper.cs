@@ -15,7 +15,10 @@ public static class RefitSettingsHelper
     /// </summary>
     public static RefitSettings CreateRefitSettings(IServiceProvider serviceProvider, Action<IServiceProvider, JsonSerializerOptions>? configureJsonSerializerOptions = null)
     {
-        var settings = new RefitSettings { ContentSerializer = new SystemTextJsonContentSerializer(CreateJsonSerializerOptions(serviceProvider, configureJsonSerializerOptions)) };
+        var settings = new RefitSettings
+        {
+            ContentSerializer = new SystemTextJsonContentSerializer(CreateJsonSerializerOptions(serviceProvider, configureJsonSerializerOptions))
+        };
 
         return settings;
     }

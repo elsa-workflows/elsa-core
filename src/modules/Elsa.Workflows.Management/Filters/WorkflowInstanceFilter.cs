@@ -117,6 +117,11 @@ public class WorkflowInstanceFilter
     public ICollection<TimestampFilter>? TimestampFilters { get; set; }
 
     /// <summary>
+    /// Filter workflow instances by name.
+    /// </summary>
+    public List<string>? Names { get; set; }
+
+    /// <summary>
     /// Applies the filter to the specified query.
     /// </summary>
     [RequiresUnreferencedCode("The method uses reflection to create an expression tree.")]
@@ -134,6 +139,7 @@ public class WorkflowInstanceFilter
         if (filter.ParentWorkflowInstanceIds != null) query = query.Where(x => x.ParentWorkflowInstanceId != null && filter.ParentWorkflowInstanceIds.Contains(x.ParentWorkflowInstanceId));
         if (!string.IsNullOrWhiteSpace(filter.CorrelationId)) query = query.Where(x => x.CorrelationId == filter.CorrelationId);
         if (filter.CorrelationIds != null) query = query.Where(x => filter.CorrelationIds.Contains(x.CorrelationId!));
+        if (filter.Names != null) query = query.Where(x => filter.Names.Contains(x.Name!));
         if (filter.WorkflowStatus != null) query = query.Where(x => x.Status == filter.WorkflowStatus);
         if (filter.WorkflowSubStatus != null) query = query.Where(x => x.SubStatus == filter.WorkflowSubStatus);
         if (filter.WorkflowStatuses != null) query = query.Where(x => filter.WorkflowStatuses.Contains(x.Status));

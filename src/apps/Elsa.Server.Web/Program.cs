@@ -212,7 +212,7 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Citus)
                             ef.UsePostgreSql(citusConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.YugabyteDb)
-                            ef.UsePostgreSql(yugabyteDbConnectionString, configure: dbContextOptions => dbContextOptions.With());
+                            ef.UsePostgreSql(yugabyteDbConnectionString);
 #if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) 
                             ef.UseMySql(mySqlConnectionString);
