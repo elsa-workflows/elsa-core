@@ -15,12 +15,6 @@ public class DefaultBookmarkQueuePurger(IBookmarkQueueStore store, ISystemClock 
 {
     public async Task PurgeAsync(CancellationToken cancellationToken = default)
     {
-        if (!options.Value.IsEnabled)
-        {
-            logger.LogInformation("Purging bookmark queue is disabled");
-            return;
-        }
-        
         var currentPage = 0;
         var now = systemClock.UtcNow;
         var thresholdDate = now - options.Value.Ttl;

@@ -14,9 +14,4 @@ public class BookmarkQueuePurgeOptions
     /// The number of records to clean up per sweep.
     /// </summary>
     public int BatchSize { get; set; } = 1000;
-    
-    /// <summary>
-    /// Whether the bookmark queue purge is enabled.
-    /// </summary>
-    public bool IsEnabled { get; set; } = true;
 }

@@ -154,15 +154,6 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         Services.Configure<WorkflowInboxCleanupOptions>(options => { options.IsEnabled = false; });
         return this;
     }
-    
-    /// <summary>
-    /// Disables the purge bookmark queue recurring task.
-    /// </summary>
-    public WorkflowRuntimeFeature DisablePurgeBookmarkQueueRecurringTask()
-    {
-        Services.Configure<BookmarkQueuePurgeOptions>(options => { options.IsEnabled = false; });
-        return this;
-    }
 
     /// <summary>
     /// Register the specified workflow type.
