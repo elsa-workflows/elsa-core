@@ -312,7 +312,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddRecurringTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromMinutes(1))
             .AddRecurringTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10))
             .AddRecurringTask<RestartInterruptedWorkflowsTask>(TimeSpan.FromMinutes(5)) // Same default as the workflow liveness threshold.
-
+            
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
 
