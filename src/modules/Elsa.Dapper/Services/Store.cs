@@ -452,13 +452,13 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     public async Task<long> DeleteAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
         var query = dbConnectionProvider.CreateQuery().Delete(TableName);
+        filter(query);
 
         // If there are no conditions, we don't want to delete all records.
         if (!query.Parameters.ParameterNames.Any())
             return 0;
 
         ApplyTenantFilter(query);
-        filter(query);
 
         using var connection = dbConnectionProvider.GetConnection();
         return await query.ExecuteAsync(connection);
@@ -476,13 +476,13 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     public async Task<long> DeleteAsync(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, string primaryKey = "Id", CancellationToken cancellationToken = default)
     {
         var selectQuery = dbConnectionProvider.CreateQuery().From(TableName, primaryKey);
+        filter(selectQuery);
 
         // If there are no conditions, we don't want to delete all records.
         if (!selectQuery.Parameters.ParameterNames.Any())
             return 0;
 
         ApplyTenantFilter(selectQuery, false);
-        filter(selectQuery);
         selectQuery = selectQuery.OrderBy(orderFields.ToArray()).Page(pageArgs);
 
         var deleteQuery = dbConnectionProvider.CreateQuery().Delete(TableName, primaryKey, selectQuery);
