@@ -35,7 +35,7 @@ public class ScheduledRecurringTask : IScheduledTask
         _scopeFactory = scopeFactory;
         _startAt = startAt;
         _interval = interval;
-        _cancellationTokenSource = new CancellationTokenSource();
+        _cancellationTokenSource = new();
 
         Schedule();
     }
@@ -72,11 +72,11 @@ public class ScheduledRecurringTask : IScheduledTask
     {
         if (delay < TimeSpan.Zero) delay = TimeSpan.FromSeconds(1);
 
-        _timer = new Timer(delay.TotalMilliseconds) { Enabled = true };
+        _timer = new(delay.TotalMilliseconds) { Enabled = true };
 
         _timer.Elapsed += async (_, _) =>
         {
-            _timer.Dispose();
+            _timer?.Dispose();
             _timer = null;
             _startAt = _systemClock.UtcNow + _interval;
 

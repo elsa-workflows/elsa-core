@@ -1,6 +1,7 @@
 using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Models;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Requests;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,7 +25,18 @@ public class RunWorkflowTask : ITask
     /// <inheritdoc />
     public async ValueTask ExecuteAsync(TaskExecutionContext context)
     {
-        var workflowDispatcher = context.ServiceProvider.GetRequiredService<IWorkflowDispatcher>();
-        await workflowDispatcher.DispatchAsync(_request, cancellationToken: context.CancellationToken);
+        var workflowRuntime = context.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
+        var options = new StartWorkflowRuntimeParams
+        {
+            Input = _request.Input,
+            VersionOptions = _request.VersionOptions,
+            Properties = _request.Properties,
+            CorrelationId = _request.CorrelationId,
+            InstanceId = _request.InstanceId,
+            ParentWorkflowInstanceId = _request.ParentWorkflowInstanceId,
+            TriggerActivityId = _request.TriggerActivityId,
+            CancellationTokens = context.CancellationToken,
+        };
+        await workflowRuntime.TryStartWorkflowAsync(_request.DefinitionId, options);
     }
 }

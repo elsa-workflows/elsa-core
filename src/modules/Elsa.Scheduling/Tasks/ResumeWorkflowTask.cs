@@ -1,6 +1,7 @@
 using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Models;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Requests;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,7 +26,20 @@ public class ResumeWorkflowTask : ITask
     /// <inheritdoc />
     public async ValueTask ExecuteAsync(TaskExecutionContext context)
     {
-        var workflowDispatcher = context.ServiceProvider.GetRequiredService<IWorkflowDispatcher>();
-        await workflowDispatcher.DispatchAsync(_dispatchWorkflowInstanceRequest, cancellationToken: context.CancellationToken);
+        var workflowRuntime = context.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
+        var workflowInstanceId = _dispatchWorkflowInstanceRequest.InstanceId;
+        var options = new ResumeWorkflowRuntimeParams
+        {
+            CancellationTokens = context.CancellationToken,
+            Input = _dispatchWorkflowInstanceRequest.Input,
+            ActivityHash = _dispatchWorkflowInstanceRequest.ActivityHash,
+            ActivityId = _dispatchWorkflowInstanceRequest.ActivityId,
+            Properties = _dispatchWorkflowInstanceRequest.Properties,
+            CorrelationId = _dispatchWorkflowInstanceRequest.CorrelationId,
+            BookmarkId = _dispatchWorkflowInstanceRequest.BookmarkId,
+            ActivityInstanceId = _dispatchWorkflowInstanceRequest.ActivityInstanceId,
+            ActivityNodeId = _dispatchWorkflowInstanceRequest.ActivityNodeId,
+        };
+        await workflowRuntime.ResumeWorkflowAsync(workflowInstanceId, options);
     }
 }
