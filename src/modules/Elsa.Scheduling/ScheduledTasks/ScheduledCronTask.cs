@@ -33,7 +33,7 @@ public class ScheduledCronTask : IScheduledTask
         _scopeFactory = scopeFactory;
         _systemClock = systemClock;
         _logger = logger;
-        _cancellationTokenSource = new CancellationTokenSource();
+        _cancellationTokenSource = new();
 
         Schedule();
     }
@@ -83,11 +83,11 @@ public class ScheduledCronTask : IScheduledTask
 
     private void SetupTimer(TimeSpan delay)
     {
-        _timer = new Timer(delay.TotalMilliseconds) { Enabled = true };
+        _timer = new(delay.TotalMilliseconds) { Enabled = true };
 
         _timer.Elapsed += async (_, _) =>
         {
-            _timer.Dispose();
+            _timer?.Dispose();
             _timer = null;
 
             using var scope = _scopeFactory.CreateScope();

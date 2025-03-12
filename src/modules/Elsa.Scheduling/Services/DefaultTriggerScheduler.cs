@@ -68,8 +68,8 @@ public class DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ISyst
         // Schedule each Cron trigger.
         foreach (var trigger in cronTriggers)
         {
-            var payload = trigger.GetPayload<CronTriggerPayload>();
-            var cronExpression = payload.CronExpression;
+            var payload = trigger.GetPayload<CronTriggerPayload?>();
+            var cronExpression = payload?.CronExpression;
 
             if (string.IsNullOrWhiteSpace(cronExpression))
             {
