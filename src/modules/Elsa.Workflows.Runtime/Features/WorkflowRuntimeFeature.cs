@@ -154,6 +154,15 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         Services.Configure<WorkflowInboxCleanupOptions>(options => { options.IsEnabled = false; });
         return this;
     }
+    
+    /// <summary>
+    /// Disables the purge bookmark queue recurring task.
+    /// </summary>
+    public WorkflowRuntimeFeature DisablePurgeBookmarkQueueRecurringTask()
+    {
+        Services.Configure<BookmarkQueuePurgeOptions>(options => { options.IsEnabled = false; });
+        return this;
+    }
 
     /// <summary>
     /// Register the specified workflow type.
@@ -312,7 +321,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddRecurringTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromMinutes(1))
             .AddRecurringTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10))
             .AddRecurringTask<RestartInterruptedWorkflowsTask>(TimeSpan.FromMinutes(5)) // Same default as the workflow liveness threshold.
-
+            
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
 
