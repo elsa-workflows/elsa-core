@@ -32,6 +32,7 @@ public class RunPython : CodeActivity<object?>
     /// </summary>
     [Input(
         Description = "The script to run.",
+        DefaultSyntax = "Python",
         UIHint = InputUIHints.CodeEditor,
         UIHandler = typeof(RunPythonOptionsProvider)
     )]

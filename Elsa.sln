@@ -322,6 +322,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{AA5ACF
 		scripts\docker\build-and-run-all-in-one-web-docker.sh = scripts\docker\build-and-run-all-in-one-web-docker.sh
 		scripts\docker\docker-compose.yml = scripts\docker\docker-compose.yml
 		scripts\docker\docker-run-all-in-one-web.ps1 = scripts\docker\docker-run-all-in-one-web.ps1
+		scripts\docker\docker-compose-citus.yml = scripts\docker\docker-compose-citus.yml
+		scripts\docker\docker-compose-yugabyte.yml = scripts\docker\docker-compose-yugabyte.yml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "elsa-studio", "elsa-studio", "{DFFE6199-B5A7-4BA8-A5E1-77D0426C6468}"

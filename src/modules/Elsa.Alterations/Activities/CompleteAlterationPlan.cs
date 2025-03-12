@@ -13,7 +13,7 @@ namespace Elsa.Alterations.Activities;
 /// Marks an alteration plan as completed.
 /// </summary>
 [Browsable(false)]
-[Activity("Elsa", "Alterations", "Dispatches jobs for the specified Alteration Plan", Kind = ActivityKind.Job)]
+[Activity("Elsa", "Alterations", "Dispatches jobs for the specified Alteration Plan", Kind = ActivityKind.Task)]
 public class CompleteAlterationPlan : CodeActivity
 {
     /// <inheritdoc />

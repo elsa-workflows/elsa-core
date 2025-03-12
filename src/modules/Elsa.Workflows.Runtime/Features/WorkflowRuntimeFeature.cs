@@ -31,13 +31,8 @@ namespace Elsa.Workflows.Runtime.Features;
 /// Installs and configures workflow runtime features.
 /// </summary>
 [DependsOn(typeof(SystemClockFeature))]
-public class WorkflowRuntimeFeature : FeatureBase
+public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public WorkflowRuntimeFeature(IModule module) : base(module)
-    {
-    }
-
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
 
     /// <summary>
@@ -141,6 +136,24 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A delegate to configure the <see cref="BookmarkQueuePurgeOptions"/>.
     /// </summary>
     public Action<BookmarkQueuePurgeOptions> BookmarkQueuePurgeOptions { get; set; } = _ => { };
+
+    /// <summary>
+    /// Enables the workflow inbox cleanup job. 
+    /// </summary>
+    public WorkflowRuntimeFeature EnableWorkflowInboxCleanupJob()
+    {
+        Services.Configure<WorkflowInboxCleanupOptions>(options => { options.IsEnabled = true; });
+        return this;
+    }
+
+    /// <summary>
+    /// Disables the workflow inbox cleanup job.
+    /// </summary>
+    public WorkflowRuntimeFeature DisableWorkflowInboxCleanupJob()
+    {
+        Services.Configure<WorkflowInboxCleanupOptions>(options => { options.IsEnabled = false; });
+        return this;
+    }
 
     /// <summary>
     /// Register the specified workflow type.
@@ -299,7 +312,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddRecurringTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromMinutes(1))
             .AddRecurringTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10))
             .AddRecurringTask<RestartInterruptedWorkflowsTask>(TimeSpan.FromMinutes(5)) // Same default as the workflow liveness threshold.
-
+            
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
 

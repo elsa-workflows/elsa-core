@@ -33,6 +33,7 @@ public class RunJavaScript : CodeActivity<object?>
     /// </summary>
     [Input(
         Description = "The script to run.",
+        DefaultSyntax = "JavaScript",
         UIHint = InputUIHints.CodeEditor,
         UIHandler = typeof(RunJavaScriptOptionsProvider)
     )]

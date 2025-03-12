@@ -1,0 +1,65 @@
+﻿services:
+  # Coordinator Node
+  citus-coordinator:
+    image: citusdata/citus:latest
+    container_name: citus-coordinator
+    ports:
+      - "9700:5432"
+    environment:
+      POSTGRES_DB: citus
+      POSTGRES_USER: citus
+      POSTGRES_PASSWORD: citus
+      CITUS_HOST: citus-coordinator
+    command: [ "postgres", "-c", "wal_level=logical" ]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "citus"]
+      interval: 10s
+      retries: 5
+    networks:
+      - citus-network
+
+  # Worker Node 1
+  citus-worker-1:
+    image: citusdata/citus:latest
+    container_name: citus-worker-1
+    environment:
+      POSTGRES_DB: citus
+      POSTGRES_USER: citus
+      POSTGRES_PASSWORD: citus
+      CITUS_HOST: citus-worker-1
+    command: [ "postgres", "-c", "wal_level=logical" ]
+    depends_on:
+      - citus-coordinator
+    networks:
+      - citus-network
+
+  # Worker Node 2
+  citus-worker-2:
+    image: citusdata/citus:latest
+    container_name: citus-worker-2
+    environment:
+      POSTGRES_DB: citus
+      POSTGRES_USER: citus
+      POSTGRES_PASSWORD: citus
+      CITUS_HOST: citus-worker-2
+    command: [ "postgres", "-c", "wal_level=logical" ]
+    depends_on:
+      - citus-coordinator
+    networks:
+      - citus-network
+
+  # Citus Manager (optional - registers worker nodes automatically)
+  citus-manager:
+    image: citusdata/citus:latest
+    container_name: citus-manager
+    depends_on:
+      - citus-coordinator
+      - citus-worker-1
+      - citus-worker-2
+    command: [ "citus_setup" ]
+    networks:
+      - citus-network
+
+networks:
+  citus-network:
+    driver: bridge
