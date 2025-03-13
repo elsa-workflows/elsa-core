@@ -21,7 +21,7 @@ public class Variable : MemoryBlockReference
     }
 
     /// <inheritdoc />
-    public Variable(string name, object? value = default) : this()
+    public Variable(string name, object? value = null) : this()
     {
         Name = name;
         Value = value;
@@ -30,7 +30,7 @@ public class Variable : MemoryBlockReference
     /// <summary>
     /// The name of the variable.
     /// </summary>
-    public string Name { get; set; } = default!;
+    public string Name { get; set; } = null!;
     
     /// <summary>
     /// A default value for the variable.
@@ -87,6 +87,12 @@ public class Variable<T> : Variable
     public Variable<T> WithStorageDriver<TDriver>() where TDriver:IStorageDriver
     {
         StorageDriverType = typeof(TDriver);
+        return this;
+    }
+
+    public Variable<T> WithId(string id)
+    {
+        Id = id;
         return this;
     }
 }
