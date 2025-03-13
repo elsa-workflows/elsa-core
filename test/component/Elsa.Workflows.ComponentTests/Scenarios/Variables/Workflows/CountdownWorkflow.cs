@@ -12,7 +12,7 @@ public class CountdownWorkflow : WorkflowBase
     {
         builder.WithDefinitionId(DefinitionId);
         var counter = builder.WithVariable("Counter", 3).WithWorkflowStorage();
-        
+
         builder.Root = new Sequence
         {
             Activities =
