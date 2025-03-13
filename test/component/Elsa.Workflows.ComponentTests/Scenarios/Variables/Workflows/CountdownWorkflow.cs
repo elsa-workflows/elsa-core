@@ -6,7 +6,7 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Variables.Workflows;
 
 public class CountdownWorkflow : WorkflowBase
 {
-    public static readonly string DefinitionId = "Guid.NewGuid().ToString()";
+    public static readonly string DefinitionId = Guid.NewGuid().ToString();
 
     protected override void Build(IWorkflowBuilder builder)
     {
