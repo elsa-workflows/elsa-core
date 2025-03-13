@@ -124,7 +124,20 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         {
             var containerVariables = (Activity as IVariableContainer)?.Variables ?? Enumerable.Empty<Variable>();
             var dynamicVariables = DynamicVariables;
-            return containerVariables.Concat(dynamicVariables).DistinctBy(x => x.Name);
+            var mergedVariables = new Dictionary<string, Variable>();
+            
+            foreach (var containerVariable in containerVariables)
+            {
+                var name = !string.IsNullOrEmpty(containerVariable.Name) ? containerVariable.Name : containerVariable.Id;
+                mergedVariables[name] = containerVariable;
+            }
+            
+            foreach (var dynamicVariable in dynamicVariables)
+            {
+                var name = !string.IsNullOrEmpty(dynamicVariable.Name) ? dynamicVariable.Name : dynamicVariable.Id;
+                mergedVariables[name] = dynamicVariable;
+            }
+            return mergedVariables.Values;
         }
     }
 
