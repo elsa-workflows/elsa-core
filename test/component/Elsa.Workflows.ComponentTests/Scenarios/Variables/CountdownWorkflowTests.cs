@@ -30,7 +30,7 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
         };
         var runResponse = await workflowClient.CreateAndRunInstanceAsync(runAndCreateRequest);
         var workflowInstanceId = runResponse.WorkflowInstanceId;
-        var createdBookmarks = await bookmarkStore.FindManyAsync(new BookmarkFilter
+        var createdBookmarks = await bookmarkStore.FindManyAsync(new()
         {
             WorkflowInstanceId = workflowInstanceId
         });
@@ -54,7 +54,7 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
             
             await workflowClient.RunInstanceAsync(runRequest);
 
-            createdBookmarks = await bookmarkStore.FindManyAsync(new BookmarkFilter
+            createdBookmarks = await bookmarkStore.FindManyAsync(new()
             {
                 WorkflowInstanceId = workflowInstanceId
             });
