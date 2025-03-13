@@ -12,8 +12,8 @@ public class JavascriptAndLiquidWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
     {
-        var products = new Variable<object> { Name = "Products", StorageDriverType = typeof(WorkflowInstanceStorageDriver) };
-        var product = new Variable<object> { Name = "Product", StorageDriverType = typeof(WorkflowInstanceStorageDriver) };
+        var products = new Variable<object>("Products", null!).WithStorageDriver<WorkflowInstanceStorageDriver>();
+        var product = new Variable<object>("Product", null!).WithStorageDriver<WorkflowInstanceStorageDriver>();
 
         builder.Root = new Sequence
         {

@@ -30,7 +30,7 @@ public class JavaScriptVariablesWorkflowTests(App app) : AppComponentTest(app)
         var workflowState = workflowInstance!.WorkflowState;
         var rootWorkflowActivityExecutionContext = workflowState.ActivityExecutionContexts.Single(x => x.ParentContextId == null);
         var variables = GetVariablesDictionary(rootWorkflowActivityExecutionContext);
-        var magicNumber = variables["Workflow1:variable-1"].ConvertTo<int>();
+        var magicNumber = variables["magicNumberVariable"].ConvertTo<int>();
         Assert.Equal(42, magicNumber);
     }
 

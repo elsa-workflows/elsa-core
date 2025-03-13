@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.ComponentTests.Abstractions;
@@ -25,7 +26,7 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
         var bookmarkStore = Scope.ServiceProvider.GetRequiredService<IBookmarkStore>();
         var runAndCreateRequest = new CreateAndRunWorkflowInstanceRequest
         {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(CountdownWorkflow.DefinitionId),
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(CountdownWorkflow.DefinitionId, VersionOptions.Latest),
         };
         var runResponse = await workflowClient.CreateAndRunInstanceAsync(runAndCreateRequest);
         var workflowInstanceId = runResponse.WorkflowInstanceId;
@@ -42,7 +43,7 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
             var workflowState = workflowInstance!.WorkflowState;
             var rootWorkflowActivityExecutionContext = workflowState.ActivityExecutionContexts.Single(x => x.ParentContextId == null);
             var variables = GetVariablesDictionary(rootWorkflowActivityExecutionContext);
-            var actualCounter = variables["Workflow1:variable-1"].ConvertTo<int>();
+            var actualCounter = variables["counterVariable"].ConvertTo<int>();
             Assert.Equal(--expectedCounter, actualCounter);
 
             var bookmark = bookmarks.Pop();
