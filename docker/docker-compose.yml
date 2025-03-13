@@ -12,6 +12,16 @@
     ports:
       - "5432:5432"
         
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=!Elsa2025@
+    ports:
+      - 1433:1433
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+        
   mysql:
     image: mysql:8.0
     container_name: mysql
@@ -126,6 +136,7 @@
       - "14000:8080"
 
 volumes:
+  sqlserver_data:
   postgres-data:
   oracle-data-free1:
   mysql_data2:
