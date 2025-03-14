@@ -1,26 +1,26 @@
-using Elsa.Extensions;
-using Elsa.Http.Bookmarks;
-using Elsa.Http.Options;
-using Elsa.Workflows.Runtime.Filters;
-using JetBrains.Annotations;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
+using Elsa.Common.Multitenancy;
+using Elsa.Extensions;
+using Elsa.Http.Bookmarks;
+using Elsa.Http.Options;
+using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
-using Elsa.Workflows.Runtime.Entities;
-using FastEndpoints;
-using System.Diagnostics.CodeAnalysis;
-using Elsa.Common.Multitenancy;
-using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
+using FastEndpoints;
+using JetBrains.Annotations;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Http.Middleware;
@@ -57,7 +57,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
         }
 
         matchingPath = matchingPath.NormalizeRoute();
-        
+
         var input = new Dictionary<string, object>
         {
             [HttpEndpoint.HttpContextInputKey] = true,
@@ -368,11 +368,29 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
         return await httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, workflow, bookmarkPayload.Policy));
     }
 
-    private string ComputeBookmarkHash(IServiceProvider serviceProvider, string path, string method)
+    private static string ComputeBookmarkHash(IServiceProvider serviceProvider, string path, string method)
     {
         var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
         var bookmarkHasher = serviceProvider.GetRequiredService<IStimulusHasher>();
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-        return bookmarkHasher.Hash(activityTypeName, bookmarkPayload);
+        var httpEndpointActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
+        var newHash = bookmarkHasher.Hash(activityTypeName: null, bookmarkPayload);
+        var legacyHash = bookmarkHasher.Hash(activityTypeName: httpEndpointActivityTypeName, bookmarkPayload); // Backward compatible
+
+        if (WorkflowExists(serviceProvider, newHash))
+            return newHash;
+
+        return legacyHash; // Fallback for old workflows
+
+    }
+
+    private static bool WorkflowExists(IServiceProvider serviceProvider, string hash)
+    {
+        var triggerStore = serviceProvider.GetRequiredService<ITriggerStore>();
+        var bookmarkStore = serviceProvider.GetRequiredService<IBookmarkStore>();
+
+        var triggerExists = triggerStore.FindManyAsync(new TriggerFilter { Hash = hash }, CancellationToken.None).Result.Any();
+        var bookmarkExists = bookmarkStore.FindManyAsync(new BookmarkFilter { Hash = hash }, CancellationToken.None).Result.Any();
+
+        return triggerExists || bookmarkExists;
     }
 }
