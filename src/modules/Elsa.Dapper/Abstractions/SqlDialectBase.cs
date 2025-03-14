@@ -1,7 +1,7 @@
 using System.Text;
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Dapper.Contracts;
+using Elsa.Framework.Entities;
 
 namespace Elsa.Dapper.Abstractions;
 

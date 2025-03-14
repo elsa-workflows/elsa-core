@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Framework.Entities;
 using LinqKit;
 
 // ReSharper disable once CheckNamespace

@@ -1,5 +1,7 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Framework.Tenants;
 using JetBrains.Annotations;
+using Tenant = Elsa.Common.Multitenancy.Tenant;
 
 namespace Elsa.Tenants.Providers;
 

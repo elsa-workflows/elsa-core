@@ -1,3 +1,4 @@
+using Elsa.Framework.Tenants;
 using JetBrains.Annotations;
 
 namespace Elsa.Common.Multitenancy;

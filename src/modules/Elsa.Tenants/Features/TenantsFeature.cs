@@ -3,6 +3,8 @@ using Elsa.Common.Multitenancy;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Framework.Shells;
+using Elsa.Framework.Tenants;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,6 +45,11 @@ public class TenantsFeature(IModule serviceConfiguration) : FeatureBase(serviceC
     public void UseStoreBasedTenantsProvider()
     {
         Module.Configure<MultitenancyFeature>(feature => feature.UseTenantsProvider<StoreTenantsProvider>());
+    }
+
+    public override void ConfigureHostedServices()
+    {
+        //ConfigureHostedService<CreateShellsHostedService>();
     }
 
     /// <inheritdoc />
