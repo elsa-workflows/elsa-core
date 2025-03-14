@@ -60,7 +60,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         if (context.SubStatus == WorkflowSubStatus.Faulted)
         {
             span.AddEvent(new("faulted"));
-            span.SetStatus(ActivityStatusCode.Error);
+            span.SetStatus(ActivityStatusCode.Error, "The workflow entered the Faulted state. See incidents for details.");
         }
         else if (context.SubStatus == WorkflowSubStatus.Finished)
         {
@@ -107,7 +107,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         {
             tags["incident.exception.message"] = incident.Exception.Message;
             tags["incident.exception.stackTrace"] = incident.Exception.StackTrace;
-            tags["incident.exception.type"] = incident.Exception.GetType().FullName;
+            tags["incident.exception.type"] = incident.Exception.Type.FullName;
         }
 
         return tags;
