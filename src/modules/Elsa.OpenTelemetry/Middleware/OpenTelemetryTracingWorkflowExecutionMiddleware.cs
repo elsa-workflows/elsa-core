@@ -39,6 +39,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         }
 
         span.SetTag("operation.name", "elsa.workflow.execution");
+        span.SetTag("span.type", "workflow");
         span.SetTag("workflow.definition.id", workflow.Identity.DefinitionId);
         span.SetTag("workflow.definition.version", workflow.Identity.Version);
         span.SetTag("workflow.definition.name", workflow.WorkflowMetadata.Name);

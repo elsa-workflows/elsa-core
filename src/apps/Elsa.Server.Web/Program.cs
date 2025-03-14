@@ -129,13 +129,6 @@ TypeAliasRegistry.RegisterAlias("OrderReceivedConsumerFactory", typeof(GenericCo
 
 if (useManualOtelInstrumentation)
 {
-    // Configure OpenTelemetry Tracing
-    // using var tracerProvider = Sdk.CreateTracerProviderBuilder()
-    //     .AddSource("Elsa.Workflows") // Match your ActivitySource name here
-    //     .SetSampler(new AlwaysOnSampler()) // Always record traces for testing
-    //     .AddConsoleExporter() // Export spans to the console (optional)
-    //     .Build();
-
     services.AddOpenTelemetry()
         .ConfigureResource(resource => resource.AddService("elsa-workflows", serviceVersion: "3.4.0").AddTelemetrySdk())
         .WithTracing(tracing =>
@@ -146,7 +139,7 @@ if (useManualOtelInstrumentation)
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
                 .AddSqlClientInstrumentation()
-                .AddConsoleExporter()
+                //.AddConsoleExporter()
                 .AddOtlpExporter()
                 ;
         })
@@ -155,7 +148,7 @@ if (useManualOtelInstrumentation)
             metrics
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
-                .AddConsoleExporter()
+                //.AddConsoleExporter()
                 .AddOtlpExporter()
                 ;
         });

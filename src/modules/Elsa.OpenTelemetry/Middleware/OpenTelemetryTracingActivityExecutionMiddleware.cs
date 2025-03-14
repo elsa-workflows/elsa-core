@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Elsa.Common;
+using Elsa.Extensions;
 using Elsa.OpenTelemetry.Contracts;
 using Elsa.OpenTelemetry.Helpers;
 using Elsa.OpenTelemetry.Models;
@@ -35,6 +36,10 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
         span.SetTag("activity.version", activity.Version);
         span.SetTag("activity.instance.id", context.Id);
         span.SetTag("activity.tenant.id", context.WorkflowExecutionContext.Workflow.Identity.TenantId);
+        
+        var activityKind = context.ActivityDescriptor.Kind;
+        if (activityKind == Elsa.Workflows.ActivityKind.Job || (activityKind == Workflows.ActivityKind.Task && activity.GetRunAsynchronously())) 
+            span.SetTag("span.type", "job");
 
         span.AddEvent(new("executing"));
 
@@ -47,12 +52,11 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
             span.SetTag("activity.incidents", true);
 
             var errorSpanHandlerContext = new ErrorSpanContext(span, context.Exception);
-            var errorSpanHandlers = context.GetServices<IErrorSpanHandler>()
+            var errorSpanHandler = context.GetServices<IErrorSpanHandler>()
                 .OrderBy(x => x.Order)
-                .Where(x => x.CanHandle(errorSpanHandlerContext));
+                .FirstOrDefault(x => x.CanHandle(errorSpanHandlerContext));
             
-            foreach (var handler in errorSpanHandlers)
-                handler.Handle(errorSpanHandlerContext);
+            errorSpanHandler?.Handle(errorSpanHandlerContext);
         }
         else if (context.Status == ActivityStatus.Canceled)
         {
