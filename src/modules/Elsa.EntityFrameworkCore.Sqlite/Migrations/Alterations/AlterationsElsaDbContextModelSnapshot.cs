@@ -15,7 +15,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.20");
+            modelBuilder
+                .HasDefaultSchema("Elsa")
+                .HasAnnotation("ProductVersion", "8.0.12");
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationJob", b =>
                 {
@@ -72,7 +74,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_AlterationJob_WorkflowInstanceId");
 
-                    b.ToTable("AlterationJobs");
+                    b.ToTable("AlterationJobs", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationPlan", b =>
@@ -119,7 +121,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_AlterationPlan_TenantId");
 
-                    b.ToTable("AlterationPlans");
+                    b.ToTable("AlterationPlans", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

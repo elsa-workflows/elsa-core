@@ -19,7 +19,7 @@ public class DefaultBookmarkQueuePurger(IBookmarkQueueStore store, ISystemClock 
         var now = systemClock.UtcNow;
         var thresholdDate = now - options.Value.Ttl;
 
-        logger.LogInformation("Purging bookmark queue items older than {ThresholdDate}.", thresholdDate);
+        logger.LogDebug("Purging bookmark queue items older than {ThresholdDate}.", thresholdDate);
 
         while (true)
         {
@@ -46,6 +46,6 @@ public class DefaultBookmarkQueuePurger(IBookmarkQueueStore store, ISystemClock 
             currentPage++;
         }
 
-        logger.LogInformation("Finished purging bookmark queue items.");
+        logger.LogDebug("Finished purging bookmark queue items.");
     }
 }

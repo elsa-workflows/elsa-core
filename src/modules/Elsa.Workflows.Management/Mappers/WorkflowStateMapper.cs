@@ -35,6 +35,7 @@ public class WorkflowStateMapper
         target.ParentWorkflowInstanceId = source.ParentWorkflowInstanceId;
         target.Status = source.Status;
         target.SubStatus = source.SubStatus;
+        target.IsExecuting = source.IsExecuting;
         target.CorrelationId = source.CorrelationId;
         target.Name = source.Name;
         target.IncidentCount = source.Incidents.Count;
@@ -61,6 +62,7 @@ public class WorkflowStateMapper
         workflowState.ParentWorkflowInstanceId = source.ParentWorkflowInstanceId;
         workflowState.Status = source.Status;
         workflowState.SubStatus = source.SubStatus;
+        workflowState.IsExecuting = source.IsExecuting;
         workflowState.CorrelationId = source.CorrelationId;
         workflowState.Name = source.Name;
         workflowState.UpdatedAt = source.UpdatedAt;

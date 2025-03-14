@@ -14,7 +14,7 @@
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
         <PackageReference Include="Quartz.Serialization.Json" />
     </ItemGroup>
-
+    
     <ItemGroup>
         <ProjectReference Include="..\Elsa.EntityFrameworkCore.Common\Elsa.EntityFrameworkCore.Common.csproj" />
         <ProjectReference Include="..\Elsa.Quartz\Elsa.Quartz.csproj" />

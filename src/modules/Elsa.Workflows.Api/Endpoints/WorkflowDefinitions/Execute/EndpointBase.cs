@@ -45,6 +45,7 @@ internal abstract class EndpointBase<T>(
             CorrelationId = request.CorrelationId,
             Name = request.Name,
             Input = request.GetInputAsDictionary(),
+            Variables = request.GetVariablesAsDictionary(),
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle
         };

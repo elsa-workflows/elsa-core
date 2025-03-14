@@ -93,6 +93,31 @@ public static partial class ActivityExecutionContextExtensions
     public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value, Action<MemoryBlock>? configure = null) =>
         context.ExpressionExecutionContext.SetVariable(name, value, configure);
 
+    public static Variable SetDynamicVariable<T>(this ActivityExecutionContext context, string name, T value, Action<MemoryBlock>? configure = null)
+    {
+        // Check if a predefined variable already exists.
+        var predefinedVariable = context.ExpressionExecutionContext.GetVariable(name);
+
+        if (predefinedVariable != null)
+        {
+            context.SetVariable(name, value);
+            return predefinedVariable;
+        }
+        
+        // No predefined variable exists, so we will add a dynamic variable to the current container in scope.
+        var container = context.FindParentWithVariableContainer();
+
+        if (container == null)
+            throw new("No parent variable container found");
+
+        var existingVariable = container.DynamicVariables.FirstOrDefault(x => x.Name == name);
+
+        if (existingVariable == null)
+            container.DynamicVariables.Add(new Variable<T>(name, value));
+
+        return context.SetVariable(name, value);
+    }
+
     /// <summary>
     /// Gets a workflow variable by name.
     /// </summary>
@@ -140,7 +165,7 @@ public static partial class ActivityExecutionContextExtensions
         {
             var activity = node.Activity;
             var activityDescriptor = await activityRegistryLookup.FindAsync(activity.Type, activity.Version);
-            if (activityDescriptor != null && activityDescriptor.Outputs.Any()) 
+            if (activityDescriptor != null && activityDescriptor.Outputs.Any())
                 yield return (activity, activityDescriptor);
         }
     }
@@ -188,7 +213,10 @@ public static partial class ActivityExecutionContextExtensions
     /// </summary>
     public static async ValueTask SendSignalAsync(this ActivityExecutionContext context, object signal)
     {
-        var receivingContexts = new[] { context }.Concat(context.GetAncestors()).ToList();
+        var receivingContexts = new[]
+        {
+            context
+        }.Concat(context.GetAncestors()).ToList();
         var logger = context.GetRequiredService<ILogger<ActivityExecutionContext>>();
         var signalType = signal.GetType();
         var signalTypeName = signalType.Name;
@@ -243,7 +271,7 @@ public static partial class ActivityExecutionContextExtensions
         // Send a signal.
         await context.SendSignalAsync(new ScheduleActivityOutcomes(outcomes));
     }
-    
+
     /// <summary>
     /// Cancel the activity. For blocking activities, it means their bookmarks will be removed. For job activities, the background work will be cancelled.
     /// </summary>
@@ -300,7 +328,7 @@ public static partial class ActivityExecutionContextExtensions
 
         return null;
     }
-    
+
     /// <summary>
     /// Returns a flattened list of the current context's ancestors.
     /// </summary>

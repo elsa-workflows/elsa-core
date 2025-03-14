@@ -48,6 +48,10 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
             context.AddExecutionLogEntry("Precondition Failed", "Cannot execute at this time");
             return;
         }
+        
+        // Mark workflow and activity as executing.
+        context.WorkflowExecutionContext.IsExecuting = true;
+        context.IsExecuting = true;
 
         // Conditionally commit the workflow state.
         if (ShouldCommit(context, ActivityLifetimeEvent.ActivityExecuting))
@@ -83,6 +87,10 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
             workflowExecutionContext.Bookmarks.AddRange(context.Bookmarks);
             logger.LogDebug("Added {BookmarkCount} bookmarks to the workflow execution context", context.Bookmarks.Count);
         }
+        
+        // Mark activity as executed.
+        context.IsExecuting = false;
+        context.WorkflowExecutionContext.IsExecuting = false;
 
         // Conditionally commit the workflow state.
         if (ShouldCommit(context, ActivityLifetimeEvent.ActivityExecuted))

@@ -241,6 +241,17 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// The current sub status of the workflow.
     public WorkflowSubStatus SubStatus { get; internal set; }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the workflow instance is actively executing. 
+    /// </summary>
+    /// <remarks>
+    /// This flag is set to <c>true</c> immediately before the workflow begins execution 
+    /// and is set to <c>false</c> once the execution is completed. 
+    /// It can be used to determine if a workflow instance was in-progress in case of unexpected 
+    /// application termination, allowing the system to retry execution upon restarting. 
+    /// </remarks>
+    public bool IsExecuting { get; set; }
+
     /// The root <see cref="MemoryRegister"/> associated with the execution context.
     public MemoryRegister MemoryRegister { get; private set; } = null!;
 

@@ -48,7 +48,6 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         var expressionExecutionContextProps = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(workflowExecutionContext, workflowExecutionContext.Input);
         expressionExecutionContextProps[ExpressionExecutionContextExtensions.ActivityKey] = activity;
         ExpressionExecutionContext = new(workflowExecutionContext.ServiceProvider, new(), parentActivityExecutionContext?.ExpressionExecutionContext ?? workflowExecutionContext.ExpressionExecutionContext, expressionExecutionContextProps, Taint, CancellationToken);
-        ;
         Activity = activity;
         ActivityDescriptor = activityDescriptor;
         StartedAt = startedAt;
@@ -85,6 +84,17 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     public bool IsCompleted => Status is ActivityStatus.Completed or ActivityStatus.Canceled;
 
     /// <summary>
+    /// Gets or sets a value indicating whether the activity is actively executing. 
+    /// </summary>
+    /// <remarks>
+    /// This flag is set to <c>true</c> immediately before the activity begins execution 
+    /// and is set to <c>false</c> once the execution is completed. 
+    /// It can be used to determine if an activity was in-progress in case of unexpected 
+    /// application termination, allowing the system to retry execution upon restarting. 
+    /// </remarks>
+    public bool IsExecuting { get; set; }
+
+    /// <summary>
     /// The workflow execution context. 
     /// </summary>
     public WorkflowExecutionContext WorkflowExecutionContext { get; }
@@ -114,7 +124,20 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         {
             var containerVariables = (Activity as IVariableContainer)?.Variables ?? Enumerable.Empty<Variable>();
             var dynamicVariables = DynamicVariables;
-            return containerVariables.Concat(dynamicVariables).DistinctBy(x => x.Name);
+            var mergedVariables = new Dictionary<string, Variable>();
+            
+            foreach (var containerVariable in containerVariables)
+            {
+                var name = !string.IsNullOrEmpty(containerVariable.Name) ? containerVariable.Name : containerVariable.Id;
+                mergedVariables[name] = containerVariable;
+            }
+            
+            foreach (var dynamicVariable in dynamicVariables)
+            {
+                var name = !string.IsNullOrEmpty(dynamicVariable.Name) ? dynamicVariable.Name : dynamicVariable.Id;
+                mergedVariables[name] = dynamicVariable;
+            }
+            return mergedVariables.Values;
         }
     }
 

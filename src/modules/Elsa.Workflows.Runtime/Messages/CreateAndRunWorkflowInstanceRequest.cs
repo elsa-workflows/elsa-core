@@ -30,6 +30,11 @@ public class CreateAndRunWorkflowInstanceRequest
     public IDictionary<string, object>? Input { get; set; }
 
     /// <summary>
+    /// A collection of custom variables used within the workflow instance.
+    /// </summary>
+    public IDictionary<string, object>? Variables { get; set; }
+
+    /// <summary>
     /// Any properties to assign to the workflow instance.
     /// </summary>
     public IDictionary<string, object>? Properties { get; set; }

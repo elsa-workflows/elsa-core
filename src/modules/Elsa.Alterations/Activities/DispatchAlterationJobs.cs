@@ -15,7 +15,7 @@ namespace Elsa.Alterations.Activities;
 /// Submits an alteration plan for execution.
 /// </summary>
 [Browsable(false)]
-[Activity("Elsa", "Alterations", "Dispatches jobs for the specified Alteration Plan", Kind = ActivityKind.Job)]
+[Activity("Elsa", "Alterations", "Dispatches jobs for the specified Alteration Plan", Kind = ActivityKind.Task)]
 public class DispatchAlterationJobs : CodeActivity
 {
     /// <inheritdoc />

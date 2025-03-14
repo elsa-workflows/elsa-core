@@ -14,7 +14,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Tenants
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.20");
+            modelBuilder
+                .HasDefaultSchema("Elsa")
+                .HasAnnotation("ProductVersion", "8.0.12");
 
             modelBuilder.Entity("Elsa.Common.Multitenancy.Tenant", b =>
                 {
@@ -40,7 +42,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Tenants
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_Tenant_TenantId");
 
-                    b.ToTable("Tenants");
+                    b.ToTable("Tenants", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

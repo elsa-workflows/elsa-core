@@ -7,12 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\modules\Elsa.Agents.Activities\Elsa.Agents.Activities.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Agents.Api\Elsa.Agents.Api.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Agents.Persistence.EntityFrameworkCore.MySql\Elsa.Agents.Persistence.EntityFrameworkCore.MySql.csproj" Condition=" '$(TargetFramework)' != 'net9.0' " />
-        <ProjectReference Include="..\..\modules\Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql\Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer\Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Connections.Api\Elsa.Connections.Api.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Connections.Core\Elsa.Connections.Core.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite\Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite.csproj" />

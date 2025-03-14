@@ -89,7 +89,10 @@ public class FlowScope
     public bool HasFollowedInboundConnection(FlowGraph flowGraph, IActivity activity)
     {
         var forwardInboundConnections = flowGraph.GetForwardInboundConnections(activity);
-        return forwardInboundConnections.Any(c => GetConnectionLastVisitFollowed(c));
+        var outboundActivityVisitCount = GetActivityVisitCount(activity);
+        var maxConnectionVisitCount = forwardInboundConnections.Max(c => GetConnectionVisitCount(c));
+        return maxConnectionVisitCount > outboundActivityVisitCount 
+            && forwardInboundConnections.Any(c => GetConnectionVisitCount(c) == maxConnectionVisitCount && GetConnectionLastVisitFollowed(c));
     }
 
     /// <summary>

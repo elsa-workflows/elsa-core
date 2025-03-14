@@ -35,6 +35,11 @@ public class RunWorkflowInstanceRequest
     public IDictionary<string, object>? Input { get; set; }
 
     /// <summary>
+    /// A collection of variables to be used during the execution of a workflow instance.
+    /// </summary>
+    public IDictionary<string, object>? Variables { get; set; }
+
+    /// <summary>
     /// Represents an empty <see cref="RunWorkflowInstanceRequest"/> object used as a default value.
     /// </summary>
     public static RunWorkflowInstanceRequest Empty => new();
