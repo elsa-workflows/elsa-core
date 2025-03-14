@@ -6,11 +6,11 @@ namespace Elsa.OpenTelemetry.Handlers;
 
 public class FaultExceptionErrorSpanHandler : ErrorSpanHandlerBase
 {
+    public override bool CanHandle(ErrorSpanContext context) => context.Exception is FaultException;
+
     public override void Handle(ErrorSpanContext context)
     {
-        if (context.Exception is not FaultException faultException)
-            return;
-
+        var faultException = (FaultException)context.Exception!;
         var span = context.Span;
         var tags = new Dictionary<string, object?>
         {

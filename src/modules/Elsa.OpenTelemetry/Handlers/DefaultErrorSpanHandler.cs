@@ -5,11 +5,12 @@ namespace Elsa.OpenTelemetry.Handlers;
 
 public class DefaultErrorSpanHandler : ErrorSpanHandlerBase
 {
+    public override float Order => 100000;
+    
+    public override bool CanHandle(ErrorSpanContext context) => context.Exception != null;
+
     public override void Handle(ErrorSpanContext context)
     {
-        if (context.Exception is null)
-            return;
-        
-        context.Span.AddException(context.Exception);
+        context.Span.AddException(context.Exception!);
     }
 }

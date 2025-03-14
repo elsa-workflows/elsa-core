@@ -46,9 +46,11 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
             span.SetStatus(ActivityStatusCode.Error);
             span.SetTag("activity.incidents", true);
 
-            var errorSpanHandlers = context.GetServices<IErrorSpanHandler>();
             var errorSpanHandlerContext = new ErrorSpanContext(span, context.Exception);
-
+            var errorSpanHandlers = context.GetServices<IErrorSpanHandler>()
+                .OrderBy(x => x.Order)
+                .Where(x => x.CanHandle(errorSpanHandlerContext));
+            
             foreach (var handler in errorSpanHandlers)
                 handler.Handle(errorSpanHandlerContext);
         }
