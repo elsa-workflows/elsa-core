@@ -13,6 +13,7 @@ public interface IExecutionRequest
 {
     string DefinitionId { get; }
     string? CorrelationId { get; }
+    string? Name { get; }
     string? TriggerActivityId { get; }
     ActivityHandle? ActivityHandle { get; }
     VersionOptions? VersionOptions { get; }
@@ -25,6 +26,7 @@ public class PostRequest : IExecutionRequest
 {
     public string DefinitionId { get; set; } = null!;
     public string? CorrelationId { get; set; }
+    public string? Name { get; set; }
     public string? TriggerActivityId { get; set; }
     public ActivityHandle? ActivityHandle { get; set; }
     public VersionOptions? VersionOptions { get; set; }
@@ -43,6 +45,7 @@ public class GetRequest : IExecutionRequest
 {
     public string DefinitionId { get; set; } = null!;
     public string? CorrelationId { get; set; }
+    public string? Name { get; set; }
     public string? TriggerActivityId { get; set; }
     public ActivityHandle? ActivityHandle { get; set; }
     public VersionOptions? VersionOptions { get; set; }

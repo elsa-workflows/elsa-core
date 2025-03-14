@@ -24,6 +24,11 @@ public class StartWorkflowRequest
     public string? CorrelationId { get; set; }
 
     /// <summary>
+    /// The name to use when starting a new workflow instance.
+    /// </summary>
+    public string? Name { get; set; }
+
+    /// <summary>
     /// The input to the workflow instance, if any.
     /// </summary>
     public IDictionary<string, object>? Input { get; set; }

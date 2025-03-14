@@ -35,6 +35,8 @@ public class ConfigureEngineWithCommonFunctions(IOptions<JintOptions> options) :
         engine.SetValue("getWorkflowInstanceId", (Func<string>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.Id));
         engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
         engine.SetValue("getCorrelationId", (Func<string?>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId));
+        engine.SetValue("setWorkflowInstanceName", (Action<string?>)(value => context.GetWorkflowExecutionContext().Name = value));
+        engine.SetValue("getWorkflowInstanceName", (Func<string?>)(() => context.GetWorkflowExecutionContext().Name));
         engine.SetValue("setVariable", (Action<string, object>)((name, value) =>
         {
             engine.SyncVariablesContainer(options, name, value);
