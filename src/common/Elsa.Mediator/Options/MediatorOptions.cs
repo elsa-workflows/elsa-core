@@ -11,11 +11,16 @@ public class MediatorOptions
     /// The max number of workers to process commands.
     /// </summary>
     public int CommandWorkerCount { get; set; } = 4;
-    
+
     /// <summary>
     /// The max number of workers to process notifications.
     /// </summary>
     public int NotificationWorkerCount { get; set; } = 4;
+
+    /// <summary>
+    /// The max number of workers to process jobs.
+    /// </summary>
+    public int JobWorkerCount { get; set; } = 4;
 
     /// <summary>
     /// The default publishing strategy to use.

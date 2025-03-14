@@ -9,13 +9,14 @@ namespace Elsa.Mediator.HostedServices;
 /// </summary>
 public class JobRunnerHostedService : BackgroundService
 {
-    private const int WorkerCount = 4;
+    private readonly int _workerCount;
     private readonly IJobsChannel _jobsChannel;
     private readonly ILogger<JobRunnerHostedService> _logger;
 
     /// <inheritdoc />
-    public JobRunnerHostedService(IJobsChannel jobsChannel, ILogger<JobRunnerHostedService> logger)
+    public JobRunnerHostedService(int workerCount, IJobsChannel jobsChannel, ILogger<JobRunnerHostedService> logger)
     {
+        _workerCount = workerCount;
         _jobsChannel = jobsChannel;
         _logger = logger;
     }
@@ -23,9 +24,9 @@ public class JobRunnerHostedService : BackgroundService
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var workers = new Task[WorkerCount];
-        
-        for (var i = 0; i < WorkerCount; i++) 
+        var workers = new Task[_workerCount];
+
+        for (var i = 0; i < _workerCount; i++)
             workers[i] = ProcessJobsAsync(stoppingToken);
 
         await Task.WhenAll(workers);

@@ -55,7 +55,13 @@ public static class DependencyInjectionExtensions
             .AddSingleton<ICommandsChannel, CommandsChannel>()
             .AddSingleton<IJobsChannel, JobsChannel>()
             .AddSingleton<IJobQueue, JobQueue>()
-            .AddHostedService<JobRunnerHostedService>()
+            .AddHostedService(sp =>
+            {
+                using var scope = sp.CreateScope();
+
+                var options = scope.ServiceProvider.GetRequiredService<IOptions<MediatorOptions>>().Value;
+                return ActivatorUtilities.CreateInstance<JobRunnerHostedService>(scope.ServiceProvider, options.JobWorkerCount);
+            })
             .AddHostedService(sp =>
             {
                 using var scope = sp.CreateScope();
