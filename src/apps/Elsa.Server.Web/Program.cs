@@ -68,6 +68,10 @@ using Medallion.Threading.Redis;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using OpenTelemetry;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Proto.Cluster.Kubernetes;
 using Proto.Persistence.Sqlite;
@@ -96,7 +100,7 @@ const bool useTenantsFromConfiguration = true;
 const bool useSecrets = false;
 const bool disableVariableWrappers = false;
 const bool disableVariableCopying = false;
-const bool useOtel = false;
+const bool useManualOtelInstrumentation = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -123,14 +127,46 @@ var sqlDatabaseProvider = Enum.Parse<SqlDatabaseProvider>(configuration["Databas
 TypeAliasRegistry.RegisterAlias("OrderReceivedProducerFactory", typeof(GenericProducerFactory<string, OrderReceived>));
 TypeAliasRegistry.RegisterAlias("OrderReceivedConsumerFactory", typeof(GenericConsumerFactory<string, OrderReceived>));
 
-if (useOtel)
+if (useManualOtelInstrumentation)
 {
-// Configure OpenTelemetry Tracing
-    using var tracerProvider = Sdk.CreateTracerProviderBuilder()
-        .AddSource("Elsa.Workflows") // Match your ActivitySource name here
-        .SetSampler(new AlwaysOnSampler()) // Always record traces for testing
-        .AddConsoleExporter() // Export spans to the console (optional)
-        .Build();
+    // Configure OpenTelemetry Tracing
+    // using var tracerProvider = Sdk.CreateTracerProviderBuilder()
+    //     .AddSource("Elsa.Workflows") // Match your ActivitySource name here
+    //     .SetSampler(new AlwaysOnSampler()) // Always record traces for testing
+    //     .AddConsoleExporter() // Export spans to the console (optional)
+    //     .Build();
+
+    services.AddOpenTelemetry()
+        .ConfigureResource(resource => resource.AddService("elsa-workflows", serviceVersion: "3.4.0").AddTelemetrySdk())
+        .WithTracing(tracing =>
+        {
+            tracing
+                .AddSource("*")
+                .SetSampler(new AlwaysOnSampler())
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddSqlClientInstrumentation()
+                .AddConsoleExporter()
+                .AddOtlpExporter()
+                ;
+        })
+        .WithMetrics(metrics =>
+        {
+            metrics
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddConsoleExporter()
+                .AddOtlpExporter()
+                ;
+        });
+
+    // Enable OpenTelemetry Logging (optional)
+    builder.Logging.AddOpenTelemetry(options =>
+    {
+        options.IncludeFormattedMessage = true;
+        options.IncludeScopes = true;
+        options.ParseStateValues = true;
+    });
 }
 
 // Add Elsa services.
@@ -221,7 +257,9 @@ services
                             ef.UsePostgreSql(cockroachDbConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
                             ef.UseOracle(oracleConnectionString, new()
-                                { SchemaName = "ELSA"});
+                            {
+                                SchemaName = "ELSA"
+                            });
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -269,7 +307,9 @@ services
                             ef.UsePostgreSql(cockroachDbConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
                             ef.UseOracle(oracleConnectionString, new()
-                                { SchemaName = "ELSA"});
+                            {
+                                SchemaName = "ELSA"
+                            });
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -322,7 +362,9 @@ services
                             ef.UsePostgreSql(cockroachDbConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
                             ef.UseOracle(oracleConnectionString, new()
-                                { SchemaName = "ELSA"});
+                            {
+                                SchemaName = "ELSA"
+                            });
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -474,7 +516,9 @@ services
                             ef.UsePostgreSql(cockroachDbConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
                             ef.UseOracle(oracleConnectionString, new()
-                                { SchemaName = "ELSA"});
+                            {
+                                SchemaName = "ELSA"
+                            });
                         else
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
@@ -577,7 +621,7 @@ services
                 }
             });
         }
-        
+
         if (useKafka)
         {
             elsa.UseKafka(kafka =>
@@ -585,7 +629,7 @@ services
                 kafka.ConfigureOptions(options => configuration.GetSection("Kafka").Bind(options));
             });
         }
-        
+
         if (useSecrets)
         {
             elsa
@@ -661,8 +705,11 @@ services
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.Citus) ef.UsePostgreSql(citusConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.YugabyteDb) ef.UsePostgreSql(yugabyteDbConnectionString);
-                                if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle) ef.UseOracle(oracleConnectionString, new()
-                                    { SchemaName = "ELSA"});
+                                if (sqlDatabaseProvider == SqlDatabaseProvider.Oracle)
+                                    ef.UseOracle(oracleConnectionString, new()
+                                    {
+                                        SchemaName = "ELSA"
+                                    });
 #if !NET9_0
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) 
                                     ef.UseMySql(mySqlConnectionString);
@@ -682,7 +729,7 @@ services
                 tenantHttpRouting.WithTenantHeader("X-Tenant-ID");
             });
         }
-        
+
         elsa.UseWebhooks(webhooks => webhooks.ConfigureSinks += options => builder.Configuration.GetSection("Webhooks").Bind(options));
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();

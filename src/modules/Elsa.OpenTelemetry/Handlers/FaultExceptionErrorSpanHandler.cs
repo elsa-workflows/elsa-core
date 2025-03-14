@@ -8,12 +8,16 @@ public class FaultExceptionErrorSpanHandler : ErrorSpanHandlerBase
 {
     public override void Handle(ErrorSpanContext context)
     {
-        if(context.Exception is not FaultException faultException)
+        if (context.Exception is not FaultException faultException)
             return;
-        
+
         var span = context.Span;
-        span.SetTag("error.code", faultException.Code);
-        span.SetTag("error.category", faultException.Category);
-        span.SetTag("error.faultType", faultException.Type);
+        var tags = new Dictionary<string, object?>
+        {
+            ["exception.code"] = faultException.Code,
+            ["exception.category"] = faultException.Category,
+            ["exception.type"] = faultException.Type
+        };
+        span.AddException(context.Exception, new(tags.ToArray()));
     }
 }

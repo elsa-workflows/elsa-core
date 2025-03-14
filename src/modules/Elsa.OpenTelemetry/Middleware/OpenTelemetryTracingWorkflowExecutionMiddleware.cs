@@ -1,10 +1,13 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices.Marshalling;
 using System.Text.Json;
 using Elsa.Common;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.OpenTelemetry.Helpers;
 using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
@@ -26,7 +29,8 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
     {
         var workflowInstanceId = context.Id;
         var workflow = context.Workflow;
-        using var span = ElsaOpenTelemetry.ActivitySource.StartActivity("WorkflowExecution", ActivityKind.Internal, Activity.Current?.Context ?? default);
+        using var span = ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflow.WorkflowMetadata.Name}", ActivityKind.Server, Activity.Current?.Context ?? default);
+        var now = systemClock.UtcNow;
 
         if (span == null) // No listener is registered.
         {
@@ -34,61 +38,79 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
             return;
         }
 
-        span.SetTag("workflowInstance.id", workflowInstanceId);
-        span.SetTag("workflowDefinition.definitionId", workflow.Identity.DefinitionId);
-        span.SetTag("workflowDefinition.version", workflow.Identity.Version);
-        span.SetTag("workflowDefinition.name", workflow.WorkflowMetadata.Name);
-        span.SetTag("workflowExecution.startTimeUtc", span.StartTimeUtc);
-        span.SetTag("tenantId", workflow.Identity.TenantId);
-        
-        if(context.TriggerActivityId != null)
+        span.SetTag("operation.name", "elsa.workflow.execution");
+        span.SetTag("workflow.definition.id", workflow.Identity.DefinitionId);
+        span.SetTag("workflow.definition.version", workflow.Identity.Version);
+        span.SetTag("workflow.definition.name", workflow.WorkflowMetadata.Name);
+        span.SetTag("workflow.definition.tenant.id", workflow.Identity.TenantId);
+        span.SetTag("workflow.instance.id", workflowInstanceId);
+
+        if (context.TriggerActivityId != null)
         {
-            var activity = context.FindActivityById(context.TriggerActivityId) ?? throw new Exception($"Trigger activity with ID {context.TriggerActivityId} not found. This should not happen.");
-            span.SetTag("workflowExecution.trigger.activityId", activity.Id);
-            span.SetTag("workflowExecution.trigger.activityName", activity.Name);
-            span.SetTag("workflowExecution.trigger.activityType", activity.Type);
+            var activity = context.FindActivityById(context.TriggerActivityId) ?? throw new($"Trigger activity with ID {context.TriggerActivityId} not found. This should not happen.");
+            span.SetTag("workflow.trigger.activity.id", activity.Id);
+            span.SetTag("workflow.trigger.activity.name", activity.Name);
+            span.SetTag("workflow.trigger.activity.type", activity.Type);
+            span.SetTag("workflow.trigger.activity.version", activity.Version);
         }
-        
-        span.AddEvent(new ActivityEvent("Executing", tags: CreateStatusTags(context)));
+
+        span.AddEvent(new("executing"));
         await Next(context);
 
         if (context.SubStatus == WorkflowSubStatus.Faulted)
         {
-            span.AddEvent(new ActivityEvent("Faulted", tags: CreateStatusTags(context)));
+            span.AddEvent(new("faulted"));
             span.SetStatus(ActivityStatusCode.Error);
-            span.SetTag("error", true);
         }
-        else
+        else if (context.SubStatus == WorkflowSubStatus.Finished)
         {
-            span.AddEvent(new ActivityEvent("Executed", tags: CreateStatusTags(context)));
+            span.AddEvent(new("finished"));
             span.SetStatus(ActivityStatusCode.Ok);
         }
-        
-        if(context.Incidents.Any())
+        else if (context.SubStatus == WorkflowSubStatus.Cancelled)
         {
-            span.SetStatus(ActivityStatusCode.Error);
-            span.SetTag("workflowInstance.hasIncidents", true);
-            span.SetTag("error", true);
-
-            if (context.Incidents.Count > 0)
-                span.SetTag("error.message", JsonSerializer.Serialize(context.Incidents, _incidentSerializerOptions));
+            span.AddEvent(new("canceled"));
+            span.SetStatus(ActivityStatusCode.Ok);
         }
-        
-        if (!string.IsNullOrWhiteSpace(context.CorrelationId))
-            span.SetTag("workflowInstance.correlationId", context.CorrelationId);
-        
-        var now = systemClock.UtcNow;
-        span.SetTag("workflowExecution.endTimeUtc", now);
-        span.SetTag("workflowExecution.durationMs", (now - span.StartTimeUtc).TotalMilliseconds);
-    }
-    
-    private ActivityTagsCollection CreateStatusTags(WorkflowExecutionContext context)
-    {
-        return new ActivityTagsCollection(new Dictionary<string, object?>
+        else if (context.SubStatus == WorkflowSubStatus.Suspended)
         {
-            ["workflowInstance.status"] = context.Status.ToString(),
-            ["workflowInstance.subStatus"] = context.SubStatus.ToString()
+            span.AddEvent(new("suspended"));
+            span.SetStatus(ActivityStatusCode.Ok);
+        }
+        else if (context.SubStatus == WorkflowSubStatus.Pending)
+        {
+            span.AddEvent(new("pending"));
+            span.SetStatus(ActivityStatusCode.Ok);
+        }
+
+        if (context.Incidents.Any())
+        {
+            span.SetTag("workflow.incidents", true);
+            span.SetTag("workflow.incidents.count", context.Incidents.Count);
+
+            foreach (var incident in context.Incidents)
+                span.AddEvent(new("incident", incident.Timestamp, CreateIncidentTags(incident)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(context.CorrelationId))
+            span.SetTag("workflow.correlation_id", context.CorrelationId);
+    }
+
+    private ActivityTagsCollection CreateIncidentTags(ActivityIncident incident)
+    {
+        var tags = new ActivityTagsCollection(new Dictionary<string, object?>
+        {
+            ["incident.message"] = incident.Message,
         });
+
+        if (incident.Exception != null)
+        {
+            tags["incident.exception.message"] = incident.Exception.Message;
+            tags["incident.exception.stackTrace"] = incident.Exception.StackTrace;
+            tags["incident.exception.type"] = incident.Exception.GetType().FullName;
+        }
+
+        return tags;
     }
 }
 

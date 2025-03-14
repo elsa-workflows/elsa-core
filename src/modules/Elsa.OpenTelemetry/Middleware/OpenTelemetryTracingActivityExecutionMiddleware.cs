@@ -19,7 +19,7 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
         var activity = context.Activity;
-        using var span = ElsaOpenTelemetry.ActivitySource.StartActivity("ActivityExecution", ActivityKind.Internal, Activity.Current?.Context ?? default);
+        using var span = ElsaOpenTelemetry.ActivitySource.StartActivity($"execute activity {activity.Type}", ActivityKind.Internal, Activity.Current?.Context ?? default);
 
         if (span == null)
         {
@@ -27,46 +27,51 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
             return;
         }
 
-        span.SetTag("activity.nodeId", activity.NodeId);
+        span.SetTag("operation.name", "elsa.activity.execution");
+        span.SetTag("activity.id", activity.NodeId);
+        span.SetTag("activity.node.id", activity.NodeId);
         span.SetTag("activity.type", activity.Type);
         span.SetTag("activity.name", activity.Name);
-        span.SetTag("activityInstance.id", context.Id);
-        span.SetTag("activityExecution.startTimeUtc", span.StartTimeUtc);
-        span.SetTag("tenantId", context.WorkflowExecutionContext.Workflow.Identity.TenantId);
-        
-        span.AddEvent(new("Executing", tags: CreateStatusTags(context)));
-        
+        span.SetTag("activity.version", activity.Version);
+        span.SetTag("activity.instance.id", context.Id);
+        span.SetTag("activity.tenant.id", context.WorkflowExecutionContext.Workflow.Identity.TenantId);
+
+        span.AddEvent(new("executing"));
+
         await next(context);
 
         if (context.Status == ActivityStatus.Faulted)
         {
-            span.AddEvent(new("Faulted", tags: CreateStatusTags(context)));
+            span.AddEvent(new("faulted"));
             span.SetStatus(ActivityStatusCode.Error);
-            span.SetTag("activityInstance.hasIncidents", true);
+            span.SetTag("activity.incidents", true);
 
             var errorSpanHandlers = context.GetServices<IErrorSpanHandler>();
             var errorSpanHandlerContext = new ErrorSpanContext(span, context.Exception);
-            
-            foreach (var handler in errorSpanHandlers) 
+
+            foreach (var handler in errorSpanHandlers)
                 handler.Handle(errorSpanHandlerContext);
         }
-        else
+        else if (context.Status == ActivityStatus.Canceled)
         {
-            span.AddEvent(new("Executed", tags: CreateStatusTags(context)));
+            span.AddEvent(new("canceled"));
             span.SetStatus(ActivityStatusCode.Ok);
         }
-        
-        var now = systemClock.UtcNow;
-        span.SetTag("activityExecution.endTimeUtc", now);
-        span.SetTag("activityExecution.durationMs", (now - span.StartTimeUtc).TotalMilliseconds);
-    }
-    
-    private ActivityTagsCollection CreateStatusTags(ActivityExecutionContext context)
-    {
-        return new(new Dictionary<string, object?>
+        else if (context.Status == ActivityStatus.Running)
         {
-            ["activityInstance.status"] = context.Status.ToString()
-        });
+            span.AddEvent(new("running"));
+            span.SetStatus(ActivityStatusCode.Ok);
+        }
+        else if (context.Status == ActivityStatus.Completed)
+        {
+            span.AddEvent(new("completed"));
+            span.SetStatus(ActivityStatusCode.Ok);
+        }
+        else if (context.Status == ActivityStatus.Pending)
+        {
+            span.AddEvent(new("pending"));
+            span.SetStatus(ActivityStatusCode.Ok);
+        }
     }
 }
 
