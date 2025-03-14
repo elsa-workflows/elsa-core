@@ -20,7 +20,7 @@ public class ParallelForEach<T> : Activity
     private const string CompletedTagsProperty = nameof(CompletedTagsProperty);
 
     /// <inheritdoc />
-    public ParallelForEach([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public ParallelForEach([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -34,7 +34,7 @@ public class ParallelForEach<T> : Activity
     /// The <see cref="IActivity"/> to execute each iteration.
     /// </summary>
     [Port]
-    public IActivity Body { get; set; } = default!;
+    public IActivity Body { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

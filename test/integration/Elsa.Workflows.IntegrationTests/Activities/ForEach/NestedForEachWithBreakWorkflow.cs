@@ -9,8 +9,8 @@ class NestedForEachWithBreakWorkflow : WorkflowBase
     {
         var outerItems = new[] { "C#", "Rust", "Go" };
         var innerItems = new[] { "Classes", "Functions", "Modules" };
-        var currentOuterItem = new Variable<string>();
-        var currentInnerItem = new Variable<string>();
+        var currentOuterItem = new Variable<string>("CurrentOuterItem", "");
+        var currentInnerItem = new Variable<string>("CurrentInnerItem", "");
 
         workflow.Root = new ForEach<string>(outerItems)
         {

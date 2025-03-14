@@ -7,7 +7,7 @@ class BreakForWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        var currentValue = new Variable<int?>();
+        var currentValue = new Variable<int?>("CurrentValue", null);
 
         workflow.Root = new Sequence
         {
