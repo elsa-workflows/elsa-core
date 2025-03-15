@@ -177,6 +177,11 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         }
     }
 
+    public IDisposable EnterExecution()
+    {
+        return new WorkflowExecutionState(this);
+    }
+
     /// <summary>
     /// Sets the current status of the activity.
     /// </summary>
