@@ -63,11 +63,6 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
             span.AddEvent(new("canceled"));
             span.SetStatus(ActivityStatusCode.Ok);
         }
-        else if (context.Status == ActivityStatus.Running)
-        {
-            span.AddEvent(new("running"));
-            span.SetStatus(ActivityStatusCode.Ok);
-        }
         else if (context.Status == ActivityStatus.Completed)
         {
             span.AddEvent(new("completed"));

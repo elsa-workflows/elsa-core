@@ -22,8 +22,6 @@ namespace Elsa.OpenTelemetry.Middleware;
 [UsedImplicitly]
 public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, ISystemClock systemClock) : WorkflowExecutionMiddleware(next)
 {
-    private readonly JsonSerializerOptions? _incidentSerializerOptions = new JsonSerializerOptions().WithConverters(new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()));
-
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
@@ -76,11 +74,6 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         else if (context.SubStatus == WorkflowSubStatus.Suspended)
         {
             span.AddEvent(new("suspended"));
-            span.SetStatus(ActivityStatusCode.Ok);
-        }
-        else if (context.SubStatus == WorkflowSubStatus.Pending)
-        {
-            span.AddEvent(new("pending"));
             span.SetStatus(ActivityStatusCode.Ok);
         }
 
