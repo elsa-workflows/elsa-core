@@ -1,5 +1,6 @@
 using System.Data;
 using System.Data.Common;
+using System.Text;
 using Elsa.Sql.Models;
 
 namespace Elsa.Sql.Client;
@@ -10,6 +11,24 @@ public abstract class BaseSqlClient : ISqlClient
     /// The connection string used to connect with the database.
     /// </summary>
     protected readonly string _connectionString;
+
+    /// <summary>
+    /// The marker used when injecting parameters into a query.
+    /// Default: "@"
+    /// </summary>
+    public virtual string ParameterMarker { get; set; } =  "@";
+
+    /// <summary>
+    /// The text following the <c>ParameterMarker</c>when injecting parameters into a query
+    /// Default: <see cref="string.Empty"/>
+    /// </summary>
+    public virtual string ParameterText { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Set to true to add a counter to the end of the parameter string
+    /// Default: false
+    /// </summary>
+    public virtual bool IncrementParameter { get; set; } = true;
 
     /// <summary>
     /// Create a connection using the client specific connection.
@@ -38,8 +57,9 @@ public abstract class BaseSqlClient : ISqlClient
     {
         using var connection = CreateConnection();
         connection.Open();
-        var command = CreateCommand(evaluatedQuery.Query, connection);
-        AddParameters(command, evaluatedQuery.Parameters);
+        var query = ReplaceQueryParameters(evaluatedQuery);
+        var command = CreateCommand(query, connection);
+        AddCommandParameters(command, evaluatedQuery.Parameters);
 
         var result = await command.ExecuteNonQueryAsync();
         return result;
@@ -52,8 +72,9 @@ public abstract class BaseSqlClient : ISqlClient
     {
         using var connection = CreateConnection();
         connection.Open();
-        var command = CreateCommand(evaluatedQuery.Query, connection);
-        AddParameters(command, evaluatedQuery.Parameters);
+        var query = ReplaceQueryParameters(evaluatedQuery);
+        var command = CreateCommand(query, connection);
+        AddCommandParameters(command, evaluatedQuery.Parameters);
 
         var result = await command.ExecuteScalarAsync();
         return result;
@@ -66,11 +87,33 @@ public abstract class BaseSqlClient : ISqlClient
     {
         using var connection = CreateConnection();
         connection.Open();
-        var command = CreateCommand(evaluatedQuery.Query, connection);
-        AddParameters(command, evaluatedQuery.Parameters);
+        var query = ReplaceQueryParameters(evaluatedQuery);
+        var command = CreateCommand(query, connection);
+        AddCommandParameters(command, evaluatedQuery.Parameters);
 
         using var reader = await command.ExecuteReaderAsync();
         return await Task.FromResult(ReadAsDataSet(reader));
+    }
+
+    /// <summary>
+    /// Replace the evaluated parameters with client specific parameters.
+    /// </summary>
+    /// <param name="evaluatedQuery">Query to replace parameters for.</param>
+    /// <returns></returns>
+    private string ReplaceQueryParameters(EvaluatedQuery evaluatedQuery)
+    {
+        var count = 1;
+        var clientUpdatedParams = new Dictionary<string, object>();
+        var queryBuilder = new StringBuilder(evaluatedQuery.Query);
+        foreach (var param in evaluatedQuery.Parameters)
+        {
+            var counterValue = IncrementParameter ? count++.ToString() : string.Empty;
+            var newKey = $"{ParameterMarker}{ParameterText}{counterValue}";
+            queryBuilder.Replace(param.Key, newKey);
+            clientUpdatedParams[newKey] = param.Value;
+        }
+        evaluatedQuery.Parameters = clientUpdatedParams;
+        return queryBuilder.ToString();
     }
 
     /// <summary>
@@ -79,7 +122,7 @@ public abstract class BaseSqlClient : ISqlClient
     /// <param name="command">Command to add the parameters to</param>
     /// <param name="parameters">Parameters to add</param>
     /// <returns></returns>
-    private DbCommand AddParameters(DbCommand command, Dictionary<string, object?> parameters)
+    private DbCommand AddCommandParameters(DbCommand command, Dictionary<string, object?> parameters)
     {
         // Add parameters dynamically
         foreach (var param in parameters)

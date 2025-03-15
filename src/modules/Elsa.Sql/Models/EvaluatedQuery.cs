@@ -8,12 +8,12 @@
         /// <summary>
         /// Query with parameterized values
         /// </summary>
-        public string Query { get; }
+        public string Query { get; set; }
 
         /// <summary>
         /// Parameters to inject into the query at execution
         /// </summary>
-        public Dictionary<string, object?> Parameters { get; } = new Dictionary<string, object?>();
+        public Dictionary<string, object?> Parameters { get; set; } = new Dictionary<string, object?>();
 
         /// <summary>
         /// An evaluated query response.

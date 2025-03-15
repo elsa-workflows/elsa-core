@@ -21,39 +21,43 @@ public class SqlEvaluator() : ISqlEvaluator
         ExpressionEvaluatorOptions options,
         CancellationToken cancellationToken = default)
     {
-        if (!expression.Contains("@")) return new EvaluatedQuery(expression);
+        if (!expression.Contains("{{")) return new EvaluatedQuery(expression);
 
         var sb = new StringBuilder();
-        var parameters = new Dictionary<string, object?>();
         int start = 0;
+        var parameters = new Dictionary<string, object?>();
         int paramIndex = 0;
 
         while (start < expression.Length)
         {
-            int atIndex = expression.IndexOf('@', start);
-            if (atIndex == -1)
+            int openIndex = expression.IndexOf("{{", start);
+            if (openIndex == -1)
             {
-                sb.Append(expression.Substring(start));
+                sb.Append(expression.AsSpan(start));
                 break;
             }
 
-            sb.Append(expression.Substring(start, atIndex - start));
+            // Append everything before {{
+            sb.Append(expression.AsSpan(start, openIndex - start));
 
-            int endIndex = atIndex + 1;
-            while (endIndex < expression.Length && (char.IsLetterOrDigit((char)expression[endIndex]) || expression[endIndex] == '.' || expression[endIndex] == '_'))
-            {
-                endIndex++;
-            }
+            // Find the closing }}
+            int closeIndex = expression.IndexOf("}}", openIndex + 2);
+            if (closeIndex == -1) throw new FormatException("Unmatched '{{' found in SQL expression.");
 
-            string key = expression.Substring(atIndex + 1, endIndex - atIndex - 1);
+            // Extract key
+            string key = expression.Substring(openIndex + 2, closeIndex - openIndex - 2).Trim();
+            if (string.IsNullOrEmpty(key)) throw new FormatException("Empty placeholder '{{}}' is not allowed.");
+
+            // Resolve value
             object? value = ResolveValue(key, context);
-            if (value is null) throw new NullReferenceException($"No value found for '{key}'.");
+            if (value is null) throw new NullReferenceException($"No value found for '{{{{{key}}}}}'.");
 
-            string paramName = $"@param{paramIndex++}";
+            // Replace with parameterized name
+            string paramName = $"{{{{p{paramIndex++}}}}}";
             parameters[paramName] = value;
 
             sb.Append(paramName);
-            start = endIndex;
+            start = closeIndex + 2;
         }
 
         return new EvaluatedQuery(sb.ToString(), parameters);
