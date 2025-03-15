@@ -27,13 +27,28 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
     {
         var workflowInstanceId = context.Id;
         var workflow = context.Workflow;
-        using var span = ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflow.WorkflowMetadata.Name}", ActivityKind.Server, Activity.Current?.Context ?? default);
-        var now = systemClock.UtcNow;
+        var startNewTrace = context.Properties.TryGetValue("StartNewTrace", out var startNewTraceValue) && (bool)startNewTraceValue;
+        var parentTraceContext = startNewTrace ? default : Activity.Current?.Context ?? default;
+        var linkedTraceContext = startNewTrace ? Activity.Current : null;
+        
+        if(startNewTrace)
+        {
+            Activity.Current?.Stop();
+            Activity.Current = null;
+        }
+        
+        using var span = ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflow.WorkflowMetadata.Name}", ActivityKind.Server, parentTraceContext);
 
         if (span == null) // No listener is registered.
         {
             await Next(context);
             return;
+        }
+
+        if(startNewTrace)
+        {
+            if (linkedTraceContext != null)
+                span.AddLink(new(linkedTraceContext.Context));
         }
 
         span.SetTag("operation.name", "elsa.workflow.execution");

@@ -20,7 +20,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 public class DispatchWorkflow : Activity<object>
 {
     /// <inheritdoc />
-    public DispatchWorkflow([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public DispatchWorkflow([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -32,7 +32,7 @@ public class DispatchWorkflow : Activity<object>
         Description = "The definition ID of the workflow to dispatch.",
         UIHint = InputUIHints.WorkflowDefinitionPicker
     )]
-    public Input<string> WorkflowDefinitionId { get; set; } = default!;
+    public Input<string> WorkflowDefinitionId { get; set; } = null!;
 
     /// <summary>
     /// The correlation ID to associate the workflow with. 
@@ -41,19 +41,25 @@ public class DispatchWorkflow : Activity<object>
         DisplayName = "Correlation ID",
         Description = "The correlation ID to associate the workflow with."
     )]
-    public Input<string?> CorrelationId { get; set; } = default!;
+    public Input<string?> CorrelationId { get; set; } = null!;
 
     /// <summary>
     /// The input to send to the workflow.
     /// </summary>
     [Input(Description = "The input to send to the workflow.")]
-    public Input<IDictionary<string, object>?> Input { get; set; } = default!;
+    public Input<IDictionary<string, object>?> Input { get; set; } = null!;
 
     /// <summary>
     /// True to wait for the child workflow to complete before completing this activity, false to "fire and forget".
     /// </summary>
     [Input(Description = "Wait for the child workflow to complete before completing this activity.")]
-    public Input<bool> WaitForCompletion { get; set; } = default!;
+    public Input<bool> WaitForCompletion { get; set; } = null!;
+
+    /// <summary>
+    /// Indicates whether a new trace context should be started for the workflow execution.
+    /// </summary>
+    [Input(Description = "Start a new trace context when using Open Telemetry.", Category = "Open Telemetry")]
+    public Input<bool> StartNewTrace { get; set; }
 
     /// <summary>
     /// The channel to dispatch the workflow to.
@@ -64,7 +70,7 @@ public class DispatchWorkflow : Activity<object>
         UIHint = InputUIHints.DropDown,
         UIHandler = typeof(DispatcherChannelOptionsProvider)
     )]
-    public Input<string?> ChannelName { get; set; } = default!;
+    public Input<string?> ChannelName { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -103,16 +109,17 @@ public class DispatchWorkflow : Activity<object>
 
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
         var channelName = ChannelName.GetOrDefault(context);
+        var startNewTrace = StartNewTrace.GetOrDefault(context);
         var parentInstanceId = context.WorkflowExecutionContext.Id;
         var properties = new Dictionary<string, object>
         {
-            ["ParentInstanceId"] = parentInstanceId
+            ["ParentInstanceId"] = parentInstanceId,
         };
 
         // If we need to wait for the child workflow to complete, set the property. This will be used by the ResumeDispatchWorkflowActivity handler.
-        if (waitForCompletion)
-            properties["WaitForCompletion"] = true;
-
+        if (waitForCompletion) properties["WaitForCompletion"] = true;
+        if (startNewTrace) properties["StartNewTrace"] = true;
+        
         input["ParentInstanceId"] = parentInstanceId;
 
         var correlationId = CorrelationId.GetOrDefault(context);
