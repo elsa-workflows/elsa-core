@@ -1,4 +1,5 @@
 ﻿using Elsa.Expressions.Models;
+using Elsa.Sql.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Sql.Contracts;
@@ -16,8 +17,8 @@ public interface ISqlEvaluator
     /// <param name="context">The context in which the expression is evaluated.</param>
     /// <param name="options">A set of options.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
-    /// <returns>The result of the evaluation.</returns>
-    Task<string?> EvaluateAsync(
+    /// <returns>The <see cref="EvaluatedQuery"/> result.</returns>
+    Task<EvaluatedQuery> EvaluateAsync(
         string expression,
         ExpressionExecutionContext context,
         ExpressionEvaluatorOptions options,

@@ -2,6 +2,7 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Sql.Contracts;
+using Elsa.Sql.Models;
 
 namespace Elsa.Sql.Services;
 
@@ -14,16 +15,18 @@ namespace Elsa.Sql.Services;
 public class SqlEvaluator() : ISqlEvaluator
 {
     /// <inheritdoc />
-    public async Task<string?> EvaluateAsync(
+    public async Task<EvaluatedQuery> EvaluateAsync(
         string expression,
         ExpressionExecutionContext context,
         ExpressionEvaluatorOptions options,
         CancellationToken cancellationToken = default)
     {
-        if (!expression.Contains("@")) return expression;
+        if (!expression.Contains("@")) return new EvaluatedQuery(expression);
 
         var sb = new StringBuilder();
+        var parameters = new Dictionary<string, object?>();
         int start = 0;
+        int paramIndex = 0;
 
         while (start < expression.Length)
         {
@@ -46,11 +49,14 @@ public class SqlEvaluator() : ISqlEvaluator
             object? value = ResolveValue(key, context);
             if (value is null) throw new NullReferenceException($"No value found for '{key}'.");
 
-            sb.Append(value?.ToString() ?? $"<{key}>");
+            string paramName = $"@param{paramIndex++}";
+            parameters[paramName] = value;
+
+            sb.Append(paramName);
             start = endIndex;
         }
 
-        return sb.ToString();
+        return new EvaluatedQuery(sb.ToString(), parameters);
     }
 
     private object? ResolveValue(string key, ExpressionExecutionContext context)
