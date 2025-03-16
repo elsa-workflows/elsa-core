@@ -30,6 +30,12 @@ public abstract class BaseSqlClient : ISqlClient
     public virtual bool IncrementParameter { get; set; } = true;
 
     /// <summary>
+    /// Default base implementation for an SQL client.
+    /// </summary>
+    /// <param name="connectionString"></param>
+    protected BaseSqlClient(string connectionString) => _connectionString = connectionString;
+
+    /// <summary>
     /// Create a connection using the client specific connection.
     /// </summary>
     /// <returns></returns>
@@ -42,12 +48,6 @@ public abstract class BaseSqlClient : ISqlClient
     /// <param name="connection"></param>
     /// <returns></returns>
     protected abstract DbCommand CreateCommand(string query, DbConnection connection);
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="connectionString"></param>
-    protected BaseSqlClient(string connectionString) => _connectionString = connectionString;
 
     /// <summary>
     /// <inheritdoc/>
@@ -99,7 +99,6 @@ public abstract class BaseSqlClient : ISqlClient
     /// <returns></returns>
     private DbCommand AddCommandParameters(DbCommand command, Dictionary<string, object?> parameters)
     {
-        // Add parameters dynamically
         foreach (var param in parameters)
         {
             var dbParam = command.CreateParameter();
