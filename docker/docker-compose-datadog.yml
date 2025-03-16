@@ -41,7 +41,7 @@ services:
   datadog-agent:
     image: gcr.io/datadoghq/agent:7
     environment:
-      DD_API_KEY: "b430503d709680c951cfe3979ae35068"
+      DD_API_KEY: "<hidden>"
       DD_SITE: "datadoghq.eu"
       DD_HOSTNAME: "datadog-agent"
       DD_LOGS_ENABLED: "true"
