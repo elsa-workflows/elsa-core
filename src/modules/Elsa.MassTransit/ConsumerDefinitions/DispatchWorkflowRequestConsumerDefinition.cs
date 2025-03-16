@@ -22,11 +22,6 @@ public class DispatchWorkflowRequestConsumerDefinition : ConsumerDefinition<Disp
     /// <inheritdoc />
     protected override void ConfigureConsumer(IReceiveEndpointConfigurator endpointConfigurator, IConsumerConfigurator<DispatchWorkflowRequestConsumer> consumerConfigurator, IRegistrationContext context)
     {
-        endpointConfigurator.UseMessageRetry(r =>
-        {
-            r.Ignore<InvalidOperationException>(); // Ignore exceptions due to e.g. serialization errors.
-            r.Interval(5, 1000);
-        });
         endpointConfigurator.UseInMemoryOutbox(context);
     }
 }
