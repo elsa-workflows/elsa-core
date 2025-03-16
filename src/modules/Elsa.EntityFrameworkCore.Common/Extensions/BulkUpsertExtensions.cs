@@ -89,10 +89,7 @@ public static class BulkUpsertExtensions
         var entityType = dbContext.Model.FindEntityType(typeof(TEntity))!;
         var tableName = $"[{entityType.GetSchema()}].[{entityType.GetTableName()}]";
         var storeObject = StoreObjectIdentifier.Table(entityType.GetTableName()!, entityType.GetSchema());
-
-        // Include shadow properties
         var props = entityType.GetProperties().ToList();
-
         var keyProp = entityType.FindProperty(keySelector.GetMemberAccess().Name)!;
         var keyColumnName = $"[{keyProp.GetColumnName(storeObject)}]";
         var columnNames = props
@@ -119,13 +116,18 @@ public static class BulkUpsertExtensions
                 object? value = property.IsShadowProperty()
                     ? dbContext.Entry(entity).Property(property.Name).CurrentValue
                     : property.PropertyInfo?.GetValue(entity);
-                
-                var converter = property.GetTypeMapping().Converter;
-                if (converter != null) 
-                    value = converter.ConvertToProvider(value);
 
-                values.Add(paramName);
-                parameters.Add(value);
+                var converter = property.GetTypeMapping().Converter;
+                if (converter != null)
+                    value = converter.ConvertToProvider(value)!;
+
+                // Explicitly cast null values for varbinary columns
+                if (property.GetColumnType().StartsWith("varbinary", StringComparison.OrdinalIgnoreCase) && value is null)
+                    values.Add("CAST(NULL AS varbinary(max))"); // Explicitly cast null
+                else
+                    values.Add(paramName);
+                
+                parameters.Add(value!);
             }
 
             var line = $"({string.Join(", ", values)}){(i < entities.Count - 1 ? "," : string.Empty)}";
@@ -179,9 +181,9 @@ public static class BulkUpsertExtensions
                 object? value = property.IsShadowProperty()
                     ? dbContext.Entry(entity).Property(property.Name).CurrentValue
                     : property.PropertyInfo?.GetValue(entity);
-                
+
                 var converter = property.GetTypeMapping().Converter;
-                if (converter != null) 
+                if (converter != null)
                     value = converter.ConvertToProvider(value);
 
                 placeholders.Add(paramName);
@@ -241,9 +243,9 @@ public static class BulkUpsertExtensions
                 object? value = property.IsShadowProperty()
                     ? dbContext.Entry(entity).Property(property.Name).CurrentValue
                     : property.PropertyInfo?.GetValue(entity);
-                
+
                 var converter = property.GetTypeMapping().Converter;
-                if (converter != null) 
+                if (converter != null)
                     value = converter.ConvertToProvider(value);
 
                 placeholders.Add(paramName);
@@ -303,9 +305,9 @@ public static class BulkUpsertExtensions
                 object? value = property.IsShadowProperty()
                     ? dbContext.Entry(entity).Property(property.Name).CurrentValue
                     : property.PropertyInfo?.GetValue(entity);
-                
+
                 var converter = property.GetTypeMapping().Converter;
-                if (converter != null) 
+                if (converter != null)
                     value = converter.ConvertToProvider(value);
 
                 placeholders.Add(paramName);
@@ -369,9 +371,9 @@ public static class BulkUpsertExtensions
                 object? value = property.IsShadowProperty()
                     ? dbContext.Entry(entity).Property(property.Name).CurrentValue
                     : property.PropertyInfo?.GetValue(entity);
-                
+
                 var converter = property.GetTypeMapping().Converter;
-                if (converter != null) 
+                if (converter != null)
                     value = converter.ConvertToProvider(value);
 
                 parameters.Add(value);
