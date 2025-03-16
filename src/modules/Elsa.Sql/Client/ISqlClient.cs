@@ -6,6 +6,21 @@ namespace Elsa.Sql.Client;
 public interface ISqlClient
 {
     /// <summary>
+    /// The marker used when injecting parameters into a query.
+    /// </summary>
+    public string ParameterMarker { get; set; }
+
+    /// <summary>
+    /// The text following the <c>ParameterMarker</c> when injecting parameters into a query.
+    /// </summary>
+    public string ParameterText { get; set; }
+
+    /// <summary>
+    /// Set to true to add a counter to the end of the parameter string.
+    /// </summary>
+    public bool IncrementParameter { get; set; }
+
+    /// <summary>
     /// Asynchronously executes a Transact-SQL statement against the connection and returns the number of rows affected.
     /// </summary>
     /// <param name="evaluatedQuery">The evaluated query to execute.</param>

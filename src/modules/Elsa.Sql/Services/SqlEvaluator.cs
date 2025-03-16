@@ -3,6 +3,7 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Sql.Contracts;
 using Elsa.Sql.Models;
+using Elsa.Workflows;
 
 namespace Elsa.Sql.Services;
 
@@ -14,6 +15,10 @@ namespace Elsa.Sql.Services;
 /// </remarks>
 public class SqlEvaluator() : ISqlEvaluator
 {
+    private WorkflowExecutionContext executionContext;
+    private ActivityExecutionContext activityContext;
+    private ExpressionExecutionContext expressionContext;
+
     /// <inheritdoc />
     public async Task<EvaluatedQuery> EvaluateAsync(
         string expression,
@@ -22,6 +27,14 @@ public class SqlEvaluator() : ISqlEvaluator
         CancellationToken cancellationToken = default)
     {
         if (!expression.Contains("{{")) return new EvaluatedQuery(expression);
+
+        expressionContext = context;
+        executionContext = context.GetWorkflowExecutionContext();
+        activityContext = context.GetActivityExecutionContext();
+
+        // Create client
+        var factory = context.GetRequiredService<ISqlClientFactory>();
+        var client = factory.CreateClient(activityContext.ActivityState["Client"].ToString(), activityContext.ActivityState["ConnectionString"].ToString());
 
         var sb = new StringBuilder();
         int start = 0;
@@ -49,11 +62,12 @@ public class SqlEvaluator() : ISqlEvaluator
             if (string.IsNullOrEmpty(key)) throw new FormatException("Empty placeholder '{{}}' is not allowed.");
 
             // Resolve value
-            object? value = ResolveValue(key, context);
-            if (value is null) throw new NullReferenceException($"No value found for '{{{{{key}}}}}'.");
+            object? value = ResolveValue(key);
+            if (value is null) throw new NullReferenceException($"No value found for {{{{{key}}}}}.");
 
             // Replace with parameterized name
-            string paramName = $"{{{{p{paramIndex++}}}}}";
+            var counterValue = client.IncrementParameter ? paramIndex++.ToString() : string.Empty;
+            string paramName = $"{client.ParameterMarker}{client.ParameterText}{counterValue}";
             parameters[paramName] = value;
 
             sb.Append(paramName);
@@ -63,19 +77,19 @@ public class SqlEvaluator() : ISqlEvaluator
         return new EvaluatedQuery(sb.ToString(), parameters);
     }
 
-    private object? ResolveValue(string key, ExpressionExecutionContext context)
+    private object? ResolveValue(string key)
     {
         return key switch
         {
-            "Workflow.Definition.Id" => context.GetWorkflowExecutionContext().Workflow.Identity.DefinitionId,
-            "Workflow.Definition.Version.Id" => context.GetWorkflowExecutionContext().Workflow.Identity.Id,
-            "Workflow.Definition.Version" => context.GetWorkflowExecutionContext().Workflow.Identity.Version,
-            "Workflow.Instance.Id" => context.GetActivityExecutionContext().WorkflowExecutionContext.Id,
-            "Correlation.Id" => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId,
-            "LastResult" => context.GetLastResult(),
-            var i when i.StartsWith("Input.") => context.GetWorkflowExecutionContext().Input.TryGetValue(i.Substring(6), out var v) ? v : null,
-            var o when o.StartsWith("Output.") => context.GetWorkflowExecutionContext().Output.TryGetValue(o.Substring(7), out var v) ? v : null,
-            var v when v.StartsWith("Variables.") => context.GetWorkflowExecutionContext().Variables.FirstOrDefault(x => x.Name == v.Substring(10), null)?.Value ?? null,
+            "Workflow.Definition.Id" => executionContext.Workflow.Identity.DefinitionId,
+            "Workflow.Definition.Version.Id" => executionContext.Workflow.Identity.Id,
+            "Workflow.Definition.Version" => executionContext.Workflow.Identity.Version,
+            "Workflow.Instance.Id" => activityContext.WorkflowExecutionContext.Id,
+            "Correlation.Id" => activityContext.WorkflowExecutionContext.CorrelationId,
+            "LastResult" => expressionContext.GetLastResult(),
+            var i when i.StartsWith("Input.") => executionContext.Input.TryGetValue(i.Substring(6), out var v) ? v : null,
+            var o when o.StartsWith("Output.") => executionContext.Output.TryGetValue(o.Substring(7), out var v) ? v : null,
+            var v when v.StartsWith("Variables.") => executionContext.Variables.FirstOrDefault(x => x.Name == v.Substring(10), null)?.Value ?? null,
             _ => null
         };
     }

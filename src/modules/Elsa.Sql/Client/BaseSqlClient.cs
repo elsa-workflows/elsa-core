@@ -1,6 +1,5 @@
 using System.Data;
 using System.Data.Common;
-using System.Text;
 using Elsa.Sql.Models;
 
 namespace Elsa.Sql.Client;
@@ -19,14 +18,14 @@ public abstract class BaseSqlClient : ISqlClient
     public virtual string ParameterMarker { get; set; } =  "@";
 
     /// <summary>
-    /// The text following the <c>ParameterMarker</c>when injecting parameters into a query
-    /// Default: <see cref="string.Empty"/>
+    /// The text following the <c>ParameterMarker</c> when injecting parameters into a query.
+    /// Default: "param"
     /// </summary>
-    public virtual string ParameterText { get; set; } = string.Empty;
+    public virtual string ParameterText { get; set; } = "p";
 
     /// <summary>
-    /// Set to true to add a counter to the end of the parameter string
-    /// Default: false
+    /// Set to true to add a counter to the end of the parameter string.
+    /// Default: true
     /// </summary>
     public virtual bool IncrementParameter { get; set; } = true;
 
@@ -57,8 +56,7 @@ public abstract class BaseSqlClient : ISqlClient
     {
         using var connection = CreateConnection();
         connection.Open();
-        var query = ReplaceQueryParameters(evaluatedQuery);
-        var command = CreateCommand(query, connection);
+        var command = CreateCommand(evaluatedQuery.Query, connection);
         AddCommandParameters(command, evaluatedQuery.Parameters);
 
         var result = await command.ExecuteNonQueryAsync();
@@ -72,8 +70,7 @@ public abstract class BaseSqlClient : ISqlClient
     {
         using var connection = CreateConnection();
         connection.Open();
-        var query = ReplaceQueryParameters(evaluatedQuery);
-        var command = CreateCommand(query, connection);
+        var command = CreateCommand(evaluatedQuery.Query, connection);
         AddCommandParameters(command, evaluatedQuery.Parameters);
 
         var result = await command.ExecuteScalarAsync();
@@ -87,8 +84,7 @@ public abstract class BaseSqlClient : ISqlClient
     {
         using var connection = CreateConnection();
         connection.Open();
-        var query = ReplaceQueryParameters(evaluatedQuery);
-        var command = CreateCommand(query, connection);
+        var command = CreateCommand(evaluatedQuery.Query, connection);
         AddCommandParameters(command, evaluatedQuery.Parameters);
 
         using var reader = await command.ExecuteReaderAsync();
@@ -96,28 +92,7 @@ public abstract class BaseSqlClient : ISqlClient
     }
 
     /// <summary>
-    /// Replace the evaluated parameters with client specific parameters.
-    /// </summary>
-    /// <param name="evaluatedQuery">Query to replace parameters for.</param>
-    /// <returns></returns>
-    private string ReplaceQueryParameters(EvaluatedQuery evaluatedQuery)
-    {
-        var count = 1;
-        var clientUpdatedParams = new Dictionary<string, object>();
-        var queryBuilder = new StringBuilder(evaluatedQuery.Query);
-        foreach (var param in evaluatedQuery.Parameters)
-        {
-            var counterValue = IncrementParameter ? count++.ToString() : string.Empty;
-            var newKey = $"{ParameterMarker}{ParameterText}{counterValue}";
-            queryBuilder.Replace(param.Key, newKey);
-            clientUpdatedParams[newKey] = param.Value;
-        }
-        evaluatedQuery.Parameters = clientUpdatedParams;
-        return queryBuilder.ToString();
-    }
-
-    /// <summary>
-    /// Inject parameters into the query to prevent SQL injection.
+    /// Add parameters into the query to prevent SQL injection.
     /// </summary>
     /// <param name="command">Command to add the parameters to</param>
     /// <param name="parameters">Parameters to add</param>
