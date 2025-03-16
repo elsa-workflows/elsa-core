@@ -71,8 +71,8 @@ public partial class WorkflowExecutionContext : IExecutionContext
         _activityExecutionContexts = new List<ActivityExecutionContext>();
         Scheduler = serviceProvider.GetRequiredService<IActivitySchedulerFactory>().CreateScheduler();
         IdentityGenerator = serviceProvider.GetRequiredService<IIdentityGenerator>();
-        Input = input != null ? new Dictionary<string, object>(input, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-        Properties = properties != null ? new Dictionary<string, object>(properties, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        Input = input != null ? new(input, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        Properties = properties != null ? new(properties, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         ExecuteDelegate = executeDelegate;
         TriggerActivityId = triggerActivityId;
         CreatedAt = createdAt;
@@ -193,7 +193,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             MemoryRegister = workflowGraph.Workflow.CreateRegister()
         };
 
-        workflowExecutionContext.ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, workflowExecutionContext.MemoryRegister, cancellationToken: cancellationToken);
+        workflowExecutionContext.ExpressionExecutionContext = new(serviceProvider, workflowExecutionContext.MemoryRegister, cancellationToken: cancellationToken);
 
         await workflowExecutionContext.SetWorkflowGraphAsync(workflowGraph);
         return workflowExecutionContext;
@@ -263,6 +263,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
     /// An application-specific identifier associated with the execution context.
     public string? CorrelationId { get; set; }
+
+    /// Gets or sets the name of the workflow instance.
+    public string? Name { get; set; }
 
     /// The ID of the workflow instance that triggered this instance.
     public string? ParentWorkflowInstanceId { get; set; }

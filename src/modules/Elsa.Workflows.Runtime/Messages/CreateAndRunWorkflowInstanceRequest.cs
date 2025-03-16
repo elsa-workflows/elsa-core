@@ -18,6 +18,11 @@ public class CreateAndRunWorkflowInstanceRequest
     /// The correlation ID of the workflow, if any.
     /// </summary>
     public string? CorrelationId { get; set; }
+    
+    /// <summary>
+    /// The name of the workflow instance to be created.
+    /// </summary>
+    public string? Name { get; set; }
 
     /// <summary>
     /// The input to the workflow instance, if any.
