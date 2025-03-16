@@ -61,14 +61,10 @@ public class SqlEvaluator() : ISqlEvaluator
             string key = expression.Substring(openIndex + 2, closeIndex - openIndex - 2).Trim();
             if (string.IsNullOrEmpty(key)) throw new FormatException("Empty placeholder '{{}}' is not allowed.");
 
-            // Resolve value
-            object? value = ResolveValue(key);
-            if (value is null) throw new NullReferenceException($"No value found for {{{{{key}}}}}.");
-
-            // Replace with parameterized name
+            // Resolve value and replace with parameterized name
             var counterValue = client.IncrementParameter ? paramIndex++.ToString() : string.Empty;
             string paramName = $"{client.ParameterMarker}{client.ParameterText}{counterValue}";
-            parameters[paramName] = value;
+            parameters[paramName] = ResolveValue(key);
 
             sb.Append(paramName);
             start = closeIndex + 2;
@@ -90,7 +86,7 @@ public class SqlEvaluator() : ISqlEvaluator
             var i when i.StartsWith("Input.") => executionContext.Input.TryGetValue(i.Substring(6), out var v) ? v : null,
             var o when o.StartsWith("Output.") => executionContext.Output.TryGetValue(o.Substring(7), out var v) ? v : null,
             var v when v.StartsWith("Variables.") => executionContext.Variables.FirstOrDefault(x => x.Name == v.Substring(10), null)?.Value ?? null,
-            _ => null
+            _ => throw new NullReferenceException($"No matching property found for {{{{{key}}}}}.")
         };
     }
 }
