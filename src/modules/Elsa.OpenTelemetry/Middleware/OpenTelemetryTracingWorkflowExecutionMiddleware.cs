@@ -91,7 +91,6 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
 
         if (context.Incidents.Any())
         {
-            span.SetTag("workflow.incidents", true);
             span.SetTag("workflow.incidents.count", context.Incidents.Count);
 
             foreach (var incident in context.Incidents)
