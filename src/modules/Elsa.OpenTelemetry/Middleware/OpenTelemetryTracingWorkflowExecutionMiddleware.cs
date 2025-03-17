@@ -73,22 +73,18 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         else if (context.SubStatus == WorkflowSubStatus.Finished)
         {
             span.AddEvent(new("finished"));
-            span.SetStatus(ActivityStatusCode.Ok);
         }
         else if (context.SubStatus == WorkflowSubStatus.Cancelled)
         {
             span.AddEvent(new("canceled"));
-            span.SetStatus(ActivityStatusCode.Ok);
         }
         else if (context.SubStatus == WorkflowSubStatus.Suspended)
         {
             span.AddEvent(new("suspended"));
-            span.SetStatus(ActivityStatusCode.Ok);
         }
 
         if (context.Incidents.Any())
         {
-            span.SetTag("workflow.incidents", true);
             span.SetTag("workflow.incidents.count", context.Incidents.Count);
 
             foreach (var incident in context.Incidents)
