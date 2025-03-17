@@ -11,4 +11,8 @@
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="System.Diagnostics.DiagnosticSource" />
+    </ItemGroup>
+
 </Project>
