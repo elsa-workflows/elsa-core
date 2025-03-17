@@ -78,6 +78,12 @@ public class BulkDispatchWorkflows : Activity
         Description = "Wait for the dispatched workflows to complete before completing this activity.",
         DefaultValue = true)]
     public Input<bool> WaitForCompletion { get; set; } = new(true);
+    
+    /// <summary>
+    /// Indicates whether a new trace context should be started for the workflow execution.
+    /// </summary>
+    [Input(Description = "Start a new trace context when using Open Telemetry.", Category = "Open Telemetry")]
+    public Input<bool> StartNewTrace { get; set; }
 
     /// <summary>
     /// The channel to dispatch the workflow to.
@@ -104,12 +110,13 @@ public class BulkDispatchWorkflows : Activity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var waitForCompletion = WaitForCompletion.GetOrDefault(context);
+        var startNewTrace = StartNewTrace.GetOrDefault(context);
         var items = await context.GetItemSource<object>(Items).ToListAsync(context.CancellationToken);
         var count = items.Count;
 
         // Dispatch the child workflows.
         foreach (var item in items)
-            await DispatchChildWorkflowAsync(context, item, waitForCompletion);
+            await DispatchChildWorkflowAsync(context, item, waitForCompletion, startNewTrace);
 
         // Store the number of dispatched instances for tracking.
         context.SetProperty(DispatchedInstancesCountKey, count);
@@ -139,7 +146,7 @@ public class BulkDispatchWorkflows : Activity
         }
     }
 
-    private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, object item, bool waitForCompletion)
+    private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, object item, bool waitForCompletion, bool startNewTrace)
     {
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
         var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
@@ -157,8 +164,8 @@ public class BulkDispatchWorkflows : Activity
             ["ParentInstanceId"] = parentInstanceId
         };
 
-        if (waitForCompletion)
-            properties["WaitForCompletion"] = true;
+        if (waitForCompletion) properties["WaitForCompletion"] = true;
+        if (startNewTrace) properties["StartNewTrace"] = true;
 
         var itemDictionary = new Dictionary<string, object>
         {

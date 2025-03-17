@@ -56,6 +56,12 @@ public class DispatchWorkflow : Activity<object>
     public Input<bool> WaitForCompletion { get; set; } = null!;
 
     /// <summary>
+    /// Indicates whether a new trace context should be started for the workflow execution.
+    /// </summary>
+    [Input(Description = "Start a new trace context when using Open Telemetry.", Category = "Open Telemetry")]
+    public Input<bool> StartNewTrace { get; set; }
+
+    /// <summary>
     /// The channel to dispatch the workflow to.
     /// </summary>
     [Input(
@@ -103,16 +109,17 @@ public class DispatchWorkflow : Activity<object>
 
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
         var channelName = ChannelName.GetOrDefault(context);
+        var startNewTrace = StartNewTrace.GetOrDefault(context);
         var parentInstanceId = context.WorkflowExecutionContext.Id;
         var properties = new Dictionary<string, object>
         {
-            ["ParentInstanceId"] = parentInstanceId
+            ["ParentInstanceId"] = parentInstanceId,
         };
 
         // If we need to wait for the child workflow to complete, set the property. This will be used by the ResumeDispatchWorkflowActivity handler.
-        if (waitForCompletion)
-            properties["WaitForCompletion"] = true;
-
+        if (waitForCompletion) properties["WaitForCompletion"] = true;
+        if (startNewTrace) properties["StartNewTrace"] = true;
+        
         input["ParentInstanceId"] = parentInstanceId;
 
         var correlationId = CorrelationId.GetOrDefault(context);

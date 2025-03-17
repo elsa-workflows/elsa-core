@@ -22,7 +22,7 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
     }
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var command = new DispatchWorkflowDefinitionCommand(request.DefinitionVersionId)
         {
@@ -38,7 +38,7 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
     }
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var command = new DispatchWorkflowInstanceCommand(request.InstanceId){
             BookmarkId = request.BookmarkId,
@@ -52,7 +52,7 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
     }
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var command = new DispatchTriggerWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload)
         {
@@ -67,7 +67,7 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
     }
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var command = new DispatchResumeWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload)
         {

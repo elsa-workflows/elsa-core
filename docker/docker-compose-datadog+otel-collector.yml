@@ -91,7 +91,7 @@ services:
   datadog-agent:
     image: datadog/agent:latest
     environment:
-      DD_API_KEY: "<HIDDEN>"
+      DD_API_KEY: "<hidden>"
       DD_SITE: "datadoghq.eu"
       DD_HOSTNAME: "otel-collector"
       DD_LOGS_ENABLED: "true"
