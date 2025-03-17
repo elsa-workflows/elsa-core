@@ -56,6 +56,12 @@ public class DispatchWorkflow : Activity<object>
     /// </summary>
     [Input(Description = "Wait for the child workflow to complete before completing this activity.")]
     public Input<bool> WaitForCompletion { get; set; } = default!;
+    
+    /// <summary>
+    /// Indicates whether a new trace context should be started for the workflow execution.
+    /// </summary>
+    [Input(Description = "Start a new trace context when using Open Telemetry.", Category = "Open Telemetry")]
+    public Input<bool> StartNewTrace { get; set; }
 
     /// <summary>
     /// The channel to dispatch the workflow to.
@@ -99,8 +105,11 @@ public class DispatchWorkflow : Activity<object>
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
         var channelName = ChannelName.GetOrDefault(context);
+        var startNewTrace = StartNewTrace.GetOrDefault(context);
+        var properties = new Dictionary<string, object>();
 
         input["ParentInstanceId"] = context.WorkflowExecutionContext.Id;
+        if (startNewTrace) properties["StartNewTrace"] = true;
 
         var correlationId = CorrelationId.GetOrDefault(context);
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
@@ -112,6 +121,7 @@ public class DispatchWorkflow : Activity<object>
             VersionOptions = VersionOptions.Published,
             ParentWorkflowInstanceId = context.WorkflowExecutionContext.Id,
             Input = input,
+            Properties = properties,
             CorrelationId = correlationId,
             InstanceId = instanceId,
         };

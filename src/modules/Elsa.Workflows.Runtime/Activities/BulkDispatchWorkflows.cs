@@ -82,6 +82,12 @@ public class BulkDispatchWorkflows : Activity
         Description = "Wait for the dispatched workflows to complete before completing this activity.",
         DefaultValue = true)]
     public Input<bool> WaitForCompletion { get; set; } = new(true);
+    
+    /// <summary>
+    /// Indicates whether a new trace context should be started for the workflow execution.
+    /// </summary>
+    [Input(Description = "Start a new trace context when using Open Telemetry.", Category = "Open Telemetry")]
+    public Input<bool> StartNewTrace { get; set; }
 
     /// <summary>
     /// The channel to dispatch the workflow to.
@@ -179,11 +185,14 @@ public class BulkDispatchWorkflows : Activity
         var parentInstanceId = context.WorkflowExecutionContext.Id;
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
         var channelName = ChannelName.GetOrDefault(context);
+        var startNewTrace = StartNewTrace.GetOrDefault(context);
         var defaultInputItemKey = DefaultItemInputKey.GetOrDefault(context, () => "Item")!;
         var properties = new Dictionary<string, object>
         {
             ["ParentInstanceId"] = parentInstanceId
         };
+        
+        if (startNewTrace) properties["StartNewTrace"] = true;
 
         var itemDictionary = new Dictionary<string, object>
         {
