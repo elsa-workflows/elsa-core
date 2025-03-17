@@ -1,8 +1,10 @@
 using System.Threading.Channels;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Mediator.HostedServices;
 
@@ -18,13 +20,13 @@ public class BackgroundEventPublisherHostedService : BackgroundService
     private readonly ILogger _logger;
 
     /// <inheritdoc />
-    public BackgroundEventPublisherHostedService(int workerCount, INotificationsChannel notificationsChannel, IServiceScopeFactory scopeFactory, ILogger<BackgroundEventPublisherHostedService> logger)
+    public BackgroundEventPublisherHostedService(IOptions<MediatorOptions> options, INotificationsChannel notificationsChannel, IServiceScopeFactory scopeFactory, ILogger<BackgroundEventPublisherHostedService> logger)
     {
-        _workerCount = workerCount;
+        _workerCount = options.Value.NotificationWorkerCount;
         _notificationsChannel = notificationsChannel;
         _scopeFactory = scopeFactory;
         _logger = logger;
-        _outputs = new List<Channel<INotification>>(workerCount);
+        _outputs = new List<Channel<INotification>>(_workerCount);
     }
 
     /// <inheritdoc />

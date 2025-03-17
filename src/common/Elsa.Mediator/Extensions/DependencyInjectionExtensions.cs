@@ -14,7 +14,6 @@ using Elsa.Mediator.Options;
 using Elsa.Mediator.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
@@ -55,27 +54,9 @@ public static class DependencyInjectionExtensions
             .AddSingleton<ICommandsChannel, CommandsChannel>()
             .AddSingleton<IJobsChannel, JobsChannel>()
             .AddSingleton<IJobQueue, JobQueue>()
-            .AddHostedService(sp =>
-            {
-                using var scope = sp.CreateScope();
-
-                var options = scope.ServiceProvider.GetRequiredService<IOptions<MediatorOptions>>().Value;
-                return ActivatorUtilities.CreateInstance<JobRunnerHostedService>(scope.ServiceProvider, options.JobWorkerCount);
-            })
-            .AddHostedService(sp =>
-            {
-                using var scope = sp.CreateScope();
-
-                var options = scope.ServiceProvider.GetRequiredService<IOptions<MediatorOptions>>().Value;
-                return ActivatorUtilities.CreateInstance<BackgroundCommandSenderHostedService>(scope.ServiceProvider, options.CommandWorkerCount);
-            })
-            .AddHostedService(sp =>
-            {
-                using var scope = sp.CreateScope();
-
-                var options = scope.ServiceProvider.GetRequiredService<IOptions<MediatorOptions>>().Value;
-                return ActivatorUtilities.CreateInstance<BackgroundEventPublisherHostedService>(scope.ServiceProvider, options.NotificationWorkerCount);
-            });
+            .AddHostedService<JobRunnerHostedService>()
+            .AddHostedService<BackgroundCommandSenderHostedService>()
+            .AddHostedService<BackgroundEventPublisherHostedService>();
     }
 
     /// <summary>

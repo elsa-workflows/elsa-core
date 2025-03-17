@@ -1,6 +1,8 @@
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Options;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Mediator.HostedServices;
 
@@ -14,9 +16,9 @@ public class JobRunnerHostedService : BackgroundService
     private readonly ILogger<JobRunnerHostedService> _logger;
 
     /// <inheritdoc />
-    public JobRunnerHostedService(int workerCount, IJobsChannel jobsChannel, ILogger<JobRunnerHostedService> logger)
+    public JobRunnerHostedService(IOptions<MediatorOptions> options, IJobsChannel jobsChannel, ILogger<JobRunnerHostedService> logger)
     {
-        _workerCount = workerCount;
+        _workerCount = options.Value.JobWorkerCount;
         _jobsChannel = jobsChannel;
         _logger = logger;
     }
