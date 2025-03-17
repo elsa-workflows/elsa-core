@@ -2,6 +2,8 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Sql.Contracts;
+using Elsa.Sql.Models;
+using Elsa.Workflows;
 
 namespace Elsa.Sql.Services;
 
@@ -13,60 +15,78 @@ namespace Elsa.Sql.Services;
 /// </remarks>
 public class SqlEvaluator() : ISqlEvaluator
 {
+    private WorkflowExecutionContext executionContext;
+    private ActivityExecutionContext activityContext;
+    private ExpressionExecutionContext expressionContext;
+
     /// <inheritdoc />
-    public async Task<string?> EvaluateAsync(
+    public async Task<EvaluatedQuery> EvaluateAsync(
         string expression,
         ExpressionExecutionContext context,
         ExpressionEvaluatorOptions options,
         CancellationToken cancellationToken = default)
     {
-        if (!expression.Contains("@")) return expression;
+        if (!expression.Contains("{{")) return new EvaluatedQuery(expression);
+
+        expressionContext = context;
+        executionContext = context.GetWorkflowExecutionContext();
+        activityContext = context.GetActivityExecutionContext();
+
+        // Create client
+        var factory = context.GetRequiredService<ISqlClientFactory>();
+        var client = factory.CreateClient(activityContext.ActivityState["Client"].ToString(), activityContext.ActivityState["ConnectionString"].ToString());
 
         var sb = new StringBuilder();
         int start = 0;
+        var parameters = new Dictionary<string, object?>();
+        int paramIndex = 0;
 
         while (start < expression.Length)
         {
-            int atIndex = expression.IndexOf('@', start);
-            if (atIndex == -1)
+            int openIndex = expression.IndexOf("{{", start);
+            if (openIndex == -1)
             {
-                sb.Append(expression.Substring(start));
+                sb.Append(expression.AsSpan(start));
                 break;
             }
 
-            sb.Append(expression.Substring(start, atIndex - start));
+            // Append everything before {{
+            sb.Append(expression.AsSpan(start, openIndex - start));
 
-            int endIndex = atIndex + 1;
-            while (endIndex < expression.Length && (char.IsLetterOrDigit((char)expression[endIndex]) || expression[endIndex] == '.' || expression[endIndex] == '_'))
-            {
-                endIndex++;
-            }
+            // Find the closing }}
+            int closeIndex = expression.IndexOf("}}", openIndex + 2);
+            if (closeIndex == -1) throw new FormatException("Unmatched '{{' found in SQL expression.");
 
-            string key = expression.Substring(atIndex + 1, endIndex - atIndex - 1);
-            object? value = ResolveValue(key, context);
-            if (value is null) throw new NullReferenceException($"No value found for '{key}'.");
+            // Extract key
+            string key = expression.Substring(openIndex + 2, closeIndex - openIndex - 2).Trim();
+            if (string.IsNullOrEmpty(key)) throw new FormatException("Empty placeholder '{{}}' is not allowed.");
 
-            sb.Append(value?.ToString() ?? $"<{key}>");
-            start = endIndex;
+            // Resolve value and replace with parameterized name
+            var counterValue = client.IncrementParameter ? paramIndex++.ToString() : string.Empty;
+            string paramName = $"{client.ParameterMarker}{client.ParameterText}{counterValue}";
+            parameters[paramName] = ResolveValue(key);
+
+            sb.Append(paramName);
+            start = closeIndex + 2;
         }
 
-        return sb.ToString();
+        return new EvaluatedQuery(sb.ToString(), parameters);
     }
 
-    private object? ResolveValue(string key, ExpressionExecutionContext context)
+    private object? ResolveValue(string key)
     {
         return key switch
         {
-            "Workflow.Definition.Id" => context.GetWorkflowExecutionContext().Workflow.Identity.DefinitionId,
-            "Workflow.Definition.Version.Id" => context.GetWorkflowExecutionContext().Workflow.Identity.Id,
-            "Workflow.Definition.Version" => context.GetWorkflowExecutionContext().Workflow.Identity.Version,
-            "Workflow.Instance.Id" => context.GetActivityExecutionContext().WorkflowExecutionContext.Id,
-            "Correlation.Id" => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId,
-            "LastResult" => context.GetLastResult(),
-            var i when i.StartsWith("Input.") => context.GetWorkflowExecutionContext().Input.TryGetValue(i.Substring(6), out var v) ? v : null,
-            var o when o.StartsWith("Output.") => context.GetWorkflowExecutionContext().Output.TryGetValue(o.Substring(7), out var v) ? v : null,
-            var v when v.StartsWith("Variables.") => context.GetWorkflowExecutionContext().Variables.FirstOrDefault(x => x.Name == v.Substring(10), null)?.Value ?? null,
-            _ => null
+            "Workflow.Definition.Id" => executionContext.Workflow.Identity.DefinitionId,
+            "Workflow.Definition.Version.Id" => executionContext.Workflow.Identity.Id,
+            "Workflow.Definition.Version" => executionContext.Workflow.Identity.Version,
+            "Workflow.Instance.Id" => activityContext.WorkflowExecutionContext.Id,
+            "Correlation.Id" => activityContext.WorkflowExecutionContext.CorrelationId,
+            "LastResult" => expressionContext.GetLastResult(),
+            var i when i.StartsWith("Input.") => executionContext.Input.TryGetValue(i.Substring(6), out var v) ? v : null,
+            var o when o.StartsWith("Output.") => executionContext.Output.TryGetValue(o.Substring(7), out var v) ? v : null,
+            var v when v.StartsWith("Variables.") => executionContext.Variables.FirstOrDefault(x => x.Name == v.Substring(10), null)?.Value ?? null,
+            _ => throw new NullReferenceException($"No matching property found for {{{{{key}}}}}.")
         };
     }
 }
