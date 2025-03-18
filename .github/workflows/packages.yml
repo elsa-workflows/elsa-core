@@ -9,6 +9,7 @@ on:
       - 'patch/*'
       - 'feat/*'
       - 'enh/*'
+      - 'rc/*'
   release:
     types: [ prereleased, published ]
 env:
