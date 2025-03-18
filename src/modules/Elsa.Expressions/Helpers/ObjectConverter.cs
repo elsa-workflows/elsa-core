@@ -248,6 +248,21 @@ public static class ObjectConverter
                     return collection;
                 }
             }
+            
+            if(underlyingTargetType.IsArray)
+            {
+                var executedEnumerable = enumerable.Cast<object>().ToList();
+                var underlyingTargetElementType = underlyingTargetType.GetElementType()!;
+                var array = Array.CreateInstance(underlyingTargetElementType, executedEnumerable.Count);
+                var index = 0;
+                foreach (var item in executedEnumerable)
+                {
+                    var convertedItem = ConvertTo(item, underlyingTargetElementType);
+                    array.SetValue(convertedItem, index);
+                    index++;
+                }
+                return array;
+            }
         }
 
         try
