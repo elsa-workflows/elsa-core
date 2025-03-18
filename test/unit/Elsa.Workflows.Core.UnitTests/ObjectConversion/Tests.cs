@@ -300,4 +300,17 @@ public class Tests
         Assert.Equal("Alice", result[0].Name);
         Assert.Equal("Bob", result[1].Name);
     }
+
+    [Fact]
+    public void ConvertFrom_ObjectArrayOfDoubleToArrayOfDouble_ReturnsArrayOfDouble()
+    {
+        // Arrange
+        object[] objectArray = [1d, 2d, 3d];
+        
+        // Act
+        var result = objectArray.ConvertTo<double[]>();
+        
+        // Assert
+        Assert.NotNull(result);
+    }
 }
