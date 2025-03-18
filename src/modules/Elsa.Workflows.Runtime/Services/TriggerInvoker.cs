@@ -9,6 +9,7 @@ public class TriggerInvoker(IWorkflowStarter workflowStarter) : ITriggerInvoker
             Workflow = request.Workflow,
             CorrelationId = request.CorrelationId,
             Input = request.Input,
+            Variables = request.Variables,
             Properties = request.Properties,
             ParentId = request.ParentWorkflowInstanceId,
             TriggerActivityId = request.ActivityId,

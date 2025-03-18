@@ -6,10 +6,13 @@ on:
       - 'main'
       - 'bug/*'
       - 'perf/*'
+      - 'patch/*'
+      - 'feat/*'
+      - 'enh/*'
   release:
     types: [ prereleased, published ]
 env:
-  base_version: '3.3.2'
+  base_version: '3.4.0'
   feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
   nuget_feed_source: 'https://api.nuget.org/v3/index.json'
 
@@ -56,28 +59,28 @@ jobs:
           else
             echo "VERSION=${{env.base_version}}-${PACKAGE_PREFIX}.${{github.run_number}}" >> $GITHUB_ENV
           fi
-#      - name: Set up JDK 17
-#        uses: actions/setup-java@v2
-#        with:
-#          java-version: '17'
-#          distribution: 'adopt'
+      #      - name: Set up JDK 17
+      #        uses: actions/setup-java@v2
+      #        with:
+      #          java-version: '17'
+      #          distribution: 'adopt'
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.x
-#      - name: Install SonarScanner for .NET
-#        run: dotnet tool install --global dotnet-sonarscanner
-#      - name: Install Coverlet for code coverage
-#        run: dotnet tool install --global coverlet.console
-#      - name: Begin SonarCloud analysis
-#        env:
-#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#        run: dotnet sonarscanner begin /k:"elsa-workflows_elsa-core" /o:"elsa-workflows" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.exclusions=**/obj/**,**/*.dll,build/**,samples/**,src/apps/** /d:"sonar.verbose=true" /d:sonar.cs.opencover.reportsPaths=**/testresults/**/coverage.opencover.xml
+      #      - name: Install SonarScanner for .NET
+      #        run: dotnet tool install --global dotnet-sonarscanner
+      #      - name: Install Coverlet for code coverage
+      #        run: dotnet tool install --global coverlet.console
+      #      - name: Begin SonarCloud analysis
+      #        env:
+      #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #        run: dotnet sonarscanner begin /k:"elsa-workflows_elsa-core" /o:"elsa-workflows" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.exclusions=**/obj/**,**/*.dll,build/**,samples/**,src/apps/** /d:"sonar.verbose=true" /d:sonar.cs.opencover.reportsPaths=**/testresults/**/coverage.opencover.xml
       - name: Compile+Test+Pack
         run: ./build.sh Compile+Test+Pack --version ${VERSION} --analyseCode true
-#      - name: End SonarCloud analysis
-#        env:
-#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+      #      - name: End SonarCloud analysis
+      #        env:
+      #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

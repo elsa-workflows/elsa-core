@@ -109,11 +109,6 @@ public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, 
                 activity.LatestAvailablePublishedVersionId = latestPublishedVersion?.Id;
 
                 return activity;
-            },
-            ConfigureSerializerOptions = options =>
-            {
-                options.Converters.Add(new JsonIgnoreCompositeRootConverterFactory(activityWriter));
-                return options;
             }
         };
     }

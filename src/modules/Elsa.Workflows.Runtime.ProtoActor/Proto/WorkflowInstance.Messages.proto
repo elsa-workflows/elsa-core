@@ -45,9 +45,10 @@ message CreateWorkflowInstanceRequest{
   WorkflowDefinitionHandle WorkflowDefinitionHandle = 1;
   string WorkflowInstanceId = 2;
   optional string CorrelationId = 3;
-  optional string ParentId = 4;
-  optional Input input = 5;
-  optional Properties properties = 6;
+  optional string Name = 4;
+  optional string ParentId = 5;
+  optional Input input = 6;
+  optional Properties properties = 7;
 }
 
 message CreateWorkflowInstanceResponse{
@@ -71,11 +72,12 @@ message CreateAndRunWorkflowInstanceRequest{
   WorkflowDefinitionHandle WorkflowDefinitionHandle = 1;
   string WorkflowInstanceId = 2;
   optional string CorrelationId = 3;
-  optional string ParentId = 4;
-  optional Input input = 5;
-  optional Properties properties = 6;
-  optional ActivityHandle ActivityHandle = 7;
-  optional string TriggerActivityId = 8;
+  optional string Name = 4;
+  optional string ParentId = 5;
+  optional Input input = 6;
+  optional Properties properties = 7;
+  optional ActivityHandle ActivityHandle = 8;
+  optional string TriggerActivityId = 9;
 }
 
 message ExportWorkflowStateResponse {

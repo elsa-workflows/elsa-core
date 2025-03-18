@@ -72,9 +72,10 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
     }
 
     /// <inheritdoc />
+    [Obsolete("Use the overload that takes a name instead. This overload will be removed in a future version.")]
     public Variable<T> WithVariable<T>()
     {
-        var variable = new Variable<T>();
+        var variable = new Variable<T>(null!, default!);
         Variables.Add(variable);
         variable.WithWorkflowStorage();
         variable.Id = null!; // This ensures that a deterministic ID is assigned by the builder.  
@@ -84,13 +85,13 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
     /// <inheritdoc />
     public Variable<T> WithVariable<T>(string name, T value)
     {
-        var variable = WithVariable<T>();
-        variable.Name = name;
-        variable.Value = value;
+        var variable = new Variable<T>(name, value);
+        Variables.Add(variable);
         return variable;
     }
 
     /// <inheritdoc />
+    [Obsolete("Use the overload that takes a name instead. This overload will be removed in a future version.")]
     public Variable<T> WithVariable<T>(T value)
     {
         var variable = WithVariable<T>();

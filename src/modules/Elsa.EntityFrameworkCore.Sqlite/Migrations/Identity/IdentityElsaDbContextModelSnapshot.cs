@@ -14,7 +14,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.20");
+            modelBuilder
+                .HasDefaultSchema("Elsa")
+                .HasAnnotation("ProductVersion", "8.0.12");
 
             modelBuilder.Entity("Elsa.Identity.Entities.Application", b =>
                 {
@@ -66,7 +68,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_Application_TenantId");
 
-                    b.ToTable("Applications");
+                    b.ToTable("Applications", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Identity.Entities.Role", b =>
@@ -95,7 +97,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_Role_TenantId");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Identity.Entities.User", b =>
@@ -132,7 +134,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_User_TenantId");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

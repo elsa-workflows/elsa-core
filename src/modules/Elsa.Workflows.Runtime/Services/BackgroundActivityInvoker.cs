@@ -18,6 +18,7 @@ public class BackgroundActivityInvoker(
     IWorkflowDefinitionService workflowDefinitionService,
     IVariablePersistenceManager variablePersistenceManager,
     IActivityInvoker activityInvoker,
+    WorkflowHeartbeatGeneratorFactory workflowHeartbeatGeneratorFactory,
     IServiceProvider serviceProvider,
     ILogger<BackgroundActivityInvoker> logger)
     : IBackgroundActivityInvoker
@@ -29,18 +30,21 @@ public class BackgroundActivityInvoker(
     {
         var workflowInstanceId = scheduledBackgroundActivity.WorkflowInstanceId;
         var workflowInstance = await workflowInstanceManager.FindByIdAsync(workflowInstanceId, cancellationToken);
-        if (workflowInstance == null) throw new Exception("Workflow instance not found");
+        if (workflowInstance == null) throw new("Workflow instance not found");
         var workflowState = workflowInstance.WorkflowState;
         var workflow = await workflowDefinitionService.FindWorkflowGraphAsync(workflowInstance.DefinitionVersionId, cancellationToken);
-        if (workflow == null) throw new Exception("Workflow definition not found");
+        if (workflow == null) throw new("Workflow definition not found");
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(serviceProvider, workflow, workflowState, cancellationToken: cancellationToken);
         var activityNodeId = scheduledBackgroundActivity.ActivityNodeId;
         var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.NodeId == activityNodeId);
 
-        await variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);
-        activityExecutionContext.SetIsBackgroundExecution();
-        await activityInvoker.InvokeAsync(activityExecutionContext);
-        await variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
+        using (workflowHeartbeatGeneratorFactory.CreateHeartbeatGenerator(workflowExecutionContext))
+        {
+            await variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);
+            activityExecutionContext.SetIsBackgroundExecution();
+            await activityInvoker.InvokeAsync(activityExecutionContext);
+            await variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
+        }
         await ResumeWorkflowAsync(activityExecutionContext, scheduledBackgroundActivity);
     }
 

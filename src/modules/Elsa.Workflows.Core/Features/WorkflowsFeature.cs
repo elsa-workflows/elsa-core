@@ -1,7 +1,6 @@
 using Elsa.Common;
 using Elsa.Common.Features;
 using Elsa.Common.Serialization;
-using Elsa.CSharp.Activities;
 using Elsa.Expressions.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -9,6 +8,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Builders;
+using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.LogPersistence.Strategies;
@@ -36,6 +36,7 @@ namespace Elsa.Workflows.Features;
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(DefaultFormattersFeature))]
 [DependsOn(typeof(MultitenancyFeature))]
+[DependsOn(typeof(CommitStrategiesFeature))]
 public class WorkflowsFeature : FeatureBase
 {
     /// <inheritdoc />

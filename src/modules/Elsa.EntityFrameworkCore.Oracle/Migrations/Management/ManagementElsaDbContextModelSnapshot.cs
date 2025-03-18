@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Management
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.20")
+                .HasAnnotation("ProductVersion", "8.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -29,35 +29,35 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Management
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<byte[]>("BinaryData")
-                        .HasColumnType("RAW(2000)");
+                        .HasColumnType("BLOB");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<string>("Data")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("DefinitionId")
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Description")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<bool>("IsLatest")
-                        .HasColumnType("NUMBER(1)");
+                        .HasColumnType("BOOLEAN");
 
                     b.Property<bool>("IsPublished")
-                        .HasColumnType("NUMBER(1)");
+                        .HasColumnType("BOOLEAN");
 
                     b.Property<bool>("IsReadonly")
-                        .HasColumnType("NUMBER(1)");
+                        .HasColumnType("BOOLEAN");
 
                     b.Property<bool>("IsSystem")
-                        .HasColumnType("NUMBER(1)");
+                        .HasColumnType("BOOLEAN");
 
                     b.Property<string>("MaterializerContext")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("MaterializerName")
                         .IsRequired()
@@ -70,7 +70,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Management
                         .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("StringData")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("NVARCHAR2(450)");
@@ -79,7 +79,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Management
                         .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<bool?>("UsableAsActivity")
-                        .HasColumnType("NUMBER(1)");
+                        .HasColumnType("BOOLEAN");
 
                     b.Property<int>("Version")
                         .HasColumnType("NUMBER(10)");
@@ -126,7 +126,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Management
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<string>("Data")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("DataCompressionAlgorithm")
                         .HasColumnType("NVARCHAR2(2000)");
@@ -145,8 +145,11 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Management
                     b.Property<int>("IncidentCount")
                         .HasColumnType("NUMBER(10)");
 
+                    b.Property<bool>("IsExecuting")
+                        .HasColumnType("BOOLEAN");
+
                     b.Property<bool>("IsSystem")
-                        .HasColumnType("NUMBER(1)");
+                        .HasColumnType("BOOLEAN");
 
                     b.Property<string>("Name")
                         .HasColumnType("NVARCHAR2(450)");
@@ -184,6 +187,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Management
 
                     b.HasIndex("FinishedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FinishedAt");
+
+                    b.HasIndex("IsExecuting")
+                        .HasDatabaseName("IX_WorkflowInstance_IsExecuting");
 
                     b.HasIndex("IsSystem")
                         .HasDatabaseName("IX_WorkflowInstance_IsSystem");

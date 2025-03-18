@@ -9,8 +9,9 @@ namespace Elsa.Expressions.Models;
 public class ExpressionExecutionContext(
     IServiceProvider serviceProvider,
     MemoryRegister memory,
-    ExpressionExecutionContext? parentContext = default,
-    IDictionary<object, object>? transientProperties = default,
+    ExpressionExecutionContext? parentContext = null,
+    IDictionary<object, object>? transientProperties = null,
+    Action? onChange = null,
     CancellationToken cancellationToken = default)
 {
     /// <summary>
@@ -54,7 +55,7 @@ public class ExpressionExecutionContext(
     public bool TryGetBlock(MemoryBlockReference blockReference, out MemoryBlock block)
     {
         var b = GetBlockInternal(blockReference);
-        block = b ?? default!;
+        block = b ?? null!;
         return b != null;
     }
 
@@ -79,7 +80,7 @@ public class ExpressionExecutionContext(
             return true;
         }
 
-        value = default;
+        value = null;
         return false;
     }
 
@@ -96,16 +97,17 @@ public class ExpressionExecutionContext(
     /// <summary>
     /// Sets the value of the memory block pointed to by the specified memory block reference.
     /// </summary>
-    public void Set(Func<MemoryBlockReference> blockReference, object? value, Action<MemoryBlock>? configure = default) => Set(blockReference(), value, configure);
+    public void Set(Func<MemoryBlockReference> blockReference, object? value, Action<MemoryBlock>? configure = null) => Set(blockReference(), value, configure);
 
     /// <summary>
     /// Sets the value of the memory block pointed to by the specified memory block reference.
     /// </summary>
-    public void Set(MemoryBlockReference blockReference, object? value, Action<MemoryBlock>? configure = default)
+    public void Set(MemoryBlockReference blockReference, object? value, Action<MemoryBlock>? configure = null)
     {
         var block = GetBlockInternal(blockReference) ?? Memory.Declare(blockReference);
         block.Value = value;
         configure?.Invoke(block);
+        onChange?.Invoke();
     }
 
     /// <summary>

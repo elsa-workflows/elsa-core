@@ -11,8 +11,9 @@ using Elsa.ServerAndStudio.Web.Enums;
 using Medallion.Threading.FileSystem;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
-using Proto.Persistence.Sqlite;
 using WebhooksCore.Options;
+using Elsa.Connections.Middleware;
+using Proto.Persistence.Sqlite;
 
 const bool useMassTransit = true;
 const bool useProtoActor = true;
@@ -139,21 +140,6 @@ services
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseWebhooks(webhooks => webhooks.ConfigureSinks = options => builder.Configuration.GetSection("Webhooks:Sinks").Bind(options))
             .UseWorkflowsApi()
-            .UseAgentsApi()
-            .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef =>
-            {
-                if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
-                    ef.UseSqlServer(sqlServerConnectionString);
-                else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
-                    ef.UsePostgreSql(postgreSqlConnectionString);
-                else if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite)
-                    ef.UseSqlite(sqliteConnectionString);
-#if !NET9_0
-                else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
-                    ef.UseMySql(mySqlConnectionString);
-#endif
-            }))
-            .UseAgentActivities()
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>();
 
@@ -193,6 +179,11 @@ services
                 if (distributedCachingTransport == DistributedCachingTransport.MassTransit) distributedCaching.UseMassTransit();
             });
         }
+
+        elsa.UseConnections(
+            configure=> configure.AddConnectionsFrom<Program>());
+        elsa.UseConnectionPersistence(ef=> ef.UseEntityFrameworkCore(f=>f.UseSqlite()));
+        elsa.UseConnectionsApi();
     });
 
 services.Configure<WebhookSinksOptions>(options => configuration.GetSection("Webhooks").Bind(options));

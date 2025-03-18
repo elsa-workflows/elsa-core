@@ -16,7 +16,7 @@ public class RunMigrationsStartupTask<TDbContext>(IDbContextFactory<TDbContext> 
     /// <inheritdoc /
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var tenantDbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        await tenantDbContext.Database.MigrateAsync(cancellationToken);
+        var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await dbContext.Database.MigrateAsync(cancellationToken);
     }
 }

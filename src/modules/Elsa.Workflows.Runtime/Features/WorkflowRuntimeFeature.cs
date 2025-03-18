@@ -31,13 +31,8 @@ namespace Elsa.Workflows.Runtime.Features;
 /// Installs and configures workflow runtime features.
 /// </summary>
 [DependsOn(typeof(SystemClockFeature))]
-public class WorkflowRuntimeFeature : FeatureBase
+public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public WorkflowRuntimeFeature(IModule module) : base(module)
-    {
-    }
-
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
 
     /// <summary>
@@ -143,6 +138,24 @@ public class WorkflowRuntimeFeature : FeatureBase
     public Action<BookmarkQueuePurgeOptions> BookmarkQueuePurgeOptions { get; set; } = _ => { };
 
     /// <summary>
+    /// Enables the workflow inbox cleanup job. 
+    /// </summary>
+    public WorkflowRuntimeFeature EnableWorkflowInboxCleanupJob()
+    {
+        Services.Configure<WorkflowInboxCleanupOptions>(options => { options.IsEnabled = true; });
+        return this;
+    }
+
+    /// <summary>
+    /// Disables the workflow inbox cleanup job.
+    /// </summary>
+    public WorkflowRuntimeFeature DisableWorkflowInboxCleanupJob()
+    {
+        Services.Configure<WorkflowInboxCleanupOptions>(options => { options.IsEnabled = false; });
+        return this;
+    }
+
+    /// <summary>
     /// Register the specified workflow type.
     /// </summary>
     public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
@@ -193,7 +206,7 @@ public class WorkflowRuntimeFeature : FeatureBase
         Module.AddActivitiesFrom<WorkflowRuntimeFeature>();
         Module.Configure<WorkflowsFeature>(workflows =>
         {
-            workflows.CommitStateHandler = sp => sp.GetRequiredService<StoreCommitStateHandler>();
+            workflows.CommitStateHandler = sp => sp.GetRequiredService<DefaultCommitStateHandler>();
         });
 
         Services.Configure<RecurringTaskOptions>(options =>
@@ -262,12 +275,12 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
             .AddScoped<IWorkflowActivationStrategyEvaluator, DefaultWorkflowActivationStrategyEvaluator>()
             .AddScoped<IWorkflowStarter, DefaultWorkflowStarter>()
+            .AddScoped<IWorkflowRestarter, DefaultWorkflowRestarter>()
             .AddScoped<IBookmarkQueuePurger, DefaultBookmarkQueuePurger>()
-            .AddScoped<ILogRecordExtractor<ActivityExecutionRecord>, ActivityExecutionRecordExtractor>()
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
-            
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
-            .AddScoped<StoreCommitStateHandler>()
+            .AddScoped<DefaultCommitStateHandler>()
+            .AddScoped<WorkflowHeartbeatGeneratorFactory>()
 
             // Deprecated services.
             .AddScoped<IWorkflowInbox, StimulusProxyWorkflowInbox>()
@@ -298,7 +311,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddStartupTask<PopulateRegistriesStartupTask>()
             .AddRecurringTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromMinutes(1))
             .AddRecurringTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10))
-
+            .AddRecurringTask<RestartInterruptedWorkflowsTask>(TimeSpan.FromMinutes(5)) // Same default as the workflow liveness threshold.
+            
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
 

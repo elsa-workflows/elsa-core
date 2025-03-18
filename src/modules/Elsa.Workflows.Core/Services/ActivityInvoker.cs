@@ -26,6 +26,7 @@ public class ActivityInvoker(
         {
             // Create a new activity execution context.
             activityExecutionContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(activity, options);
+            activityExecutionContext.Taint();
 
             // Add the activity context to the workflow context.
             workflowExecutionContext.AddActivityExecutionContext(activityExecutionContext);

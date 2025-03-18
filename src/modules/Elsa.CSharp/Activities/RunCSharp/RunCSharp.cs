@@ -34,6 +34,7 @@ public class RunCSharp : CodeActivity<object?>
     /// </summary>
     [Input(
         Description = "The script to run.",
+        DefaultSyntax = "CSharp",
         UIHint = InputUIHints.CodeEditor,
         UIHandler = typeof(RunCSharpOptionsProvider)
     )]

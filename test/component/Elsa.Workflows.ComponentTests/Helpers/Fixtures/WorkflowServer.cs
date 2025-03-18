@@ -1,6 +1,4 @@
-using System.Net.Http.Headers;
 using System.Reflection;
-using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Caching;
 using Elsa.EntityFrameworkCore.Extensions;
@@ -36,7 +34,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
     public TClient CreateApiClient<TClient>()
     {
         var client = CreateClient();
-        client.BaseAddress = new Uri(client.BaseAddress!, "/elsa/api");
+        client.BaseAddress = new(client.BaseAddress!, "/elsa/api");
         client.Timeout = TimeSpan.FromMinutes(1);
         return RestService.For<TClient>(client, CreateRefitSettings(Services));
     }
@@ -44,7 +42,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
     public HttpClient CreateHttpWorkflowClient()
     {
         var client = CreateClient();
-        client.BaseAddress = new Uri(client.BaseAddress!, "/workflows/");
+        client.BaseAddress = new(client.BaseAddress!, "/workflows/");
         client.Timeout = TimeSpan.FromMinutes(1);
         return client;
     }
@@ -114,8 +112,6 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     http.UseCache();
                 });
-                elsa.UseAgents();
-                elsa.UseAgentPersistence(feature => feature.UseEntityFrameworkCore(ef => ef.UsePostgreSql(typeof(AgentsPostgreSqlProvidersExtensions).Assembly, dbConnectionString)));
             };
         }
 
@@ -137,6 +133,6 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
     protected override void ConfigureClient(HttpClient client)
     {
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("ApiKey", AdminApiKeyProvider.DefaultApiKey);
+        client.DefaultRequestHeaders.Authorization = new("ApiKey", AdminApiKeyProvider.DefaultApiKey);
     }
 }

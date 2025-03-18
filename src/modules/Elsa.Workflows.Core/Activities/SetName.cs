@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
@@ -12,18 +13,13 @@ namespace Elsa.Workflows.Activities;
 [PublicAPI]
 public class SetName : CodeActivity
 {
-    /// <summary>
-    /// The property key name used to store the workflow instance name.
-    /// </summary>
-    public const string WorkflowInstanceNameKey = "WorkflowInstanceName";
-
     /// <inheritdoc />
-    public SetName([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public SetName([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public SetName(Input<string> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public SetName(Input<string> value, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         Value = value;
     }
@@ -36,7 +32,7 @@ public class SetName : CodeActivity
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
     {
-        var value = context.Get(Value);
-        context.WorkflowExecutionContext.SetProperty(WorkflowInstanceNameKey, value!);
+        var value = Value.GetOrDefault(context);
+        context.WorkflowExecutionContext.Name = value;
     }
 }

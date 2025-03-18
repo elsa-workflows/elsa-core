@@ -73,6 +73,13 @@ public abstract class Activity : IActivity, ISignalHandler
         get => this.GetRunAsynchronously();
         set => this.SetRunAsynchronously(value);
     }
+    
+    [JsonIgnore]
+    public string? CommitStrategy
+    {
+        get => this.GetCommitStrategy();
+        set => this.SetCommitStrategy(value);
+    }
 
     /// <inheritdoc />
     [JsonConverter(typeof(PolymorphicObjectConverterFactory))]

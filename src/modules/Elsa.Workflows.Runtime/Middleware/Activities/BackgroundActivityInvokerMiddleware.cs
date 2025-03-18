@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Elsa.Extensions;
+using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -18,8 +19,9 @@ public class BackgroundActivityInvokerMiddleware(
     ActivityMiddlewareDelegate next,
     ILogger<BackgroundActivityInvokerMiddleware> logger,
     IIdentityGenerator identityGenerator,
-    IBackgroundActivityScheduler backgroundActivityScheduler)
-    : DefaultActivityInvokerMiddleware(next, logger)
+    IBackgroundActivityScheduler backgroundActivityScheduler,
+    ICommitStrategyRegistry commitStrategyRegistry)
+    : DefaultActivityInvokerMiddleware(next, commitStrategyRegistry, logger)
 {
     internal static string GetBackgroundActivityOutputKey(string activityNodeId) => $"__BackgroundActivityOutput:{activityNodeId}";
     internal static string GetBackgroundActivityOutcomesKey(string activityNodeId) => $"__BackgroundActivityOutcomes:{activityNodeId}";

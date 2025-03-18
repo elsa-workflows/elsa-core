@@ -4,6 +4,7 @@ using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Memory;
@@ -37,6 +38,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
     private IList<ActivityExecutionContext> _activityExecutionContexts;
     private readonly IHasher _hasher;
+    private readonly ICommitStateHandler _commitStateHandler;
 
     /// <summary>
     /// Initializes a new instance of <see cref="WorkflowExecutionContext"/>.
@@ -61,6 +63,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         ActivityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
         ActivityRegistryLookup = serviceProvider.GetRequiredService<IActivityRegistryLookupService>();
         _hasher = serviceProvider.GetRequiredService<IHasher>();
+        _commitStateHandler = serviceProvider.GetRequiredService<ICommitStateHandler>();
         SubStatus = WorkflowSubStatus.Pending;
         Id = id;
         CorrelationId = correlationId;
@@ -68,8 +71,8 @@ public partial class WorkflowExecutionContext : IExecutionContext
         _activityExecutionContexts = new List<ActivityExecutionContext>();
         Scheduler = serviceProvider.GetRequiredService<IActivitySchedulerFactory>().CreateScheduler();
         IdentityGenerator = serviceProvider.GetRequiredService<IIdentityGenerator>();
-        Input = input != null ? new Dictionary<string, object>(input, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-        Properties = properties != null ? new Dictionary<string, object>(properties, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        Input = input != null ? new(input, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        Properties = properties != null ? new(properties, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         ExecuteDelegate = executeDelegate;
         TriggerActivityId = triggerActivityId;
         CreatedAt = createdAt;
@@ -190,7 +193,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             MemoryRegister = workflowGraph.Workflow.CreateRegister()
         };
 
-        workflowExecutionContext.ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, workflowExecutionContext.MemoryRegister, cancellationToken: cancellationToken);
+        workflowExecutionContext.ExpressionExecutionContext = new(serviceProvider, workflowExecutionContext.MemoryRegister, cancellationToken: cancellationToken);
 
         await workflowExecutionContext.SetWorkflowGraphAsync(workflowGraph);
         return workflowExecutionContext;
@@ -238,6 +241,17 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// The current sub status of the workflow.
     public WorkflowSubStatus SubStatus { get; internal set; }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the workflow instance is actively executing. 
+    /// </summary>
+    /// <remarks>
+    /// This flag is set to <c>true</c> immediately before the workflow begins execution 
+    /// and is set to <c>false</c> once the execution is completed. 
+    /// It can be used to determine if a workflow instance was in-progress in case of unexpected 
+    /// application termination, allowing the system to retry execution upon restarting. 
+    /// </remarks>
+    public bool IsExecuting { get; set; }
+
     /// The root <see cref="MemoryRegister"/> associated with the execution context.
     public MemoryRegister MemoryRegister { get; private set; } = null!;
 
@@ -249,6 +263,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
     /// An application-specific identifier associated with the execution context.
     public string? CorrelationId { get; set; }
+
+    /// Gets or sets the name of the workflow instance.
+    public string? Name { get; set; }
 
     /// The ID of the workflow instance that triggered this instance.
     public string? ParentWorkflowInstanceId { get; set; }
@@ -510,7 +527,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     internal void TransitionTo(WorkflowSubStatus subStatus)
     {
         if (!ValidateStatusTransition())
-            throw new Exception($"Cannot transition from {SubStatus} to {subStatus}");
+            throw new($"Cannot transition from {SubStatus} to {subStatus}");
 
         SubStatus = subStatus;
         UpdatedAt = SystemClock.UtcNow;
@@ -531,20 +548,15 @@ public partial class WorkflowExecutionContext : IExecutionContext
         var activityDescriptor = await ActivityRegistryLookup.FindAsync(activity) ?? throw new ActivityNotFoundException(activity.Type);
         var tag = options?.Tag;
         var parentContext = options?.Owner;
-        var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext ?? ExpressionExecutionContext;
-        var properties = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(this, Input);
-        properties[ExpressionExecutionContextExtensions.ActivityKey] = activity;
-        var memory = new MemoryRegister();
         var now = SystemClock.UtcNow;
-        var expressionExecutionContext = new ExpressionExecutionContext(ServiceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);
         var id = IdentityGenerator.GenerateId();
-        var activityExecutionContext = new ActivityExecutionContext(id, this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, CancellationToken);
+        var activityExecutionContext = new ActivityExecutionContext(id, this, parentContext, activity, activityDescriptor, now, tag, SystemClock, CancellationToken);
         var variablesToDeclare = options?.Variables ?? Array.Empty<Variable>();
         var variableContainer = new[]
         {
             activityExecutionContext.ActivityNode
         }.Concat(activityExecutionContext.ActivityNode.Ancestors()).FirstOrDefault(x => x.Activity is IVariableContainer)?.Activity as IVariableContainer;
-        expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
+        activityExecutionContext.ExpressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
 
         if (variableContainer != null)
         {
@@ -555,11 +567,12 @@ public partial class WorkflowExecutionContext : IExecutionContext
                 activityExecutionContext.DynamicVariables.Add(variable);
 
                 // Assign the variable to the expression execution context.
-                expressionExecutionContext.CreateVariable(variable.Name, variable.Value);
+                activityExecutionContext.ExpressionExecutionContext.CreateVariable(variable.Name, variable.Value);
             }
         }
 
-        activityExecutionContext.ActivityInput = options?.Input ?? new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        var activityInput = options?.Input ?? new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        activityExecutionContext.ActivityInput.Merge(activityInput);
 
         return activityExecutionContext;
     }
@@ -574,11 +587,36 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public void AddActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Add(context);
 
     /// Removes the specified <see cref="ActivityExecutionContext"/> from the workflow execution context.
-    public void RemoveActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Remove(context);
+    public void RemoveActivityExecutionContext(ActivityExecutionContext context)
+    {
+        _activityExecutionContexts.Remove(context);
+        context.ParentActivityExecutionContext?.Children.Remove(context);
+    }
 
     /// Removes the specified <see cref="ActivityExecutionContext"/> from the workflow execution context.
     /// <param name="predicate">The predicate used to filter the activity execution contexts to remove.</param>
-    public void RemoveActivityExecutionContext(Func<ActivityExecutionContext, bool> predicate) => _activityExecutionContexts.RemoveWhere(predicate);
+    public void RemoveActivityExecutionContexts(Func<ActivityExecutionContext, bool> predicate)
+    {
+        var itemsToRemove = _activityExecutionContexts.Where(predicate).ToList();
+        foreach (var item in itemsToRemove)
+            RemoveActivityExecutionContext(item);
+    }
+
+    /// <summary>
+    /// Removes all completed activity execution contexts that have a parent activity execution context.
+    /// </summary>
+    public void ClearCompletedActivityExecutionContexts()
+    {
+        RemoveActivityExecutionContexts(x => x is { IsCompleted: true, ParentActivityExecutionContext: not null });
+    }
+
+    public IEnumerable<ActivityExecutionContext> GetActiveActivityExecutionContexts()
+    {
+        // Filter out completed activity execution contexts, except for the root Workflow activity context, which stores workflow-level variables.
+        // This will currently break scripts accessing activity output directly, but there's a workaround for that via variable capturing.
+        // We may ultimately restore direct output access, but in a different way.
+        return ActivityExecutionContexts.Where(x => !x.IsCompleted || x.ParentActivityExecutionContext == null);
+    }
 
     /// <summary>
     /// Records the output of the specified activity into the current workflow execution context.
@@ -613,5 +651,10 @@ public partial class WorkflowExecutionContext : IExecutionContext
     {
         var currentMainStatus = GetMainStatus(SubStatus);
         return currentMainStatus != WorkflowStatus.Finished;
+    }
+
+    public Task CommitAsync()
+    {
+        return _commitStateHandler.CommitAsync(this, CancellationToken);
     }
 }

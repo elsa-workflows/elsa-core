@@ -12,6 +12,16 @@
     ports:
       - "5432:5432"
         
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=!Elsa2025@
+    ports:
+      - 1433:1433
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+        
   mysql:
     image: mysql:8.0
     container_name: mysql
@@ -24,6 +34,18 @@
       - "3306:3306"
     volumes:
       - mysql_data2:/var/lib/mysql
+        
+  oracle:
+      image: container-registry.oracle.com/database/free:latest
+      container_name: oracle-db
+      environment:
+        ORACLE_PWD: elsa
+      ports:
+        - "1521:1521"
+        - "5500:5500"
+      volumes:
+        - ./data/oracle-data:/opt/oracle/oradata
+        - ./setup/oracle-setup:/opt/oracle/scripts/setup
   
   mongodb:
     image: mongo:latest
@@ -84,7 +106,6 @@
       - ASPNETCORE_URLS=http://+:80
       - Logging__LogLevel__Default=Information
 
-
   elsa-server:
     build:
       context: ../.
@@ -115,7 +136,9 @@
       - "14000:8080"
 
 volumes:
+  sqlserver_data:
   postgres-data:
+  oracle-data-free1:
   mysql_data2:
   cockroachdb-data:
   mongodb_data:

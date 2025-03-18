@@ -76,3 +76,7 @@ unlist.sh
 
 # build artifacts
 /artifacts
+
+/docker/data/
+
+docker/docker-compose-datadog.yml

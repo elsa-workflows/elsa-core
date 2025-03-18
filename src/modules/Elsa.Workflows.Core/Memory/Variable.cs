@@ -1,5 +1,7 @@
+using System.Text.Json.Serialization;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
+using Humanizer;
 
 namespace Elsa.Workflows.Memory;
 
@@ -11,26 +13,30 @@ public class Variable : MemoryBlockReference
     /// <inheritdoc />
     public Variable()
     {
-        Id = Guid.NewGuid().ToString("N");
     }
 
     /// <inheritdoc />
-    public Variable(string name) : this()
+    public Variable(string name)
     {
+        Id = GetIdFromName(name);
         Name = name;
     }
 
     /// <inheritdoc />
-    public Variable(string name, object? value = default) : this()
+    public Variable(string name, object? value = null) : this(name)
     {
-        Name = name;
+        Value = value;
+    }
+    
+    public Variable(string name, object? value = null, string? id = null) : this(name, value)
+    {
         Value = value;
     }
 
     /// <summary>
     /// The name of the variable.
     /// </summary>
-    public string Name { get; set; } = default!;
+    public string Name { get; set; } = null!;
     
     /// <summary>
     /// A default value for the variable.
@@ -45,6 +51,8 @@ public class Variable : MemoryBlockReference
 
     /// <inheritdoc />
     public override MemoryBlock Declare() => new(Value, new VariableBlockMetadata(this, StorageDriverType, false));
+
+    private string GetIdFromName(string? name) => $"{name?.Camelize() ?? "Unnamed"}{nameof(Variable)}";
 }
 
 /// <summary>
@@ -59,16 +67,19 @@ public class Variable<T> : Variable
     }
 
     /// <inheritdoc />
+    [Obsolete("Use the constructor that takes a name parameter instead.", true)]
     public Variable(T value)
     {
         Value = value;
     }
 
     /// <inheritdoc />
-    public Variable(string name, T value)
+    public Variable(string name, T value) : base(name, value)
     {
-        Name = name;
-        Value = value;
+    }
+    
+    public Variable(string name, T value, string? id = null) : base(name, value, id)
+    {
     }
 
     /// <summary>
@@ -87,6 +98,24 @@ public class Variable<T> : Variable
     public Variable<T> WithStorageDriver<TDriver>() where TDriver:IStorageDriver
     {
         StorageDriverType = typeof(TDriver);
+        return this;
+    }
+
+    public Variable<T> WithId(string id)
+    {
+        Id = id;
+        return this;
+    }
+    
+    public Variable<T> WithName(string name)
+    {
+        Name = name;
+        return this;
+    }
+    
+    public Variable<T> WithValue(T value)
+    {
+        Value = value;
         return this;
     }
 }

@@ -20,6 +20,8 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
 {
     private readonly ISystemClock _systemClock;
     private readonly List<Bookmark> _bookmarks = [];
+    private ActivityStatus _status;
+    private Exception? _exception;
     private long _executionCount;
     private ActivityExecutionContext? _parentActivityExecutionContext;
 
@@ -30,7 +32,6 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         string id,
         WorkflowExecutionContext workflowExecutionContext,
         ActivityExecutionContext? parentActivityExecutionContext,
-        ExpressionExecutionContext expressionExecutionContext,
         IActivity activity,
         ActivityDescriptor activityDescriptor,
         DateTimeOffset startedAt,
@@ -39,9 +40,14 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         CancellationToken cancellationToken)
     {
         _systemClock = systemClock;
+        Properties = new ChangeTrackingDictionary<string, object>(Taint);
+        ActivityState = new ChangeTrackingDictionary<string, object>(Taint);
+        ActivityInput = new ChangeTrackingDictionary<string, object>(Taint);
         WorkflowExecutionContext = workflowExecutionContext;
-        _parentActivityExecutionContext = parentActivityExecutionContext;
-        ExpressionExecutionContext = expressionExecutionContext;
+        ParentActivityExecutionContext = parentActivityExecutionContext;
+        var expressionExecutionContextProps = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(workflowExecutionContext, workflowExecutionContext.Input);
+        expressionExecutionContextProps[ExpressionExecutionContextExtensions.ActivityKey] = activity;
+        ExpressionExecutionContext = new(workflowExecutionContext.ServiceProvider, new(), parentActivityExecutionContext?.ExpressionExecutionContext ?? workflowExecutionContext.ExpressionExecutionContext, expressionExecutionContextProps, Taint, CancellationToken);
         Activity = activity;
         ActivityDescriptor = activityDescriptor;
         StartedAt = startedAt;
@@ -78,6 +84,17 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     public bool IsCompleted => Status is ActivityStatus.Completed or ActivityStatus.Canceled;
 
     /// <summary>
+    /// Gets or sets a value indicating whether the activity is actively executing. 
+    /// </summary>
+    /// <remarks>
+    /// This flag is set to <c>true</c> immediately before the activity begins execution 
+    /// and is set to <c>false</c> once the execution is completed. 
+    /// It can be used to determine if an activity was in-progress in case of unexpected 
+    /// application termination, allowing the system to retry execution upon restarting. 
+    /// </remarks>
+    public bool IsExecuting { get; set; }
+
+    /// <summary>
     /// The workflow execution context. 
     /// </summary>
     public WorkflowExecutionContext WorkflowExecutionContext { get; }
@@ -107,7 +124,20 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         {
             var containerVariables = (Activity as IVariableContainer)?.Variables ?? Enumerable.Empty<Variable>();
             var dynamicVariables = DynamicVariables;
-            return containerVariables.Concat(dynamicVariables).DistinctBy(x => x.Name);
+            var mergedVariables = new Dictionary<string, Variable>();
+            
+            foreach (var containerVariable in containerVariables)
+            {
+                var name = !string.IsNullOrEmpty(containerVariable.Name) ? containerVariable.Name : containerVariable.Id;
+                mergedVariables[name] = containerVariable;
+            }
+            
+            foreach (var dynamicVariable in dynamicVariables)
+            {
+                var name = !string.IsNullOrEmpty(dynamicVariable.Name) ? dynamicVariable.Name : dynamicVariable.Id;
+                mergedVariables[name] = dynamicVariable;
+            }
+            return mergedVariables.Values;
         }
     }
 
@@ -134,7 +164,23 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// The current status of the activity.
     /// </summary>
-    public ActivityStatus Status { get; private set; }
+    public ActivityStatus Status
+    {
+        get => _status;
+        private set
+        {
+            if (value == _status)
+                return;
+
+            _status = value;
+            Taint();
+        }
+    }
+
+    public IDisposable EnterExecution()
+    {
+        return new WorkflowExecutionState(this);
+    }
 
     /// <summary>
     /// Sets the current status of the activity.
@@ -147,10 +193,18 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// Gets or sets the exception that occurred during the activity execution, if any.
     /// </summary>
-    public Exception? Exception { get; set; }
+    public Exception? Exception
+    {
+        get => _exception;
+        set
+        {
+            _exception = value;
+            Taint();
+        }
+    }
 
     /// <inheritdoc />
-    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> Properties { get; private set; }
 
     /// <summary>
     /// A transient dictionary of values that can be associated with this activity execution context.
@@ -168,7 +222,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// </summary>
     /// <remarks>As of tool version 3.0, all activity Ids are already unique, so there's no need to construct a hierarchical ID</remarks>
     public string NodeId => ActivityNode.NodeId;
-    
+
     public ISet<ActivityExecutionContext> Children { get; } = new HashSet<ActivityExecutionContext>();
 
     /// <summary>
@@ -189,18 +243,23 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// A dictionary of inputs for the current activity.
     /// </summary>
-    public IDictionary<string, object> ActivityInput { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> ActivityInput { get; private set; }
 
     /// <summary>
     /// Journal data will be added to the workflow execution log for the "Executed" event.  
     /// </summary>
     // ReSharper disable once CollectionNeverQueried.Global
-    public IDictionary<string, object?> JournalData { get; } = new Dictionary<string, object?>();
+    public IDictionary<string, object> JournalData { get; } = new Dictionary<string, object>();
 
     /// <summary>
     /// Stores the evaluated inputs, serialized, for the current activity for historical purposes.
     /// </summary>
-    public IDictionary<string, object?> ActivityState { get; set; } = new Dictionary<string, object?>();
+    public IDictionary<string, object> ActivityState { get; }
+
+    /// <summary>
+    /// Indicates whether the state of the current activity execution context has been modified.
+    /// </summary>
+    public bool IsDirty { get; private set; }
 
     /// <summary>
     /// Schedules the specified activity to be executed.
@@ -357,13 +416,21 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// Adds each bookmark to the list of bookmarks.
     /// </summary>
     /// <param name="bookmarks">The bookmarks to add.</param>
-    public void AddBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);
+    public void AddBookmarks(IEnumerable<Bookmark> bookmarks)
+    {
+        _bookmarks.AddRange(bookmarks);
+        Taint();
+    }
 
     /// <summary>
     /// Adds a bookmark to the list of bookmarks.
     /// </summary>
     /// <param name="bookmark">The bookmark to add.</param>
-    public void AddBookmark(Bookmark bookmark) => _bookmarks.Add(bookmark);
+    public void AddBookmark(Bookmark bookmark)
+    {
+        _bookmarks.Add(bookmark);
+        Taint();
+    }
 
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time.
@@ -467,7 +534,11 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// Clear all bookmarks.
     /// </summary>
-    public void ClearBookmarks() => _bookmarks.Clear();
+    public void ClearBookmarks()
+    {
+        _bookmarks.Clear();
+        Taint();
+    }
 
     /// <summary>
     /// Returns a property value associated with the current activity context. 
@@ -674,7 +745,22 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         WorkflowExecutionContext.RemoveCompletionCallbacks(entriesToRemove);
     }
 
-    internal void IncrementExecutionCount() => _executionCount++;
+    public void Taint()
+    {
+        if (!IsDirty)
+            IsDirty = true;
+    }
+
+    public void ClearTaint()
+    {
+        if (IsDirty)
+            IsDirty = false;
+    }
+
+    internal void IncrementExecutionCount()
+    {
+        _executionCount++;
+    }
 
     private MemoryBlock? GetMemoryBlock(MemoryBlockReference locationBlockReference)
     {

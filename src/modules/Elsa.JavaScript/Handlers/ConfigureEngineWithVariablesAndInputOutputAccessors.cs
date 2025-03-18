@@ -1,7 +1,6 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Extensions;
-using Elsa.JavaScript.Helpers;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;

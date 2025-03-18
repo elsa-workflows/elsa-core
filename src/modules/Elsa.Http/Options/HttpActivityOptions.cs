@@ -20,7 +20,7 @@ public class HttpActivityOptions
     /// <summary>
     /// The prefix used for API routes.
     /// </summary>
-    [Obsolete("Use ElsaApiOptions from Elsa.Workflows.Api instead.")]
+    [Obsolete("Use ApiEndpointOptions from Elsa.Workflows.Api instead.")]
     public string ApiRoutePrefix { get; set; } = "elsa/api";
 
     /// <summary>

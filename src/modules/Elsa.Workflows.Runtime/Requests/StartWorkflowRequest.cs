@@ -1,3 +1,4 @@
+using System.Collections;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
 
@@ -23,9 +24,19 @@ public class StartWorkflowRequest
     public string? CorrelationId { get; set; }
 
     /// <summary>
+    /// The name to use when starting a new workflow instance.
+    /// </summary>
+    public string? Name { get; set; }
+
+    /// <summary>
     /// The input to the workflow instance, if any.
     /// </summary>
     public IDictionary<string, object>? Input { get; set; }
+
+    /// <summary>
+    /// Any variables to set before starting the workflow.
+    /// </summary>
+    public IDictionary<string, object>? Variables { get; set; }
 
     /// <summary>
     /// Any properties to assign to the workflow instance.
