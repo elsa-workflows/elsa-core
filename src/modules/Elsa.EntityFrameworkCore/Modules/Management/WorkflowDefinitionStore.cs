@@ -186,7 +186,7 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         }
         catch (Exception exp)
         {
-            logger.LogWarning(exp, "Could not deserialize workflow definition state: {DefinitionId}. Reverting to default state", entity!.DefinitionId);
+            logger.LogError(exp, "Could not deserialize workflow definition state: {DefinitionId}. Reverting to default state", entity.DefinitionId);
         }
 
         entity.Options = data.Options;
