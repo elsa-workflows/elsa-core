@@ -71,7 +71,14 @@ public class CleanupJob(
 
                     await foreach (var entities in collector.GetRelatedEntitiesGeneric(page.Items).WithCancellation(cancellationToken))
                     {
-                        await cleanupService.Cleanup(entities);
+                        try
+                        {
+                            await cleanupService.Cleanup(entities);
+                        }
+                        catch (Exception exp)
+                        {
+                            _logger.LogError(exp, "Failed to clean up {Type} because exception thrown", collectorService.Key.Name);
+                        }
                     }
                 }
                 
