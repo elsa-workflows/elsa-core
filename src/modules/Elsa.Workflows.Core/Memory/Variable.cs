@@ -30,7 +30,10 @@ public class Variable : MemoryBlockReference
     
     public Variable(string name, object? value = null, string? id = null) : this(name, value)
     {
-        Value = value;
+        if (id != null)
+        {
+            Id = id;
+        }
     }
 
     /// <summary>
