@@ -18,8 +18,8 @@ public class V3_3 : Migration
         Alter.Table("Bookmarks").AddColumn("TenantId").AsString().Nullable();
         Alter.Table("WorkflowExecutionLogRecords").AddColumn("TenantId").AsString().Nullable();
         Alter.Table("ActivityExecutionRecords").AddColumn("TenantId").AsString().Nullable();
+        Alter.Table("ActivityExecutionRecords").AddColumn("SerializedProperties").AsString(MaxValue).Nullable();
         Alter.Table("KeyValuePairs").AddColumn("TenantId").AsString().Nullable();
-        Rename.Column("Key").OnTable("KeyValuePairs").To("Id");
 
         IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
             .Create
@@ -55,6 +55,7 @@ public class V3_3 : Migration
         Delete.Column("TenantId").FromTable("Bookmarks");
         Delete.Column("TenantId").FromTable("WorkflowExecutionLogRecords");
         Delete.Column("TenantId").FromTable("ActivityExecutionRecords");
+        Delete.Column("SerializedProperties").FromTable("ActivityExecutionRecords");
         Delete.Column("TenantId").FromTable("KeyValuePairs");
         Rename.Column("Id").OnTable("KeyValuePairs").To("Key");
         Delete.Table("BookmarkQueueItems");
