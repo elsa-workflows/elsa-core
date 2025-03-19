@@ -25,6 +25,7 @@ public class V3_3 : Migration
             .Create
             .Table("BookmarkQueueItems")
             .WithColumn("Id").AsString().PrimaryKey()
+            .WithColumn("TenantId").AsString().Nullable()
             .WithColumn("WorkflowInstanceId").AsString().Nullable()
             .WithColumn("CorrelationId").AsString().Nullable()
             .WithColumn("BookmarkId").AsString().Nullable()
@@ -38,6 +39,7 @@ public class V3_3 : Migration
             .Create
             .Table("BookmarkQueueItems")
             .WithColumn("Id").AsString().PrimaryKey()
+            .WithColumn("TenantId").AsString().Nullable()
             .WithColumn("WorkflowInstanceId").AsString().Nullable()
             .WithColumn("CorrelationId").AsString().Nullable()
             .WithColumn("BookmarkId").AsString().Nullable()
