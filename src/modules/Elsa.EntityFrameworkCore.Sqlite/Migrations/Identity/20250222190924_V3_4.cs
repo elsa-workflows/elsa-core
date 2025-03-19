@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -19,22 +20,22 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
-                name: "Elsa");
+                name: _schema.Schema);
 
             migrationBuilder.RenameTable(
                 name: "Users",
                 newName: "Users",
-                newSchema: "Elsa");
+                newSchema: _schema.Schema);
 
             migrationBuilder.RenameTable(
                 name: "Roles",
                 newName: "Roles",
-                newSchema: "Elsa");
+                newSchema: _schema.Schema);
 
             migrationBuilder.RenameTable(
                 name: "Applications",
                 newName: "Applications",
-                newSchema: "Elsa");
+                newSchema: _schema.Schema);
         }
 
         /// <inheritdoc />
