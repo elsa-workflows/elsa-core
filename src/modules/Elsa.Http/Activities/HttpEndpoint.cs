@@ -6,6 +6,7 @@ using Elsa.Http.Bookmarks;
 using Elsa.Http.UIHints;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
 using Microsoft.AspNetCore.Http;
@@ -152,7 +153,11 @@ public class HttpEndpoint : Trigger<HttpRequest>
     public Output<IDictionary<string, object>> Headers { get; set; } = null!;
 
     /// <inheritdoc />
-    protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context) => GetBookmarkPayloads(context.ExpressionExecutionContext);
+    protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context)
+    {
+        context.TriggerName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
+        return GetBookmarkPayloads(context.ExpressionExecutionContext);
+    }
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -175,7 +180,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         {
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
-            context.CreateBookmark(OnResumeAsync, BookmarkMetadata.HttpCrossBoundary);
+            CreateBookmark(context);
             return;
         }
 
@@ -191,11 +196,22 @@ public class HttpEndpoint : Trigger<HttpRequest>
         {
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
-            context.CreateBookmark(OnResumeAsync, BookmarkMetadata.HttpCrossBoundary);
+            CreateBookmark(context);
             return;
         }
 
         await HandleRequestAsync(context, httpContext);
+    }
+
+    private void CreateBookmark(ActivityExecutionContext context)
+    {
+        var bookmarkOptions = new CreateBookmarkArgs
+        {
+            BookmarkName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>(),
+            Callback = OnResumeAsync,
+            Metadata = BookmarkMetadata.HttpCrossBoundary,
+        };
+        context.CreateBookmark(bookmarkOptions);
     }
 
     private async Task HandleRequestAsync(ActivityExecutionContext context, HttpContext httpContext)

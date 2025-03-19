@@ -349,7 +349,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
         var httpEndpointFaultHandler = serviceProvider.GetRequiredService<IHttpEndpointFaultHandler>();
         var workflowInstanceManager = serviceProvider.GetRequiredService<IWorkflowInstanceManager>();
         var workflowState = (await workflowInstanceManager.FindByIdAsync(workflowExecutionResult.WorkflowState.Id, cancellationToken))!;
-        await httpEndpointFaultHandler.HandleAsync(new HttpEndpointFaultContext(httpContext, workflowState.WorkflowState, cancellationToken));
+        await httpEndpointFaultHandler.HandleAsync(new(httpContext, workflowState.WorkflowState, cancellationToken));
         return true;
     }
 
@@ -365,7 +365,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
         if (bookmarkPayload.Authorize == false)
             return true;
 
-        return await httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, workflow, bookmarkPayload.Policy));
+        return await httpEndpointAuthorizationHandler.AuthorizeAsync(new(httpContext, workflow, bookmarkPayload.Policy));
     }
 
     private string ComputeBookmarkHash(IServiceProvider serviceProvider, string path, string method)

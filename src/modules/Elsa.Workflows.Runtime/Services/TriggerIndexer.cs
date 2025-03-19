@@ -156,18 +156,19 @@ public class TriggerIndexer : ITriggerIndexer
     {
         var workflow = context.Workflow;
         var cancellationToken = context.CancellationToken;
-        var triggerTypeName = trigger.Type;
-        var triggerDescriptor = _activityRegistry.Find(triggerTypeName, trigger.Version);
+        var activityTypeName = trigger.Type;
+        var triggerDescriptor = _activityRegistry.Find(activityTypeName, trigger.Version);
         
         if (triggerDescriptor == null)
         {
-            _logger.LogWarning("Could not find activity descriptor for activity type {ActivityType}", triggerTypeName);
+            _logger.LogWarning("Could not find activity descriptor for activity type {ActivityType}", activityTypeName);
             return new List<StoredTrigger>(0);
         }
         
         var expressionExecutionContext = await trigger.CreateExpressionExecutionContextAsync(triggerDescriptor, _serviceProvider, context, _expressionEvaluator, _logger);
         var triggerIndexingContext = new TriggerIndexingContext(context, expressionExecutionContext, trigger, cancellationToken);
         var triggerData = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
+        var triggerName = triggerIndexingContext.TriggerName;
 
         // If no trigger payloads were returned, create a null payload.
         if (!triggerData.Any()) triggerData.Add(null!);
@@ -177,9 +178,9 @@ public class TriggerIndexer : ITriggerIndexer
             Id = _identityGenerator.GenerateId(),
             WorkflowDefinitionId = workflow.Identity.DefinitionId,
             WorkflowDefinitionVersionId = workflow.Identity.Id,
-            Name = triggerTypeName,
+            Name = triggerName,
             ActivityId = trigger.Id,
-            Hash = _hasher.Hash(triggerTypeName, payload),
+            Hash = _hasher.Hash(triggerName, payload),
             Payload = payload
         });
 
@@ -197,6 +198,6 @@ public class TriggerIndexer : ITriggerIndexer
             _logger.LogWarning(e, "Failed to get trigger data for activity {ActivityId}", trigger.Id);
         }
 
-        return new List<object>(0);
+        return new(0);
     }
 }
