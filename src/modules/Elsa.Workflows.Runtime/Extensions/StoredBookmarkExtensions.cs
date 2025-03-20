@@ -27,6 +27,6 @@ public static class StoredBookmarkExtensions
     public static IEnumerable<StoredBookmark> Filter<T>(this IEnumerable<StoredBookmark> bookmarks) where T : IActivity
     {
         var bookmarkName = ActivityTypeNameHelper.GenerateTypeName<T>();
-        return bookmarks.Where(x => x.ActivityTypeName == bookmarkName);
+        return bookmarks.Where(x => x.Name == bookmarkName);
     }
 }

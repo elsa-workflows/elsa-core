@@ -28,7 +28,7 @@ public class DefaultRouteTableUpdater(
         };
         var bookmarkFilter = new BookmarkFilter
         {
-            ActivityTypeName = bookmarkName
+            Name = bookmarkName
         };
         var triggers = (await triggerStore.FindManyAsync(triggerFilter, cancellationToken)).ToList();
         var bookmarks = (await bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken)).ToList();
@@ -100,7 +100,7 @@ public class DefaultRouteTableUpdater(
     private static IEnumerable<StoredBookmark> Filter(IEnumerable<StoredBookmark> bookmarks)
     {
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-        return bookmarks.Where(x => x.ActivityTypeName == activityTypeName && x.Payload != null);
+        return bookmarks.Where(x => x.Name == activityTypeName && x.Payload != null);
     }
 
     private static IEnumerable<Bookmark> Filter(IEnumerable<Bookmark> bookmarks)

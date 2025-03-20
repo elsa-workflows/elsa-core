@@ -17,8 +17,15 @@ public class CreateSchedulesBackgroundTask(ITriggerStore triggerStore, IBookmark
     {
         var activityTypes = new[] { typeof(Cron), typeof(Timer), typeof(StartAt), typeof(Delay) };
         var activityTypeNames = activityTypes.Select(ActivityTypeNameHelper.GenerateTypeName).ToList();
-        var triggerFilter = new TriggerFilter { Names = activityTypeNames };
-        var bookmarkFilter = new BookmarkFilter { ActivityTypeNames = activityTypeNames };
+        var stimulusNames = new[]
+        {
+            SchedulingStimulusNames.Cron,
+            SchedulingStimulusNames.Timer,
+            SchedulingStimulusNames.StartAt,
+            SchedulingStimulusNames.Delay,
+        }.Concat(activityTypeNames).ToList(); // For backwards compatibility with existing bookmark records.
+        var triggerFilter = new TriggerFilter { Names = stimulusNames };
+        var bookmarkFilter = new BookmarkFilter { Names = stimulusNames };
         var triggers = (await triggerStore.FindManyAsync(triggerFilter, stoppingToken)).ToList();
         var bookmarks = (await bookmarkStore.FindManyAsync(bookmarkFilter, stoppingToken)).ToList();
 

@@ -132,7 +132,7 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
                 return new StoredBookmark
                 {
                     Id = bookmarkId,
-                    ActivityTypeName = activityTypeName,
+                    Name = activityTypeName,
                     Hash = hash,
                     WorkflowInstanceId = workflowInstanceId,
                     CreatedAt = createdAt,

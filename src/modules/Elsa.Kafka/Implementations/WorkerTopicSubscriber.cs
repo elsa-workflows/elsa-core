@@ -31,7 +31,7 @@ public class WorkerTopicSubscriber(ITriggerStore triggerStore, IBookmarkStore bo
     {
         var bookmarkFilter = new BookmarkFilter
         {
-            ActivityTypeName = MessageReceivedActivityTypeName
+            Name = MessageReceivedActivityTypeName
         };
         return await bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken);
     }

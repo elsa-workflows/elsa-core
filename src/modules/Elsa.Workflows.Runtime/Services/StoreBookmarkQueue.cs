@@ -21,7 +21,7 @@ public class StoreBookmarkQueue(
             CorrelationId = item.CorrelationId,
             Hash = item.StimulusHash,
             WorkflowInstanceId = item.WorkflowInstanceId,
-            ActivityTypeName = item.ActivityTypeName
+            Name = item.ActivityTypeName
         };
 
         var result = await resumer.ResumeAsync(filter, item.Options, cancellationToken);
