@@ -79,7 +79,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E5482-0482-448C-B9E4-EC67A9474B85}"
 	ProjectSection(SolutionItems) = preProject
 		docker\.dockerignore = docker\.dockerignore
-		docker\docker-compose-datadog.yml = docker\docker-compose-datadog.yml
 		docker\docker-compose.yml = docker\docker-compose.yml
 		docker\ElsaServer-Datadog.Dockerfile = docker\ElsaServer-Datadog.Dockerfile
 		docker\ElsaServer.Dockerfile = docker\ElsaServer.Dockerfile

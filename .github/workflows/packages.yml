@@ -12,7 +12,7 @@ on:
   release:
     types: [ prereleased, published ]
 env:
-  base_version: '3.4.0'
+  base_version: '3.5.0'
   feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
   nuget_feed_source: 'https://api.nuget.org/v3/index.json'
 
