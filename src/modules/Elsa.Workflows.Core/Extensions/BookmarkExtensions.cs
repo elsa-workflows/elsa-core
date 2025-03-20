@@ -19,7 +19,12 @@ public static class BookmarkExtensions
     public static IEnumerable<Bookmark> Filter<T>(this IEnumerable<Bookmark> bookmarks) where T : IActivity
     {
         var bookmarkName = ActivityTypeNameHelper.GenerateTypeName<T>();
-        return bookmarks.Where(x => x.Name == bookmarkName);
+        return bookmarks.Filter(bookmarkName);
+    }
+    
+    public static IEnumerable<Bookmark> Filter(this IEnumerable<Bookmark> bookmarks, params string[] bookmarkNames)
+    {
+        return bookmarks.Where(x => bookmarkNames.Contains(x.Name));
     }
     
     /// <summary>
