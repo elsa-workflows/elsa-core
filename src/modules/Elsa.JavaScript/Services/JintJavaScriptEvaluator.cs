@@ -65,7 +65,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         if (_jintOptions.AllowClrAccess)
             options.AllowClr();
     }
-    
+
     private void ConfigureObjectWrapper(Jint.Options options)
     {
         options.SetWrapObjectHandler((engine, target, type) =>
@@ -81,7 +81,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
     private void ConfigureObjectConverters(Jint.Options options)
     {
-        options.Interop.ObjectConverters.AddRange([new ByteArrayConverter()]);
+        options.Interop.ObjectConverters.AddRange([new ByteArrayConverter(), new EnumToStringConverter(), new JsonElementConverter()]);
     }
 
     private void ConfigureArgumentGetters(Engine engine, ExpressionEvaluatorOptions options)
@@ -89,7 +89,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         foreach (var argument in options.Arguments)
             engine.SetValue($"get{argument.Key}", (Func<object?>)(() => argument.Value));
     }
-    
+
     private void ConfigureConfigurationAccess(Engine engine)
     {
         if (_jintOptions.AllowConfigurationAccess)
@@ -118,16 +118,10 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
     private Prepared<Script> PrepareScript(string expression)
     {
-        var prepareOptions = new ScriptPreparationOptions
-        {
-            ParsingOptions = new ScriptParsingOptions
-            {
-                AllowReturnOutsideFunction = true
-            }
-        };
+        var prepareOptions = new ScriptPreparationOptions { ParsingOptions = new ScriptParsingOptions { AllowReturnOutsideFunction = true } };
         return Engine.PrepareScript(expression, options: prepareOptions);
     }
-    
+
     private string Hash(string input)
     {
         var bytes = Encoding.UTF8.GetBytes(input);
