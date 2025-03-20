@@ -1,4 +1,6 @@
-﻿namespace Elsa.Common.Multitenancy;
+﻿using Elsa.Framework.Tenants;
+
+namespace Elsa.Common.Multitenancy;
 
 /// <summary>
 /// Represents a tenant provider.

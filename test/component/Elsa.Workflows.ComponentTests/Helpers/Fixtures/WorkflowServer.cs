@@ -7,6 +7,7 @@ using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
+using Elsa.Framework.Tenants;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
 using Elsa.Testing.Shared.Handlers;

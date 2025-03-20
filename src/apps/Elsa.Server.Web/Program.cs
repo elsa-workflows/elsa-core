@@ -755,6 +755,10 @@ services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader()
 // Build the web application.
 var app = builder.Build();
 
+// Configure multitenancy.
+if (useMultitenancy)
+    app.UseMultitenancy();
+
 // Configure the pipeline.
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();

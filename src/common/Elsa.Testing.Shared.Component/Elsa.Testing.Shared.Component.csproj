@@ -20,7 +20,6 @@
         <ProjectReference Include="..\..\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Tenants\Elsa.Tenants.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
         <ProjectReference Include="..\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
     </ItemGroup>

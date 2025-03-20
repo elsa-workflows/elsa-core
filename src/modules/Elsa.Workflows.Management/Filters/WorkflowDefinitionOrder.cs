@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using Elsa.Common.Entities;
+using Elsa.Framework.Entities;
 using Elsa.Workflows.Management.Entities;
 using JetBrains.Annotations;
 

@@ -1,6 +1,6 @@
-using Elsa.Common.Entities;
 using Elsa.Dapper.Records;
 using Elsa.Dapper.Services;
+using Elsa.Framework.Entities;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Dapper.Extensions;

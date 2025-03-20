@@ -1,4 +1,5 @@
-using Elsa.Common.Multitenancy;
+using Elsa.Framework.Tenants;
+using Tenant = Elsa.Common.Multitenancy.Tenant;
 
 namespace Elsa.Tenants;
 

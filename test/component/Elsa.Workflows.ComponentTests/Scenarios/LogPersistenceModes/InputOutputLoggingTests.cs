@@ -1,7 +1,7 @@
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Responses;
 using Elsa.Api.Client.Resources.WorkflowInstances.Models;
-using Elsa.Common.Entities;
+using Elsa.Framework.Entities;
 using Elsa.Testing.Shared.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.ComponentTests.Abstractions;

@@ -2,6 +2,8 @@ using System.Linq.Expressions;
 using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
+using Elsa.Framework.Entities;
+using Elsa.Framework.Tenants;
 using Elsa.MongoDb.Extensions;
 using JetBrains.Annotations;
 using MongoDB.Driver;

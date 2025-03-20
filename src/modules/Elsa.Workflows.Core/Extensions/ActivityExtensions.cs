@@ -130,10 +130,10 @@ public static class ActivityExtensions
     /// <typeparam name="TActivity">The type of the activity.</typeparam>
     /// <typeparam name="T">The type of the output.</typeparam>
     /// <returns>The output value.</returns>
-    public static T? GetOutput<TActivity, T>(this TActivity activity, ActivityExecutionContext context, Expression<Func<TActivity, object?>> outputExpression)
+    public static T? GetOutput<TActivity, T>(this TActivity activity, ActivityExecutionContext context, Expression<Func<TActivity, object?>> outputExpression) where TActivity: IActivity
     {
         var outputName = outputExpression.GetPropertyName();
-        return ((IActivity)activity!).GetOutput<T>(context, outputName);
+        return activity!.GetOutput<T>(context, outputName);
     }
     
     /// <summary>
@@ -145,10 +145,10 @@ public static class ActivityExtensions
     /// <typeparam name="TActivity">The type of the activity.</typeparam>
     /// <typeparam name="T">The type of the output.</typeparam>
     /// <returns>The output value.</returns>
-    public static T? GetOutput<TActivity, T>(this TActivity activity, ExpressionExecutionContext context, Expression<Func<TActivity, object?>> outputExpression)
+    public static T? GetOutput<TActivity, T>(this TActivity activity, ExpressionExecutionContext context, Expression<Func<TActivity, object?>> outputExpression) where TActivity: IActivity
     {
         var outputName = outputExpression.GetPropertyName();
-        return ((IActivity)activity!).GetOutput<T>(context, outputName);
+        return activity!.GetOutput<T>(context, outputName);
     }
 
     /// <summary>

@@ -1,6 +1,6 @@
 using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Models;
-using Elsa.Common.Entities;
+using Elsa.Framework.Entities;
 
 namespace Elsa.Alterations.Core.Entities;
 
