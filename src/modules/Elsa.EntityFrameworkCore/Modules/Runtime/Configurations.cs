@@ -80,11 +80,23 @@ public class Configurations :
         builder.HasKey(b => b.Id);
         builder.Property<string>("SerializedPayload");
         builder.Property<string>("SerializedMetadata");
+        builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}");
         builder.HasIndex(x => x.Name, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.Name)}");
         builder.HasIndex(x => x.Hash, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.Hash)}");
         builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.WorkflowInstanceId)}");
         builder.HasIndex(x => x.ActivityInstanceId, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityInstanceId)}");
         builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.CreatedAt)}");
+        builder.HasIndex(x => new
+            {
+                x.ActivityTypeName,
+                x.Hash
+            }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}_{nameof(StoredBookmark.Hash)}");
+        builder.HasIndex(x => new
+            {
+                x.ActivityTypeName,
+                x.Hash,
+                x.WorkflowInstanceId
+            }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}_{nameof(StoredBookmark.Hash)}_{nameof(StoredBookmark.WorkflowInstanceId)}");
         builder.HasIndex(x => new
             {
                 ActivityTypeName = x.Name,
