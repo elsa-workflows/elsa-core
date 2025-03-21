@@ -38,7 +38,7 @@ public class Timer : TimerBase
     {
         return Interval.Get(context);
     }
-    
+
     /// <summary>
     /// Creates a new <see cref="Timer"/> activity set to trigger at the specified interval.
     /// </summary>
