@@ -4,26 +4,20 @@ using Elsa.Workflows;
 
 namespace Elsa.Server.Web.Activities;
 
-public class CustomHttpEndpoint : Trigger
+public class CustomHttpEndpoint : HttpEndpointBase
 {
-    protected override void Execute(ActivityExecutionContext context)
+    protected override HttpEndpointOptions GetOptions()
     {
-        context.WaitForHttpRequest("my-path", HttpMethods.Get, OnHttpRequestReceivedAsync);
+        return new()
+        {
+            Path = "my-path",
+            Methods = [HttpMethods.Get],
+        };
     }
 
-    protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context)
+    protected override async ValueTask OnHttpRequestReceivedAsync(ActivityExecutionContext context, HttpContext httpContext)
     {
-        context.TriggerName = HttpStimulusNames.HttpEndpoint;
-        return context.GetHttpEndpointStimuli("my-path", HttpMethods.Get);
-    }
-
-    private async ValueTask OnHttpRequestReceivedAsync(ActivityExecutionContext context)
-    {
-        var httpContextAccessor = context.GetRequiredService<IHttpContextAccessor>();
-        var httpContext = httpContextAccessor.HttpContext!;
-        
         httpContext.Response.StatusCode = 200;
         await httpContext.Response.WriteAsync("Hello World", context.CancellationToken);
-        await context.CompleteActivityAsync();
     }
 }
