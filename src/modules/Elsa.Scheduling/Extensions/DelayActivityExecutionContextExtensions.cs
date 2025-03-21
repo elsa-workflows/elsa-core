@@ -7,7 +7,7 @@ using Elsa.Workflows.Models;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
-public static class ActivityExecutionContextExtensions
+public static class DelayActivityExecutionContextExtensions
 {
     /// <summary>
     /// Resumes the activity after a specified delay.
@@ -15,12 +15,12 @@ public static class ActivityExecutionContextExtensions
     /// <param name="context">The activity execution context in which the workflow is running.</param>
     /// <param name="delay">The delay before the workflow resumes.</param>
     /// <param name="callback">The delegate to execute when the activity resumes.</param>
-    public static void ResumeIn(this ActivityExecutionContext context, TimeSpan delay, ExecuteActivityDelegate callback)
+    public static void DelayFor(this ActivityExecutionContext context, TimeSpan delay, ExecuteActivityDelegate? callback = null)
     {
         var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();
         var resumeAt = clock.UtcNow.Add(delay);
         
-        ResumeAt(context, resumeAt, callback);
+        DelayUntil(context, resumeAt, callback);
     }
 
     /// <summary>
@@ -29,7 +29,7 @@ public static class ActivityExecutionContextExtensions
     /// <param name="context">The activity execution context in which the workflow is running.</param>
     /// <param name="resumeAt">The point in time at which the workflow should resume execution.</param>
     /// <param name="callback">The delegate to execute when the activity resumes.</param>
-    public static void ResumeAt(this ActivityExecutionContext context, DateTimeOffset resumeAt, ExecuteActivityDelegate callback)
+    public static void DelayUntil(this ActivityExecutionContext context, DateTimeOffset resumeAt, ExecuteActivityDelegate? callback = null)
     {
         var payload = new DelayPayload(resumeAt);
 
@@ -39,6 +39,7 @@ public static class ActivityExecutionContextExtensions
             Stimulus = payload,
             Callback = callback
         };
+        
         context.CreateBookmark(bookmarkOptions);
     }
 }

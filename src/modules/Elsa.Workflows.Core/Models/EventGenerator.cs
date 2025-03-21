@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Models;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Generates events on a workflow instance.
@@ -6,12 +6,12 @@ namespace Elsa.Workflows.Models;
 public abstract class EventGenerator : Trigger, IEventGenerator
 {
     /// <inheritdoc />
-    protected EventGenerator(string? source = default, int? line = default) : base(source, line)
+    protected EventGenerator(string? source = null, int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    protected EventGenerator(string triggerType, int version = 1, string? source = default, int? line = default) : base(triggerType, version, source, line)
+    protected EventGenerator(string triggerType, int version = 1, string? source = null, int? line = null) : base(triggerType, version, source, line)
     {
     }
 }

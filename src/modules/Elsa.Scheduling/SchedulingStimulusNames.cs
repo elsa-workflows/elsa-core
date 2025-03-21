@@ -2,8 +2,8 @@ namespace Elsa.Scheduling;
 
 public static class SchedulingStimulusNames
 {
-    public const string Cron = "Cron";
-    public const string StartAt = "StartAt";
-    public const string Timer = "Timer";
-    public const string Delay = "Delay";
+    public const string Cron = "Elsa.Cron";
+    public const string StartAt = "Elsa.StartAt";
+    public const string Timer = "Elsa.Timer";
+    public const string Delay = "Elsa.Delay";
 }
