@@ -3,7 +3,6 @@ using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing.Patterns;
 
 namespace Elsa.Http.Extensions;
@@ -92,14 +91,4 @@ public static class HttpEndpointActivityExecutionContextExtensions
         };
         context.CreateBookmark(bookmarkOptions);
     }
-}
-
-public class HttpEndpointOptions
-{
-    public string Path { get; set; } = null!;
-    public ICollection<string> Methods { get; set; } = [HttpMethods.Get];
-    public bool Authorize { get; set; }
-    public string? Policy { get; set; }
-    public TimeSpan? RequestTimeout { get; set; }
-    public long? RequestSizeLimit { get; set; }
 }
