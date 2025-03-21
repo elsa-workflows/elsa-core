@@ -4,8 +4,8 @@ namespace Elsa.Workflows;
 public class StimulusHasher(IHasher hasher) : IStimulusHasher
 {
     /// <inheritdoc />
-    public string Hash(string activityTypeName, object? payload = null, string? activityInstanceId = null)
+    public string Hash(string stimulusName, object? payload = null, string? activityInstanceId = null)
     {
-        return hasher.Hash(activityTypeName, payload, activityInstanceId);
+        return hasher.Hash(stimulusName, payload, activityInstanceId);
     }
 }

@@ -315,6 +315,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "migrations", "migrations", 
 		scripts\migrations\efcore-3.3.sh = scripts\migrations\efcore-3.3.sh
 		scripts\migrations\README.md = scripts\migrations\README.md
 		scripts\migrations\efcore-3.4.sh = scripts\migrations\efcore-3.4.sh
+		scripts\migrations\efcore-3.5.sh = scripts\migrations\efcore-3.5.sh
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{AA5ACF15-8647-4AC9-B9F5-73FCB92BE7E3}"

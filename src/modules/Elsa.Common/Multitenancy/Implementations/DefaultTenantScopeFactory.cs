@@ -7,6 +7,6 @@ public class DefaultTenantScopeFactory(ITenantAccessor tenantAccessor, IServiceS
     public TenantScope CreateScope(Tenant? tenant)
     {
         var serviceScope = serviceScopeFactory.CreateAsyncScope();
-        return new TenantScope(serviceScope, tenantAccessor, tenant);
+        return new(serviceScope, tenantAccessor, tenant);
     }
 }

@@ -58,8 +58,8 @@ internal class DapperBookmarkStore(Store<StoredBookmarkRecord> store, IPayloadSe
             .Is(nameof(StoredBookmarkRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
             .In(nameof(StoredBookmarkRecord.WorkflowInstanceId), filter.WorkflowInstanceIds)
             .Is(nameof(StoredBookmarkRecord.CorrelationId), filter.CorrelationId)
-            .Is(nameof(StoredBookmarkRecord.ActivityTypeName), filter.ActivityTypeName)
-            .In(nameof(StoredBookmarkRecord.ActivityTypeName), filter.ActivityTypeNames)
+            .Is(nameof(StoredBookmarkRecord.ActivityTypeName), filter.Name)
+            .In(nameof(StoredBookmarkRecord.ActivityTypeName), filter.Names)
             .Is(nameof(StoredBookmarkRecord.ActivityInstanceId), filter.ActivityInstanceId)
             ;
     }
@@ -75,7 +75,7 @@ internal class DapperBookmarkStore(Store<StoredBookmarkRecord> store, IPayloadSe
             WorkflowInstanceId = source.WorkflowInstanceId,
             CorrelationId = source.CorrelationId,
             ActivityInstanceId = source.ActivityInstanceId,
-            ActivityTypeName = source.ActivityTypeName,
+            ActivityTypeName = source.Name,
             Hash = source.Hash,
             SerializedPayload = source.Payload != null ? payloadSerializer.Serialize(source.Payload) : default,
             SerializedMetadata = source.Metadata != null ? payloadSerializer.Serialize(source.Metadata) : default,
@@ -92,7 +92,7 @@ internal class DapperBookmarkStore(Store<StoredBookmarkRecord> store, IPayloadSe
             WorkflowInstanceId = source.WorkflowInstanceId,
             CorrelationId = source.CorrelationId,
             ActivityInstanceId = source.ActivityInstanceId,
-            ActivityTypeName = source.ActivityTypeName,
+            Name = source.ActivityTypeName,
             Hash = source.Hash,
             Payload = source.SerializedPayload != null ? payloadSerializer.Deserialize(source.SerializedPayload) : default,
             Metadata = source.SerializedMetadata != null ? payloadSerializer.Deserialize<Dictionary<string, string>>(source.SerializedMetadata) : default,

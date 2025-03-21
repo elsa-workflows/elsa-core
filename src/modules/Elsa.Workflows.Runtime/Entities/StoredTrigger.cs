@@ -18,9 +18,9 @@ public class StoredTrigger : Entity
     public string WorkflowDefinitionVersionId { get; set; } = null!;
     
     /// <summary>
-    /// The name of the trigger.
+    /// The name of the trigger, if any. Typically assigned a stimulus name.
     /// </summary>
-    public string Name { get; set; } = null!;
+    public string? Name { get; set; }
     
     /// <summary>
     /// The ID of the activity associated with the trigger.

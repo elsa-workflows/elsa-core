@@ -1,8 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
-using Elsa.Common;
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Scheduling.Bookmarks;
-using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 
@@ -12,20 +10,20 @@ namespace Elsa.Scheduling.Activities;
 /// Represents a timer to periodically trigger the workflow.
 /// </summary>
 [Activity("Elsa", "Scheduling", "Trigger workflow execution at a specific interval.")]
-public class Timer : EventGenerator
+public class Timer : TimerBase
 {
     /// <inheritdoc />
-    public Timer([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Timer([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public Timer(TimeSpan interval, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Input<TimeSpan>(interval), source, line)
+    public Timer(TimeSpan interval, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(new Input<TimeSpan>(interval), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Timer(Input<TimeSpan> interval, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public Timer(Input<TimeSpan> interval, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         Interval = interval;
     }
@@ -36,39 +34,18 @@ public class Timer : EventGenerator
     [Input(Description = "The interval at which the timer should execute.", DefaultValue = "00:01:00")]
     public Input<TimeSpan> Interval { get; set; } = new(TimeSpan.FromMinutes(1));
 
-    /// <inheritdoc />
-    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    protected override TimeSpan GetInterval(ExpressionExecutionContext context)
     {
-        if(context.IsTriggerOfWorkflow())
-        {
-            await context.CompleteActivityAsync();
-            return;
-        }
-        
-        var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();
-        var timeSpan = context.ExpressionExecutionContext.Get(Interval);
-        var resumeAt = clock.UtcNow.Add(timeSpan);
-        
-        context.JournalData.Add("ResumeAt", resumeAt);
-        context.CreateBookmark(new TimerBookmarkPayload(resumeAt));
-    }
-
-    /// <inheritdoc />
-    protected override object GetTriggerPayload(TriggerIndexingContext context)
-    {
-        var interval = context.ExpressionExecutionContext.Get(Interval);
-        var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();
-        var executeAt = clock.UtcNow.Add(interval);
-        return new TimerTriggerPayload(executeAt, interval);
+        return Interval.Get(context);
     }
 
     /// <summary>
     /// Creates a new <see cref="Timer"/> activity set to trigger at the specified interval.
     /// </summary>
-    public static Timer FromTimeSpan(TimeSpan value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(value, source, line);
+    public static Timer FromTimeSpan(TimeSpan value, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) => new(value, source, line);
 
     /// <summary>
     /// Creates a new <see cref="Timer"/> activity set to trigger at the specified interval in seconds.
     /// </summary>
-    public static Timer FromSeconds(double value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => FromTimeSpan(TimeSpan.FromSeconds(value), source, line);
+    public static Timer FromSeconds(double value, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) => FromTimeSpan(TimeSpan.FromSeconds(value), source, line);
 }

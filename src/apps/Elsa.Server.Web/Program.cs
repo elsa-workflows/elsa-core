@@ -102,7 +102,7 @@ const bool useTenantsFromConfiguration = true;
 const bool useSecrets = false;
 const bool disableVariableWrappers = false;
 const bool disableVariableCopying = false;
-const bool useManualOtelInstrumentation = true;
+const bool useManualOtelInstrumentation = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -141,7 +141,7 @@ if (useManualOtelInstrumentation)
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
                 .AddSqlClientInstrumentation()
-                //.AddConsoleExporter()
+                .AddConsoleExporter()
                 .AddOtlpExporter()
                 ;
         })
@@ -150,7 +150,7 @@ if (useManualOtelInstrumentation)
             metrics
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
-                //.AddConsoleExporter()
+                .AddConsoleExporter()
                 .AddOtlpExporter()
                 ;
         });

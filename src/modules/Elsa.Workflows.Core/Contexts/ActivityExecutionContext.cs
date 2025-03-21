@@ -404,7 +404,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = null, bool includeActivityInstanceId = true)
     {
         foreach (var payload in payloads)
-            CreateBookmark(new CreateBookmarkArgs
+            CreateBookmark(new()
             {
                 Stimulus = payload,
                 Callback = callback,
@@ -440,7 +440,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(ExecuteActivityDelegate callback, IDictionary<string, string>? metadata = null)
     {
-        return CreateBookmark(new CreateBookmarkArgs
+        return CreateBookmark(new()
         {
             Callback = callback,
             Metadata = metadata
@@ -455,9 +455,9 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <param name="includeActivityInstanceId">Whether or not the activity instance ID should be included in the bookmark payload.</param>
     /// <param name="customProperties">Custom properties to associate with the bookmark.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(object stimulus, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = null)
+    public Bookmark CreateBookmark(object stimulus, ExecuteActivityDelegate? callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = null)
     {
-        return CreateBookmark(new CreateBookmarkArgs
+        return CreateBookmark(new()
         {
             Stimulus = stimulus,
             Callback = callback,
@@ -475,7 +475,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(object stimulus, bool includeActivityInstanceId, IDictionary<string, string>? customProperties = null)
     {
-        return CreateBookmark(new CreateBookmarkArgs
+        return CreateBookmark(new()
         {
             Stimulus = stimulus,
             IncludeActivityInstanceId = includeActivityInstanceId,

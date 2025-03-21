@@ -29,10 +29,8 @@ namespace Elsa.Http.Middleware;
 /// An ASP.NET middleware component that tries to match the inbound request path to an associated workflow and then run that workflow.
 /// </summary>
 [PublicAPI]
-public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenantAccessor, IOptions<HttpActivityOptions> options)
+public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivityOptions> options)
 {
-    private readonly string _activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-
     /// <summary>
     /// Attempts to match the inbound request path to an associated workflow and then run that workflow.
     /// </summary>
@@ -372,7 +370,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
     {
         var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
         var bookmarkHasher = serviceProvider.GetRequiredService<IStimulusHasher>();
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-        return bookmarkHasher.Hash(activityTypeName, bookmarkPayload);
+        return bookmarkHasher.Hash(HttpStimulusNames.HttpEndpoint, bookmarkPayload);
     }
 }
