@@ -17,6 +17,12 @@ public static class ActivityExecutionContextExtensions
     /// <param name="callback">An optional delegate to execute when the event occurs.</param>
     public static void WaitForEvent(this ActivityExecutionContext context, string eventName, ExecuteActivityDelegate? callback = null)
     {
+        if (context.IsTriggerOfWorkflow())
+        {
+            if (callback != null) callback(context);
+            return;
+        }
+
         var options = new CreateBookmarkArgs
         {
             Stimulus = new EventStimulus(eventName),
@@ -25,6 +31,12 @@ public static class ActivityExecutionContextExtensions
             Callback = callback
         };
         context.CreateBookmark(options);
+    }
+    
+    public static EventStimulus GetEventStimulus(this TriggerIndexingContext context, string eventName)
+    {
+        context.TriggerName = RuntimeStimulusNames.Event;
+        return new(eventName);
     }
 
     public static object? GetEventInput(this ActivityExecutionContext context)
