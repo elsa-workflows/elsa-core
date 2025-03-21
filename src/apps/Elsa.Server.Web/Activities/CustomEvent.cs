@@ -1,25 +1,18 @@
-using Elsa.Extensions;
+using Elsa.Expressions.Models;
 using Elsa.Workflows;
+using Elsa.Workflows.Runtime.Activities;
 
 namespace Elsa.Server.Web.Activities;
 
-public class CustomEvent : Trigger<object>
+public class CustomEvent : EventBase<object>
 {
-    protected override object GetTriggerPayload(TriggerIndexingContext context)
+    protected override string GetEventName(ExpressionExecutionContext context)
     {
-        return context.GetEventStimulus("MyEvent");
+        return "MyEvent";
     }
     
-    protected override ValueTask ExecuteAsync(ActivityExecutionContext context)
+    protected override void OnEventReceived(ActivityExecutionContext context, object? eventData)
     {
-        context.WaitForEvent("MyEvent", OnEventReceivedAsync);
-        return default;
-    }
-
-    private async ValueTask OnEventReceivedAsync(ActivityExecutionContext context)
-    {
-        context.SetResult(context.GetEventInput());
-        Console.WriteLine("Event received");
-        await context.CompleteActivityAsync();
+        Console.WriteLine("Event received with data: " + eventData);
     }
 }

@@ -1,7 +1,6 @@
 using Elsa.Expressions.Models;
 using Elsa.Scheduling.Activities;
 using Elsa.Workflows;
-using Elsa.Workflows.Attributes;
 
 namespace Elsa.Server.Web.Activities;
 
