@@ -15,7 +15,7 @@ public static class ActivityExecutionContextExtensions
     /// <param name="context">The activity execution context in which the workflow is running.</param>
     /// <param name="delay">The delay before the workflow resumes.</param>
     /// <param name="callback">The delegate to execute when the activity resumes.</param>
-    public static void ResumeIn(this ActivityExecutionContext context, TimeSpan delay, ExecuteActivityDelegate callback)
+    public static void ResumeIn(this ActivityExecutionContext context, TimeSpan delay, ExecuteActivityDelegate? callback = null)
     {
         var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();
         var resumeAt = clock.UtcNow.Add(delay);
@@ -29,7 +29,7 @@ public static class ActivityExecutionContextExtensions
     /// <param name="context">The activity execution context in which the workflow is running.</param>
     /// <param name="resumeAt">The point in time at which the workflow should resume execution.</param>
     /// <param name="callback">The delegate to execute when the activity resumes.</param>
-    public static void ResumeAt(this ActivityExecutionContext context, DateTimeOffset resumeAt, ExecuteActivityDelegate callback)
+    public static void ResumeAt(this ActivityExecutionContext context, DateTimeOffset resumeAt, ExecuteActivityDelegate? callback = null)
     {
         var payload = new DelayPayload(resumeAt);
 
@@ -39,6 +39,7 @@ public static class ActivityExecutionContextExtensions
             Stimulus = payload,
             Callback = callback
         };
+        
         context.CreateBookmark(bookmarkOptions);
     }
 }
