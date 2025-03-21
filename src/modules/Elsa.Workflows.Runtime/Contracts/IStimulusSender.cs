@@ -11,7 +11,7 @@ public interface IStimulusSender
     /// Delivers a stimulus to an activity. This could result in new workflow instances as well as existing workflow instances being resumed.
     /// </summary>
     Task<SendStimulusResult> SendAsync(string activityTypeName, object stimulus, StimulusMetadata? metadata = null, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Delivers a stimulus to an activity. This could result in new workflow instances as well as existing workflow instances being resumed.
     /// </summary>
