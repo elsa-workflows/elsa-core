@@ -1,7 +1,5 @@
 using Elsa.Extensions;
-using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Bookmarks;
-using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
 
@@ -26,10 +24,10 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
     public async Task ScheduleAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.ToList();
-        var delayBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Delay, ActivityTypeNameHelper.GenerateTypeName<Delay>());
-        var startAtBookmarks = bookmarkList.Filter(SchedulingStimulusNames.StartAt, ActivityTypeNameHelper.GenerateTypeName<StartAt>());
-        var timerBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Timer, ActivityTypeNameHelper.GenerateTypeName<Activities.Timer>());
-        var cronBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Cron, ActivityTypeNameHelper.GenerateTypeName<Cron>());
+        var delayBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Delay);
+        var startAtBookmarks = bookmarkList.Filter(SchedulingStimulusNames.StartAt);
+        var timerBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Timer);
+        var cronBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Cron);
 
         // Schedule each Delay bookmark.
         foreach (var bookmark in delayBookmarks)
@@ -88,10 +86,10 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
     public async Task ScheduleAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.ToList();
-        var delayBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Delay, ActivityTypeNameHelper.GenerateTypeName<Delay>());
-        var startAtBookmarks = bookmarkList.Filter(SchedulingStimulusNames.StartAt, ActivityTypeNameHelper.GenerateTypeName<StartAt>());
-        var timerBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Timer, ActivityTypeNameHelper.GenerateTypeName<Activities.Timer>());
-        var cronBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Cron, ActivityTypeNameHelper.GenerateTypeName<Cron>());
+        var delayBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Delay);
+        var startAtBookmarks = bookmarkList.Filter(SchedulingStimulusNames.StartAt);
+        var timerBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Timer);
+        var cronBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Cron);
 
         // Schedule each Delay bookmark.
         foreach (var bookmark in delayBookmarks)
@@ -150,10 +148,10 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
     public async Task UnscheduleAsync(IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.ToList();
-        var delayBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Delay, ActivityTypeNameHelper.GenerateTypeName<Delay>());
-        var startAtBookmarks = bookmarkList.Filter(SchedulingStimulusNames.StartAt, ActivityTypeNameHelper.GenerateTypeName<StartAt>());
-        var timerBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Timer, ActivityTypeNameHelper.GenerateTypeName<Activities.Timer>());
-        var cronBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Cron, ActivityTypeNameHelper.GenerateTypeName<Cron>());
+        var delayBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Delay);
+        var startAtBookmarks = bookmarkList.Filter(SchedulingStimulusNames.StartAt);
+        var timerBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Timer);
+        var cronBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Cron);
         var bookmarksToUnSchedule = delayBookmarks.Concat(startAtBookmarks).Concat(timerBookmarks).Concat(cronBookmarks).ToList();
 
         foreach (var bookmark in bookmarksToUnSchedule)
@@ -164,10 +162,10 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
     public async Task UnscheduleAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.ToList();
-        var delayBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Delay, ActivityTypeNameHelper.GenerateTypeName<Delay>());
-        var startAtBookmarks = bookmarkList.Filter(SchedulingStimulusNames.StartAt, ActivityTypeNameHelper.GenerateTypeName<StartAt>());
-        var timerBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Timer, ActivityTypeNameHelper.GenerateTypeName<Activities.Timer>());
-        var cronBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Cron, ActivityTypeNameHelper.GenerateTypeName<Cron>());
+        var delayBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Delay);
+        var startAtBookmarks = bookmarkList.Filter(SchedulingStimulusNames.StartAt);
+        var timerBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Timer);
+        var cronBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Cron);
         var bookmarksToUnSchedule = delayBookmarks.Concat(startAtBookmarks).Concat(timerBookmarks).Concat(cronBookmarks).ToList();
 
         foreach (var bookmark in bookmarksToUnSchedule)

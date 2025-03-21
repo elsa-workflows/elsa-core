@@ -22,9 +22,9 @@ public static class BookmarkExtensions
         return bookmarks.Filter(bookmarkName);
     }
     
-    public static IEnumerable<Bookmark> Filter(this IEnumerable<Bookmark> bookmarks, params string[] bookmarkNames)
+    public static IEnumerable<Bookmark> Filter(this IEnumerable<Bookmark> bookmarks, string name)
     {
-        return bookmarks.Where(x => bookmarkNames.Contains(x.Name));
+        return bookmarks.Where(x => x.Name == name);
     }
     
     /// <summary>

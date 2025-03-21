@@ -30,8 +30,8 @@ public static class StoredBookmarkExtensions
         return bookmarks.Filter(bookmarkName);
     }
     
-    public static IEnumerable<StoredBookmark> Filter(this IEnumerable<StoredBookmark> bookmarks, params string[] bookmarkNames)
+    public static IEnumerable<StoredBookmark> Filter(this IEnumerable<StoredBookmark> bookmarks, string name)
     {
-        return bookmarks.Where(x => bookmarkNames.Contains(x.Name));
+        return bookmarks.Where(x => x.Name == name);
     }
 }

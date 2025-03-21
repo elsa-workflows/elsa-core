@@ -31,26 +31,33 @@ public class Event : Trigger<object?>
 
     /// <inheritdoc />
     public Event(Func<string> eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(new Input<string>(Expression.DelegateExpression(eventName), new MemoryBlockReference()), source, line)
+        : this(new Input<string>(Expression.DelegateExpression(eventName), new()), source, line)
     {
     }
 
     /// <inheritdoc />
     public Event(Func<ExpressionExecutionContext, string?> eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(new Input<string>(Expression.DelegateExpression(eventName), new MemoryBlockReference()), source, line)
+        : this(new Input<string>(Expression.DelegateExpression(eventName), new()), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Event(Variable<string> variable, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
-        EventName = new Input<string>(variable);
+    public Event(Variable<string> variable, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    {
+        EventName = new(variable);
+    }
 
     /// <inheritdoc />
-    public Event(Literal<string> literal, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
-        EventName = new Input<string>(literal);
+    public Event(Literal<string> literal, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    {
+        EventName = new(literal);
+    }
 
     /// <inheritdoc />
-    public Event(Input<string> eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => EventName = eventName;
+    public Event(Input<string> eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    {
+        EventName = eventName;
+    }
 
     /// <summary>
     /// The name of the event to listen for.
@@ -72,13 +79,7 @@ public class Event : Trigger<object?>
 
         if (!context.IsTriggerOfWorkflow())
         {
-            var options = new CreateBookmarkArgs
-            {
-                Stimulus = new EventStimulus(eventName),
-                IncludeActivityInstanceId = false,
-                Callback = CompleteInternalAsync
-            };
-            context.CreateBookmark(options);
+            context.WaitForEvent(eventName, CompleteInternalAsync);
             return;
         }
 
@@ -87,9 +88,7 @@ public class Event : Trigger<object?>
 
     private async ValueTask CompleteInternalAsync(ActivityExecutionContext context)
     {
-        if (context.TryGetWorkflowInput<object?>(EventInputWorkflowInputKey, out var input))
-            context.SetResult(input);
-
+        context.SetResult(context.GetEventInput());
         await context.CompleteActivityAsync();
     }
 }
