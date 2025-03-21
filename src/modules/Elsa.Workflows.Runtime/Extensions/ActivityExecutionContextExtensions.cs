@@ -19,7 +19,7 @@ public static class ActivityExecutionContextExtensions
     {
         if (context.IsTriggerOfWorkflow())
         {
-            if (callback != null) callback(context);
+            callback?.Invoke(context);
             return;
         }
 

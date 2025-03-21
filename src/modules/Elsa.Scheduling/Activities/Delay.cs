@@ -71,7 +71,7 @@ public class Delay : Activity, IActivityPropertyDefaultValueProvider
     protected override void Execute(ActivityExecutionContext context)
     {
         var timeSpan = context.ExpressionExecutionContext.Get(TimeSpan);
-        context.ResumeIn(timeSpan);
+        context.DelayFor(timeSpan);
     }
 
     /// <summary>

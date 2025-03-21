@@ -455,7 +455,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <param name="includeActivityInstanceId">Whether or not the activity instance ID should be included in the bookmark payload.</param>
     /// <param name="customProperties">Custom properties to associate with the bookmark.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(object stimulus, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = null)
+    public Bookmark CreateBookmark(object stimulus, ExecuteActivityDelegate? callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = null)
     {
         return CreateBookmark(new()
         {
