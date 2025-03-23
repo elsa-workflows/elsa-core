@@ -384,6 +384,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Persistenc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite", "src\modules\Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite\Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite.csproj", "{DB20B168-CD90-41F2-BE08-3D8C6F142459}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "copilot", "copilot", "{38ECCF34-6641-4328-ACC5-68786F46E97F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Copilot", "Elsa.Copilot\Elsa.Copilot.csproj", "{92CB60A8-FB57-4D44-AE52-70495F4AC0E9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -808,6 +812,10 @@ Global
 		{DB20B168-CD90-41F2-BE08-3D8C6F142459}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB20B168-CD90-41F2-BE08-3D8C6F142459}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB20B168-CD90-41F2-BE08-3D8C6F142459}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92CB60A8-FB57-4D44-AE52-70495F4AC0E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92CB60A8-FB57-4D44-AE52-70495F4AC0E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92CB60A8-FB57-4D44-AE52-70495F4AC0E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92CB60A8-FB57-4D44-AE52-70495F4AC0E9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -951,6 +959,8 @@ Global
 		{DF0CA7E2-F5DF-40ED-91B6-748767084FC7} = {9DF81143-2F39-4CFB-9DA3-902279010622}
 		{DB20B168-CD90-41F2-BE08-3D8C6F142459} = {9DF81143-2F39-4CFB-9DA3-902279010622}
 		{8A050229-DB79-4E0B-9AFF-7565E87F2954} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
+		{38ECCF34-6641-4328-ACC5-68786F46E97F} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{92CB60A8-FB57-4D44-AE52-70495F4AC0E9} = {38ECCF34-6641-4328-ACC5-68786F46E97F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

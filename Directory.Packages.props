@@ -67,6 +67,9 @@
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="6.0.1" />
     <PackageVersion Include="Microsoft.Identity.Client" Version="4.69.1" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.42.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Agents.Core" Version="1.42.0-preview" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Yaml" Version="1.42.0" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <PackageVersion Include="MongoDB.Driver" Version="3.2.1" />
     <PackageVersion Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="2.0.0" />
