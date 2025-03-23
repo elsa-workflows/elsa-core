@@ -1,7 +1,6 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Microsoft.Extensions.DependencyInjection;
-using Parlot.Fluent;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Activities;
