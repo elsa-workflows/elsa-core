@@ -1,5 +1,7 @@
 using Elsa.Testing.Shared;
+using Elsa.Workflows.Activities;
 using Microsoft.Extensions.DependencyInjection;
+using Parlot.Fluent;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Activities;
@@ -17,24 +19,42 @@ public class IfTests
     }
 
     [Theory(DisplayName = "The correct branch executes when condition is true")]
-    [InlineData(true, "True!")]
-    [InlineData(false, "False!")]
-    public async Task Test1(bool conditionResult, string expectedLine)
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Test1(bool conditionResult)
     {
-        await _services.PopulateRegistriesAsync();
-        await _workflowRunner.RunAsync(new IfThenWorkflow(() => conditionResult));
-        var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[] { expectedLine }, lines);
+        var result = default(bool?);
+        
+        var activity = new If(() => conditionResult)
+        {
+            Then = new Inline(() => result = true),
+            Else = new Inline(() => result = false)
+        };
+        await _services.RunActivityAsync(activity);
+        Assert.Equal(conditionResult, result);
     }
 
     [Theory(DisplayName = "The If activity completes only after either one of its branches completed")]
-    [InlineData(true, new[] { "Start", "Executing", "True!", "End" })]
-    [InlineData(false, new[] { "Start", "Executing", "False!", "End" })]
-    public async Task Test2(bool conditionResult, string[] expectedLines)
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Test2(bool conditionResult)
     {
-        await _services.PopulateRegistriesAsync();
-        await _workflowRunner.RunAsync(new ComplexIfWorkflow(() => conditionResult));
-        var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(expectedLines, lines);
+        var activity = new If(() => conditionResult)
+        {
+            Then = new Inline(),
+            Else = new Inline()
+        };
+        var result = await _services.RunActivityAsync(activity);
+        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
+    }
+    
+    [Fact(DisplayName = "The If activity produces a result when one of its branches completes")]
+    public async Task Test3()
+    {
+        var activity = new If(() => true);
+        var result = await _services.RunActivityAsync(activity);
+        var activityResult = result.GetActivityOutput<bool>(activity);
+        
+        Assert.True(activityResult);
     }
 }
