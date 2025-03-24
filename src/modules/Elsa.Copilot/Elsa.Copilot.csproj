@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides a copilot for Elsa Workflows.
+        </Description>
+        <PackageTags>elsa module copilot ai</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+      <ProjectReference Include="..\..\common\Elsa.Mediator\Elsa.Mediator.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.SemanticKernel" />
+      <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" />
+      <PackageReference Include="Microsoft.SemanticKernel.Yaml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Agents\Workflow.template.yaml" />
+      <EmbeddedResource Include="Agents\Workflow.template.yaml" />
+    </ItemGroup>
+
+</Project>
