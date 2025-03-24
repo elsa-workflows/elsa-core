@@ -49,6 +49,7 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
         {
             span.AddEvent(new("faulted"));
             span.SetStatus(ActivityStatusCode.Error);
+            span.SetTag("activity.incidents", true);
 
             var errorSpanHandlerContext = new ErrorSpanContext(span, context.Exception);
             var errorSpanHandler = context.GetServices<IErrorSpanHandler>()
@@ -60,14 +61,17 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
         else if (context.Status == ActivityStatus.Canceled)
         {
             span.AddEvent(new("canceled"));
+            span.SetStatus(ActivityStatusCode.Ok);
         }
         else if (context.Status == ActivityStatus.Completed)
         {
             span.AddEvent(new("completed"));
+            span.SetStatus(ActivityStatusCode.Ok);
         }
         else if (context.Status == ActivityStatus.Pending)
         {
             span.AddEvent(new("pending"));
+            span.SetStatus(ActivityStatusCode.Ok);
         }
     }
 }
