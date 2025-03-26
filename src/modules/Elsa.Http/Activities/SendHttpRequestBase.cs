@@ -16,12 +16,12 @@ namespace Elsa.Http;
 /// Base class for activities that send HTTP requests.
 /// </summary>
 [Output(IsSerializable = false)]
-public abstract class SendHttpRequestBase(string? source = default, int? line = default) : Activity<HttpResponseMessage>(source, line)
+public abstract class SendHttpRequestBase(string? source = null, int? line = null) : Activity<HttpResponseMessage>(source, line)
 {
     /// <summary>
     /// The URL to send the request to.
     /// </summary>
-    [Input(Order = 0)] public Input<Uri?> Url { get; set; } = default!;
+    [Input(Order = 0)] public Input<Uri?> Url { get; set; } = null!;
 
     /// <summary>
     /// The HTTP method to use when sending the request.
@@ -45,7 +45,7 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
         Description = "The content to send with the request. Can be a string, an object, a byte array or a stream.",
         Order = 2
         )]
-    public Input<object?> Content { get; set; } = default!;
+    public Input<object?> Content { get; set; } = null!;
 
     /// <summary>
     /// The content type to use when sending the request.
@@ -56,7 +56,7 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
         UIHint = InputUIHints.DropDown,
         Order = 3
     )]
-    public Input<string?> ContentType { get; set; } = default!;
+    public Input<string?> ContentType { get; set; } = null!;
 
     /// <summary>
     /// The Authorization header value to send with the request.
@@ -68,7 +68,7 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
         CanContainSecrets = true,
         Order = 4
     )]
-    public Input<string?> Authorization { get; set; } = default!;
+    public Input<string?> Authorization { get; set; } = null!;
 
     /// <summary>
     /// A value that allows to add the Authorization header without validation.
@@ -78,7 +78,7 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
         Category = "Security",
         Order = 5
     )]
-    public Input<bool> DisableAuthorizationHeaderValidation { get; set; } = default!;
+    public Input<bool> DisableAuthorizationHeaderValidation { get; set; } = null!;
 
     /// <summary>
     /// The headers to send along with the request.
@@ -94,25 +94,25 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
     /// <summary>
     /// Indicates whether resiliency mechanisms should be enabled for the HTTP request.
     /// </summary>
-    public Input<bool> EnableResiliency { get; set; } = default!;
+    public Input<bool> EnableResiliency { get; set; } = null!;
 
     /// <summary>
     /// The HTTP response status code
     /// </summary>
     [Output(Description = "The HTTP response status code")]
-    public Output<int> StatusCode { get; set; } = default!;
+    public Output<int> StatusCode { get; set; } = null!;
 
     /// <summary>
     /// The parsed content, if any.
     /// </summary>
     [Output(Description = "The parsed content, if any.")]
-    public Output<object?> ParsedContent { get; set; } = default!;
+    public Output<object?> ParsedContent { get; set; } = null!;
 
     /// <summary>
     /// The response headers that were received.
     /// </summary>
     [Output(Description = "The response headers that were received.")]
-    public Output<HttpHeaders?> ResponseHeaders { get; set; } = default!;
+    public Output<HttpHeaders?> ResponseHeaders { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
