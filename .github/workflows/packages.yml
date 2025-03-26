@@ -31,7 +31,7 @@ jobs:
           PACKAGE_PREFIX=$(echo $BRANCH_NAME | rev | cut -d/ -f1 | rev | tr '_' '-')
           
           # If the branch name is main, use the preview version. Otherwise, use the branch name as the version prefix.
-          if [[ "${BRANCH_NAME}" == "main" ]]; then
+          if [[ "${BRANCH_NAME}" == "main" || "${BRANCH_NAME}" =~ ^rc/ ]]; then
               PACKAGE_PREFIX="preview"
           fi
           
