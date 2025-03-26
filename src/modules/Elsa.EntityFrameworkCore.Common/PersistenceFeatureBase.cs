@@ -4,6 +4,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore;
@@ -24,12 +25,12 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase
     /// <summary>
     /// Gets or sets a value indicating whether to use context pooling.
     /// </summary>
-    public bool UseContextPooling { get; set; }
+    public virtual bool UseContextPooling { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to run migrations.
     /// </summary>
-    public bool RunMigrations { get; set; } = true;
+    public virtual bool RunMigrations { get; set; } = true;
 
     /// <summary>
     /// Gets or sets the lifetime of the <see cref="IDbContextFactory{TContext}"/>. Defaults to <see cref="ServiceLifetime.Singleton"/>.
@@ -50,13 +51,19 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        if(DbContextOptionsBuilder == null)
+        if (DbContextOptionsBuilder == null)
             throw new InvalidOperationException("The DbContextOptionsBuilder must be configured.");
-        
+
+        Action<IServiceProvider, DbContextOptionsBuilder> setup = (sp, opts) =>
+        {
+            opts.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+            DbContextOptionsBuilder(sp, opts);
+        };
+
         if (UseContextPooling)
-            Services.AddPooledDbContextFactory<TDbContext>(DbContextOptionsBuilder);
+            Services.AddPooledDbContextFactory<TDbContext>(setup);
         else
-            Services.AddDbContextFactory<TDbContext>(DbContextOptionsBuilder, DbContextFactoryLifetime);
+            Services.AddDbContextFactory<TDbContext>(setup, DbContextFactoryLifetime);
     }
 
     protected virtual void ConfigureMigrations()

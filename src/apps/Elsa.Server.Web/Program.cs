@@ -84,6 +84,7 @@ using StackExchange.Redis;
 
 // ReSharper disable RedundantAssignment
 const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
+const bool useDbContextPooling = true;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
@@ -236,6 +237,8 @@ services
                 else
                     identity.UseEntityFrameworkCore(ef =>
                     {
+                        ef.UseContextPooling = useDbContextPooling;
+                        
                         if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
@@ -286,6 +289,7 @@ services
                 else
                     management.UseEntityFrameworkCore(ef =>
                     {
+                        ef.UseContextPooling = useDbContextPooling;
                         if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
@@ -336,6 +340,7 @@ services
                 else
                     runtime.UseEntityFrameworkCore(ef =>
                     {
+                        ef.UseContextPooling = useDbContextPooling;
                         if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                         {
                             //ef.UseSqlServer(sqlServerConnectionString, new ElsaDbContextOptions);
@@ -495,6 +500,7 @@ services
                 {
                     alterations.UseEntityFrameworkCore(ef =>
                     {
+                        ef.UseContextPooling = useDbContextPooling;
                         if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
@@ -634,15 +640,20 @@ services
                     management.ConfigureOptions(options => configuration.GetSection("Secrets:Management").Bind(options));
                     if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                         management.UseEntityFrameworkCore(ef =>
-                            ef.UseSqlServer(sqlServerConnectionString)
-                        );
+                        {
+                            ef.UseContextPooling = useDbContextPooling;
+                            ef.UseSqlServer(sqlServerConnectionString);
+                        });
                     else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                         management.UseEntityFrameworkCore(ef =>
-                            ef.UsePostgreSql(postgresConnectionString)
-                        );
+                        {
+                            ef.UseContextPooling = useDbContextPooling;
+                            ef.UsePostgreSql(postgresConnectionString);
+                        });
                     else
                         management.UseEntityFrameworkCore(ef =>
                         {
+                            ef.UseContextPooling = useDbContextPooling;
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
                         });
                 })
@@ -695,6 +706,7 @@ services
                         {
                             management.UseEntityFrameworkCore(ef =>
                             {
+                                ef.UseContextPooling = useDbContextPooling;
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite) ef.UseSqlite(sqliteConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer) ef.UseSqlServer(sqlServerConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);
