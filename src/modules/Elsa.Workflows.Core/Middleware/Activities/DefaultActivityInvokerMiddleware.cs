@@ -1,3 +1,4 @@
+using System.Reflection;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.CommitStates;
@@ -23,6 +24,8 @@ public static class ActivityInvokerMiddlewareExtensions
 public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ICommitStrategyRegistry commitStrategyRegistry, ILogger<DefaultActivityInvokerMiddleware> logger)
     : IActivityExecutionMiddleware
 {
+    private static readonly MethodInfo ExecuteAsyncMethodInfo = typeof(IActivity).GetMethod(nameof(IActivity.ExecuteAsync))!;
+    
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
@@ -98,13 +101,8 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
     /// </summary>
     protected virtual async ValueTask ExecuteActivityAsync(ActivityExecutionContext context)
     {
-        var executeDelegate = context.WorkflowExecutionContext.ExecuteDelegate;
-
-        if (executeDelegate == null)
-        {
-            var methodInfo = typeof(IActivity).GetMethod(nameof(IActivity.ExecuteAsync))!;
-            executeDelegate = (ExecuteActivityDelegate)Delegate.CreateDelegate(typeof(ExecuteActivityDelegate), context.Activity, methodInfo);
-        }
+        var executeDelegate = context.WorkflowExecutionContext.ExecuteDelegate 
+                              ?? (ExecuteActivityDelegate)Delegate.CreateDelegate(typeof(ExecuteActivityDelegate), context.Activity, ExecuteAsyncMethodInfo);
 
         await executeDelegate(context);
     }
