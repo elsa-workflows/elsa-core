@@ -14,13 +14,9 @@ namespace Elsa.EntityFrameworkCore;
 /// <typeparam name="TDbContext">The type of the database context.</typeparam>
 /// <typeparam name="TFeature">The type of the feature.</typeparam>
 [DependsOn(typeof(CommonPersistenceFeature))]
-public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase where TDbContext : ElsaDbContextBase
+public abstract class PersistenceFeatureBase<TFeature, TDbContext>(IModule module) : FeatureBase(module)
+    where TDbContext : ElsaDbContextBase
 {
-    /// <inheritdoc />
-    protected PersistenceFeatureBase(IModule module) : base(module)
-    {
-    }
-
     /// <summary>
     /// Gets or sets a value indicating whether to use context pooling.
     /// </summary>
