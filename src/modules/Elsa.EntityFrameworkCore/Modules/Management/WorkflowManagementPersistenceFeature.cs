@@ -24,4 +24,26 @@ public class WorkflowManagementPersistenceFeature(IModule module) : PersistenceF
             Module.Configure<EFCoreWorkflowInstancePersistenceFeature>(x => x.DbContextOptionsBuilder = value);
         }
     }
+
+    public override bool UseContextPooling
+    {
+        get => base.UseContextPooling; 
+        set
+        {
+            base.UseContextPooling = value;
+            Module.Configure<EFCoreWorkflowDefinitionPersistenceFeature>(x => x.UseContextPooling = value);
+            Module.Configure<EFCoreWorkflowInstancePersistenceFeature>(x => x.UseContextPooling = value);
+        }
+    }
+
+    public override bool RunMigrations
+    {
+        get => base.RunMigrations; 
+        set
+        {
+            base.RunMigrations = value;
+            Module.Configure<EFCoreWorkflowDefinitionPersistenceFeature>(x => x.RunMigrations = value);
+            Module.Configure<EFCoreWorkflowInstancePersistenceFeature>(x => x.RunMigrations = value);
+        }
+    }
 }
