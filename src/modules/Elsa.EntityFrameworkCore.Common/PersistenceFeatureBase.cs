@@ -56,13 +56,8 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase
 
         Action<IServiceProvider, DbContextOptionsBuilder> setup = (sp, opts) =>
         {
-            opts.EnableSensitiveDataLogging();
-
-#if NET9_0_OR_GREATER
             opts.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
-            
             DbContextOptionsBuilder(sp, opts);
-#endif
         };
 
         if (UseContextPooling)
