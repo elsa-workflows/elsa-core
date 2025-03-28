@@ -21,7 +21,7 @@ internal class WorkflowInstance(
     private string? _workflowInstanceId;
     private WorkflowGraph? _workflowGraph;
     private WorkflowState? _workflowState;
-    private CancellationTokenSource _linkedTokenSource = default!;
+    private CancellationTokenSource _linkedTokenSource = null!;
     private CancellationToken _linkedCancellationToken;
     private readonly Queue<RunWorkflowOptions> _queuedRunWorkflowOptions = new();
     private bool _isRunning;
@@ -137,8 +137,8 @@ internal class WorkflowInstance(
             ActivityHandle = mappers.ActivityHandleMapper.Map(request.ActivityHandle),
             Properties = request.Properties.DeserializeProperties(),
             Input = request.Input.DeserializeInput(),
-            CorrelationId = request.CorrelationId,
-            TriggerActivityId = request.TriggerActivityId
+            CorrelationId = request.CorrelationId.NullIfEmpty(),
+            TriggerActivityId = request.TriggerActivityId.NullIfEmpty()
         };
 
         var result = await RunAsync(runWorkflowOptions);
@@ -266,7 +266,7 @@ internal class WorkflowInstance(
             CorrelationId = request.CorrelationId.NullIfEmpty(),
             Input = request.Input.DeserializeInput(),
             Properties = request.Properties.DeserializeProperties(),
-            ParentWorkflowInstanceId = request.ParentId
+            ParentWorkflowInstanceId = request.ParentId.NullIfEmpty()
         };
 
         await using var scope = scopeFactory.CreateAsyncScope();
