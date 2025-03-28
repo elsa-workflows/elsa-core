@@ -1,6 +1,7 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.SymbolStore;
 using System.Dynamic;
 using System.Globalization;
 using System.Text.Encodings.Web;
@@ -108,8 +109,19 @@ public static class ObjectConverter
         {
             if (jsonNode is not JsonArray jsonArray)
             {
+                var valueKind = jsonNode.GetValueKind();
+                if (valueKind == JsonValueKind.Null)
+                    return null;
+
+                if (valueKind == JsonValueKind.Undefined)
+                    return null;
+
                 return underlyingTargetType switch
                 {
+                    { } t when t == typeof(bool) && valueKind == JsonValueKind.False => false,
+                    { } t when t == typeof(bool) && valueKind == JsonValueKind.True => true,
+                    { } t when t.IsNumericType() && valueKind == JsonValueKind.Number => ConvertTo(jsonNode.ToString(), t),
+                    { } t when t == typeof(string) && valueKind == JsonValueKind.String => jsonNode.ToString(),
                     { } t when t == typeof(string) => jsonNode.ToString(),
                     { } t when t == typeof(ExpandoObject) && jsonNode.GetValueKind() == JsonValueKind.Object => JsonSerializer.Deserialize<ExpandoObject>(jsonNode.ToJsonString()),
                     { } t when t != typeof(object) || converterOptions?.DeserializeJsonObjectToObject == true => jsonNode.Deserialize(targetType, serializerOptions),
@@ -275,7 +287,7 @@ public static class ObjectConverter
                 return array;
             }
         }
-        
+
         try
         {
             return Convert.ChangeType(value, underlyingTargetType, CultureInfo.InvariantCulture);
@@ -288,12 +300,12 @@ public static class ObjectConverter
         {
             return ReturnOrThrow(e);
         }
-        
+
         object ReturnOrThrow(Exception e)
         {
-            if(!StrictMode)
+            if (!StrictMode)
                 return value;
-            
+
             throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
         }
     }
