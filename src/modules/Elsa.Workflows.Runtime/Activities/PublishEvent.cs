@@ -31,8 +31,8 @@ public class PublishEvent([CallerFilePath] string? source = null, [CallerLineNum
     [Input(DisplayName = "Local event", Description = "Whether the event is local to the workflow. When checked, the event will be delivered to this workflow instance only.")]
     public Input<bool> IsLocalEvent { get; set; } = null!;
 
-    [Input(Description = "Whether the event should be delivered synchronously or asynchronously. Choose asynchronous if the event is to be delivered by this workflow instance to avoid race conditions.")]
-    public Input<bool> Asynchronous { get; set; } = null!;
+    [Input(Description = "Whether the event should be delivered synchronously or asynchronously.")]
+    public Input<bool> Asynchronous { get; set; } = new(true);
 
     /// <summary>
     /// The input to send as the event body.

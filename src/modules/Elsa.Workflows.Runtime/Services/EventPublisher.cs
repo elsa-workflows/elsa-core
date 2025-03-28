@@ -1,3 +1,4 @@
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Stimuli;
@@ -33,6 +34,7 @@ public class EventPublisher(IStimulusSender stimulusSender, IStimulusDispatcher 
         {
             await stimulusDispatcher.SendAsync(new()
             {
+                ActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<Event>(),
                 Stimulus = stimulus,
                 Metadata = metadata
             }, cancellationToken);
