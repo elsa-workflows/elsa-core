@@ -275,17 +275,25 @@ public static class ObjectConverter
                 return array;
             }
         }
-
+        
         try
         {
             return Convert.ChangeType(value, underlyingTargetType, CultureInfo.InvariantCulture);
         }
         catch (FormatException e)
         {
-            throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
+            return ReturnOrThrow(e);
         }
         catch (InvalidCastException e)
         {
+            return ReturnOrThrow(e);
+        }
+        
+        object ReturnOrThrow(Exception e)
+        {
+            if(!StrictMode)
+                return value;
+            
             throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
         }
     }
