@@ -7,10 +7,7 @@ using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Memory;
-using Elsa.Workflows.Models;
-using Elsa.Workflows.Options;
 using Elsa.Workflows.Serialization.Converters;
-using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -22,7 +19,7 @@ public static class VariableExtensions
 {
     private static JsonSerializerOptions? _serializerOptions;
 
-    internal static JsonSerializerOptions SerializerOptions =>
+    private static JsonSerializerOptions SerializerOptions =>
         _serializerOptions ??= new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -87,7 +84,7 @@ public static class VariableExtensions
     public static object? ParseValue(Type type, object? value)
     {
         var genericType = type.GenericTypeArguments.FirstOrDefault();
-        var converterOptions = new ObjectConverterOptions(SerializerOptions, ThrowOnIncompatibleTypes: Variable.StrictMode);
+        var converterOptions = new ObjectConverterOptions(SerializerOptions);
         return genericType == null ? value : value?.ConvertTo(genericType, converterOptions);
     }
     
@@ -95,7 +92,7 @@ public static class VariableExtensions
     /// Converts the specified value into a type that is compatible with the variable.
     /// </summary>
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
-    public static bool TryParseValue(this Variable variable, object? value, out object? parsedValue, bool strictMode = true)
+    public static bool TryParseValue(this Variable variable, object? value, out object? parsedValue)
     {
         try
         {

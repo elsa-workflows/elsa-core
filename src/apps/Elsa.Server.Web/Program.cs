@@ -15,6 +15,7 @@ using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.EntityFrameworkCore.Modules.Tenants;
+using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Identity.Multitenancy;
@@ -106,7 +107,7 @@ const bool disableVariableWrappers = false;
 const bool disableVariableCopying = false;
 const bool useManualOtelInstrumentation = true;
 
-Variable.StrictMode = true;
+ObjectConverter.StrictMode = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

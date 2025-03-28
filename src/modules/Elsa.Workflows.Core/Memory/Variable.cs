@@ -9,8 +9,6 @@ namespace Elsa.Workflows.Memory;
 /// </summary>
 public class Variable : MemoryBlockReference
 {
-    public static bool StrictMode = true;
-    
     /// <inheritdoc />
     public Variable()
     {
