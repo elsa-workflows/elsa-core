@@ -107,7 +107,7 @@ const bool disableVariableWrappers = false;
 const bool disableVariableCopying = false;
 const bool useManualOtelInstrumentation = true;
 
-ObjectConverter.StrictMode = true;
+ObjectConverter.StrictMode = true; // Default.
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
