@@ -19,7 +19,7 @@ namespace Elsa.Expressions.Helpers;
 /// <summary>
 /// Provides options to the conversion method.
 /// </summary>
-public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = null, IWellKnownTypeRegistry? WellKnownTypeRegistry = null, bool DeserializeJsonObjectToObject = false);
+public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = null, IWellKnownTypeRegistry? WellKnownTypeRegistry = null, bool DeserializeJsonObjectToObject = false, bool ThrowOnIncompatibleTypes = false);
 
 /// <summary>
 /// A helper that attempts many strategies to try and convert the source value into the destination type. 
@@ -187,9 +187,17 @@ public static class ObjectConverter
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);
 
         if (targetTypeConverter.CanConvertFrom(underlyingSourceType))
-            return targetTypeConverter.IsValid(value)
-                ? targetTypeConverter.ConvertFrom(null, CultureInfo.InvariantCulture, value)
-                : targetType.GetDefaultValue();
+        {
+            var isValid = targetTypeConverter.IsValid(value);
+
+            if (isValid)
+                return targetTypeConverter.ConvertFrom(null, CultureInfo.InvariantCulture, value);
+
+            if (converterOptions?.ThrowOnIncompatibleTypes == true)
+                throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType);
+
+            return value;
+        }
 
         var sourceTypeConverter = TypeDescriptor.GetConverter(underlyingSourceType);
 
@@ -248,8 +256,8 @@ public static class ObjectConverter
                     return collection;
                 }
             }
-            
-            if(underlyingTargetType.IsArray)
+
+            if (underlyingTargetType.IsArray)
             {
                 var executedEnumerable = enumerable.Cast<object>().ToList();
                 var underlyingTargetElementType = underlyingTargetType.GetElementType()!;
@@ -261,6 +269,7 @@ public static class ObjectConverter
                     array.SetValue(convertedItem, index);
                     index++;
                 }
+
                 return array;
             }
         }

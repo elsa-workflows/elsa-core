@@ -6,8 +6,10 @@ using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
+using Elsa.Workflows.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Alterations.AlterationHandlers;
 
@@ -30,7 +32,7 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
             context.Fail($"Variable with ID {alteration.VariableId} not found");
             return;
         }
-
+        
         var convertedValue = variable.ParseValue(alteration.Value);
         UpdateVariable(context, variable, convertedValue);
         context.Succeed();

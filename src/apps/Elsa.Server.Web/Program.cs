@@ -52,6 +52,7 @@ using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Options;
@@ -104,6 +105,8 @@ const bool useSecrets = false;
 const bool disableVariableWrappers = false;
 const bool disableVariableCopying = false;
 const bool useManualOtelInstrumentation = true;
+
+Variable.StrictMode = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

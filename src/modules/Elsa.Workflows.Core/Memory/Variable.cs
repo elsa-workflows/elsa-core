@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Humanizer;
@@ -10,6 +9,8 @@ namespace Elsa.Workflows.Memory;
 /// </summary>
 public class Variable : MemoryBlockReference
 {
+    public static bool StrictMode = true;
+    
     /// <inheritdoc />
     public Variable()
     {
