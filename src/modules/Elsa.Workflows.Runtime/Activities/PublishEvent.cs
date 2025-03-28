@@ -31,9 +31,6 @@ public class PublishEvent([CallerFilePath] string? source = null, [CallerLineNum
     [Input(DisplayName = "Local event", Description = "Whether the event is local to the workflow. When checked, the event will be delivered to this workflow instance only.")]
     public Input<bool> IsLocalEvent { get; set; } = null!;
 
-    [Input(Description = "Whether the event should be delivered synchronously or asynchronously.", DefaultValue = true)]
-    public Input<bool> Asynchronous { get; set; } = new(true);
-
     /// <summary>
     /// The input to send as the event body.
     /// </summary>
@@ -46,12 +43,11 @@ public class PublishEvent([CallerFilePath] string? source = null, [CallerLineNum
         var eventName = EventName.Get(context);
         var correlationId = CorrelationId.GetOrDefault(context);
         var isLocalEvent = IsLocalEvent.GetOrDefault(context);
-        var asynchronous = Asynchronous.GetOrDefault(context, () => true);
         var workflowInstanceId = isLocalEvent ? context.WorkflowExecutionContext.Id : null;
         var payload = Payload.GetOrDefault(context);
         var publisher = context.GetRequiredService<IEventPublisher>();
 
-        await publisher.PublishAsync(eventName, correlationId, workflowInstanceId, null, payload, asynchronous, context.CancellationToken);
+        await publisher.PublishAsync(eventName, correlationId, workflowInstanceId, null, payload, true, context.CancellationToken);
         await context.CompleteActivityAsync();
     }
 }
