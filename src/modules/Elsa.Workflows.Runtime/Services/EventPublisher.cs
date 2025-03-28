@@ -1,10 +1,11 @@
 using Elsa.Workflows.Runtime.Activities;
+using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Stimuli;
 
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class EventPublisher(IStimulusSender stimulusSender) : IEventPublisher
+public class EventPublisher(IStimulusSender stimulusSender, IStimulusDispatcher stimulusDispatcher) : IEventPublisher
 {
     /// <inheritdoc />
     public async Task PublishAsync(
@@ -13,6 +14,7 @@ public class EventPublisher(IStimulusSender stimulusSender) : IEventPublisher
         string? workflowInstanceId = null,
         string? activityInstanceId = null,
         object? payload = null,
+        bool asynchronous = false,
         CancellationToken cancellationToken = default)
     {
         var stimulus = new EventStimulus(eventName);
@@ -27,6 +29,15 @@ public class EventPublisher(IStimulusSender stimulusSender) : IEventPublisher
             WorkflowInstanceId = workflowInstanceId,
             Input = workflowInput
         };
-        await stimulusSender.SendAsync<Event>(stimulus, metadata, cancellationToken);
+        if (asynchronous)
+        {
+            await stimulusDispatcher.SendAsync(new()
+            {
+                Stimulus = stimulus,
+                Metadata = metadata
+            }, cancellationToken);
+        }
+        else
+            await stimulusSender.SendAsync<Event>(stimulus, metadata, cancellationToken);
     }
 }

@@ -53,6 +53,11 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         var decoratedService = ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
         return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
     };
+    
+    /// <summary>
+    /// A factory that instantiates an <see cref="IStimulusDispatcher"/>.
+    /// </summary>
+    public Func<IServiceProvider, IStimulusDispatcher> StimulusDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundStimulusDispatcher>(sp);
 
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowCancellationDispatcher"/>.
@@ -237,6 +242,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IBackgroundActivityInvoker, BackgroundActivityInvoker>()
             .AddScoped(WorkflowRuntime)
             .AddScoped(WorkflowDispatcher)
+            .AddScoped(StimulusDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)
             .AddScoped(RunTaskDispatcher)
             .AddScoped(ActivityExecutionLogSink)
@@ -324,6 +330,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 
             // Domain handlers.
             .AddCommandHandler<DispatchWorkflowCommandHandler>()
+            .AddCommandHandler<DispatchStimulusCommandHandler>()
             .AddCommandHandler<CancelWorkflowsCommandHandler>()
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeBulkDispatchWorkflowActivity>()

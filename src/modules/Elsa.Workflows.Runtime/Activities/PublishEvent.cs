@@ -11,13 +11,8 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// </summary>
 [Activity("Elsa", "Primitives", "Publishes an event.")]
 [UsedImplicitly]
-public class PublishEvent : Activity
+public class PublishEvent([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : Activity(source, line)
 {
-    /// <inheritdoc />
-    public PublishEvent([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
-    {
-    }
-
     /// <summary>
     /// The name of the event to publish.
     /// </summary>
@@ -36,10 +31,13 @@ public class PublishEvent : Activity
     [Input(DisplayName = "Local event", Description = "Whether the event is local to the workflow. When checked, the event will be delivered to this workflow instance only.")]
     public Input<bool> IsLocalEvent { get; set; } = null!;
 
+    [Input(Description = "Whether the event should be delivered synchronously or asynchronously. Choose asynchronous if the event is to be delivered by this workflow instance to avoid race conditions.")]
+    public Input<bool> Asynchronous { get; set; } = null!;
+
     /// <summary>
     /// The input to send as the event body.
     /// </summary>
-    [Input(Description = "The payload to send as the event body.")]
+    [Input(Description = "The payload to send as the event body.", DefaultValue = true)]
     public Input<object> Payload { get; set; } = null!;
 
     /// <inheritdoc />
@@ -48,11 +46,12 @@ public class PublishEvent : Activity
         var eventName = EventName.Get(context);
         var correlationId = CorrelationId.GetOrDefault(context);
         var isLocalEvent = IsLocalEvent.GetOrDefault(context);
+        var asynchronous = Asynchronous.GetOrDefault(context, () => true);
         var workflowInstanceId = isLocalEvent ? context.WorkflowExecutionContext.Id : null;
         var payload = Payload.GetOrDefault(context);
         var publisher = context.GetRequiredService<IEventPublisher>();
-        
-        await publisher.PublishAsync(eventName, correlationId, workflowInstanceId, null, payload, context.CancellationToken);
+
+        await publisher.PublishAsync(eventName, correlationId, workflowInstanceId, null, payload, asynchronous, context.CancellationToken);
         await context.CompleteActivityAsync();
     }
 }
