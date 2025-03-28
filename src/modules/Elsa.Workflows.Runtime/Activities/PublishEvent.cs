@@ -31,13 +31,13 @@ public class PublishEvent([CallerFilePath] string? source = null, [CallerLineNum
     [Input(DisplayName = "Local event", Description = "Whether the event is local to the workflow. When checked, the event will be delivered to this workflow instance only.")]
     public Input<bool> IsLocalEvent { get; set; } = null!;
 
-    [Input(Description = "Whether the event should be delivered synchronously or asynchronously.")]
+    [Input(Description = "Whether the event should be delivered synchronously or asynchronously.", DefaultValue = true)]
     public Input<bool> Asynchronous { get; set; } = new(true);
 
     /// <summary>
     /// The input to send as the event body.
     /// </summary>
-    [Input(Description = "The payload to send as the event body.", DefaultValue = true)]
+    [Input(Description = "The payload to send as the event body.")]
     public Input<object> Payload { get; set; } = null!;
 
     /// <inheritdoc />
