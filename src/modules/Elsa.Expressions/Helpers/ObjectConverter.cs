@@ -27,7 +27,7 @@ public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = 
 public static class ObjectConverter
 {
     public static bool StrictMode = true; // Set to false to revert to original flexible behavior.
-    
+
     /// <summary>
     /// Attempts to convert the source value into the destination type.
     /// </summary>
@@ -194,17 +194,17 @@ public static class ObjectConverter
 
             if (isValid)
                 return targetTypeConverter.ConvertFrom(null, CultureInfo.InvariantCulture, value);
-
-            if (StrictMode)
-                throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType);
-
-            return value;
         }
 
         var sourceTypeConverter = TypeDescriptor.GetConverter(underlyingSourceType);
 
         if (sourceTypeConverter.CanConvertTo(underlyingTargetType))
-            return sourceTypeConverter.ConvertTo(value, underlyingTargetType);
+        {
+            var isValid = targetTypeConverter.IsValid(value);
+
+            if (isValid)
+                return sourceTypeConverter.ConvertTo(value, underlyingTargetType);
+        }
 
         if (underlyingTargetType.IsEnum)
         {
@@ -279,6 +279,10 @@ public static class ObjectConverter
         try
         {
             return Convert.ChangeType(value, underlyingTargetType, CultureInfo.InvariantCulture);
+        }
+        catch (FormatException e)
+        {
+            throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
         }
         catch (InvalidCastException e)
         {
