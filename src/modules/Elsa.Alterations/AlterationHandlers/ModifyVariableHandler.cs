@@ -32,7 +32,7 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
             context.Fail($"Variable with ID {alteration.VariableId} not found");
             return;
         }
-        
+
         var convertedValue = variable.ParseValue(alteration.Value);
         UpdateVariable(context, variable, convertedValue);
         context.Succeed();
