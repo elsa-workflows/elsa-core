@@ -225,7 +225,6 @@ public class HttpEndpoint : Trigger<HttpRequest>
         // Handle Form Fields
         if (request.HasFormContentType)
         {
-
             var formFields = request.Form.ToObjectDictionary();
 
             ParsedContent.Set(context, formFields);

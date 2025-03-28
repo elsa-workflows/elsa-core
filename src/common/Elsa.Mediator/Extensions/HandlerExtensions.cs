@@ -44,7 +44,7 @@ public static class HandlerExtensions
     /// <param name="cancellationToken">The cancellation token.</param>
     public static Task InvokeAsync(this INotificationHandler handler, MethodBase handleMethod, INotification notification, CancellationToken cancellationToken)
     {
-        return (Task)handleMethod.Invoke(handler, new object?[] { notification, cancellationToken })!;
+        return (Task)handleMethod.Invoke(handler, [notification, cancellationToken])!;
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ public static class HandlerExtensions
     /// <param name="cancellationToken">The cancellation token.</param>
     public static Task<TResult> InvokeAsync<TResult>(this ICommandHandler handler, MethodBase handleMethod, ICommand command, CancellationToken cancellationToken)
     {
-        var task = (Task<TResult>)handleMethod.Invoke(handler, new object?[] { command, cancellationToken })!;
+        var task = (Task<TResult>)handleMethod.Invoke(handler, [command, cancellationToken])!;
         return task;
     }
 }

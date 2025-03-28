@@ -22,7 +22,7 @@ public class MemoryBlockReference
     /// <summary>
     /// The ID of the memory block.
     /// </summary>
-    public string Id { get; set; } = default!;
+    public string Id { get; set; } = null!;
 
     /// <summary>
     /// Declares the memory block.
@@ -62,7 +62,7 @@ public class MemoryBlockReference
     /// <summary>
     /// Sets the value of the memory block.
     /// </summary>
-    public void Set(MemoryRegister memoryRegister, object? value, Action<MemoryBlock>? configure = default)
+    public void Set(MemoryRegister memoryRegister, object? value, Action<MemoryBlock>? configure = null)
     {
         var block = GetBlock(memoryRegister);
         block.Value = value;
@@ -72,7 +72,7 @@ public class MemoryBlockReference
     /// <summary>
     /// Sets the value of the memory block.
     /// </summary>
-    public void Set(ExpressionExecutionContext context, object? value, Action<MemoryBlock>? configure = default) => context.Set(this, value, configure);
+    public void Set(ExpressionExecutionContext context, object? value, Action<MemoryBlock>? configure = null) => context.Set(this, value, configure);
     
     /// <summary>
     /// Returns the <see cref="MemoryBlock"/> pointed to by the specified memory block reference.

@@ -1,3 +1,4 @@
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
@@ -51,10 +52,13 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
                     if (!variable.TryParseValue(value, out var parsedValue))
                     {
                         logger.LogWarning("Failed to parse value for variable {VariableId} of type {VariableType} with value {Value}", variable.Id, variable.GetVariableType().FullName, value);
+
+                        if (!ObjectConverter.StrictMode)
+                            variable.Set(register, value);
                         continue;
                     }
 
-                    variable.Set(register, parsedValue);    
+                    variable.Set(register, parsedValue);
                 }
                 catch (Exception e)
                 {

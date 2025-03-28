@@ -79,7 +79,7 @@
           "logPersistenceMode": {
             "default": "Exclude",
             "inputs": {
-              "text": "Default"
+              "text": "Inherit"
             },
             "outputs": {}
           },

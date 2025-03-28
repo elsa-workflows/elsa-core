@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Humanizer;

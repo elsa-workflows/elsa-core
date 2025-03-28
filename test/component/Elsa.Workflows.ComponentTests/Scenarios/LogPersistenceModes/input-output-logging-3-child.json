@@ -75,10 +75,10 @@
           "canStartWorkflow": false,
           "runAsynchronously": false,
           "logPersistenceMode": {
-            "default": "Default",
+            "default": "Inherit",
             "inputs": {
-              "outputName": "Default",
-              "outputValue": "Default"
+              "outputName": "Inherit",
+              "outputValue": "Inherit"
             },
             "outputs": {}
           }
@@ -120,7 +120,7 @@
           "canStartWorkflow": false,
           "runAsynchronously": false,
           "logPersistenceMode": {
-            "default": "Default",
+            "default": "Inherit",
             "inputs": {
               "outputName": "Include",
               "outputValue": "Include"

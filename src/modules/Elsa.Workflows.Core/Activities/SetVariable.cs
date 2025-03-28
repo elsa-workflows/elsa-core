@@ -18,37 +18,37 @@ namespace Elsa.Workflows.Activities;
 public class SetVariable<T> : CodeActivity
 {
     /// <inheritdoc />
-    public SetVariable([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public SetVariable([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public SetVariable(Variable<T> variable, Input<T> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public SetVariable(Variable<T> variable, Input<T> value, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         Variable = variable;
         Value = value;
     }
 
     /// <inheritdoc />
-    public SetVariable(Variable<T> variable, Variable<T> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public SetVariable(Variable<T> variable, Variable<T> value, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(variable, new Input<T>(value), source, line)
     {
     }
 
     /// <inheritdoc />
-    public SetVariable(Variable<T> variable, Func<ExpressionExecutionContext, T> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public SetVariable(Variable<T> variable, Func<ExpressionExecutionContext, T> value, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(variable, new Input<T>(value), source, line)
     {
     }
 
     /// <inheritdoc />
-    public SetVariable(Variable<T> variable, Func<T> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public SetVariable(Variable<T> variable, Func<T> value, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(variable, new Input<T>(value), source, line)
     {
     }
 
     /// <inheritdoc />
-    public SetVariable(Variable<T> variable, T value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public SetVariable(Variable<T> variable, T value, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(variable, new Input<T>(value), source, line)
     {
     }
@@ -57,7 +57,7 @@ public class SetVariable<T> : CodeActivity
     /// The variable to assign the value to.
     /// </summary>
     [Input(Description = "The variable to assign the value to.")]
-    public Variable<T> Variable { get; set; } = default!;
+    public Variable<T> Variable { get; set; } = null!;
 
     /// <summary>
     /// The value to assign.
@@ -81,7 +81,7 @@ public class SetVariable<T> : CodeActivity
 public class SetVariable : CodeActivity
 {
     /// <inheritdoc />
-    public SetVariable([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public SetVariable([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -89,7 +89,7 @@ public class SetVariable : CodeActivity
     /// The variable to assign the value to.
     /// </summary>
     [Input(Description = "The variable to assign the value to.")]
-    public Variable Variable { get; set; } = default!;
+    public Variable Variable { get; set; } = null!;
 
     /// <summary>
     /// The value to assign.
