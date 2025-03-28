@@ -174,9 +174,4 @@ public class MassTransitWorkflowDispatcher(
         var sendEndpoint = await bus.GetSendEndpoint(new($"queue:{endpointName}"));
         return sendEndpoint;
     }
-    
-    private string? SerializeInput(object? input)
-    {
-        return input != null ? jsonSerializer.Serialize(input) : null;
-    }
 }

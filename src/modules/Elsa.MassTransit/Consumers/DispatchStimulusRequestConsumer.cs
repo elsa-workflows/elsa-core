@@ -1,21 +1,22 @@
-using Elsa.Mediator.Contracts;
-using Elsa.Mediator.Models;
-using Elsa.Workflows.Runtime.Commands;
+using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Requests;
 using JetBrains.Annotations;
+using MassTransit;
 
-namespace Elsa.Workflows.Runtime.Handlers;
+namespace Elsa.MassTransit.Consumers;
 
 [UsedImplicitly]
-public class DispatchStimulusCommandHandler(IStimulusSender stimulusSender) : ICommandHandler<DispatchStimulusCommand>
+public class DispatchStimulusRequestConsumer(IStimulusSender stimulusSender) : IConsumer<DispatchStimulusRequest>
 {
-    public async Task<Unit> HandleAsync(DispatchStimulusCommand command, CancellationToken cancellationToken)
+    public async Task Consume(ConsumeContext<DispatchStimulusRequest> context)
     {
-        var request = command.Request;
+        var cancellationToken = context.CancellationToken;
+        var request = context.Message;
         
         if(request.ActivityTypeName != null)
         {
             await stimulusSender.SendAsync(request.ActivityTypeName, request.Stimulus!, request.Metadata, cancellationToken);
-            return Unit.Instance;
+            return;
         }
         
         if(request.StimulusHash != null)
