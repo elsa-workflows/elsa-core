@@ -25,7 +25,6 @@ public class MassTransitWorkflowDispatcher(
     IStimulusHasher stimulusHasher,
     ITriggerStore triggerStore,
     IBookmarkStore bookmarkStore,
-    IPayloadSerializer jsonSerializer,
     ILogger<MassTransitWorkflowDispatcher> logger)
     : IWorkflowDispatcher
 {

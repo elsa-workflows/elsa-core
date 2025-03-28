@@ -1,3 +1,5 @@
+using Elsa.MassTransit.Messages;
+using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Requests;
 using JetBrains.Annotations;
@@ -6,12 +8,14 @@ using MassTransit;
 namespace Elsa.MassTransit.Consumers;
 
 [UsedImplicitly]
-public class DispatchStimulusRequestConsumer(IStimulusSender stimulusSender) : IConsumer<DispatchStimulusRequest>
+public class DispatchStimulusRequestConsumer(IStimulusSender stimulusSender, IPayloadSerializer payloadSerializer) : IConsumer<DispatchStimulus>
 {
-    public async Task Consume(ConsumeContext<DispatchStimulusRequest> context)
+    public async Task Consume(ConsumeContext<DispatchStimulus> context)
     {
         var cancellationToken = context.CancellationToken;
-        var request = context.Message;
+        var message = context.Message;
+        var json = message.SerializedRequest;
+        var request = payloadSerializer.Deserialize<DispatchStimulusRequest>(json);
         
         if(request.ActivityTypeName != null)
         {
