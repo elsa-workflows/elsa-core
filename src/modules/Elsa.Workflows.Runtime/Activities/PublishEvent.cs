@@ -11,13 +11,8 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// </summary>
 [Activity("Elsa", "Primitives", "Publishes an event.")]
 [UsedImplicitly]
-public class PublishEvent : Activity
+public class PublishEvent([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : Activity(source, line)
 {
-    /// <inheritdoc />
-    public PublishEvent([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
-    {
-    }
-
     /// <summary>
     /// The name of the event to publish.
     /// </summary>
@@ -46,13 +41,13 @@ public class PublishEvent : Activity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var eventName = EventName.Get(context);
-        var correlationId = CorrelationId.GetOrDefault(context);
+        var correlationId = CorrelationId.GetOrDefault(context).NullIfEmpty();
         var isLocalEvent = IsLocalEvent.GetOrDefault(context);
         var workflowInstanceId = isLocalEvent ? context.WorkflowExecutionContext.Id : null;
         var payload = Payload.GetOrDefault(context);
         var publisher = context.GetRequiredService<IEventPublisher>();
-        
-        await publisher.PublishAsync(eventName, correlationId, workflowInstanceId, null, payload, context.CancellationToken);
+
+        await publisher.PublishAsync(eventName, correlationId, workflowInstanceId, null, payload, true, context.CancellationToken);
         await context.CompleteActivityAsync();
     }
 }

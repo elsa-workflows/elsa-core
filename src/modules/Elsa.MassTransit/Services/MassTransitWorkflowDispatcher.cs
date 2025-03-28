@@ -25,7 +25,6 @@ public class MassTransitWorkflowDispatcher(
     IStimulusHasher stimulusHasher,
     ITriggerStore triggerStore,
     IBookmarkStore bookmarkStore,
-    IPayloadSerializer jsonSerializer,
     ILogger<MassTransitWorkflowDispatcher> logger)
     : IWorkflowDispatcher
 {
@@ -173,10 +172,5 @@ public class MassTransitWorkflowDispatcher(
         var endpointName = endpointChannelFormatter.FormatEndpointName(options?.Channel);
         var sendEndpoint = await bus.GetSendEndpoint(new($"queue:{endpointName}"));
         return sendEndpoint;
-    }
-    
-    private string? SerializeInput(object? input)
-    {
-        return input != null ? jsonSerializer.Serialize(input) : null;
     }
 }

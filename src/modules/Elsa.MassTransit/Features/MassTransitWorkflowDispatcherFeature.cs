@@ -23,18 +23,33 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
     public MassTransitWorkflowDispatcherFeature(IModule module) : base(module)
     {
     }
+
+    /// <summary>
+    /// Configures the MassTransit workflow dispatcher.
+    /// </summary>
+    [Obsolete("Use ConfigureWorkflowDispatcherOptions instead.")]
+    public Action<MassTransitWorkflowDispatcherOptions> ConfigureDispatcherOptions
+    {
+        get => ConfigureWorkflowDispatcherOptions; 
+        set => ConfigureWorkflowDispatcherOptions = value;
+    }
     
     /// <summary>
     /// Configures the MassTransit workflow dispatcher.
     /// </summary>
-    public Action<MassTransitWorkflowDispatcherOptions>? ConfigureDispatcherOptions { get; set; }
+    public Action<MassTransitWorkflowDispatcherOptions> ConfigureWorkflowDispatcherOptions { get; set; } = _ => { };
     
+    /// <summary>
+    /// Configures the MassTransit stimulus dispatcher.
+    /// </summary>
+    public Action<MassTransitStimulusDispatcherOptions> ConfigureStimulusDispatcherOptions { get; set; } = _ => { };
 
     /// <inheritdoc />
     public override void Configure()
     {
         Module.AddMassTransitConsumer<DispatchWorkflowRequestConsumer, DispatchWorkflowRequestConsumerDefinition>();
         Module.AddMassTransitConsumer<DispatchCancelWorkflowsRequestConsumer>("elsa-dispatch-cancel-workflow", true);
+        Module.AddMassTransitConsumer<DispatchStimulusRequestConsumer, DispatchStimulusRequestConsumerDefinition>("elsa-dispatch-stimulus");
         Module.Configure<WorkflowRuntimeFeature>(f =>
         {
             f.WorkflowDispatcher = sp =>
@@ -44,17 +59,17 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
             };
 
             f.WorkflowCancellationDispatcher = sp => sp.GetRequiredService<MassTransitWorkflowCancellationDispatcher>();
+            f.StimulusDispatcher = sp => sp.GetRequiredService<MassTransitStimulusDispatcher>();
         });
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
-        var options = Services.AddOptions<MassTransitWorkflowDispatcherOptions>();
-        
-        if (ConfigureDispatcherOptions != null)
-            options.Configure(ConfigureDispatcherOptions);
+        Services.Configure(ConfigureWorkflowDispatcherOptions);
+        Services.Configure(ConfigureStimulusDispatcherOptions);
         
         Services.AddScoped<MassTransitWorkflowCancellationDispatcher>();
+        Services.AddScoped<MassTransitStimulusDispatcher>();
     }
 }
