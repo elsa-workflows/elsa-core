@@ -9,10 +9,10 @@ public class EventPublisher(IStimulusSender stimulusSender) : IEventPublisher
     /// <inheritdoc />
     public async Task PublishAsync(
         string eventName,
-        string? correlationId = default,
-        string? workflowInstanceId = default,
-        string? activityInstanceId = default,
-        object? payload = default,
+        string? correlationId = null,
+        string? workflowInstanceId = null,
+        string? activityInstanceId = null,
+        object? payload = null,
         CancellationToken cancellationToken = default)
     {
         var stimulus = new EventStimulus(eventName);
