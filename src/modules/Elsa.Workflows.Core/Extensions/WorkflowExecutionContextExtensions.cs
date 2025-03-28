@@ -139,4 +139,10 @@ public static class WorkflowExecutionContextExtensions
     /// Returns true if all activities have completed or canceled, false otherwise.
     /// </summary>
     public static bool AllActivitiesCompleted(this WorkflowExecutionContext workflowExecutionContext) => workflowExecutionContext.ActivityExecutionContexts.All(x => x.IsCompleted);
+
+    public static object? GetOutputByActivityId(this WorkflowExecutionContext workflowExecutionContext, string activityId, string? outputName = null)
+    {
+        var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
+        return outputRegister.FindOutputByActivityId(activityId, outputName);
+    }
 }

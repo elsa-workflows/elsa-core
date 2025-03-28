@@ -153,7 +153,7 @@ public static class ServiceProviderExtensions
     public static async Task<WorkflowDefinition> GetWorkflowDefinitionAsync(this IServiceProvider services, string workflowDefinitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         var workflowDefinitionService = services.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(workflowDefinitionId, versionOptions);
+        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(workflowDefinitionId, versionOptions, cancellationToken);
         return workflowDefinition!;
     }
 }

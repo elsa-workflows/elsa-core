@@ -14,26 +14,26 @@ namespace Elsa.Workflows.Activities;
 [PublicAPI]
 public class Inline : CodeActivity
 {
-    private readonly Func<ActivityExecutionContext, ValueTask> _activity = default!;
+    private readonly Func<ActivityExecutionContext, ValueTask> _activity = _ => default;
 
     /// <inheritdoc />
-    public Inline([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Inline([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
     
     /// <inheritdoc />
-    public Inline(Func<ActivityExecutionContext, ValueTask> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Inline(Func<ActivityExecutionContext, ValueTask> activity, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         _activity = activity;
     }
 
     /// <inheritdoc />
-    public Inline(Func<ValueTask> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(_ => activity(), source, line)
+    public Inline(Func<ValueTask> activity, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(_ => activity(), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Inline(Action<ActivityExecutionContext> activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(c =>
+    public Inline(Action<ActivityExecutionContext> activity, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(c =>
     {
         activity(c);
         return new ValueTask();
@@ -42,7 +42,7 @@ public class Inline : CodeActivity
     }
 
     /// <inheritdoc />
-    public Inline(Action activity, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(c =>
+    public Inline(Action activity, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(c =>
     {
         activity();
         return new ValueTask();
@@ -103,20 +103,20 @@ public class Inline<T> : CodeActivity<T>
     private readonly Func<ActivityExecutionContext, ValueTask<T>> _activity;
 
     /// <inheritdoc />
-    public Inline(Func<ActivityExecutionContext, ValueTask<T>> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+    public Inline(Func<ActivityExecutionContext, ValueTask<T>> activity, MemoryBlockReference? output = null, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
         : base(output, source, line)
     {
         _activity = activity;
     }
 
     /// <inheritdoc />
-    public Inline(Func<ValueTask<T>> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+    public Inline(Func<ValueTask<T>> activity, MemoryBlockReference? output = null, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
         : this(_ => activity(), output, source, line)
     {
     }
 
     /// <inheritdoc />
-    public Inline(Func<ActivityExecutionContext, T> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+    public Inline(Func<ActivityExecutionContext, T> activity, MemoryBlockReference? output = null, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
         : this(c =>
     {
         var result = activity(c);
@@ -126,7 +126,7 @@ public class Inline<T> : CodeActivity<T>
     }
 
     /// <inheritdoc />
-    public Inline(Func<T> activity, MemoryBlockReference? output = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+    public Inline(Func<T> activity, MemoryBlockReference? output = null, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
         : this(c =>
     {
         var result = activity();

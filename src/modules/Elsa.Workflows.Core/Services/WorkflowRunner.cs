@@ -45,7 +45,7 @@ public class WorkflowRunner(
     public async Task<RunWorkflowResult<TResult>> RunAsync<TResult>(WorkflowBase<TResult> workflow, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         var result = await RunAsync((IWorkflow)workflow, options, cancellationToken);
-        return new(result.WorkflowState, result.Workflow, (TResult)result.Result!);
+        return new(result.WorkflowExecutionContext, result.WorkflowState, result.Workflow, (TResult)result.Result!);
     }
 
     /// <inheritdoc />
@@ -219,6 +219,6 @@ public class WorkflowRunner(
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
         await notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
         await commitStateHandler.CommitAsync(workflowExecutionContext, workflowState, cancellationToken);
-        return new(workflowState, workflowExecutionContext.Workflow, result);
+        return new(workflowExecutionContext, workflowState, workflowExecutionContext.Workflow, result);
     }
 }
