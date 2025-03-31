@@ -47,7 +47,8 @@ public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer)
             DeserializeJsonObjectToObject = true,
             SerializerOptions = payloadSerializer.GetOptions()  
         };
-        var parsedValue = node.ConvertTo(variableType, options);
+        var result = node.TryConvertTo(variableType, options);
+        var parsedValue = result.Success ? result.Value : node;
         return new (parsedValue);
     }
 

@@ -15,7 +15,7 @@ public class MemoryBlock
     /// <summary>
     /// Constructor.
     /// </summary>
-    public MemoryBlock(object? value, object? metadata = default)
+    public MemoryBlock(object? value, object? metadata = null)
     {
         Value = value;
         Metadata = metadata;
