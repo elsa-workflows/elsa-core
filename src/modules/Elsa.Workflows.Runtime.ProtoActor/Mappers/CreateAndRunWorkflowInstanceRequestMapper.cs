@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Workflows.Runtime.ProtoActor.Extensions;
 using Elsa.Workflows.Runtime.Messages;
 using ProtoCreateAndRunWorkflowInstanceRequest = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.CreateAndRunWorkflowInstanceRequest;
