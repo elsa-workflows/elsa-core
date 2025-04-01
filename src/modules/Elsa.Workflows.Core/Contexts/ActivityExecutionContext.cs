@@ -98,7 +98,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// The number of faults encountered during the execution of the activity and its descendants.
     /// </summary>
-    public int FaultCount { get; set; }
+    public int AggregatedFaultCount { get; set; }
 
     /// <summary>
     /// The workflow execution context. 
