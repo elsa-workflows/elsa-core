@@ -22,6 +22,9 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     private Exception? _exception;
     private long _executionCount;
     private ActivityExecutionContext? _parentActivityExecutionContext;
+    
+    // Bookmarks created during the lifetime of this activity. 
+    private List<Bookmark> _newBookmarks = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ActivityExecutionContext"/> class.
@@ -91,6 +94,11 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// application termination, allowing the system to retry execution upon restarting. 
     /// </remarks>
     public bool IsExecuting { get; set; }
+
+    /// <summary>
+    /// The number of faults encountered during the execution of the activity and its descendants.
+    /// </summary>
+    public int FaultCount { get; set; }
 
     /// <summary>
     /// The workflow execution context. 
@@ -224,9 +232,14 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     public ISet<ActivityExecutionContext> Children { get; } = new HashSet<ActivityExecutionContext>();
 
     /// <summary>
-    /// A list of bookmarks created by the current activity.
+    /// A list of bookmarks associated with the current activity.
     /// </summary>
     public IEnumerable<Bookmark> Bookmarks => WorkflowExecutionContext.Bookmarks.Where(x => x.ActivityInstanceId == Id);
+
+    /// <summary>
+    /// A collection of bookmarks created during the execution of the activity.
+    /// </summary>
+    public IEnumerable<Bookmark> NewBookmarks => _newBookmarks.AsReadOnly();
 
     /// <summary>
     /// The number of times this <see cref="ActivityExecutionContext"/> has executed.
@@ -426,6 +439,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <param name="bookmark">The bookmark to add.</param>
     public void AddBookmark(Bookmark bookmark)
     {
+        _newBookmarks.Add(bookmark);
         WorkflowExecutionContext.Bookmarks.Add(bookmark);
         Taint();
     }
@@ -534,6 +548,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// </summary>
     public void ClearBookmarks()
     {
+        _newBookmarks.Clear();
         WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityInstanceId == Id);
         Taint();
     }

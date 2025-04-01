@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_5 : Migration
@@ -22,17 +22,28 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Triggers",
-                type: "NVARCHAR2(450)",
+                type: "varchar(255)",
                 nullable: true,
                 oldClrType: typeof(string),
-                oldType: "NVARCHAR2(450)");
+                oldType: "varchar(255)")
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .OldAnnotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<string>(
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Bookmarks",
-                type: "NVARCHAR2(450)",
-                nullable: true);
+                type: "varchar(255)",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.AddColumn<int>(
+                name: "AggregatedFaultCount",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                type: "int",
+                nullable: false,
+                defaultValue: 0);
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_Name",
@@ -76,16 +87,30 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "Bookmarks");
 
+            migrationBuilder.DropColumn(
+                name: "AggregatedFaultCount",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords");
+
+            migrationBuilder.UpdateData(
+                schema: _schema.Schema,
+                table: "Triggers",
+                keyColumn: "Name",
+                keyValue: null,
+                column: "Name",
+                value: "");
+
             migrationBuilder.AlterColumn<string>(
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Triggers",
-                type: "NVARCHAR2(450)",
+                type: "varchar(255)",
                 nullable: false,
-                defaultValue: "",
                 oldClrType: typeof(string),
-                oldType: "NVARCHAR2(450)",
-                oldNullable: true);
+                oldType: "varchar(255)",
+                oldNullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .OldAnnotation("MySql:CharSet", "utf8mb4");
         }
     }
 }

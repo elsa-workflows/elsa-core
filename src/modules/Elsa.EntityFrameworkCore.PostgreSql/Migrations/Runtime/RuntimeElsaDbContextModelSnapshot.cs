@@ -65,6 +65,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<int>("ActivityTypeVersion")
                         .HasColumnType("integer");
 
+                    b.Property<int>("AggregatedFaultCount")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("timestamp with time zone");
 

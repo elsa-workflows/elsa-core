@@ -34,6 +34,14 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 type: "text",
                 nullable: true);
 
+            migrationBuilder.AddColumn<int>(
+                name: "AggregatedFaultCount",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                type: "integer",
+                nullable: false,
+                defaultValue: 0);
+
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_Name",
                 schema: _schema.Schema,
@@ -75,6 +83,11 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Bookmarks");
+
+            migrationBuilder.DropColumn(
+                name: "AggregatedFaultCount",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords");
 
             migrationBuilder.AlterColumn<string>(
                 name: "Name",

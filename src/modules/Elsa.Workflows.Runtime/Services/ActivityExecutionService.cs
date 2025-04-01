@@ -26,7 +26,7 @@ public class ActivityExecutionStatsService : IActivityExecutionStatsService
             ActivityNodeIds = activityNodeIds?.ToList()
         };
         var order = new ActivityExecutionRecordOrder<DateTimeOffset>(x => x.StartedAt, OrderDirection.Ascending);
-        var records = (await _store.FindManyAsync(filter, order, cancellationToken)).ToList();
+        var records = (await _store.FindManySummariesAsync(filter, order, cancellationToken)).ToList();
         var groupedRecords = records.GroupBy(x => x.ActivityNodeId).ToList();
         var stats = groupedRecords.Select(grouping => new ActivityExecutionStats
         {
@@ -36,7 +36,8 @@ public class ActivityExecutionStatsService : IActivityExecutionStatsService
             CompletedCount = grouping.Count(x => x.CompletedAt != null),
             UncompletedCount = grouping.Count(x => x.CompletedAt == null),
             IsBlocked = grouping.Any(x => x.HasBookmarks),
-            IsFaulted = grouping.Any(x => x.Status == ActivityStatus.Faulted)
+            IsFaulted = grouping.Any(x => x.Status == ActivityStatus.Faulted),
+            AggregateFaultCount = grouping.Last().AggregatedFaultCount
         }).ToList();
         
         return stats;
@@ -45,7 +46,7 @@ public class ActivityExecutionStatsService : IActivityExecutionStatsService
     /// <inheritdoc />
     public async Task<ActivityExecutionStats> GetStatsAsync(string workflowInstanceId, string activityNodeId, CancellationToken cancellationToken = default)
     {
-        var stats = (await GetStatsAsync(workflowInstanceId, new[] { activityNodeId }, cancellationToken)).FirstOrDefault();
+        var stats = (await GetStatsAsync(workflowInstanceId, [activityNodeId], cancellationToken)).FirstOrDefault();
         
         return stats ?? new ActivityExecutionStats
         {

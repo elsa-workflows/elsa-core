@@ -65,6 +65,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                     b.Property<int>("ActivityTypeVersion")
                         .HasColumnType("NUMBER(10)");
 
+                    b.Property<int>("AggregatedFaultCount")
+                        .HasColumnType("NUMBER(10)");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 

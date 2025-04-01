@@ -65,6 +65,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<int>("ActivityTypeVersion")
                         .HasColumnType("int");
 
+                    b.Property<int>("AggregatedFaultCount")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("datetimeoffset");
 

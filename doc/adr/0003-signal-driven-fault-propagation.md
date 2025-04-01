@@ -24,6 +24,9 @@ When an activity faults, it emits a signal that container activities may listen 
 
 The `ExceptionHandlingMiddleware` no longer faults ancestors by default.
 
+To make sure that the workflow instance viewer can still show a visual indicator that a parent activity contains a faulted descendant activity, an update will be made that allows a child activity to notify ancestors using a fault count.
+This allows multiple descendants to propagate a fault, while also allowing a child to clear the fault and thereby decrementing the fault count of its ancestors.
+
 ## Consequences
 
 ### Positive:

@@ -11,22 +11,22 @@ public class ActivityExecutionRecordSummary : Entity
     /// <summary>
     /// Gets or sets the workflow instance ID.
     /// </summary>
-    public string WorkflowInstanceId { get; set; } = default!;
+    public string WorkflowInstanceId { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the activity ID.
     /// </summary>
-    public string ActivityId { get; set; } = default!;
+    public string ActivityId { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the activity node ID.
     /// </summary>
-    public string ActivityNodeId { get; set; } = default!;
+    public string ActivityNodeId { get; set; } = null!;
 
     /// <summary>
     /// The type of the activity.
     /// </summary>
-    public string ActivityType { get; set; } = default!;
+    public string ActivityType { get; set; } = null!;
 
     /// <summary>
     /// The version of the activity type.
@@ -52,6 +52,11 @@ public class ActivityExecutionRecordSummary : Entity
     /// Gets or sets the status of the activity.
     /// </summary>
     public ActivityStatus Status { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the aggregated count of faults encountered during the execution of the activity instance and its descendants.
+    /// </summary>
+    public int AggregatedFaultCount { get; set; }
 
     /// <summary>
     /// Gets or sets the time at which the activity execution completed.
@@ -63,7 +68,7 @@ public class ActivityExecutionRecordSummary : Entity
     /// </summary>
     public static ActivityExecutionRecordSummary FromRecord(ActivityExecutionRecord record)
     {
-        return new ActivityExecutionRecordSummary
+        return new()
         {
             Id = record.Id,
             WorkflowInstanceId = record.WorkflowInstanceId,
@@ -75,7 +80,8 @@ public class ActivityExecutionRecordSummary : Entity
             StartedAt = record.StartedAt,
             HasBookmarks = record.HasBookmarks,
             Status = record.Status,
-            CompletedAt = record.CompletedAt
+            AggregatedFaultCount = record.AggregatedFaultCount,
+            CompletedAt = record.CompletedAt,
         };
     }
     
@@ -84,7 +90,7 @@ public class ActivityExecutionRecordSummary : Entity
     /// </summary>
     public static Expression<Func<ActivityExecutionRecord, ActivityExecutionRecordSummary>> FromRecordExpression()
     {
-        return record => new ActivityExecutionRecordSummary
+        return record => new()
         {
             Id = record.Id,
             WorkflowInstanceId = record.WorkflowInstanceId,
@@ -96,6 +102,7 @@ public class ActivityExecutionRecordSummary : Entity
             StartedAt = record.StartedAt,
             HasBookmarks = record.HasBookmarks,
             Status = record.Status,
+            AggregatedFaultCount = record.AggregatedFaultCount,
             CompletedAt = record.CompletedAt
         };
     }

@@ -3,16 +3,16 @@ using System;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Oracle.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20250320220124_V3_5")]
+    [Migration("20250401201339_V3_5")]
     partial class V3_5
     {
         /// <inheritdoc />
@@ -22,21 +22,21 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
             modelBuilder
                 .HasDefaultSchema("Elsa")
                 .HasAnnotation("ProductVersion", "9.0.3")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
-            OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("SerializedValue")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
@@ -48,63 +48,66 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.ActivityExecutionRecord", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityName")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<int>("ActivityTypeVersion")
-                        .HasColumnType("NUMBER(10)");
+                        .HasColumnType("int");
+
+                    b.Property<int>("AggregatedFaultCount")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<bool>("HasBookmarks")
-                        .HasColumnType("BOOLEAN");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("SerializedActivityState")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SerializedActivityStateCompressionAlgorithm")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SerializedException")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SerializedOutputs")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SerializedProperties")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTimeOffset>("StartedAt")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
@@ -150,34 +153,34 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueItem", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityInstanceId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityTypeName")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("BookmarkId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("CorrelationId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("SerializedOptions")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("StimulusHash")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("WorkflowInstanceId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
@@ -203,40 +206,40 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityInstanceId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityTypeName")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("CorrelationId")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Hash")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Name")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("SerializedMetadata")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
@@ -268,31 +271,31 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredTrigger", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Hash")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Name")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("WorkflowDefinitionVersionId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
@@ -317,71 +320,71 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowExecutionLogRecord", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityInstanceId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityName")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<int>("ActivityTypeVersion")
-                        .HasColumnType("NUMBER(10)");
+                        .HasColumnType("int");
 
                     b.Property<string>("EventName")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Message")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("ParentActivityInstanceId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<long>("Sequence")
-                        .HasColumnType("NUMBER(19)");
+                        .HasColumnType("bigint");
 
                     b.Property<string>("SerializedActivityState")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Source")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("WorkflowDefinitionVersionId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<int>("WorkflowVersion")
-                        .HasColumnType("NUMBER(10)");
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -442,39 +445,39 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowInboxMessage", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityInstanceId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityTypeName")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("CorrelationId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Hash")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("SerializedBookmarkPayload")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SerializedInput")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("WorkflowInstanceId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
