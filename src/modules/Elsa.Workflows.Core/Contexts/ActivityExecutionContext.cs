@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using Elsa.Common;
 using Elsa.Expressions.Helpers;
@@ -19,7 +18,6 @@ namespace Elsa.Workflows;
 public partial class ActivityExecutionContext : IExecutionContext, IDisposable
 {
     private readonly ISystemClock _systemClock;
-    private readonly List<Bookmark> _bookmarks = [];
     private ActivityStatus _status;
     private Exception? _exception;
     private long _executionCount;
@@ -228,7 +226,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// A list of bookmarks created by the current activity.
     /// </summary>
-    public IReadOnlyCollection<Bookmark> Bookmarks => new ReadOnlyCollection<Bookmark>(_bookmarks);
+    public IEnumerable<Bookmark> Bookmarks => WorkflowExecutionContext.Bookmarks.Where(x => x.ActivityInstanceId == Id);
 
     /// <summary>
     /// The number of times this <see cref="ActivityExecutionContext"/> has executed.
@@ -418,7 +416,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <param name="bookmarks">The bookmarks to add.</param>
     public void AddBookmarks(IEnumerable<Bookmark> bookmarks)
     {
-        _bookmarks.AddRange(bookmarks);
+        WorkflowExecutionContext.Bookmarks.AddRange(bookmarks);
         Taint();
     }
 
@@ -428,7 +426,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <param name="bookmark">The bookmark to add.</param>
     public void AddBookmark(Bookmark bookmark)
     {
-        _bookmarks.Add(bookmark);
+        WorkflowExecutionContext.Bookmarks.Add(bookmark);
         Taint();
     }
 
@@ -536,7 +534,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// </summary>
     public void ClearBookmarks()
     {
-        _bookmarks.Clear();
+        WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityInstanceId == Id);
         Taint();
     }
 

@@ -82,13 +82,13 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
         // Invoke next middleware.
         await next(context);
 
-        // If the activity created any bookmarks, copy them into the workflow execution context.
-        if (context.Bookmarks.Any())
-        {
-            // Store bookmarks.
-            workflowExecutionContext.Bookmarks.AddRange(context.Bookmarks);
-            logger.LogDebug("Added {BookmarkCount} bookmarks to the workflow execution context", context.Bookmarks.Count);
-        }
+        // // If the activity created any bookmarks, copy them into the workflow execution context.
+        // if (context.Bookmarks.Any())
+        // {
+        //     // Store bookmarks.
+        //     workflowExecutionContext.Bookmarks.AddRange(context.Bookmarks);
+        //     logger.LogDebug("Added {BookmarkCount} bookmarks to the workflow execution context", context.Bookmarks.Count);
+        // }
 
         // Conditionally commit the workflow state.
         if (ShouldCommit(context, ActivityLifetimeEvent.ActivityExecuted))

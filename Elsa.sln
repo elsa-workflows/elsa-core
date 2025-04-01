@@ -20,10 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"
-	ProjectSection(SolutionItems) = preProject
-		docs\bounty-footer.md = docs\bounty-footer.md
-	EndProjectSection
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}"
 EndProject
@@ -383,6 +380,23 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Persistence.EntityFrameworkCore", "src\modules\Elsa.Connections.Persistence.EntityFrameworkCore\Elsa.Connections.Persistence.EntityFrameworkCore.csproj", "{DF0CA7E2-F5DF-40ED-91B6-748767084FC7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite", "src\modules\Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite\Elsa.Connections.Persistence.EntityFrameworkCore.Sqlite.csproj", "{DB20B168-CD90-41F2-BE08-3D8C6F142459}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{0A04B1FD-06C0-4271-A910-A08C263DBC44}"
+	ProjectSection(SolutionItems) = preProject
+		doc\adr\0001-record-architecture-decisions.md = doc\adr\0001-record-architecture-decisions.md
+		doc\adr\0002-fault-propagation-from-child-to-parent-activities.md = doc\adr\0002-fault-propagation-from-child-to-parent-activities.md
+		doc\adr\0003-signal-driven-fault-propagation.md = doc\adr\0003-signal-driven-fault-propagation.md
+		doc\adr\toc.md = doc\adr\toc.md
+		doc\adr\graph.dot = doc\adr\graph.dot
+		doc\adr\0004-direct-bookmark-management-in-workflowexecutioncontext.md = doc\adr\0004-direct-bookmark-management-in-workflowexecutioncontext.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bounty", "bounty", "{9B80A705-2E31-4012-964A-83963DCDB384}"
+	ProjectSection(SolutionItems) = preProject
+		doc\bounty\bounty-announcement-template.md = doc\bounty\bounty-announcement-template.md
+		doc\bounty\bounty-footer.md = doc\bounty\bounty-footer.md
+		doc\bounty\bounty-quality-standards.md = doc\bounty\bounty-quality-standards.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -951,6 +965,8 @@ Global
 		{DF0CA7E2-F5DF-40ED-91B6-748767084FC7} = {9DF81143-2F39-4CFB-9DA3-902279010622}
 		{DB20B168-CD90-41F2-BE08-3D8C6F142459} = {9DF81143-2F39-4CFB-9DA3-902279010622}
 		{8A050229-DB79-4E0B-9AFF-7565E87F2954} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
+		{0A04B1FD-06C0-4271-A910-A08C263DBC44} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
+		{9B80A705-2E31-4012-964A-83963DCDB384} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
