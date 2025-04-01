@@ -44,4 +44,14 @@ public static class TypeExtensions
     /// Returns the element type of the specified collection type.
     /// </summary>
     public static Type GetCollectionElementType(this Type type) => type.GenericTypeArguments[0];
+
+    /// <summary>
+    /// Determines whether the specified type is a numeric type.
+    /// </summary>
+    /// <param name="type">The type to check.</param>
+    /// <returns>True if the specified type is numeric, otherwise false.</returns>
+    public static bool IsNumericType(this Type type)
+    {
+        return type.IsPrimitive || type == typeof(decimal) || type == typeof(float) || type == typeof(double) || type == typeof(int) || type == typeof(long) || type == typeof(short) || type == typeof(byte) || type == typeof(uint) || type == typeof(ulong) || type == typeof(ushort) || type == typeof(sbyte);
+    } 
 }

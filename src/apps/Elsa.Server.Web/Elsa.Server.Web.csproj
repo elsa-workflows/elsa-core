@@ -59,7 +59,6 @@
     <ItemGroup>
         <PackageReference Include="Azure.Identity" />
         <PackageReference Include="Bogus" />
-        <PackageReference Include="Datadog.Trace.Bundle" />
         <PackageReference Include="DistributedLock.Postgres" />
         <PackageReference Include="DistributedLock.Redis" />
         <PackageReference Include="FluentStorage.Azure.Blobs" />

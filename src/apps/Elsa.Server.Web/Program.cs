@@ -15,6 +15,7 @@ using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.EntityFrameworkCore.Modules.Tenants;
+using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Identity.Multitenancy;
@@ -52,6 +53,7 @@ using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Options;
@@ -84,6 +86,7 @@ using StackExchange.Redis;
 
 // ReSharper disable RedundantAssignment
 const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
+const bool useDbContextPooling = true;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
@@ -103,6 +106,8 @@ const bool useSecrets = false;
 const bool disableVariableWrappers = false;
 const bool disableVariableCopying = false;
 const bool useManualOtelInstrumentation = false;
+
+ObjectConverter.StrictMode = true; // Default.
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -236,6 +241,8 @@ services
                 else
                     identity.UseEntityFrameworkCore(ef =>
                     {
+                        ef.UseContextPooling = useDbContextPooling;
+                        
                         if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
@@ -286,6 +293,7 @@ services
                 else
                     management.UseEntityFrameworkCore(ef =>
                     {
+                        ef.UseContextPooling = useDbContextPooling;
                         if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
@@ -336,6 +344,7 @@ services
                 else
                     runtime.UseEntityFrameworkCore(ef =>
                     {
+                        ef.UseContextPooling = useDbContextPooling;
                         if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                         {
                             //ef.UseSqlServer(sqlServerConnectionString, new ElsaDbContextOptions);
@@ -495,6 +504,7 @@ services
                 {
                     alterations.UseEntityFrameworkCore(ef =>
                     {
+                        ef.UseContextPooling = useDbContextPooling;
                         if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
@@ -634,15 +644,20 @@ services
                     management.ConfigureOptions(options => configuration.GetSection("Secrets:Management").Bind(options));
                     if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                         management.UseEntityFrameworkCore(ef =>
-                            ef.UseSqlServer(sqlServerConnectionString)
-                        );
+                        {
+                            ef.UseContextPooling = useDbContextPooling;
+                            ef.UseSqlServer(sqlServerConnectionString);
+                        });
                     else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                         management.UseEntityFrameworkCore(ef =>
-                            ef.UsePostgreSql(postgresConnectionString)
-                        );
+                        {
+                            ef.UseContextPooling = useDbContextPooling;
+                            ef.UsePostgreSql(postgresConnectionString);
+                        });
                     else
                         management.UseEntityFrameworkCore(ef =>
                         {
+                            ef.UseContextPooling = useDbContextPooling;
                             ef.UseSqlite(sp => sp.GetSqliteConnectionString());
                         });
                 })
@@ -695,6 +710,7 @@ services
                         {
                             management.UseEntityFrameworkCore(ef =>
                             {
+                                ef.UseContextPooling = useDbContextPooling;
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.Sqlite) ef.UseSqlite(sqliteConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer) ef.UseSqlServer(sqlServerConnectionString);
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql) ef.UsePostgreSql(postgresConnectionString);

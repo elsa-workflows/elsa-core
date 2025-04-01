@@ -1,4 +1,4 @@
-﻿using Elsa.Workflows;
+using Elsa.Workflows;
 
 namespace Elsa.Testing.Shared;
 

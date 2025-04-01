@@ -46,13 +46,8 @@ public class Tests
         var result = value.TryConvertTo<int>();
 
         // Assert
-
-        // I would have expected this conversion to not be successful. It seems there are many cases like this
-        //Assert.False(result.Success);
-        //Assert.NotNull(result.Exception);
-
-        Assert.True(result.Success);
-        Assert.Equal(0, result.Value);
+        Assert.False(result.Success);
+        Assert.NotNull(result.Exception);
     }
 
     [Fact]

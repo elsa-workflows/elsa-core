@@ -38,15 +38,14 @@ internal class Trigger : ElsaEndpoint<Request>
 
         if (workflowExecutionMode == WorkflowExecutionMode.Asynchronous)
         {
-            // TODO: Implement async dispatch
-            await _eventPublisher.PublishAsync(eventName, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
+            await _eventPublisher.PublishAsync(eventName, correlationId, workflowInstanceId, activityInstanceId, input, true, cancellationToken);
             await SendOkAsync(cancellationToken);
         }
         else
         {
-            await _eventPublisher.PublishAsync(eventName, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
+            await _eventPublisher.PublishAsync(eventName, correlationId, workflowInstanceId, activityInstanceId, input, false, cancellationToken);
 
-            if (!HttpContext.Response.HasStarted) 
+            if (!HttpContext.Response.HasStarted)
                 await SendOkAsync(cancellationToken);
         }
     }

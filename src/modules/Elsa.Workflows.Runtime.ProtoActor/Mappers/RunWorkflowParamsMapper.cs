@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Workflows.Runtime.ProtoActor.Extensions;
 using Elsa.Workflows.Options;
 using ProtoRunWorkflowInstanceRequest = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.RunWorkflowInstanceRequest;

@@ -60,14 +60,6 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         return await base.SaveChangesAsync(cancellationToken);
     }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.EnableSensitiveDataLogging();
-#if NET9_0_OR_GREATER
-        optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
-#endif
-    }
-
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -78,7 +70,8 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         
         additionalConfigurations?.Invoke(modelBuilder);
 
-        var entityTypeHandlers = ServiceProvider.GetServices<IEntityModelCreatingHandler>().ToList();
+        using var scope = ServiceProvider.CreateScope();
+        var entityTypeHandlers = scope.ServiceProvider.GetServices<IEntityModelCreatingHandler>().ToList();
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
         {
@@ -89,7 +82,8 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 
     private async Task OnBeforeSavingAsync(CancellationToken cancellationToken)
     {
-        var handlers = ServiceProvider.GetServices<IEntitySavingHandler>().ToList();
+        using var scope = ServiceProvider.CreateScope();
+        var handlers = scope.ServiceProvider.GetServices<IEntitySavingHandler>().ToList();
         foreach (var entry in ChangeTracker.Entries().Where(IsModifiedEntity))
         {
             foreach (var handler in handlers)
