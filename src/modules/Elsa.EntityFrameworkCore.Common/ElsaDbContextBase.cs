@@ -16,7 +16,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         EntityState.Modified,
     };
 
-    private IServiceProvider ServiceProvider { get; }
+    protected IServiceProvider ServiceProvider { get; }
     private readonly ElsaDbContextOptions? _elsaDbContextOptions;
     public string? TenantId { get; set; }
 
