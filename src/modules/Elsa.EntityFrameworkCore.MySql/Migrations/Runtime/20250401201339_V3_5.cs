@@ -38,7 +38,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<int>(
-                name: "AggregatedFaultCount",
+                name: "AggregateFaultCount",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
                 type: "int",
@@ -88,7 +88,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 table: "Bookmarks");
 
             migrationBuilder.DropColumn(
-                name: "AggregatedFaultCount",
+                name: "AggregateFaultCount",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords");
 

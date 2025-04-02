@@ -35,7 +35,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 nullable: true);
 
             migrationBuilder.AddColumn<int>(
-                name: "AggregatedFaultCount",
+                name: "AggregateFaultCount",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
                 type: "integer",
@@ -85,7 +85,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 table: "Bookmarks");
 
             migrationBuilder.DropColumn(
-                name: "AggregatedFaultCount",
+                name: "AggregateFaultCount",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords");
 

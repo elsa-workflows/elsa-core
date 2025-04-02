@@ -82,7 +82,7 @@ public class ActivityExecutionRecord : Entity, ILogRecord
     /// <summary>
     /// Gets or sets the aggregated count of faults encountered during the execution of the activity instance and its descendants.
     /// </summary>
-    public int AggregatedFaultCount { get; set; }
+    public int AggregateFaultCount { get; set; }
     
     /// <summary>
     /// Gets or sets the time at which the activity execution completed.

@@ -150,7 +150,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             
             activityExecutionContext.TransitionTo(activityExecutionContextState.Status);
             activityExecutionContext.IsExecuting = activityExecutionContextState.IsExecuting;
-            activityExecutionContext.AggregatedFaultCount = activityExecutionContextState.FaultCount;
+            activityExecutionContext.AggregateFaultCount = activityExecutionContextState.FaultCount;
             activityExecutionContext.StartedAt = activityExecutionContextState.StartedAt;
             activityExecutionContext.CompletedAt = activityExecutionContextState.CompletedAt;
             activityExecutionContext.Tag = activityExecutionContextState.Tag;
@@ -239,7 +239,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
                 ActivityState = activityExecutionContext.ActivityState,
                 Status = activityExecutionContext.Status,
                 IsExecuting = activityExecutionContext.IsExecuting,
-                FaultCount = activityExecutionContext.AggregatedFaultCount,
+                FaultCount = activityExecutionContext.AggregateFaultCount,
                 StartedAt = activityExecutionContext.StartedAt,
                 CompletedAt = activityExecutionContext.CompletedAt,
                 Tag = activityExecutionContext.Tag,

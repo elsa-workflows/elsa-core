@@ -101,7 +101,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             StartedAt = source.StartedAt,
             HasBookmarks = source.Bookmarks.Any(),
             Status = source.Status,
-            AggregatedFaultCount = source.AggregatedFaultCount,
+            AggregateFaultCount = source.AggregateFaultCount,
             CompletedAt = source.CompletedAt
         };
     }

@@ -320,12 +320,12 @@ public static partial class ActivityExecutionContextExtensions
         var now = systemClock.UtcNow;
         var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, exceptionState, now);
         context.WorkflowExecutionContext.Incidents.Add(incident);
-        context.AggregatedFaultCount++;
+        context.AggregateFaultCount++;
         
         var ancestors = context.GetAncestors();
 
         foreach (var ancestor in ancestors)
-            ancestor.AggregatedFaultCount++;
+            ancestor.AggregateFaultCount++;
 
         context.TransitionTo(ActivityStatus.Faulted);
     }
@@ -335,12 +335,12 @@ public static partial class ActivityExecutionContextExtensions
     /// </summary>
     public static void RecoverFromFault(this ActivityExecutionContext context)
     {
-        context.AggregatedFaultCount = 0;
+        context.AggregateFaultCount = 0;
 
         var ancestors = context.GetAncestors();
 
         foreach (var ancestor in ancestors)
-            ancestor.AggregatedFaultCount--;
+            ancestor.AggregateFaultCount--;
 
         context.TransitionTo(ActivityStatus.Running);
     }

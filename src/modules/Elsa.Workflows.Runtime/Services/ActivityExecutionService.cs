@@ -37,7 +37,7 @@ public class ActivityExecutionStatsService : IActivityExecutionStatsService
             UncompletedCount = grouping.Count(x => x.CompletedAt == null),
             IsBlocked = grouping.Any(x => x.HasBookmarks),
             IsFaulted = grouping.Any(x => x.Status == ActivityStatus.Faulted),
-            AggregateFaultCount = grouping.Last().AggregatedFaultCount
+            AggregateFaultCount = grouping.Last().AggregateFaultCount
         }).ToList();
         
         return stats;

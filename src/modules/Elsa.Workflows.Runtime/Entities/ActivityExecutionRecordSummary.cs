@@ -56,7 +56,7 @@ public class ActivityExecutionRecordSummary : Entity
     /// <summary>
     /// Gets or sets the aggregated count of faults encountered during the execution of the activity instance and its descendants.
     /// </summary>
-    public int AggregatedFaultCount { get; set; }
+    public int AggregateFaultCount { get; set; }
 
     /// <summary>
     /// Gets or sets the time at which the activity execution completed.
@@ -80,7 +80,7 @@ public class ActivityExecutionRecordSummary : Entity
             StartedAt = record.StartedAt,
             HasBookmarks = record.HasBookmarks,
             Status = record.Status,
-            AggregatedFaultCount = record.AggregatedFaultCount,
+            AggregateFaultCount = record.AggregateFaultCount,
             CompletedAt = record.CompletedAt,
         };
     }
@@ -102,7 +102,7 @@ public class ActivityExecutionRecordSummary : Entity
             StartedAt = record.StartedAt,
             HasBookmarks = record.HasBookmarks,
             Status = record.Status,
-            AggregatedFaultCount = record.AggregatedFaultCount,
+            AggregateFaultCount = record.AggregateFaultCount,
             CompletedAt = record.CompletedAt
         };
     }

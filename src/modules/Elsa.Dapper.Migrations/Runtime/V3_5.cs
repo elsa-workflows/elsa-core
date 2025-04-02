@@ -14,12 +14,12 @@ public class V3_5 : Migration
     /// <inheritdoc />
     public override void Up()
     {
-        Alter.Table("ActivityExecutionRecords").AddColumn("AggregatedFaultCount").AsInt32().NotNullable().WithDefault(0);
+        Alter.Table("ActivityExecutionRecords").AddColumn("AggregateFaultCount").AsInt32().NotNullable().WithDefault(0);
     }
 
     /// <inheritdoc />
     public override void Down()
     {
-        Delete.Column("AggregatedFaultCount").FromTable("ActivityExecutionRecords");
+        Delete.Column("AggregateFaultCount").FromTable("ActivityExecutionRecords");
     }
 }

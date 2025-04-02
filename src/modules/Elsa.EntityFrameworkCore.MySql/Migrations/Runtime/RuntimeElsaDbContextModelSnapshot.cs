@@ -65,7 +65,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<int>("ActivityTypeVersion")
                         .HasColumnType("int");
 
-                    b.Property<int>("AggregatedFaultCount")
+                    b.Property<int>("AggregateFaultCount")
                         .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("CompletedAt")

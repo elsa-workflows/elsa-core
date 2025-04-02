@@ -64,7 +64,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<int>("ActivityTypeVersion")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("AggregatedFaultCount")
+                    b.Property<int>("AggregateFaultCount")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset?>("CompletedAt")
