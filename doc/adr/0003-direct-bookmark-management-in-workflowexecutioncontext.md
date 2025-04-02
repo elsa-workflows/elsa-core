@@ -1,4 +1,4 @@
-# 4. Direct Bookmark Management in WorkflowExecutionContext
+# 3. Direct Bookmark Management in WorkflowExecutionContext
 
 Date: 2025-04-01
 

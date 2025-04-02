@@ -1,13 +1,10 @@
 digraph {
-node [shape=plaintext];
-subgraph {
-_1 [label="1. Record architecture decisions"; URL="0001-record-architecture-decisions.html"];
-_2 [label="2. Fault Propagation from Child to Parent Activities"; URL="0002-fault-propagation-from-child-to-parent-activities.html"];
-_1 -> _2 [style="dotted", weight=1];
-_3 [label="3. Signal-Driven Fault Propagation"; URL="0003-signal-driven-fault-propagation.html"];
-_2 -> _3 [style="dotted", weight=1];
-_4 [label="4. Direct Bookmark Management in WorkflowExecutionContext"; URL="0004-direct-bookmark-management-in-workflowexecutioncontext.html"];
-_3 -> _4 [style="dotted", weight=1];
-}
-_3 -> _2 [label="Amends", weight=0]
+  node [shape=plaintext];
+  subgraph {
+    _1 [label="1. Record architecture decisions"; URL="0001-record-architecture-decisions.html"];
+    _2 [label="2. Fault Propagation from Child to Parent Activities"; URL="0002-fault-propagation-from-child-to-parent-activities.html"];
+    _1 -> _2 [style="dotted", weight=1];
+    _3 [label="3. Direct Bookmark Management in WorkflowExecutionContext"; URL="0003-direct-bookmark-management-in-workflowexecutioncontext.html"];
+    _2 -> _3 [style="dotted", weight=1];
+  }
 }
