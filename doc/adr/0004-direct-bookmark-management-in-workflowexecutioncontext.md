@@ -14,7 +14,7 @@ This architecture leads to a subtle issue upon resumption:
 - The `ActivityExecutionContext`'s temporary `Bookmarks` list remains empty.
 - As a result, if the resumed activity attempts to cancel (or modify) its previously created bookmarks, it cannot, because it has no access to them—changes are not tracked.
 
-However, there is an existing convention that determins that if an activity created a bookmark during its execution, the activity will not automatically complete.
+However, there is an existing convention that determines that if an activity created a bookmark during its execution, the activity will not automatically complete.
 Specifically, this is implemented in the `AutoCompleteBehavior`, which is installed by the `CodeActivity` and possibly by custom activities.
 To keep this behavior in tact, we will still maintain a private list of bookmarks, one that is explicitly purposed for maintaining *new** bookmarks, temporarily for the lifetime of the ActivityExecutionContext in memory.  
 
