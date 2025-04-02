@@ -1,4 +1,5 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Extensions;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Runtime.Features;
 using Elsa.Workflows.Runtime.Options;
@@ -46,7 +47,7 @@ public class ClrWorkflowsProvider(
         {
             Id = id,
             DefinitionId = definitionId,
-            TenantId = tenantId
+            TenantId = tenantId?.NullIfEmpty()
         };
 
         var materializerContext = new ClrWorkflowMaterializerContext(workflowBuilder.GetType());

@@ -154,9 +154,7 @@ public static class BulkUpsertExtensions
         var entityType = dbContext.Model.FindEntityType(typeof(TEntity))!;
         var tableName = entityType.GetTableName();
         var storeObject = StoreObjectIdentifier.Table(tableName!, entityType.GetSchema());
-
         var props = entityType.GetProperties().ToList();
-
         var keyProp = entityType.FindProperty(keySelector.GetMemberAccess().Name)!;
         var keyColumnName = keyProp.GetColumnName(storeObject);
         var columnNames = props

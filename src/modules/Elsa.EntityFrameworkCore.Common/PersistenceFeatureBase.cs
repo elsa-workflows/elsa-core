@@ -64,6 +64,8 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase
             Services.AddPooledDbContextFactory<TDbContext>(setup);
         else
             Services.AddDbContextFactory<TDbContext>(setup, DbContextFactoryLifetime);
+
+        Services.Decorate<IDbContextFactory<TDbContext>, TenantAwareDbContextFactory<TDbContext>>();
     }
 
     protected virtual void ConfigureMigrations()
