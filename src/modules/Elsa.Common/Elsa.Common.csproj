@@ -16,6 +16,7 @@
     <ItemGroup>
         <PackageReference Include="Cronos" />
         <PackageReference Include="DistributedLock.Core" />
+        <PackageReference Include="IronCompress" />
         <PackageReference Include="LinqKit.Core" />
         <PackageReference Include="Microsoft.Extensions.Configuration" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
