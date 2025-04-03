@@ -36,7 +36,7 @@ public static class BookmarkExtensions
         return new StoredBookmark
         {
             Id = bookmark.Id,
-            ActivityTypeName = bookmark.Name,
+            Name = bookmark.Name,
             Hash = bookmark.Hash,
             WorkflowInstanceId = workflowExecutionContext.Id,
             CreatedAt = bookmark.CreatedAt,

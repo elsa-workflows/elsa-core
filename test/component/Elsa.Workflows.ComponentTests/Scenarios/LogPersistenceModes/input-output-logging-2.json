@@ -52,7 +52,7 @@
           "logPersistenceMode": {
             "default": "Include",
             "inputs": {
-              "text": "Default"
+              "text": "Inherit"
             },
             "outputs": {}
           },
@@ -117,7 +117,7 @@
         "version": 1,
         "customProperties": {
           "logPersistenceMode": {
-            "default": "Default",
+            "default": "Inherit",
             "inputs": {
               "text": "Include"
             },
@@ -154,7 +154,7 @@
         "version": 1,
         "customProperties": {
           "logPersistenceMode": {
-            "default": "Default",
+            "default": "Inherit",
             "inputs": {
               "text": "Exclude"
             },

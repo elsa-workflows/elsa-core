@@ -29,10 +29,8 @@ namespace Elsa.Http.Middleware;
 /// An ASP.NET middleware component that tries to match the inbound request path to an associated workflow and then run that workflow.
 /// </summary>
 [PublicAPI]
-public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenantAccessor, IOptions<HttpActivityOptions> options)
+public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivityOptions> options)
 {
-    private readonly string _activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-
     /// <summary>
     /// Attempts to match the inbound request path to an associated workflow and then run that workflow.
     /// </summary>
@@ -349,7 +347,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
         var httpEndpointFaultHandler = serviceProvider.GetRequiredService<IHttpEndpointFaultHandler>();
         var workflowInstanceManager = serviceProvider.GetRequiredService<IWorkflowInstanceManager>();
         var workflowState = (await workflowInstanceManager.FindByIdAsync(workflowExecutionResult.WorkflowState.Id, cancellationToken))!;
-        await httpEndpointFaultHandler.HandleAsync(new HttpEndpointFaultContext(httpContext, workflowState.WorkflowState, cancellationToken));
+        await httpEndpointFaultHandler.HandleAsync(new(httpContext, workflowState.WorkflowState, cancellationToken));
         return true;
     }
 
@@ -365,14 +363,13 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
         if (bookmarkPayload.Authorize == false)
             return true;
 
-        return await httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, workflow, bookmarkPayload.Policy));
+        return await httpEndpointAuthorizationHandler.AuthorizeAsync(new(httpContext, workflow, bookmarkPayload.Policy));
     }
 
     private string ComputeBookmarkHash(IServiceProvider serviceProvider, string path, string method)
     {
         var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
         var bookmarkHasher = serviceProvider.GetRequiredService<IStimulusHasher>();
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-        return bookmarkHasher.Hash(activityTypeName, bookmarkPayload);
+        return bookmarkHasher.Hash(HttpStimulusNames.HttpEndpoint, bookmarkPayload);
     }
 }

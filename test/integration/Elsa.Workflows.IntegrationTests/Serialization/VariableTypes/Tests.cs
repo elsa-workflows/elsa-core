@@ -24,7 +24,7 @@ public class Tests
         var model = new VariablesContainer(variables);
         
         // Create a typed variable.
-        var variable = new Variable<bool>();
+        var variable = new Variable<bool>("Variable", false);
         
         // Add variable to collection.
         variables.Add(variable);

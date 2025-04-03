@@ -22,8 +22,6 @@ public class DryRun(IWorkflowInstanceFinder workflowInstanceFinder) : ElsaEndpoi
     public override async Task HandleAsync(AlterationWorkflowInstanceFilter filter, CancellationToken cancellationToken)
     {
         var workflowInstanceIds = await workflowInstanceFinder.FindAsync(filter, cancellationToken);
-
-        // Write response.
         var response = new Response(workflowInstanceIds.ToList());
         await SendOkAsync(response, cancellationToken);
     }

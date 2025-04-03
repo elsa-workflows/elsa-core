@@ -1,4 +1,5 @@
 using Elsa.Expressions.Helpers;
+using Elsa.Expressions.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -29,8 +30,9 @@ public static class DictionaryExtensions
             return false;
         }
 
-        value = ConvertValue<T>(item);
-        return true;
+        var result = TryConvertValue<T>(item);
+        value = result.Success ? (T)result.Value! : default!;
+        return result.Success;
     }
     
     public static bool TryGetValue<TKey, T>(this IDictionary<TKey, object> dictionary, IEnumerable<TKey> keys, out T value)
@@ -39,8 +41,9 @@ public static class DictionaryExtensions
         {
             if (dictionary.TryGetValue(key, out var item))
             {
-                value = ConvertValue<T>(item);
-                return true;
+                var result = TryConvertValue<T>(item);
+                value = result.Success ? (T)result.Value! : default!;
+                return result.Success;
             }    
         }
         
@@ -57,7 +60,7 @@ public static class DictionaryExtensions
     public static T? GetValueOrDefault<T>(this IDictionary<string, object> dictionary, string key, Func<T?> defaultValueFactory) => TryGetValue<T>(dictionary, key, out var value) ? value : defaultValueFactory();
     public static T? GetValueOrDefault<T>(this IDictionary<string, object> dictionary, IEnumerable<string> keys, Func<T?> defaultValueFactory) => TryGetValue<T>(dictionary, keys, out var value) ? value : defaultValueFactory();
     public static T? GetValueOrDefault<T>(this IDictionary<string, object> dictionary, string key) => GetValueOrDefault<T>(dictionary, key, () => default);
-    public static object? GetValueOrDefault(this IDictionary<string, object> dictionary, string key) => GetValueOrDefault<object>(dictionary, key, () => default);
+    public static object? GetValueOrDefault(this IDictionary<string, object> dictionary, string key) => GetValueOrDefault<object>(dictionary, key, () => null);
     
     public static T GetOrAdd<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key, Func<T> valueFactory)
     {
@@ -98,4 +101,9 @@ public static class DictionaryExtensions
     }
 
     private static T? ConvertValue<T>(object? value) => value.ConvertTo<T>();
+    
+    private static Result TryConvertValue<T>(object? value)
+    {
+        return value.TryConvertTo<T>();
+    }
 }

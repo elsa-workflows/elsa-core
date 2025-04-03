@@ -18,9 +18,11 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             DefinitionVersionId = workflowExecutionContext.Workflow.Identity.Id,
             DefinitionVersion = workflowExecutionContext.Workflow.Identity.Version,
             CorrelationId = workflowExecutionContext.CorrelationId,
+            Name = workflowExecutionContext.Name,
             ParentWorkflowInstanceId = workflowExecutionContext.ParentWorkflowInstanceId,
             Status = workflowExecutionContext.Status,
             SubStatus = workflowExecutionContext.SubStatus,
+            IsExecuting = workflowExecutionContext.IsExecuting,
             Bookmarks = workflowExecutionContext.Bookmarks,
             ExecutionLogSequence = workflowExecutionContext.ExecutionLogSequence,
             Input = GetPersistableInput(workflowExecutionContext),
@@ -45,8 +47,10 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
     {
         workflowExecutionContext.Id = state.Id;
         workflowExecutionContext.CorrelationId = state.CorrelationId;
+        workflowExecutionContext.Name = state.Name;
         workflowExecutionContext.ParentWorkflowInstanceId = state.ParentWorkflowInstanceId;
         workflowExecutionContext.SubStatus = state.SubStatus;
+        workflowExecutionContext.IsExecuting = state.IsExecuting;
         workflowExecutionContext.Bookmarks = state.Bookmarks;
         workflowExecutionContext.Output = state.Output;
         workflowExecutionContext.ExecutionLogSequence = state.ExecutionLogSequence;
@@ -145,6 +149,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
                 activityExecutionContext.ActivityState.Merge(activityExecutionContextState.ActivityState);
             
             activityExecutionContext.TransitionTo(activityExecutionContextState.Status);
+            activityExecutionContext.IsExecuting = activityExecutionContextState.IsExecuting;
             activityExecutionContext.StartedAt = activityExecutionContextState.StartedAt;
             activityExecutionContext.CompletedAt = activityExecutionContextState.CompletedAt;
             activityExecutionContext.Tag = activityExecutionContextState.Tag;
@@ -232,6 +237,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
                 Properties = activityExecutionContext.Properties,
                 ActivityState = activityExecutionContext.ActivityState,
                 Status = activityExecutionContext.Status,
+                IsExecuting = activityExecutionContext.IsExecuting,
                 StartedAt = activityExecutionContext.StartedAt,
                 CompletedAt = activityExecutionContext.CompletedAt,
                 Tag = activityExecutionContext.Tag,

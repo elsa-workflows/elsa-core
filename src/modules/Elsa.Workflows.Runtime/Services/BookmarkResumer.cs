@@ -22,7 +22,7 @@ public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bo
         var stimulusHash = stimulusHasher.Hash(activityTypeName, stimulus);
         var bookmarkFilter = new BookmarkFilter
         {
-            ActivityTypeName = activityTypeName,
+            Name = activityTypeName,
             WorkflowInstanceId = workflowInstanceId,
             Hash = stimulusHash,
         };
@@ -49,7 +49,7 @@ public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bo
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<TActivity>();
         var bookmarkFilter = new BookmarkFilter
         {
-            ActivityTypeName = activityTypeName,
+            Name = activityTypeName,
             BookmarkId = bookmarkId
         };
         return await ResumeAsync(bookmarkFilter, options, cancellationToken);

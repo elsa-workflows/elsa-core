@@ -15,10 +15,13 @@ public class RunBackgroundTasks : ITenantActivatedEvent, ITenantDeactivatedEvent
         var tenantScope = args.TenantScope;
         var backgroundTasks = tenantScope.ServiceProvider.GetServices<IBackgroundTask>();
         var backgroundTaskStarter = tenantScope.ServiceProvider.GetRequiredService<IBackgroundTaskStarter>();
+        var taskExecutor = tenantScope.ServiceProvider.GetRequiredService<ITaskExecutor>();
         
         foreach (var backgroundTask in backgroundTasks)
         {
-            var task = backgroundTaskStarter.StartAsync(backgroundTask, _cancellationTokenSource.Token);
+            var task = backgroundTaskStarter
+                .StartAsync(backgroundTask, _cancellationTokenSource.Token)
+                .ContinueWith(t => taskExecutor.ExecuteTaskAsync(backgroundTask, _cancellationTokenSource.Token), cancellationToken, TaskContinuationOptions.RunContinuationsAsynchronously, TaskScheduler.Default);
             if (!task.IsCompleted) _runningTasks.Add(task);
         }
 

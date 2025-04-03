@@ -15,10 +15,10 @@ public static class ModuleExtensions
     /// <summary>
     /// Creates a new Elsa module and adds the <see cref="ElsaFeature"/> to it.
     /// </summary>
-    public static IModule AddElsa(this IServiceCollection services, Action<IModule>? configure = default)
+    public static IModule AddElsa(this IServiceCollection services, Action<IModule>? configure = null)
     {
         var module = services.GetOrCreateModule();
-        module.Configure<AppFeature>(app => app.Configurator = configure);
+        module.Configure<AppFeature>(app => app.Configurator += configure);
         module.Apply();
         
         return module;
@@ -27,7 +27,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Configures the Elsa module.
     /// </summary>
-    public static IModule ConfigureElsa(this IServiceCollection services, Action<IModule>? configure = default)
+    public static IModule ConfigureElsa(this IServiceCollection services, Action<IModule>? configure = null)
     {
         var module = services.GetOrCreateModule();
         

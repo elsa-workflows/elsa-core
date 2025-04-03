@@ -1,7 +1,6 @@
 using Elsa.Caching;
 using Elsa.Http.Bookmarks;
 using Elsa.Workflows;
-using Elsa.Workflows.Helpers;
 
 namespace Elsa.Http.Services;
 
@@ -35,7 +34,6 @@ public class HttpWorkflowsCacheManager(ICacheManager cache, IHasher bookmarkHash
     public string ComputeBookmarkHash(string path, string method)
     {
         var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-        return bookmarkHasher.Hash(activityTypeName, bookmarkPayload);
+        return bookmarkHasher.Hash(HttpStimulusNames.HttpEndpoint, bookmarkPayload);
     }
 }

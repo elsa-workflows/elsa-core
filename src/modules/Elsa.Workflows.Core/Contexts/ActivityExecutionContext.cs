@@ -44,11 +44,10 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         ActivityState = new ChangeTrackingDictionary<string, object>(Taint);
         ActivityInput = new ChangeTrackingDictionary<string, object>(Taint);
         WorkflowExecutionContext = workflowExecutionContext;
-        _parentActivityExecutionContext = parentActivityExecutionContext;
+        ParentActivityExecutionContext = parentActivityExecutionContext;
         var expressionExecutionContextProps = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(workflowExecutionContext, workflowExecutionContext.Input);
         expressionExecutionContextProps[ExpressionExecutionContextExtensions.ActivityKey] = activity;
         ExpressionExecutionContext = new(workflowExecutionContext.ServiceProvider, new(), parentActivityExecutionContext?.ExpressionExecutionContext ?? workflowExecutionContext.ExpressionExecutionContext, expressionExecutionContextProps, Taint, CancellationToken);
-        ;
         Activity = activity;
         ActivityDescriptor = activityDescriptor;
         StartedAt = startedAt;
@@ -85,6 +84,17 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     public bool IsCompleted => Status is ActivityStatus.Completed or ActivityStatus.Canceled;
 
     /// <summary>
+    /// Gets or sets a value indicating whether the activity is actively executing. 
+    /// </summary>
+    /// <remarks>
+    /// This flag is set to <c>true</c> immediately before the activity begins execution 
+    /// and is set to <c>false</c> once the execution is completed. 
+    /// It can be used to determine if an activity was in-progress in case of unexpected 
+    /// application termination, allowing the system to retry execution upon restarting. 
+    /// </remarks>
+    public bool IsExecuting { get; set; }
+
+    /// <summary>
     /// The workflow execution context. 
     /// </summary>
     public WorkflowExecutionContext WorkflowExecutionContext { get; }
@@ -114,7 +124,20 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         {
             var containerVariables = (Activity as IVariableContainer)?.Variables ?? Enumerable.Empty<Variable>();
             var dynamicVariables = DynamicVariables;
-            return containerVariables.Concat(dynamicVariables).DistinctBy(x => x.Name);
+            var mergedVariables = new Dictionary<string, Variable>();
+            
+            foreach (var containerVariable in containerVariables)
+            {
+                var name = !string.IsNullOrEmpty(containerVariable.Name) ? containerVariable.Name : containerVariable.Id;
+                mergedVariables[name] = containerVariable;
+            }
+            
+            foreach (var dynamicVariable in dynamicVariables)
+            {
+                var name = !string.IsNullOrEmpty(dynamicVariable.Name) ? dynamicVariable.Name : dynamicVariable.Id;
+                mergedVariables[name] = dynamicVariable;
+            }
+            return mergedVariables.Values;
         }
     }
 
@@ -152,6 +175,11 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
             _status = value;
             Taint();
         }
+    }
+
+    public IDisposable EnterExecution()
+    {
+        return new WorkflowExecutionState(this);
     }
 
     /// <summary>
@@ -376,7 +404,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = null, bool includeActivityInstanceId = true)
     {
         foreach (var payload in payloads)
-            CreateBookmark(new CreateBookmarkArgs
+            CreateBookmark(new()
             {
                 Stimulus = payload,
                 Callback = callback,
@@ -412,7 +440,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(ExecuteActivityDelegate callback, IDictionary<string, string>? metadata = null)
     {
-        return CreateBookmark(new CreateBookmarkArgs
+        return CreateBookmark(new()
         {
             Callback = callback,
             Metadata = metadata
@@ -427,9 +455,9 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <param name="includeActivityInstanceId">Whether or not the activity instance ID should be included in the bookmark payload.</param>
     /// <param name="customProperties">Custom properties to associate with the bookmark.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(object stimulus, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = null)
+    public Bookmark CreateBookmark(object stimulus, ExecuteActivityDelegate? callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = null)
     {
-        return CreateBookmark(new CreateBookmarkArgs
+        return CreateBookmark(new()
         {
             Stimulus = stimulus,
             Callback = callback,
@@ -447,7 +475,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(object stimulus, bool includeActivityInstanceId, IDictionary<string, string>? customProperties = null)
     {
-        return CreateBookmark(new CreateBookmarkArgs
+        return CreateBookmark(new()
         {
             Stimulus = stimulus,
             IncludeActivityInstanceId = includeActivityInstanceId,

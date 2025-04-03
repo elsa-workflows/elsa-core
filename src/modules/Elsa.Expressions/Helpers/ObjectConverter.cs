@@ -1,6 +1,7 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.SymbolStore;
 using System.Dynamic;
 using System.Globalization;
 using System.Text.Encodings.Web;
@@ -26,6 +27,8 @@ public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = 
 /// </summary>
 public static class ObjectConverter
 {
+    public static bool StrictMode = true; // Set to false to revert to original flexible behavior.
+
     /// <summary>
     /// Attempts to convert the source value into the destination type.
     /// </summary>
@@ -106,8 +109,19 @@ public static class ObjectConverter
         {
             if (jsonNode is not JsonArray jsonArray)
             {
+                var valueKind = jsonNode.GetValueKind();
+                if (valueKind == JsonValueKind.Null)
+                    return null;
+
+                if (valueKind == JsonValueKind.Undefined)
+                    return null;
+
                 return underlyingTargetType switch
                 {
+                    { } t when t == typeof(bool) && valueKind == JsonValueKind.False => false,
+                    { } t when t == typeof(bool) && valueKind == JsonValueKind.True => true,
+                    { } t when t.IsNumericType() && valueKind == JsonValueKind.Number => ConvertTo(jsonNode.ToString(), t),
+                    { } t when t == typeof(string) && valueKind == JsonValueKind.String => jsonNode.ToString(),
                     { } t when t == typeof(string) => jsonNode.ToString(),
                     { } t when t == typeof(ExpandoObject) && jsonNode.GetValueKind() == JsonValueKind.Object => JsonSerializer.Deserialize<ExpandoObject>(jsonNode.ToJsonString()),
                     { } t when t != typeof(object) || converterOptions?.DeserializeJsonObjectToObject == true => jsonNode.Deserialize(targetType, serializerOptions),
@@ -187,14 +201,22 @@ public static class ObjectConverter
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);
 
         if (targetTypeConverter.CanConvertFrom(underlyingSourceType))
-            return targetTypeConverter.IsValid(value)
-                ? targetTypeConverter.ConvertFrom(null, CultureInfo.InvariantCulture, value)
-                : targetType.GetDefaultValue();
+        {
+            var isValid = targetTypeConverter.IsValid(value);
+
+            if (isValid)
+                return targetTypeConverter.ConvertFrom(null, CultureInfo.InvariantCulture, value);
+        }
 
         var sourceTypeConverter = TypeDescriptor.GetConverter(underlyingSourceType);
 
         if (sourceTypeConverter.CanConvertTo(underlyingTargetType))
-            return sourceTypeConverter.ConvertTo(value, underlyingTargetType);
+        {
+            var isValid = targetTypeConverter.IsValid(value);
+
+            if (isValid)
+                return sourceTypeConverter.ConvertTo(value, underlyingTargetType);
+        }
 
         if (underlyingTargetType.IsEnum)
         {
@@ -248,14 +270,42 @@ public static class ObjectConverter
                     return collection;
                 }
             }
+
+            if (underlyingTargetType.IsArray)
+            {
+                var executedEnumerable = enumerable.Cast<object>().ToList();
+                var underlyingTargetElementType = underlyingTargetType.GetElementType()!;
+                var array = Array.CreateInstance(underlyingTargetElementType, executedEnumerable.Count);
+                var index = 0;
+                foreach (var item in executedEnumerable)
+                {
+                    var convertedItem = ConvertTo(item, underlyingTargetElementType);
+                    array.SetValue(convertedItem, index);
+                    index++;
+                }
+
+                return array;
+            }
         }
 
         try
         {
             return Convert.ChangeType(value, underlyingTargetType, CultureInfo.InvariantCulture);
         }
+        catch (FormatException e)
+        {
+            return ReturnOrThrow(e);
+        }
         catch (InvalidCastException e)
         {
+            return ReturnOrThrow(e);
+        }
+
+        object ReturnOrThrow(Exception e)
+        {
+            if (!StrictMode)
+                return value;
+
             throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
         }
     }

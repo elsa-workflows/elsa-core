@@ -28,7 +28,6 @@ public class DefaultActivitySchedulerMiddleware(WorkflowMiddlewareDelegate next,
         var scheduler = context.Scheduler;
 
         context.TransitionTo(WorkflowSubStatus.Executing);
-        
         await ConditionallyCommitStateAsync(context, WorkflowLifetimeEvent.WorkflowExecuting);
         
         while (scheduler.HasAny)

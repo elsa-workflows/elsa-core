@@ -17,12 +17,8 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
     public async Task TestJsonObjectPassedAsJsonElement()
     {
         var javaScriptEvaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, new MemoryRegister());
-        var jsonVariable = new Variable<object>
-        {
-            Name = "JsonVariable"
-        };
-
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, new());
+        var jsonVariable = new Variable<object>("JsonVariable", "");
         var jsonString = "{\"name\": \"John\", \"age\": 30}";
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
@@ -36,12 +32,8 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
     public async Task TestJsonArrayPassedAsJsonElement()
     {
         var javaScriptEvaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, new MemoryRegister());
-        var jsonVariable = new Variable<object>
-        {
-            Name = "JsonVariable"
-        };
-
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, new());
+        var jsonVariable = new Variable<object>("JsonVariable", "");
         var jsonString = "[1, 2, 3, 4, 5, 6]";
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
@@ -55,12 +47,8 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
     public async Task TestStringPassedAsJsonElement()
     {
         var javaScriptEvaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, new MemoryRegister());
-        var jsonVariable = new Variable<object>
-        {
-            Name = "JsonVariable"
-        };
-
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, new());
+        var jsonVariable = new Variable<object>("JsonVariable", "");
         var jsonString = "\"I'm just a string\"";
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
@@ -74,12 +62,8 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
     public async Task TestBooleanPassedAsJsonElement()
     {
         var javaScriptEvaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, new MemoryRegister());
-        var jsonVariable = new Variable<object>
-        {
-            Name = "JsonVariable"
-        };
-
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, new());
+        var jsonVariable = new Variable<object>("JsonVariable", "");
         var jsonString = "false";
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
@@ -93,11 +77,8 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
     public async Task TestNestedJsonPassedAsJsonElement()
     {
         var javaScriptEvaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, new MemoryRegister());
-        var jsonVariable = new Variable<object>
-        {
-            Name = "JsonVariable"
-        };
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, new());
+        var jsonVariable = new Variable<object>("JsonVariable", "");
 
         var jsonString = @"
         {

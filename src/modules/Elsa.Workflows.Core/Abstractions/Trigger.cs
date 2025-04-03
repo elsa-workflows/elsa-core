@@ -6,12 +6,12 @@ namespace Elsa.Workflows;
 public abstract class Trigger : Activity, ITrigger
 {
     /// <inheritdoc />
-    protected Trigger(string? source = default, int? line = default) : base(source, line)
+    protected Trigger(string? source = null, int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    protected Trigger(string activityType, int version = 1, string? source = default, int? line = default) : base(activityType, version, source, line)
+    protected Trigger(string activityType, int version = 1, string? source = null, int? line = null) : base(activityType, version, source, line)
     {
     }
 
@@ -39,11 +39,11 @@ public abstract class Trigger : Activity, ITrigger
 
 public abstract class Trigger<TResult> : Activity<TResult>, ITrigger
 {
-    protected Trigger(string? source = default, int? line = default) : base(source, line)
+    protected Trigger(string? source = null, int? line = null) : base(source, line)
     {
     }
 
-    protected Trigger(string activityType, int version = 1, string? source = default, int? line = default) : base(activityType, version, source, line)
+    protected Trigger(string activityType, int version = 1, string? source = null, int? line = null) : base(activityType, version, source, line)
     {
     }
 

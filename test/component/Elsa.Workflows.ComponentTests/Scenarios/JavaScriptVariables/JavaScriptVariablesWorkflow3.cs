@@ -11,6 +11,6 @@ public class JavaScriptVariablesWorkflow3 : WorkflowBase
     {
         builder.WithDefinitionId(DefinitionId);
         builder.WithVariable("MagicNumber", 3).WithWorkflowStorage();
-        builder.Root = new RunJavaScript("setVariable('MagicNumber', 42)", default, default);
+        builder.Root = new RunJavaScript("setVariable('MagicNumber', 42)", null, null);
     }
 }

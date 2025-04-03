@@ -3,6 +3,7 @@ using System.Text.Json;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
+using Elsa.Http.Extensions;
 using Elsa.Http.UIHints;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
@@ -10,7 +11,6 @@ using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Http;
@@ -152,34 +152,18 @@ public class HttpEndpoint : Trigger<HttpRequest>
     public Output<IDictionary<string, object>> Headers { get; set; } = null!;
 
     /// <inheritdoc />
-    protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context) => GetBookmarkPayloads(context.ExpressionExecutionContext);
+    protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context)
+    {
+        context.TriggerName = HttpStimulusNames.HttpEndpoint;
+        return GetBookmarkPayloads(context.ExpressionExecutionContext);
+    }
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var path = Path.Get(context);
-
-        if (path.Contains("//"))
-            throw new RoutePatternException(path, "Path cannot contain double slashes (//)");
-
-        if (!context.IsTriggerOfWorkflow())
-        {
-            context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext), includeActivityInstanceId: false, callback: OnResumeAsync);
-            return;
-        }
-
-        var httpContextAccessor = context.GetRequiredService<IHttpContextAccessor>();
-        var httpContext = httpContextAccessor.HttpContext;
-
-        if (httpContext == null)
-        {
-            // We're executing in a non-HTTP context (e.g. in a virtual actor).
-            // Create a bookmark to allow the invoker to export the state and resume execution from there.
-            context.CreateBookmark(OnResumeAsync, BookmarkMetadata.HttpCrossBoundary);
-            return;
-        }
-
-        await HandleRequestAsync(context, httpContext);
+        var methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get };
+        context.WaitForHttpRequest(path, methods, OnResumeAsync);
     }
 
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)
@@ -191,15 +175,18 @@ public class HttpEndpoint : Trigger<HttpRequest>
         {
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
-            context.CreateBookmark(OnResumeAsync, BookmarkMetadata.HttpCrossBoundary);
+            context.CreateCrossBoundaryBookmark();
             return;
         }
 
-        await HandleRequestAsync(context, httpContext);
+        await HandleRequestAsync(context);
     }
 
-    private async Task HandleRequestAsync(ActivityExecutionContext context, HttpContext httpContext)
+    private async Task HandleRequestAsync(ActivityExecutionContext context)
     {
+        var httpContextAccessor = context.GetRequiredService<IHttpContextAccessor>();
+        var httpContext = httpContextAccessor.HttpContext!;
+        
         // Provide the received HTTP request as output.
         var request = httpContext.Request;
         context.Set(Result, request);
@@ -225,7 +212,6 @@ public class HttpEndpoint : Trigger<HttpRequest>
         // Handle Form Fields
         if (request.HasFormContentType)
         {
-
             var formFields = request.Form.ToObjectDictionary();
 
             ParsedContent.Set(context, formFields);

@@ -1,6 +1,7 @@
 using Elsa.Dapper.Contracts;
 using Elsa.Dapper.HostedServices;
 using Elsa.Dapper.Migrations.Management;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using FluentMigrator.Runner;
@@ -11,13 +12,8 @@ namespace Elsa.Dapper.Features;
 /// <summary>
 /// Configures migrations.
 /// </summary>
-public class DapperMigrationsFeature : FeatureBase
+public class DapperMigrationsFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public DapperMigrationsFeature(IModule module) : base(module)
-    {
-    }
-
     /// <summary>
     /// Configures migrations to use SQLite.
     /// </summary>
@@ -48,11 +44,6 @@ public class DapperMigrationsFeature : FeatureBase
     {
         Services.AddFluentMigratorCore();
         Services.ConfigureRunner(ConfigureRunner);
-    }
-
-    /// <inheritdoc />
-    public override void ConfigureHostedServices()
-    {
-        ConfigureHostedService<RunMigrationsHostedService>(-1);
+        Services.AddStartupTask<RunMigrationsStartupTask>();
     }
 }

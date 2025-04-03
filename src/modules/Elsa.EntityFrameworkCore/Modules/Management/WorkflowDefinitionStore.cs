@@ -13,12 +13,13 @@ using Elsa.Common.Entities;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 
 /// <inheritdoc />
 [UsedImplicitly]
-public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, WorkflowDefinition> store, IPayloadSerializer payloadSerializer)
+public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, WorkflowDefinition> store, IPayloadSerializer payloadSerializer, ILogger<EFCoreWorkflowDefinitionStore> logger)
     : IWorkflowDefinitionStore
 {
     /// <inheritdoc />
@@ -178,8 +179,15 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
-        if (!string.IsNullOrWhiteSpace(json))
-            data = payloadSerializer.Deserialize<WorkflowDefinitionState>(json);
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(json))
+                data = payloadSerializer.Deserialize<WorkflowDefinitionState>(json);
+        }
+        catch (Exception exp)
+        {
+            logger.LogError(exp, "Could not deserialize workflow definition state: {DefinitionId}. Reverting to default state", entity.DefinitionId);
+        }
 
         entity.Options = data.Options;
         entity.Variables = data.Variables;

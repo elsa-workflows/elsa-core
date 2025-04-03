@@ -66,13 +66,7 @@ public static class VariableExtensions
     
     public static void Set(this Variable variable, ActivityExecutionContext context, object? value)
     {
-        // Validate type compatibility.
-        if (!variable.TryParseValue(value, out var parsedValue))
-        {
-            var variableType = variable.GetVariableType();
-            throw new InvalidCastException($"The value '{value}' is not compatible with the variable '{variable.Name}' of type '{variableType.FullName}'.");
-        }
-        
+        var parsedValue = variable.ParseValue(value);
         // Set the value.
         ((MemoryBlockReference)variable).Set(context, parsedValue);
     }
@@ -83,7 +77,13 @@ public static class VariableExtensions
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
     public static object? ParseValue(this Variable variable, object? value)
     {
-        var genericType = variable.GetType().GenericTypeArguments.FirstOrDefault();
+        var genericType = variable.GetType();
+        return ParseValue(genericType, value);
+    }
+    
+    public static object? ParseValue(Type type, object? value)
+    {
+        var genericType = type.GenericTypeArguments.FirstOrDefault();
         var converterOptions = new ObjectConverterOptions(SerializerOptions);
         return genericType == null ? value : value?.ConvertTo(genericType, converterOptions);
     }

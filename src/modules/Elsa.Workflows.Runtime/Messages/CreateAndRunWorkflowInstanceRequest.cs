@@ -12,17 +12,27 @@ public class CreateAndRunWorkflowInstanceRequest
     /// <summary>
     /// The ID of the workflow definition version to create an instance of.
     /// </summary>
-    public WorkflowDefinitionHandle WorkflowDefinitionHandle { get; set; } = default!;
+    public WorkflowDefinitionHandle WorkflowDefinitionHandle { get; set; } = null!;
 
     /// <summary>
     /// The correlation ID of the workflow, if any.
     /// </summary>
     public string? CorrelationId { get; set; }
+    
+    /// <summary>
+    /// The name of the workflow instance to be created.
+    /// </summary>
+    public string? Name { get; set; }
 
     /// <summary>
     /// The input to the workflow instance, if any.
     /// </summary>
     public IDictionary<string, object>? Input { get; set; }
+
+    /// <summary>
+    /// A collection of custom variables used within the workflow instance.
+    /// </summary>
+    public IDictionary<string, object>? Variables { get; set; }
 
     /// <summary>
     /// Any properties to assign to the workflow instance.

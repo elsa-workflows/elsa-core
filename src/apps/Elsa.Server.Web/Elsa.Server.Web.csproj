@@ -1,11 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <ItemGroup>
-        <ProjectReference Include="..\..\modules\Elsa.Agents.Activities\Elsa.Agents.Activities.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Agents.Api\Elsa.Agents.Api.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Agents.Persistence.EntityFrameworkCore.MySql\Elsa.Agents.Persistence.EntityFrameworkCore.MySql.csproj" Condition=" '$(TargetFramework)' != 'net9.0' " />
-        <ProjectReference Include="..\..\modules\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.AzureServiceBus\Elsa.AzureServiceBus.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.ProtoActor\Elsa.Caching.Distributed.ProtoActor.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.MySql\Elsa.EntityFrameworkCore.MySql.csproj" Condition=" '$(TargetFramework)' != 'net9.0' " />
@@ -28,6 +24,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Sql.SqlServer\Elsa.Sql.SqlServer.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Sql\Elsa.Sql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Webhooks\Elsa.Webhooks.csproj" />
         <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\common\Elsa.DropIns\Elsa.DropIns.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Alterations.MassTransit\Elsa.Alterations.MassTransit.csproj" />
@@ -71,6 +68,13 @@
         <PackageReference Include="DistributedLock.Redis" />
         <PackageReference Include="FluentStorage.Azure.Blobs" />
         <PackageReference Include="Hangfire.PostgreSql" />
+        <PackageReference Include="OpenTelemetry" />
+        <PackageReference Include="OpenTelemetry.Exporter.Console" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" />
         <PackageReference Include="Proto.Cluster.Kubernetes" />
         <PackageReference Include="Grpc.Net.Client" />
         <PackageReference Include="Proto.Persistence.Sqlite" />

@@ -71,8 +71,8 @@ public partial class WorkflowExecutionContext : IExecutionContext
         _activityExecutionContexts = new List<ActivityExecutionContext>();
         Scheduler = serviceProvider.GetRequiredService<IActivitySchedulerFactory>().CreateScheduler();
         IdentityGenerator = serviceProvider.GetRequiredService<IIdentityGenerator>();
-        Input = input != null ? new Dictionary<string, object>(input, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-        Properties = properties != null ? new Dictionary<string, object>(properties, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        Input = input != null ? new(input, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        Properties = properties != null ? new(properties, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         ExecuteDelegate = executeDelegate;
         TriggerActivityId = triggerActivityId;
         CreatedAt = createdAt;
@@ -193,7 +193,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             MemoryRegister = workflowGraph.Workflow.CreateRegister()
         };
 
-        workflowExecutionContext.ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, workflowExecutionContext.MemoryRegister, cancellationToken: cancellationToken);
+        workflowExecutionContext.ExpressionExecutionContext = new(serviceProvider, workflowExecutionContext.MemoryRegister, cancellationToken: cancellationToken);
 
         await workflowExecutionContext.SetWorkflowGraphAsync(workflowGraph);
         return workflowExecutionContext;
@@ -241,6 +241,17 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// The current sub status of the workflow.
     public WorkflowSubStatus SubStatus { get; internal set; }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the workflow instance is actively executing. 
+    /// </summary>
+    /// <remarks>
+    /// This flag is set to <c>true</c> immediately before the workflow begins execution 
+    /// and is set to <c>false</c> once the execution is completed. 
+    /// It can be used to determine if a workflow instance was in-progress in case of unexpected 
+    /// application termination, allowing the system to retry execution upon restarting. 
+    /// </remarks>
+    public bool IsExecuting { get; set; }
+
     /// The root <see cref="MemoryRegister"/> associated with the execution context.
     public MemoryRegister MemoryRegister { get; private set; } = null!;
 
@@ -252,6 +263,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
     /// An application-specific identifier associated with the execution context.
     public string? CorrelationId { get; set; }
+
+    /// Gets or sets the name of the workflow instance.
+    public string? Name { get; set; }
 
     /// The ID of the workflow instance that triggered this instance.
     public string? ParentWorkflowInstanceId { get; set; }

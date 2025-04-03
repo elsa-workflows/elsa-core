@@ -25,7 +25,7 @@ public class StaticCheckListOptionsProvider : IPropertyUIHandler
 
         var props = new CheckListProps
         {
-            CheckList = new CheckList
+            CheckList = new()
             {
                 Items = selectListItems.ToList() 
             }

@@ -26,7 +26,7 @@ public class TestApplicationBuilder
     public TestApplicationBuilder(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
-        _services = new ServiceCollection();
+        _services = new();
 
         _services
             .AddSingleton(testOutputHelper)

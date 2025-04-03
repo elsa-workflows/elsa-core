@@ -35,23 +35,15 @@ public class FlowJoin : Activity, IJoinNode
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var flowchartContext = context.ParentActivityExecutionContext!;
-        var flowchart = (Flowchart)flowchartContext.Activity;
-        var inboundActivities = flowchart.Connections.LeftInboundActivities(this).ToList();
-        var flowScope = flowchartContext.GetProperty(Flowchart.ScopeProperty, () => new FlowScope());
-        var executionCount = flowScope.GetExecutionCount(this);
         var mode = context.Get(Mode);
 
         switch (mode)
         {
             case FlowJoinMode.WaitAll:
             {
-                // If all left-inbound activities have executed, complete & continue.
-                var haveAllInboundActivitiesExecuted = inboundActivities.All(x => flowScope.GetExecutionCount(x) > executionCount);
-
-                if (haveAllInboundActivitiesExecuted)
+                if (Flowchart.CanWaitAllProceed(context))
                 {
-                    await CancelActivitiesInInboundPathAsync(flowchart, flowchartContext, context);
+                    Flowchart.CancelAncestorActivatesAsync(context);
                     await context.CompleteActivityAsync();
                 }
 
@@ -59,23 +51,10 @@ public class FlowJoin : Activity, IJoinNode
             }
             case FlowJoinMode.WaitAny:
             {
-                await CancelActivitiesInInboundPathAsync(flowchart, flowchartContext, context);
+                Flowchart.CancelAncestorActivatesAsync(context);
                 await context.CompleteActivityAsync();
                 break;
             }
         }
-    }
-
-    private async Task CancelActivitiesInInboundPathAsync(Flowchart flowchart, ActivityExecutionContext flowchartContext, ActivityExecutionContext joinContext)
-    {
-        // Cancel all activities between this join activity and its most recent fork.
-        var connections = flowchart.Connections;
-        var workflowExecutionContext = joinContext.WorkflowExecutionContext;
-        var inboundActivities = connections.LeftAncestorActivities(this).Select(x => workflowExecutionContext.FindNodeByActivity(x)).Select(x => x!.Activity).ToList();
-        var inboundActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => inboundActivities.Contains(x.Activity) && x.ParentActivityExecutionContext == flowchartContext).ToList();
-
-        // Cancel each inbound activity.
-        foreach (var activityExecutionContext in inboundActivityExecutionContexts)
-            await activityExecutionContext.CancelActivityAsync();
     }
 }

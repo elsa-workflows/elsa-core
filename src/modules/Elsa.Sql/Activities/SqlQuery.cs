@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Runtime.CompilerServices;
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Sql.Contracts;
 using Elsa.Sql.UIHints;
@@ -45,6 +46,7 @@ public class SqlQuery : Activity
     /// </summary>
     [Input(
         Description = "Query to run against the database.",
+        DefaultSyntax = "Sql",
         UIHint = InputUIHints.CodeEditor,
         UIHandler = typeof(SqlCodeOptionsProvider)
     )]
@@ -59,15 +61,28 @@ public class SqlQuery : Activity
         IsSerializable = false)]
     public Output<DataSet?> Results { get; set; } = default!;
 
+
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        var query = Query.GetOrDefault(context);
+
+        // If no query was specified, there's nothing to do.
+        if (string.IsNullOrWhiteSpace(query))
+            return;
+
+        // Get and execute the SQL evaluator.
+        var evaluator = context.GetRequiredService<ISqlEvaluator>();
+        var evaluatedQuery = await evaluator.EvaluateAsync(query, context.ExpressionExecutionContext, new ExpressionEvaluatorOptions(), context.CancellationToken);
+
+        // Create client
         var factory = context.GetRequiredService<ISqlClientFactory>();
         var client = factory.CreateClient(Client.GetOrDefault(context), ConnectionString.GetOrDefault(context));
 
-        var results = await client.ExecuteQueryAsync(Query.GetOrDefault(context));
+        // Execute query
+        var results = await client.ExecuteQueryAsync(evaluatedQuery);
         context.Set(Results, results);
 
         await CompleteAsync(context);

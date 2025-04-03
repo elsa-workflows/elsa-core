@@ -8,7 +8,9 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Humanizer;
+using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -137,8 +139,7 @@ public static class ExpressionExecutionContextExtensions
     /// <summary>
     /// Creates a named variable in the context.
     /// </summary>
-    public static Variable CreateVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = null,
-        Action<MemoryBlock>? configure = null)
+    public static Variable CreateVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = null, Action<MemoryBlock>? configure = null)
     {
         var existingVariable = context.GetVariable(name, localScopeOnly: true);
 
@@ -149,12 +150,14 @@ public static class ExpressionExecutionContextExtensions
         {
             StorageDriverType = storageDriverType ?? typeof(WorkflowInstanceStorageDriver)
         };
+        
+        var parsedValue = variable.ParseValue(value);
 
         // Find the first parent context that has a variable container.
         // If not found, use the current context.
         var variableContainerContext = context.GetVariableContainerContext();
 
-        variableContainerContext.Set(variable, value, configure);
+        variableContainerContext.Set(variable, parsedValue, configure);
         return variable;
     }
 
@@ -184,7 +187,8 @@ public static class ExpressionExecutionContextExtensions
         var contextWithVariable = context.FindContextContainingBlock(variable.Id) ?? context;
 
         // Set the value on the variable.
-        variable.Set(contextWithVariable, value, configure);
+        var parsedValue = variable.ParseValue(value);
+        variable.Set(contextWithVariable, parsedValue, configure);
 
         // Return the variable.
         return variable;
@@ -199,7 +203,8 @@ public static class ExpressionExecutionContextExtensions
         {
             // Set the value on the output.
             var outputMemoryBlockReference = output.MemoryBlockReference();
-            context.Set(outputMemoryBlockReference, value, configure);
+            var parsedValue = output.ParseValue(value);
+            context.Set(outputMemoryBlockReference, parsedValue, configure);
 
             // If the referenced output is a workflow output definition, set the value on the workflow execution context.
             var workflowExecutionContext = context.GetWorkflowExecutionContext();

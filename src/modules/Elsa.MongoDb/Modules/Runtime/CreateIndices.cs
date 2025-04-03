@@ -95,14 +95,14 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                     new List<CreateIndexModel<StoredBookmark>>
                     {
                         new(indexBuilder
-                            .Ascending(x => x.ActivityTypeName)
+                            .Ascending(x => x.Name)
                             .Ascending(x => x.Hash)),
                         new(indexBuilder
-                            .Ascending(x => x.ActivityTypeName)
+                            .Ascending(x => x.Name)
                             .Ascending(x => x.Hash)
                             .Ascending(x => x.WorkflowInstanceId)),
                         new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
-                        new(indexBuilder.Ascending(x => x.ActivityTypeName)),
+                        new(indexBuilder.Ascending(x => x.Name)),
                         new(indexBuilder.Ascending(x => x.Hash)),
                         new(indexBuilder.Ascending(x => x.TenantId))
                     },

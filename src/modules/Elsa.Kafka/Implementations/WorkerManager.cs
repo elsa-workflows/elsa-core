@@ -112,7 +112,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
 
     public Task BindBookmarksAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
     {
-        var bookmarkList = bookmarks.Where(x => x.ActivityTypeName == MessageReceivedActivityTypeName).ToList();
+        var bookmarkList = bookmarks.Where(x => x.Name == MessageReceivedActivityTypeName).ToList();
 
         if (bookmarkList.Count == 0)
             return Task.CompletedTask;
@@ -136,7 +136,7 @@ public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : 
     
     public Task UnbindBookmarksAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
     {
-        var bookmarkList = bookmarks.Where(x => x.ActivityTypeName == MessageReceivedActivityTypeName).ToList();
+        var bookmarkList = bookmarks.Where(x => x.Name == MessageReceivedActivityTypeName).ToList();
         var removedBookmarkIds = bookmarkList.Select(x => x.Id).ToList();
 
         foreach (var bookmark in bookmarkList)

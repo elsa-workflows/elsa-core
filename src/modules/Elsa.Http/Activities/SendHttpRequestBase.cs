@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
@@ -7,6 +8,7 @@ using Elsa.Workflows.Attributes;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
+using Polly;
 
 namespace Elsa.Http;
 
@@ -14,12 +16,12 @@ namespace Elsa.Http;
 /// Base class for activities that send HTTP requests.
 /// </summary>
 [Output(IsSerializable = false)]
-public abstract class SendHttpRequestBase(string? source = default, int? line = default) : Activity<HttpResponseMessage>(source, line)
+public abstract class SendHttpRequestBase(string? source = null, int? line = null) : Activity<HttpResponseMessage>(source, line)
 {
     /// <summary>
     /// The URL to send the request to.
     /// </summary>
-    [Input(Order = 0)] public Input<Uri?> Url { get; set; } = default!;
+    [Input(Order = 0)] public Input<Uri?> Url { get; set; } = null!;
 
     /// <summary>
     /// The HTTP method to use when sending the request.
@@ -43,7 +45,7 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
         Description = "The content to send with the request. Can be a string, an object, a byte array or a stream.",
         Order = 2
         )]
-    public Input<object?> Content { get; set; } = default!;
+    public Input<object?> Content { get; set; } = null!;
 
     /// <summary>
     /// The content type to use when sending the request.
@@ -54,7 +56,7 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
         UIHint = InputUIHints.DropDown,
         Order = 3
     )]
-    public Input<string?> ContentType { get; set; } = default!;
+    public Input<string?> ContentType { get; set; } = null!;
 
     /// <summary>
     /// The Authorization header value to send with the request.
@@ -66,7 +68,7 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
         CanContainSecrets = true,
         Order = 4
     )]
-    public Input<string?> Authorization { get; set; } = default!;
+    public Input<string?> Authorization { get; set; } = null!;
 
     /// <summary>
     /// A value that allows to add the Authorization header without validation.
@@ -76,7 +78,7 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
         Category = "Security",
         Order = 5
     )]
-    public Input<bool> DisableAuthorizationHeaderValidation { get; set; } = default!;
+    public Input<bool> DisableAuthorizationHeaderValidation { get; set; } = null!;
 
     /// <summary>
     /// The headers to send along with the request.
@@ -90,22 +92,27 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
     public Input<HttpHeaders?> RequestHeaders { get; set; } = new(new HttpHeaders());
 
     /// <summary>
+    /// Indicates whether resiliency mechanisms should be enabled for the HTTP request.
+    /// </summary>
+    public Input<bool> EnableResiliency { get; set; } = null!;
+
+    /// <summary>
     /// The HTTP response status code
     /// </summary>
     [Output(Description = "The HTTP response status code")]
-    public Output<int> StatusCode { get; set; } = default!;
+    public Output<int> StatusCode { get; set; } = null!;
 
     /// <summary>
     /// The parsed content, if any.
     /// </summary>
     [Output(Description = "The parsed content, if any.")]
-    public Output<object?> ParsedContent { get; set; } = default!;
+    public Output<object?> ParsedContent { get; set; } = null!;
 
     /// <summary>
     /// The response headers that were received.
     /// </summary>
     [Output(Description = "The response headers that were received.")]
-    public Output<HttpHeaders?> ResponseHeaders { get; set; } = default!;
+    public Output<HttpHeaders?> ResponseHeaders { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -130,15 +137,15 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
 
     private async Task TrySendAsync(ActivityExecutionContext context)
     {
-        var request = PrepareRequest(context);
         var logger = (ILogger)context.GetRequiredService(typeof(ILogger<>).MakeGenericType(GetType()));
         var httpClientFactory = context.GetRequiredService<IHttpClientFactory>();
         var httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequestBase));
         var cancellationToken = context.CancellationToken;
+        var resiliencyEnabled = EnableResiliency.GetOrDefault(context, () => false);
 
         try
         {
-            var response = await httpClient.SendAsync(request, cancellationToken);
+            var response = await SendRequestAsync();
             var parsedContent = await ParseContentAsync(context, response);
             var statusCode = (int)response.StatusCode;
             var responseHeaders = new HttpHeaders(response.Headers);
@@ -155,7 +162,7 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
             logger.LogWarning(e, "An error occurred while sending an HTTP request");
             context.AddExecutionLogEntry("Error", e.Message, payload: new
             {
-                StackTrace = e.StackTrace
+                e.StackTrace
             });
             context.JournalData.Add("Error", e.Message);
             await HandleRequestExceptionAsync(context, e);
@@ -165,10 +172,29 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
             logger.LogWarning(e, "An error occurred while sending an HTTP request");
             context.AddExecutionLogEntry("Error", e.Message, payload: new
             {
-                StackTrace = e.StackTrace
+                e.StackTrace
             });
             context.JournalData.Add("Cancelled", true);
             await HandleTaskCanceledExceptionAsync(context, e);
+        }
+
+        return;
+
+        async Task<HttpResponseMessage> SendRequestAsync()
+        {
+            if (resiliencyEnabled)
+            {
+                var pipeline = BuildResiliencyPipeline(context);
+                return await pipeline.ExecuteAsync(async ct => await SendRequestAsyncCore(ct), cancellationToken);
+            }
+
+            return await SendRequestAsyncCore();
+        }
+
+        async Task<HttpResponseMessage> SendRequestAsyncCore(CancellationToken ct = default)
+        {
+            var request = PrepareRequest(context);
+            return await httpClient.SendAsync(request, ct);
         }
     }
 
@@ -237,5 +263,47 @@ public abstract class SendHttpRequestBase(string? source = default, int? line = 
 
         var parsedContentType = new System.Net.Mime.ContentType(contentType);
         return factories.FirstOrDefault(httpContentFactory => httpContentFactory.SupportedContentTypes.Any(c => c == parsedContentType.MediaType)) ?? new JsonContentFactory();
+    }
+
+    private ResiliencePipeline<HttpResponseMessage> BuildResiliencyPipeline(ActivityExecutionContext context)
+    {
+        // Docs: https://www.pollydocs.org/strategies/retry
+        var pipelineBuilder = new ResiliencePipelineBuilder<HttpResponseMessage>()
+            .AddRetry(new()
+            {
+                ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                    .Handle<TimeoutException>() // Specific timeout exception
+                    .Handle<HttpRequestException>() // Any HTTP exception
+                    .HandleResult(response => IsTransientStatusCode(response.StatusCode)),
+                MaxRetryAttempts = 8,
+                UseJitter = false, // If enabled, adds a random value between -25% and +25% of the calculated Delay, except if BackoffType is Exponential, where a DecorrelatedJitterBackoffV2 formula is used for jitter calculation. That formula is based on Polly.Contrib.WaitAndRetry.
+                Delay = TimeSpan.FromSeconds(1),
+                BackoffType = DelayBackoffType.Exponential // Delay * 2^AttemptNumber, e.g. [ 2s, 4s, 8s, 16s ]. Total secs: 2 + 4 + 8 + 16 = 30
+                // If BackoffType is Exponential, then the calculated Delay is multiplied by a random value between -25% and +25% of the calculated Delay, except if BackoffType is Exponential, where a DecorrelatedJitterBackoffV2 formula is used for jitter calculation. That formula is based on Polly.Contrib.WaitAndRetry.
+            });
+
+        return pipelineBuilder.Build();
+    }
+
+    // Helper method to identify transient status codes.
+    private static bool IsTransientStatusCode(HttpStatusCode? statusCode)
+    {
+        if (statusCode is null)
+        {
+            // No status code -> Assume network failure, worth retrying.
+            return true;
+        }
+
+        return statusCode.Value switch
+        {
+            HttpStatusCode.RequestTimeout => true, // 408
+            HttpStatusCode.TooManyRequests => true, // 429 (if no Retry-After header is respected)
+            HttpStatusCode.InternalServerError => true, // 500
+            HttpStatusCode.BadGateway => true, // 502
+            HttpStatusCode.ServiceUnavailable => true, // 503
+            HttpStatusCode.GatewayTimeout => true, // 504
+            HttpStatusCode.Conflict => true, // 409 - Can be transient in concurrency cases
+            _ => false // Other errors are not transient
+        };
     }
 }

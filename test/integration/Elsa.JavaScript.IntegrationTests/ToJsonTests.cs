@@ -31,10 +31,7 @@ public class ToJsonTests(ITestOutputHelper testOutputHelper)
         var javaScriptEvaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
         var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, new MemoryRegister());
         var unicodeString = UnicodeRangeGenerator.GenerateUnicodeString();
-        var payloadVariable = new Variable<object>
-        {
-            Name = "Payload"
-        };
+        var payloadVariable = new Variable<object>("Payload", null!);
         var payload = new
         {
             Text = unicodeString

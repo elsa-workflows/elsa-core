@@ -133,7 +133,7 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
         _tenantScopesDictionary![tenant] = scope;
 
         using (tenantAccessor.PushContext(tenant))
-            await tenantEvents.TenantActivatedAsync(new TenantActivatedEventArgs(tenant, scope, cancellationToken));
+            await tenantEvents.TenantActivatedAsync(new(tenant, scope, cancellationToken));
     }
 
     private async Task UnregisterTenantAsync(Tenant tenant, CancellationToken cancellationToken = default)
@@ -143,7 +143,7 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
             _tenantsDictionary!.Remove(tenant.Id, out _);
 
             using (tenantAccessor.PushContext(tenant))
-                await tenantEvents.TenantDeactivatedAsync(new TenantDeactivatedEventArgs(tenant, scope, cancellationToken));
+                await tenantEvents.TenantDeactivatedAsync(new(tenant, scope, cancellationToken));
         }
     }
 }

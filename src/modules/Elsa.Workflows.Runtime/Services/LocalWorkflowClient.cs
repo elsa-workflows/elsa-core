@@ -35,6 +35,7 @@ public class LocalWorkflowClient(
         {
             WorkflowInstanceId = WorkflowInstanceId,
             CorrelationId = request.CorrelationId,
+            Name = request.Name,
             ParentWorkflowInstanceId = request.ParentId,
             Input = request.Input,
             Properties = request.Properties
@@ -58,6 +59,7 @@ public class LocalWorkflowClient(
         {
             Properties = request.Properties,
             CorrelationId = request.CorrelationId,
+            Name = request.Name,
             Input = request.Input,
             WorkflowDefinitionHandle = request.WorkflowDefinitionHandle,
             ParentId = request.ParentId
@@ -66,6 +68,7 @@ public class LocalWorkflowClient(
         return await RunInstanceAsync(workflowInstance, new()
         {
             Input = request.Input,
+            Variables = request.Variables,
             Properties = request.Properties,
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle
@@ -119,6 +122,7 @@ public class LocalWorkflowClient(
         var runWorkflowOptions = new RunWorkflowOptions
         {
             Input = request.Input,
+            Variables = request.Variables,
             Properties = request.Properties,
             BookmarkId = request.BookmarkId,
             TriggerActivityId = request.TriggerActivityId,
@@ -148,6 +152,7 @@ public class LocalWorkflowClient(
         {
             WorkflowInstanceId = WorkflowInstanceId,
             CorrelationId = request.CorrelationId,
+            Name = request.Name,
             ParentWorkflowInstanceId = request.ParentId,
             Input = request.Input,
             Properties = request.Properties
