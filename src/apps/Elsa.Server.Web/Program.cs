@@ -481,7 +481,7 @@ services
 
                 if (massTransitBroker == MassTransitBroker.AzureServiceBus)
                 {
-                    massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
+                    massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = (context, bus) =>
                     {
                         bus.PrefetchCount = 50;
                         bus.LockDuration = TimeSpan.FromMinutes(5);
@@ -493,7 +493,7 @@ services
 
                 if (massTransitBroker == MassTransitBroker.RabbitMq)
                 {
-                    massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
+                    massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = (context, bus) =>
                     {
                         bus.PrefetchCount = 50;
                         bus.Durable = true;

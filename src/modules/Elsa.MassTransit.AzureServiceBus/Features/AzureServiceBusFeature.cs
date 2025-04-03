@@ -53,7 +53,7 @@ public class AzureServiceBusFeature : FeatureBase
     /// <summary>
     /// A delegate that configures the Azure Service Bus transport options.
     /// </summary>
-    public Action<IServiceBusBusFactoryConfigurator>? ConfigureServiceBus { get; set; }
+    public Action<IBusRegistrationContext, IServiceBusBusFactoryConfigurator>? ConfigureServiceBus { get; set; }
 
     /// <summary>
     /// A delegate to configure <see cref="AzureServiceBusOptions"/>.
@@ -103,7 +103,7 @@ public class AzureServiceBusFeature : FeatureBase
                     configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
 
                     configurator.UseServiceBusMessageScheduler();
-                    ConfigureServiceBus?.Invoke(configurator);
+                    ConfigureServiceBus?.Invoke(context, configurator);
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
 
                     foreach (var consumer in temporaryConsumers)

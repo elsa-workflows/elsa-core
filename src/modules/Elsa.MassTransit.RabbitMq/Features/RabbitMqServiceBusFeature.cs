@@ -39,7 +39,7 @@ public class RabbitMqServiceBusFeature : FeatureBase
     /// <summary>
     /// Configures the RabbitMQ bus.
     /// </summary>
-    public Action<IRabbitMqBusFactoryConfigurator>? ConfigureServiceBus { get; set; }
+    public Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? ConfigureServiceBus { get; set; }
 
     /// <inheritdoc />
     public override void Configure()
@@ -68,7 +68,7 @@ public class RabbitMqServiceBusFeature : FeatureBase
                         configurator.PrefetchCount = options.PrefetchCount.Value;
                     configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
 
-                    ConfigureServiceBus?.Invoke(configurator);
+                    ConfigureServiceBus?.Invoke(context, configurator);
 
                     foreach (var consumer in temporaryConsumers)
                     {
