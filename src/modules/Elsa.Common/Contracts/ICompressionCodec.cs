@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Management;
+namespace Elsa.Common;
 
 /// <summary>
 /// Represents a compression strategy.
