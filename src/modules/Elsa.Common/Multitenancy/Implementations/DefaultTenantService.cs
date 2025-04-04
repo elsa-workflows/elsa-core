@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.Multitenancy;
@@ -19,7 +20,7 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
     public async Task<Tenant?> FindAsync(string id, CancellationToken cancellationToken = default)
     {
         var dictionary = await GetTenantsDictionaryAsync(cancellationToken);
-        return dictionary.TryGetValue(id, out var tenant) ? tenant : null;
+        return dictionary.TryGetValue(id.EmptyIfNull(), out var tenant) ? tenant : null;
     }
 
     public async Task<Tenant?> FindAsync(TenantFilter filter, CancellationToken cancellationToken = default)
@@ -31,7 +32,7 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
     public async Task<Tenant> GetAsync(string id, CancellationToken cancellationToken = default)
     {
         var dictionary = await GetTenantsDictionaryAsync(cancellationToken);
-        return dictionary[id];
+        return dictionary[id.EmptyIfNull()];
     }
 
     public async Task<Tenant> GetAsync(TenantFilter filter, CancellationToken cancellationToken = default)
@@ -76,7 +77,7 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
             var tenantsProvider = scope.ServiceProvider.GetRequiredService<ITenantsProvider>();
             var currentTenants = await GetTenantsDictionaryAsync(cancellationToken);
             var currentTenantIds = currentTenants.Keys;
-            var newTenants = (await tenantsProvider.ListAsync(cancellationToken)).ToDictionary(x => x.Id);
+            var newTenants = (await tenantsProvider.ListAsync(cancellationToken)).ToDictionary(x => x.Id.EmptyIfNull());
             var newTenantIds = newTenants.Keys;
             var removedTenantIds = currentTenantIds.Except(newTenantIds).ToArray();
             var addedTenantIds = newTenantIds.Except(currentTenantIds).ToArray();
@@ -129,21 +130,21 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
     private async Task RegisterTenantAsync(Tenant tenant, CancellationToken cancellationToken = default)
     {
         var scope = tenantScopeFactory.CreateScope(tenant);
-        _tenantsDictionary![tenant.Id] = tenant;
+        _tenantsDictionary![tenant.Id.EmptyIfNull()] = tenant;
         _tenantScopesDictionary![tenant] = scope;
 
         using (tenantAccessor.PushContext(tenant))
-            await tenantEvents.TenantActivatedAsync(new TenantActivatedEventArgs(tenant, scope, cancellationToken));
+            await tenantEvents.TenantActivatedAsync(new(tenant, scope, cancellationToken));
     }
 
     private async Task UnregisterTenantAsync(Tenant tenant, CancellationToken cancellationToken = default)
     {
         if (_tenantScopesDictionary!.Remove(tenant, out var scope))
         {
-            _tenantsDictionary!.Remove(tenant.Id, out _);
+            _tenantsDictionary!.Remove(tenant.Id.EmptyIfNull(), out _);
 
             using (tenantAccessor.PushContext(tenant))
-                await tenantEvents.TenantDeactivatedAsync(new TenantDeactivatedEventArgs(tenant, scope, cancellationToken));
+                await tenantEvents.TenantDeactivatedAsync(new(tenant, scope, cancellationToken));
         }
     }
 }
