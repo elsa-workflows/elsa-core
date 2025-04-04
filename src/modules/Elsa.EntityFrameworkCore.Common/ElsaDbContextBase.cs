@@ -1,4 +1,6 @@
 using Elsa.Common.Entities;
+using Elsa.Common.Multitenancy;
+using Elsa.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,6 +45,12 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         
         // ReSharper disable once VirtualMemberCallInConstructor
         Schema = !string.IsNullOrWhiteSpace(_elsaDbContextOptions?.SchemaName) ? _elsaDbContextOptions.SchemaName : ElsaSchema;
+
+        var tenantAccessor = serviceProvider.GetService<ITenantAccessor>();
+        var tenantId = tenantAccessor?.Tenant?.Id;
+
+        if (!string.IsNullOrWhiteSpace(tenantId))
+            TenantId = tenantId.NullIfEmpty();
     }
 
     /// <inheritdoc/>
