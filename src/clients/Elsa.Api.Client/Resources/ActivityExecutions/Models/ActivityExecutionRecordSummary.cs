@@ -10,22 +10,22 @@ public class ActivityExecutionRecordSummary : Entity
     /// <summary>
     /// Gets or sets the workflow instance ID.
     /// </summary>
-    public string WorkflowInstanceId { get; set; } = default!;
+    public string WorkflowInstanceId { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the activity ID.
     /// </summary>
-    public string ActivityId { get; set; } = default!;
+    public string ActivityId { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the activity node ID.
     /// </summary>
-    public string ActivityNodeId { get; set; } = default!;
+    public string ActivityNodeId { get; set; } = null!;
 
     /// <summary>
     /// The type of the activity.
     /// </summary>
-    public string ActivityType { get; set; } = default!;
+    public string ActivityType { get; set; } = null!;
 
     /// <summary>
     /// The version of the activity type.
@@ -62,7 +62,7 @@ public class ActivityExecutionRecordSummary : Entity
     /// </summary>
     public static ActivityExecutionRecordSummary FromRecord(ActivityExecutionRecord record)
     {
-        return new ActivityExecutionRecordSummary
+        return new()
         {
             Id = record.Id,
             WorkflowInstanceId = record.WorkflowInstanceId,

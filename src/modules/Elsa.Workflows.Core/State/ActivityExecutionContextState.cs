@@ -62,6 +62,11 @@ public class ActivityExecutionContextState
     public bool IsExecuting { get; set; }
 
     /// <summary>
+    /// The number of faults recorded by this activity for itself and descendants.
+    /// </summary>
+    public int FaultCount { get; set; }
+
+    /// <summary>
     /// The time at which the activity execution began.
     /// </summary>
     public DateTimeOffset StartedAt { get; set; }

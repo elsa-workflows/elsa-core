@@ -8,12 +8,12 @@ public class ActivityExecutionStats
     /// <summary>
     /// Gets or sets the ID of the activity.
     /// </summary>
-    public string ActivityId { get; set; } = default!;
+    public string ActivityId { get; set; } = null!;
     
     /// <summary>
     /// Gets or sets the node ID of the activity.
     /// </summary>
-    public string ActivityNodeId { get; set; } = default!;
+    public string ActivityNodeId { get; set; } = null!;
     
     /// <summary>
     /// Gets or sets the number of uncompleted executions.
@@ -39,4 +39,9 @@ public class ActivityExecutionStats
     /// Gets or sets a value whether this activity is faulted.
     /// </summary>
     public bool IsFaulted { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total count of faults aggregated from the activity execution and its descendants.
+    /// </summary>
+    public int AggregateFaultCount { get; set; }
 }

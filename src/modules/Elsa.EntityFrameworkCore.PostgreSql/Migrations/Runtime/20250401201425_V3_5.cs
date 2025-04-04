@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_5 : Migration
@@ -22,20 +22,25 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Triggers",
-                type: "varchar(255)",
+                type: "text",
                 nullable: true,
                 oldClrType: typeof(string),
-                oldType: "varchar(255)")
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
+                oldType: "text");
 
             migrationBuilder.AddColumn<string>(
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Bookmarks",
-                type: "varchar(255)",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
+                type: "text",
+                nullable: true);
+
+            migrationBuilder.AddColumn<int>(
+                name: "AggregateFaultCount",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                type: "integer",
+                nullable: false,
+                defaultValue: 0);
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_Name",
@@ -79,25 +84,21 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "Bookmarks");
 
-            migrationBuilder.UpdateData(
+            migrationBuilder.DropColumn(
+                name: "AggregateFaultCount",
                 schema: _schema.Schema,
-                table: "Triggers",
-                keyColumn: "Name",
-                keyValue: null,
-                column: "Name",
-                value: "");
+                table: "ActivityExecutionRecords");
 
             migrationBuilder.AlterColumn<string>(
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Triggers",
-                type: "varchar(255)",
+                type: "text",
                 nullable: false,
+                defaultValue: "",
                 oldClrType: typeof(string),
-                oldType: "varchar(255)",
-                oldNullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
+                oldType: "text",
+                oldNullable: true);
         }
     }
 }
