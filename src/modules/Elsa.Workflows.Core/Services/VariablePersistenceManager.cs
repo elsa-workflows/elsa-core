@@ -100,11 +100,12 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
     }
 
     /// <inheritdoc />
-    public async Task DeleteVariablesAsync(ActivityExecutionContext context)
+    public async Task DeleteVariablesAsync(ActivityExecutionContext context, IEnumerable<string>? includeTags = default)
     {
         var register = context.ExpressionExecutionContext.Memory;
         var variableList = GetLocalVariables(context).ToList();
         var cancellationToken = context.CancellationToken;
+        var includeTagsList = includeTags?.ToList();
 
         foreach (var variable in variableList)
         {
@@ -116,6 +117,9 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
 
             if (driver == null)
                 continue;
+            
+            if (includeTagsList != null && !driver.Tags.Any(includeTagsList.Contains))
+                continue;
 
             var id = GetStateId(variable);
             var storageDriverContext = new StorageDriverContext(context, variable, cancellationToken);
@@ -125,7 +129,7 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
     }
 
     /// <inheritdoc />
-    public async Task DeleteVariablesAsync(WorkflowExecutionContext context)
+    public async Task DeleteVariablesAsync(WorkflowExecutionContext context, IEnumerable<string>? includeTags = default)
     {
         var activityContexts = context.ActivityExecutionContexts.ToList();
 

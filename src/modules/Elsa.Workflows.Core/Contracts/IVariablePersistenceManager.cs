@@ -17,14 +17,20 @@ public interface IVariablePersistenceManager
     /// Persists all persistable variables from the specified <see cref="WorkflowExecutionContext"/>. 
     /// </summary>
     Task SaveVariablesAsync(WorkflowExecutionContext context);
-
+    
     /// <summary>
     /// Deletes the specified variables from the <see cref="ActivityExecutionContext"/>.
     /// </summary>
-    Task DeleteVariablesAsync(ActivityExecutionContext context);
+    /// <param name="context"></param>
+    /// <param name="includeTags"></param>
+    /// <returns></returns>
+    Task DeleteVariablesAsync(ActivityExecutionContext context, IEnumerable<string>? includeTags = default);
     
     /// <summary>
     /// Deletes the specified variables from the <see cref="WorkflowExecutionContext"/>.
     /// </summary>
-    Task DeleteVariablesAsync(WorkflowExecutionContext context);
+    /// <param name="context"></param>
+    /// <param name="includeTags"></param>
+    /// <returns></returns>
+    Task DeleteVariablesAsync(WorkflowExecutionContext context, IEnumerable<string>? includeTags = default);
 }
