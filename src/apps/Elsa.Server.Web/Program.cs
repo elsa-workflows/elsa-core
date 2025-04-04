@@ -86,7 +86,7 @@ using StackExchange.Redis;
 
 // ReSharper disable RedundantAssignment
 const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
-const bool useDbContextPooling = true;
+const bool useDbContextPooling = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
@@ -105,9 +105,9 @@ const bool useTenantsFromConfiguration = true;
 const bool useSecrets = false;
 const bool disableVariableWrappers = false;
 const bool disableVariableCopying = false;
-const bool useManualOtelInstrumentation = true;
+const bool useManualOtelInstrumentation = false;
 
-ObjectConverter.StrictMode = true; // Default.
+ObjectConverter.StrictMode = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
