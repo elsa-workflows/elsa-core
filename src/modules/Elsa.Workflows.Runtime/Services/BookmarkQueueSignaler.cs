@@ -37,7 +37,7 @@ public class BookmarkQueueSignaler : IBookmarkQueueSignaler
         lock (_lock)
         {
             // Reset the TCS for the next wait
-            _tcs = new TaskCompletionSource<object?>();
+            _tcs = new();
         }
     }
 }
