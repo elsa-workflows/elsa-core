@@ -81,7 +81,7 @@ public class MassTransitFeature : FeatureBase
                 var category = categoryAttr?.Category ?? activityAttr?.Category ?? "MassTransit";
                 var descriptionAttr = messageType.GetCustomAttribute<DescriptionAttribute>();
                 var description = descriptionAttr?.Description ?? activityAttr?.Description;
-                options.VariableDescriptors.Add(new VariableDescriptor(messageType, category, description));
+                options.VariableDescriptors.Add(new(messageType, category, description));
             }
         });
     }

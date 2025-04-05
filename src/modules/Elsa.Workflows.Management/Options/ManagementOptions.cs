@@ -16,7 +16,7 @@ public class ManagementOptions
     /// <summary>
     /// A collection of types that are available to the system as variable types.
     /// </summary>
-    public HashSet<VariableDescriptor> VariableDescriptors { get; set; } = new();
+    public HashSet<VariableDescriptor> VariableDescriptors { get; set; } = new(new VariableDescriptor.VariableDescriptorComparer());
 
     /// <summary>
     /// The format to use for compressing workflow state.

@@ -560,6 +560,7 @@ services
             elsa.UseMassTransit(massTransit =>
             {
                 massTransit.DisableConsumers = appRole == ApplicationRole.Api;
+                massTransit.AddMessageType<OrderReceived>();
 
                 if (massTransitBroker == MassTransitBroker.AzureServiceBus)
                 {
