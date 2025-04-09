@@ -47,7 +47,7 @@ public class ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncid
         var activity = context.Activity;
         var exceptionState = ExceptionState.FromException(e);
         var now = systemClock.UtcNow;
-        var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, exceptionState, now);
+        var incident = new ActivityIncident(activity.Id, activity.NodeId ,activity.Type, e.Message, exceptionState, now);
         context.WorkflowExecutionContext.Incidents.Add(incident);
     }
 
