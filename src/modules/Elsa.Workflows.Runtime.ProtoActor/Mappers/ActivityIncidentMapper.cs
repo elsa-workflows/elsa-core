@@ -32,6 +32,7 @@ public class ActivityIncidentMapper(ExceptionMapper exceptionMapper)
         return new()
         {
             ActivityId = source.ActivityId,
+            ActivityNodeId = source.ActivityNodeId,
             ActivityType = source.ActivityType,
             Message = source.Message,
             Exception = exceptionMapper.Map(source.Exception),
@@ -47,6 +48,7 @@ public class ActivityIncidentMapper(ExceptionMapper exceptionMapper)
         return new()
         {
             ActivityId = source.ActivityId,
+            ActivityNodeId = source.ActivityNodeId,
             ActivityType = source.ActivityType,
             Message = source.Message,
             Exception = exceptionMapper.Map(source.Exception),
