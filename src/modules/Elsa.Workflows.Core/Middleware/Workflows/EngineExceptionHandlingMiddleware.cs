@@ -30,7 +30,7 @@ public class EngineExceptionHandlingMiddleware(WorkflowMiddlewareDelegate next, 
             var exceptionState = ExceptionState.FromException(e);
             var now = systemClock.UtcNow;
             var activity = context.Workflow;
-            var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, exceptionState, now);
+            var incident = new ActivityIncident(activity.Id, activity.NodeId, activity.Type, e.Message, exceptionState, now);
             
             // No state change as the workflow / activities status should be leading.
             // We will however be adding an incident to make the issue visible.

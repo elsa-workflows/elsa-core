@@ -55,7 +55,7 @@ public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
             var activity = context.Activity;
             var exceptionState = ExceptionState.FromException(e);
             var now = _systemClock.UtcNow;
-            var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, exceptionState, now);
+            var incident = new ActivityIncident(activity.Id, activity.NodeId, activity.Type, e.Message, exceptionState, now);
             context.WorkflowExecutionContext.Incidents.Add(incident);
 
             var strategy = await _incidentStrategyResolver.ResolveStrategyAsync(context);

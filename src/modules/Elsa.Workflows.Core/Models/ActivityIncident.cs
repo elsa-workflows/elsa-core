@@ -20,13 +20,15 @@ public class ActivityIncident
     /// Initializes a new instance of the <see cref="ActivityIncident"/> class.
     /// </summary>
     /// <param name="activityId">The ID of the activity that caused the incident.</param>
+    /// <param name="activityNodeId">The Node ID of the activity that caused the incident.</param>
     /// <param name="activityType">The type of the activity that caused the incident.</param>
     /// <param name="message">The message of the incident.</param>
     /// <param name="exception">The exception that caused the incident.</param>
     /// <param name="timestamp">The timestamp of the incident.</param>
-    public ActivityIncident(string activityId, string activityType, string message, ExceptionState? exception, DateTimeOffset timestamp)
+    public ActivityIncident(string activityId, string activityNodeId, string activityType, string message, ExceptionState? exception, DateTimeOffset timestamp)
     {
         ActivityId = activityId;
+        ActivityNodeId = activityNodeId;
         ActivityType = activityType;
         Message = message;
         Exception = exception;
@@ -35,6 +37,8 @@ public class ActivityIncident
 
     /// <summary>The ID of the activity that caused the incident.</summary>
     public string ActivityId { get; init; } = default!;
+    /// <summary>The Node ID of the activity that caused the incident.</summary>
+    public string ActivityNodeId { get; init; } = default!;
 
     /// <summary>The type of the activity that caused the incident.</summary>
     public string ActivityType { get; init; } = default!;
