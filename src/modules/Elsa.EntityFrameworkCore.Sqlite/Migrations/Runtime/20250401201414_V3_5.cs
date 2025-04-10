@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_5 : Migration
@@ -22,17 +22,25 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Triggers",
-                type: "nvarchar(450)",
+                type: "TEXT",
                 nullable: true,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(450)");
+                oldType: "TEXT");
 
             migrationBuilder.AddColumn<string>(
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Bookmarks",
-                type: "nvarchar(450)",
+                type: "TEXT",
                 nullable: true);
+
+            migrationBuilder.AddColumn<int>(
+                name: "AggregateFaultCount",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                type: "INTEGER",
+                nullable: false,
+                defaultValue: 0);
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_Name",
@@ -76,15 +84,20 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "Bookmarks");
 
+            migrationBuilder.DropColumn(
+                name: "AggregateFaultCount",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords");
+
             migrationBuilder.AlterColumn<string>(
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Triggers",
-                type: "nvarchar(450)",
+                type: "TEXT",
                 nullable: false,
                 defaultValue: "",
                 oldClrType: typeof(string),
-                oldType: "nvarchar(450)",
+                oldType: "TEXT",
                 oldNullable: true);
         }
     }

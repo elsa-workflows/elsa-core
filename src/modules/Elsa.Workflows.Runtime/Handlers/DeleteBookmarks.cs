@@ -14,6 +14,9 @@ public class DeleteBookmarks(IBookmarkManager bookmarkManager) : INotificationHa
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowInstancesDeleting notification, CancellationToken cancellationToken)
     {
-        await bookmarkManager.DeleteManyAsync(new BookmarkFilter { WorkflowInstanceIds = notification.Ids }, cancellationToken);
+        await bookmarkManager.DeleteManyAsync(new()
+        {
+            WorkflowInstanceIds = notification.Ids
+        }, cancellationToken);
     }
 }

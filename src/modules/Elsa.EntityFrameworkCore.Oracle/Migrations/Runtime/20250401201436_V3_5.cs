@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_5 : Migration
@@ -22,17 +22,25 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Triggers",
-                type: "TEXT",
+                type: "NVARCHAR2(450)",
                 nullable: true,
                 oldClrType: typeof(string),
-                oldType: "TEXT");
+                oldType: "NVARCHAR2(450)");
 
             migrationBuilder.AddColumn<string>(
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Bookmarks",
-                type: "TEXT",
+                type: "NVARCHAR2(450)",
                 nullable: true);
+
+            migrationBuilder.AddColumn<int>(
+                name: "AggregateFaultCount",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                type: "NUMBER(10)",
+                nullable: false,
+                defaultValue: 0);
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_Name",
@@ -76,15 +84,20 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "Bookmarks");
 
+            migrationBuilder.DropColumn(
+                name: "AggregateFaultCount",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords");
+
             migrationBuilder.AlterColumn<string>(
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Triggers",
-                type: "TEXT",
+                type: "NVARCHAR2(450)",
                 nullable: false,
                 defaultValue: "",
                 oldClrType: typeof(string),
-                oldType: "TEXT",
+                oldType: "NVARCHAR2(450)",
                 oldNullable: true);
         }
     }

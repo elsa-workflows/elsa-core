@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
+using Elsa.Common;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
@@ -10,6 +11,7 @@ using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Signals;
+using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
@@ -79,8 +81,10 @@ public static partial class ActivityExecutionContextExtensions
     /// <param name="storageDriverType">The type of storage driver to use for the variable.</param>
     /// <param name="configure">A callback to configure the memory block.</param>
     /// <returns>The created <see cref="Variable"/>.</returns>
-    public static Variable CreateVariable(this ActivityExecutionContext context, string name, object? value, Type? storageDriverType = null, Action<MemoryBlock>? configure = null) =>
-        context.ExpressionExecutionContext.CreateVariable(name, value, storageDriverType, configure);
+    public static Variable CreateVariable(this ActivityExecutionContext context, string name, object? value, Type? storageDriverType = null, Action<MemoryBlock>? configure = null)
+    {
+        return context.ExpressionExecutionContext.CreateVariable(name, value, storageDriverType, configure);
+    }
 
     /// <summary>
     /// Sets a workflow variable by name.
@@ -103,7 +107,7 @@ public static partial class ActivityExecutionContextExtensions
             context.SetVariable(name, value);
             return predefinedVariable;
         }
-        
+
         // No predefined variable exists, so we will add a dynamic variable to the current container in scope.
         var container = context.FindParentWithVariableContainer();
 
@@ -298,6 +302,47 @@ public static partial class ActivityExecutionContextExtensions
 
         await context.SendSignalAsync(new CancelSignal());
         await publisher.SendAsync(new ActivityCancelled(context));
+    }
+
+    /// <summary>
+    /// Marks the current activity as faulted, records an exception, and transitions its status to <see cref="ActivityStatus.Faulted"/>.
+    /// An incident is logged, and the fault count for the activity and its ancestor activities is incremented.
+    /// </summary>
+    /// <param name="context">The <see cref="ActivityExecutionContext"/> representing the execution context of the current activity.</param>
+    /// <param name="e">The exception to be recorded as the cause of the fault.</param>
+    public static void Fault(this ActivityExecutionContext context, Exception e)
+    {
+        context.Exception = e;
+        context.TransitionTo(ActivityStatus.Faulted);
+        var activity = context.Activity;
+        var exceptionState = ExceptionState.FromException(e);
+        var systemClock = context.GetRequiredService<ISystemClock>();
+        var now = systemClock.UtcNow;
+        var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, exceptionState, now);
+        context.WorkflowExecutionContext.Incidents.Add(incident);
+        context.AggregateFaultCount++;
+        
+        var ancestors = context.GetAncestors();
+
+        foreach (var ancestor in ancestors)
+            ancestor.AggregateFaultCount++;
+
+        context.TransitionTo(ActivityStatus.Faulted);
+    }
+
+    /// <summary>
+    /// Recovers the current activity from a faulted state by resetting fault counts and transitioning the activity to the running status.
+    /// </summary>
+    public static void RecoverFromFault(this ActivityExecutionContext context)
+    {
+        context.AggregateFaultCount = 0;
+
+        var ancestors = context.GetAncestors();
+
+        foreach (var ancestor in ancestors)
+            ancestor.AggregateFaultCount--;
+
+        context.TransitionTo(ActivityStatus.Running);
     }
 
     /// <summary>

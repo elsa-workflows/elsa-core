@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20250320185742_V3_5")]
+    [Migration("20250401201414_V3_5")]
     partial class V3_5
     {
         /// <inheritdoc />
@@ -62,6 +62,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasColumnType("TEXT");
 
                     b.Property<int>("ActivityTypeVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AggregateFaultCount")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset?>("CompletedAt")

@@ -12,22 +12,22 @@ public class ActivityExecutionRecord : Entity, ILogRecord
     /// <summary>
     /// Gets or sets the workflow instance ID.
     /// </summary>
-    public string WorkflowInstanceId { get; set; } = default!;
+    public string WorkflowInstanceId { get; set; } = null!;
     
     /// <summary>
     /// Gets or sets the activity ID.
     /// </summary>
-    public string ActivityId { get; set; } = default!;
+    public string ActivityId { get; set; } = null!;
     
     /// <summary>
     /// Gets or sets the activity node ID.
     /// </summary>
-    public string ActivityNodeId { get; set; } = default!;
+    public string ActivityNodeId { get; set; } = null!;
 
     /// <summary>
     /// The type of the activity.
     /// </summary>
-    public string ActivityType { get; set; } = default!;
+    public string ActivityType { get; set; } = null!;
 
     /// <summary>
     /// The version of the activity type.
@@ -78,6 +78,11 @@ public class ActivityExecutionRecord : Entity, ILogRecord
     /// Gets or sets the status of the activity.
     /// </summary>
     public ActivityStatus Status { get; set; }
+
+    /// <summary>
+    /// Gets or sets the aggregated count of faults encountered during the execution of the activity instance and its descendants.
+    /// </summary>
+    public int AggregateFaultCount { get; set; }
     
     /// <summary>
     /// Gets or sets the time at which the activity execution completed.
