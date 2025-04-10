@@ -37,6 +37,17 @@ public class ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncid
         }
     }
 
+    private void LogExceptionAndTransition(ActivityExecutionContext context, Exception e)
+    {
+        context.Exception = e;
+        context.TransitionTo(ActivityStatus.Faulted);
+        var activity = context.Activity;
+        var exceptionState = ExceptionState.FromException(e);
+        var now = systemClock.UtcNow;
+        var incident = new ActivityIncident(activity.Id, activity.NodeId ,activity.Type, e.Message, exceptionState, now);
+        context.WorkflowExecutionContext.Incidents.Add(incident);
+    }
+
     private async Task HandleIncidentAsync(ActivityExecutionContext context)
     {
         var strategy = await incidentStrategyResolver.ResolveStrategyAsync(context);
