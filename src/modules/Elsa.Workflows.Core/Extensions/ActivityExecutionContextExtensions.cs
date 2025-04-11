@@ -318,7 +318,7 @@ public static partial class ActivityExecutionContextExtensions
         var exceptionState = ExceptionState.FromException(e);
         var systemClock = context.GetRequiredService<ISystemClock>();
         var now = systemClock.UtcNow;
-        var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, exceptionState, now);
+        var incident = new ActivityIncident(activity.Id, activity.NodeId, activity.Type, e.Message, exceptionState, now);
         context.WorkflowExecutionContext.Incidents.Add(incident);
         context.AggregateFaultCount++;
         
