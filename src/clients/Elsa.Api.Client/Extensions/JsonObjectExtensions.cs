@@ -24,7 +24,7 @@ public static class JsonObjectExtensions
     /// <returns>A <see cref="JsonObject"/> representing the specified value.</returns>
     public static JsonNode SerializeToNode(this object value, JsonSerializerOptions? options = null)
     {
-        options ??= new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        options ??= new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
         return JsonSerializer.SerializeToNode(value, options)!;
     }
@@ -37,7 +37,7 @@ public static class JsonObjectExtensions
     /// <returns>A <see cref="JsonObject"/> representing the specified value.</returns>
     public static JsonArray SerializeToArray(this object value, JsonSerializerOptions? options = null)
     {
-        options ??= new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        options ??= new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
         return JsonSerializer.SerializeToNode(value, options)!.AsArray();
     }
@@ -50,7 +50,7 @@ public static class JsonObjectExtensions
     /// <returns>A <see cref="JsonObject"/> representing the specified value.</returns>
     public static JsonArray SerializeToArray<T>(this IEnumerable<T> value, JsonSerializerOptions? options = null)
     {
-        options ??= new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        options ??= new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
         return JsonSerializer.SerializeToNode(value, options)!.AsArray();
     }
