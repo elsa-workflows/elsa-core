@@ -55,7 +55,7 @@ public class ConfigureEngineWithVariablesAndInputOutputAccessors(IOptions<JintOp
         if (context.IsContainedWithinCompositeActivity())
             return;
 
-        var inputs = context.GetWorkflowInputs().Where(x => x.Name.IsValidVariableName()).ToDictionary(x => x.Name);
+        var inputs = context.GetWorkflowInputs().Where(x => x.Name.IsValidVariableName()).ToDictionary(x => x.Name, StringComparer.OrdinalIgnoreCase);
 
         if (!context.TryGetWorkflowExecutionContext(out var workflowExecutionContext))
             return;
