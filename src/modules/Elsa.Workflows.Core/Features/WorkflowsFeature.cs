@@ -43,27 +43,27 @@ public class WorkflowsFeature : FeatureBase
     public WorkflowsFeature(IModule module) : base(module)
     {
     }
-    
+
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IStandardInStreamProvider"/>.
     /// </summary>
     public Func<IServiceProvider, IStandardInStreamProvider> StandardInStreamProvider { get; set; } = _ => new StandardInStreamProvider(Console.In);
-    
+
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IStandardOutStreamProvider"/>.
     /// </summary>
     public Func<IServiceProvider, IStandardOutStreamProvider> StandardOutStreamProvider { get; set; } = _ => new StandardOutStreamProvider(Console.Out);
-    
+
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IIdentityGenerator"/>.
     /// </summary>
     public Func<IServiceProvider, IIdentityGenerator> IdentityGenerator { get; set; } = sp => new RandomLongIdentityGenerator();
-    
+
     /// <summary>
     /// A handler for committing workflow execution state.
     /// </summary>
     public Func<IServiceProvider, ICommitStateHandler> CommitStateHandler { get; set; } = sp => new NoopCommitStateHandler();
-    
+
     /// <summary>
     /// A factory that instantiates a concrete <see cref="ILoggerStateGenerator{WorkflowExecutionContext}"/>.
     /// </summary>
@@ -80,7 +80,7 @@ public class WorkflowsFeature : FeatureBase
     public Action<IWorkflowExecutionPipelineBuilder> WorkflowExecutionPipeline { get; set; } = builder => builder
         .UseExceptionHandling()
         .UseDefaultActivityScheduler();
-    
+
     /// <summary>
     /// A delegate to configure the <see cref="IActivityExecutionPipeline"/>.
     /// </summary>
@@ -94,7 +94,7 @@ public class WorkflowsFeature : FeatureBase
         StandardInStreamProvider = provider;
         return this;
     }
-    
+
     /// <summary>
     /// Fluent method to set <see cref="StandardOutStreamProvider"/>.
     /// </summary>
