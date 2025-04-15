@@ -5,6 +5,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 using Activity = System.Diagnostics.Activity;
 using ActivityKind = System.Diagnostics.ActivityKind;
 
@@ -14,21 +15,34 @@ namespace Elsa.OpenTelemetry.Middleware;
 /// Middleware that traces workflow execution using OpenTelemetry.
 /// </summary>
 [UsedImplicitly]
-public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, ISystemClock systemClock) : WorkflowExecutionMiddleware(next)
+public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, ISystemClock systemClock, ILogger<OpenTelemetryTracingWorkflowExecutionMiddleware> logger) : WorkflowExecutionMiddleware(next)
 {
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         var workflowInstanceId = context.Id;
         var workflow = context.Workflow;
+        
+        var currentActivity = Activity.Current;
+        if (currentActivity != null)
+        {
+            var serializedActivity = System.Text.Json.JsonSerializer.Serialize(currentActivity);
+            logger.LogInformation("There is an activity in the workflow execution context. {data}", serializedActivity);
+        }
+
         var startNewTrace = (context.Properties.TryGetValue("StartNewTrace", out var startNewTraceValue) && (bool)startNewTraceValue) || Activity.Current?.HasRemoteParent == true;
         var parentTraceContext = startNewTrace ? default : Activity.Current?.Context ?? default;
         var linkedTraceContext = startNewTrace ? Activity.Current : null;
 
         if (startNewTrace)
         {
+            logger.LogInformation("Starting new trace.");
             Activity.Current?.Stop();
             Activity.Current = null;
+        }
+        else
+        {
+            logger.LogInformation("Continuing existing trace.");
         }
 
         using var span = ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflow.WorkflowMetadata.Name}", ActivityKind.Server, parentTraceContext);
