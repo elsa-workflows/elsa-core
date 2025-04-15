@@ -4,6 +4,7 @@ using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Management.Mappers;
@@ -11,7 +12,7 @@ namespace Elsa.Workflows.Management.Mappers;
 /// <summary>
 /// Maps <see cref="Variable"/>s to <see cref="VariableDefinition"/>s and vice versa.
 /// </summary>
-public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegistry, ILogger<VariableDefinitionMapper> logger)
+public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegistry, IServiceScopeFactory scopeFactory, ILogger<VariableDefinitionMapper> logger)
 {
     /// <summary>
     /// Maps a <see cref="VariableDefinition"/> to a <see cref="Variable"/>.
@@ -47,7 +48,7 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
             });
         }
 
-        variable.StorageDriverType = !string.IsNullOrEmpty(source.StorageDriverTypeName) ? Type.GetType(source.StorageDriverTypeName) : null;
+        variable.StorageDriverType = GetStorageDriverType(source.StorageDriverTypeName);
 
         return variable;
     }
@@ -90,4 +91,28 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
     /// Maps a list of <see cref="Variable"/>s to a list of <see cref="VariableDefinition"/>s.
     /// </summary>
     public IEnumerable<VariableDefinition> Map(IEnumerable<Variable>? source) => source?.Select(Map) ?? [];
+    
+    private Type? GetStorageDriverType(string? storageDriverTypeName)
+    {
+        if (string.IsNullOrEmpty(storageDriverTypeName))
+            return null;
+
+        var type = Type.GetType(storageDriverTypeName);
+
+        if (type != null)
+            return type;
+
+        // TODO: The following code handles backward compatibility with variable definitions referencing older .NET type namespaces.
+        // We will refactor this by storing a driver identifier rather than its full type name - which is brittle in case we move namespaces.
+        using var scope = scopeFactory.CreateScope();
+        var storageDrivers = scope.ServiceProvider.GetServices<IStorageDriver>();
+        foreach (var storageDriver in storageDrivers)
+        {
+            var typeName = storageDriver.GetType().Name;
+            if (storageDriverTypeName.Contains(typeName, StringComparison.OrdinalIgnoreCase))
+                return storageDriver.GetType();
+        }
+
+        return null;
+    }
 }
