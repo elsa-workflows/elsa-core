@@ -1,15 +1,9 @@
 using System.Diagnostics;
-using System.Runtime.InteropServices.Marshalling;
-using System.Text.Json;
 using Elsa.Common;
-using Elsa.Expressions.Services;
-using Elsa.Extensions;
 using Elsa.OpenTelemetry.Helpers;
 using Elsa.Workflows;
-using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
-using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
 using Activity = System.Diagnostics.Activity;
 using ActivityKind = System.Diagnostics.ActivityKind;
@@ -27,16 +21,16 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
     {
         var workflowInstanceId = context.Id;
         var workflow = context.Workflow;
-        var startNewTrace = context.Properties.TryGetValue("StartNewTrace", out var startNewTraceValue) && (bool)startNewTraceValue;
+        var startNewTrace = (context.Properties.TryGetValue("StartNewTrace", out var startNewTraceValue) && (bool)startNewTraceValue) || Activity.Current?.HasRemoteParent == true;
         var parentTraceContext = startNewTrace ? default : Activity.Current?.Context ?? default;
         var linkedTraceContext = startNewTrace ? Activity.Current : null;
-        
-        if(startNewTrace)
+
+        if (startNewTrace)
         {
             Activity.Current?.Stop();
             Activity.Current = null;
         }
-        
+
         using var span = ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflow.WorkflowMetadata.Name}", ActivityKind.Server, parentTraceContext);
 
         if (span == null) // No listener is registered.
@@ -45,7 +39,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
             return;
         }
 
-        if(startNewTrace)
+        if (startNewTrace)
         {
             if (linkedTraceContext != null)
                 span.AddLink(new(linkedTraceContext.Context));
