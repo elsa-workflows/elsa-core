@@ -52,6 +52,8 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
             await Next(context);
             return;
         }
+        
+        logger.LogInformation("Starting new span with trace id {traceId} - {spanData}.", span?.TraceId, System.Text.Json.JsonSerializer.Serialize(currentActivity));
 
         if (startNewTrace)
         {
