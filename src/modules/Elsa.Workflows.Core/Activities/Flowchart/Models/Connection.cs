@@ -33,19 +33,24 @@ public class Connection : IEquatable<Connection>
     /// <param name="target">The target endpoint.</param>
     public Connection(IActivity source, IActivity target)
     {
-        Source = new Endpoint(source);
-        Target = new Endpoint(target);
+        Source = new(source);
+        Target = new(target);
     }
 
     /// <summary>
     /// The source endpoint.
     /// </summary>
-    public Endpoint Source { get; set; } = default!;
+    public Endpoint Source { get; set; } = null!;
     
     /// <summary>
     /// The target endpoint.
     /// </summary>
-    public Endpoint Target { get; set; } = default!;
+    public Endpoint Target { get; set; } = null!;
+
+    /// <summary>
+    /// A collection of points representing the vertices of the connection.
+    /// </summary>
+    public ICollection<Position> Vertices { get; set; } = [];
 
     public override string ToString() => 
         $"{Source.Activity.Id}{(string.IsNullOrEmpty(Source.Port) ? "" : $":{Source.Port}")}->" +
