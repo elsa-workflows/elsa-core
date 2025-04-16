@@ -48,6 +48,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
 
         Activity? StartActivity()
         {
+            logger.LogInformation("Current Trace ID generator in use {generator}", Activity.TraceIdGenerator?.GetType().FullName);
             if (parentTraceContext != null)
             {
                 logger.LogInformation("{Name} - Starting new span based on parent trace context {traceContext}.", workflowName, System.Text.Json.JsonSerializer.Serialize(parentTraceContext));
