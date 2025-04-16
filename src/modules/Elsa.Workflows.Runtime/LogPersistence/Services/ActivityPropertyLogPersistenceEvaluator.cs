@@ -215,7 +215,8 @@ public class ActivityPropertyLogPersistenceEvaluator : IActivityPropertyLogPersi
 
     private LogPersistenceMode ResolveMode(LogPersistenceMode mode, Func<LogPersistenceMode> defaultFactory)
     {
-        return mode == LogPersistenceMode.Inherit ? defaultFactory() : mode;
+        var m = mode == LogPersistenceMode.Inherit ? defaultFactory() : mode;
+        return m == LogPersistenceMode.Inherit ? LogPersistenceMode.Include : m;
     }
 
     private LogPersistenceConfiguration? ConvertToConfig(object? value)

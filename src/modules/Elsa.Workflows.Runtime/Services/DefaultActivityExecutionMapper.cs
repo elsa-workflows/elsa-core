@@ -49,7 +49,8 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         foreach (var stateEntry in state)
         {
             var mode = map.TryGetValue(stateEntry.Key, out var value) ? value : LogPersistenceMode.Include;
-            result.Add(stateEntry.Key, mode == LogPersistenceMode.Include ? stateEntry.Value : null);
+            if (mode == LogPersistenceMode.Include)
+                result.Add(stateEntry.Key, stateEntry.Value);
         }
 
         return result;
