@@ -43,7 +43,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         return Task.FromResult(Map(source));
     }
 
-    private IDictionary<string, object?> GetPersistableProperties(IDictionary<string, object?> state, IDictionary<string, LogPersistenceMode> map)
+    private IDictionary<string, object?> GetPersistableProperties(IDictionary<string, object> state, IDictionary<string, LogPersistenceMode> map)
     {
         var result = new Dictionary<string, object?>();
         foreach (var stateEntry in state)

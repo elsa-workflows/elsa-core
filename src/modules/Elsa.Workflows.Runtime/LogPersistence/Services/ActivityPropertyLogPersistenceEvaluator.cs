@@ -130,7 +130,8 @@ public class ActivityPropertyLogPersistenceEvaluator : IActivityPropertyLogPersi
         if (config != null)
             return await EvaluateConfigAsync(config, executionContext, () => defaultMode, cancellationToken);
 
-        return legacySection.GetValueOrDefault(key, () => defaultMode);
+        var mode = legacySection.GetValueOrDefault(key, () => defaultMode);
+        return ResolveMode(mode, () => defaultMode);
     }
 
     private async Task<Dictionary<string, object>> GetPersistablePropertiesAsync(
