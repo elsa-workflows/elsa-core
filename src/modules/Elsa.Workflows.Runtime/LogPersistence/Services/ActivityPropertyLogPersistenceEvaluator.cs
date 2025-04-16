@@ -34,28 +34,29 @@ namespace Elsa.Workflows.Runtime;
  *          }
  *  }
  */
-
 public class ActivityPropertyLogPersistenceEvaluator : IActivityPropertyLogPersistenceEvaluator
 {
     private readonly IExpressionEvaluator _expressionEvaluator;
-    private readonly JsonSerializerOptions _logPersistenceConfigSerializerOptions;
-    private readonly IDictionary<string, ILogPersistenceStrategy> _logPersistenceStrategies;
+    private readonly JsonSerializerOptions _jsonOptions;
+    private readonly IDictionary<string, ILogPersistenceStrategy> _strategies;
     private readonly IOptions<ManagementOptions> _options;
     private readonly ILogger _logger;
 
+    private const string LegacyKey = "logPersistenceMode";
+    const string ConfigKey = "logPersistenceConfig";
+
     public ActivityPropertyLogPersistenceEvaluator(
-        ILogPersistenceStrategyService logPersistenceStrategyService,
+        ILogPersistenceStrategyService strategyService,
         IExpressionDescriptorRegistry expressionDescriptorRegistry,
         IExpressionEvaluator expressionEvaluator,
         IOptions<ManagementOptions> options,
-        ILogger<ActivityPropertyLogPersistenceEvaluator> logger
-    )
+        ILogger<ActivityPropertyLogPersistenceEvaluator> logger)
     {
         _expressionEvaluator = expressionEvaluator;
         _options = options;
         _logger = logger;
-        _logPersistenceStrategies = logPersistenceStrategyService.ListStrategies().ToDictionary(x => x.GetType().GetSimpleAssemblyQualifiedName(), x => x);
-        _logPersistenceConfigSerializerOptions = new JsonSerializerOptions
+        _strategies = strategyService.ListStrategies().ToDictionary(x => x.GetType().GetSimpleAssemblyQualifiedName(), x => x);
+        _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         }.WithConverters(
@@ -64,215 +65,164 @@ public class ActivityPropertyLogPersistenceEvaluator : IActivityPropertyLogPersi
             new ExpandoObjectConverterFactory());
     }
 
-    private const string LegacyLogPersistenceModeKey = "logPersistenceMode";
-    private const string LogPersistenceConfigKey = "logPersistenceConfig";
-
     public async Task<ActivityLogPersistenceModeMap> EvaluateLogPersistenceModesAsync(ActivityExecutionContext context)
     {
         var cancellationToken = context.CancellationToken;
-        var legacyActivityPersistenceProperties = context.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LegacyLogPersistenceModeKey, () => new Dictionary<string, object?>());
-        var rootActivityExecutionContext = context.WorkflowExecutionContext.ActivityExecutionContexts.First(x => x.ParentActivityExecutionContext == null);
-        var workflow = (Workflow?)context.GetAncestors().FirstOrDefault(x => x.Activity is Workflow)?.Activity ?? context.WorkflowExecutionContext.Workflow;
-        var workflowPersistenceProperty = await GetDefaultPersistenceModeAsync(rootActivityExecutionContext.ExpressionExecutionContext, workflow.CustomProperties, () => _options.Value.LogPersistenceMode, cancellationToken);
-        var activityPersistencePropertyDefault = await GetDefaultPersistenceModeAsync(context.ExpressionExecutionContext, context.Activity.CustomProperties, () => workflowPersistenceProperty, cancellationToken);
-        var activityPersistenceProperties = context.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceConfigKey, () => new Dictionary<string, object?>());
-        var inputDescriptors = context.ActivityDescriptor.Inputs;
-        var outputDescriptors = context.ActivityDescriptor.Outputs;
+        var (legacyProps, configProps, defaultMode) = await GetPersistenceDefaultsAsync(context, cancellationToken);
         var map = new ActivityLogPersistenceModeMap();
 
-        await EvaluateLogPersistencePropertiesAsync(context, "inputs", inputDescriptors, legacyActivityPersistenceProperties, activityPersistenceProperties, activityPersistencePropertyDefault, map.Inputs, cancellationToken);
-        await EvaluateLogPersistencePropertiesAsync(context, "outputs", outputDescriptors, legacyActivityPersistenceProperties, activityPersistenceProperties, activityPersistencePropertyDefault, map.Outputs, cancellationToken);
-        
+        await EvaluatePropertiesAsync(context, "inputs", context.ActivityDescriptor.Inputs, legacyProps, configProps, defaultMode, map.Inputs, cancellationToken);
+        await EvaluatePropertiesAsync(context, "outputs", context.ActivityDescriptor.Outputs, legacyProps, configProps, defaultMode, map.Outputs, cancellationToken);
+
         return map;
     }
 
-    public async Task<Dictionary<string, object?>> GetPersistableOutputAsync(ActivityExecutionContext context)
+    public async Task<Dictionary<string, object>> GetPersistableOutputAsync(ActivityExecutionContext context)
     {
         var cancellationToken = context.WorkflowExecutionContext.CancellationToken;
-        var legacyActivityPersistenceProperties = context.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LegacyLogPersistenceModeKey, () => new Dictionary<string, object?>());
-        var rootActivityExecutionContext = context.WorkflowExecutionContext.ActivityExecutionContexts.First(x => x.ParentActivityExecutionContext == null);
-        var workflow = (Workflow?)context.GetAncestors().FirstOrDefault(x => x.Activity is Workflow)?.Activity ?? context.WorkflowExecutionContext.Workflow;
-        var workflowPersistenceProperty = await GetDefaultPersistenceModeAsync(rootActivityExecutionContext.ExpressionExecutionContext, workflow.CustomProperties, () => _options.Value.LogPersistenceMode, cancellationToken);
-        var activityPersistencePropertyDefault = await GetDefaultPersistenceModeAsync(context.ExpressionExecutionContext, context.Activity.CustomProperties, () => workflowPersistenceProperty, cancellationToken);
-        var activityPersistenceProperties = context.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceConfigKey, () => new Dictionary<string, object?>());
-
-        return await GetPersistableOutputAsync(
-            context,
-            legacyActivityPersistenceProperties,
-            activityPersistenceProperties,
-            activityPersistencePropertyDefault,
-            cancellationToken);
-    }
-
-    private async Task<Dictionary<string, object?>> GetPersistableOutputAsync(
-        ActivityExecutionContext context,
-        IDictionary<string, object?> legacyActivityPersistenceProperties,
-        IDictionary<string, object?> activityPersistenceProperties,
-        LogPersistenceMode activityPersistencePropertyDefault,
-        CancellationToken cancellationToken)
-    {
+        var (legacyProps, configProps, defaultMode) = await GetPersistenceDefaultsAsync(context, cancellationToken);
         var outputs = context.GetOutputs();
-        return await GetPersistablePropertiesAsync(context, outputs, "outputs", legacyActivityPersistenceProperties, activityPersistenceProperties, activityPersistencePropertyDefault, cancellationToken);
+        return await GetPersistablePropertiesAsync(context, outputs, "outputs", legacyProps, configProps, defaultMode, cancellationToken);
     }
 
-    private async Task<Dictionary<string, object?>> GetPersistablePropertiesAsync(
+    private async Task<(IDictionary<string, object> legacyProps, IDictionary<string, object> configProps, LogPersistenceMode defaultMode)>
+        GetPersistenceDefaultsAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+    {
+        var legacyProps = context.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object>>(LegacyKey, () => new Dictionary<string, object>())!;
+        var rootContext = context.WorkflowExecutionContext.ActivityExecutionContexts.First(x => x.ParentActivityExecutionContext == null);
+        var workflow = (Workflow?)context.GetAncestors().FirstOrDefault(x => x.Activity is Workflow)?.Activity ?? context.WorkflowExecutionContext.Workflow;
+        var workflowDefault = await GetDefaultPersistenceModeAsync(rootContext.ExpressionExecutionContext, workflow.CustomProperties, () => _options.Value.LogPersistenceMode, cancellationToken);
+        var activityDefault = await GetDefaultPersistenceModeAsync(context.ExpressionExecutionContext, context.Activity.CustomProperties, () => workflowDefault, cancellationToken);
+        var configProps = context.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object>>(ConfigKey, () => new Dictionary<string, object>())!;
+        return (legacyProps, configProps, activityDefault);
+    }
+
+    private async Task EvaluatePropertiesAsync(
         ActivityExecutionContext context,
-        IDictionary<string, object?> state,
         string key,
-        IDictionary<string, object?> legacyActivityPersistenceProperties,
-        IDictionary<string, object?> activityPersistenceProperties,
-        LogPersistenceMode activityPersistencePropertyDefault,
+        IEnumerable<PropertyDescriptor> descriptors,
+        IDictionary<string, object> legacyConfig,
+        IDictionary<string, object> currentConfig,
+        LogPersistenceMode defaultMode,
+        IDictionary<string, LogPersistenceMode> resultMap,
         CancellationToken cancellationToken)
     {
-        return await FilterPropertiesUsingPersistenceMode(
-            context.ExpressionExecutionContext,
-            state,
-            legacyActivityPersistenceProperties!.GetValueOrDefault(key, () => new Dictionary<string, object>())!,
-            activityPersistenceProperties!.GetValueOrDefault(key, () => new Dictionary<string, object>())!,
-            activityPersistencePropertyDefault,
-            cancellationToken);
-    }
+        var legacySection = legacyConfig.GetValueOrDefault(key, () => new Dictionary<string, object>())!;
+        var currentSection = currentConfig.GetValueOrDefault(key, () => new Dictionary<string, object>())!;
 
-    private async Task<LogPersistenceMode> GetDefaultPersistenceModeAsync(ExpressionExecutionContext expressionExecutionContext, IDictionary<string, object> customProperties, Func<LogPersistenceMode> defaultFactory, CancellationToken cancellationToken)
-    {
-        var legacyProperties = customProperties.GetValueOrDefault<IDictionary<string, object?>>(LegacyLogPersistenceModeKey, () => new Dictionary<string, object?>());
-        var properties = customProperties.GetValueOrDefault<IDictionary<string, object>>(LogPersistenceConfigKey, () => new Dictionary<string, object>());
-        var defaultPersistenceConfigObject = properties?.TryGetValue("default", out var defaultPersistenceConfigObjectValue) == true ? defaultPersistenceConfigObjectValue : null;
-
-        if (defaultPersistenceConfigObject == null)
+        foreach (var descriptor in descriptors)
         {
-            var legacyPersistencePropertyDefault = legacyProperties!.GetValueOrDefault("default", defaultFactory);
-
-            if (legacyPersistencePropertyDefault == LogPersistenceMode.Inherit)
-                return defaultFactory();
-            return legacyPersistencePropertyDefault;
+            resultMap[descriptor.Name] = await EvaluatePropertyModeAsync(context.ExpressionExecutionContext, descriptor, legacySection, currentSection, defaultMode, cancellationToken);
         }
-
-        var defaultPersistenceConfig = Convert(defaultPersistenceConfigObject);
-        return await EvaluateLogPersistenceConfigAsync(defaultPersistenceConfig, expressionExecutionContext, defaultFactory, cancellationToken);
     }
 
-    private async Task<Dictionary<string, object?>> FilterPropertiesUsingPersistenceMode(
-        ExpressionExecutionContext expressionExecutionContext,
-        IDictionary<string, object?> state,
-        IDictionary<string, object> obsoletePersistenceModeConfiguration,
-        IDictionary<string, object> persistenceStrategyConfiguration,
-        LogPersistenceMode defaultLogPersistenceMode,
+    private async Task<LogPersistenceMode> EvaluatePropertyModeAsync(
+        ExpressionExecutionContext executionContext,
+        PropertyDescriptor descriptor,
+        IDictionary<string, object> legacySection,
+        IDictionary<string, object> currentSection,
+        LogPersistenceMode defaultMode,
         CancellationToken cancellationToken)
     {
-        var result = new Dictionary<string, object?>();
+        var key = descriptor.Name.Camelize();
+        var configObject = currentSection.GetValueOrDefault(key, () => null);
+        var config = ConvertToConfig(configObject);
+        if (config != null)
+            return await EvaluateConfigAsync(config, executionContext, () => defaultMode, cancellationToken);
 
-        foreach (var value in state)
+        return legacySection.GetValueOrDefault(key, () => defaultMode);
+    }
+
+    private async Task<Dictionary<string, object>> GetPersistablePropertiesAsync(
+        ActivityExecutionContext context,
+        IDictionary<string, object> state,
+        string key,
+        IDictionary<string, object> legacyConfig,
+        IDictionary<string, object> currentConfig,
+        LogPersistenceMode defaultMode,
+        CancellationToken cancellationToken)
+    {
+        var result = new Dictionary<string, object>();
+        var legacySection = legacyConfig.GetValueOrDefault(key, () => new Dictionary<string, object>());
+        var currentSection = currentConfig.GetValueOrDefault(key, () => new Dictionary<string, object>());
+
+        foreach (var item in state)
         {
-            var propKey = value.Key.Camelize();
-            var logPersistenceConfigObject = persistenceStrategyConfiguration.GetValueOrDefault(propKey, () => null);
-            var logPersistenceConfig = Convert(logPersistenceConfigObject);
-            var mode = logPersistenceConfig != null
-                ? await EvaluateLogPersistenceConfigAsync(logPersistenceConfig, expressionExecutionContext, () => defaultLogPersistenceMode, cancellationToken)
-                : obsoletePersistenceModeConfiguration.GetValueOrDefault(propKey, () => defaultLogPersistenceMode);
+            var propKey = item.Key.Camelize();
+            var configObject = currentSection!.GetValueOrDefault(propKey, () => null);
+            var config = ConvertToConfig(configObject);
+            var mode = config != null
+                ? await EvaluateConfigAsync(config, context.ExpressionExecutionContext, () => defaultMode, cancellationToken)
+                : legacySection!.GetValueOrDefault(propKey, () => defaultMode);
 
-            if (mode == LogPersistenceMode.Include || mode == LogPersistenceMode.Inherit && defaultLogPersistenceMode is LogPersistenceMode.Include or LogPersistenceMode.Inherit)
-                result.Add(value.Key, value.Value);
+            if (mode == LogPersistenceMode.Include || (mode == LogPersistenceMode.Inherit && (defaultMode == LogPersistenceMode.Include || defaultMode == LogPersistenceMode.Inherit)))
+                result.Add(item.Key, item.Value);
         }
 
         return result;
     }
-    
-    private async Task EvaluateLogPersistencePropertiesAsync(
-        ActivityExecutionContext context, 
-        string key, 
-        IEnumerable<PropertyDescriptor> propertyDescriptors, 
-        IDictionary<string, object?>? obsoletePersistenceModeConfiguration,
-        IDictionary<string, object?>? persistenceStrategyConfiguration,
-        LogPersistenceMode defaultLogPersistenceMode,
-        IDictionary<string, LogPersistenceMode> map,
+
+    private async Task<LogPersistenceMode> GetDefaultPersistenceModeAsync(
+        ExpressionExecutionContext executionContext,
+        IDictionary<string, object> properties,
+        Func<LogPersistenceMode> defaultFactory,
         CancellationToken cancellationToken)
     {
-        var legacyProps = obsoletePersistenceModeConfiguration!.GetValueOrDefault(key, () => new Dictionary<string, object?>());
-        var props = persistenceStrategyConfiguration!.GetValueOrDefault(key, () => new Dictionary<string, object?>());
-            
-        foreach (var inputDescriptor in propertyDescriptors)
+        var legacyProps = properties.GetValueOrDefault<IDictionary<string, object>>(LegacyKey, () => new Dictionary<string, object>());
+        var configProps = properties.GetValueOrDefault<IDictionary<string, object>>(ConfigKey, () => new Dictionary<string, object>());
+        var defaultObj = configProps!.TryGetValue("default", out var val) ? val : null;
+        if (defaultObj == null)
         {
-            var logMode = await EvaluateLogPersistenceMode(
-                context.ExpressionExecutionContext, 
-                inputDescriptor, 
-                legacyProps, 
-                props, 
-                defaultLogPersistenceMode, 
-                cancellationToken);
-            map[inputDescriptor.Name] = logMode;
+            var legacyDefault = legacyProps!.GetValueOrDefault("default", defaultFactory);
+            return legacyDefault == LogPersistenceMode.Inherit ? defaultFactory() : legacyDefault;
         }
+
+        var config = ConvertToConfig(defaultObj);
+        return await EvaluateConfigAsync(config, executionContext, defaultFactory, cancellationToken);
     }
-    
-    private async Task<LogPersistenceMode> EvaluateLogPersistenceMode(
-        ExpressionExecutionContext expressionExecutionContext,
-        PropertyDescriptor propertyDescriptor,
-        IDictionary<string, object?>? obsoletePersistenceModeConfiguration,
-        IDictionary<string, object?>? persistenceStrategyConfiguration,
-        LogPersistenceMode defaultLogPersistenceMode,
+
+    private async Task<LogPersistenceMode> EvaluateConfigAsync(
+        LogPersistenceConfiguration? config,
+        ExpressionExecutionContext executionContext,
+        Func<LogPersistenceMode> defaultFactory,
         CancellationToken cancellationToken)
     {
-        var propKey = propertyDescriptor.Name.Camelize();
-        var logPersistenceConfigObject = persistenceStrategyConfiguration?.GetValueOrDefault(propKey, () => null);
-        var logPersistenceConfig = Convert(logPersistenceConfigObject);
-        var mode = logPersistenceConfig != null
-            ? await EvaluateLogPersistenceConfigAsync(logPersistenceConfig, expressionExecutionContext, () => defaultLogPersistenceMode, cancellationToken)
-            : obsoletePersistenceModeConfiguration!?.GetValueOrDefault(propKey, () => defaultLogPersistenceMode);
-
-        return mode ?? defaultLogPersistenceMode;
-    }
-    
-    private async Task<LogPersistenceMode> EvaluateLogPersistenceConfigAsync(LogPersistenceConfiguration? config, ExpressionExecutionContext executionContext, Func<LogPersistenceMode> defaultMode, CancellationToken cancellationToken)
-    {
-        if (config == null)
-            return defaultMode();
-
-        if (config.EvaluationMode == LogPersistenceEvaluationMode.Strategy)
+        if (config?.EvaluationMode == LogPersistenceEvaluationMode.Strategy)
         {
-            var strategyTypeName = config.StrategyType ?? typeof(Inherit).GetSimpleAssemblyQualifiedName();
-            var strategy = _logPersistenceStrategies.TryGetValue(strategyTypeName, out var v) ? v : null;
-
-            if (strategy == null)
-                return defaultMode();
+            var strategyType = config.StrategyType ?? typeof(Inherit).GetSimpleAssemblyQualifiedName();
+            if (!_strategies.TryGetValue(strategyType, out var strategy))
+                return defaultFactory();
 
             var strategyContext = new LogPersistenceStrategyContext(cancellationToken);
-            var logMode = await strategy.GetPersistenceModeAsync(strategyContext);
-            return ResolveFinalLogPersistenceMode(logMode, defaultMode);
+            var mode = await strategy.GetPersistenceModeAsync(strategyContext);
+            return ResolveMode(mode, defaultFactory);
         }
 
-        if (config.Expression == null)
-            return defaultMode();
-
-        var expression = config.Expression;
+        if (config?.Expression == null)
+            return defaultFactory();
 
         try
         {
-            var logMode = await _expressionEvaluator.EvaluateAsync<LogPersistenceMode>(expression, executionContext);
-            return ResolveFinalLogPersistenceMode(logMode, defaultMode);
+            var mode = await _expressionEvaluator.EvaluateAsync<LogPersistenceMode>(config.Expression, executionContext);
+            return ResolveMode(mode, defaultFactory);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            _logger.LogWarning(e, "Error evaluating log persistence expression");
-            return defaultMode();
+            _logger.LogWarning(ex, "Error evaluating log persistence expression");
+            return defaultFactory();
         }
     }
 
-    private LogPersistenceMode ResolveFinalLogPersistenceMode(LogPersistenceMode logMode, Func<LogPersistenceMode> defaultMode)
+    private LogPersistenceMode ResolveMode(LogPersistenceMode mode, Func<LogPersistenceMode> defaultFactory)
     {
-        return logMode == LogPersistenceMode.Inherit ? defaultMode() : logMode;
+        return mode == LogPersistenceMode.Inherit ? defaultFactory() : mode;
     }
 
-    private LogPersistenceConfiguration? Convert(object? value)
+    private LogPersistenceConfiguration? ConvertToConfig(object? value)
     {
-        if (value == null)
-            return null;
-
-        if (value is LogPersistenceConfiguration c)
-            return c;
-
+        if (value == null) return null;
+        if (value is LogPersistenceConfiguration config) return config;
         var json = JsonSerializer.Serialize(value);
-        var config = JsonSerializer.Deserialize<LogPersistenceConfiguration>(json, _logPersistenceConfigSerializerOptions);
-
-        return config;
+        return JsonSerializer.Deserialize<LogPersistenceConfiguration>(json, _jsonOptions);
     }
 }
