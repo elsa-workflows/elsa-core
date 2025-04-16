@@ -27,7 +27,7 @@ public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = 
 /// </summary>
 public static class ObjectConverter
 {
-    public static bool StrictMode = true; // Set to false to revert to original flexible behavior.
+    public static bool StrictMode = false; // Set to true to opt into strict mode.
 
     /// <summary>
     /// Attempts to convert the source value into the destination type.

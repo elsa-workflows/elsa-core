@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Management;
+namespace Elsa.Common;
 
 /// <summary>
 /// Resolves a <see cref="ICompressionCodec"/> from its name.

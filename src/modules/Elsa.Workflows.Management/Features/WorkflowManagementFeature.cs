@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Caching.Features;
+using Elsa.Common.Codecs;
 using Elsa.Common.Features;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
@@ -14,10 +15,8 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
-using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Handlers;
 using Elsa.Workflows.Management.Handlers.Notifications;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
@@ -35,9 +34,10 @@ namespace Elsa.Workflows.Management.Features;
 /// <summary>
 /// Installs and configures the workflow management feature.
 /// </summary>
+[DependsOn(typeof(CompressionFeature))]
 [DependsOn(typeof(MediatorFeature))]
-[DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(MemoryCacheFeature))]
+[DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(WorkflowDefinitionsFeature))]
 [DependsOn(typeof(WorkflowInstancesFeature))]
@@ -234,10 +234,6 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
             .AddScoped<WorkflowDefinitionMapper>()
             .AddSingleton<VariableDefinitionMapper>()
             .AddSingleton<WorkflowStateMapper>()
-            .AddSingleton<ICompressionCodecResolver, CompressionCodecResolver>()
-            .AddSingleton<ICompressionCodec, None>()
-            .AddSingleton<ICompressionCodec, GZip>()
-            .AddSingleton<ICompressionCodec, Zstd>()
             ;
 
         Services

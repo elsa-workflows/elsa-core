@@ -1,7 +1,7 @@
 using System.Text;
 using IronCompress;
 
-namespace Elsa.Workflows.Management.Compression;
+namespace Elsa.Common.Codecs;
 
 /// <summary>
 /// Represents a ZSTD compression strategy.
