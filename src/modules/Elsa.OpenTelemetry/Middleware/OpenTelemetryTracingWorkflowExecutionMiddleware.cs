@@ -31,7 +31,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         }
 
         var startNewTrace = (context.Properties.TryGetValue("StartNewTrace", out var startNewTraceValue) && (bool)startNewTraceValue) || Activity.Current?.HasRemoteParent == true;
-        var parentTraceContext = startNewTrace ? default : Activity.Current?.Context ?? default;
+        var parentTraceContext = startNewTrace ? null : Activity.Current?.Context ?? null;
         var linkedTraceContext = startNewTrace ? Activity.Current : null;
 
         if (startNewTrace)
@@ -45,7 +45,15 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
             logger.LogInformation("Continuing existing trace.");
         }
 
-        using var span = ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflow.WorkflowMetadata.Name}", ActivityKind.Server, parentTraceContext);
+        Activity? StartActivity()
+        {
+            return parentTraceContext != null 
+                ? ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflow.WorkflowMetadata.Name}", ActivityKind.Server, parentTraceContext.Value) 
+                : ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflow.WorkflowMetadata.Name}", ActivityKind.Server);
+        }
+
+        logger.LogInformation("Creating new span based on parent trace context {traceContext}.", parentTraceContext);
+        using var span = StartActivity();
 
         if (span == null) // No listener is registered.
         {
@@ -54,7 +62,6 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         }
         
         logger.LogInformation("Starting new span with trace id {traceId} - {spanData}.", span?.TraceId, System.Text.Json.JsonSerializer.Serialize(currentActivity));
-
         if (startNewTrace)
         {
             if (linkedTraceContext != null)
