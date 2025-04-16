@@ -8,6 +8,11 @@ namespace Elsa.Workflows.Core.UnitTests.ObjectConversion;
 
 public class Tests
 {
+    public Tests()
+    {
+        ObjectConverter.StrictMode = true;
+    }
+    
     [Fact]
     public void TryConvertTo_SameType_ReturnsSuccess()
     {

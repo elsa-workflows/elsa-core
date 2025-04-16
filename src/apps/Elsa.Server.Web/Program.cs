@@ -2,6 +2,7 @@ using System.Text.Encodings.Web;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
 using Elsa.Caching.Options;
+using Elsa.Common.Codecs;
 using Elsa.Common.DistributedHosting.DistributedLocks;
 using Elsa.Common.RecurringTasks;
 using Elsa.Common.Serialization;
@@ -51,7 +52,6 @@ using Elsa.Workflows.CommitStates.Strategies;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Options;
@@ -86,7 +86,7 @@ using StackExchange.Redis;
 
 // ReSharper disable RedundantAssignment
 const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
-const bool useDbContextPooling = true;
+const bool useDbContextPooling = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
@@ -107,7 +107,7 @@ const bool disableVariableWrappers = false;
 const bool disableVariableCopying = false;
 const bool useManualOtelInstrumentation = false;
 
-ObjectConverter.StrictMode = true; // Default.
+ObjectConverter.StrictMode = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -560,6 +560,7 @@ services
             elsa.UseMassTransit(massTransit =>
             {
                 massTransit.DisableConsumers = appRole == ApplicationRole.Api;
+                massTransit.AddMessageType<OrderReceived>();
 
                 if (massTransitBroker == MassTransitBroker.AzureServiceBus)
                 {

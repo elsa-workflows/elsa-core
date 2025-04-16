@@ -21,7 +21,7 @@ public class Flowchart : Container
     private const string BackwardConnectionActivityInput = "BackwardConnection";
 
     /// <inheritdoc />
-    public Flowchart([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Flowchart([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         OnSignalReceived<ScheduleActivityOutcomes>(OnScheduleOutcomesAsync);
         OnSignalReceived<ScheduleChildActivity>(OnScheduleChildActivityAsync);
@@ -58,7 +58,7 @@ public class Flowchart : Container
     {
         // If there's a trigger that triggered this workflow, use that.
         var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
-        var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : default;
+        var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : null;
 
         if (triggerActivity != null)
             return triggerActivity;
@@ -353,7 +353,6 @@ public class Flowchart : Container
         var flowchartContext = context.ParentActivityExecutionContext!;
         var flowchart = (Flowchart)flowchartContext.Activity;
         var flowGraph = flowchart.GetFlowGraph(flowchartContext);
-        var flowScope = flowchart.GetFlowScope(flowchartContext);
         var ancestorActivities = flowGraph.GetAncestorActivities(context.Activity);
         var inboundActivityExecutionContexts = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => ancestorActivities.Contains(x.Activity) && x.ParentActivityExecutionContext == flowchartContext).ToList();
 

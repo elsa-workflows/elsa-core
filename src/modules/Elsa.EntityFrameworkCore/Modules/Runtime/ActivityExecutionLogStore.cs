@@ -1,9 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using Elsa.Common;
+using Elsa.Common.Codecs;
 using Elsa.Extensions;
 using Elsa.Workflows;
-using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;

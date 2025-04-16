@@ -1,10 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
+using Elsa.Common;
+using Elsa.Common.Codecs;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;

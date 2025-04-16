@@ -33,6 +33,5 @@ public class ElsaDbContextOptionsExtension : IDbContextOptionsExtension
     /// <inheritdoc />
     public void Validate(IDbContextOptions options)
     {
-
     }
 }
