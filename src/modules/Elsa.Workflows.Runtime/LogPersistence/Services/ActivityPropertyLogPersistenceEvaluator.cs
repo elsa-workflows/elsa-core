@@ -112,25 +112,6 @@ public class ActivityPropertyLogPersistenceEvaluator : IActivityPropertyLogPersi
         }
     }
 
-    public async Task<LogPersistenceMode> EvaluateLogPersistenceModeAsync(ActivityExecutionContext context, PropertyDescriptor propertyDescriptor)
-    {
-        var cancellationToken = context.CancellationToken;
-        var legacyActivityPersistenceProperties = context.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LegacyLogPersistenceModeKey, () => new Dictionary<string, object?>());
-        var rootActivityExecutionContext = context.WorkflowExecutionContext.ActivityExecutionContexts.First(x => x.ParentActivityExecutionContext == null);
-        var workflow = (Workflow?)context.GetAncestors().FirstOrDefault(x => x.Activity is Workflow)?.Activity ?? context.WorkflowExecutionContext.Workflow;
-        var workflowPersistenceProperty = await GetDefaultPersistenceModeAsync(rootActivityExecutionContext.ExpressionExecutionContext, workflow.CustomProperties, () => _options.Value.LogPersistenceMode, cancellationToken);
-        var activityPersistencePropertyDefault = await GetDefaultPersistenceModeAsync(context.ExpressionExecutionContext, context.Activity.CustomProperties, () => workflowPersistenceProperty, cancellationToken);
-        var activityPersistenceProperties = context.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceConfigKey, () => new Dictionary<string, object?>());
-
-        return await EvaluateLogPersistenceMode(
-            context.ExpressionExecutionContext,
-            propertyDescriptor,
-            legacyActivityPersistenceProperties,
-            activityPersistenceProperties,
-            activityPersistencePropertyDefault,
-            cancellationToken);
-    }
-
     public async Task<LogPersistenceMode> EvaluateLogPersistenceMode(
         ExpressionExecutionContext expressionExecutionContext,
         PropertyDescriptor propertyDescriptor,
@@ -304,10 +285,4 @@ public class ActivityPropertyLogPersistenceEvaluator : IActivityPropertyLogPersi
 
         return config;
     }
-}
-
-public class ActivityLogPersistenceModeMap
-{
-    public IDictionary<string, LogPersistenceMode> Inputs { get; set; } = new Dictionary<string, LogPersistenceMode>();
-    public IDictionary<string, LogPersistenceMode> Outputs { get; set; } = new Dictionary<string, LogPersistenceMode>();
 }

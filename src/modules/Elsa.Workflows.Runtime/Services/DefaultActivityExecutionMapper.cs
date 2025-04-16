@@ -1,7 +1,5 @@
-using Elsa.Extensions;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Runtime;
@@ -14,7 +12,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         var payload = GetPayload(source);
         var outputs = source.GetOutputs();
         var inputs = source.GetInputs();
-        var persistenceMap = source.TransientProperties.GetValueOrDefault(EvaluateLogPersistenceModesMiddleware.LogPersistenceMapKey, () => new ActivityLogPersistenceModeMap())!;
+        var persistenceMap = source.GetLogPersistenceModeMap();
         var persistableInputs = GetPersistableProperties(inputs, persistenceMap.Inputs);
         var persistableOutputs = GetPersistableProperties(outputs, persistenceMap.Outputs);
 
@@ -50,7 +48,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         var result = new Dictionary<string, object?>();
         foreach (var stateEntry in state)
         {
-            var mode = map.TryGetValue(stateEntry.Key, out var value) ? value : LogPersistenceMode.Inherit;
+            var mode = map.TryGetValue(stateEntry.Key, out var value) ? value : LogPersistenceMode.Include;
             result.Add(stateEntry.Key, mode == LogPersistenceMode.Include ? stateEntry.Value : null);
         }
 
