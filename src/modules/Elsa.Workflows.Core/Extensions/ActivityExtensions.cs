@@ -88,7 +88,7 @@ public static class ActivityExtensions
     {
         var activityExecutionContext = context.GetActivityExecutionContext();
 
-        if (activityExecutionContext == null!)
+        if (activityExecutionContext == null)
             return null;
         
         return activity.GetOutput(activityExecutionContext, outputName);
