@@ -20,6 +20,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
+        var workflowName = context.Workflow.WorkflowMetadata.Name;
         var workflowInstanceId = context.Id;
         var workflow = context.Workflow;
         
@@ -27,7 +28,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         if (currentActivity != null)
         {
             var serializedActivity = System.Text.Json.JsonSerializer.Serialize(currentActivity);
-            logger.LogInformation("There is an activity in the workflow execution context. {data}", serializedActivity);
+            logger.LogInformation("{Name} - There is an activity in the workflow execution context. {data}", workflowName, serializedActivity);
         }
 
         var startNewTrace = (context.Properties.TryGetValue("StartNewTrace", out var startNewTraceValue) && (bool)startNewTraceValue) || Activity.Current?.HasRemoteParent == true;
@@ -36,32 +37,34 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
 
         if (startNewTrace)
         {
-            logger.LogInformation("Starting new trace.");
+            logger.LogInformation("{Name} - Starting new trace.", workflowName);
             Activity.Current?.Stop();
             Activity.Current = null;
         }
         else
         {
-            logger.LogInformation("Continuing existing trace.");
+            logger.LogInformation("{Name} - Continuing existing trace.", workflowName);
         }
 
         Activity? StartActivity()
         {
-            return parentTraceContext != null 
-                ? ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflow.WorkflowMetadata.Name}", ActivityKind.Server, parentTraceContext.Value) 
-                : ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflow.WorkflowMetadata.Name}", ActivityKind.Server);
+            if (parentTraceContext != null)
+            {
+                logger.LogInformation("{Name} - Starting new span based on parent trace context {traceContext}.", workflowName, System.Text.Json.JsonSerializer.Serialize(parentTraceContext));
+                return ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflow.WorkflowMetadata.Name}", ActivityKind.Server, parentTraceContext.Value);
+            }
+            logger.LogInformation("{Name} - Starting new span.", workflowName);
+            return ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflow.WorkflowMetadata.Name}", ActivityKind.Server);
         }
-
-        logger.LogInformation("Creating new span based on parent trace context {traceContext}.", parentTraceContext);
+        
         using var span = StartActivity();
-
         if (span == null) // No listener is registered.
         {
             await Next(context);
             return;
         }
         
-        logger.LogInformation("Starting new span with trace id {traceId} - {spanData}.", span?.TraceId, System.Text.Json.JsonSerializer.Serialize(currentActivity));
+        logger.LogInformation("{Name} - Using span with trace id {traceId} - {spanData}.", workflowName, span.TraceId, System.Text.Json.JsonSerializer.Serialize(span));
         if (startNewTrace)
         {
             if (linkedTraceContext != null)
