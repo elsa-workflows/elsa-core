@@ -14,9 +14,9 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         var payload = GetPayload(source);
         var outputs = source.GetOutputs();
         var inputs = source.GetInputs();
-        var persistenceMap = source.TransientProperties.GetValueOrDefault(EvaluateLogPersistenceModesMiddleware.LogPersistenceMapKey, () => new Dictionary<string, LogPersistenceMode>())!;
-        var persistableInputs = GetPersistableProperties(inputs, persistenceMap);
-        var persistableOutputs = GetPersistableProperties(outputs, persistenceMap);
+        var persistenceMap = source.TransientProperties.GetValueOrDefault(EvaluateLogPersistenceModesMiddleware.LogPersistenceMapKey, () => new ActivityLogPersistenceModeMap())!;
+        var persistableInputs = GetPersistableProperties(inputs, persistenceMap.Inputs);
+        var persistableOutputs = GetPersistableProperties(outputs, persistenceMap.Outputs);
 
         return new()
         {
@@ -51,7 +51,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         foreach (var stateEntry in state)
         {
             var mode = map.TryGetValue(stateEntry.Key, out var value) ? value : LogPersistenceMode.Inherit;
-            result.Add(stateEntry.Key, mode == LogPersistenceMode.Inherit ? stateEntry.Value : null);
+            result.Add(stateEntry.Key, mode == LogPersistenceMode.Include ? stateEntry.Value : null);
         }
 
         return result;

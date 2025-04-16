@@ -80,19 +80,36 @@ public class ActivityPropertyLogPersistenceEvaluator : IActivityPropertyLogPersi
         var outputDescriptors = context.ActivityDescriptor.Outputs;
         var map = new ActivityLogPersistenceModeMap();
 
-        foreach (var inputDescriptor in inputDescriptors)
-        {
-            var logMode = await EvaluateLogPersistenceMode(context.ExpressionExecutionContext, inputDescriptor, legacyActivityPersistenceProperties, activityPersistenceProperties, activityPersistencePropertyDefault, cancellationToken);
-            map.Inputs[inputDescriptor.Name] = logMode;
-        }
-
-        foreach (var outputDescriptor in outputDescriptors)
-        {
-            var logMode = await EvaluateLogPersistenceMode(context.ExpressionExecutionContext, outputDescriptor, legacyActivityPersistenceProperties, activityPersistenceProperties, activityPersistencePropertyDefault, cancellationToken);
-            map.Inputs[outputDescriptor.Name] = logMode;
-        }
-
+        await EvaluateLogPersistencePropertiesAsync(context, "inputs", inputDescriptors, legacyActivityPersistenceProperties, activityPersistenceProperties, activityPersistencePropertyDefault, map.Inputs, cancellationToken);
+        await EvaluateLogPersistencePropertiesAsync(context, "outputs", outputDescriptors, legacyActivityPersistenceProperties, activityPersistenceProperties, activityPersistencePropertyDefault, map.Outputs, cancellationToken);
+        
         return map;
+    }
+
+    private async Task EvaluateLogPersistencePropertiesAsync(
+        ActivityExecutionContext context, 
+        string key, 
+        IEnumerable<PropertyDescriptor> propertyDescriptors, 
+        IDictionary<string, object?>? obsoletePersistenceModeConfiguration,
+        IDictionary<string, object?>? persistenceStrategyConfiguration,
+        LogPersistenceMode defaultLogPersistenceMode,
+        IDictionary<string, LogPersistenceMode> map,
+        CancellationToken cancellationToken)
+    {
+        var legacyProps = obsoletePersistenceModeConfiguration!.GetValueOrDefault(key, () => new Dictionary<string, object?>());
+        var props = persistenceStrategyConfiguration!.GetValueOrDefault(key, () => new Dictionary<string, object?>());
+            
+        foreach (var inputDescriptor in propertyDescriptors)
+        {
+            var logMode = await EvaluateLogPersistenceMode(
+                context.ExpressionExecutionContext, 
+                inputDescriptor, 
+                legacyProps, 
+                props, 
+                defaultLogPersistenceMode, 
+                cancellationToken);
+            map[inputDescriptor.Name] = logMode;
+        }
     }
 
     public async Task<LogPersistenceMode> EvaluateLogPersistenceModeAsync(ActivityExecutionContext context, PropertyDescriptor propertyDescriptor)
@@ -122,7 +139,7 @@ public class ActivityPropertyLogPersistenceEvaluator : IActivityPropertyLogPersi
         LogPersistenceMode defaultLogPersistenceMode,
         CancellationToken cancellationToken)
     {
-        var propKey = propertyDescriptor.Name;
+        var propKey = propertyDescriptor.Name.Camelize();
         var logPersistenceConfigObject = persistenceStrategyConfiguration?.GetValueOrDefault(propKey, () => null);
         var logPersistenceConfig = Convert(logPersistenceConfigObject);
         var mode = logPersistenceConfig != null

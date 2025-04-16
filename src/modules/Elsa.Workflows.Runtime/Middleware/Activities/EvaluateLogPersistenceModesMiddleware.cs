@@ -9,7 +9,7 @@ public class EvaluateLogPersistenceModesMiddleware(ActivityMiddlewareDelegate ne
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
         await next(context);
-        var persistenceLogMap = persistenceEvaluator.EvaluateLogPersistenceModesAsync(context);
+        var persistenceLogMap = await persistenceEvaluator.EvaluateLogPersistenceModesAsync(context);
         context.TransientProperties[LogPersistenceMapKey] = persistenceLogMap;
     }
 }
