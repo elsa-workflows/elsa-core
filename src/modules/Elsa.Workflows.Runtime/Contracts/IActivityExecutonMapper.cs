@@ -10,12 +10,11 @@ public interface IActivityExecutionMapper
     /// <summary>
     /// Maps an activity execution context to an activity execution record.
     /// </summary>
-    Task<ActivityExecutionRecord> MapAsync(ActivityExecutionContext source);
-
+    ActivityExecutionRecord Map(ActivityExecutionContext source);
+    
     /// <summary>
-    /// Retrieves a dictionary containing the persistable output of an activity execution context.
+    /// Maps an activity execution context to an activity execution record.
     /// </summary>
-    /// <param name="context">The activity execution context to extract persistable output from.</param>
-    /// <returns>A dictionary containing the persistable output.</returns>
-    Task<Dictionary<string, object?>> GetPersistableOutputAsync(ActivityExecutionContext context);
+    [Obsolete( "Use Map instead.", error: false)]
+    Task<ActivityExecutionRecord> MapAsync(ActivityExecutionContext source);
 }
