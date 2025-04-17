@@ -56,6 +56,8 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
             }
             logger.LogInformation("{Name} - Starting new span.", workflowName);
             logger.LogInformation("{Name} - Current Activity: {activity}", workflowName, System.Text.Json.JsonSerializer.Serialize(Activity.Current));
+            
+            Activity.Current = null;
             return ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflow.WorkflowMetadata.Name}", ActivityKind.Server);
         }
         
