@@ -1,6 +1,8 @@
 using Elsa.Common;
 using Elsa.Extensions;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.ActivityExecution;
+using Elsa.Workflows.State;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Middleware.Activities;
