@@ -109,7 +109,7 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
 
     private ActivityExecutionRecordRecord Map(ActivityExecutionRecord source)
     {
-        return new ActivityExecutionRecordRecord
+        return new()
         {
             Id = source.Id,
             ActivityId = source.ActivityId,
@@ -122,7 +122,7 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
             HasBookmarks = source.HasBookmarks,
             Status = source.Status.ToString(),
             ActivityTypeVersion = source.ActivityTypeVersion,
-            SerializedActivityState = source.ActivityState != null ? safeSerializer.Serialize(source.ActivityState) : null,
+            SerializedActivityState = source.ActivityState?.Any() == true ? safeSerializer.Serialize(source.ActivityState) : null,
             SerializedPayload = source.Payload?.Any() == true ? safeSerializer.Serialize(source.Payload) : null,
             SerializedOutputs = source.Outputs?.Any() == true ? safeSerializer.Serialize(source.Outputs) : null,
             SerializedException = source.Exception != null ? payloadSerializer.Serialize(source.Exception) : null,
@@ -133,7 +133,7 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
 
     private ActivityExecutionRecord Map(ActivityExecutionRecordRecord source)
     {
-        return new ActivityExecutionRecord
+        return new()
         {
             Id = source.Id,
             ActivityId = source.ActivityId,
@@ -157,7 +157,7 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
 
     private ActivityExecutionRecordSummary MapSummary(ActivityExecutionSummaryRecord source)
     {
-        return new ActivityExecutionRecordSummary
+        return new()
         {
             Id = source.Id,
             ActivityId = source.ActivityId,

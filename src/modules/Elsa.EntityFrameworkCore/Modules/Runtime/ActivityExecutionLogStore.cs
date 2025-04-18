@@ -85,7 +85,7 @@ public class EFCoreActivityExecutionStore(
     {
         entity = entity.SanitizeLogMessage();
         var compressionAlgorithm = options.Value.CompressionAlgorithm ?? nameof(None);
-        var serializedActivityState = entity.ActivityState != null ? safeSerializer.Serialize(entity.ActivityState) : null;
+        var serializedActivityState = entity.ActivityState?.Count > 0 ? safeSerializer.Serialize(entity.ActivityState) : null;
         var compressedSerializedActivityState = serializedActivityState != null ? await compressionCodecResolver.Resolve(compressionAlgorithm).CompressAsync(serializedActivityState, cancellationToken) : null;
 
         dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = compressedSerializedActivityState;
