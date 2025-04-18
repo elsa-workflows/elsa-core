@@ -110,7 +110,7 @@ public class EFCoreActivityExecutionStore(
     }
 
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)")]
-    private async Task<IDictionary<string, object>?>? DeserializeActivityState(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
+    private async Task<IDictionary<string, object?>?> DeserializeActivityState(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
     {
         var json = dbContext.Entry(entity).Property<string>("SerializedActivityState").CurrentValue;
 
@@ -119,8 +119,8 @@ public class EFCoreActivityExecutionStore(
             var compressionAlgorithm = (string?)dbContext.Entry(entity).Property("SerializedActivityStateCompressionAlgorithm").CurrentValue ?? nameof(None);
             var compressionStrategy = compressionCodecResolver.Resolve(compressionAlgorithm);
             json = await compressionStrategy.DecompressAsync(json, cancellationToken);
-            var dictionary = JsonSerializer.Deserialize<IDictionary<string, object>>(json);
-            return dictionary?.ToDictionary(x => x.Key, x => (object)x.Value);
+            var dictionary = JsonSerializer.Deserialize<IDictionary<string, object?>>(json);
+            return dictionary?.ToDictionary(x => x.Key, x => x.Value);
         }
 
         return null;
