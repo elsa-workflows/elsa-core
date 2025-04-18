@@ -25,7 +25,6 @@ public class WorkflowExecutionLogRecordExtractor(IIdentityGenerator identityGene
             WorkflowInstanceId = context.Id,
             WorkflowVersion = context.Workflow.Version,
             Source = x.Source,
-            ActivityState = x.ActivityState,
             Payload = x.Payload,
             Timestamp = x.Timestamp,
             Sequence = x.Sequence

@@ -1,11 +1,14 @@
-using Elsa.Extensions;
+using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Signals;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Behaviors;
 
 /// <summary>
 /// Implements a behavior that invokes "child completed" callbacks on parent activities.
 /// </summary>
+[UsedImplicitly]
 public class ScheduledChildCallbackBehavior : Behavior
 {
     /// <inheritdoc />
@@ -21,18 +24,17 @@ public class ScheduledChildCallbackBehavior : Behavior
         var childActivityNode = childActivityExecutionContext.ActivityNode;
         var callbackEntry = activityExecutionContext.WorkflowExecutionContext.PopCompletionCallback(activityExecutionContext, childActivityNode);
 
-        if (callbackEntry == null)
-            return;
-
-        // Before invoking the parent activity, make sure its properties are evaluated.
-        if (!activityExecutionContext.GetHasEvaluatedProperties())
-            await activityExecutionContext.EvaluateInputPropertiesAsync();
-
-        if (callbackEntry.CompletionCallback != null)
+        if (callbackEntry?.CompletionCallback != null)
         {
             var completedContext = new ActivityCompletedContext(activityExecutionContext, childActivityExecutionContext, signal.Result);
             var tag = callbackEntry.Tag;
             completedContext.TargetContext.Tag = tag;
+            
+            var mediator = activityExecutionContext.GetRequiredService<IMediator>();
+            var invokingActivityCallbackNotification = new InvokingActivityCallback(activityExecutionContext, childActivityExecutionContext);
+            var cancellationToken = context.CancellationToken;
+            await mediator.SendAsync(invokingActivityCallbackNotification, cancellationToken);
+            
             await callbackEntry.CompletionCallback(completedContext);
         }
     }

@@ -33,7 +33,7 @@ public class ExecutionLogMiddleware(ActivityMiddlewareDelegate next) : IActivity
             if (context.Status == ActivityStatus.Running)
             {
                 if (IsActivityBookmarked(context))
-                    context.AddExecutionLogEntry("Suspended", payload: context.JournalData);
+                    context.AddExecutionLogEntry("Suspended");
             }
         }
         catch (Exception exception)

@@ -9,14 +9,13 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 {
     public ActivityExecutionRecord Map(ActivityExecutionContext source)
     {
-        var payload = GetPayload(source);
         var outputs = source.GetOutputs();
         var inputs = source.GetInputs();
         var persistenceMap = source.GetLogPersistenceModeMap();
         var persistableInputs = GetPersistableInputOutput(inputs, persistenceMap.Inputs);
         var persistableOutputs = GetPersistableInputOutput(outputs, persistenceMap.Outputs);
         var persistableProperties = GetPersistableDictionary(source.Properties!, persistenceMap.InternalState);
-        var persistablePayload = GetPersistableDictionary(payload!, persistenceMap.InternalState);
+        var persistableJournalData = GetPersistableDictionary(source.JournalData!, persistenceMap.InternalState);
 
         return new()
         {
@@ -29,7 +28,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             ActivityState = persistableInputs,
             Outputs = persistableOutputs,
             Properties = persistableProperties,
-            Payload = persistablePayload!,
+            Payload = persistableJournalData!,
             Exception = ExceptionState.FromException(source.Exception),
             ActivityTypeVersion = source.Activity.Version,
             StartedAt = source.StartedAt,
@@ -61,16 +60,5 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
     private IDictionary<string, object?>? GetPersistableDictionary(IDictionary<string, object?> dictionary, LogPersistenceMode mode)
     {
         return mode == LogPersistenceMode.Include ? dictionary : null;
-    }
-
-    private static IDictionary<string, object> GetPayload(ActivityExecutionContext source)
-    {
-        var outcomes = source.JournalData.TryGetValue("Outcomes", out var resultValue) ? resultValue as string[] : null;
-        var payload = new Dictionary<string, object>();
-
-        if (outcomes != null)
-            payload.Add("Outcomes", outcomes);
-
-        return payload;
     }
 }
