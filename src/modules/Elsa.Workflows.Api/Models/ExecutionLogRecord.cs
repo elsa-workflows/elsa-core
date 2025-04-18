@@ -14,5 +14,5 @@ internal record ExecutionLogRecord(
     string? EventName,
     string? Message,
     string? Source,
-    IDictionary<string, object>? ActivityState,
+    [property: Obsolete] IDictionary<string, object>? ActivityState,
     object? Payload);
