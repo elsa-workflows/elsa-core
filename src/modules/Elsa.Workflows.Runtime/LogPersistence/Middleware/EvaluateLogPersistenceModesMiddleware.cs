@@ -6,8 +6,11 @@ public class EvaluateLogPersistenceModesMiddleware(ActivityMiddlewareDelegate ne
 {
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
-        await next(context);
+        // Evaluate log persistence mode before executing the next middleware to ensure the mode is known before any potential commit action.
         var persistenceLogMap = await persistenceEvaluator.EvaluateLogPersistenceModesAsync(context);
         context.SetLogPersistenceModeMap(persistenceLogMap);
+        
+        // Execute next middleware.
+        await next(context);
     }
 }
