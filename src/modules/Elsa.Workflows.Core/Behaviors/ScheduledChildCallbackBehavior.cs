@@ -32,8 +32,7 @@ public class ScheduledChildCallbackBehavior : Behavior
             
             var mediator = activityExecutionContext.GetRequiredService<IMediator>();
             var invokingActivityCallbackNotification = new InvokingActivityCallback(activityExecutionContext, childActivityExecutionContext);
-            var cancellationToken = context.CancellationToken;
-            await mediator.SendAsync(invokingActivityCallbackNotification, cancellationToken);
+            await mediator.SendAsync(invokingActivityCallbackNotification, context.CancellationToken);
             
             await callbackEntry.CompletionCallback(completedContext);
         }
