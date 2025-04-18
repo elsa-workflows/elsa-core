@@ -1,11 +1,12 @@
 using System.Diagnostics;
 using Elsa.Common;
 using Elsa.OpenTelemetry.Helpers;
+using Elsa.OpenTelemetry.Options;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Activity = System.Diagnostics.Activity;
 using ActivityKind = System.Diagnostics.ActivityKind;
 
@@ -15,7 +16,7 @@ namespace Elsa.OpenTelemetry.Middleware;
 /// Middleware that traces workflow execution using OpenTelemetry.
 /// </summary>
 [UsedImplicitly]
-public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, ISystemClock systemClock, ILogger<OpenTelemetryTracingWorkflowExecutionMiddleware> logger) : WorkflowExecutionMiddleware(next)
+public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, ISystemClock systemClock, IOptions<OpenTelemetryOptions> options) : WorkflowExecutionMiddleware(next)
 {
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
@@ -24,49 +25,13 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         var workflowInstanceId = context.Id;
         var workflow = context.Workflow;
 
-        var currentActivity = Activity.Current;
-        if (currentActivity != null)
-        {
-            var serializedActivity = System.Text.Json.JsonSerializer.Serialize(currentActivity);
-            logger.LogInformation("{Name} - There is an activity in the workflow execution context. {data}", workflowName, serializedActivity);
-        }
-
-        var startNewTrace = (context.Properties.TryGetValue("StartNewTrace", out var startNewTraceValue) && (bool)startNewTraceValue) || Activity.Current?.HasRemoteParent == true;
-        ActivityContext contextToUse;
-        Activity? linkedTraceContext = null;
-
-        if (startNewTrace)
-        {
-            logger.LogInformation("{Name} - Starting new trace.", workflowName);
-            Activity.Current?.Stop();
-            Activity.Current = null;
-
-            var newTraceId = ActivityTraceId.CreateRandom();
-            var newSpanId = ActivitySpanId.CreateRandom();
-            contextToUse = new ActivityContext(newTraceId, newSpanId, ActivityTraceFlags.Recorded);
-        }
-        else
-        {
-            logger.LogInformation("{Name} - Continuing existing trace.", workflowName);
-            contextToUse = Activity.Current?.Context ?? default;
-            linkedTraceContext = Activity.Current;
-        }
-
-        using var span = ElsaOpenTelemetry.ActivitySource.StartActivity(
-            $"execute workflow {workflow.WorkflowMetadata.Name}",
-            ActivityKind.Server,
-            contextToUse);
+        using var span = CreateTraceActivity(context, workflowName);
 
         if (span == null)
         {
             await Next(context);
             return;
         }
-
-        logger.LogInformation("{Name} - Using span with trace id {traceId} - {spanData}.", workflowName, span.TraceId, System.Text.Json.JsonSerializer.Serialize(span));
-
-        if (startNewTrace && linkedTraceContext != null)
-            span.AddLink(new(linkedTraceContext.Context));
 
         span.SetTag("operation.name", "elsa.workflow.execution");
         span.SetTag("span.type", "workflow");
@@ -116,6 +81,38 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
 
         if (!string.IsNullOrWhiteSpace(context.CorrelationId))
             span.SetTag("workflow.correlation_id", context.CorrelationId);
+    }
+
+    private Activity? CreateTraceActivity(WorkflowExecutionContext context, string? workflowName)
+    {
+        var startNewTraceOptionValue = context.Properties.TryGetValue("StartNewTrace", out var startNewTraceValue) && (bool)startNewTraceValue;
+        var startNewTraceForRemoteParent = options.Value.UseNewRootActivityForRemoteParent && Activity.Current?.HasRemoteParent == true;
+        var startNewTrace = startNewTraceOptionValue || startNewTraceForRemoteParent;
+        
+        ActivityContext contextToUse;
+        Activity? linkedTraceContext = null;
+
+        if (startNewTrace)
+        {
+            Activity.Current?.Stop();
+            Activity.Current = null;
+
+            contextToUse = options.Value.UseDummyParentActivityAsRootSpan
+                ? new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(), ActivityTraceFlags.Recorded)
+                : default;
+        }
+        else
+        {
+            contextToUse = Activity.Current?.Context ?? default;
+            linkedTraceContext = Activity.Current;
+        }
+
+        var span = ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflowName}", ActivityKind.Server, contextToUse);
+        
+        if (span != null && startNewTrace && linkedTraceContext != null)
+            span.AddLink(new(linkedTraceContext.Context));
+        
+        return span;
     }
 
     private ActivityTagsCollection CreateIncidentTags(ActivityIncident incident)
