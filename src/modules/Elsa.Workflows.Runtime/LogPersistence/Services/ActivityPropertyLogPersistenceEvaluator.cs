@@ -31,6 +31,7 @@ namespace Elsa.Workflows.Runtime;
  *          "default": { "evaluationMode": "Strategy", "strategyType": "Elsa.Workflows.LogPersistence.Strategies.Inherit, Elsa.Workflows.Core", "expression": "..." },
  *          "inputs": { "input1" : { "evaluationMode": "Strategy", "strategyType": "Elsa.Workflows.LogPersistence.Strategies.Inherit, Elsa.Workflows.Core", "expression": "..." } },
  *          "outputs": { "output1" : { "evaluationMode": "Strategy", "strategyType": "Elsa.Workflows.LogPersistence.Strategies.Inherit, Elsa.Workflows.Core", "expression": "..." } }
+ *          "internalState": { "evaluationMode": "Strategy", "strategyType": "Elsa.Workflows.LogPersistence.Strategies.Inherit, Elsa.Workflows.Core", "expression": "..." }
  *          }
  *  }
  */
@@ -73,6 +74,7 @@ public class ActivityPropertyLogPersistenceEvaluator : IActivityPropertyLogPersi
 
         await EvaluatePropertiesAsync(context, "inputs", context.ActivityDescriptor.Inputs, legacyProps, configProps, defaultMode, map.Inputs, cancellationToken);
         await EvaluatePropertiesAsync(context, "outputs", context.ActivityDescriptor.Outputs, legacyProps, configProps, defaultMode, map.Outputs, cancellationToken);
+        map.InternalState = await EvaluateInternalStateModeAsync(context.ExpressionExecutionContext, context.Activity.CustomProperties, defaultMode, cancellationToken);
 
         return map;
     }
@@ -85,8 +87,7 @@ public class ActivityPropertyLogPersistenceEvaluator : IActivityPropertyLogPersi
         return await GetPersistablePropertiesAsync(context, outputs, "outputs", legacyProps, configProps, defaultMode, cancellationToken);
     }
 
-    private async Task<(IDictionary<string, object> legacyProps, IDictionary<string, object> configProps, LogPersistenceMode defaultMode)>
-        GetPersistenceDefaultsAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+    private async Task<(IDictionary<string, object> legacyProps, IDictionary<string, object> configProps, LogPersistenceMode defaultMode)> GetPersistenceDefaultsAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
     {
         var legacyProps = context.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object>>(LegacyKey, () => new Dictionary<string, object>())!;
         var rootContext = context.WorkflowExecutionContext.ActivityExecutionContexts.First(x => x.ParentActivityExecutionContext == null);
@@ -132,6 +133,18 @@ public class ActivityPropertyLogPersistenceEvaluator : IActivityPropertyLogPersi
 
         var mode = legacySection.GetValueOrDefault(key, () => defaultMode);
         return ResolveMode(mode, () => defaultMode);
+    }
+    
+    private async Task<LogPersistenceMode> EvaluateInternalStateModeAsync(
+        ExpressionExecutionContext executionContext,
+        IDictionary<string, object> currentConfig,
+        LogPersistenceMode defaultMode,
+        CancellationToken cancellationToken)
+    {
+        var configObject = currentConfig.GetValueOrDefault("internalState", () => new Dictionary<string, object>())!;
+        var config = ConvertToConfig(configObject);
+        if (config != null) return await EvaluateConfigAsync(config, executionContext, () => defaultMode, cancellationToken);
+        return LogPersistenceMode.Inherit;
     }
 
     private async Task<Dictionary<string, object>> GetPersistablePropertiesAsync(
