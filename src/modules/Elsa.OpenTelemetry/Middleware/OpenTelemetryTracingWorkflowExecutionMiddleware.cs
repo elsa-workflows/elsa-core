@@ -1,16 +1,12 @@
 using System.Diagnostics;
-using System.Runtime.InteropServices.Marshalling;
-using System.Text.Json;
 using Elsa.Common;
-using Elsa.Expressions.Services;
-using Elsa.Extensions;
 using Elsa.OpenTelemetry.Helpers;
+using Elsa.OpenTelemetry.Options;
 using Elsa.Workflows;
-using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
-using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Options;
 using Activity = System.Diagnostics.Activity;
 using ActivityKind = System.Diagnostics.ActivityKind;
 
@@ -20,35 +16,21 @@ namespace Elsa.OpenTelemetry.Middleware;
 /// Middleware that traces workflow execution using OpenTelemetry.
 /// </summary>
 [UsedImplicitly]
-public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, ISystemClock systemClock) : WorkflowExecutionMiddleware(next)
+public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, ISystemClock systemClock, IOptions<OpenTelemetryOptions> options) : WorkflowExecutionMiddleware(next)
 {
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
+        var workflowName = context.Workflow.WorkflowMetadata.Name;
         var workflowInstanceId = context.Id;
         var workflow = context.Workflow;
-        var startNewTrace = context.Properties.TryGetValue("StartNewTrace", out var startNewTraceValue) && (bool)startNewTraceValue;
-        var parentTraceContext = startNewTrace ? default : Activity.Current?.Context ?? default;
-        var linkedTraceContext = startNewTrace ? Activity.Current : null;
-        
-        if(startNewTrace)
-        {
-            Activity.Current?.Stop();
-            Activity.Current = null;
-        }
-        
-        using var span = ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflow.WorkflowMetadata.Name}", ActivityKind.Server, parentTraceContext);
 
-        if (span == null) // No listener is registered.
+        using var span = CreateTraceActivity(context, workflowName);
+
+        if (span == null)
         {
             await Next(context);
             return;
-        }
-
-        if(startNewTrace)
-        {
-            if (linkedTraceContext != null)
-                span.AddLink(new(linkedTraceContext.Context));
         }
 
         span.SetTag("operation.name", "elsa.workflow.execution");
@@ -99,6 +81,38 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
 
         if (!string.IsNullOrWhiteSpace(context.CorrelationId))
             span.SetTag("workflow.correlation_id", context.CorrelationId);
+    }
+
+    private Activity? CreateTraceActivity(WorkflowExecutionContext context, string? workflowName)
+    {
+        var startNewTraceOptionValue = context.Properties.TryGetValue("StartNewTrace", out var startNewTraceValue) && (bool)startNewTraceValue;
+        var startNewTraceForRemoteParent = options.Value.UseNewRootActivityForRemoteParent && Activity.Current?.HasRemoteParent == true;
+        var startNewTrace = startNewTraceOptionValue || startNewTraceForRemoteParent;
+        
+        ActivityContext contextToUse;
+        ActivityContext? linkedTraceContext = null;
+
+        if (startNewTrace)
+        {
+            linkedTraceContext = Activity.Current?.Context;
+            Activity.Current?.Stop();
+            Activity.Current = null;
+
+            contextToUse = options.Value.UseDummyParentActivityAsRootSpan
+                ? new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(), ActivityTraceFlags.Recorded)
+                : default;
+        }
+        else
+        {
+            contextToUse = Activity.Current?.Context ?? default;
+        }
+
+        var span = ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflowName}", ActivityKind.Server, contextToUse);
+        
+        if (span != null && linkedTraceContext != null)
+            span.AddLink(new (linkedTraceContext.Value));
+        
+        return span;
     }
 
     private ActivityTagsCollection CreateIncidentTags(ActivityIncident incident)
