@@ -18,11 +18,6 @@
         <ProjectReference Include="..\..\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite\Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.SqlServer\Elsa.Secrets.Persistence.EntityFrameworkCore.SqlServer.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Secrets.Scripting\Elsa.Secrets.Scripting.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Sql.MySql\Elsa.Sql.MySql.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Sql.PostgreSql\Elsa.Sql.PostgreSql.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Sql.Sqlite\Elsa.Sql.Sqlite.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Sql.SqlServer\Elsa.Sql.SqlServer.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Sql\Elsa.Sql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Webhooks\Elsa.Webhooks.csproj" />
         <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
