@@ -37,5 +37,6 @@ public class JsonActivitySerializer(IServiceProvider serviceProvider) : Configur
         options.Converters.Add(CreateInstance<InputJsonConverterFactory>());
         options.Converters.Add(CreateInstance<OutputJsonConverterFactory>());
         options.Converters.Add(CreateInstance<ExpressionJsonConverterFactory>());
+        options.Converters.Add(CreateInstance<FuncExpressionValueConverter>());
     }
 }
