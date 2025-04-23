@@ -17,7 +17,7 @@ public class OpenTelemetryFeature(IModule module) : FeatureBase(module)
     /// <summary>
     /// Determines if instead of a empty parent, a dummy parent Activity should be used to create a new Root Activity.
     /// </summary>
-    /// <remarks>This is needed when middleware is active that uses the previous Parent Activity despite creating an Activity based on an empty Parent.</remarks>
+    /// <remarks>This is needed for Datadog middleware that uses the previous parent Activity despite creating an Activity based on an empty parent.</remarks>
     public bool UseDummyParentActivityAsRootSpan { get; set; } = false;
     
     public override void Configure()
