@@ -17,7 +17,7 @@
 
     <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
     <ItemGroup>
-        <PackageReference Include="System.Formats.Asn1" VersionOverride="8.0.1" />
+        <PackageReference Include="System.Formats.Asn1" VersionOverride="9.0.4" />
     </ItemGroup>
 
     <ItemGroup>

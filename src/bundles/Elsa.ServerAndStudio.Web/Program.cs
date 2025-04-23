@@ -14,7 +14,6 @@ using Proto.Persistence.Sqlite;
 const bool useMassTransit = true;
 const bool useProtoActor = false;
 const bool useCaching = true;
-const bool useMySql = false;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
@@ -61,17 +60,11 @@ services
                 if (useCaching)
                     management.UseCache();
 
-                if (useMySql)
-                    management.UseEntityFrameworkCore(ef => ef.UseMySql(mySqlConnectionString));
-                else
-                    management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+                management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             })
             .UseWorkflowRuntime(runtime =>
             {
-                if (useMySql)
-                    runtime.UseEntityFrameworkCore(ef => ef.UseMySql(mySqlConnectionString));
-                else
-                    runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+                runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
                 
                 if (useMassTransit)
                 {
