@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Elsa.Common.Models;
 using Elsa.Expressions.Contracts;
@@ -8,6 +7,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -82,6 +82,12 @@ public class BulkDispatchWorkflows : Activity
         Description = "Wait for the dispatched workflows to complete before completing this activity.",
         DefaultValue = true)]
     public Input<bool> WaitForCompletion { get; set; } = new(true);
+    
+    /// <summary>
+    /// Indicates whether a new trace context should be started for the workflow execution.
+    /// </summary>
+    [Input(Description = "Start a new trace context when using Open Telemetry.", Category = "Open Telemetry")]
+    public Input<bool> StartNewTrace { get; set; }
 
     /// <summary>
     /// The channel to dispatch the workflow to.
@@ -97,42 +103,30 @@ public class BulkDispatchWorkflows : Activity
     /// <summary>
     /// An activity to execute when the child workflow finishes.
     /// </summary>
-    [Port]
-    public IActivity? ChildCompleted { get; set; }
+    [Port] public IActivity? ChildCompleted { get; set; }
 
     /// <summary>
     /// An activity to execute when the child workflow faults.
     /// </summary>
-    [Port]
-    public IActivity? ChildFaulted { get; set; }
-    
-    private List<string> _errors = new List<string>();
+    [Port] public IActivity? ChildFaulted { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var waitForCompletion = WaitForCompletion.GetOrDefault(context);
-        var items = context.GetItemSource<object>(Items);
-        var dispatchedInstancesCount = 0L;
+        var startNewTrace = StartNewTrace.GetOrDefault(context);
+        var items = await context.GetItemSource<object>(Items).ToListAsync(context.CancellationToken);
+        var count = items.Count;
 
-        await foreach (var item in items)
-        {
-            var dispatchedSuccessful = await ProcessItem(context, item);
-            if (dispatchedSuccessful)
-            {
-                dispatchedInstancesCount++;
-            }
-        }
+        // Dispatch the child workflows.
+        foreach (var item in items)
+            await DispatchChildWorkflowAsync(context, item, waitForCompletion, startNewTrace);
 
-        if (_errors.Count > 1)
-        {
-            context.JournalData.Add("Error", _errors);
-        }
-
-        context.SetProperty(DispatchedInstancesCountKey, dispatchedInstancesCount);
+        // Store the number of dispatched instances for tracking.
+        context.SetProperty(DispatchedInstancesCountKey, count);
 
         // If we need to wait for the child workflows to complete (if any), create a bookmark.
-        if (waitForCompletion && dispatchedInstancesCount > 0)
+        if (waitForCompletion && count > 0)
         {
             var workflowInstanceId = context.WorkflowExecutionContext.Id;
             var bookmarkOptions = new CreateBookmarkArgs
@@ -140,11 +134,13 @@ public class BulkDispatchWorkflows : Activity
                 Callback = OnChildWorkflowCompletedAsync,
                 Payload = new BulkDispatchWorkflowsBookmark(workflowInstanceId)
                 {
-                    ScheduledInstanceIdsCount = dispatchedInstancesCount
+                    ParentInstanceId = context.WorkflowExecutionContext.Id,
+                    ScheduledInstanceIdsCount = count
                 },
                 IncludeActivityInstanceId = false,
                 AutoBurn = false,
             };
+
             context.CreateBookmark(bookmarkOptions);
         }
         else
@@ -154,28 +150,15 @@ public class BulkDispatchWorkflows : Activity
         }
     }
 
-    private async Task<bool> ProcessItem(ActivityExecutionContext context, object item)
-    {
-        try
-        {
-            await DispatchChildWorkflowAsync(context, item);
-            return true;
-        }
-        catch (TaskCanceledException)
-        {
-            await context.CompleteActivityWithOutcomesAsync("Canceled");
-            return false;
-        }
-        catch (Exception ex)
-        {
-            _errors.Add(ex.Message);
-            return false;
-        }
-    }
-
-    private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, object item)
+    private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, object item, bool waitForCompletion, bool startNewTrace)
     {
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
+        var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published);
+
+        if (workflowGraph == null)
+            throw new($"No published version of workflow definition with ID {workflowDefinitionId} found.");
+
         var parentInstanceId = context.WorkflowExecutionContext.Id;
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
         var channelName = ChannelName.GetOrDefault(context);
@@ -184,6 +167,9 @@ public class BulkDispatchWorkflows : Activity
         {
             ["ParentInstanceId"] = parentInstanceId
         };
+
+        if (waitForCompletion) properties["WaitForCompletion"] = true;
+        if (startNewTrace) properties["StartNewTrace"] = true;
 
         var itemDictionary = new Dictionary<string, object>
         {
@@ -201,13 +187,11 @@ public class BulkDispatchWorkflows : Activity
 
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
-        var instanceId = identityGenerator.GenerateId();
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var correlationId = CorrelationIdFunction != null ? await evaluator.EvaluateAsync<string>(CorrelationIdFunction!, context.ExpressionExecutionContext, evaluatorOptions) : null;
-        var request = new DispatchWorkflowDefinitionRequest
+        var instanceId = identityGenerator.GenerateId();
+        var request = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.DefinitionId, VersionOptions.SpecificVersion(workflowGraph.Workflow.Identity.Version))
         {
-            DefinitionId = workflowDefinitionId,
-            VersionOptions = VersionOptions.Published,
             ParentWorkflowInstanceId = parentInstanceId,
             Input = input,
             Properties = properties,
@@ -219,13 +203,10 @@ public class BulkDispatchWorkflows : Activity
             Channel = channelName
         };
 
-        var dispatchResponse = await workflowDispatcher.DispatchAsync(request, options, context.CancellationToken);
-        dispatchResponse.ThrowIfFailed();
-
+        await workflowDispatcher.DispatchAsync(request, options, context.CancellationToken);
         return instanceId;
     }
 
-    [RequiresUnreferencedCode("Calls Elsa.Expressions.Helpers.ObjectConverter.ConvertTo<T>(ObjectConverterOptions)")]
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
