@@ -32,6 +32,9 @@ using Medallion.Threading.Postgres;
 using Medallion.Threading.Redis;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
 
@@ -51,6 +54,7 @@ const bool useCaching = true;
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disable until Elsa Studio is updated to send authenticated requests to the SignalR hub. 
 const bool useAzureServiceBus = false;
+const bool useManualOtelInstrumentation = true;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
@@ -69,6 +73,38 @@ var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var redisConnectionString = configuration.GetConnectionString("Redis")!;
 var distributedLockProviderName = configuration.GetSection("Runtime")["DistributedLockProvider"];
 var appRole = Enum.Parse<ApplicationRole>(configuration["AppRole"]);
+
+if (useManualOtelInstrumentation)
+{
+    services.AddOpenTelemetry()
+        .ConfigureResource(resource => resource.AddService("elsa-workflows", serviceVersion: "3.2.0-blueberry").AddTelemetrySdk())
+        .WithTracing(tracing =>
+        {
+            tracing
+                .AddSource("*")
+                .SetSampler(new AlwaysOnSampler())
+                //.AddConsoleExporter()
+                .AddOtlpExporter()
+                ;
+        })
+        .WithMetrics(metrics =>
+        {
+            metrics
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                //.AddConsoleExporter()
+                .AddOtlpExporter()
+                ;
+        });
+
+    // Enable OpenTelemetry Logging (optional)
+    builder.Logging.AddOpenTelemetry(options =>
+    {
+        options.IncludeFormattedMessage = true;
+        options.IncludeScopes = true;
+        options.ParseStateValues = true;
+    });
+}
 
 // Add Elsa services.
 services
@@ -322,7 +358,8 @@ services
                     alterations.UseMassTransitDispatcher();
                 }
             })
-            .UseWorkflowContexts();
+            .UseWorkflowContexts()
+            .UseOpenTelemetry();
 
         if (useQuartz)
         {

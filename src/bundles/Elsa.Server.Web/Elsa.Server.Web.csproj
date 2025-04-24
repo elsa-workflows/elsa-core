@@ -54,6 +54,13 @@
         <PackageReference Include="Grpc.Net.Client" />
         <PackageReference Include="Proto.Persistence.Sqlite"/>
         <PackageReference Include="Proto.Persistence.SqlServer"/>
+        <PackageReference Include="OpenTelemetry" />
+        <PackageReference Include="OpenTelemetry.Exporter.Console" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" />
     </ItemGroup>
     
     <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->

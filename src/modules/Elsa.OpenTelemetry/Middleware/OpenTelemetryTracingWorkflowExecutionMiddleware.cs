@@ -1,14 +1,14 @@
 using System.Diagnostics;
-using System.Text.Json;
+using Elsa.Common;
 using Elsa.Common.Contracts;
-using Elsa.Expressions.Services;
-using Elsa.Extensions;
 using Elsa.OpenTelemetry.Helpers;
+using Elsa.OpenTelemetry.Options;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
-using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Options;
 using Activity = System.Diagnostics.Activity;
 using ActivityKind = System.Diagnostics.ActivityKind;
 
@@ -18,77 +18,119 @@ namespace Elsa.OpenTelemetry.Middleware;
 /// Middleware that traces workflow execution using OpenTelemetry.
 /// </summary>
 [UsedImplicitly]
-public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, ISystemClock systemClock) : WorkflowExecutionMiddleware(next)
+public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, ISystemClock systemClock, IOptions<OpenTelemetryOptions> options) : WorkflowExecutionMiddleware(next)
 {
-    private readonly JsonSerializerOptions? _incidentSerializerOptions = new JsonSerializerOptions().WithConverters(new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()));
-
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
+        var workflowName = context.Workflow.WorkflowMetadata.Name;
         var workflowInstanceId = context.Id;
         var workflow = context.Workflow;
-        using var span = ElsaOpenTelemetry.ActivitySource.StartActivity("WorkflowExecution", ActivityKind.Internal, Activity.Current?.Context ?? default);
 
-        if (span == null) // No listener is registered.
+        using var span = CreateTraceActivity(context, workflowName);
+
+        if (span == null)
         {
             await Next(context);
             return;
         }
 
-        span.SetTag("workflowInstance.id", workflowInstanceId);
-        span.SetTag("workflowDefinition.definitionId", workflow.Identity.DefinitionId);
-        span.SetTag("workflowDefinition.version", workflow.Identity.Version);
-        span.SetTag("workflowDefinition.name", workflow.WorkflowMetadata.Name);
-        span.SetTag("workflowExecution.startTimeUtc", span.StartTimeUtc);
-        
-        if(context.TriggerActivityId != null)
+        span.SetTag("operation.name", "elsa.workflow.execution");
+        span.SetTag("span.type", "workflow");
+        span.SetTag("workflow.definition.id", workflow.Identity.DefinitionId);
+        span.SetTag("workflow.definition.version", workflow.Identity.Version);
+        span.SetTag("workflow.definition.name", workflow.WorkflowMetadata.Name);
+        span.SetTag("workflow.instance.id", workflowInstanceId);
+
+        if (context.TriggerActivityId != null)
         {
-            var activity = context.FindActivityById(context.TriggerActivityId) ?? throw new Exception($"Trigger activity with ID {context.TriggerActivityId} not found. This should not happen.");
-            span.SetTag("workflowExecution.trigger.activityId", activity.Id);
-            span.SetTag("workflowExecution.trigger.activityName", activity.Name);
-            span.SetTag("workflowExecution.trigger.activityType", activity.Type);
+            var activity = context.FindActivityById(context.TriggerActivityId) ?? throw new($"Trigger activity with ID {context.TriggerActivityId} not found. This should not happen.");
+            span.SetTag("workflow.trigger.activity.id", activity.Id);
+            span.SetTag("workflow.trigger.activity.name", activity.Name);
+            span.SetTag("workflow.trigger.activity.type", activity.Type);
+            span.SetTag("workflow.trigger.activity.version", activity.Version);
         }
-        
-        span.AddEvent(new ActivityEvent("Executing", tags: CreateStatusTags(context)));
+
+        span.AddEvent(new("executing"));
         await Next(context);
 
         if (context.SubStatus == WorkflowSubStatus.Faulted)
         {
-            span.AddEvent(new ActivityEvent("Faulted", tags: CreateStatusTags(context)));
-            span.SetStatus(ActivityStatusCode.Error);
-            span.SetTag("error", true);
+            span.AddEvent(new("faulted"));
+            span.SetStatus(ActivityStatusCode.Error, "The workflow entered the Faulted state. See incidents for details.");
+        }
+        else if (context.SubStatus == WorkflowSubStatus.Finished)
+        {
+            span.AddEvent(new("finished"));
+        }
+        else if (context.SubStatus == WorkflowSubStatus.Cancelled)
+        {
+            span.AddEvent(new("canceled"));
+        }
+        else if (context.SubStatus == WorkflowSubStatus.Suspended)
+        {
+            span.AddEvent(new("suspended"));
+        }
+
+        if (context.Incidents.Any())
+        {
+            span.SetTag("workflow.incidents.count", context.Incidents.Count);
+
+            foreach (var incident in context.Incidents)
+                span.AddEvent(new("incident", incident.Timestamp, CreateIncidentTags(incident)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(context.CorrelationId))
+            span.SetTag("workflow.correlation_id", context.CorrelationId);
+    }
+
+    private Activity? CreateTraceActivity(WorkflowExecutionContext context, string? workflowName)
+    {
+        var startNewTraceOptionValue = context.Properties.TryGetValue("StartNewTrace", out var startNewTraceValue) && (bool)startNewTraceValue;
+        var startNewTraceForRemoteParent = options.Value.UseNewRootActivityForRemoteParent && Activity.Current?.HasRemoteParent == true;
+        var startNewTrace = startNewTraceOptionValue || startNewTraceForRemoteParent;
+        
+        ActivityContext contextToUse;
+        ActivityContext? linkedTraceContext = null;
+
+        if (startNewTrace)
+        {
+            linkedTraceContext = Activity.Current?.Context;
+            Activity.Current?.Stop();
+            Activity.Current = null;
+
+            contextToUse = options.Value.UseDummyParentActivityAsRootSpan
+                ? new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(), ActivityTraceFlags.Recorded)
+                : default;
         }
         else
         {
-            span.AddEvent(new ActivityEvent("Executed", tags: CreateStatusTags(context)));
-            span.SetStatus(ActivityStatusCode.Ok);
+            contextToUse = Activity.Current?.Context ?? default;
         }
-        
-        if(context.Incidents.Any())
-        {
-            span.SetStatus(ActivityStatusCode.Error);
-            span.SetTag("workflowInstance.hasIncidents", true);
-            span.SetTag("error", true);
 
-            if (context.Incidents.Count > 0)
-                span.SetTag("error.message", JsonSerializer.Serialize(context.Incidents, _incidentSerializerOptions));
-        }
+        var span = ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflowName}", ActivityKind.Server, contextToUse);
         
-        if (!string.IsNullOrWhiteSpace(context.CorrelationId))
-            span.SetTag("workflowInstance.correlationId", context.CorrelationId);
+        if (span != null && linkedTraceContext != null)
+            span.AddLink(new (linkedTraceContext.Value));
         
-        var now = systemClock.UtcNow;
-        span.SetTag("workflowExecution.endTimeUtc", now);
-        span.SetTag("workflowExecution.durationMs", (now - span.StartTimeUtc).TotalMilliseconds);
+        return span;
     }
-    
-    private ActivityTagsCollection CreateStatusTags(WorkflowExecutionContext context)
+
+    private ActivityTagsCollection CreateIncidentTags(ActivityIncident incident)
     {
-        return new ActivityTagsCollection(new Dictionary<string, object?>
+        var tags = new ActivityTagsCollection(new Dictionary<string, object?>
         {
-            ["workflowInstance.status"] = context.Status.ToString(),
-            ["workflowInstance.subStatus"] = context.SubStatus.ToString()
+            ["incident.message"] = incident.Message,
         });
+
+        if (incident.Exception != null)
+        {
+            tags["incident.exception.message"] = incident.Exception.Message;
+            tags["incident.exception.stackTrace"] = incident.Exception.StackTrace;
+            tags["incident.exception.type"] = incident.Exception.Type.FullName;
+        }
+
+        return tags;
     }
 }
 
@@ -98,6 +140,8 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
 [UsedImplicitly]
 public static class OpenTelemetryWorkflowExecutionMiddlewareExtensions
 {
+    /// <summary>
     /// Installs the <see cref="OpenTelemetryTracingWorkflowExecutionMiddleware"/> component in the workflow execution pipeline.
+    /// </summary>
     public static IWorkflowExecutionPipelineBuilder UseWorkflowExecutionTracing(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.Insert<OpenTelemetryTracingWorkflowExecutionMiddleware>(0);
 }
