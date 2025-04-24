@@ -60,10 +60,6 @@ jobs:
           dotnet-version: 9.x
       - name: Compile+Test+Pack
         run: ./build.sh Compile+Test+Pack --version ${VERSION} --analyseCode true
-      - name: End SonarCloud analysis
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
