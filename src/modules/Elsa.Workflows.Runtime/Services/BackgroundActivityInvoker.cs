@@ -15,7 +15,7 @@ public class BackgroundActivityInvoker(
     IWorkflowDefinitionService workflowDefinitionService,
     IVariablePersistenceManager variablePersistenceManager,
     IActivityInvoker activityInvoker,
-    IActivityExecutionMapper activityExecutionMapper,
+    IActivityPropertyLogPersistenceEvaluator activityPropertyLogPersistenceEvaluator,
     WorkflowHeartbeatGeneratorFactory workflowHeartbeatGeneratorFactory,
     IServiceProvider serviceProvider,
     ILogger<BackgroundActivityInvoker> logger)
@@ -66,7 +66,7 @@ public class BackgroundActivityInvoker(
         var completed = activityExecutionContext.GetBackgroundCompleted();
         var scheduledActivities = activityExecutionContext.GetBackgroundScheduledActivities().ToList();
         var workflowInstanceId = scheduledBackgroundActivity.WorkflowInstanceId;
-        var outputValues = await activityExecutionMapper.GetPersistableOutputAsync(activityExecutionContext);
+        var outputValues = await activityPropertyLogPersistenceEvaluator.GetPersistableOutputAsync(activityExecutionContext);
         var properties = new Dictionary<string, object>
         {
             [scheduledActivitiesKey] = JsonSerializer.Serialize(scheduledActivities),

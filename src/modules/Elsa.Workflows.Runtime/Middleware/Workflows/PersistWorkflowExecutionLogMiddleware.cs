@@ -13,8 +13,5 @@ public class PersistWorkflowExecutionLogMiddleware(WorkflowMiddlewareDelegate ne
     {
         // Invoke next middleware.
         await Next(context);
-
-        // Not used anymore.
-        //await sink.PersistExecutionLogsAsync(context);
     }
 }

@@ -8,7 +8,7 @@ namespace Elsa.Workflows.CommitStates.Strategies;
 /// This strategy determines if a workflow should commit by comparing the elapsed time
 /// since the last commit with the configured interval.
 /// </summary>
-[DisplayName("Periodic")]
+[DisplayName("Commit Periodically")]
 [Description("Determines whether a workflow state should be committed based on a specified time interval.")]
 public class PeriodicWorkflowStrategy(TimeSpan interval) : IWorkflowCommitStrategy
 {
