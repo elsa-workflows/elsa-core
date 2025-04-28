@@ -32,7 +32,7 @@ public class InputOutputLoggingTests(App app) : AppComponentTest(app)
         {
             var activityExecutionRecord = activityExecutionRecords[i];
             var shouldBeIncluded = shouldBeIncludedArray[i];
-            var isIncluded = activityExecutionRecord.ActivityState!.ContainsKey(nameof(WriteLine.Text));
+            var isIncluded = activityExecutionRecord.ActivityState?.ContainsKey(nameof(WriteLine.Text)) == true;
             Assert.Equal(shouldBeIncluded, isIncluded);
         }
     }
@@ -55,8 +55,8 @@ public class InputOutputLoggingTests(App app) : AppComponentTest(app)
         await ExecuteWorkflowAsync("input-output-logging-3");
         var setOutput1Record = await GetRecordByActivityNameAsync("SetOutput1");
         var setOutput2Record = await GetRecordByActivityNameAsync("SetOutput2");
-        var output1IsIncluded = setOutput1Record.ActivityState!.ContainsKey("OutputName");
-        var output2IsIncluded = setOutput2Record.ActivityState!.ContainsKey("OutputName");
+        var output1IsIncluded = setOutput1Record.ActivityState?.ContainsKey("OutputName") == true;
+        var output2IsIncluded = setOutput2Record.ActivityState?.ContainsKey("OutputName") == true;
 
         Assert.False(output1IsIncluded);
         Assert.True(output2IsIncluded);

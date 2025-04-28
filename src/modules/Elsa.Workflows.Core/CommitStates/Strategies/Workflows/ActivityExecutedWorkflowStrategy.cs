@@ -11,7 +11,7 @@ namespace Elsa.Workflows.CommitStates.Strategies;
 /// and returns a <see cref="CommitAction.Commit"/> action if the activity's lifetime event corresponds
 /// to <see cref="WorkflowLifetimeEvent.ActivityExecuted"/>. Otherwise, it defaults to <see cref="CommitAction.Default"/>.
 /// </remarks>
-[DisplayName("Activity Executed")]
+[DisplayName("Commit After Activity Execution")]
 [Description("Determines whether a workflow state should be committed if the current activity has executed.")]
 public class ActivityExecutedWorkflowStrategy : IWorkflowCommitStrategy
 {

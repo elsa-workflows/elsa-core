@@ -109,7 +109,7 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
 
     private ActivityExecutionRecordRecord Map(ActivityExecutionRecord source)
     {
-        return new ActivityExecutionRecordRecord
+        return new()
         {
             Id = source.Id,
             ActivityId = source.ActivityId,
@@ -122,18 +122,18 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
             HasBookmarks = source.HasBookmarks,
             Status = source.Status.ToString(),
             ActivityTypeVersion = source.ActivityTypeVersion,
-            SerializedActivityState = source.ActivityState != null ? safeSerializer.Serialize(source.ActivityState) : null,
-            SerializedPayload = source.Payload != null ? safeSerializer.Serialize(source.Payload) : null,
-            SerializedOutputs = source.Outputs != null ? safeSerializer.Serialize(source.Outputs) : null,
+            SerializedActivityState = source.ActivityState?.Any() == true ? safeSerializer.Serialize(source.ActivityState) : null,
+            SerializedPayload = source.Payload?.Any() == true ? safeSerializer.Serialize(source.Payload) : null,
+            SerializedOutputs = source.Outputs?.Any() == true ? safeSerializer.Serialize(source.Outputs) : null,
             SerializedException = source.Exception != null ? payloadSerializer.Serialize(source.Exception) : null,
-            SerializedProperties = source.Properties.Any() ? safeSerializer.Serialize(source.Properties) : null,
+            SerializedProperties = source.Properties?.Any() == true ? safeSerializer.Serialize(source.Properties) : null,
             TenantId = source.TenantId
         };
     }
 
     private ActivityExecutionRecord Map(ActivityExecutionRecordRecord source)
     {
-        return new ActivityExecutionRecord
+        return new()
         {
             Id = source.Id,
             ActivityId = source.ActivityId,
@@ -146,18 +146,18 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
             HasBookmarks = source.HasBookmarks,
             Status = Enum.Parse<ActivityStatus>(source.Status),
             ActivityTypeVersion = source.ActivityTypeVersion,
-            ActivityState = source.SerializedActivityState != null ? payloadSerializer.Deserialize<IDictionary<string, object>>(source.SerializedActivityState) : default,
-            Payload = source.SerializedPayload != null ? safeSerializer.Deserialize<IDictionary<string, object>>(source.SerializedPayload) : default,
-            Outputs = source.SerializedOutputs != null ? safeSerializer.Deserialize<IDictionary<string, object?>>(source.SerializedOutputs) : default,
-            Exception = source.SerializedException != null ? payloadSerializer.Deserialize<ExceptionState>(source.SerializedException) : default,
-            Properties = source.SerializedProperties != null ? safeSerializer.Deserialize<IDictionary<string, object>>(source.SerializedProperties) : new Dictionary<string, object>(),
+            ActivityState = source.SerializedActivityState != null ? payloadSerializer.Deserialize<IDictionary<string, object?>>(source.SerializedActivityState) : null,
+            Payload = source.SerializedPayload != null ? safeSerializer.Deserialize<IDictionary<string, object>>(source.SerializedPayload) : null,
+            Outputs = source.SerializedOutputs != null ? safeSerializer.Deserialize<IDictionary<string, object?>>(source.SerializedOutputs) : null,
+            Exception = source.SerializedException != null ? payloadSerializer.Deserialize<ExceptionState>(source.SerializedException) : null,
+            Properties = source.SerializedProperties != null ? safeSerializer.Deserialize<IDictionary<string, object>>(source.SerializedProperties) : null,
             TenantId = source.TenantId
         };
     }
 
     private ActivityExecutionRecordSummary MapSummary(ActivityExecutionSummaryRecord source)
     {
-        return new ActivityExecutionRecordSummary
+        return new()
         {
             Id = source.Id,
             ActivityId = source.ActivityId,
