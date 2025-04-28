@@ -24,7 +24,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     }
 
     /// <inheritdoc />
-    public IEnumerable<ActivityDescriptor> ListAll() => _activityDescriptors.Values;
+    public IEnumerable<ActivityDescriptor> ListAll() => _activityDescriptors.Values.DistinctBy(x => x.TypeName);
 
     /// <inheritdoc />
     public IEnumerable<ActivityDescriptor> ListByProvider(Type providerType) => _providedActivityDescriptors.TryGetValue(providerType, out var descriptors) ? descriptors : ArraySegment<ActivityDescriptor>.Empty;
@@ -56,7 +56,9 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
             return;
 
         var activityDescriptor = await activityDescriber.DescribeActivityAsync(activityType, cancellationToken);
-        Add(GetType(), activityDescriptor);
+
+
+        Add(activityDescriptor, _activityDescriptors, _manualActivityDescriptors);
         _manualActivityDescriptors.Add(activityDescriptor);
     }
 
@@ -74,7 +76,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     public async Task RefreshDescriptorsAsync(IEnumerable<IActivityProvider> activityProviders, CancellationToken cancellationToken = default)
     {
         var providersDictionary = new ConcurrentDictionary<Type, ICollection<ActivityDescriptor>>();
-        var activityDescriptors = new ConcurrentDictionary<(string Type, int Version), ActivityDescriptor>();
+        var activityDescriptors = new ConcurrentDictionary<(string Type, int Version), ActivityDescriptor>(_activityDescriptors);
         foreach (var activityProvider in activityProviders)
         {
             var descriptors = (await activityProvider.GetDescriptorsAsync(cancellationToken)).ToList();
