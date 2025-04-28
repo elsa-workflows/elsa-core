@@ -20,7 +20,8 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     /// <summary>
     /// Initializes a new instance of the <see cref="JsonWorkflowStateSerializer"/> class.
     /// </summary>
-    public JsonWorkflowStateSerializer(IServiceProvider serviceProvider, IWellKnownTypeRegistry wellKnownTypeRegistry, ILoggerFactory loggerFactory) : base(serviceProvider)
+    public JsonWorkflowStateSerializer(IServiceProvider serviceProvider, IWellKnownTypeRegistry wellKnownTypeRegistry, ILoggerFactory loggerFactory)
+        : base(serviceProvider)
     {
         _wellKnownTypeRegistry = wellKnownTypeRegistry;
         _loggerFactory = loggerFactory;
@@ -128,10 +129,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     public override JsonSerializerOptions GetOptions()
     {
         var options = base.GetOptions();
-        return new(options)
-        {
-            ReferenceHandler = new CrossScopedReferenceHandler()
-        };
+        return new(options) { ReferenceHandler = new CrossScopedReferenceHandler() };
     }
 
     /// <inheritdoc />
@@ -140,5 +138,6 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
         options.Converters.Add(new TypeJsonConverter(_wellKnownTypeRegistry));
         options.Converters.Add(new PolymorphicObjectConverterFactory(_wellKnownTypeRegistry));
         options.Converters.Add(new VariableConverterFactory(_wellKnownTypeRegistry, _loggerFactory));
+        options.Converters.Add(new FuncExpressionValueConverter());
     }
 }
