@@ -25,6 +25,7 @@ public class JobRunnerHostedService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await ProcessJobsAsync(stoppingToken);
+        await ProcessJobsAsync(stoppingToken);
     }
 
     private async Task ProcessJobsAsync(CancellationToken stoppingToken)
