@@ -13,7 +13,7 @@ on:
   release:
     types: [ prereleased, published ]
 env:
-  base_version: '3.5.0'
+  base_version: '3.6.0'
   feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
   nuget_feed_source: 'https://api.nuget.org/v3/index.json'
 
@@ -46,7 +46,7 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased")]]; then
             git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
-            git branch --remote --contains | grep origin/rc/3.4.0
+            git branch --remote --contains | grep origin/main
           else
             git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
             git branch --remote --contains | grep origin/${BRANCH_NAME}
