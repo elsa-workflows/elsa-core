@@ -18,7 +18,7 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 public class FlowJoin : Activity, IJoinNode
 {
     /// <inheritdoc />
-    public FlowJoin([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public FlowJoin([CallerFilePath] string? source = null, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
@@ -35,15 +35,22 @@ public class FlowJoin : Activity, IJoinNode
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        Flowchart.CancelAncestorActivatesAsync(context);
+        if(!Flowchart.UseTokenFlow)
+            Flowchart.CancelAncestorActivatesAsync(context);
+        
         await context.CompleteActivityAsync();
     }
 
     protected override bool CanExecute(ActivityExecutionContext context)
-        => context.Get(Mode) switch
+    {
+        if(Flowchart.UseTokenFlow)
+            return true;
+        
+        return context.Get(Mode) switch
         {
             FlowJoinMode.WaitAny => true,
             FlowJoinMode.WaitAll => Flowchart.CanWaitAllProceed(context),
             _ => true
         };
+    }
 }

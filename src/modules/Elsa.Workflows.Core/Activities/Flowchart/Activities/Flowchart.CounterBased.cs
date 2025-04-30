@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Contracts;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Signals;
@@ -41,23 +42,11 @@ public partial class Flowchart
         return hasRunningActivityInstances || hasPendingWork;
     }
 
-    private IActivity? GetRootActivity()
-    {
-        // Get the first activity that has no inbound connections.
-        var query =
-            from activity in Activities
-            let inboundConnections = Connections.Any(x => x.Target.Activity == activity)
-            where !inboundConnections
-            select activity;
-
-        var rootActivity = query.FirstOrDefault();
-        return rootActivity;
-    }
-
     private FlowGraph GetFlowGraph(ActivityExecutionContext context)
     {
         // Store in TransientProperties so FlowChart is not persisted in WorkflowState 
-        return context.TransientProperties.GetOrAdd(GraphTransientProperty, () => new FlowGraph(Connections, GetStartActivity(context)));
+        var startActivity = this.GetStartActivity(context.WorkflowExecutionContext.TriggerActivityId);
+        return context.TransientProperties.GetOrAdd(GraphTransientProperty, () => new FlowGraph(Connections, startActivity));
     }
 
     private FlowScope GetFlowScope(ActivityExecutionContext context)
@@ -73,15 +62,11 @@ public partial class Flowchart
         var result = context.Result;
 
         if (flowchartContext.Activity != this)
-        {
-            throw new Exception("Target context activity must be this flowchart");
-        }
+            throw new InvalidOperationException("Target context activity must be this flowchart");
 
         // If the completed activity's status is anything but "Completed", do not schedule its outbound activities.
         if (completedActivityContext.Status != ActivityStatus.Completed)
-        {
             return;
-        }
 
         // If the complete activity is a terminal node, complete the flowchart immediately.
         if (completedActivity is ITerminalNode)
@@ -91,19 +76,17 @@ public partial class Flowchart
         }
 
         // Determine the outcomes from the completed activity
-        var outcomes = result is Outcomes o ? o : Outcomes.Default;
+        var outcomes = result as Outcomes ?? Outcomes.Default;
 
         // Schedule the outbound activities
         var flowGraph = GetFlowGraph(flowchartContext);
         var flowScope = GetFlowScope(flowchartContext);
-        var completedActivityExcecutedByBackwardConnection = completedActivityContext.ActivityInput.GetValueOrDefault<bool>(BackwardConnectionActivityInput);
-        bool hasScheduledActivity = await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, completedActivity, outcomes, completedActivityExcecutedByBackwardConnection);
+        var completedActivityExecutedByBackwardConnection = completedActivityContext.ActivityInput.GetValueOrDefault<bool>(BackwardConnectionActivityInput);
+        var hasScheduledActivity = await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, completedActivity, outcomes, completedActivityExecutedByBackwardConnection);
 
         // If there are not any outbound connections, complete the flowchart activity if there is no other pending work
-        if (!hasScheduledActivity)
-        {
+        if (!hasScheduledActivity) 
             await CompleteIfNoPendingWorkAsync(flowchartContext);
-        }
     }
 
     /// <summary>
@@ -121,7 +104,7 @@ public partial class Flowchart
     /// <returns>True if at least one activity was scheduled; otherwise, false.</returns>
     private async ValueTask<bool> ScheduleOutboundActivitiesAsync(FlowGraph flowGraph, FlowScope flowScope, ActivityExecutionContext flowchartContext, IActivity activity, Outcomes outcomes, bool completedActivityExecutedByBackwardConnection = false)
     {
-        bool hasScheduledActivity = false;
+        var hasScheduledActivity = false;
 
         // Check if the activity is dangling (i.e., it is not reachable from the flowchart graph)
         if (flowGraph.IsDanglingActivity(activity))
@@ -138,12 +121,12 @@ public partial class Flowchart
         // Process each outbound connection from the current activity
         foreach (var outboundConnection in flowGraph.GetOutboundConnections(activity))
         {
-            bool connectionFollowed = outcomes.Names.Contains(outboundConnection.Source.Port);
+            var connectionFollowed = outcomes.Names.Contains(outboundConnection.Source.Port);
             flowScope.RegisterConnectionVisit(outboundConnection, connectionFollowed);
             var outboundActivity = outboundConnection.Target.Activity;
 
             // Determine scheduling strategy based on connection type
-            if (flowGraph.IsBackwardConnection(outboundConnection, out bool backwardConnectionIsValid))
+            if (flowGraph.IsBackwardConnection(outboundConnection, out var backwardConnectionIsValid))
             {
                 hasScheduledActivity |= await ScheduleBackwardConnectionActivityAsync(flowGraph, flowchartContext, outboundConnection, outboundActivity, connectionFollowed, backwardConnectionIsValid);
             }
