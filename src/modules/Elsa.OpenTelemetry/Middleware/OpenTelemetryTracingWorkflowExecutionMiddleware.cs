@@ -59,7 +59,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         {
             span.AddEvent(new("faulted"));
 
-            var lastIncident = context.Incidents.LastOrDefault();
+            var lastIncident = context.Incidents.FirstOrDefault();
 
             if (lastIncident == null)
                 span.SetStatus(ActivityStatusCode.Error, "The workflow entered the Faulted state. See incidents for details.");
