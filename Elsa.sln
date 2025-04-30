@@ -84,6 +84,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 		docker\otel-collector-config.yaml = docker\otel-collector-config.yaml
 		docker\init-db-postgres.sh = docker\init-db-postgres.sh
 		docker\docker-compose-datadog+otel-collector.yml = docker\docker-compose-datadog+otel-collector.yml
+		docker\docker-compose-datadog.yml = docker\docker-compose-datadog.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Elasticsearch", "src\modules\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj", "{3246883E-2FA7-4B4A-BDC5-99039A2869BC}"
