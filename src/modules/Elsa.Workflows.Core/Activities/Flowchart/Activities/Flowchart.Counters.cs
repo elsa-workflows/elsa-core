@@ -300,31 +300,6 @@ public partial class Flowchart
         }
     }
 
-    private async ValueTask OnScheduleChildActivityAsync(ScheduleChildActivity signal, SignalContext context)
-    {
-        var flowchartContext = context.ReceiverActivityExecutionContext;
-        var activity = signal.Activity;
-        var activityExecutionContext = signal.ActivityExecutionContext;
-
-        if (activityExecutionContext != null)
-        {
-            await flowchartContext.ScheduleActivityAsync(activityExecutionContext.Activity, new ScheduleWorkOptions
-            {
-                ExistingActivityExecutionContext = activityExecutionContext,
-                CompletionCallback = OnChildCompletedCounterBasedLogicAsync,
-                Input = signal.Input
-            });
-        }
-        else
-        {
-            await flowchartContext.ScheduleActivityAsync(activity, new ScheduleWorkOptions
-            {
-                CompletionCallback = OnChildCompletedCounterBasedLogicAsync,
-                Input = signal.Input
-            });
-        }
-    }
-
     private async ValueTask OnActivityCanceledAsync(CancelSignal signal, SignalContext context)
     {
         await CompleteIfNoPendingWorkAsync(context.ReceiverActivityExecutionContext);

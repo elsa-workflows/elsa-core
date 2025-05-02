@@ -4,6 +4,8 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Signals;
 
 namespace Elsa.Workflows.Activities.Flowchart.Activities;
@@ -15,8 +17,8 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 [Browsable(false)]
 public partial class Flowchart : Container
 {
-    public static bool UseTokenFlow = true;
-    
+    public const bool UseTokenFlow = true;
+
     /// <inheritdoc />
     public Flowchart([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
@@ -47,17 +49,37 @@ public partial class Flowchart : Container
             return;
         }
 
-        if (UseTokenFlow)
+        await context.ScheduleActivityAsync(startActivity, OnChildCompletedAsync);
+    }
+
+    private async ValueTask OnScheduleChildActivityAsync(ScheduleChildActivity signal, SignalContext context)
+    {
+        var flowchartContext = context.ReceiverActivityExecutionContext;
+        var activity = signal.Activity;
+        var activityExecutionContext = signal.ActivityExecutionContext;
+
+        if (activityExecutionContext != null)
         {
-            var tokens = GetTokenList(context);
-            var newToken = Token.Create(this, startActivity);
-            tokens.Add(newToken);
-            SaveTokenList(context, tokens);
-            await context.ScheduleActivityAsync(startActivity, OnChildCompletedTokenBasedLogicAsync);
+            await flowchartContext.ScheduleActivityAsync(activityExecutionContext.Activity, new()
+            {
+                ExistingActivityExecutionContext = activityExecutionContext,
+                CompletionCallback = OnChildCompletedAsync,
+                Input = signal.Input
+            });
         }
         else
         {
-            await context.ScheduleActivityAsync(startActivity, OnChildCompletedCounterBasedLogicAsync);
+            await flowchartContext.ScheduleActivityAsync(activity, new()
+            {
+                CompletionCallback = OnChildCompletedAsync,
+                Input = signal.Input
+            });
         }
+    }
+
+    private async ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
+    {
+        if (UseTokenFlow)
+            await OnChildCompletedTokenBasedLogicAsync(context);
     }
 }

@@ -1,5 +1,3 @@
-using Elsa.Workflows.Activities.Flowchart.Contracts;
-using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 
 namespace Elsa.Workflows.Activities.Flowchart.Activities;
@@ -17,14 +15,6 @@ public partial class Flowchart
     }
 
     private const string TokenStoreKey = "FlowchartTokens";
-    private const string DynExpectedCountKey = "FlowchartDynExpectedCount";
-    private LoopbackDetector _loopbackDetector;
-
-    protected override ValueTask ExecuteAsync(ActivityExecutionContext context)
-    {
-        _loopbackDetector = new(Activities, Connections);
-        return base.ExecuteAsync(context);
-    }
 
     private async ValueTask OnChildCompletedTokenBasedLogicAsync(ActivityCompletedContext ctx)
     {
@@ -77,13 +67,13 @@ public partial class Flowchart
         {
             // For each target, get its inbound connections.
             var targetInboundConnections = flowGraph.GetForwardInboundConnections(connection.Target.Activity).ToList();
-            
+
             // For each inbound connection, check to see if there are any unconsumed tokens.
             var unconsumedTokens = targetInboundConnections.Where(x => tokens.Where(token => !token.Consumed).Select(token => token.ToActivityId).Contains(x.Source.Activity.Id)).ToList();
             var hasUnconsumedTokens = unconsumedTokens.Count > 0;
             var ready = !hasUnconsumedTokens;
-            
-            if (ready) 
+
+            if (ready)
                 await flowContext.ScheduleActivityAsync(connection.Target.Activity, OnChildCompletedTokenBasedLogicAsync);
         }
 
@@ -110,6 +100,4 @@ public partial class Flowchart
     {
         context.Properties[TokenStoreKey] = tokens;
     }
-
-    private bool IsLoopback(Connection connection) => _loopbackDetector.IsLoopback(connection);
 }
