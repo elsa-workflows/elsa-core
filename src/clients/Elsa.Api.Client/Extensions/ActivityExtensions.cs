@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
+using Elsa.Api.Client.Shared.Enums;
 using Elsa.Api.Client.Shared.Models;
 
 namespace Elsa.Api.Client.Extensions;
@@ -116,6 +117,16 @@ public static class ActivityExtensions
     /// Sets a value indicating whether the specified activity can trigger the workflow.
     /// </summary>
     public static void SetCanStartWorkflow(this JsonObject activity, bool value) => activity.SetProperty(JsonValue.Create(value), "customProperties", "canStartWorkflow");
+    
+    public static JoinKind? GetJoinKind(this JsonObject activity)
+    {
+        return activity.GetProperty<JoinKind?>("customProperties", "joinKind");
+    }
+
+    public static void SetJoinKind(this JsonObject activity, JoinKind? value)
+    {
+        activity.SetProperty(JsonValue.Create(value), "customProperties", "joinKind");
+    }
 
     /// <summary>
     /// Gets the activities in the specified flowchart.
