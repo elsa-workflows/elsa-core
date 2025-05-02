@@ -6,7 +6,15 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 
 public partial class Flowchart
 {
-    private record Token(string FromActivityId, string FromActivityName, string Outcome, string ToActivityId, string ToActivityName, JoinKind JoinKind, bool Consumed);
+    private record Token(string FromActivityId, string? FromActivityName, string ToActivityId, string? ToActivityName, bool Consumed)
+    {
+        public static Token Create(IActivity from, IActivity to) => new(from.Id, from.Name, to.Id, to.Name, false);
+
+        public Token Consume() => this with
+        {
+            Consumed = true
+        };
+    }
 
     private const string TokenStoreKey = "FlowchartTokens";
     private const string DynExpectedCountKey = "FlowchartDynExpectedCount";
@@ -20,151 +28,72 @@ public partial class Flowchart
 
     private async ValueTask OnChildCompletedTokenBasedLogicAsync(ActivityCompletedContext ctx)
     {
-        var flow = ctx.TargetContext;
-        var childCtx = ctx.ChildContext;
-        var act = childCtx.Activity;
+        var flowContext = ctx.TargetContext;
+        var completedActivityContext = ctx.ChildContext;
+        var completedActivity = completedActivityContext.Activity;
 
-        if (flow.Activity != this) throw new InvalidOperationException();
-        if (childCtx.Status != ActivityStatus.Completed) return;
-        if (act is ITerminalNode)
+        // Check for abnormal state.
+        if (flowContext.Activity != this) throw new InvalidOperationException();
+        if (completedActivityContext.Status != ActivityStatus.Completed) return;
+
+        // If this is a terminal node, there's nothing else to schedule.
+        if (completedActivity is ITerminalNode)
         {
-            await flow.CompleteActivityAsync();
+            await flowContext.CompleteActivityAsync();
             return;
         }
 
-        // 1) Emit tokens (no JoinKind on the token)
+        var flowGraph = GetFlowGraph(flowContext);
+
+        // Get the outcomes and matching outbound connections (i.e. active connections).
         var outcomes = (ctx.Result as Outcomes ?? Outcomes.Default).Names;
-        var outbound = GetFlowGraph(flow).GetOutboundConnections(act);
-        var tokens = GetTokenList(flow);
+        var outboundConnections = GetFlowGraph(flowContext).GetOutboundConnections(completedActivity);
+        var activeOutboundConnections = outboundConnections.Where(x => outcomes.Contains(x.Source.Port)).Distinct().ToList();
 
-        foreach (var outcome in outcomes)
-        foreach (var conn in outbound.Where(x => x.Source.Port == outcome))
-            tokens.Add(new Token(
-                FromActivityId: conn.Source.Activity.Id,
-                FromActivityName: conn.Source.Activity.Name!,
-                Outcome: outcome,
-                ToActivityId: conn.Target.Activity.Id,
-                ToActivityName: conn.Target.Activity.Name!,
-                JoinKind.StaticAnd,
-                Consumed: false));
+        // Emit a token for each active outbound connection.
+        var tokens = GetTokenList(flowContext);
 
-        SaveTokenList(flow, tokens);
-
-        // 2) Find every downstream target with pending tokens
-        var targets = tokens.Where(t => !t.Consumed)
-            .Select(t => t.ToActivityId)
-            .Distinct()
-            .ToList();
-
-        foreach (var tid in targets)
+        foreach (var connection in activeOutboundConnections)
         {
-            var target = Activities.First(a => a.Id == tid);
-            var inbound = Connections.Where(c => c.Target.Activity.Id == tid).ToList();
-            var pending = tokens.Where(t => !t.Consumed && t.ToActivityId == tid).ToList();
-
-            // 2a) If any inbound edge is a loop-back, treat this target as OR:
-            var loopbacks = inbound.Where(IsLoopback).ToList();
-            if (loopbacks.Any())
-            {
-                // fire once per loop-back token
-                var loopTokens = pending
-                    .Where(t => loopbacks.Any(c =>
-                        c.Source.Activity.Id == t.FromActivityId &&
-                        c.Source.Port == t.Outcome))
-                    .ToList();
-
-                foreach (var lt in loopTokens)
-                {
-                    tokens.Remove(lt);
-                    var consumedToken = lt with
-                    {
-                        Consumed = true
-                    };
-                    tokens.Add(consumedToken);
-                    SaveTokenList(flow, tokens);
-                    await flow.ScheduleActivityAsync(target, OnChildCompletedTokenBasedLogicAsync);
-                }
-
-                continue;
-            }
-
-            // 2b) Otherwise, check for an explicit override on the activity:
-            var explicitKind = target.GetJoinKind();
-            var joinMode = explicitKind
-                           ?? (inbound.Any(c => c.Source.Activity is IJoinHintProvider)
-                               ? JoinKind.DynamicAnd
-                               : JoinKind.StaticAnd);
-
-            switch (joinMode)
-            {
-                case JoinKind.DynamicAnd:
-                    // merge only the branches that actually produced tokens:
-                    var activeConns = inbound
-                        .Where(c => pending.Any(t =>
-                            t.FromActivityId == c.Source.Activity.Id &&
-                            t.Outcome == c.Source.Port))
-                        .ToList();
-
-                    // wait until each active branch has at least one token
-                    if (activeConns.All(c => pending.Any(t =>
-                            t.FromActivityId == c.Source.Activity.Id &&
-                            t.Outcome == c.Source.Port)))
-                    {
-                        // schedule exactly once
-                        await flow.ScheduleActivityAsync(target, OnChildCompletedTokenBasedLogicAsync);
-
-                        // consume exactly one token per active path
-                        foreach (var c in activeConns)
-                        {
-                            var tok = pending.First(t =>
-                                t.FromActivityId == c.Source.Activity.Id &&
-                                t.Outcome == c.Source.Port);
-                            tokens.Remove(tok);
-                            tok = tok with
-                            {
-                                Consumed = true
-                            };
-                            tokens.Add(tok);
-                        }
-
-                        SaveTokenList(flow, tokens);
-                    }
-
-                    break;
-
-                case JoinKind.StaticAnd:
-                    // wait for each *defined* inbound connection to have a token
-                    if (inbound.All(c => pending.Any(t =>
-                            t.FromActivityId == c.Source.Activity.Id &&
-                            t.Outcome == c.Source.Port)))
-                    {
-                        await flow.ScheduleActivityAsync(target, OnChildCompletedTokenBasedLogicAsync);
-
-                        foreach (var c in inbound)
-                        {
-                            var tok = pending.First(t =>
-                                t.FromActivityId == c.Source.Activity.Id &&
-                                t.Outcome == c.Source.Port);
-                            tokens.Remove(tok);
-                            tok = tok with
-                            {
-                                Consumed = true
-                            };
-                            tokens.Add(tok);
-                        }
-
-                        SaveTokenList(flow, tokens);
-                    }
-
-                    break;
-            }
+            var sourceEndpoint = connection.Source;
+            var sourceActivity = sourceEndpoint.Activity;
+            var targetActivity = connection.Target.Activity;
+            var newToken = Token.Create(sourceActivity, targetActivity);
+            tokens.Add(newToken);
         }
 
-        // 3) Complete if nothing left
-        SaveTokenList(flow, tokens);
-        if (!flow.WorkflowExecutionContext.Scheduler.HasAny
+        // Consume any inbound tokens.
+        var inboundTokens = tokens.Where(t => t.ToActivityId == completedActivity.Id).ToList();
+
+        foreach (var token in inboundTokens)
+        {
+            tokens.Remove(token);
+            var consumedToken = token.Consume();
+            tokens.Add(consumedToken);
+        }
+
+        // Consider each active outbound connection.
+        foreach (var connection in activeOutboundConnections)
+        {
+            // For each target, get its inbound connections.
+            var targetInboundConnections = flowGraph.GetForwardInboundConnections(connection.Target.Activity).ToList();
+            
+            // For each inbound connection, check to see if there are any unconsumed tokens.
+            var unconsumedTokens = targetInboundConnections.Where(x => tokens.Where(token => !token.Consumed).Select(token => token.ToActivityId).Contains(x.Source.Activity.Id)).ToList();
+            var hasUnconsumedTokens = unconsumedTokens.Count > 0;
+            var ready = !hasUnconsumedTokens;
+            
+            if (ready) 
+                await flowContext.ScheduleActivityAsync(connection.Target.Activity, OnChildCompletedTokenBasedLogicAsync);
+        }
+
+        // Save the updated token list.
+        SaveTokenList(flowContext, tokens);
+
+        // Complete if nothing left
+        if (!flowContext.WorkflowExecutionContext.Scheduler.HasAny
             && tokens.All(t => t.Consumed))
-            await flow.CompleteActivityAsync();
+            await flowContext.CompleteActivityAsync();
     }
 
     private List<Token> GetTokenList(ActivityExecutionContext context)

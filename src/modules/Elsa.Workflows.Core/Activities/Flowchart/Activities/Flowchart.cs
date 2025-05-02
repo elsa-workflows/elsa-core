@@ -49,6 +49,10 @@ public partial class Flowchart : Container
 
         if (UseTokenFlow)
         {
+            var tokens = GetTokenList(context);
+            var newToken = Token.Create(this, startActivity);
+            tokens.Add(newToken);
+            SaveTokenList(context, tokens);
             await context.ScheduleActivityAsync(startActivity, OnChildCompletedTokenBasedLogicAsync);
         }
         else
