@@ -6,15 +6,15 @@ public static class ActivityExtensions
 {
     public static JoinKind? GetJoinKind(this IActivity activity)
     {
-        activity.CustomProperties.TryGetValue(nameof(JoinKind), out var joinKind);
-        return joinKind is JoinKind kind ? kind : null;
+        activity.CustomProperties.TryGetValue("joinKind", out var joinKindString);
+        return Enum.TryParse<JoinKind>((string?)joinKindString, true, out var joinKind) ? joinKind : null;
     }
 
     public static void SetJoinKind(this IActivity activity, JoinKind? joinKind)
     {
         if (joinKind == null)
-            activity.CustomProperties.Remove(nameof(JoinKind));
+            activity.CustomProperties.Remove("joinKind");
         else
-            activity.CustomProperties[nameof(JoinKind)] = joinKind;
+            activity.CustomProperties["joinKind"] = joinKind;
     }
 }

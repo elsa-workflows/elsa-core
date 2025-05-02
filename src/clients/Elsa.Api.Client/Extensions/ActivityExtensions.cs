@@ -118,9 +118,9 @@ public static class ActivityExtensions
     /// </summary>
     public static void SetCanStartWorkflow(this JsonObject activity, bool value) => activity.SetProperty(JsonValue.Create(value), "customProperties", "canStartWorkflow");
     
-    public static JoinKind? GetJoinKind(this JsonObject activity)
+    public static JoinKind GetJoinKind(this JsonObject activity)
     {
-        return activity.GetProperty<JoinKind?>("customProperties", "joinKind");
+        return activity.GetProperty<JoinKind?>("customProperties", "joinKind") ?? JoinKind.StaticAnd;
     }
 
     public static void SetJoinKind(this JsonObject activity, JoinKind? value)
