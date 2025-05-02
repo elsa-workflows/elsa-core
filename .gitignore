@@ -78,5 +78,5 @@ unlist.sh
 /artifacts
 
 /docker/data/
-
+docker/azurite-data
 docker/docker-compose-datadog.yml
