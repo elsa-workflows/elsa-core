@@ -10,7 +10,6 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 public partial class Flowchart
 {
     private const string ScopeProperty = "FlowScope";
-    private const string GraphTransientProperty = "FlowGraph";
     private const string BackwardConnectionActivityInput = "BackwardConnection";
 
     private async ValueTask OnChildCompletedCounterBasedLogicAsync(ActivityCompletedContext context)
@@ -42,23 +41,16 @@ public partial class Flowchart
         var outcomes = result is Outcomes o ? o : Outcomes.Default;
 
         // Schedule the outbound activities
-        var flowGraph = GetFlowGraph(flowchartContext);
+        var flowGraph = flowchartContext.GetFlowGraph();
         var flowScope = GetFlowScope(flowchartContext);
-        var completedActivityExcecutedByBackwardConnection = completedActivityContext.ActivityInput.GetValueOrDefault<bool>(BackwardConnectionActivityInput);
-        bool hasScheduledActivity = await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, completedActivity, outcomes, completedActivityExcecutedByBackwardConnection);
+        var completedActivityExecutedByBackwardConnection = completedActivityContext.ActivityInput.GetValueOrDefault<bool>(BackwardConnectionActivityInput);
+        bool hasScheduledActivity = await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, completedActivity, outcomes, completedActivityExecutedByBackwardConnection);
 
         // If there are not any outbound connections, complete the flowchart activity if there is no other pending work
         if (!hasScheduledActivity)
         {
             await CompleteIfNoPendingWorkAsync(flowchartContext);
         }
-    }
-
-    private FlowGraph GetFlowGraph(ActivityExecutionContext context)
-    {
-        // Store in TransientProperties so FlowChart is not persisted in WorkflowState 
-        var startActivity = this.GetStartActivity(context.WorkflowExecutionContext.TriggerActivityId);
-        return context.TransientProperties.GetOrAdd(GraphTransientProperty, () => new FlowGraph(Connections, startActivity));
     }
 
     private FlowScope GetFlowScope(ActivityExecutionContext context)
@@ -231,26 +223,11 @@ public partial class Flowchart
     {
         var flowchartContext = context.ParentActivityExecutionContext!;
         var flowchart = (Flowchart)flowchartContext.Activity;
-        var flowGraph = flowchart.GetFlowGraph(flowchartContext);
+        var flowGraph = flowchartContext.GetFlowGraph();
         var flowScope = flowchart.GetFlowScope(flowchartContext);
         var activity = context.Activity;
 
         return flowScope.AllInboundConnectionsVisited(flowGraph, activity);
-    }
-
-    public static async void CancelAncestorActivatesAsync(ActivityExecutionContext context)
-    {
-        var flowchartContext = context.ParentActivityExecutionContext!;
-        var flowchart = (Flowchart)flowchartContext.Activity;
-        var flowGraph = flowchart.GetFlowGraph(flowchartContext);
-        var ancestorActivities = flowGraph.GetAncestorActivities(context.Activity);
-        var inboundActivityExecutionContexts = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => ancestorActivities.Contains(x.Activity) && x.ParentActivityExecutionContext == flowchartContext).ToList();
-
-        // Cancel each ancestor activity.
-        foreach (var activityExecutionContext in inboundActivityExecutionContexts)
-        {
-            await activityExecutionContext.CancelActivityAsync();
-        }
     }
 
     private async Task CompleteIfNoPendingWorkAsync(ActivityExecutionContext context)
@@ -286,9 +263,9 @@ public partial class Flowchart
     {
         await CompleteIfNoPendingWorkAsync(context.ReceiverActivityExecutionContext);
 
-        var flowchartContext = context.ReceiverActivityExecutionContext!;
+        var flowchartContext = context.ReceiverActivityExecutionContext;
         var flowchart = (Flowchart)flowchartContext.Activity;
-        var flowGraph = flowchart.GetFlowGraph(flowchartContext);
+        var flowGraph = flowchartContext.GetFlowGraph();
         var flowScope = flowchart.GetFlowScope(flowchartContext);
 
         // Propagate canceled connections visited count by scheduling with Outcomes.Empty

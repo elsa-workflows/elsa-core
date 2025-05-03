@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Activities.Flowchart.Attributes;
-using Elsa.Workflows.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
@@ -17,7 +16,7 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 [FlowNode("Default")]
 [Activity("Elsa", "Branching", "Evaluate a set of case conditions and schedule the activity for a matching case.", DisplayName = "Switch (flow)")]
 [PublicAPI]
-public class FlowSwitch : Activity, IJoinHintProvider
+public class FlowSwitch : Activity
 {
     /// <inheritdoc />
     public FlowSwitch([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
@@ -38,8 +37,6 @@ public class FlowSwitch : Activity, IJoinHintProvider
         UIHint = InputUIHints.DropDown
     )]
     public Input<SwitchMode> Mode { get; set; } = new(SwitchMode.MatchFirst);
-
-    public JoinKind DefaultJoinKind => JoinKind.DynamicAnd;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

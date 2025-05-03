@@ -118,20 +118,20 @@ public static class ActivityExtensions
     /// </summary>
     public static void SetCanStartWorkflow(this JsonObject activity, bool value) => activity.SetProperty(JsonValue.Create(value), "customProperties", "canStartWorkflow");
     
-    public static JoinKind GetJoinKind(this JsonObject activity)
+    public static JoinMode GetJoinMode(this JsonObject activity)
     {
-        return activity.GetProperty<JoinKind?>("customProperties", "joinKind") ?? JoinKind.StaticAnd;
+        return activity.GetProperty<JoinMode?>("customProperties", "joinMode") ?? JoinMode.WaitAll;
     }
 
-    public static void SetJoinKind(this JsonObject activity, JoinKind? value)
+    public static void SetJoinMode(this JsonObject activity, JoinMode? value)
     {
-        activity.SetProperty(JsonValue.Create(value), "customProperties", "joinKind");
+        activity.SetProperty(JsonValue.Create(value), "customProperties", "joinMode");
     }
 
     /// <summary>
     /// Gets the activities in the specified flowchart.
     /// </summary>
-    public static IEnumerable<JsonObject> GetActivities(this JsonObject flowchart) => flowchart.GetProperty("activities")?.AsArray().AsEnumerable().Cast<JsonObject>() ?? Array.Empty<JsonObject>();
+    public static IEnumerable<JsonObject> GetActivities(this JsonObject flowchart) => flowchart.GetProperty("activities")?.AsArray().AsEnumerable().Cast<JsonObject>() ?? [];
 
     /// <summary>
     /// Sets the activities in the specified flowchart.

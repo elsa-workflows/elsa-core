@@ -1,13 +1,16 @@
 using Elsa.Extensions;
+using Elsa.Workflows.Activities.Flowchart.Models;
 
 namespace Elsa.Workflows.Activities.Flowchart.Extensions;
 
 public static class ActivityExecutionContextExtensions
 {
+    private const string GraphTransientProperty = "FlowGraph";
+
     public static IActivity? GetStartActivity(this Activities.Flowchart flowchart, string? triggerActivityId)
     {
         var activities = flowchart.Activities;
-        
+
         // If there's a trigger that triggered this workflow, use that.
         var triggerActivity = triggerActivityId != null ? activities.FirstOrDefault(x => x.Id == triggerActivityId) : null;
 
@@ -39,7 +42,7 @@ public static class ActivityExecutionContextExtensions
         // If no start activity found, return the first activity.
         return activities.FirstOrDefault();
     }
-    
+
     /// <summary>
     /// Checks if there is any pending work for the flowchart.
     /// </summary>
@@ -73,5 +76,26 @@ public static class ActivityExecutionContextExtensions
     internal static bool HasFaultedChildren(this ActivityExecutionContext context)
     {
         return context.Children.Any(x => x.Status == ActivityStatus.Faulted);
+    }
+
+    internal static FlowGraph GetFlowGraph(this ActivityExecutionContext context)
+    {
+        // Store in TransientProperties so FlowChart is not persisted in WorkflowState
+        var flowchart = (Activities.Flowchart)context.Activity;
+        var startActivity = flowchart.GetStartActivity(context.WorkflowExecutionContext.TriggerActivityId);
+        return context.TransientProperties.GetOrAdd(GraphTransientProperty, () => new FlowGraph(flowchart.Connections, startActivity));
+    }
+
+    internal static async Task CancelInboundAncestorsAsync(this ActivityExecutionContext flowchartContext)
+    {
+        var flowGraph = flowchartContext.GetFlowGraph();
+        var ancestorActivities = flowGraph.GetAncestorActivities(flowchartContext.Activity);
+        var inboundActivityExecutionContexts = flowchartContext.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => ancestorActivities.Contains(x.Activity) && x.ParentActivityExecutionContext == flowchartContext).ToList();
+
+        // Cancel each ancestor activity.
+        foreach (var activityExecutionContext in inboundActivityExecutionContexts)
+        {
+            await activityExecutionContext.CancelActivityAsync();
+        }
     }
 }

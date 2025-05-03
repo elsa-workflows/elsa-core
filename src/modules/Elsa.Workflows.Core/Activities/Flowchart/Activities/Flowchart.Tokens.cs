@@ -34,11 +34,11 @@ public partial class Flowchart
             return;
         }
 
-        var flowGraph = GetFlowGraph(flowContext);
+        var flowGraph = flowContext.GetFlowGraph();
 
         // Get the outcomes and matching outbound connections (i.e. active connections).
         var outcomes = (ctx.Result as Outcomes ?? Outcomes.Default).Names;
-        var outboundConnections = GetFlowGraph(flowContext).GetOutboundConnections(completedActivity);
+        var outboundConnections = flowGraph.GetOutboundConnections(completedActivity);
         var activeOutboundConnections = outboundConnections.Where(x => outcomes.Contains(x.Source.Port)).Distinct().ToList();
 
         // Emit a token for each active outbound connection.
@@ -66,6 +66,20 @@ public partial class Flowchart
         // Consider each active outbound connection.
         foreach (var connection in activeOutboundConnections)
         {
+            // By default, all joins are of mode "Wait All", but this could be overridden by the Join Kind property.
+            var joinKind = connection.Target.Activity.GetJoinMode();
+
+            if (joinKind == FlowJoinMode.WaitAny)
+            {
+                // Cancel inbound ancestor activities (Timers, Events, etc.) and schedule the target.
+                await flowContext.CancelInboundAncestorsAsync();
+                await flowContext.ScheduleActivityAsync(connection.Target.Activity, OnChildCompletedTokenBasedLogicAsync);
+                
+                // Exit this iteration.
+                continue;
+            }
+            
+            // Handle Wait All joins by checking if all inbound tokens of the target activity have been consumed.
             // For each target, get its inbound connections.
             var targetInboundConnections = flowGraph.GetForwardInboundConnections(connection.Target.Activity).ToList();
 
@@ -74,7 +88,7 @@ public partial class Flowchart
             var hasUnconsumedTokens = unconsumedTokens.Count > 0;
             var ready = !hasUnconsumedTokens;
 
-            if (ready)
+            if (ready) 
                 await flowContext.ScheduleActivityAsync(connection.Target.Activity, OnChildCompletedTokenBasedLogicAsync);
         }
 

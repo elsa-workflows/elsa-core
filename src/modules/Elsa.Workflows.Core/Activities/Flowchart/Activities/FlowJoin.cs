@@ -12,13 +12,15 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 
 /// <summary>
 /// Merge multiple branches into a single branch of execution.
+/// Note that this activity is no longer necessary for either AND or OR merges, because all activities inherit the Join Kind property.
+/// Use this activity if an explicit join step is desired.
 /// </summary>
-[Activity("Elsa", "Branching", "Merge multiple branches into a single branch of execution.", DisplayName = "Join")]
-[PublicAPI]
+[Activity("Elsa", "Branching", "Explicitly merge multiple branches into a single branch of execution.", DisplayName = "Join")]
+[UsedImplicitly]
 public class FlowJoin : Activity, IJoinNode
 {
     /// <inheritdoc />
-    public FlowJoin([CallerFilePath] string? source = null, [CallerLineNumber] int? line = default) : base(source, line)
+    public FlowJoin([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -30,13 +32,14 @@ public class FlowJoin : Activity, IJoinNode
         DefaultValue = FlowJoinMode.WaitAny,
         UIHint = InputUIHints.DropDown
     )]
+    [Obsolete("Use the Join Kind property instead.", false)]
     public Input<FlowJoinMode> Mode { get; set; } = new(FlowJoinMode.WaitAny);
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         if(!Flowchart.UseTokenFlow)
-            Flowchart.CancelAncestorActivatesAsync(context);
+            await context.ParentActivityExecutionContext.CancelInboundAncestorsAsync();
         
         await context.CompleteActivityAsync();
     }

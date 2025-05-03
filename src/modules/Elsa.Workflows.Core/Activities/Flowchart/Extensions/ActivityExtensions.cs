@@ -4,17 +4,17 @@ namespace Elsa.Workflows.Activities.Flowchart.Extensions;
 
 public static class ActivityExtensions
 {
-    public static JoinKind? GetJoinKind(this IActivity activity)
+    public static FlowJoinMode? GetJoinMode(this IActivity activity)
     {
-        activity.CustomProperties.TryGetValue("joinKind", out var joinKindString);
-        return Enum.TryParse<JoinKind>((string?)joinKindString, true, out var joinKind) ? joinKind : null;
+        activity.CustomProperties.TryGetValue("joinMode", out var joinModeString);
+        return Enum.TryParse<FlowJoinMode>((string?)joinModeString, true, out var joinMode) ? joinMode : null;
     }
 
-    public static void SetJoinKind(this IActivity activity, JoinKind? joinKind)
+    public static void SetJoinMode(this IActivity activity, FlowJoinMode? value)
     {
-        if (joinKind == null)
-            activity.CustomProperties.Remove("joinKind");
+        if (value == null)
+            activity.CustomProperties.Remove("joinMode");
         else
-            activity.CustomProperties["joinKind"] = joinKind;
+            activity.CustomProperties["joinMode"] = value;
     }
 }
