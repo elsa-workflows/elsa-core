@@ -81,5 +81,7 @@ public partial class Flowchart : Container
     {
         if (UseTokenFlow)
             await OnChildCompletedTokenBasedLogicAsync(context);
+        else
+            await OnChildCompletedCounterBasedLogicAsync(context);
     }
 }

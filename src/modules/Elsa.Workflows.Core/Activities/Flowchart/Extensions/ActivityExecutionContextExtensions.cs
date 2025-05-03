@@ -39,4 +39,39 @@ public static class ActivityExecutionContextExtensions
         // If no start activity found, return the first activity.
         return activities.FirstOrDefault();
     }
+    
+    /// <summary>
+    /// Checks if there is any pending work for the flowchart.
+    /// </summary>
+    internal static bool HasPendingWork(this ActivityExecutionContext context)
+    {
+        var flowchart = (Activities.Flowchart)context.Activity;
+        var workflowExecutionContext = context.WorkflowExecutionContext;
+        var activityIds = flowchart.Activities.Select(x => x.Id).ToList();
+        var children = context.Children;
+        var hasRunningActivityInstances = children.Where(x => activityIds.Contains(x.Activity.Id)).Any(x => x.Status == ActivityStatus.Running);
+
+        var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(workItem =>
+        {
+            var ownerInstanceId = workItem.Owner?.Id;
+
+            if (ownerInstanceId == null)
+                return false;
+
+            if (ownerInstanceId == context.Id)
+                return true;
+
+            var ownerContext = context.WorkflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
+            var ancestors = ownerContext.GetAncestors().ToList();
+
+            return ancestors.Any(x => x == context);
+        });
+
+        return hasRunningActivityInstances || hasPendingWork;
+    }
+
+    internal static bool HasFaultedChildren(this ActivityExecutionContext context)
+    {
+        return context.Children.Any(x => x.Status == ActivityStatus.Faulted);
+    }
 }

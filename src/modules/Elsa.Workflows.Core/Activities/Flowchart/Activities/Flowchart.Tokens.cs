@@ -1,3 +1,4 @@
+using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 
 namespace Elsa.Workflows.Activities.Flowchart.Activities;
@@ -80,9 +81,12 @@ public partial class Flowchart
         // Save the updated token list.
         SaveTokenList(flowContext, tokens);
 
-        // Complete if nothing left
-        if (!flowContext.WorkflowExecutionContext.Scheduler.HasAny
-            && tokens.All(t => t.Consumed))
+        // Complete if nothing left.
+        var hasPendingWork = flowContext.HasPendingWork();
+        var allTokensConsumed = tokens.All(t => t.Consumed);
+        var hasFaultedChildren = flowContext.HasFaultedChildren();
+
+        if (!hasPendingWork && allTokensConsumed && !hasFaultedChildren)
             await flowContext.CompleteActivityAsync();
     }
 

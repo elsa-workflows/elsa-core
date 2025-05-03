@@ -12,34 +12,46 @@ public partial class Flowchart
     private const string ScopeProperty = "FlowScope";
     private const string GraphTransientProperty = "FlowGraph";
     private const string BackwardConnectionActivityInput = "BackwardConnection";
-    
-    /// <summary>
-    /// Checks if there is any pending work for the flowchart.
-    /// </summary>
-    private bool HasPendingWork(ActivityExecutionContext context)
+
+    private async ValueTask OnChildCompletedCounterBasedLogicAsync(ActivityCompletedContext context)
     {
-        var workflowExecutionContext = context.WorkflowExecutionContext;
-        var activityIds = Activities.Select(x => x.Id).ToList();
-        var children = context.Children;
-        var hasRunningActivityInstances = children.Where(x => activityIds.Contains(x.Activity.Id)).Any(x => x.Status == ActivityStatus.Running);
+        var flowchartContext = context.TargetContext;
+        var completedActivityContext = context.ChildContext;
+        var completedActivity = completedActivityContext.Activity;
+        var result = context.Result;
 
-        var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(workItem =>
+        if (flowchartContext.Activity != this)
         {
-            var ownerInstanceId = workItem.Owner?.Id;
+            throw new Exception("Target context activity must be this flowchart");
+        }
 
-            if (ownerInstanceId == null)
-                return false;
+        // If the completed activity's status is anything but "Completed", do not schedule its outbound activities.
+        if (completedActivityContext.Status != ActivityStatus.Completed)
+        {
+            return;
+        }
 
-            if (ownerInstanceId == context.Id)
-                return true;
+        // If the complete activity is a terminal node, complete the flowchart immediately.
+        if (completedActivity is ITerminalNode)
+        {
+            await flowchartContext.CompleteActivityAsync();
+            return;
+        }
 
-            var ownerContext = context.WorkflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
-            var ancestors = ownerContext.GetAncestors().ToList();
+        // Determine the outcomes from the completed activity
+        var outcomes = result is Outcomes o ? o : Outcomes.Default;
 
-            return ancestors.Any(x => x == context);
-        });
+        // Schedule the outbound activities
+        var flowGraph = GetFlowGraph(flowchartContext);
+        var flowScope = GetFlowScope(flowchartContext);
+        var completedActivityExcecutedByBackwardConnection = completedActivityContext.ActivityInput.GetValueOrDefault<bool>(BackwardConnectionActivityInput);
+        bool hasScheduledActivity = await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, completedActivity, outcomes, completedActivityExcecutedByBackwardConnection);
 
-        return hasRunningActivityInstances || hasPendingWork;
+        // If there are not any outbound connections, complete the flowchart activity if there is no other pending work
+        if (!hasScheduledActivity)
+        {
+            await CompleteIfNoPendingWorkAsync(flowchartContext);
+        }
     }
 
     private FlowGraph GetFlowGraph(ActivityExecutionContext context)
@@ -52,41 +64,6 @@ public partial class Flowchart
     private FlowScope GetFlowScope(ActivityExecutionContext context)
     {
         return context.GetProperty(ScopeProperty, () => new FlowScope());
-    }
-
-    private async ValueTask OnChildCompletedCounterBasedLogicAsync(ActivityCompletedContext context)
-    {
-        var flowchartContext = context.TargetContext;
-        var completedActivityContext = context.ChildContext;
-        var completedActivity = completedActivityContext.Activity;
-        var result = context.Result;
-
-        if (flowchartContext.Activity != this)
-            throw new InvalidOperationException("Target context activity must be this flowchart");
-
-        // If the completed activity's status is anything but "Completed", do not schedule its outbound activities.
-        if (completedActivityContext.Status != ActivityStatus.Completed)
-            return;
-
-        // If the complete activity is a terminal node, complete the flowchart immediately.
-        if (completedActivity is ITerminalNode)
-        {
-            await flowchartContext.CompleteActivityAsync();
-            return;
-        }
-
-        // Determine the outcomes from the completed activity
-        var outcomes = result as Outcomes ?? Outcomes.Default;
-
-        // Schedule the outbound activities
-        var flowGraph = GetFlowGraph(flowchartContext);
-        var flowScope = GetFlowScope(flowchartContext);
-        var completedActivityExecutedByBackwardConnection = completedActivityContext.ActivityInput.GetValueOrDefault<bool>(BackwardConnectionActivityInput);
-        var hasScheduledActivity = await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, completedActivity, outcomes, completedActivityExecutedByBackwardConnection);
-
-        // If there are not any outbound connections, complete the flowchart activity if there is no other pending work
-        if (!hasScheduledActivity) 
-            await CompleteIfNoPendingWorkAsync(flowchartContext);
     }
 
     /// <summary>
@@ -139,6 +116,7 @@ public partial class Flowchart
                 hasScheduledActivity |= await ScheduleJoinActivityAsync(flowGraph, flowScope, flowchartContext, outboundConnection, outboundActivity);
             }
         }
+
         return hasScheduledActivity;
     }
 
@@ -160,7 +138,12 @@ public partial class Flowchart
         var scheduleWorkOptions = new ScheduleWorkOptions
         {
             CompletionCallback = OnChildCompletedCounterBasedLogicAsync,
-            Input = new Dictionary<string, object>() { { BackwardConnectionActivityInput, true } }
+            Input = new Dictionary<string, object>()
+            {
+                {
+                    BackwardConnectionActivityInput, true
+                }
+            }
         };
 
         await flowchartContext.ScheduleActivityAsync(outboundActivity, scheduleWorkOptions);
@@ -208,6 +191,7 @@ public partial class Flowchart
                 // Propagate skipped connections by scheduling with Outcomes.Empty
                 return await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, outboundActivity, Outcomes.Empty);
             }
+
             return false;
         }
 
@@ -271,16 +255,14 @@ public partial class Flowchart
 
     private async Task CompleteIfNoPendingWorkAsync(ActivityExecutionContext context)
     {
-        var hasPendingWork = HasPendingWork(context);
+        var hasPendingWork = context.HasPendingWork();
 
         if (!hasPendingWork)
         {
-            var hasFaultedActivities = context.Children.Any(x => x.Status == ActivityStatus.Faulted);
+            var hasFaultedActivities = context.HasFaultedChildren();
 
             if (!hasFaultedActivities)
-            {
                 await context.CompleteActivityAsync();
-            }
         }
     }
 
@@ -295,8 +277,8 @@ public partial class Flowchart
 
         if (outboundActivities.Any())
         {
-            // Schedule each child.
-            foreach (var activity in outboundActivities) await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedCounterBasedLogicAsync);
+            foreach (var activity in outboundActivities)
+                await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedCounterBasedLogicAsync);
         }
     }
 
