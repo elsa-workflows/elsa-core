@@ -85,11 +85,14 @@ public static class ActivityExecutionContextExtensions
         var startActivity = flowchart.GetStartActivity(context.WorkflowExecutionContext.TriggerActivityId);
         return context.TransientProperties.GetOrAdd(GraphTransientProperty, () => new FlowGraph(flowchart.Connections, startActivity));
     }
-
-    internal static async Task CancelInboundAncestorsAsync(this ActivityExecutionContext flowchartContext)
+    
+    internal static async Task CancelInboundAncestorsAsync(this ActivityExecutionContext flowchartContext, IActivity activity)
     {
+        if(flowchartContext.Activity is not Activities.Flowchart)
+            throw new InvalidOperationException("Activity context is not a flowchart.");
+        
         var flowGraph = flowchartContext.GetFlowGraph();
-        var ancestorActivities = flowGraph.GetAncestorActivities(flowchartContext.Activity);
+        var ancestorActivities = flowGraph.GetAncestorActivities(activity);
         var inboundActivityExecutionContexts = flowchartContext.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => ancestorActivities.Contains(x.Activity) && x.ParentActivityExecutionContext == flowchartContext).ToList();
 
         // Cancel each ancestor activity.

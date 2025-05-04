@@ -39,7 +39,7 @@ public class FlowJoin : Activity, IJoinNode
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         if(!Flowchart.UseTokenFlow)
-            await context.ParentActivityExecutionContext.CancelInboundAncestorsAsync();
+            await context.ParentActivityExecutionContext.CancelInboundAncestorsAsync(this);
         
         await context.CompleteActivityAsync();
     }

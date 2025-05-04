@@ -50,7 +50,7 @@ public partial class Flowchart
                 // only the first token per iteration will pass this check…
                 if (waitAnyGuard.Add(targetActivity.Id))
                 {
-                    await flowContext.CancelInboundAncestorsAsync();
+                    await flowContext.CancelInboundAncestorsAsync(targetActivity);
                     await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
                 }
             }
