@@ -5,16 +5,6 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 
 public partial class Flowchart
 {
-    private record Token(string FromActivityId, string? FromActivityName, string ToActivityId, string? ToActivityName, bool Consumed)
-    {
-        public static Token Create(IActivity from, IActivity to) => new(from.Id, from.Name, to.Id, to.Name, false);
-
-        public Token Consume() => this with
-        {
-            Consumed = true
-        };
-    }
-
     private const string TokenStoreKey = "Flowchart.Tokens";
     private const string WaitAnyGuardKey = "Flowchart.WaitAnyGuard";
 
@@ -46,11 +36,8 @@ public partial class Flowchart
 
         // Consume tokens.
         var inboundTokens = tokens.Where(t => t.ToActivityId == completedActivity.Id).ToList();
-        foreach (var t in inboundTokens)
-        {
-            tokens.Remove(t);
-            tokens.Add(t.Consume());
-        }
+        foreach (var t in inboundTokens) 
+            t.Consume();
 
         // Schedule next activities.
         foreach (var connection in activeOutboundConnections)
@@ -69,7 +56,7 @@ public partial class Flowchart
             }
             else
             {
-                // WaitAll.
+                // Wait for all inbound tokens to be consumed before scheduling the target activity.
                 var inboundConnections = flowGraph.GetForwardInboundConnections(targetActivity);
                 var hasUnconsumed = inboundConnections.Any(inbound =>
                     tokens.Any(t => !t.Consumed && t.ToActivityId == inbound.Source.Activity.Id)
