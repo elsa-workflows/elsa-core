@@ -10,7 +10,7 @@ namespace Elsa.Workflows.CommitStates.Strategies;
 /// This strategy evaluates the activity's execution events, specifically committing only if the
 /// activity's lifetime event is "ActivityExecuted".
 /// </remarks>
-[DisplayName("Executed")]
+[DisplayName("Commit After")]
 [Description("Commit the workflow state after the activity has executed.")]
 public class ExecutedActivityStrategy : IActivityCommitStrategy
 {

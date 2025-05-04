@@ -13,7 +13,7 @@ public class Tenant : Entity
     /// <summary>
     /// Gets or sets the name.
     /// </summary>
-    public string Name { get; set; } = default!;
+    public string Name { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the configuration.
@@ -22,7 +22,7 @@ public class Tenant : Entity
     
     public static readonly Tenant Default = new()
     {
-        Id = string.Empty,
+        Id = null!,
         Name = "Default"
     };
 }

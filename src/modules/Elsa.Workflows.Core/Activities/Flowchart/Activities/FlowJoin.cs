@@ -35,26 +35,15 @@ public class FlowJoin : Activity, IJoinNode
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var mode = context.Get(Mode);
-
-        switch (mode)
-        {
-            case FlowJoinMode.WaitAll:
-            {
-                if (Flowchart.CanWaitAllProceed(context))
-                {
-                    Flowchart.CancelAncestorActivatesAsync(context);
-                    await context.CompleteActivityAsync();
-                }
-
-                break;
-            }
-            case FlowJoinMode.WaitAny:
-            {
-                Flowchart.CancelAncestorActivatesAsync(context);
-                await context.CompleteActivityAsync();
-                break;
-            }
-        }
+        Flowchart.CancelAncestorActivatesAsync(context);
+        await context.CompleteActivityAsync();
     }
+
+    protected override bool CanExecute(ActivityExecutionContext context)
+        => context.Get(Mode) switch
+        {
+            FlowJoinMode.WaitAny => true,
+            FlowJoinMode.WaitAll => Flowchart.CanWaitAllProceed(context),
+            _ => true
+        };
 }

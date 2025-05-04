@@ -28,6 +28,7 @@ public static class WorkflowsFeatureExtensions
           workflowsFeature.WithActivityExecutionPipeline(pipeline => 
               pipeline
                   .UseExceptionHandling()
+                  .UseLogPersistenceModeEvaluation()
                   .UseExecutionLogging()
                   .UseNotifications()
                   .UseBackgroundActivityInvoker());

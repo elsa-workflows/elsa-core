@@ -20,7 +20,7 @@ public class JsonPayloadSerializer : IPayloadSerializer
     {
         _serviceProvider = serviceProvider;
     }
-    
+
     /// <inheritdoc />
     public string Serialize(object payload)
     {
@@ -82,8 +82,10 @@ public class JsonPayloadSerializer : IPayloadSerializer
         options.Converters.Add(GetService<PolymorphicObjectConverterFactory>());
         options.Converters.Add(GetService<TypeJsonConverter>());
         options.Converters.Add(GetService<VariableConverterFactory>());
+        options.Converters.Add(new FuncExpressionValueConverter());
         return options;
     }
-    
-    private T GetService<T>() where T : notnull => ActivatorUtilities.GetServiceOrCreateInstance<T>(_serviceProvider);
+
+    private T GetService<T>()
+        where T : notnull => ActivatorUtilities.GetServiceOrCreateInstance<T>(_serviceProvider);
 }

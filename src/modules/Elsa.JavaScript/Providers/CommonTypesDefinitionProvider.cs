@@ -6,7 +6,7 @@ using Elsa.JavaScript.TypeDefinitions.Models;
 namespace Elsa.JavaScript.Providers;
 
 /// <summary>
-/// Produces <see cref="FunctionDefinition"/>s for common functions.
+/// Produces <see cref="TypeDefinition"/>s for common types.
 /// </summary>
 internal class CommonTypeDefinitionProvider(ITypeDescriber typeDescriber) : TypeDefinitionProvider
 {

@@ -50,14 +50,13 @@ public class ConnectionMiddleware(ActivityMiddlewareDelegate next
                     LogConnectionExtensions.LogConnectionIsNull(logger);
                 else
                 {
-                    //Get connection from store, if exist,
-                    var connectionConfiguration = await connectionStore.FindAsync(new Persistence.Filters.ConnectionDefinitionFilter() { Name = connectionName });
+                    // Get connection from store, if exists.
+                    var connectionConfiguration = await connectionStore.FindAsync(new() { Name = connectionName });
                     if (connectionConfiguration != null)
                     {
-                        dynamic deserializedjson = JsonSerializer.Deserialize(connectionConfiguration.ConnectionConfiguration, propertyType, SerializerOptions);
+                        dynamic deserializedJson = connectionConfiguration.ConnectionConfiguration.Deserialize(propertyType, SerializerOptions)!;
 
-                        inputValue.Properties = deserializedjson;
-
+                        inputValue.Properties = deserializedJson;
                         input.ValueSetter(context.Activity, inputValue);
                     }
                     else

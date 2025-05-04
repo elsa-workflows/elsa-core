@@ -1,8 +1,8 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
+using Elsa.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore;
@@ -50,7 +50,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         var tenantId = tenantAccessor?.Tenant?.Id;
 
         if (!string.IsNullOrWhiteSpace(tenantId))
-            TenantId = tenantId;
+            TenantId = tenantId.NullIfEmpty();
     }
 
     /// <inheritdoc/>

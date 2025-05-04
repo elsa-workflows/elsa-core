@@ -41,7 +41,7 @@ public partial class ActivityExecutionContext
             JournalData["Outcomes"] = outcomes.Names;
 
         // Add an execution log entry.
-        AddExecutionLogEntry("Completed", payload: JournalData);
+        AddExecutionLogEntry("Completed");
 
         // Send a signal.
         await this.SendSignalAsync(new ActivityCompleted(result));

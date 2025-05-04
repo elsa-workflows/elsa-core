@@ -23,7 +23,7 @@ public class ActivityDesignerMetadata
     /// <param name="y">The y coordinate of the activity.</param>
     /// <param name="width">The width of the activity.</param>
     /// <param name="height">The height of the activity.</param>
-    public ActivityDesignerMetadata(double x, double y, double width, double height) : this(new Position(x, y), new Size(width, height))
+    public ActivityDesignerMetadata(double x, double y, double width, double height) : this(new(x, y), new(width, height))
     {
     }
 

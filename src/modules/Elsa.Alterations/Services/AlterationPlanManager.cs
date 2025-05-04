@@ -25,7 +25,7 @@ public class AlterationPlanManager(IAlterationPlanStore planStore, IAlterationJo
         var jobFilter = new AlterationJobFilter
         {
             PlanId = planId,
-            Statuses = new[] { AlterationJobStatus.Pending, AlterationJobStatus.Running }
+            Statuses = [AlterationJobStatus.Pending, AlterationJobStatus.Running]
         };
         
         return await jobStore.CountAsync(jobFilter, cancellationToken) == 0;

@@ -1,6 +1,6 @@
-using Elsa.Workflows.Management.Compression;
+using Elsa.Common.Codecs;
 
-namespace Elsa.Workflows.Management.Services;
+namespace Elsa.Common.Services;
 
 /// <inheritdoc />
 public class CompressionCodecResolver : ICompressionCodecResolver

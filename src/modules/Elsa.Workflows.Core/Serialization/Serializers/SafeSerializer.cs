@@ -13,9 +13,8 @@ namespace Elsa.Workflows.Serialization.Serializers;
 public class SafeSerializer : ConfigurableSerializer, ISafeSerializer
 {
     /// <inheritdoc />
-    public SafeSerializer(IServiceProvider serviceProvider) : base(serviceProvider)
-    {
-    }
+    public SafeSerializer(IServiceProvider serviceProvider)
+        : base(serviceProvider) { }
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type T may be trimmed.")]
@@ -78,5 +77,6 @@ public class SafeSerializer : ConfigurableSerializer, ISafeSerializer
         options.Converters.Add(new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()));
         options.Converters.Add(new SafeValueConverterFactory());
         options.Converters.Add(new ExpressionJsonConverterFactory(expressionDescriptorRegistry));
+        options.Converters.Add(new FuncExpressionValueConverter());
     }
 }

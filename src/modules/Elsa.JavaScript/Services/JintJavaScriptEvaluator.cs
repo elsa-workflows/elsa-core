@@ -32,8 +32,8 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
     public async Task<object?> EvaluateAsync(string expression,
         Type returnType,
         ExpressionExecutionContext context,
-        ExpressionEvaluatorOptions? options = default,
-        Action<Engine>? configureEngine = default,
+        ExpressionEvaluatorOptions? options = null,
+        Action<Engine>? configureEngine = null,
         CancellationToken cancellationToken = default)
     {
         var engine = await GetConfiguredEngine(configureEngine, context, options, cancellationToken);
@@ -46,7 +46,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
     private async Task<Engine> GetConfiguredEngine(Action<Engine>? configureEngine, ExpressionExecutionContext context, ExpressionEvaluatorOptions? options, CancellationToken cancellationToken)
     {
-        options ??= new ExpressionEvaluatorOptions();
+        options ??= new();
 
         var engineOptions = new Jint.Options
         {
@@ -130,7 +130,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
     {
         var prepareOptions = new ScriptPreparationOptions
         {
-            ParsingOptions = new ScriptParsingOptions
+            ParsingOptions = new()
             {
                 AllowReturnOutsideFunction = true
             }

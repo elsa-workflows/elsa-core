@@ -21,7 +21,7 @@ public class Flowchart : Container
     private const string BackwardConnectionActivityInput = "BackwardConnection";
 
     /// <inheritdoc />
-    public Flowchart([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Flowchart([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         OnSignalReceived<ScheduleActivityOutcomes>(OnScheduleOutcomesAsync);
         OnSignalReceived<ScheduleChildActivity>(OnScheduleChildActivityAsync);
@@ -58,7 +58,7 @@ public class Flowchart : Container
     {
         // If there's a trigger that triggered this workflow, use that.
         var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
-        var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : default;
+        var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : null;
 
         if (triggerActivity != null)
             return triggerActivity;
@@ -321,13 +321,20 @@ public class Flowchart : Container
             }
         }
 
-        var scheduleWorkOptions = new ScheduleWorkOptions
+        if (joinContext is not { Status: ActivityStatus.Running })
         {
-            CompletionCallback = OnChildCompletedAsync,
-            ExistingActivityExecutionContext = joinContext
-        };
-        await flowchartContext.ScheduleActivityAsync(outboundActivity, scheduleWorkOptions);
-        return true;
+            var scheduleWorkOptions = new ScheduleWorkOptions
+            {
+                CompletionCallback = OnChildCompletedAsync,
+                ExistingActivityExecutionContext = joinContext
+            };
+            await flowchartContext.ScheduleActivityAsync(outboundActivity, scheduleWorkOptions);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     public static bool CanWaitAllProceed(ActivityExecutionContext context)
@@ -415,5 +422,13 @@ public class Flowchart : Container
     private async ValueTask OnActivityCanceledAsync(CancelSignal signal, SignalContext context)
     {
         await CompleteIfNoPendingWorkAsync(context.ReceiverActivityExecutionContext);
+
+        var flowchartContext = context.ReceiverActivityExecutionContext!;
+        var flowchart = (Flowchart)flowchartContext.Activity;
+        var flowGraph = flowchart.GetFlowGraph(flowchartContext);
+        var flowScope = flowchart.GetFlowScope(flowchartContext);
+
+        // Propagate canceled connections visited count by scheduling with Outcomes.Empty
+        await flowchart.ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, context.SenderActivityExecutionContext.Activity, Outcomes.Empty);
     }
 }
