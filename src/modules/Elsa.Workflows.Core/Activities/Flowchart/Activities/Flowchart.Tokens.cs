@@ -15,92 +15,79 @@ public partial class Flowchart
         };
     }
 
-    private const string TokenStoreKey = "FlowchartTokens";
+    private const string TokenStoreKey = "Flowchart.Tokens";
+    private const string WaitAnyGuardKey = "Flowchart.WaitAnyGuard";
 
     private async ValueTask OnChildCompletedTokenBasedLogicAsync(ActivityCompletedContext ctx)
     {
         var flowContext = ctx.TargetContext;
-        var completedActivityContext = ctx.ChildContext;
-        var completedActivity = completedActivityContext.Activity;
-
-        // Check for abnormal state.
-        if (flowContext.Activity != this) throw new InvalidOperationException();
-        if (completedActivityContext.Status != ActivityStatus.Completed) return;
-
-        // If this is a terminal node, there's nothing else to schedule.
-        if (completedActivity is ITerminalNode)
-        {
-            await flowContext.CompleteActivityAsync();
-            return;
-        }
-
+        var completedActivity = ctx.ChildContext.Activity;
         var flowGraph = flowContext.GetFlowGraph();
 
-        // Get the outcomes and matching outbound connections (i.e. active connections).
+        // Retrieve or initialize the “WaitAny” guard set.
+        if (!flowContext.Properties.TryGetValue(WaitAnyGuardKey, out var waitAnyGuardObj) || waitAnyGuardObj is not HashSet<string> waitAnyGuard)
+        {
+            waitAnyGuard = new();
+            flowContext.Properties[WaitAnyGuardKey] = waitAnyGuard;
+        }
+
+        // When a WaitAny‐joined activity actually completes, clear its flag so it can fire again on a next loopback.
+        if (completedActivity.GetJoinMode() == FlowJoinMode.WaitAny)
+            waitAnyGuard.Remove(completedActivity.Id);
+
+        // Emit tokens.
         var outcomes = (ctx.Result as Outcomes ?? Outcomes.Default).Names;
         var outboundConnections = flowGraph.GetOutboundConnections(completedActivity);
         var activeOutboundConnections = outboundConnections.Where(x => outcomes.Contains(x.Source.Port)).Distinct().ToList();
-
-        // Emit a token for each active outbound connection.
         var tokens = GetTokenList(flowContext);
 
         foreach (var connection in activeOutboundConnections)
-        {
-            var sourceEndpoint = connection.Source;
-            var sourceActivity = sourceEndpoint.Activity;
-            var targetActivity = connection.Target.Activity;
-            var newToken = Token.Create(sourceActivity, targetActivity);
-            tokens.Add(newToken);
-        }
+            tokens.Add(Token.Create(connection.Source.Activity, connection.Target.Activity));
 
-        // Consume any inbound tokens.
+        // Consume tokens.
         var inboundTokens = tokens.Where(t => t.ToActivityId == completedActivity.Id).ToList();
-
-        foreach (var token in inboundTokens)
+        foreach (var t in inboundTokens)
         {
-            tokens.Remove(token);
-            var consumedToken = token.Consume();
-            tokens.Add(consumedToken);
+            tokens.Remove(t);
+            tokens.Add(t.Consume());
         }
 
-        // Consider each active outbound connection.
+        // Schedule next activities.
         foreach (var connection in activeOutboundConnections)
         {
-            // By default, all joins are of mode "Wait All", but this could be overridden by the Join Kind property.
-            var joinKind = connection.Target.Activity.GetJoinMode();
+            var targetActivity = connection.Target.Activity;
+            var joinKind = targetActivity.GetJoinMode();
 
             if (joinKind == FlowJoinMode.WaitAny)
             {
-                // Cancel inbound ancestor activities (Timers, Events, etc.) and schedule the target.
-                await flowContext.CancelInboundAncestorsAsync();
-                await flowContext.ScheduleActivityAsync(connection.Target.Activity, OnChildCompletedTokenBasedLogicAsync);
-                
-                // Exit this iteration.
-                continue;
+                // only the first token per iteration will pass this check…
+                if (waitAnyGuard.Add(targetActivity.Id))
+                {
+                    await flowContext.CancelInboundAncestorsAsync();
+                    await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
+                }
             }
-            
-            // Handle Wait All joins by checking if all inbound tokens of the target activity have been consumed.
-            // For each target, get its inbound connections.
-            var targetInboundConnections = flowGraph.GetForwardInboundConnections(connection.Target.Activity).ToList();
+            else
+            {
+                // WaitAll.
+                var inboundConnections = flowGraph.GetForwardInboundConnections(targetActivity);
+                var hasUnconsumed = inboundConnections.Any(inbound =>
+                    tokens.Any(t => !t.Consumed && t.ToActivityId == inbound.Source.Activity.Id)
+                );
 
-            // For each inbound connection, check to see if there are any unconsumed tokens.
-            var unconsumedTokens = targetInboundConnections.Where(x => tokens.Where(token => !token.Consumed).Select(token => token.ToActivityId).Contains(x.Source.Activity.Id)).ToList();
-            var hasUnconsumedTokens = unconsumedTokens.Count > 0;
-            var ready = !hasUnconsumedTokens;
-
-            if (ready) 
-                await flowContext.ScheduleActivityAsync(connection.Target.Activity, OnChildCompletedTokenBasedLogicAsync);
+                if (!hasUnconsumed)
+                    await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
+            }
         }
 
-        // Save the updated token list.
         SaveTokenList(flowContext, tokens);
 
-        // Complete if nothing left.
+        // Complete flow if done.
         var hasPendingWork = flowContext.HasPendingWork();
         var allTokensConsumed = tokens.All(t => t.Consumed);
-        var hasFaultedChildren = flowContext.HasFaultedChildren();
+        var hasFaulted = flowContext.HasFaultedChildren();
 
-        if (!hasPendingWork && allTokensConsumed && !hasFaultedChildren)
+        if (!hasPendingWork && allTokensConsumed && !hasFaulted)
             await flowContext.CompleteActivityAsync();
     }
 
