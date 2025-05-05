@@ -32,11 +32,11 @@ public partial class Flowchart
         var tokens = GetTokenList(flowContext);
 
         foreach (var connection in activeOutboundConnections)
-            tokens.Add(Token.Create(connection.Source.Activity, connection.Target.Activity));
+            tokens.Add(Token.Create(connection.Source.Activity, connection.Target.Activity, connection.Source.Port));
 
         // Consume tokens.
         var inboundTokens = tokens.Where(t => t.ToActivityId == completedActivity.Id).ToList();
-        foreach (var t in inboundTokens) 
+        foreach (var t in inboundTokens)
             t.Consume();
 
         // Schedule next activities.
@@ -44,14 +44,25 @@ public partial class Flowchart
         {
             var targetActivity = connection.Target.Activity;
             var joinKind = targetActivity.GetJoinMode();
+            var attachedToken = tokens.First(t => t.FromActivityId == connection.Source.Activity.Id && t.ToActivityId == targetActivity.Id && t.Outcome == connection.Source.Port);
 
             if (joinKind == FlowJoinMode.WaitAny)
             {
+                // If there's at least one schedule token by the target, we don't schedule the target again.
+                var hasScheduled = tokens.Any(t => (t.Scheduled || t.Consumed) && t.ToActivityId == targetActivity.Id);
+
                 // only the first token per iteration will pass this check…
-                if (waitAnyGuard.Add(targetActivity.Id))
+                if (waitAnyGuard.Add(targetActivity.Id) && !hasScheduled)
                 {
-                    await flowContext.CancelInboundAncestorsAsync(targetActivity);
+                    //await flowContext.CancelInboundAncestorsAsync(targetActivity);
+                    attachedToken.Schedule();
                     await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
+                }
+                else
+                {
+                    // The target will not be scheduled again, so the outbound token would not be consumed upon its completion.
+                    // We need to consume it manually.
+                    attachedToken.Consume(); 
                 }
             }
             else
@@ -63,7 +74,10 @@ public partial class Flowchart
                 );
 
                 if (!hasUnconsumed)
+                {
+                    attachedToken.Schedule();
                     await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
+                }
             }
         }
 
