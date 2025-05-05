@@ -6,7 +6,7 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 public partial class Flowchart
 {
     private const string TokenStoreKey = "Flowchart.Tokens";
-    private const string WaitAnyGuardKey = "Flowchart.WaitAnyGuard";
+    //private const string WaitAnyGuardKey = "Flowchart.WaitAnyGuard";
 
     private async ValueTask OnChildCompletedTokenBasedLogicAsync(ActivityCompletedContext ctx)
     {
@@ -14,16 +14,16 @@ public partial class Flowchart
         var completedActivity = ctx.ChildContext.Activity;
         var flowGraph = flowContext.GetFlowGraph();
 
-        // Retrieve or initialize the “WaitAny” guard set.
-        if (!flowContext.Properties.TryGetValue(WaitAnyGuardKey, out var waitAnyGuardObj) || waitAnyGuardObj is not HashSet<string> waitAnyGuard)
-        {
-            waitAnyGuard = new();
-            flowContext.Properties[WaitAnyGuardKey] = waitAnyGuard;
-        }
+        // // Retrieve or initialize the “WaitAny” guard set.
+        // if (!flowContext.Properties.TryGetValue(WaitAnyGuardKey, out var waitAnyGuardObj) || waitAnyGuardObj is not HashSet<string> waitAnyGuard)
+        // {
+        //     waitAnyGuard = new();
+        //     flowContext.Properties[WaitAnyGuardKey] = waitAnyGuard;
+        // }
 
-        // When a WaitAny‐joined activity actually completes, clear its flag so it can fire again on a next loopback.
-        if (completedActivity.GetJoinMode() == FlowJoinMode.WaitAny)
-            waitAnyGuard.Remove(completedActivity.Id);
+        // // When a WaitAny‐joined activity actually completes, clear its flag so it can fire again on a next loopback.
+        // if (completedActivity.GetJoinMode() == FlowJoinMode.WaitAny)
+        //     waitAnyGuard.Remove(completedActivity.Id);
 
         // Emit tokens.
         var outcomes = (ctx.Result as Outcomes ?? Outcomes.Default).Names;
@@ -52,7 +52,7 @@ public partial class Flowchart
                 var hasScheduled = tokens.Any(t => (t.Scheduled || t.Consumed) && t.ToActivityId == targetActivity.Id);
 
                 // only the first token per iteration will pass this check…
-                if (waitAnyGuard.Add(targetActivity.Id) && !hasScheduled)
+                if (!hasScheduled)
                 {
                     //await flowContext.CancelInboundAncestorsAsync(targetActivity);
                     attachedToken.Schedule();
