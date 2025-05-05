@@ -127,6 +127,16 @@ public static class ActivityExtensions
     {
         activity.SetProperty(JsonValue.Create(value), "customProperties", "joinMode");
     }
+    
+    public static MergeMode GetMergeMode(this JsonObject activity)
+    {
+        return activity.GetProperty<MergeMode?>("customProperties", "mergeMode") ?? MergeMode.Converge;
+    }
+
+    public static void SetMergeMode(this JsonObject activity, MergeMode? value)
+    {
+        activity.SetProperty(JsonValue.Create(value), "customProperties", "mergeMode");
+    }
 
     /// <summary>
     /// Gets the activities in the specified flowchart.

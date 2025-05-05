@@ -6,24 +6,12 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 public partial class Flowchart
 {
     private const string TokenStoreKey = "Flowchart.Tokens";
-    //private const string WaitAnyGuardKey = "Flowchart.WaitAnyGuard";
 
     private async ValueTask OnChildCompletedTokenBasedLogicAsync(ActivityCompletedContext ctx)
     {
         var flowContext = ctx.TargetContext;
         var completedActivity = ctx.ChildContext.Activity;
         var flowGraph = flowContext.GetFlowGraph();
-
-        // // Retrieve or initialize the “WaitAny” guard set.
-        // if (!flowContext.Properties.TryGetValue(WaitAnyGuardKey, out var waitAnyGuardObj) || waitAnyGuardObj is not HashSet<string> waitAnyGuard)
-        // {
-        //     waitAnyGuard = new();
-        //     flowContext.Properties[WaitAnyGuardKey] = waitAnyGuard;
-        // }
-
-        // // When a WaitAny‐joined activity actually completes, clear its flag so it can fire again on a next loopback.
-        // if (completedActivity.GetJoinMode() == FlowJoinMode.WaitAny)
-        //     waitAnyGuard.Remove(completedActivity.Id);
 
         // Emit tokens.
         var outcomes = (ctx.Result as Outcomes ?? Outcomes.Default).Names;
@@ -43,10 +31,10 @@ public partial class Flowchart
         foreach (var connection in activeOutboundConnections)
         {
             var targetActivity = connection.Target.Activity;
-            var joinKind = targetActivity.GetJoinMode();
+            var mergeMode = targetActivity.GetMergeMode();
             var attachedToken = tokens.First(t => t.FromActivityId == connection.Source.Activity.Id && t.ToActivityId == targetActivity.Id && t.Outcome == connection.Source.Port);
 
-            if (joinKind == FlowJoinMode.WaitAny)
+            if (mergeMode is MergeMode.Stream or MergeMode.Race)
             {
                 // If there's at least one schedule token by the target, we don't schedule the target again.
                 var hasScheduled = tokens.Any(t => (t.Scheduled || t.Consumed) && t.ToActivityId == targetActivity.Id);
@@ -54,14 +42,16 @@ public partial class Flowchart
                 // only the first token per iteration will pass this check…
                 if (!hasScheduled)
                 {
-                    //await flowContext.CancelInboundAncestorsAsync(targetActivity);
+                    if(mergeMode == MergeMode.Race)
+                        await flowContext.CancelInboundAncestorsAsync(targetActivity);
+                    
                     attachedToken.Schedule();
                     await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
                 }
                 else
                 {
                     // The target will not be scheduled again, so the outbound token would not be consumed upon its completion.
-                    // We need to consume it manually.
+                    // So, we need to consume it manually.
                     attachedToken.Consume(); 
                 }
             }
