@@ -39,7 +39,7 @@ public partial class Flowchart
                 // If there's at least one schedule token by the target, we don't schedule the target again.
                 var hasScheduled = tokens.Any(t => (t.Scheduled || t.Consumed) && t.ToActivityId == targetActivity.Id);
 
-                // only the first token per iteration will pass this check…
+                // Only the first token per iteration will pass this check.
                 if (!hasScheduled)
                 {
                     if(mergeMode == MergeMode.Race)
