@@ -31,7 +31,7 @@ public partial class Flowchart
         foreach (var connection in activeOutboundConnections)
         {
             var targetActivity = connection.Target.Activity;
-            var mergeMode = targetActivity.GetMergeMode();
+            var mergeMode = await targetActivity.GetMergeModeAsync(ctx.ChildContext);
             var attachedToken = tokens.First(t => t.FromActivityId == connection.Source.Activity.Id && t.ToActivityId == targetActivity.Id && t.Outcome == connection.Source.Port);
 
             if (mergeMode is MergeMode.Stream or MergeMode.Race)

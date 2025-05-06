@@ -17,6 +17,7 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 /// </summary>
 [Activity("Elsa", "Branching", "Explicitly merge multiple branches into a single branch of execution.", DisplayName = "Join")]
 [UsedImplicitly]
+[Obsolete("Each activity now supports the MergeMode property, making the use of this activity obsolete.", false)]
 public class FlowJoin : Activity, IJoinNode
 {
     /// <inheritdoc />
@@ -32,7 +33,6 @@ public class FlowJoin : Activity, IJoinNode
         DefaultValue = FlowJoinMode.WaitAny,
         UIHint = InputUIHints.DropDown
     )]
-    [Obsolete("Use the Join Kind property instead.", false)]
     public Input<FlowJoinMode> Mode { get; set; } = new(FlowJoinMode.WaitAny);
 
     /// <inheritdoc />

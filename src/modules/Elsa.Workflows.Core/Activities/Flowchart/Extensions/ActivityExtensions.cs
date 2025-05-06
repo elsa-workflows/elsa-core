@@ -1,23 +1,11 @@
+using Elsa.Extensions;
+using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
 
 namespace Elsa.Workflows.Activities.Flowchart.Extensions;
 
 public static class ActivityExtensions
 {
-    public static FlowJoinMode? GetJoinMode(this IActivity activity)
-    {
-        activity.CustomProperties.TryGetValue("joinMode", out var joinModeString);
-        return Enum.TryParse<FlowJoinMode>((string?)joinModeString, true, out var joinMode) ? joinMode : null;
-    }
-
-    public static void SetJoinMode(this IActivity activity, FlowJoinMode? value)
-    {
-        if (value == null)
-            activity.CustomProperties.Remove("joinMode");
-        else
-            activity.CustomProperties["joinMode"] = value;
-    }
-    
     public static MergeMode? GetMergeMode(this IActivity activity)
     {
         activity.CustomProperties.TryGetValue("mergeMode", out var mergeModeString);
@@ -30,5 +18,23 @@ public static class ActivityExtensions
             activity.CustomProperties.Remove("mergeMode");
         else
             activity.CustomProperties["mergeMode"] = value;
+    }
+    
+    public static async Task<MergeMode?> GetMergeModeAsync(this IActivity activity, ActivityExecutionContext context)
+    {
+        if (activity.Type != "Elsa.FlowJoin")
+        {
+            return activity.GetMergeMode();
+        }
+        
+        // Handle deprecated FlowJoin activity by evaluating its JoinMode property and mapping it to the appropriate MergeMode equivalent.
+        var joinActivityExecutionContext = await context.WorkflowExecutionContext.CreateActivityExecutionContextAsync(activity);
+        var joinMode = await joinActivityExecutionContext.EvaluateInputPropertyAsync<FlowJoin, FlowJoinMode>(x => x.Mode);
+
+        return joinMode switch
+        {
+            FlowJoinMode.WaitAny => MergeMode.Race,
+            _ => MergeMode.Converge
+        };
     }
 }
