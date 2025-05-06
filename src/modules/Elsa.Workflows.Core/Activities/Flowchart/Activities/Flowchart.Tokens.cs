@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 
@@ -70,6 +71,9 @@ public partial class Flowchart
                 }
             }
         }
+        
+        // Purge tokens.
+        tokens.RemoveWhere(t => t.ToActivityId == completedActivity.Id && t.Consumed);
 
         SaveTokenList(flowContext, tokens);
 
