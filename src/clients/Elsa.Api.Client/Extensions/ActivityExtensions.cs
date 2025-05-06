@@ -118,16 +118,6 @@ public static class ActivityExtensions
     /// </summary>
     public static void SetCanStartWorkflow(this JsonObject activity, bool value) => activity.SetProperty(JsonValue.Create(value), "customProperties", "canStartWorkflow");
     
-    public static JoinMode GetJoinMode(this JsonObject activity)
-    {
-        return activity.GetProperty<JoinMode?>("customProperties", "joinMode") ?? JoinMode.WaitAll;
-    }
-
-    public static void SetJoinMode(this JsonObject activity, JoinMode? value)
-    {
-        activity.SetProperty(JsonValue.Create(value), "customProperties", "joinMode");
-    }
-    
     public static MergeMode GetMergeMode(this JsonObject activity)
     {
         return activity.GetProperty<MergeMode?>("customProperties", "mergeMode") ?? MergeMode.Converge;
