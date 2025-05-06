@@ -7,6 +7,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Server.Api.Helpers;
+using Asp.Versioning;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {

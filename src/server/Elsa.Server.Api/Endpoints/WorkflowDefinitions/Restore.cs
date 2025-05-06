@@ -10,6 +10,7 @@ using Elsa.Server.Api.Helpers;
 using System.IO.Compression;
 using Elsa.Persistence;
 using MediatR;
+using Asp.Versioning;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
