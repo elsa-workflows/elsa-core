@@ -245,4 +245,16 @@ public partial class Flowchart
                 await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedCounterBasedLogicAsync);
         }
     }
+
+    private async ValueTask OnCounterFlowActivityCanceledAsync(CancelSignal signal, SignalContext context)
+    {
+        var flowchartContext = context.ReceiverActivityExecutionContext;
+        await CompleteIfNoPendingWorkAsync(flowchartContext);
+        var flowchart = (Flowchart)flowchartContext.Activity;
+        var flowGraph = flowchartContext.GetFlowGraph();
+        var flowScope = flowchart.GetFlowScope(flowchartContext);
+
+        // Propagate canceled connections visited count by scheduling with Outcomes.Empty
+        await flowchart.ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, context.SenderActivityExecutionContext.Activity, Outcomes.Empty);
+    }
 }

@@ -1,11 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Models;
-using Elsa.Workflows.Options;
 using Elsa.Workflows.Signals;
 
 namespace Elsa.Workflows.Activities.Flowchart.Activities;
@@ -77,43 +74,25 @@ public partial class Flowchart : Container
         }
     }
 
-    private async ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
+    private ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
     {
-        if (UseTokenFlow)
-            await OnChildCompletedTokenBasedLogicAsync(context);
-        else
-            await OnChildCompletedCounterBasedLogicAsync(context);
+        return UseTokenFlow
+            ? OnChildCompletedTokenBasedLogicAsync(context)
+            : OnChildCompletedCounterBasedLogicAsync(context);
     }
 
-    private async ValueTask OnActivityCanceledAsync(CancelSignal signal, SignalContext context)
+    private ValueTask OnActivityCanceledAsync(CancelSignal signal, SignalContext context)
     {
-        var flowchartContext = context.ReceiverActivityExecutionContext;
-        var cancelledActivityContext = context.SenderActivityExecutionContext;
-        
-        if (UseTokenFlow)
-        {
-            // Remove all tokens from and to this activity.
-            var tokenList = GetTokenList(flowchartContext);
-            tokenList.RemoveWhere(x => x.FromActivityId == cancelledActivityContext.Activity.Id || x.ToActivityId == cancelledActivityContext.Activity.Id);
-            await CompleteIfNoPendingWorkAsync(flowchartContext);
-        }
-        else
-        {
-            await CompleteIfNoPendingWorkAsync(flowchartContext);
-            var flowchart = (Flowchart)flowchartContext.Activity;
-            var flowGraph = flowchartContext.GetFlowGraph();
-            var flowScope = flowchart.GetFlowScope(flowchartContext);
-
-            // Propagate canceled connections visited count by scheduling with Outcomes.Empty
-            await flowchart.ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, context.SenderActivityExecutionContext.Activity, Outcomes.Empty);
-        }
+        return UseTokenFlow
+            ? OnTokenFlowActivityCanceledAsync(signal, context)
+            : OnCounterFlowActivityCanceledAsync(signal, context);
     }
-    
+
     private async Task CompleteIfNoPendingWorkAsync(ActivityExecutionContext context)
     {
         var hasPendingWork = context.HasPendingWork();
 
-        if (!hasPendingWork) 
+        if (!hasPendingWork)
             await context.CompleteActivityAsync();
     }
 }

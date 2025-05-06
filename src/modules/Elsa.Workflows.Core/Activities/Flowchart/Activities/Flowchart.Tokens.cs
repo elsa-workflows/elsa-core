@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Signals;
 
 namespace Elsa.Workflows.Activities.Flowchart.Activities;
 
@@ -46,10 +47,10 @@ public partial class Flowchart
                 {
                     // Schedule the target activity.
                     await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
-                    
+
                     // And block other inbound connections.
                     var otherInboundConnections = flowGraph.GetForwardInboundConnections(targetActivity).Where(x => x.Source.Activity != completedActivity).ToList();
-                    
+
                     foreach (var inboundConnection in otherInboundConnections)
                     {
                         var blockedToken = Token.Create(inboundConnection.Source.Activity, inboundConnection.Target.Activity, inboundConnection.Source.Port).Block();
@@ -88,6 +89,17 @@ public partial class Flowchart
 
         // Purge tokens.
         tokens.RemoveWhere(t => t.ToActivityId == completedActivity.Id && t.Consumed);
+    }
+
+    private async ValueTask OnTokenFlowActivityCanceledAsync(CancelSignal signal, SignalContext context)
+    {
+        var flowchartContext = context.ReceiverActivityExecutionContext;
+        var cancelledActivityContext = context.SenderActivityExecutionContext;
+
+        // Remove all tokens from and to this activity.
+        var tokenList = GetTokenList(flowchartContext);
+        tokenList.RemoveWhere(x => x.FromActivityId == cancelledActivityContext.Activity.Id || x.ToActivityId == cancelledActivityContext.Activity.Id);
+        await CompleteIfNoPendingWorkAsync(flowchartContext);
     }
 
     internal List<Token> GetTokenList(ActivityExecutionContext context)
