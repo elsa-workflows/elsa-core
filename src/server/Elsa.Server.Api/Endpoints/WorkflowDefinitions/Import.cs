@@ -35,7 +35,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             OperationId = "WorkflowDefinitions.Import",
             Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<IActionResult> Handle(string workflowDefinitionId, [FromForm] IFormFile? file, CancellationToken cancellationToken)
+        public async Task<IActionResult> Handle(string workflowDefinitionId, IFormFile? file, CancellationToken cancellationToken)
         {
             if (file == null)
                 return BadRequest();

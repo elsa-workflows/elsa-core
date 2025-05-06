@@ -41,7 +41,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             OperationId = "WorkflowDefinitions.Restore",
             Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<IActionResult> Handle([FromForm] IFormFile? file, CancellationToken cancellationToken)
+        public async Task<IActionResult> Handle(IFormFile? file, CancellationToken cancellationToken)
         {
             if (file == null)
                 return BadRequest();
