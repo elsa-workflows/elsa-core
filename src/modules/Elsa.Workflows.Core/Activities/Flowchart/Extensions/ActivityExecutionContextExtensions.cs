@@ -53,7 +53,7 @@ public static class ActivityExecutionContextExtensions
         var activityIds = flowchart.Activities.Select(x => x.Id).ToList();
         var children = context.Children;
         var hasRunningActivityInstances = children.Where(x => activityIds.Contains(x.Activity.Id)).Any(x => x.Status == ActivityStatus.Running);
-        var hasUnconsumedTokens = flowchart.GetTokenList(context).Any(x => !x.Consumed);
+        var hasUnconsumedTokens = flowchart.GetTokenList(context).Any(x => x is { Consumed: false, Blocked: false });
         var hasFaulted = context.HasFaultedChildren();
 
         var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(workItem =>
