@@ -230,19 +230,6 @@ public partial class Flowchart
         return flowScope.AllInboundConnectionsVisited(flowGraph, activity);
     }
 
-    private async Task CompleteIfNoPendingWorkAsync(ActivityExecutionContext context)
-    {
-        var hasPendingWork = context.HasPendingWork();
-
-        if (!hasPendingWork)
-        {
-            var hasFaultedActivities = context.HasFaultedChildren();
-
-            if (!hasFaultedActivities)
-                await context.CompleteActivityAsync();
-        }
-    }
-
     private async ValueTask OnScheduleOutcomesAsync(ScheduleActivityOutcomes signal, SignalContext context)
     {
         var flowchartContext = context.ReceiverActivityExecutionContext;

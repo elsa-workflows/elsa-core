@@ -75,14 +75,12 @@ public partial class Flowchart
 
         // Complete flow if done.
         var hasPendingWork = flowContext.HasPendingWork();
-        var allTokensConsumed = tokens.All(t => t.Consumed);
-        var hasFaulted = flowContext.HasFaultedChildren();
 
-        if (!hasPendingWork && allTokensConsumed && !hasFaulted)
+        if (!hasPendingWork)
             await flowContext.CompleteActivityAsync();
     }
 
-    private List<Token> GetTokenList(ActivityExecutionContext context)
+    internal List<Token> GetTokenList(ActivityExecutionContext context)
     {
         if (context.Properties.TryGetValue(TokenStoreKey, out var obj) && obj is List<Token> list)
             return list;

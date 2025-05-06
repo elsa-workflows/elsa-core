@@ -84,20 +84,36 @@ public partial class Flowchart : Container
         else
             await OnChildCompletedCounterBasedLogicAsync(context);
     }
-    
+
     private async ValueTask OnActivityCanceledAsync(CancelSignal signal, SignalContext context)
     {
-        if (UseTokenFlow)
-            return;
-        
-        await CompleteIfNoPendingWorkAsync(context.ReceiverActivityExecutionContext);
-
         var flowchartContext = context.ReceiverActivityExecutionContext;
-        var flowchart = (Flowchart)flowchartContext.Activity;
-        var flowGraph = flowchartContext.GetFlowGraph();
-        var flowScope = flowchart.GetFlowScope(flowchartContext);
+        var cancelledActivityContext = context.SenderActivityExecutionContext;
+        
+        if (UseTokenFlow)
+        {
+            // Remove all tokens from and to this activity.
+            var tokenList = GetTokenList(flowchartContext);
+            tokenList.RemoveWhere(x => x.FromActivityId == cancelledActivityContext.Activity.Id || x.ToActivityId == cancelledActivityContext.Activity.Id);
+            await CompleteIfNoPendingWorkAsync(flowchartContext);
+        }
+        else
+        {
+            await CompleteIfNoPendingWorkAsync(flowchartContext);
+            var flowchart = (Flowchart)flowchartContext.Activity;
+            var flowGraph = flowchartContext.GetFlowGraph();
+            var flowScope = flowchart.GetFlowScope(flowchartContext);
 
-        // Propagate canceled connections visited count by scheduling with Outcomes.Empty
-        await flowchart.ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, context.SenderActivityExecutionContext.Activity, Outcomes.Empty);
+            // Propagate canceled connections visited count by scheduling with Outcomes.Empty
+            await flowchart.ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, context.SenderActivityExecutionContext.Activity, Outcomes.Empty);
+        }
+    }
+    
+    private async Task CompleteIfNoPendingWorkAsync(ActivityExecutionContext context)
+    {
+        var hasPendingWork = context.HasPendingWork();
+
+        if (!hasPendingWork) 
+            await context.CompleteActivityAsync();
     }
 }
