@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.UIHints;
+using Elsa.Resilience;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.UIHints;
@@ -16,7 +17,7 @@ namespace Elsa.Http;
 /// Base class for activities that send HTTP requests.
 /// </summary>
 [Output(IsSerializable = false)]
-public abstract class SendHttpRequestBase(string? source = null, int? line = null) : Activity<HttpResponseMessage>(source, line)
+public abstract class SendHttpRequestBase(string? source = null, int? line = null) : Activity<HttpResponseMessage>(source, line), IResilientActivity
 {
     /// <summary>
     /// The URL to send the request to.
@@ -145,7 +146,7 @@ public abstract class SendHttpRequestBase(string? source = null, int? line = nul
 
         try
         {
-            var response = await SendRequestAsync();
+            var response = await SendRequestAsync(context);
             var parsedContent = await ParseContentAsync(context, response);
             var statusCode = (int)response.StatusCode;
             var responseHeaders = new HttpHeaders(response.Headers);
@@ -180,12 +181,19 @@ public abstract class SendHttpRequestBase(string? source = null, int? line = nul
 
         return;
 
-        async Task<HttpResponseMessage> SendRequestAsync()
+        async Task<HttpResponseMessage> SendRequestAsync(ActivityExecutionContext activityExecutionContext)
         {
+            // Keep this for backward compatibility.
             if (resiliencyEnabled)
             {
                 var pipeline = BuildResiliencyPipeline(context);
                 return await pipeline.ExecuteAsync(async ct => await SendRequestAsyncCore(ct), cancellationToken);
+            }
+            else
+            {
+                var resilienceService = activityExecutionContext.GetRequiredService<IResilienceService>();
+                var strategyId = resilienceService.GetStrategyId(this);
+                var resilienceStrategy = resilienceService.GetStrategyByIdAsync()
             }
 
             return await SendRequestAsyncCore();
