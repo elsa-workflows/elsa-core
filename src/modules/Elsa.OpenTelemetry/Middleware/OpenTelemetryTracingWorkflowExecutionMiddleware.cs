@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Elsa.Common;
+using Elsa.OpenTelemetry.Contracts;
 using Elsa.OpenTelemetry.Helpers;
+using Elsa.OpenTelemetry.Models;
 using Elsa.OpenTelemetry.Options;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
@@ -56,7 +58,28 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         if (context.SubStatus == WorkflowSubStatus.Faulted)
         {
             span.AddEvent(new("faulted"));
-            span.SetStatus(ActivityStatusCode.Error, "The workflow entered the Faulted state. See incidents for details.");
+
+            var lastIncident = context.Incidents.FirstOrDefault();
+
+            if (lastIncident == null)
+                span.SetStatus(ActivityStatusCode.Error, "The workflow entered the Faulted state. See incidents for details.");
+            else
+            {
+                span.SetStatus(ActivityStatusCode.Error, lastIncident.Message);
+
+                var activityExecutionContext = context.ActivityExecutionContexts.FirstOrDefault(x => x.Activity.NodeId == lastIncident.ActivityNodeId && x.Status == ActivityStatus.Faulted);
+                var exception = activityExecutionContext?.Exception;
+
+                if (exception != null)
+                {
+                    var errorSpanHandlerContext = new WorkflowErrorSpanContext(span, lastIncident, exception);
+                    var errorSpanHandler = context.GetServices<IWorkflowErrorSpanHandler>()
+                        .OrderBy(x => x.Order)
+                        .FirstOrDefault(x => x.CanHandle(errorSpanHandlerContext));
+
+                    errorSpanHandler?.Handle(errorSpanHandlerContext);
+                }
+            }
         }
         else if (context.SubStatus == WorkflowSubStatus.Finished)
         {
@@ -88,7 +111,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         var startNewTraceOptionValue = context.Properties.TryGetValue("StartNewTrace", out var startNewTraceValue) && (bool)startNewTraceValue;
         var startNewTraceForRemoteParent = options.Value.UseNewRootActivityForRemoteParent && Activity.Current?.HasRemoteParent == true;
         var startNewTrace = startNewTraceOptionValue || startNewTraceForRemoteParent;
-        
+
         ActivityContext contextToUse;
         ActivityContext? linkedTraceContext = null;
 
@@ -108,10 +131,10 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         }
 
         var span = ElsaOpenTelemetry.ActivitySource.StartActivity($"execute workflow {workflowName}", ActivityKind.Server, contextToUse);
-        
+
         if (span != null && linkedTraceContext != null)
-            span.AddLink(new (linkedTraceContext.Value));
-        
+            span.AddLink(new(linkedTraceContext.Value));
+
         return span;
     }
 

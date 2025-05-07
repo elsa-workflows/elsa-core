@@ -1,15 +1,21 @@
-using Elsa.OpenTelemetry.Abstractions;
+using Elsa.OpenTelemetry.Contracts;
 using Elsa.OpenTelemetry.Models;
 
 namespace Elsa.OpenTelemetry.Handlers;
 
-public class DefaultErrorSpanHandler : ErrorSpanHandlerBase
+public class DefaultErrorSpanHandler : IActivityErrorSpanHandler, IWorkflowErrorSpanHandler
 {
-    public override float Order => 100000;
-    
-    public override bool CanHandle(ErrorSpanContext context) => context.Exception != null;
+    public float Order => 100000;
 
-    public override void Handle(ErrorSpanContext context)
+    public bool CanHandle(WorkflowErrorSpanContext context) => false;
+
+    public void Handle(WorkflowErrorSpanContext context)
+    {
+    }
+
+    public  bool CanHandle(ActivityErrorSpanContext context) => context.Exception != null;
+
+    public void Handle(ActivityErrorSpanContext context)
     {
         context.Span.AddException(context.Exception!);
     }
