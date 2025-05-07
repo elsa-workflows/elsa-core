@@ -1,7 +1,7 @@
-#Ignore thumbnails created by Windows
+# Ignore thumbnails created by Windows
 Thumbs.db
 
-#Ignore files built by Visual Studio
+# Ignore files built by Visual Studio
 *.obj
 *.exe
 *.pdb
@@ -32,26 +32,26 @@ _ReSharper*/
 # VS Code/Omnisharp crash dumps
 mono_crash.mem*.blob
 
-#Nuget packages folder
+# Nuget packages folder
 packages/
 
-#Ignore git-related files
+# Ignore git-related files
 *.orig
 
-#Rider
+# Rider
 .idea
 .run
 
-#wwwroot
+# wwwroot
 wwwroot/
 
-#npm
+# npm
 node_modules/
 .babelrc
 .stylelintrc.yml
 .eslintrc.yml
 
-#volatile
+# volatile
 App_Data/
 *.db
 *.db-journal
@@ -76,3 +76,7 @@ unlist.sh
 
 # build artifacts
 /artifacts
+
+/docker/data/
+/docker/azurite-data/
+docker/docker-compose-datadog.yml
