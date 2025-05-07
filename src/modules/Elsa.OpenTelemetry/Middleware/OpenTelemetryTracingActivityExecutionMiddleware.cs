@@ -51,7 +51,6 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
             span.AddEvent(new("faulted"));
             span.SetStatus(ActivityStatusCode.Error);
 
-            var exception = context.Exception;
             var errorSpanHandlerContext = new ActivityErrorSpanContext(span, context.Exception);
             var errorSpanHandler = context.GetServices<IActivityErrorSpanHandler>()
                 .OrderBy(x => x.Order)
