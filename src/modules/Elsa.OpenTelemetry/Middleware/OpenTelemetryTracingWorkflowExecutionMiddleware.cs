@@ -67,7 +67,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
             {
                 span.SetStatus(ActivityStatusCode.Error, lastIncident.Message);
 
-                var activityExecutionContext = context.ActivityExecutionContexts.LastOrDefault(x => x.Activity.NodeId == lastIncident.ActivityNodeId && x.Status == ActivityStatus.Faulted);
+                var activityExecutionContext = context.ActivityExecutionContexts.FirstOrDefault(x => x.Activity.NodeId == lastIncident.ActivityNodeId && x.Status == ActivityStatus.Faulted);
                 var exception = activityExecutionContext?.Exception;
 
                 if (exception != null)
