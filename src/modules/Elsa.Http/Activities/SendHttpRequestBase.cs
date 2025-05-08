@@ -189,14 +189,9 @@ public abstract class SendHttpRequestBase(string? source = null, int? line = nul
                 var pipeline = BuildResiliencyPipeline(context);
                 return await pipeline.ExecuteAsync(async ct => await SendRequestAsyncCore(ct), cancellationToken);
             }
-            else
-            {
-                var resilienceService = activityExecutionContext.GetRequiredService<IResilienceService>();
-                var strategyId = resilienceService.GetStrategyId(this);
-                var resilienceStrategy = resilienceService.GetStrategyByIdAsync()
-            }
-
-            return await SendRequestAsyncCore();
+            
+            var resilienceService = activityExecutionContext.GetRequiredService<IResilienceService>();
+            return await resilienceService.ExecuteAsync(this, async () => await SendRequestAsyncCore(cancellationToken), cancellationToken);
         }
 
         async Task<HttpResponseMessage> SendRequestAsyncCore(CancellationToken ct = default)

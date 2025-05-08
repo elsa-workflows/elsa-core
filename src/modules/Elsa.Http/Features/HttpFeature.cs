@@ -10,10 +10,13 @@ using Elsa.Http.Handlers;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
+using Elsa.Http.Resilience;
 using Elsa.Http.Selectors;
 using Elsa.Http.Services;
 using Elsa.Http.Tasks;
 using Elsa.Http.UIHints;
+using Elsa.Resilience.Extensions;
+using Elsa.Resilience.Features;
 using Elsa.Workflows;
 using FluentStorage;
 using Microsoft.AspNetCore.Http;
@@ -28,6 +31,7 @@ namespace Elsa.Http.Features;
 /// Installs services related to HTTP services and activities.
 /// </summary>
 [DependsOn(typeof(HttpJavaScriptFeature))]
+[DependsOn(typeof(ResilienceFeature))]
 public class HttpFeature(IModule module) : FeatureBase(module)
 {
     private Func<IServiceProvider, IHttpEndpointRoutesProvider> _httpEndpointRouteProvider = sp => sp.GetRequiredService<DefaultHttpEndpointRoutesProvider>();
@@ -137,6 +141,8 @@ public class HttpFeature(IModule module) : FeatureBase(module)
 
             management.AddActivitiesFrom<HttpFeature>();
         });
+
+        Module.UseResilience(resilience => resilience.AddResiliencyStrategyType<HttpResilienceStrategy>());
     }
 
     /// <inheritdoc />

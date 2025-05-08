@@ -2,21 +2,26 @@ namespace Elsa.Resilience;
 
 public class ResilienceService : IResilienceService
 {
-    private const string ResilienceStrategyId = "ResilienceStrategyId";
+    private const string ResilienceStrategyIdPropKey = "ResilienceStrategyId";
     private readonly Lazy<Task<IEnumerable<IResilienceStrategy>>> _strategies;
     private readonly IEnumerable<IResilienceStrategyProvider> _providers;
 
     public ResilienceService(IEnumerable<IResilienceStrategyProvider> providers)
     {
         _providers = providers;
-        _strategies = new(GetStrategiesAsync, LazyThreadSafetyMode.ExecutionAndPublication);
+        _strategies = new(GetStrategiesInternalAsync, LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
     public string? GetStrategyId(IResilientActivity resilientActivity)
     {
-        return !resilientActivity.CustomProperties.TryGetValue(ResilienceStrategyId, out var strategyIdVal)
+        return !resilientActivity.CustomProperties.TryGetValue(ResilienceStrategyIdPropKey, out var strategyIdVal)
             ? null
             : strategyIdVal.ToString();
+    }
+
+    public Task<IEnumerable<IResilienceStrategy>> GetStrategiesAsync(CancellationToken cancellationToken = default)
+    {
+        return _strategies.Value;       
     }
 
     public async Task<IResilienceStrategy?> GetStrategyByIdAsync(string id, CancellationToken cancellationToken = default)
@@ -25,12 +30,14 @@ public class ResilienceService : IResilienceService
         return strategies.FirstOrDefault(x => x.Id == id);
     }
 
-    public Task<T> ExecuteAsync<T>(IResilientActivity activity, Func<Task<T>> action, CancellationToken cancellationToken = default)
+    public async Task<T> ExecuteAsync<T>(IResilientActivity activity, Func<Task<T>> action, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var strategyId = GetStrategyId(activity);
+        var strategy = strategyId == null ? null : await GetStrategyByIdAsync(strategyId, cancellationToken);
+        return strategy == null ? await action() : await strategy.ExecuteAsync(action);
     }
 
-    private async Task<IEnumerable<IResilienceStrategy>> GetStrategiesAsync()
+    private async Task<IEnumerable<IResilienceStrategy>> GetStrategiesInternalAsync()
     {
         var strategies = new List<IResilienceStrategy>();
         foreach (var provider in _providers) strategies.AddRange(await provider.GetStrategiesAsync());

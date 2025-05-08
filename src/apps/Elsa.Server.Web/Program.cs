@@ -30,6 +30,7 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.MongoDb.Modules.Tenants;
 using Elsa.OpenTelemetry.Middleware;
+using Elsa.Resilience.Extensions;
 using Elsa.Retention.Extensions;
 using Elsa.Retention.Models;
 using Elsa.Secrets.Extensions;
@@ -105,9 +106,9 @@ const bool useTenantsFromConfiguration = true;
 const bool useSecrets = false;
 const bool disableVariableWrappers = false;
 const bool disableVariableCopying = false;
-const bool useManualOtelInstrumentation = true;
+const bool useManualOtelInstrumentation = false;
 
-ObjectConverter.StrictMode = false;
+ObjectConverter.StrictMode = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -742,6 +743,7 @@ services
             });
         }
 
+        elsa.UseResilience();
         elsa.UseWebhooks(webhooks => webhooks.ConfigureSinks += options => builder.Configuration.GetSection("Webhooks").Bind(options));
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();

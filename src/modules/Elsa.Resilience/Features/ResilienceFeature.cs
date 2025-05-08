@@ -1,23 +1,38 @@
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Resilience.Options;
 using Elsa.Resilience.Providers;
+using Elsa.Resilience.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Resilience.Features;
 
 public class ResilienceFeature(IModule module) : FeatureBase(module)
 {
-    public ResilienceFeature AddResilienceStrategy(IResilienceStrategy strategy)
+    public ResilienceFeature AddResiliencyStrategyType<T>() where T : IResilienceStrategy
     {
-        Services.Configure<ResilienceStrategiesOptions>(options => options.ResilienceStrategies.Add(strategy));
+        return AddResiliencyStrategyType(typeof(T));
+    }
+
+    public ResilienceFeature AddResiliencyStrategyType(Type strategyType)
+    {
+        Services.Configure<ResilienceOptions>(options => options.StrategyTypes.Add(strategyType));
         return this;
+    }
+
+    public override void Configure()
+    {
+        Module.AddFastEndpointsAssembly<ResilienceFeature>();
     }
 
     public override void Apply()
     {
-        Services.AddOptions<ResilienceStrategiesOptions>();
-        Services.AddScoped<IResilienceStrategyProvider, ConfigurationResilienceStrategyProvider>();
-        Services.AddScoped<IResilienceService, ResilienceService>();
+        Services.AddOptions<ResilienceOptions>();
+
+        Services
+            .AddSingleton<ResilienceStrategySerializer>()
+            .AddScoped<IResilienceService, ResilienceService>()
+            .AddScoped<IResilienceStrategyProvider, ConfigurationResilienceStrategyProvider>();
     }
 }
