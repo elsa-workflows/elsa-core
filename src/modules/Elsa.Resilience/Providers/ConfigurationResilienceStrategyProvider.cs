@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Resilience.Serialization;
 using Microsoft.Extensions.Configuration;
 
@@ -12,8 +13,7 @@ public class ConfigurationResilienceStrategyProvider(IConfiguration configuratio
     
     private IEnumerable<IResilienceStrategy> GetStrategies()
     {
-        var section = configuration.GetSection("Resilience:Strategies");
-        var json = section.Value;
+        var json = configuration.GetSectionAsJson("Resilience:Strategies");
         return string.IsNullOrWhiteSpace(json) ? [] : serializer.DeserializeMany(json);
     }
 }
