@@ -15,7 +15,7 @@ public class Endpoint(IResilienceStrategyCatalog catalog, ResilienceStrategySeri
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        var strategies = (await catalog.GetAllStrategiesAsync(ct)).ToList();
+        var strategies = (await catalog.ListAsync(ct)).ToList();
         var response = new ListResponse<IResilienceStrategy>(strategies);
 
         await HttpContext.Response.WriteAsJsonAsync(response, serializer.SerializerOptions, ct);

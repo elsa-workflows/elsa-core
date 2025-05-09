@@ -11,14 +11,14 @@ public class ResilienceStrategyCatalog : IResilienceStrategyCatalog
         _strategies = new(GetStrategiesInternalAsync, LazyThreadSafetyMode.ExecutionAndPublication);
     }
     
-    public Task<IEnumerable<IResilienceStrategy>> GetAllStrategiesAsync(CancellationToken cancellationToken = default)
+    public Task<IEnumerable<IResilienceStrategy>> ListAsync(CancellationToken cancellationToken = default)
     {
         return _strategies.Value;
     }
 
-    public async Task<IResilienceStrategy?> GetStrategyAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<IResilienceStrategy?> GetAsync(string id, CancellationToken cancellationToken = default)
     {
-        var strategies = await GetAllStrategiesAsync(cancellationToken);
+        var strategies = await ListAsync(cancellationToken);
         return strategies.FirstOrDefault(x => x.Id == id);
     }
 

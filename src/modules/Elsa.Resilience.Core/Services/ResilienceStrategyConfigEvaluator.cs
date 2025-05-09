@@ -25,7 +25,7 @@ public class ResilienceStrategyConfigEvaluator(IResilienceStrategyCatalog catalo
         var strategyId = config.StrategyId;
         return string.IsNullOrWhiteSpace(strategyId)
             ? null
-            : await catalog.GetStrategyAsync(strategyId, cancellationToken);
+            : await catalog.GetAsync(strategyId, cancellationToken);
     }
 
     private async Task<IResilienceStrategy?> ResolveByExpressionAsync(ResilienceStrategyConfig config, ExpressionExecutionContext context, CancellationToken cancellationToken = default)
@@ -39,7 +39,7 @@ public class ResilienceStrategyConfigEvaluator(IResilienceStrategyCatalog catalo
 
         return result switch
         {
-            string strategyId => await catalog.GetStrategyAsync(strategyId, cancellationToken),
+            string strategyId => await catalog.GetAsync(strategyId, cancellationToken),
             IResilienceStrategy strategy => strategy,
             _ => null
         };
