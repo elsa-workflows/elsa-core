@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Elsa.Resilience.StrategySources;
 
+[ResilienceSourceName("Configuration")]
 public class ConfigurationResilienceStrategySource(IConfiguration configuration, ResilienceStrategySerializer serializer) : IResilienceStrategySource
 {
     public Task<IEnumerable<IResilienceStrategy>> GetStrategiesAsync(CancellationToken cancellationToken = default)

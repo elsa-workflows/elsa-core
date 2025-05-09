@@ -1,13 +1,15 @@
+using System.Reflection;
+
 namespace Elsa.Resilience;
 
 public class ResilienceStrategyCatalog : IResilienceStrategyCatalog
 {
     private readonly Lazy<Task<IEnumerable<IResilienceStrategy>>> _strategies;
-    private readonly IEnumerable<IResilienceStrategySource> _providers;
+    private readonly IEnumerable<IResilienceStrategySource> _sources;
 
-    public ResilienceStrategyCatalog(IEnumerable<IResilienceStrategySource> providers)
+    public ResilienceStrategyCatalog(IEnumerable<IResilienceStrategySource> sources)
     {
-        _providers = providers;
+        _sources = sources;
         _strategies = new(GetStrategiesInternalAsync, LazyThreadSafetyMode.ExecutionAndPublication);
     }
     
@@ -25,7 +27,18 @@ public class ResilienceStrategyCatalog : IResilienceStrategyCatalog
     private async Task<IEnumerable<IResilienceStrategy>> GetStrategiesInternalAsync()
     {
         var strategies = new List<IResilienceStrategy>();
-        foreach (var provider in _providers) strategies.AddRange(await provider.GetStrategiesAsync());
+        foreach (var source in _sources)
+        {
+            var sourceType = source.GetType();
+            var sourceNameAttr = sourceType.GetCustomAttribute<ResilienceSourceNameAttribute>();
+            var providerPrefix = sourceNameAttr?.Name ?? sourceType.Name;
+            var providedStrategies = (await source.GetStrategiesAsync()).ToList();
+            
+            foreach (var strategy in providedStrategies)
+                strategy.Id = $"{providerPrefix}:{strategy.Id}";
+            
+            strategies.AddRange(providedStrategies);
+        }
         return strategies;
     }
 }
