@@ -38,9 +38,6 @@ public class ResilienceStrategySerializer
             NumberHandling = JsonNumberHandling.AllowReadingFromString
         };
         
-        // serializerOptions.Converters.Add(new IntegerJsonConverter());
-        // serializerOptions.Converters.Add(new BigIntegerJsonConverter());
-        // serializerOptions.Converters.Add(new DecimalJsonConverter());
         _serializerOptions = serializerOptions;
     }
 
