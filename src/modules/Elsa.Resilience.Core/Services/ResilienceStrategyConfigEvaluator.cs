@@ -1,10 +1,13 @@
+using System.Dynamic;
 using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Resilience.Models;
+using Elsa.Resilience.Serialization;
 
 namespace Elsa.Resilience;
 
-public class ResilienceStrategyConfigEvaluator(IResilienceStrategyCatalog catalog, IExpressionEvaluator expressionEvaluator) : IResilienceStrategyConfigEvaluator
+public class ResilienceStrategyConfigEvaluator(IResilienceStrategyCatalog catalog, IExpressionEvaluator expressionEvaluator, ResilienceStrategySerializer strategySerializer) : IResilienceStrategyConfigEvaluator
 {
     public async Task<IResilienceStrategy?> EvaluateAsync(ResilienceStrategyConfig? config, ExpressionExecutionContext context, CancellationToken cancellationToken = default)
     {
@@ -41,6 +44,7 @@ public class ResilienceStrategyConfigEvaluator(IResilienceStrategyCatalog catalo
         {
             string strategyId => await catalog.GetAsync(strategyId, cancellationToken),
             IResilienceStrategy strategy => strategy,
+            ExpandoObject expando => expando.ConvertTo<IResilienceStrategy>(new(strategySerializer.SerializerOptions)),
             _ => null
         };
     }
