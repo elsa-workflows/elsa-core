@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Elsa;
 using Elsa.Models;
 using Elsa.Server.Api;
@@ -35,18 +36,16 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddControllers();//.AddNewtonsoftJson(setupNewtonsoftJson);
             services.AddRouting(options => { options.LowercaseUrls = true; });
 
-            services.AddVersionedApiExplorer(o =>
-            {
-                o.GroupNameFormat = "'v'VVV";
-                o.SubstituteApiVersionInUrl = true;
-            });
-
             services.AddApiVersioning(
                 options =>
                 {
                     options.ReportApiVersions = true;
                     options.DefaultApiVersion = ApiVersion.Default;
                     options.AssumeDefaultVersionWhenUnspecified = true;
+                }).AddApiExplorer(o =>
+                {
+                    o.GroupNameFormat = "'v'VVV";
+                    o.SubstituteApiVersionInUrl = true;
                 });
 
             services
