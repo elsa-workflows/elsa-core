@@ -96,6 +96,8 @@ public abstract class SendHttpRequestBase(string? source = null, int? line = nul
     /// <summary>
     /// Indicates whether resiliency mechanisms should be enabled for the HTTP request.
     /// </summary>
+    [Obsolete("Use the common Resilience Strategy setting instead.")]
+    [Input(Description = "Obsolete. Use the common Resilience Strategy setting instead.")]
     public Input<bool> EnableResiliency { get; set; } = null!;
 
     /// <summary>
