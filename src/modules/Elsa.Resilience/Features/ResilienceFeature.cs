@@ -35,7 +35,8 @@ public class ResilienceFeature(IModule module) : FeatureBase(module)
         Services
             .AddSingleton<ResilienceStrategySerializer>()
             .AddSingleton<IActivityDescriptorModifier, ResilientActivityDescriptorModifier>()
-            .AddScoped<IResilienceService, ResilienceService>()
-            .AddScoped<IResilienceStrategyProvider, ConfigurationResilienceStrategyProvider>();
+            .AddScoped<IResilienceStrategyCatalog, ResilienceStrategyCatalog>()
+            .AddScoped<IResilienceStrategyConfigEvaluator, ResilienceStrategyConfigEvaluator>()
+            .AddScoped<IResilienceStrategySource, ConfigurationResilienceStrategySource>();
     }
 }
