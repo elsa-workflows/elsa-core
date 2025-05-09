@@ -21,6 +21,9 @@ public class ResilientActivityDescriptorModifier : IActivityDescriptorModifier
         if (!typeof(IResilientActivity).IsAssignableFrom(type))
             return;
 
+        var categoryAttr = descriptor.Attributes.FirstOrDefault(x => x is ResilienceCategoryAttribute) as ResilienceCategoryAttribute;
+        var category = categoryAttr?.Category ?? "Default";
         descriptor.CustomProperties["Resilient"] = true;
+        descriptor.CustomProperties["ResilienceCategory"] = category;
     }
 }

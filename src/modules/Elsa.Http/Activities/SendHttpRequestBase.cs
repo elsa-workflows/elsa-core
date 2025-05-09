@@ -17,10 +17,9 @@ namespace Elsa.Http;
 /// Base class for activities that send HTTP requests.
 /// </summary>
 [Output(IsSerializable = false)]
+[ResilienceCategory("HTTP")]
 public abstract class SendHttpRequestBase(string? source = null, int? line = null) : Activity<HttpResponseMessage>(source, line), IResilientActivity
 {
-    public string ResilienceCategory => "HTTP";
-    
     /// <summary>
     /// The URL to send the request to.
     /// </summary>

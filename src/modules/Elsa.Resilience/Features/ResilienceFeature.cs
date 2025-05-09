@@ -37,6 +37,7 @@ public class ResilienceFeature(IModule module) : FeatureBase(module)
             .AddSingleton<IActivityDescriptorModifier, ResilientActivityDescriptorModifier>()
             .AddScoped<IResilienceStrategyCatalog, ResilienceStrategyCatalog>()
             .AddScoped<IResilienceStrategyConfigEvaluator, ResilienceStrategyConfigEvaluator>()
+            .AddScoped<IResilientActivityInvoker, ResilientActivityInvoker>()
             .AddScoped<IResilienceStrategySource, ConfigurationResilienceStrategySource>();
     }
 }
