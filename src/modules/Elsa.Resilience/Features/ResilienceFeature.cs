@@ -3,8 +3,8 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Resilience.Modifiers;
 using Elsa.Resilience.Options;
-using Elsa.Resilience.Providers;
 using Elsa.Resilience.Serialization;
+using Elsa.Resilience.StrategySources;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 

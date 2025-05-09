@@ -2,7 +2,7 @@ using Elsa.Extensions;
 using Elsa.Resilience.Serialization;
 using Microsoft.Extensions.Configuration;
 
-namespace Elsa.Resilience.Providers;
+namespace Elsa.Resilience.StrategySources;
 
 public class ConfigurationResilienceStrategySource(IConfiguration configuration, ResilienceStrategySerializer serializer) : IResilienceStrategySource
 {
