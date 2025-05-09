@@ -142,7 +142,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             management.AddActivitiesFrom<HttpFeature>();
         });
 
-        Module.UseResilience(resilience => resilience.AddResiliencyStrategyType<HttpResilienceStrategy>());
+        Module.UseResilience(resilience => resilience.AddResilienceStrategyType<HttpResilienceStrategy>());
     }
 
     /// <inheritdoc />

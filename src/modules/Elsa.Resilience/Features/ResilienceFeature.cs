@@ -12,12 +12,12 @@ namespace Elsa.Resilience.Features;
 
 public class ResilienceFeature(IModule module) : FeatureBase(module)
 {
-    public ResilienceFeature AddResiliencyStrategyType<T>() where T : IResilienceStrategy
+    public ResilienceFeature AddResilienceStrategyType<T>() where T : IResilienceStrategy
     {
-        return AddResiliencyStrategyType(typeof(T));
+        return AddResilienceStrategyType(typeof(T));
     }
 
-    public ResilienceFeature AddResiliencyStrategyType(Type strategyType)
+    public ResilienceFeature AddResilienceStrategyType(Type strategyType)
     {
         Services.Configure<ResilienceOptions>(options => options.StrategyTypes.Add(strategyType));
         return this;
