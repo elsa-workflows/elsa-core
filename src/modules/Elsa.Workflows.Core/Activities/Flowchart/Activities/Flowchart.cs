@@ -14,7 +14,10 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 [Browsable(false)]
 public partial class Flowchart : Container
 {
-    public const bool UseTokenFlow = true;
+    /// <summary>
+    /// Set this to <c>false</c> from your program file in case you wish to use the old counter based model.
+    /// </summary>
+    public static bool UseTokenFlow = true;
 
     /// <inheritdoc />
     public Flowchart([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
