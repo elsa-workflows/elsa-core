@@ -551,7 +551,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         var now = SystemClock.UtcNow;
         var id = IdentityGenerator.GenerateId();
         var activityExecutionContext = new ActivityExecutionContext(id, this, parentContext, activity, activityDescriptor, now, tag, SystemClock, CancellationToken);
-        var variablesToDeclare = options?.Variables ?? Array.Empty<Variable>();
+        var variablesToDeclare = options?.Variables ?? [];
         var variableContainer = new[]
         {
             activityExecutionContext.ActivityNode
