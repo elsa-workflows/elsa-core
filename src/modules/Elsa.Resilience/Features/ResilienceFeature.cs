@@ -1,9 +1,11 @@
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Resilience.Modifiers;
 using Elsa.Resilience.Options;
 using Elsa.Resilience.Providers;
 using Elsa.Resilience.Serialization;
+using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Resilience.Features;
@@ -32,6 +34,7 @@ public class ResilienceFeature(IModule module) : FeatureBase(module)
 
         Services
             .AddSingleton<ResilienceStrategySerializer>()
+            .AddSingleton<IActivityDescriptorModifier, ResilientActivityDescriptorModifier>()
             .AddScoped<IResilienceService, ResilienceService>()
             .AddScoped<IResilienceStrategyProvider, ConfigurationResilienceStrategyProvider>();
     }

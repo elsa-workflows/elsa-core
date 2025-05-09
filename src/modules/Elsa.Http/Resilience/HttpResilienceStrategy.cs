@@ -8,6 +8,7 @@ namespace Elsa.Http.Resilience;
 public class HttpResilienceStrategy : IResilienceStrategy
 {
     public string Id { get; set; } = null!;
+    public string DisplayName { get; set; } = null!;
     public int RetryCount { get; set; } = 3;
     public double BackoffFactor { get; set; } = 2.0;
 

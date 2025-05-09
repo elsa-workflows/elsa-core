@@ -1,8 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Elsa.Common.Serialization;
+namespace Elsa.Api.Client.Serialization;
 
+/// <summary>
+/// Provides options for serializing and deserializing objects.
+/// </summary>
 public static class SerializerOptions
 {
     public static JsonSerializerOptions CommonSerializerOptions { get; } = new()
@@ -10,11 +13,6 @@ public static class SerializerOptions
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
         Converters = { new JsonStringEnumConverter() }
-    };
-    
-    public static JsonSerializerOptions ConfigurationJsonSerializerOptions { get; } = new()
-    {
-        Converters = { new ConfigurationJsonConverter() }
     };
     
     /// <summary>

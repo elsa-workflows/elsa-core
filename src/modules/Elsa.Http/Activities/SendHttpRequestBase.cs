@@ -19,6 +19,8 @@ namespace Elsa.Http;
 [Output(IsSerializable = false)]
 public abstract class SendHttpRequestBase(string? source = null, int? line = null) : Activity<HttpResponseMessage>(source, line), IResilientActivity
 {
+    public string ResilienceCategory => "HTTP";
+    
     /// <summary>
     /// The URL to send the request to.
     /// </summary>
@@ -191,7 +193,7 @@ public abstract class SendHttpRequestBase(string? source = null, int? line = nul
             }
             
             var resilienceService = activityExecutionContext.GetRequiredService<IResilienceService>();
-            return await resilienceService.ExecuteAsync(this, async () => await SendRequestAsyncCore(cancellationToken), cancellationToken);
+            return await resilienceService.ExecuteAsync(this, activityExecutionContext, async () => await SendRequestAsyncCore(cancellationToken), cancellationToken);
         }
 
         async Task<HttpResponseMessage> SendRequestAsyncCore(CancellationToken ct = default)
