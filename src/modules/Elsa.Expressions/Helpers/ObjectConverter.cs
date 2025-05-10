@@ -178,7 +178,7 @@ public static class ObjectConverter
 
         var internalSerializerOptions = InternalSerializerOptions;
 
-        if (typeof(IDictionary<string, object>).IsAssignableFrom(underlyingSourceType) && underlyingTargetType.IsClass)
+        if (typeof(IDictionary<string, object>).IsAssignableFrom(underlyingSourceType) && (underlyingTargetType.IsClass || underlyingTargetType.IsInterface))
         {
             if (typeof(ExpandoObject) == underlyingTargetType)
             {

@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides features and services for implementing resilient services and activities.
+        </Description>
+        <PackageTags>elsa module resilience</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
+      <ProjectReference Include="..\Elsa.Resilience.Core\Elsa.Resilience.Core.csproj" />
+    </ItemGroup>
+
+</Project>

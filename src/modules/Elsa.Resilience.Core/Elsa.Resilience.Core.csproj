@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides core services and types for implementing resilient services and activities.
+        </Description>
+        <PackageTags>elsa module resilience core</PackageTags>
+        <RootNamespace>Elsa.Resilience</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+    </ItemGroup>
+
+</Project>
