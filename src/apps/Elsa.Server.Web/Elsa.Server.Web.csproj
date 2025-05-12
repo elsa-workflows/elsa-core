@@ -62,11 +62,6 @@
         <PackageReference Include="DistributedLock.Postgres" />
         <PackageReference Include="DistributedLock.Redis" />
         <PackageReference Include="FluentStorage.Azure.Blobs" />
-        <PackageReference Include="Azure.Identity" />
-        <PackageReference Include="Bogus" />
-        <PackageReference Include="DistributedLock.Postgres" />
-        <PackageReference Include="DistributedLock.Redis" />
-        <PackageReference Include="FluentStorage.Azure.Blobs" />
         <PackageReference Include="Hangfire.PostgreSql" />
         <PackageReference Include="OpenTelemetry" />
         <PackageReference Include="OpenTelemetry.Exporter.Console" />
