@@ -11,7 +11,7 @@ namespace Elsa.Http;
 public class SendHttpRequest : SendHttpRequestBase
 {
     /// <inheritdoc />
-    public SendHttpRequest([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public SendHttpRequest([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 

@@ -386,6 +386,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bounty", "bounty", "{9B80A7
 		doc\bounty\bounty-quality-standards.md = doc\bounty\bounty-quality-standards.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "resilience", "resilience", "{CD7DC0D1-FFDC-417A-89BE-7F32408F583E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Resilience.Core", "src\modules\Elsa.Resilience.Core\Elsa.Resilience.Core.csproj", "{70593549-8B26-4D63-9857-6BA8BB3E31DB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Resilience", "src\modules\Elsa.Resilience\Elsa.Resilience.csproj", "{E7137FB0-1988-4562-AD8D-D0D9D2EE85F6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -790,6 +796,14 @@ Global
 		{DB20B168-CD90-41F2-BE08-3D8C6F142459}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB20B168-CD90-41F2-BE08-3D8C6F142459}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB20B168-CD90-41F2-BE08-3D8C6F142459}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70593549-8B26-4D63-9857-6BA8BB3E31DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70593549-8B26-4D63-9857-6BA8BB3E31DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70593549-8B26-4D63-9857-6BA8BB3E31DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70593549-8B26-4D63-9857-6BA8BB3E31DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7137FB0-1988-4562-AD8D-D0D9D2EE85F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7137FB0-1988-4562-AD8D-D0D9D2EE85F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7137FB0-1988-4562-AD8D-D0D9D2EE85F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7137FB0-1988-4562-AD8D-D0D9D2EE85F6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -929,6 +943,9 @@ Global
 		{DB20B168-CD90-41F2-BE08-3D8C6F142459} = {9DF81143-2F39-4CFB-9DA3-902279010622}
 		{0A04B1FD-06C0-4271-A910-A08C263DBC44} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
 		{9B80A705-2E31-4012-964A-83963DCDB384} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
+		{CD7DC0D1-FFDC-417A-89BE-7F32408F583E} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{70593549-8B26-4D63-9857-6BA8BB3E31DB} = {CD7DC0D1-FFDC-417A-89BE-7F32408F583E}
+		{E7137FB0-1988-4562-AD8D-D0D9D2EE85F6} = {CD7DC0D1-FFDC-417A-89BE-7F32408F583E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

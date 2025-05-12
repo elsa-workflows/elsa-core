@@ -30,6 +30,7 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.MongoDb.Modules.Tenants;
 using Elsa.OpenTelemetry.Middleware;
+using Elsa.Resilience.Extensions;
 using Elsa.Retention.Extensions;
 using Elsa.Retention.Models;
 using Elsa.Secrets.Extensions;
@@ -102,7 +103,7 @@ const bool disableVariableWrappers = false;
 const bool disableVariableCopying = false;
 const bool useManualOtelInstrumentation = false;
 
-ObjectConverter.StrictMode = false;
+ObjectConverter.StrictMode = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -132,7 +133,7 @@ TypeAliasRegistry.RegisterAlias("OrderReceivedConsumerFactory", typeof(GenericCo
 if (useManualOtelInstrumentation)
 {
     services.AddOpenTelemetry()
-        .ConfigureResource(resource => resource.AddService("elsa-workflows", serviceVersion: "3.4.0").AddTelemetrySdk())
+        .ConfigureResource(resource => resource.AddService("elsa-workflows", serviceVersion: "3.5.0").AddTelemetrySdk())
         .WithTracing(tracing =>
         {
             tracing
@@ -521,7 +522,7 @@ services
                     alterations.UseMassTransitDispatcher();
                 }
             })
-            .UseOpenTelemetry()
+            .UseOpenTelemetry(otel => otel.UseNewRootActivityForRemoteParent = true)
             .UseWorkflowContexts();
 
         if (useQuartz)

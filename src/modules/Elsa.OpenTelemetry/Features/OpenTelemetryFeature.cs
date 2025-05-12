@@ -23,8 +23,10 @@ public class OpenTelemetryFeature(IModule module) : FeatureBase(module)
     public override void Configure()
     {
         Services
-            .AddScoped<IErrorSpanHandler, DefaultErrorSpanHandler>()
-            .AddScoped<IErrorSpanHandler, FaultExceptionErrorSpanHandler>();
+            .AddScoped<IActivityErrorSpanHandler, DefaultErrorSpanHandler>()
+            .AddScoped<IActivityErrorSpanHandler, FaultExceptionErrorSpanHandler>()
+            .AddScoped<IWorkflowErrorSpanHandler, DefaultErrorSpanHandler>()
+            .AddScoped<IWorkflowErrorSpanHandler, FaultExceptionErrorSpanHandler>();
 
         Services.Configure<OpenTelemetryOptions>(options =>
         {
