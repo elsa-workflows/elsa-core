@@ -1,4 +1,5 @@
 using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Runtime.Exceptions;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Options;
@@ -64,7 +65,7 @@ public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bo
             ActivityHandle = request.ActivityHandle,
             BookmarkId = request.BookmarkId
         };
-        
+
         var workflowInstanceId = request.WorkflowInstanceId;
         var workflowClient = await workflowRuntime.CreateClientAsync(workflowInstanceId, cancellationToken);
         var response = await workflowClient.RunInstanceAsync(runRequest, cancellationToken);
@@ -89,8 +90,18 @@ public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bo
             Properties = options?.Properties,
             BookmarkId = bookmark.Id
         };
-        var response = await workflowClient.RunInstanceAsync(runRequest, cancellationToken);
-        logger.LogDebug("Resumed workflow instance {WorkflowInstanceId} with bookmark {BookmarkId}", bookmark.WorkflowInstanceId, bookmark.Id);
-        return ResumeBookmarkResult.Found(response);
+
+        try
+        {
+            var response = await workflowClient.RunInstanceAsync(runRequest, cancellationToken);
+            logger.LogDebug("Resumed workflow instance {WorkflowInstanceId} with bookmark {BookmarkId}", bookmark.WorkflowInstanceId, bookmark.Id);
+            return ResumeBookmarkResult.Found(response);
+        }
+        catch (WorkflowInstanceNotFoundException)
+        {
+            // The workflow instance does not (yet) exist in the DB.
+            logger.LogDebug("No workflow instance with ID {WorkflowInstanceId} found for bookmark {BookmarkId} at this time.", bookmark.WorkflowInstanceId, bookmark.Id);
+            return ResumeBookmarkResult.NotFound();
+        }
     }
 }
