@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Http.Bookmarks;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.DownloadableContentHandlers;
 using Elsa.Http.FileCaches;
@@ -13,6 +14,7 @@ using Elsa.Http.PortResolvers;
 using Elsa.Http.Selectors;
 using Elsa.Http.Services;
 using Elsa.Http.Tasks;
+using Elsa.Http.TriggerPayloadValidators;
 using Elsa.Http.UIHints;
 using Elsa.Workflows;
 using FluentStorage;
@@ -166,7 +168,6 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddHttpContextAccessor()
 
             // Handlers.
-            .AddNotificationHandler<ValidateWorkflowRequestHandler>()
             .AddNotificationHandler<UpdateRouteTable>()
 
             // Content parsers.
@@ -213,6 +214,9 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddScoped<IDownloadableContentHandler, UrlDownloadableContentHandler>()
             .AddScoped<IDownloadableContentHandler, StringDownloadableContentHandler>()
             .AddScoped<IDownloadableContentHandler, HttpFileDownloadableContentHandler>()
+
+            //Trigger payload validators.
+            .AddTriggerPaylodValidator<HttpEndpointTriggerPayloadValidator, HttpEndpointBookmarkPayload>()
 
             // File caches.
             .AddScoped(FileCache)
