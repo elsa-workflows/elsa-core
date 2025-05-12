@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Elsa.Api.Client.Resources.ResilienceStrategies.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Shared.Models;
 
@@ -193,4 +194,23 @@ public static class ActivityExtensions
     /// Sets the commit state behavior for the specified activity.
     /// </summary>
     public static void SetCommitStrategy(this JsonObject activity, string? name) => activity.SetProperty(JsonValue.Create(name), "customProperties", "commitStrategyName");
+    
+    
+    /// <summary>
+    /// Gets the resilience strategy for the specified activity.
+    /// </summary>
+    public static ResilienceStrategyConfig? GetResilienceStrategy(this JsonObject activity)
+    {
+        var node = activity.GetProperty("customProperties", "resilienceStrategy");
+        return ResilienceStrategyConfig.Deserialize(node);
+    }
+
+    /// <summary>
+    /// Sets the resilience strategy for the specified activity.
+    /// </summary>
+    public static void SetResilienceStrategy(this JsonObject activity, ResilienceStrategyConfig? config)
+    {
+        var node = config?.SerializeToNode();
+        activity.SetProperty(node, "customProperties", "resilienceStrategy");
+    }
 }
