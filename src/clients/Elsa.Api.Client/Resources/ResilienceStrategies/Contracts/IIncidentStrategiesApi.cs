@@ -16,5 +16,5 @@ public interface IResilienceStrategiesApi
     /// <param name="cancellationToken">An optional token to cancel the operation.</param>
     /// <returns>A <see cref="ListResponse{JsonObject}"/> with the list of resilience strategies.</returns>
     [Get("/resilience/strategies")]
-    Task<ListResponse<JsonObject>> LisAsync(string category, CancellationToken cancellationToken = default);
+    Task<ListResponse<JsonObject>> ListAsync(string category, CancellationToken cancellationToken = default);
 }
