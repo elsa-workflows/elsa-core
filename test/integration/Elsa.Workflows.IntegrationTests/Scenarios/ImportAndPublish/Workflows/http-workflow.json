@@ -1,0 +1,151 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "name": "HttpWorkflow",
+  "createdAt": "2025-05-12T12:28:56.845918+00:00",
+  "version": 1,
+  "toolVersion": "3.3.0.0",
+  "variables": [
+  ],
+  "inputs": [
+  ],
+  "outputs": [
+  ],
+  "outcomes": [
+  ],
+  "customProperties": {
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": false,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "8163a86bbcff6777",
+    "nodeId": "Workflow1:8163a86bbcff6777",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [
+      ],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {
+    },
+    "activities": [
+      {
+        "path": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "test"
+          }
+        },
+        "supportedMethods": {
+          "typeName": "List<String>",
+          "expression": {
+            "type": "Literal",
+            "value": "[\"GET\"]"
+          }
+        },
+        "authorize": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "Literal",
+            "value": false
+          }
+        },
+        "policy": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal"
+          }
+        },
+        "requestTimeout": null,
+        "requestSizeLimit": null,
+        "fileSizeLimit": null,
+        "allowedFileExtensions": null,
+        "blockedFileExtensions": null,
+        "allowedMimeTypes": null,
+        "exposeRequestTooLargeOutcome": false,
+        "exposeFileTooLargeOutcome": false,
+        "exposeInvalidFileExtensionOutcome": false,
+        "exposeInvalidFileMimeTypeOutcome": false,
+        "parsedContent": null,
+        "files": null,
+        "routeData": null,
+        "queryStringData": null,
+        "headers": null,
+        "result": null,
+        "id": "b036c71bbd31983d",
+        "nodeId": "Workflow1:8163a86bbcff6777:b036c71bbd31983d",
+        "name": "HttpEndpoint1",
+        "type": "Elsa.HttpEndpoint",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": true,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -180,
+              "y": -80
+            },
+            "size": {
+              "width": 173.5625,
+              "height": 49.600002288818359
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Hello from http"
+          }
+        },
+        "id": "b91befb34b3e44ea",
+        "nodeId": "Workflow1:8163a86bbcff6777:b91befb34b3e44ea",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 133.0999755859375,
+              "y": -80
+            },
+            "size": {
+              "width": 138.02500915527344,
+              "height": 49.600002288818359
+            }
+          }
+        }
+      }
+    ],
+    "variables": [
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "b036c71bbd31983d",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "b91befb34b3e44ea",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

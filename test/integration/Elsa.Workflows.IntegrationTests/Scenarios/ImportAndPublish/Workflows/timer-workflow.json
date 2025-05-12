@@ -1,0 +1,117 @@
+﻿{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "6e217c3e1fbce6e",
+  "definitionId": "d1d828033d9c2dcd",
+  "name": "TimerWorkflow",
+  "createdAt": "2025-05-12T12:28:56.845918+00:00",
+  "version": 1,
+  "toolVersion": "3.3.0.0",
+  "variables": [
+  ],
+  "inputs": [
+  ],
+  "outputs": [
+  ],
+  "outcomes": [
+  ],
+  "customProperties": {
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": false,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "8163a86bbcff6777",
+    "nodeId": "Workflow1:8163a86bbcff6777",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [
+      ],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {
+    },
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Hello from timer"
+          }
+        },
+        "id": "b91befb34b3e44ea",
+        "nodeId": "Workflow1:8163a86bbcff6777:b91befb34b3e44ea",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 133.0999755859375,
+              "y": -80
+            },
+            "size": {
+              "width": 138.02500915527344,
+              "height": 49.600002288818359
+            }
+          }
+        }
+      },
+      {
+        "interval": {
+          "typeName": "TimeSpan",
+          "expression": {
+            "type": "Literal",
+            "value": "00:01:00"
+          }
+        },
+        "id": "89ab56281a99239",
+        "nodeId": "Workflow1:8163a86bbcff6777:89ab56281a99239",
+        "name": "Timer1",
+        "type": "Elsa.Timer",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": true,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -81.899993896484375,
+              "y": -80
+            },
+            "size": {
+              "width": 107.63750457763672,
+              "height": 49.600002288818359
+            }
+          }
+        }
+      }
+    ],
+    "variables": [
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "89ab56281a99239",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "b91befb34b3e44ea",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}
