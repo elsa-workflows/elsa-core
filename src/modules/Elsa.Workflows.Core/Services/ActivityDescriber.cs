@@ -150,7 +150,7 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
 
         var uiSpecification = await propertyUIHandlerResolver.GetUIPropertiesAsync(propertyInfo, null, cancellationToken);
 
-        return new InputDescriptor
+        var inputDescriptor = new InputDescriptor
         (
             inputAttribute?.Name ?? propertyInfo.Name,
             wrappedPropertyType,
@@ -173,6 +173,20 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
             propertyInfo,
             uiSpecification
         );
+
+        if (inputAttribute is null)
+            return inputDescriptor;
+
+        if (inputAttribute.InputType == InputType.Default)
+            return inputDescriptor;
+        
+        var conditionalDescriptor = new ConditionalDescriptor{
+            ShowForStates = inputAttribute.ShowForStates ?? [],
+            InputType = inputAttribute.InputType,
+            DropDownStates = inputAttribute.Options as List<string>        
+        };
+        inputDescriptor.ConditionalDescriptor = conditionalDescriptor;
+        return inputDescriptor;
     }
 
     /// <inheritdoc />
