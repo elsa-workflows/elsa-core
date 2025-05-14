@@ -158,41 +158,59 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
 
     private static ICollection<Connection> DeserializeConnections(JsonElement connectionsElement, IDictionary<string, IActivity> activityDictionary, JsonSerializerOptions options)
     {
-        if (connectionsElement.ValueKind == JsonValueKind.Undefined)
+        // 1) Nothing → empty
+        if (connectionsElement.ValueKind == JsonValueKind.Undefined || connectionsElement.ValueKind == JsonValueKind.Null)
             return new List<Connection>();
 
-        // First, find the real JSON array of connections
-        JsonElement arrayElement;
-
+        // 2) OData‐style wrapper: { "$values": [ … ] }
         if (connectionsElement.ValueKind == JsonValueKind.Object && connectionsElement.TryGetProperty("$values", out var valuesEl) && valuesEl.ValueKind == JsonValueKind.Array)
         {
-            // Unwrap the "$values" array
-            arrayElement = valuesEl;
+            connectionsElement = valuesEl;
         }
-        else if (connectionsElement.ValueKind == JsonValueKind.Array)
+        // 3) Single‐object (old style): wrap into a 1‑element array if it has a "source" property
+        else if (connectionsElement.ValueKind == JsonValueKind.Object && connectionsElement.TryGetProperty("source", out _))
         {
-            // Already an array of connection objects
-            arrayElement = connectionsElement;
-        }
-        else
-        {
-            // Fallback: treat the single object itself as a one‑element array
-            using var tempDoc = JsonDocument.Parse($"[{connectionsElement.GetRawText()}]");
-            arrayElement = tempDoc.RootElement;
+            using var tmp = JsonDocument.Parse($"[{connectionsElement.GetRawText()}]");
+            connectionsElement = tmp.RootElement;
         }
 
-        // Now that we have the *real* array of connection objects, deserialize them:
-        var useOldConverter = arrayElement.EnumerateArray().Any(x => x.TryGetProperty("sourcePort", out var sp) && sp.ValueKind == JsonValueKind.String);
+        // 4) If it’s still not an array, bail
+        if (connectionsElement.ValueKind != JsonValueKind.Array)
+            return new List<Connection>();
 
+        // Shortcut: detect the classic flat‐connection JSON and parse manually
+        var arr = connectionsElement.EnumerateArray().ToArray();
+        if (arr.Length > 0 && arr[0].TryGetProperty("source", out var srcProp) && srcProp.ValueKind == JsonValueKind.String && arr[0].TryGetProperty("target", out var tgtProp) && tgtProp.ValueKind == JsonValueKind.String)
+        {
+            var list = new List<Connection>();
+
+            foreach (var el in arr)
+            {
+                var srcId = el.GetProperty("source").GetString()!;
+                var tgtId = el.GetProperty("target").GetString()!;
+                var srcPort = el.TryGetProperty("sourcePort", out var sp) && sp.ValueKind == JsonValueKind.String ? sp.GetString() : null;
+                var tgtPort = el.TryGetProperty("targetPort", out var tp) && tp.ValueKind == JsonValueKind.String ? tp.GetString() : null;
+
+                var srcAct = activityDictionary[srcId];
+                var tgtAct = activityDictionary[tgtId];
+                list.Add(new Connection(new Endpoint(srcAct, srcPort), new Endpoint(tgtAct, tgtPort)));
+            }
+
+            return list;
+        }
+
+        // Otherwise, it's an array of nested‐object connections → delegate to your converters
         var serializer = new JsonSerializerOptions(options);
-        if (useOldConverter)
+
+        // Legacy check: look for "sourcePort" on the first item to choose the old converter
+        if (arr.Length > 0 && arr[0].TryGetProperty("sourcePort", out _))
             serializer.Converters.Add(new ObsoleteConnectionJsonConverter(activityDictionary));
         else
             serializer.Converters.Add(new ConnectionJsonConverter(activityDictionary));
 
-        var raw = arrayElement.Deserialize<ICollection<Connection>>(serializer) ?? new List<Connection>();
+        var raw = connectionsElement.Deserialize<ICollection<Connection>>(serializer) ?? new List<Connection>();
 
-        // Filter out any half‑baked entries and return
-        return raw.Where(x => x.Source != null && x.Target != null).ToList();
+        // drop any half‑baked entries
+        return raw.Where(c => c.Source?.Activity != null && c.Target?.Activity != null).ToList();
     }
 }
