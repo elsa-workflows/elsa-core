@@ -25,7 +25,7 @@ internal class ActivityIncidentStateMapper
     /// <returns>The mapped <see cref="ActivityIncident"/>.</returns>
     public ActivityIncident Map(ProtoActivityIncident source)
     {
-        return new(source.ActivityId, source.ActivityType, source.Message, _exceptionMapper.Map(source.Exception), DateTimeOffset.Parse(source.Timestamp));
+        return new(source.ActivityId, source.ActivityNodeId, source.ActivityType, source.Message, _exceptionMapper.Map(source.Exception), DateTimeOffset.Parse(source.Timestamp));
     }
     
     /// <summary>
