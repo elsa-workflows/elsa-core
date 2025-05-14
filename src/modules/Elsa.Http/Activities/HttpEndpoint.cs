@@ -206,6 +206,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         if (!ValidateRequestSize(context, httpContext))
         {
             await HandleRequestTooLargeAsync(context, httpContext);
+            throw new("1. Request too large");
             return;
         }
 
@@ -224,24 +225,28 @@ public class HttpEndpoint : Trigger<HttpRequest>
                 if (!ValidateFileSizes(context, httpContext, files))
                 {
                     await HandleFileSizeTooLargeAsync(context, httpContext);
+                    throw new("2. File too large");
                     return;
                 }
 
                 if (!ValidateFileExtensionWhitelist(context, httpContext, files))
                 {
                     await HandleInvalidFileExtensionWhitelistAsync(context, httpContext);
+                    throw new("3. Invalid file extension");
                     return;
                 }
 
                 if (!ValidateFileExtensionBlacklist(context, httpContext, files))
                 {
                     await HandleInvalidFileExtensionBlacklistAsync(context, httpContext);
+                    throw new("4. Invalid file extension");
                     return;
                 }
 
                 if (!ValidateFileMimeTypes(context, httpContext, files))
                 {
                     await HandleInvalidFileMimeTypesAsync(context, httpContext);
+                    throw new("5. Invalid file MIME type");
                     return;
                 }
 
@@ -259,6 +264,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
             catch (JsonException e)
             {
                 await HandleInvalidJsonPayloadAsync(context, httpContext, e);
+                throw new("6. Invalid JSON payload");
                 throw;
             }
 
