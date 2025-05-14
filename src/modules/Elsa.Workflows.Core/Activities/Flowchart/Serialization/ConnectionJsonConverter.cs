@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Activities.Flowchart.Models;
 
@@ -26,26 +26,63 @@ public class ConnectionJsonConverter : JsonConverter<Connection>
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             throw new JsonException("Failed to parse JsonDocument");
 
-        var sourceElement = doc.RootElement.GetProperty("source");
-        var targetElement = doc.RootElement.GetProperty("target");
-        var sourceId = sourceElement.GetProperty("activity").GetString()!;
-        var targetId = targetElement.TryGetProperty("activity", out var targetIdValue) ? targetIdValue.GetString() : null;
-        var sourcePort = sourceElement.TryGetProperty("port", out var sourcePortValue) ? sourcePortValue.GetString() : null;
-        var targetPort = targetElement.TryGetProperty("port", out var targetPortValue) ? targetPortValue.GetString() : null;
-        var sourceActivity = _activities.TryGetValue(sourceId, out var s) ? s : null!;
-        var targetActivity = targetId != null ? _activities.TryGetValue(targetId, out var t) ? t : null! : null!;
-        var source = new Endpoint(sourceActivity, sourcePort);
-        var target = new Endpoint(targetActivity, targetPort);
-        var verticesElement = doc.RootElement.TryGetProperty("vertices", out var verticesValue) ? verticesValue : default;
-        var vertices = Array.Empty<Position>();
+        var root = doc.RootElement;
 
-        if (verticesElement.ValueKind == JsonValueKind.Array) 
-            vertices = verticesElement.Deserialize<Position[]>(options)!;
-        
-        return new(source, target)
+        // case‐insensitive get
+        JsonElement Get(string name)
         {
-            Vertices = vertices
-        };
+            if (root.TryGetProperty(name, out var e))
+                return e;
+            var alt = char.ToUpperInvariant(name[0]) + name.Substring(1);
+            if (root.TryGetProperty(alt, out e))
+                return e;
+            throw new JsonException($"Missing property '{name}' or '{alt}'");
+        }
+
+        var sourceElement = Get("source");
+        var targetElement = Get("target");
+
+        // now inside sourceElement and targetElement, their children
+        // are again PascalCased (“Activity”, “Port”), so do the same thing:
+
+        string GetId(JsonElement container, string propName)
+        {
+            if (container.TryGetProperty(propName, out var p))
+                return p.GetString()!;
+            var alt = char.ToUpperInvariant(propName[0]) + propName.Substring(1);
+            return container.GetProperty(alt).GetString()!;
+        }
+
+        string? GetPort(JsonElement container, string propName)
+        {
+            if (container.TryGetProperty(propName, out var p))
+                return p.GetString();
+            var alt = char.ToUpperInvariant(propName[0]) + propName.Substring(1);
+            return container.TryGetProperty(alt, out p) ? p.GetString() : null;
+        }
+
+        var sourceId = GetId(sourceElement, "activity");
+        var targetId = GetPort(targetElement, "activity"); // note: this could be null
+        var sourcePort = GetPort(sourceElement, "port");
+        var targetPort = GetPort(targetElement, "port");
+
+        var sourceAct = _activities.TryGetValue(sourceId, out var s) ? s : throw new JsonException($"Unknown activity ID '{sourceId}'");
+        var targetAct =
+            targetId != null
+                ? _activities.TryGetValue(targetId, out var t)
+                    ? t
+                    : throw new JsonException($"Unknown activity ID '{targetId}'")
+                : null;
+
+        var source = new Endpoint(sourceAct, sourcePort);
+        var target = new Endpoint(targetAct!, targetPort);
+
+        // vertices is already correct:
+        var vertices = Array.Empty<Position>();
+        if (doc.RootElement.TryGetProperty("vertices", out var vertsEl) && vertsEl.ValueKind == JsonValueKind.Array)
+            vertices = vertsEl.Deserialize<Position[]>(options)!;
+
+        return new Connection(source, target) { Vertices = vertices };
     }
 
     /// <inheritdoc />
@@ -53,20 +90,12 @@ public class ConnectionJsonConverter : JsonConverter<Connection>
     {
         if (value.Source.Activity == null! || value.Target.Activity == null!)
             return;
-        
+
         var model = new
         {
-            Source = new
-            {
-                Activity = value.Source.Activity.Id,
-                Port = value.Source.Port
-            },
-            Target = new
-            {
-                Activity = value.Target.Activity.Id,
-                Port = value.Target.Port
-            },
-            Vertices = value.Vertices
+            Source = new { Activity = value.Source.Activity.Id, Port = value.Source.Port },
+            Target = new { Activity = value.Target.Activity.Id, Port = value.Target.Port },
+            Vertices = value.Vertices,
         };
 
         JsonSerializer.Serialize(writer, model, options);
