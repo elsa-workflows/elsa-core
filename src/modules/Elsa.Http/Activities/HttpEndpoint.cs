@@ -12,6 +12,7 @@ using Elsa.Workflows.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Http;
 
@@ -161,13 +162,18 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        var logger = context.GetRequiredService<ILogger<HttpEndpoint>>();
+        logger.LogDebug("Executing HTTP endpoint activity.");
         var path = Path.Get(context);
         var methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get };
         context.WaitForHttpRequest(path, methods, OnResumeAsync);
+        logger.LogDebug("Executed HTTP endpoint activity.");
     }
 
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)
     {
+        var logger = context.GetRequiredService<ILogger<HttpEndpoint>>();
+        logger.LogDebug("Resuming HTTP endpoint activity.");
         var httpContextAccessor = context.GetRequiredService<IHttpContextAccessor>();
         var httpContext = httpContextAccessor.HttpContext;
 
@@ -176,6 +182,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
             context.CreateCrossBoundaryBookmark();
+            logger.LogDebug("Created cross-boundary bookmark.");
             return;
         }
 
@@ -184,8 +191,11 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
     private async Task HandleRequestAsync(ActivityExecutionContext context)
     {
+        var logger = context.GetRequiredService<ILogger<HttpEndpoint>>();
         var httpContextAccessor = context.GetRequiredService<IHttpContextAccessor>();
         var httpContext = httpContextAccessor.HttpContext!;
+        
+        logger.LogDebug("Handling HTTP request.");
         
         // Provide the received HTTP request as output.
         var request = httpContext.Request;
@@ -206,7 +216,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         if (!ValidateRequestSize(context, httpContext))
         {
             await HandleRequestTooLargeAsync(context, httpContext);
-            throw new("1. Request too large");
+            logger.LogDebug("Request too large.");
             return;
         }
 
@@ -225,31 +235,32 @@ public class HttpEndpoint : Trigger<HttpRequest>
                 if (!ValidateFileSizes(context, httpContext, files))
                 {
                     await HandleFileSizeTooLargeAsync(context, httpContext);
-                    throw new("2. File too large");
+                    logger.LogDebug("File too large.");
                     return;
                 }
 
                 if (!ValidateFileExtensionWhitelist(context, httpContext, files))
                 {
                     await HandleInvalidFileExtensionWhitelistAsync(context, httpContext);
-                    throw new("3. Invalid file extension");
+                    logger.LogDebug("Invalid file extension.");
                     return;
                 }
 
                 if (!ValidateFileExtensionBlacklist(context, httpContext, files))
                 {
                     await HandleInvalidFileExtensionBlacklistAsync(context, httpContext);
-                    throw new("4. Invalid file extension");
+                    logger.LogDebug("Invalid file extension.");
                     return;
                 }
 
                 if (!ValidateFileMimeTypes(context, httpContext, files))
                 {
                     await HandleInvalidFileMimeTypesAsync(context, httpContext);
-                    throw new("5. Invalid file MIME type");
+                    logger.LogDebug("Invalid file MIME type.");
                     return;
                 }
 
+                logger.LogDebug("Files validated.");
                 Files.Set(context, files.ToArray());
             }
         }
@@ -258,19 +269,22 @@ public class HttpEndpoint : Trigger<HttpRequest>
             // Parse Non-Form content.
             try
             {
+                logger.LogDebug("Parsing non-form content.");
                 var content = await ParseContentAsync(context, request);
+                logger.LogDebug("Parsed non-form content.");
                 ParsedContent.Set(context, content);
             }
             catch (JsonException e)
             {
                 await HandleInvalidJsonPayloadAsync(context, httpContext, e);
-                throw new("6. Invalid JSON payload");
+                logger.LogError(e, "Invalid JSON payload.");
                 throw;
             }
 
         }
 
         // Complete.
+        logger.LogDebug("Completing activity.");
         await context.CompleteActivityAsync();
     }
 
@@ -306,6 +320,9 @@ public class HttpEndpoint : Trigger<HttpRequest>
             {
                 Message = $"The maximum request size allowed is {RequestSizeLimit.Get(context)} bytes."
             });
+            
+            var logger = context.GetRequiredService<ILogger<HttpEndpoint>>();
+            logger.LogDebug("Request too large.");
             await response.Body.FlushAsync();
         }
     }
@@ -339,6 +356,8 @@ public class HttpEndpoint : Trigger<HttpRequest>
             {
                 Message = $"The maximum file size allowed is {FileSizeLimit.Get(context)} bytes."
             });
+            var logger = context.GetRequiredService<ILogger<HttpEndpoint>>();
+            logger.LogDebug("File too large.");
             await response.Body.FlushAsync();
         }
     }
@@ -371,6 +390,8 @@ public class HttpEndpoint : Trigger<HttpRequest>
         {
             Message = $"Only the following file extensions are allowed: {string.Join(", ", allowedFileExtensions)}"
         });
+        var logger = context.GetRequiredService<ILogger<HttpEndpoint>>();
+        logger.LogDebug("Invalid file extension.");
         await response.Body.FlushAsync();
     }
 
@@ -402,6 +423,8 @@ public class HttpEndpoint : Trigger<HttpRequest>
         {
             Message = $"The following file extensions are not allowed: {string.Join(", ", blockedFileExtensions)}"
         });
+        var logger = context.GetRequiredService<ILogger<HttpEndpoint>>();
+        logger.LogDebug("Invalid file extension.");
         await response.Body.FlushAsync();
     }
 
@@ -433,6 +456,8 @@ public class HttpEndpoint : Trigger<HttpRequest>
         {
             Message = $"Only the following MIME types are allowed: {string.Join(", ", allowedMimeTypes)}"
         });
+        var logger = context.GetRequiredService<ILogger<HttpEndpoint>>();
+        logger.LogDebug("Invalid file MIME type.");
         await response.Body.FlushAsync();
     }
 
@@ -446,6 +471,8 @@ public class HttpEndpoint : Trigger<HttpRequest>
             exception.Path,
             exception.LineNumber,
         });
+        var logger = context.GetRequiredService<ILogger<HttpEndpoint>>();
+        logger.LogError(exception, "Invalid JSON payload.");
         await response.Body.FlushAsync();
     }
 

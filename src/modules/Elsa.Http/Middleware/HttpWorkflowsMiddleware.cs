@@ -21,6 +21,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
+using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Http.Middleware;
@@ -29,7 +30,7 @@ namespace Elsa.Http.Middleware;
 /// An ASP.NET middleware component that tries to match the inbound request path to an associated workflow and then run that workflow.
 /// </summary>
 [PublicAPI]
-public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivityOptions> options)
+public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivityOptions> options, ILogger<HttpWorkflowsMiddleware> logger)
 {
     /// <summary>
     /// Attempts to match the inbound request path to an associated workflow and then run that workflow.
@@ -208,6 +209,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var cancellationToken = httpContext.RequestAborted;
         var workflow = workflowGraph.Workflow;
 
+        logger.LogDebug("Executing workflow {WorkflowDefinitionId} with bookmark {BookmarkName} and input {Input}", workflow.Id, bookmarkPayload.Path, input);
         if (!await AuthorizeAsync(serviceProvider, httpContext, workflow, bookmarkPayload, cancellationToken))
         {
             httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
@@ -228,13 +230,25 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
     {
         // If no request timeout is specified, execute the action without any timeout.
         if (requestTimeout == null)
+        {
+            logger.LogDebug("Executing without request timeout");
             return await action(httpContext.RequestAborted);
+        }
 
         // Create a combined cancellation token that cancels when the request is aborted or when the request timeout is reached.
         using var requestTimeoutCancellationTokenSource = new CancellationTokenSource();
         requestTimeoutCancellationTokenSource.CancelAfter(requestTimeout.Value);
+        requestTimeoutCancellationTokenSource.Token.Register(() =>
+        {
+            logger.LogWarning("Request timeout reached.");
+        });
         using var combinedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(httpContext.RequestAborted, requestTimeoutCancellationTokenSource.Token);
         var originalCancellationToken = httpContext.RequestAborted;
+
+        httpContext.RequestAborted.Register(() =>
+        {
+            logger.LogWarning("Request aborted.");
+        });
 
         // Replace the original cancellation token with the combined one.
         httpContext.RequestAborted = combinedTokenSource.Token;
