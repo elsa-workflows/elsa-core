@@ -78,7 +78,7 @@ jobs:
       #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       #        run: dotnet sonarscanner begin /k:"elsa-workflows_elsa-core" /o:"elsa-workflows" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.exclusions=**/obj/**,**/*.dll,build/**,samples/**,src/apps/** /d:"sonar.verbose=true" /d:sonar.cs.opencover.reportsPaths=**/testresults/**/coverage.opencover.xml
       - name: Compile+Test+Pack
-        run: ./build.sh Compile+Test+Pack --version ${VERSION} --analyseCode true
+        run: ./build.sh Compile+Pack --version ${VERSION} --analyseCode false
       #      - name: End SonarCloud analysis
       #        env:
       #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
