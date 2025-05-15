@@ -3,6 +3,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime;
 
@@ -11,7 +12,8 @@ public class DefaultCommitStateHandler(
     IBookmarksPersister bookmarkPersister,
     IVariablePersistenceManager variablePersistenceManager,
     ILogRecordSink<ActivityExecutionRecord> activityExecutionLogRecordSink,
-    ILogRecordSink<WorkflowExecutionLogRecord> workflowExecutionLogRecordSink) : ICommitStateHandler
+    ILogRecordSink<WorkflowExecutionLogRecord> workflowExecutionLogRecordSink,
+    ILogger<DefaultCommitStateHandler> logger) : ICommitStateHandler
 {
     public async Task CommitAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default)
     {
@@ -21,6 +23,7 @@ public class DefaultCommitStateHandler(
 
     public async Task CommitAsync(WorkflowExecutionContext workflowExecutionContext, WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
+        logger.LogDebug("Committing state");
         var updateBookmarksRequest = new UpdateBookmarksRequest(workflowExecutionContext, workflowExecutionContext.BookmarksDiff, workflowExecutionContext.CorrelationId);
         await bookmarkPersister.PersistBookmarksAsync(updateBookmarksRequest);
         await activityExecutionLogRecordSink.PersistExecutionLogsAsync(workflowExecutionContext, cancellationToken);
@@ -30,5 +33,6 @@ public class DefaultCommitStateHandler(
         workflowExecutionContext.ExecutionLog.Clear();
         workflowExecutionContext.ClearCompletedActivityExecutionContexts();
         await workflowExecutionContext.ExecuteDeferredTasksAsync();
+        logger.LogDebug("Committed state");
     }
 }
