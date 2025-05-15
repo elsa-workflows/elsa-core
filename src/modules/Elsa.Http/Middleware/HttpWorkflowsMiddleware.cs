@@ -63,7 +63,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
             [HttpEndpoint.PathInputKey] = path
         };
 
-        var cancellationToken = httpContext.RequestAborted;
+        var cancellationToken = CancellationToken.None; //httpContext.RequestAborted;
         var request = httpContext.Request;
         var method = request.Method.ToLowerInvariant();
         var httpWorkflowLookupService = serviceProvider.GetRequiredService<IHttpWorkflowLookupService>();
