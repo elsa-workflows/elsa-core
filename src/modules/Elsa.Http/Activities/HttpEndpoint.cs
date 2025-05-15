@@ -280,6 +280,10 @@ public class HttpEndpoint : Trigger<HttpRequest>
                 logger.LogError(e, "Invalid JSON payload.");
                 throw;
             }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Error parsing non-form content.");
+            }
 
         }
 
