@@ -208,9 +208,12 @@ public class WorkflowRunner(
             await notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), cancellationToken);
         }
 
+        logger.LogDebug("Executing pipeline for workflow {WorkflowId}", workflow.Id);
         await pipeline.ExecuteAsync(workflowExecutionContext);
+        logger.LogDebug("Pipeline executed for workflow {WorkflowId}", workflow.Id);
         var workflowState = workflowStateExtractor.Extract(workflowExecutionContext);
 
+        logger.LogDebug("Workflow execution finished with status {WorkflowSubStatus}", workflowState.SubStatus);
         if (workflowState.Status == WorkflowStatus.Finished)
         {
             await notificationSender.SendAsync(new WorkflowFinished(workflow, workflowState, workflowExecutionContext), cancellationToken);
@@ -218,7 +221,9 @@ public class WorkflowRunner(
 
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
         await notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
+        logger.LogDebug("Committing workflow state for workflow {WorkflowId}", workflow.Id);
         await commitStateHandler.CommitAsync(workflowExecutionContext, workflowState, cancellationToken);
+        logger.LogDebug("Workflow state committed for workflow {WorkflowId}", workflow.Id);
         return new(workflowExecutionContext, workflowState, workflowExecutionContext.Workflow, result);
     }
 }
