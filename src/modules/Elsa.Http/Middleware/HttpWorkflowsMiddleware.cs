@@ -156,6 +156,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
 
     private async Task StartWorkflowAsync(HttpContext httpContext, StoredTrigger trigger, WorkflowGraph workflowGraph, IDictionary<string, object> input, string? workflowInstanceId, string? correlationId)
     {
+        using var scope = logger.BeginScope(new HttpWorkflowsMiddlewareState());
         var bookmarkPayload = trigger.GetPayload<HttpEndpointBookmarkPayload>();
         var workflowOptions = new RunWorkflowOptions
         {
@@ -223,6 +224,8 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
                 return await workflowRunner.RunAsync(workflowGraph, workflowOptions, ct);
             return await workflowRunner.RunAsync(workflow, workflowInstance.WorkflowState, workflowOptions, ct);
         }, bookmarkPayload.RequestTimeout, httpContext);
+        
+        logger.LogDebug("Executed workflow");
         await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
     }
 
