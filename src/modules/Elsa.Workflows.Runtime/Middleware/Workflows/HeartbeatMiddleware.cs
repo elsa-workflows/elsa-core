@@ -6,7 +6,7 @@ public class WorkflowHeartbeatMiddleware(WorkflowMiddlewareDelegate next, Workfl
 {
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
-        using var heartbeat = workflowHeartbeatGeneratorFactory.CreateHeartbeatGenerator(context);
+        //using var heartbeat = workflowHeartbeatGeneratorFactory.CreateHeartbeatGenerator(context);
         await Next(context);
     }
 }
