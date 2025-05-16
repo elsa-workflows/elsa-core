@@ -1,9 +1,7 @@
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
-using Elsa.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Query;
 
 namespace Elsa.EntityFrameworkCore.EntityHandlers;
 
@@ -15,15 +13,32 @@ public class SetTenantIdFilter : IEntityModelCreatingHandler
     /// <inheritdoc />
     public void Handle(ElsaDbContextBase dbContext, ModelBuilder modelBuilder, IMutableEntityType entityType)
     {
-        if (!entityType.ClrType.IsAssignableTo(typeof(Entity)))
+        if (!typeof(Entity).IsAssignableFrom(entityType.ClrType))
             return;
 
-        var tenantId = dbContext.TenantId.NullIfEmpty();
-        var parameter = Expression.Parameter(entityType.ClrType);
-        Expression<Func<Entity, bool>> filterExpr = entity => entity.TenantId == tenantId;
-        var body = ReplacingExpressionVisitor.Replace(filterExpr.Parameters[0], parameter, filterExpr.Body);
-        var lambdaExpression = Expression.Lambda(body, parameter);
+        modelBuilder
+            .Entity(entityType.ClrType)
+            .HasQueryFilter(CreateTenantFilterExpression(dbContext, entityType.ClrType));
+    }
 
-        entityType.SetQueryFilter(lambdaExpression);
+    private LambdaExpression CreateTenantFilterExpression(ElsaDbContextBase dbContext, Type clrType)
+    {
+        var parameter = Expression.Parameter(clrType, "e");
+
+        // e => EF.Property<string>(e, "TenantId") == this.TenantId
+        var tenantIdProperty = Expression.Call(
+            typeof(EF),
+            nameof(EF.Property),
+            [typeof(string)],
+            parameter,
+            Expression.Constant("TenantId"));
+
+        var tenantIdOnContext = Expression.Property(
+            Expression.Constant(dbContext),
+            nameof(ElsaDbContextBase.TenantId));
+
+        var body = Expression.Equal(tenantIdProperty, tenantIdOnContext);
+
+        return Expression.Lambda(body, parameter);
     }
 }
