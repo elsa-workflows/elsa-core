@@ -83,7 +83,7 @@ public static async ValueTask WaitForHttpRequest(this ActivityExecutionContext c
             .ToArray();
     }
 
-    internal static ValueTask CreateCrossBoundaryBookmark(this ActivityExecutionContext context, ExecuteActivityDelegate? callback = null)
+    internal static void CreateCrossBoundaryBookmark(this ActivityExecutionContext context, ExecuteActivityDelegate? callback = null)
     {
         var bookmarkOptions = new CreateBookmarkArgs
         {
@@ -92,6 +92,5 @@ public static async ValueTask WaitForHttpRequest(this ActivityExecutionContext c
             Metadata = BookmarkMetadata.HttpCrossBoundary,
         };
         context.CreateBookmark(bookmarkOptions);
-        return ValueTask.CompletedTask;
     }
 }
