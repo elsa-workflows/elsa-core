@@ -10,7 +10,7 @@ namespace Elsa.Workflows;
 public abstract class WorkflowBase : IWorkflow
 {
     /// <summary>
-    /// Invokes the the specified <see cref="IWorkflowBuilder"/>.
+    /// Invokes the specified <see cref="IWorkflowBuilder"/>.
     /// </summary>
     protected virtual ValueTask BuildAsync(IWorkflowBuilder builder, CancellationToken cancellationToken = default)
     {
