@@ -68,6 +68,7 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
+        logger.LogDebug("Preparing new workflow execution context");
         // Set up a workflow execution context.
         var instanceId = options?.WorkflowInstanceId ?? identityGenerator.GenerateId();
         var input = options?.Input;
@@ -88,6 +89,7 @@ public class WorkflowRunner(
             cancellationToken);
 
         // Schedule the first activity.
+        logger.LogDebug("Scheduling Workflow activity for execution");
         workflowExecutionContext.ScheduleWorkflow();
 
         return await RunAsync(workflowExecutionContext);
@@ -194,16 +196,19 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
+        logger.LogDebug("Beginning new log scope");
         var loggerState = loggerStateGenerator.GenerateLoggerState(workflowExecutionContext);
         using var loggingScope = logger.BeginScope(loggerState);
         var workflow = workflowExecutionContext.Workflow;
         var cancellationToken = workflowExecutionContext.CancellationToken;
 
+        logger.LogDebug("Sending WorkflowExecuting notification");
         await notificationSender.SendAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken);
 
         // If the status is Pending, it means the workflow is started for the first time.
         if (workflowExecutionContext.SubStatus == WorkflowSubStatus.Pending)
         {
+            logger.LogDebug("Transitioning workflow status from Pending to Executing");
             workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
             await notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), cancellationToken);
         }
