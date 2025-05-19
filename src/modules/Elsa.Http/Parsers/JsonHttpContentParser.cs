@@ -32,7 +32,8 @@ public class JsonHttpContentParser(ILogger<JsonHttpContentParser> logger) : IHtt
 
         var content = context.Content;
         using var reader = new StreamReader(content, leaveOpen: true);
-        var json = await reader.ReadToEndAsync();
+        //var json = await reader.ReadToEndAsync();
+        var json = reader.ReadToEnd();
         var returnType = context.ReturnType;
         
         logger.LogDebug("Deserializing JSON content.");
