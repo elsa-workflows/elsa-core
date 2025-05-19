@@ -163,7 +163,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
     {
         var path = Path.Get(context);
         var methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get };
-        context.WaitForHttpRequest(path, methods, OnResumeAsync);
+        await context.WaitForHttpRequest(path, methods, OnResumeAsync);
     }
 
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)
@@ -175,7 +175,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         {
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
-            context.CreateCrossBoundaryBookmark();
+            await context.CreateCrossBoundaryBookmark();
             return;
         }
 

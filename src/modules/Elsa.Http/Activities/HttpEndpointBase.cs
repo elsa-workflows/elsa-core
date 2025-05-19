@@ -20,10 +20,10 @@ public abstract class HttpEndpointBase<TResult> : Trigger<TResult>
     {
     }
 
-    protected override void Execute(ActivityExecutionContext context)
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var options = GetOptions();
-        context.WaitForHttpRequest(options, HttpRequestReceivedAsync);
+        await context.WaitForHttpRequest(options, HttpRequestReceivedAsync);
     }
 
     protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context)
