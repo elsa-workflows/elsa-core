@@ -270,9 +270,10 @@ public class HttpEndpoint : Trigger<HttpRequest>
             try
             {
                 logger.LogDebug("Parsing non-form content.");
-                var content = await ParseContentAsync(context, request);
+                //var content = await ParseContentAsync(context, request);
+                logger.LogDebug("(Skipping...)");
                 logger.LogDebug("Parsed non-form content.");
-                ParsedContent.Set(context, content);
+                //ParsedContent.Set(context, content);
             }
             catch (JsonException e)
             {
