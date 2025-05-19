@@ -33,11 +33,11 @@ public class LoggingMiddleware : IActivityExecutionMiddleware
         }
 
         var activity = context.Activity;
-        _logger.LogInformation("Executing {ActivityType} activity {ActivityId}", activity.Type, activity.Id);
+        _logger.LogInformation("Executing {ActivityType} activity {ActivityId} with status {ActivityStatus}", activity.Type, activity.Id, context.Status);
         _stopwatch.Restart();
         await _next(context);
         _stopwatch.Stop();
-        _logger.LogInformation("Executed {ActivityType} activity {ActivityId} in {Elapsed}", activity.Type, activity.Id, _stopwatch.Elapsed);
+        _logger.LogInformation("Executed {ActivityType} activity {ActivityId} with new status {ActivityStatus} in {Elapsed}", activity.Type, activity.Id, context.Status, _stopwatch.Elapsed);
     }
 }
 

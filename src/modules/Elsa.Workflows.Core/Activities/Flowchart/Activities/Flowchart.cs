@@ -6,6 +6,7 @@ using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Signals;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Activities.Flowchart.Activities;
 
@@ -148,7 +149,10 @@ public class Flowchart : Container
         var completedActivityContext = context.ChildContext;
         var completedActivity = completedActivityContext.Activity;
         var result = context.Result;
-
+        var logger = context.GetRequiredService<ILogger<Flowchart>>();
+        
+        logger.LogDebug("Flowchart child activity completed: {ActivityType}: {ActivityId}", completedActivity.Type, completedActivity.Id);
+        
         if (flowchartContext.Activity != this)
         {
             throw new Exception("Target context activity must be this flowchart");
@@ -157,6 +161,7 @@ public class Flowchart : Container
         // If the completed activity's status is anything but "Completed", do not schedule its outbound activities.
         if (completedActivityContext.Status != ActivityStatus.Completed)
         {
+            logger.LogDebug("Flowchart child activity Status not completed: {ActivityType}: {ActivityId}", completedActivity.Type, completedActivity.Id);
             return;
         }
 
@@ -173,9 +178,11 @@ public class Flowchart : Container
         // Schedule the outbound activities
         var flowGraph = GetFlowGraph(flowchartContext);
         var flowScope = GetFlowScope(flowchartContext);
-        var completedActivityExcecutedByBackwardConnection = completedActivityContext.ActivityInput.GetValueOrDefault<bool>(BackwardConnectionActivityInput);
-        bool hasScheduledActivity = await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, completedActivity, outcomes, completedActivityExcecutedByBackwardConnection);
+        var completedActivityExecutedByBackwardConnection = completedActivityContext.ActivityInput.GetValueOrDefault<bool>(BackwardConnectionActivityInput);
+        var hasScheduledActivity = await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, completedActivity, outcomes, completedActivityExecutedByBackwardConnection);
 
+        logger.LogDebug("Has Scheduled Activity: {HasScheduledActivity}", hasScheduledActivity ? "Yes" : "No");
+        
         // If there are not any outbound connections, complete the flowchart activity if there is no other pending work
         if (!hasScheduledActivity)
         {
@@ -359,13 +366,19 @@ public class Flowchart : Container
     private async Task CompleteIfNoPendingWorkAsync(ActivityExecutionContext context)
     {
         var hasPendingWork = HasPendingWork(context);
+        var logger = context.GetRequiredService<ILogger<Flowchart>>();
+        
+        logger.LogDebug("Has Pending Work: {HasPendingWork}", hasPendingWork ? "Yes" : "No");
 
         if (!hasPendingWork)
         {
             var hasFaultedActivities = context.Children.Any(x => x.Status == ActivityStatus.Faulted);
+            
+            logger.LogDebug("Has Faulted Activities: {HasFaultedActivities}", hasFaultedActivities ? "Yes" : "No");
 
             if (!hasFaultedActivities)
             {
+                logger.LogDebug("Completing Flowchart");
                 await context.CompleteActivityAsync();
             }
         }
