@@ -175,7 +175,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         {
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
-            await context.CreateCrossBoundaryBookmark();
+            context.CreateCrossBoundaryBookmark();
             return;
         }
 
