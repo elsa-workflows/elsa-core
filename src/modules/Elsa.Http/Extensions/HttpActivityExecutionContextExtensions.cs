@@ -24,9 +24,18 @@ internal static class HttpActivityExecutionContextExtensions
         }
 
         logger.LogDebug("Using parser {ParserType}", contentParser.GetType());
-        var result =  await contentParser.ReadAsync(httpResponseParserContext);
-        logger.LogDebug("Parser returned {Result}", result);
-        return result;
+        try
+        {
+            var result =  await contentParser.ReadAsync(httpResponseParserContext);
+            logger.LogDebug("Parser returned {Result}", result);
+            return result;
+        }
+        catch (Exception e)
+        {
+            logger.LogDebug(e, "Error parsing content");
+            Console.WriteLine(e);
+            throw;
+        }
     }
 
     public static IEnumerable<KeyValuePair<string, string[]>> GetHeaders(this ActivityExecutionContext context, Input input)
