@@ -270,10 +270,9 @@ public class HttpEndpoint : Trigger<HttpRequest>
             try
             {
                 logger.LogDebug("Parsing non-form content.");
-                //var content = await ParseContentAsync(context, request);
-                logger.LogDebug("(Skipping...)");
+                var content = await ParseContentAsync(context, request);
                 logger.LogDebug("Parsed non-form content.");
-                //ParsedContent.Set(context, content);
+                ParsedContent.Set(context, content);
             }
             catch (JsonException e)
             {
@@ -483,8 +482,12 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
     private async Task<object?> ParseContentAsync(ActivityExecutionContext context, HttpRequest httpRequest)
     {
+        var logger = context.GetRequiredService<ILogger<HttpEndpoint>>();
         if (!HasContent(httpRequest))
+        {
+            logger.LogDebug("No content.");
             return null;
+        }
 
         var cancellationToken = context.CancellationToken;
         var targetType = ParsedContent.GetTargetType(context);
@@ -492,6 +495,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var contentType = httpRequest.ContentType!;
         var headers = httpRequest.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray());
 
+        logger.LogDebug("Parsing content.");
         return await context.ParseContentAsync(contentStream, contentType, targetType, headers, cancellationToken);
     }
 
