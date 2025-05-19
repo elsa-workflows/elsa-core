@@ -3,34 +3,33 @@ using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Routing.Patterns;
 
 namespace Elsa.Http.Extensions;
 
 public static class HttpEndpointActivityExecutionContextExtensions
 {
-public static async ValueTask WaitForHttpRequest(this ActivityExecutionContext context, string path, string method, ExecuteActivityDelegate? callback = null)
+public static async ValueTask WaitForHttpRequestAsync(this ActivityExecutionContext context, string path, string method, ExecuteActivityDelegate? callback = null)
 {
     var options = new HttpEndpointOptions
     {
         Path = path,
         Methods = [method]
     };
-    await WaitForHttpRequest(context, options, callback);
+    await WaitForHttpRequestAsync(context, options, callback);
 }
 
-public static async ValueTask WaitForHttpRequest(this ActivityExecutionContext context, string path, IEnumerable<string> methods, ExecuteActivityDelegate? callback = null)
+public static async ValueTask WaitForHttpRequestAsync(this ActivityExecutionContext context, string path, IEnumerable<string> methods, ExecuteActivityDelegate? callback = null)
 {
     var options = new HttpEndpointOptions
     {
         Path = path,
         Methods = methods.ToList()
     };
-    await WaitForHttpRequest(context, options, callback);
+    await WaitForHttpRequestAsync(context, options, callback);
 }
 
-    public static async ValueTask WaitForHttpRequest(this ActivityExecutionContext context, HttpEndpointOptions options, ExecuteActivityDelegate? callback = null)
+    public static async ValueTask WaitForHttpRequestAsync(this ActivityExecutionContext context, HttpEndpointOptions options, ExecuteActivityDelegate? callback = null)
     {
         var path = options.Path;
         if (path.Contains("//"))
