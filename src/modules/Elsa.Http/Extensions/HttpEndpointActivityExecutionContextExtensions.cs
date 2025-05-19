@@ -9,27 +9,27 @@ namespace Elsa.Http.Extensions;
 
 public static class HttpEndpointActivityExecutionContextExtensions
 {
-    public static void WaitForHttpRequest(this ActivityExecutionContext context, string path, string method, ExecuteActivityDelegate? callback = null)
+    public static Task WaitForHttpRequest(this ActivityExecutionContext context, string path, string method, ExecuteActivityDelegate? callback = null)
     {
         var options = new HttpEndpointOptions
         {
             Path = path,
             Methods = [method]
         };
-        WaitForHttpRequest(context, options, callback);
+        return WaitForHttpRequest(context, options, callback);
     }
 
-    public static void WaitForHttpRequest(this ActivityExecutionContext context, string path, IEnumerable<string> methods, ExecuteActivityDelegate? callback = null)
+    public static Task WaitForHttpRequest(this ActivityExecutionContext context, string path, IEnumerable<string> methods, ExecuteActivityDelegate? callback = null)
     {
         var options = new HttpEndpointOptions
         {
             Path = path,
             Methods = methods.ToList()
         };
-        WaitForHttpRequest(context, options, callback);
+        return WaitForHttpRequest(context, options, callback);
     }
 
-    public static void WaitForHttpRequest(this ActivityExecutionContext context, HttpEndpointOptions options, ExecuteActivityDelegate? callback = null)
+    public static async Task WaitForHttpRequest(this ActivityExecutionContext context, HttpEndpointOptions options, ExecuteActivityDelegate? callback = null)
     {
         var path = options.Path;
         if (path.Contains("//"))
@@ -42,14 +42,15 @@ public static class HttpEndpointActivityExecutionContextExtensions
             return;
         }
 
-        callback?.Invoke(context);
+        if (callback != null)
+            await callback(context);
     }
 
     public static IEnumerable<object> GetHttpEndpointStimuli(this TriggerIndexingContext context, string path, string method)
     {
         return context.GetHttpEndpointStimuli(path, [method]);
     }
-    
+
     public static IEnumerable<object> GetHttpEndpointStimuli(this TriggerIndexingContext context, string path, IEnumerable<string> methods)
     {
         var options = new HttpEndpointOptions

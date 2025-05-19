@@ -166,7 +166,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         logger.LogDebug("Executing HTTP endpoint activity.");
         var path = Path.Get(context);
         var methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get };
-        context.WaitForHttpRequest(path, methods, OnResumeAsync);
+        await context.WaitForHttpRequest(path, methods, OnResumeAsync);
         logger.LogDebug("Executed HTTP endpoint activity.");
     }
 
