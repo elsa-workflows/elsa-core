@@ -8,11 +8,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Http\Elsa.Http.csproj" />
         <ProjectReference Include="..\Elsa.Tenants\Elsa.Tenants.csproj" />
     </ItemGroup>
 
