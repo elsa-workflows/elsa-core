@@ -11,6 +11,7 @@ on:
       - 'enh/*'
       - 'rc/*'
       - 'develop/*'
+      - 'codex/*'
   release:
     types: [ prereleased, published ]
 env:
