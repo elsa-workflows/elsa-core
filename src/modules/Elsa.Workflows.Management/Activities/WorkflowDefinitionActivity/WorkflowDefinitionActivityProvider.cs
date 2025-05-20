@@ -73,7 +73,7 @@ public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, 
 
         ports.Insert(0, rootPort);
 
-        return new ActivityDescriptor
+        return new()
         {
             TypeName = typeName,
             Name = typeName,

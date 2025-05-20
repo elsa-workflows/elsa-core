@@ -12,8 +12,5 @@ public class PersistActivityExecutionLogMiddleware(WorkflowMiddlewareDelegate ne
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         await Next(context);
-        
-        // Not used anymore.
-        //await sink.PersistExecutionLogsAsync(context);
     }
 }

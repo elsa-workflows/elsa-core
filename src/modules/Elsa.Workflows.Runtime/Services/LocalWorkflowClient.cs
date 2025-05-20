@@ -71,7 +71,8 @@ public class LocalWorkflowClient(
             Variables = request.Variables,
             Properties = request.Properties,
             TriggerActivityId = request.TriggerActivityId,
-            ActivityHandle = request.ActivityHandle
+            ActivityHandle = request.ActivityHandle,
+            IncludeWorkflowOutput = request.IncludeWorkflowOutput
         }, cancellationToken);
     }
 
@@ -139,7 +140,8 @@ public class LocalWorkflowClient(
             WorkflowInstanceId = WorkflowInstanceId,
             Status = workflowState.Status,
             SubStatus = workflowState.SubStatus,
-            Incidents = workflowState.Incidents
+            Incidents = workflowState.Incidents,
+            Output = request.IncludeWorkflowOutput ? new Dictionary<string, object>(workflowState.Output) : null
         };
     }
     

@@ -24,7 +24,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     }
 
     /// <inheritdoc />
-    public IEnumerable<ActivityDescriptor> ListAll() => _activityDescriptors.Values.DistinctBy(x => x.TypeName);
+    public IEnumerable<ActivityDescriptor> ListAll() => _activityDescriptors.Values;
 
     /// <inheritdoc />
     public IEnumerable<ActivityDescriptor> ListByProvider(Type providerType) => _providedActivityDescriptors.TryGetValue(providerType, out var descriptors) ? descriptors : ArraySegment<ActivityDescriptor>.Empty;

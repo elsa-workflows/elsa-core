@@ -6,7 +6,7 @@ namespace Elsa.Workflows;
 public interface IWorkflow
 {
     /// <summary>
-    /// Invokes the the specified <see cref="IWorkflowBuilder"/>.
+    /// Invokes the specified <see cref="IWorkflowBuilder"/>.
     /// </summary>
     ValueTask BuildAsync(IWorkflowBuilder builder, CancellationToken cancellationToken = default);
 }

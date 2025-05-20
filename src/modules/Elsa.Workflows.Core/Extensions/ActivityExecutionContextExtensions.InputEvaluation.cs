@@ -101,7 +101,7 @@ public static partial class ActivityExecutionContextExtensions
             // When input is created from an activity provider, there may be no memory block reference.
             if (memoryReference?.Id != null!)
             {
-                // Declare the input memory block on the current context. 
+                // Declare the input memory block in the current context. 
                 context.ExpressionExecutionContext.Set(memoryReference, value!);
             }
         }
@@ -110,12 +110,12 @@ public static partial class ActivityExecutionContextExtensions
             value = input;
         }
 
-        await StoreInputValueAsync(context, inputDescriptor, value);
+        await StoreInputValueAsync(context, inputDescriptor, value!);
 
         return value;
     }
     
-    private static async Task StoreInputValueAsync(ActivityExecutionContext context, InputDescriptor inputDescriptor, object? value)
+    private static Task StoreInputValueAsync(ActivityExecutionContext context, InputDescriptor inputDescriptor, object value)
     {
         // Store the serialized input value in the activity state.
         // Serializing the value ensures we store a copy of the value and not a reference to the input, which may change over time.
@@ -128,5 +128,7 @@ public static partial class ActivityExecutionContextExtensions
             // var filterResult = await manager.RunFiltersAsync(filterContext);
             context.ActivityState[inputDescriptor.Name] = value;
         }
+
+        return Task.CompletedTask;
     }
 }

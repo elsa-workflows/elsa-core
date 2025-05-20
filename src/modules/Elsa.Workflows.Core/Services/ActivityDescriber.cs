@@ -81,6 +81,10 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
             IsStart = isStart,
             IsTerminal = isTerminal,
             Attributes = attributes,
+            CustomProperties =
+            {
+                ["Type"] = activityType
+            },
             Constructor = context =>
             {
                 var activity = activityFactory.Create(activityType, context);
@@ -143,7 +147,7 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
 
         if (wrappedPropertyType.IsNullableType())
             wrappedPropertyType = wrappedPropertyType.GetTypeOfNullable();
-        
+
         var uiSpecification = await propertyUIHandlerResolver.GetUIPropertiesAsync(propertyInfo, null, cancellationToken);
 
         return new InputDescriptor
@@ -183,7 +187,7 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
     {
         return await DescribeOutputPropertiesAsync(GetOutputProperties(activityType), cancellationToken);
     }
-    
+
     public static string GetUIHint(Type wrappedPropertyType, InputAttribute? inputAttribute = null)
     {
         if (inputAttribute?.UIHint != null)

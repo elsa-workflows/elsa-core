@@ -12,7 +12,7 @@ namespace Elsa.Workflows.CommitStates.Strategies;
 /// (i.e., the lifetime event is `ActivityLifetimeEvent.ActivityExecuting`).
 /// For all other states, it defaults to no specific commit action.
 /// </remarks>
-[DisplayName("Executing")]
+[DisplayName("Commit Before")]
 [Description("Commit the workflow state when the activity is executing.")]
 public class ExecutingActivityStrategy : IActivityCommitStrategy
 {

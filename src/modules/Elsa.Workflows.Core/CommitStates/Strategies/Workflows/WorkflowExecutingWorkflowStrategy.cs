@@ -11,7 +11,7 @@ namespace Elsa.Workflows.CommitStates.Strategies;
 /// the workflow state if it corresponds to the `WorkflowExecuting` event.
 /// Otherwise, it defaults to no explicit commit action.
 /// </remarks>
-[DisplayName("Workflow Executing")]
+[DisplayName("Commit Before Workflow Execution")]
 [Description("Commit the workflow state when the workflow is executing.")]
 public class WorkflowExecutingWorkflowStrategy : IWorkflowCommitStrategy
 {

@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Messages;
 using ProtoRunWorkflowInstanceResponse = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.RunWorkflowInstanceResponse;
+using Elsa.Workflows.Runtime.ProtoActor.Extensions;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Mappers;
 
@@ -16,11 +17,11 @@ public class RunWorkflowInstanceResponseMapper(
     /// <summary>
     /// Maps <see cref="RunWorkflowResult"/> to <see cref="ProtoRunWorkflowInstanceResponse"/>.
     /// </summary>
-    public ProtoRunWorkflowInstanceResponse Map(RunWorkflowResult source)
+    public ProtoRunWorkflowInstanceResponse Map(RunWorkflowResult source, bool includeOutput)
     {
         if(source.WorkflowState == null!)
             return new();
-        
+
         var response = new ProtoRunWorkflowInstanceResponse
         {
             Status = workflowStatusMapper.Map(source.WorkflowState.Status),
@@ -28,6 +29,9 @@ public class RunWorkflowInstanceResponseMapper(
         };
 
         response.Incidents.AddRange(activityIncidentMapper.Map(source.WorkflowState.Incidents));
+
+        if (includeOutput)
+            response.Output = source.WorkflowState.Output.SerializeOutput();
         return response;
     }
 
@@ -41,10 +45,11 @@ public class RunWorkflowInstanceResponseMapper(
             WorkflowInstanceId = workflowInstanceId,
             Status = workflowStatusMapper.Map(source.Status),
             SubStatus = workflowSubStatusMapper.Map(source.SubStatus),
+            Output = source.Output?.DeserializeOutput()
         };
 
         response.Incidents.AddRange(activityIncidentMapper.Map(source.Incidents));
         return response;
-        
+
     }
 }

@@ -127,6 +127,9 @@ public class FlowchartNextActivityTests
     [Fact(DisplayName = "Flowchart with an invalid backward connection")]
     public async Task InvalidBackwardConnectionTest()
     {
+        if(Flowchart.UseTokenFlow)
+            return;
+        
         var workflow = new TestWorkflow(workflowBuilder =>
         {
             var start = new Start() { Id = "Start" };

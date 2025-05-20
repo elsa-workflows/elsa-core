@@ -1,5 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using Elsa.Extensions;
 
 namespace Elsa.Api.Client.Extensions;
 
@@ -24,7 +26,11 @@ public static class JsonObjectExtensions
     /// <returns>A <see cref="JsonObject"/> representing the specified value.</returns>
     public static JsonNode SerializeToNode(this object value, JsonSerializerOptions? options = null)
     {
-        options ??= new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        options ??= (new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+
+        }).WithConverters(new JsonStringEnumConverter());
 
         return JsonSerializer.SerializeToNode(value, options)!;
     }

@@ -91,6 +91,7 @@ public class WorkflowExecutionLogRecord : Entity, ILogRecord
     /// <summary>
     /// The state of the activity at the time of the log entry.
     /// </summary>
+    [Obsolete("Look at the ActivityExecutionRecord.ActivityState property instead.")]
     public IDictionary<string, object>? ActivityState { get; set; }
     
     /// <summary>

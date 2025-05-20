@@ -105,6 +105,26 @@
     environment:
       - ASPNETCORE_URLS=http://+:80
       - Logging__LogLevel__Default=Information
+        
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite
+    command: >
+      azurite
+      --blobHost 0.0.0.0 --blobPort 10010
+      --queueHost 0.0.0.0 --queuePort 10011
+      --tableHost 0.0.0.0 --tablePort 10012
+      --location /data
+      --debug /data/debug.log
+      --skipApiVersionCheck
+      --loose
+    ports:
+      - "10010:10010"  # Blob service
+      - "10011:10011"  # Queue service
+      - "10012:10012"  # Table service
+    volumes:
+      - ./azurite-data:/data
+    restart: always
 
   elsa-server:
     build:

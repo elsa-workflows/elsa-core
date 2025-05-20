@@ -22,6 +22,7 @@ public class RunWorkflowInstanceRequestMapper(ActivityHandleMapper activityHandl
             TriggerActivityId = source?.TriggerActivityId.EmptyIfNull(),
             Input = source?.Input?.SerializeInput(),
             Properties = source?.Properties?.SerializeProperties(),
+            IncludeWorkflowOutput = source?.IncludeWorkflowOutput ?? false,
         };
     }
 
@@ -37,6 +38,7 @@ public class RunWorkflowInstanceRequestMapper(ActivityHandleMapper activityHandl
             TriggerActivityId = source.TriggerActivityId,
             Input = source.Input?.DeserializeInput(),
             Properties = source.Properties?.DeserializeProperties(),
+            IncludeWorkflowOutput = source.IncludeWorkflowOutput,
         };
     }
 }

@@ -23,7 +23,7 @@ public partial class ActivityExecutionContext
         ClearBookmarks();
         ClearCompletionCallbacks();
         WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == NodeId);
-        AddExecutionLogEntry("Canceled", payload: JournalData);
+        AddExecutionLogEntry("Canceled");
         await this.SendSignalAsync(new CancelSignal());
         await CancelChildActivitiesAsync();
         
