@@ -16,28 +16,28 @@ public class ForEach<T> : Activity
     private const string CurrentIndexProperty = "CurrentIndex";
 
     /// <inheritdoc />
-    public ForEach(Func<ExpressionExecutionContext, ICollection<T>> @delegate, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Input<ICollection<T>>(@delegate), source, line)
+    public ForEach(Func<ExpressionExecutionContext, ICollection<T>> @delegate, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(new Input<ICollection<T>>(@delegate), source, line)
     {
     }
     
     /// <inheritdoc />
-    public ForEach(Func<ICollection<T>> @delegate, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Input<ICollection<T>>(@delegate), source, line)
+    public ForEach(Func<ICollection<T>> @delegate, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(new Input<ICollection<T>>(@delegate), source, line)
     {
     }
 
     /// <inheritdoc />
-    public ForEach(ICollection<T> items, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Input<ICollection<T>>(items), source, line)
+    public ForEach(ICollection<T> items, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(new Input<ICollection<T>>(items), source, line)
     {
     }
     
     /// <inheritdoc />
-    public ForEach(Input<ICollection<T>> items, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public ForEach(Input<ICollection<T>> items, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         Items = items;
     }
     
     /// <inheritdoc />
-    public ForEach([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public ForEach([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
     {
         Behaviors.Add<BreakBehavior>(this);
     }

@@ -16,12 +16,12 @@ public class MessageReceived : Trigger<object>
     internal const string InputKey = "TransportMessage";
 
     /// <inheritdoc />
-    public MessageReceived([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public MessageReceived([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public MessageReceived(Input<string> consumerDefinitionId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public MessageReceived(Input<string> consumerDefinitionId, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         ConsumerDefinitionId = consumerDefinitionId;
     }
@@ -35,7 +35,7 @@ public class MessageReceived : Trigger<object>
         UIHandler = typeof(ConsumerDefinitionsDropdownOptionsProvider),
         UIHint = InputUIHints.DropDown
     )]
-    public Input<string> ConsumerDefinitionId { get; set; } = default!;
+    public Input<string> ConsumerDefinitionId { get; set; } = null!;
     
     /// <summary>
     /// The topics to read from.
@@ -45,7 +45,7 @@ public class MessageReceived : Trigger<object>
         Description = "The topics to read from.",
         UIHint = InputUIHints.MultiText
     )]
-    public Input<ICollection<string>> Topics { get; set; } = default!;
+    public Input<ICollection<string>> Topics { get; set; } = null!;
 
     [Input(
         Description = "Optional. A predicate to filter messages.",
@@ -53,15 +53,15 @@ public class MessageReceived : Trigger<object>
         DefaultSyntax = "JavaScript",
         UIHint = InputUIHints.ExpressionEditor
     )]
-    public Input<bool> Predicate { get; set; } = default!;
+    public Input<bool> Predicate { get; set; } = null!;
     
     [Input(DisplayName = "Local", Description = "Whether the event is local to the workflow. When checked, only events delivered to this workflow instance will resume this activity.")]
-    public Input<bool> IsLocal { get; set; } = default!;
+    public Input<bool> IsLocal { get; set; } = null!;
 
     /// <summary>
     /// The received transport message.
     /// </summary>
-    public Output<KafkaTransportMessage> TransportMessage = default!;
+    public Output<KafkaTransportMessage> TransportMessage = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

@@ -19,12 +19,12 @@ namespace Elsa.CSharp.Activities;
 public class RunCSharp : CodeActivity<object?>
 {
     /// <inheritdoc />
-    public RunCSharp([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public RunCSharp([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public RunCSharp(string script, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public RunCSharp(string script, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         Script = new Input<string>(script);
     }
@@ -44,7 +44,7 @@ public class RunCSharp : CodeActivity<object?>
     /// A list of possible outcomes. Use "SetOutcome(string)" to set the outcome. Use "SetOutcomes(params string[])" to set multiple outcomes.
     /// </summary>
     [Input(Description = "A list of possible outcomes.", UIHint = InputUIHints.DynamicOutcomes)]
-    public Input<ICollection<string>> PossibleOutcomes { get; set; } = default!;
+    public Input<ICollection<string>> PossibleOutcomes { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

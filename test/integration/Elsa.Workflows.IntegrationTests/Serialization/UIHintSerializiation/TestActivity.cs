@@ -1,10 +1,10 @@
-﻿using Elsa.Workflows.Attributes;
-using System.Text.Json.Serialization;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
+using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Core.UnitTests;
+namespace Elsa.Workflows.IntegrationTests.Serialization.UIHintSerializiation;
 
 /// <summary>
 ///  Write a line of text to the console.
@@ -16,14 +16,14 @@ public class TestActivity : CodeActivity
     /// The text to write.
     /// </summary>
     [Description("The text to write.")]
-    public Input<TestEnumType> Option { get; set; } = default!;
+    public Input<TestEnumType> Option { get; set; } = null!;
 
     [JsonConstructor]
-    private TestActivity(string? source = default, int? line = default) : base(source, line)
+    private TestActivity(string? source = null, int? line = null) : base(source, line)
     {
     }
     /// <inheritdoc />
-    public TestActivity(Input<TestEnumType> option, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => Option = option;
+    public TestActivity(Input<TestEnumType> option, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line) => Option = option;
 
 
 }

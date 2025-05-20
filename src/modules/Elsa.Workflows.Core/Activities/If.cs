@@ -15,24 +15,24 @@ namespace Elsa.Workflows.Activities;
 public class If : Activity<bool>
 {
     /// <inheritdoc />
-    public If([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public If([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public If(Input<bool> condition, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public If(Input<bool> condition, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         Condition = condition;
     }
 
     /// <inheritdoc />
-    public If(Func<ExpressionExecutionContext, bool> condition, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public If(Func<ExpressionExecutionContext, bool> condition, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         Condition = new Input<bool>(condition);
     }
 
     /// <inheritdoc />
-    public If(Func<bool> condition, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public If(Func<bool> condition, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         Condition = new Input<bool>(condition);
     }

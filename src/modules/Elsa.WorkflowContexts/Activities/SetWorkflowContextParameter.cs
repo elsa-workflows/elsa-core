@@ -17,12 +17,12 @@ namespace Elsa.WorkflowContexts.Activities;
 public class SetWorkflowContextParameter : CodeActivity
 {
     /// <inheritdoc />
-    public SetWorkflowContextParameter([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public SetWorkflowContextParameter([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public SetWorkflowContextParameter(Type providerType, string? parameterName, object parameterValue, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public SetWorkflowContextParameter(Type providerType, string? parameterName, object parameterValue, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         ProviderType = new(providerType);
         ParameterName = new(parameterName);
@@ -41,8 +41,8 @@ public class SetWorkflowContextParameter : CodeActivity
     public static SetWorkflowContextParameter For<T>(
         string parameterName, 
         object parameterValue, 
-        [CallerFilePath] string? source = default, 
-        [CallerLineNumber] int? line = default) where T : IWorkflowContextProvider => new(typeof(T), parameterName, parameterValue, source, line);
+        [CallerFilePath] string? source = null, 
+        [CallerLineNumber] int? line = null) where T : IWorkflowContextProvider => new(typeof(T), parameterName, parameterValue, source, line);
 
     /// <summary>
     /// Create a new instance of <see cref="SetWorkflowContextParameter"/> for the specified provider type.
@@ -52,7 +52,7 @@ public class SetWorkflowContextParameter : CodeActivity
     /// <param name="line"></param>
     /// <typeparam name="T">The type of the workflow context provider.</typeparam>
     /// <returns></returns>
-    public static SetWorkflowContextParameter For<T>(object parameterValue, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) where T : IWorkflowContextProvider
+    public static SetWorkflowContextParameter For<T>(object parameterValue, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) where T : IWorkflowContextProvider
     {
         return new SetWorkflowContextParameter(source, line)
         {
@@ -69,7 +69,7 @@ public class SetWorkflowContextParameter : CodeActivity
     /// <param name="line"></param>
     /// <typeparam name="T">The type of the workflow context provider.</typeparam>
     /// <returns></returns>
-    public static SetWorkflowContextParameter For<T>(Func<ExpressionExecutionContext, object> parameterValue, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) where T : IWorkflowContextProvider
+    public static SetWorkflowContextParameter For<T>(Func<ExpressionExecutionContext, object> parameterValue, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) where T : IWorkflowContextProvider
     {
         return new SetWorkflowContextParameter(source, line)
         {
@@ -85,19 +85,19 @@ public class SetWorkflowContextParameter : CodeActivity
         UIHint = "workflow-context-provider-picker",
         Description = "The type of the workflow context provider."
     )]
-    public Input<Type> ProviderType { get; set; } = default!;
+    public Input<Type> ProviderType { get; set; } = null!;
     
     /// <summary>
     /// The name of the parameter to set. If not specified, the parameter name will be inferred from the workflow context provider.
     /// </summary>
     [Input(Description = "Optional. The name of the parameter to set. If not specified, the parameter name will be inferred from the workflow context provider.")]
-    public Input<string?> ParameterName { get; set; } = default!;
+    public Input<string?> ParameterName { get; set; } = null!;
 
     /// <summary>
     /// The value of the parameter to set.
     /// </summary>
     [Input(Description = "The value of the parameter to set.")]
-    public Input<object> ParameterValue { get; set; } = default!;
+    public Input<object> ParameterValue { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

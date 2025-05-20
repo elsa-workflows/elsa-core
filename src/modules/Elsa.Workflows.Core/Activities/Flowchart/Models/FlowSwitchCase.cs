@@ -51,7 +51,7 @@ public class FlowSwitchCase
     /// <summary>
     /// Gets or sets the label of the case.
     /// </summary>
-    public string Label { get; set; } = default!;
+    public string Label { get; set; } = null!;
     
     /// <summary>
     /// Gets or sets the condition of the case.
