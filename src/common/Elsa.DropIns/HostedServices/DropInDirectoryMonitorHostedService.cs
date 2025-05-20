@@ -120,4 +120,24 @@ public class DropInDirectoryMonitorHostedService : BackgroundService
         }
         return Task.CompletedTask;
     }
+
+    /// <inheritdoc />
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        _watcher.EnableRaisingEvents = false;
+        _watcher.Changed -= OnChanged;
+        _watcher.Deleted -= OnDeleted;
+
+        await base.StopAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public override void Dispose()
+    {
+        _watcher.Changed -= OnChanged;
+        _watcher.Deleted -= OnDeleted;
+        _watcher.Dispose();
+
+        base.Dispose();
+    }
 }
