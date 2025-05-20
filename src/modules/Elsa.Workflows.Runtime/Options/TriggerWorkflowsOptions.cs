@@ -3,6 +3,7 @@ namespace Elsa.Workflows.Runtime.Options;
 /// <summary>
 /// Options for triggering workflows.
 /// </summary>
+[Obsolete("This type is obsolete. Use the new CreateClientAsync methods of IWorkflowRuntime instead.")]
 public class TriggerWorkflowsOptions
 {
     public string? CorrelationId { get; set; }

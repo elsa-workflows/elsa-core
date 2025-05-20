@@ -1,8 +1,12 @@
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
+/// <summary>
 /// Computes a hash for a given activity type name and bookmark payload.
+/// </summary>
 public interface IStimulusHasher
 {
+    /// <summary>
     /// Produces a hash from the specified activity type name, payload and activity instance ID.
-    string Hash(string activityTypeName, object? payload = null, string? activityInstanceId = null);
+    /// </summary>
+    string Hash(string stimulusName, object? payload = null, string? activityInstanceId = null);
 }

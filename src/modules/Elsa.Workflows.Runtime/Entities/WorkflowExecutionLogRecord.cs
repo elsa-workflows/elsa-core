@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Common.Entities;
 
 namespace Elsa.Workflows.Runtime.Entities;
@@ -11,27 +11,27 @@ public class WorkflowExecutionLogRecord : Entity, ILogRecord
     /// <summary>
     /// The ID of the workflow definition.
     /// </summary>
-    public string WorkflowDefinitionId { get; set; } = default!;
+    public string WorkflowDefinitionId { get; set; } = null!;
     
     /// <summary>
     /// The version ID of the workflow definition.
     /// </summary>
-    public string WorkflowDefinitionVersionId { get; set; } = default!;
+    public string WorkflowDefinitionVersionId { get; set; } = null!;
     
     /// <summary>
     /// The ID of the workflow instance.
     /// </summary>
-    public string WorkflowInstanceId { get; set; } = default!;
+    public string WorkflowInstanceId { get; set; } = null!;
     
     /// <summary>
     /// The version of the workflow definition.
     /// </summary>
-    public int WorkflowVersion { get; init; }
+    public int WorkflowVersion { get; set; }
     
     /// <summary>
     /// The ID of the activity instance.
     /// </summary>
-    public string ActivityInstanceId { get; set; } = default!;
+    public string ActivityInstanceId { get; set; } = null!;
     
     /// <summary>
     /// The ID of the parent activity instance.
@@ -41,12 +41,12 @@ public class WorkflowExecutionLogRecord : Entity, ILogRecord
     /// <summary>
     /// The ID of the activity.
     /// </summary>
-    public string ActivityId { get; set; } = default!;
+    public string ActivityId { get; set; } = null!;
     
     /// <summary>
     /// The type of the activity.
     /// </summary>
-    public string ActivityType { get; set; } = default!;
+    public string ActivityType { get; set; } = null!;
 
     /// <summary>
     /// The version of the activity type.
@@ -61,7 +61,7 @@ public class WorkflowExecutionLogRecord : Entity, ILogRecord
     /// <summary>
     /// The unique ID of the node within the workflow graph.
     /// </summary>
-    public string ActivityNodeId { get; set; } = default!;
+    public string ActivityNodeId { get; set; } = null!;
 
     /// <summary>
     /// The time stamp of the log entry.
@@ -91,6 +91,7 @@ public class WorkflowExecutionLogRecord : Entity, ILogRecord
     /// <summary>
     /// The state of the activity at the time of the log entry.
     /// </summary>
+    [Obsolete("Look at the ActivityExecutionRecord.ActivityState property instead.")]
     public IDictionary<string, object>? ActivityState { get; set; }
     
     /// <summary>

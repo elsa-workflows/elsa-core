@@ -10,6 +10,11 @@ namespace Elsa.Common.Services;
 public class MemoryStore<TEntity>
 {
     private IDictionary<string, TEntity> Entities { get; set; } = new ConcurrentDictionary<string, TEntity>();
+    
+    /// <summary>
+    /// Gets a queryable of all entities.
+    /// </summary>
+    public IQueryable<TEntity> Queryable => Entities.Values.AsQueryable();
 
     /// <summary>
     /// Adds an entity.

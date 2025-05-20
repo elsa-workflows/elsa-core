@@ -1,4 +1,3 @@
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.KeyValues.Entities;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -14,30 +13,50 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     public RuntimeElsaDbContext(DbContextOptions<RuntimeElsaDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
     {
     }
+
+    #region Obsolete
+
+    /// <summary>
+    /// The workflow inbox messages.
+    /// </summary>
+    [Obsolete("Use BookmarkQueueItems instead.")]
+    public DbSet<WorkflowInboxMessage> WorkflowInboxMessages { get; set; } = null!;
+
+    #endregion
     
+    /// <summary>
     /// The workflow triggers.
-    public DbSet<StoredTrigger> Triggers { get; set; } = default!;
+    /// </summary>
+    public DbSet<StoredTrigger> Triggers { get; set; } = null!;
     
+    /// <summary>
     /// The workflow execution log records.
-    public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
+    /// </summary>
+    public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = null!;
     
+    /// <summary>
     /// The activity execution records.
-    public DbSet<ActivityExecutionRecord> ActivityExecutionRecords { get; set; } = default!;
+    /// </summary>
+    public DbSet<ActivityExecutionRecord> ActivityExecutionRecords { get; set; } = null!;
     
+    /// <summary>
     /// The workflow bookmarks.
-    public DbSet<StoredBookmark> Bookmarks { get; set; } = default!;
+    /// </summary>
+    public DbSet<StoredBookmark> Bookmarks { get; set; } = null!;
     
+    /// <summary>
     /// The bookmark queue items.
-    public DbSet<BookmarkQueueItem> BookmarkQueueItems { get; set; } = default!;
+    /// </summary>
+    public DbSet<BookmarkQueueItem> BookmarkQueueItems { get; set; } = null!;
     
+    /// <summary>
     /// The generic key value pairs.
-    public DbSet<SerializedKeyValuePair> KeyValuePairs { get; set; } = default!;
+    /// </summary>
+    public DbSet<SerializedKeyValuePair> KeyValuePairs { get; set; } = null!;
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
-        
         var config = new Configurations();
         modelBuilder.ApplyConfiguration<StoredTrigger>(config);
         modelBuilder.ApplyConfiguration<WorkflowExecutionLogRecord>(config);
@@ -45,5 +64,8 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<StoredBookmark>(config);
         modelBuilder.ApplyConfiguration<BookmarkQueueItem>(config);
         modelBuilder.ApplyConfiguration<SerializedKeyValuePair>(config);
+        modelBuilder.ApplyConfiguration<WorkflowInboxMessage>(config);
+        
+        base.OnModelCreating(modelBuilder);
     }
 }

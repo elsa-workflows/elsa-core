@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
@@ -25,7 +24,7 @@ public class Tests
         var model = new VariablesContainer(variables);
         
         // Create a typed variable.
-        var variable = new Variable<bool>();
+        var variable = new Variable<bool>("Variable", false);
         
         // Add variable to collection.
         variables.Add(variable);

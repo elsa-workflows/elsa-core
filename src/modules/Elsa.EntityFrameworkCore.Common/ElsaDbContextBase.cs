@@ -1,10 +1,11 @@
 using Elsa.Common.Entities;
-using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.Common.Multitenancy;
+using Elsa.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.EntityFrameworkCore.Common;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// An optional base class to implement with some opinions on certain converters to install for certain DB providers.
@@ -16,8 +17,9 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         EntityState.Added,
         EntityState.Modified,
     };
-    
-    protected readonly IServiceProvider ServiceProvider;
+
+    protected IServiceProvider ServiceProvider { get; }
+    private readonly ElsaDbContextOptions? _elsaDbContextOptions;
     public string? TenantId { get; set; }
 
     /// <summary>
@@ -39,12 +41,18 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     protected ElsaDbContextBase(DbContextOptions options, IServiceProvider serviceProvider) : base(options)
     {
         ServiceProvider = serviceProvider;
-        var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
-
+        _elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
+        
         // ReSharper disable once VirtualMemberCallInConstructor
-        Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
+        Schema = !string.IsNullOrWhiteSpace(_elsaDbContextOptions?.SchemaName) ? _elsaDbContextOptions.SchemaName : ElsaSchema;
+
+        var tenantAccessor = serviceProvider.GetService<ITenantAccessor>();
+        var tenantId = tenantAccessor?.Tenant?.Id;
+
+        if (!string.IsNullOrWhiteSpace(tenantId))
+            TenantId = tenantId.NullIfEmpty();
     }
-    
+
     /// <inheritdoc/>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -55,26 +63,27 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        if (!string.IsNullOrWhiteSpace(Schema))
-        {
-            if (!Database.IsSqlite())
-                modelBuilder.HasDefaultSchema(Schema);
-        }
-        
-        var entityTypeHandlers = ServiceProvider.GetServices<IEntityModelCreatingHandler>().ToList();
+        if (!string.IsNullOrWhiteSpace(Schema)) 
+            modelBuilder.HasDefaultSchema(Schema);
 
-        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        var additionalConfigurations = _elsaDbContextOptions?.GetModelConfigurations(this);
+        
+        additionalConfigurations?.Invoke(modelBuilder);
+
+        using var scope = ServiceProvider.CreateScope();
+        var entityTypeHandlers = scope.ServiceProvider.GetServices<IEntityModelCreatingHandler>().ToList();
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
         {
-            foreach (var handler in entityTypeHandlers)
-            {
+            foreach (var handler in entityTypeHandlers) 
                 handler.Handle(this, modelBuilder, entityType);
-            }
         }
     }
-    
+
     private async Task OnBeforeSavingAsync(CancellationToken cancellationToken)
     {
-        var handlers = ServiceProvider.GetServices<IEntitySavingHandler>().ToList();
+        using var scope = ServiceProvider.CreateScope();
+        var handlers = scope.ServiceProvider.GetServices<IEntitySavingHandler>().ToList();
         foreach (var entry in ChangeTracker.Entries().Where(IsModifiedEntity))
         {
             foreach (var handler in handlers)

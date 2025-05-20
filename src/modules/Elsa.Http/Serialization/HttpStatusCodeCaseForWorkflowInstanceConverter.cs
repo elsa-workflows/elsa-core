@@ -1,10 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Http.Models;
 
 namespace Elsa.Http.Serialization;
 
+/// <summary>
 /// A custom JSON converter for <see cref="HttpStatusCodeCase"/> objects when serializing workflow states.
+/// </summary>
 public class HttpStatusCodeCaseForWorkflowInstanceConverter : JsonConverter<HttpStatusCodeCase>
 {
     /// <inheritdoc />

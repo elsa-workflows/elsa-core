@@ -5,33 +5,18 @@ using System.Reflection;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;
 using Humanizer;
+using Container = Elsa.Workflows.Activities.Container;
 
 namespace Elsa.Workflows;
 
 /// <inheritdoc />
-public class ActivityDescriber : IActivityDescriber
+public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolver, IActivityFactory activityFactory, IPropertyUIHandlerResolver propertyUIHandlerResolver) : IActivityDescriber
 {
-    //private readonly IPropertyOptionsResolver _optionsResolver;
-    private readonly IPropertyDefaultValueResolver _defaultValueResolver;
-    private readonly IActivityFactory _activityFactory;
-    private readonly IPropertyUIHandlerResolver _propertyUIHandlerResolver;
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolver, IActivityFactory activityFactory, IPropertyUIHandlerResolver propertyUIHandlerResolver)
-    {
-        //_optionsResolver = optionsResolver;
-        _defaultValueResolver = defaultValueResolver;
-        _activityFactory = activityFactory;
-        _propertyUIHandlerResolver = propertyUIHandlerResolver;
-    }
-
     /// <inheritdoc />
     public async Task<ActivityDescriptor> DescribeActivityAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default)
     {
@@ -91,14 +76,18 @@ public class ActivityDescriber : IActivityDescriber
             Ports = allPorts.ToList(),
             Inputs = (await DescribeInputPropertiesAsync(inputProperties, cancellationToken)).ToList(),
             Outputs = (await DescribeOutputPropertiesAsync(outputProperties, cancellationToken)).ToList(),
-            IsContainer = typeof(IContainer).IsAssignableFrom(activityType),
+            IsContainer = typeof(Container).IsAssignableFrom(activityType),
             IsBrowsable = browsableAttr == null || browsableAttr.Browsable,
             IsStart = isStart,
             IsTerminal = isTerminal,
             Attributes = attributes,
+            CustomProperties =
+            {
+                ["Type"] = activityType
+            },
             Constructor = context =>
             {
-                var activity = _activityFactory.Create(activityType, context);
+                var activity = activityFactory.Create(activityType, context);
                 activity.Type = fullTypeName;
                 return activity;
             }
@@ -158,8 +147,8 @@ public class ActivityDescriber : IActivityDescriber
 
         if (wrappedPropertyType.IsNullableType())
             wrappedPropertyType = wrappedPropertyType.GetTypeOfNullable();
-        
-        var uiSpecification = await _propertyUIHandlerResolver.GetUIPropertiesAsync(propertyInfo, null, cancellationToken);
+
+        var uiSpecification = await propertyUIHandlerResolver.GetUIPropertiesAsync(propertyInfo, null, cancellationToken);
 
         return new InputDescriptor
         (
@@ -173,7 +162,7 @@ public class ActivityDescriber : IActivityDescriber
             descriptionAttribute?.Description ?? inputAttribute?.Description,
             inputAttribute?.Category,
             inputAttribute?.Order ?? 0,
-            _defaultValueResolver.GetDefaultValue(propertyInfo),
+            defaultValueResolver.GetDefaultValue(propertyInfo),
             inputAttribute?.DefaultSyntax,
             inputAttribute?.IsReadOnly ?? false,
             inputAttribute?.IsBrowsable ?? true,
@@ -198,7 +187,7 @@ public class ActivityDescriber : IActivityDescriber
     {
         return await DescribeOutputPropertiesAsync(GetOutputProperties(activityType), cancellationToken);
     }
-    
+
     public static string GetUIHint(Type wrappedPropertyType, InputAttribute? inputAttribute = null)
     {
         if (inputAttribute?.UIHint != null)

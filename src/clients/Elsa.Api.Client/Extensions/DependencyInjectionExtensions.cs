@@ -2,11 +2,16 @@ using Elsa.Api.Client.Options;
 using Elsa.Api.Client.Resources.ActivityDescriptorOptions.Contracts;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
 using Elsa.Api.Client.Resources.ActivityExecutions.Contracts;
+using Elsa.Api.Client.Resources.Alterations.Contracts;
+using Elsa.Api.Client.Resources.CommitStrategies.Contracts;
 using Elsa.Api.Client.Resources.Features.Contracts;
 using Elsa.Api.Client.Resources.Identity.Contracts;
 using Elsa.Api.Client.Resources.IncidentStrategies.Contracts;
+using Elsa.Api.Client.Resources.LogPersistenceStrategies;
+using Elsa.Api.Client.Resources.ResilienceStrategies.Contracts;
 using Elsa.Api.Client.Resources.Scripting.Contracts;
 using Elsa.Api.Client.Resources.StorageDrivers.Contracts;
+using Elsa.Api.Client.Resources.Tasks.Contracts;
 using Elsa.Api.Client.Resources.VariableTypes.Contracts;
 using Elsa.Api.Client.Resources.WorkflowActivationStrategies.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
@@ -14,17 +19,22 @@ using Elsa.Api.Client.Resources.WorkflowExecutionContexts.Contracts;
 using Elsa.Api.Client.Resources.WorkflowInstances.Contracts;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Refit;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
 namespace Elsa.Api.Client.Extensions;
 
+/// <summary>
 /// Provides extension methods for dependency injection.
+/// </summary>
 [PublicAPI]
 public static class DependencyInjectionExtensions
 {
+    /// <summary>
     /// Adds default Elsa API clients configured to use an API key.
+    /// </summary>
     public static IServiceCollection AddDefaultApiClientsUsingApiKey(this IServiceCollection services, Action<ElsaClientOptions> configureOptions)
     {
         var options = new ElsaClientOptions();
@@ -38,8 +48,10 @@ public static class DependencyInjectionExtensions
         });
     }
 
+    /// <summary>
     /// Adds default Elsa API clients.
-    public static IServiceCollection AddDefaultApiClients(this IServiceCollection services, Action<ElsaClientBuilderOptions> configureClient)
+    /// </summary>
+    public static IServiceCollection AddDefaultApiClients(this IServiceCollection services, Action<ElsaClientBuilderOptions>? configureClient = null)
     {
         return services.AddApiClients(configureClient, builderOptions =>
         {
@@ -63,45 +75,46 @@ public static class DependencyInjectionExtensions
             services.AddApi<IVariableTypesApi>(builderOptions);
             services.AddApi<IWorkflowActivationStrategiesApi>(builderOptions);
             services.AddApi<IIncidentStrategiesApi>(builderOptions);
+            services.AddApi<ILogPersistenceStrategiesApi>(builderOptions);
+            services.AddApi<ICommitStrategiesApi>(builderOptions);
+            services.AddApi<IResilienceStrategiesApi>(builderOptions);
             services.AddApi<ILoginApi>(builderOptions);
             services.AddApi<IFeaturesApi>(builderOptions);
             services.AddApi<IJavaScriptApi>(builderOptions);
             services.AddApi<IExpressionDescriptorsApi>(builderOptions);
             services.AddApi<IWorkflowContextProviderDescriptorsApi>(builderOptions);
+            services.AddApi<IAlterationsApi>(builderOptions);
+            services.AddApi<ITasksApi>(builderOptions);
         });
     }
 
     /// <summary>
     /// Adds an API client to the service collection. Requires AddElsaClient to be called exactly once.
     /// </summary>
-    public static IServiceCollection AddApiClient<T>(this IServiceCollection services, Action<ElsaClientBuilderOptions> configureClient) where T : class
+    public static IServiceCollection AddApiClient<T>(this IServiceCollection services, Action<ElsaClientBuilderOptions>? configureClient = null) where T : class
     {
         return services.AddApiClients(configureClient, builderOptions => services.AddApi<T>(builderOptions));
     }
 
+    /// <summary>
     /// Adds the Elsa client to the service collection.
-    public static IServiceCollection AddApiClients(this IServiceCollection services, Action<ElsaClientBuilderOptions> configureClient, Action<ElsaClientBuilderOptions>? configureServices)
+    /// </summary>
+    public static IServiceCollection AddApiClients(this IServiceCollection services, Action<ElsaClientBuilderOptions>? configureClient = null, Action<ElsaClientBuilderOptions>? configureServices = null)
     {
-        var builderOptionsServiceDescriptor = services.FirstOrDefault(x => x.ServiceType == typeof(ElsaClientBuilderOptions));
+        var builderOptions = new ElsaClientBuilderOptions();
+        configureClient?.Invoke(builderOptions);
+        builderOptions.ConfigureHttpClientBuilder += builder => builder.AddHttpMessageHandler(sp => (DelegatingHandler)sp.GetRequiredService(builderOptions.AuthenticationHandler));
 
-        if (builderOptionsServiceDescriptor == null)
+        services.TryAddScoped(builderOptions.AuthenticationHandler);
+
+        services.Configure<ElsaClientOptions>(options =>
         {
-            var builderOptions = new ElsaClientBuilderOptions();
-            configureClient.Invoke(builderOptions);
-            builderOptions.ConfigureHttpClientBuilder += builder => builder.AddHttpMessageHandler(sp => (DelegatingHandler)sp.GetRequiredService(builderOptions.AuthenticationHandler));
+            options.BaseAddress = builderOptions.BaseAddress;
+            options.ConfigureHttpClient = builderOptions.ConfigureHttpClient;
+            options.ApiKey = builderOptions.ApiKey;
+        });
 
-            services.AddScoped(builderOptions.AuthenticationHandler);
-
-            services.Configure<ElsaClientOptions>(options =>
-            {
-                options.BaseAddress = builderOptions.BaseAddress;
-                options.ConfigureHttpClient = builderOptions.ConfigureHttpClient;
-                options.ApiKey = builderOptions.ApiKey;
-            });
-
-            configureServices?.Invoke(builderOptions);
-        }
-
+        configureServices?.Invoke(builderOptions);
         return services;
     }
 
@@ -124,7 +137,7 @@ public static class DependencyInjectionExtensions
     /// <param name="httpClientBuilderOptions">An options object that can be used to configure the HTTP client builder.</param>
     public static IServiceCollection AddApi(this IServiceCollection services, Type apiType, ElsaClientBuilderOptions? httpClientBuilderOptions = default)
     {
-        var builder = services.AddRefitClient(apiType, _ => CreateRefitSettings(), apiType.Name).ConfigureHttpClient(ConfigureElsaApiHttpClient);
+        var builder = services.AddRefitClient(apiType, sp => CreateRefitSettings(sp, httpClientBuilderOptions?.ConfigureJsonSerializerOptions), apiType.Name).ConfigureHttpClient(ConfigureElsaApiHttpClient);
         httpClientBuilderOptions?.ConfigureHttpClientBuilder(builder);
         httpClientBuilderOptions?.ConfigureRetryPolicy?.Invoke(builder);
         return services;
@@ -139,12 +152,14 @@ public static class DependencyInjectionExtensions
     public static void AddApiWithoutRetryPolicy<T>(this IServiceCollection services, ElsaClientBuilderOptions? httpClientBuilderOptions = default) where T : class
     {
         var builder = services
-            .AddRefitClient<T>(_ => CreateRefitSettings(), typeof(T).Name)
+            .AddRefitClient<T>(sp => CreateRefitSettings(sp), typeof(T).Name)
             .ConfigureHttpClient(ConfigureElsaApiHttpClient);
         httpClientBuilderOptions?.ConfigureHttpClientBuilder(builder);
     }
 
+    /// <summary>
     /// Creates an API client for the specified API type.
+    /// </summary>
     public static T CreateApi<T>(this IServiceProvider serviceProvider, Uri baseAddress) where T : class
     {
         var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
@@ -153,10 +168,12 @@ public static class DependencyInjectionExtensions
         return CreateApi<T>(serviceProvider, httpClient);
     }
 
+    /// <summary>
     /// Creates an API client for the specified API type.
+    /// </summary>
     public static T CreateApi<T>(this IServiceProvider serviceProvider, HttpClient httpClient) where T : class
     {
-        return RestService.For<T>(httpClient, CreateRefitSettings());
+        return RestService.For<T>(httpClient, CreateRefitSettings(serviceProvider));
     }
 
     private static void ConfigureElsaApiHttpClient(IServiceProvider serviceProvider, HttpClient httpClient)

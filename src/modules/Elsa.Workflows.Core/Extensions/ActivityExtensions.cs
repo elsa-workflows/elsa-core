@@ -3,7 +3,6 @@ using System.Reflection;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
@@ -65,7 +64,7 @@ public static class ActivityExtensions
     /// <param name="context">The activity execution context.</param>
     /// <param name="outputName">Name of the output.</param>
     /// <returns>The output value.</returns>
-    public static object? GetOutput(this IActivity activity, ActivityExecutionContext context, string? outputName = default)
+    public static object? GetOutput(this IActivity activity, ActivityExecutionContext context, string? outputName = null)
     {
         var workflowExecutionContext = context.WorkflowExecutionContext;
         var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
@@ -85,7 +84,7 @@ public static class ActivityExtensions
     /// <param name="context">The expression execution context.</param>
     /// <param name="outputName">Name of the output.</param>
     /// <returns>The output value.</returns>
-    public static object? GetOutput(this IActivity activity, ExpressionExecutionContext context, string? outputName = default)
+    public static object? GetOutput(this IActivity activity, ExpressionExecutionContext context, string? outputName = null)
     {
         var activityExecutionContext = context.GetActivityExecutionContext();
 

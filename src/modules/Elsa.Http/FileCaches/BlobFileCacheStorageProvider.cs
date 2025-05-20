@@ -1,4 +1,3 @@
-using Elsa.Http.Contracts;
 using FluentStorage.Blobs;
 
 namespace Elsa.Http.FileCaches;

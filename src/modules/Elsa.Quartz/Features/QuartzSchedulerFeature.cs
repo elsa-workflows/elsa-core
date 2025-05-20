@@ -1,12 +1,14 @@
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Quartz.Contracts;
 using Elsa.Quartz.Handlers;
-using Elsa.Quartz.Jobs;
 using Elsa.Quartz.Services;
+using Elsa.Quartz.Tasks;
 using Elsa.Scheduling;
 using Elsa.Scheduling.Features;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 
@@ -16,13 +18,8 @@ namespace Elsa.Quartz.Features;
 /// A feature that installs Quartz.NET implementations for <see cref="IWorkflowScheduler"/>.
 /// </summary>
 [DependsOn(typeof(SchedulingFeature))]
-public class QuartzSchedulerFeature : FeatureBase
+public class QuartzSchedulerFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public QuartzSchedulerFeature(IModule module) : base(module)
-    {
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -39,11 +36,12 @@ public class QuartzSchedulerFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSingleton<IActivityDescriptorModifier, CronActivityDescriptorModifier>();
-        Services.AddScoped<QuartzWorkflowScheduler>();
-        Services.AddScoped<QuartzCronParser>();
-        Services.AddQuartz(quartz => quartz
-            .AddJob<RunWorkflowJob>(job => job.WithIdentity(RunWorkflowJob.JobKey).StoreDurably())
-            .AddJob<ResumeWorkflowJob>(job => job.WithIdentity(ResumeWorkflowJob.JobKey).StoreDurably()));
+        Services
+            .AddSingleton<IActivityDescriptorModifier, CronActivityDescriptorModifier>()
+            .AddSingleton<QuartzCronParser>()
+            .AddScoped<QuartzWorkflowScheduler>()
+            .AddScoped<IJobKeyProvider, JobKeyProvider>()
+            .AddStartupTask<RegisterJobsTask>()
+            .AddQuartz();
     }
 }

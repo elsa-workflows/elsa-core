@@ -8,7 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Features;
 
+/// <summary>
 /// Installs and configures workflow runtime caching features.
+/// </summary>
 [DependsOn(typeof(MemoryCacheFeature))]
 public class CachingWorkflowRuntimeFeature : FeatureBase
 {

@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Elsa.Common.Serialization;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.Workflows.Serialization.Serializers;
@@ -11,9 +10,8 @@ public class ApiSerializer : ConfigurableSerializer, IApiSerializer
     /// <summary>
     /// Initializes a new instance of the <see cref="ApiSerializer"/> class.
     /// </summary>
-    public ApiSerializer(IServiceProvider serviceProvider) : base(serviceProvider)
-    {
-    }
+    public ApiSerializer(IServiceProvider serviceProvider)
+        : base(serviceProvider) { }
 
     /// <inheritdoc />
     public string Serialize(object model)
@@ -42,6 +40,7 @@ public class ApiSerializer : ConfigurableSerializer, IApiSerializer
     protected override void AddConverters(JsonSerializerOptions options)
     {
         options.Converters.Add(CreateInstance<TypeJsonConverter>());
+        options.Converters.Add(CreateInstance<FuncExpressionValueConverter>());
     }
 
     JsonSerializerOptions IApiSerializer.GetOptions() => GetOptions();

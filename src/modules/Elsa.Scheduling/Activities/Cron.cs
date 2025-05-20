@@ -14,17 +14,17 @@ namespace Elsa.Scheduling.Activities;
 public class Cron : EventGenerator
 {
     /// <inheritdoc />
-    public Cron([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Cron([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public Cron(string cronExpression, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Input<string>(cronExpression), source, line)
+    public Cron(string cronExpression, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(new Input<string>(cronExpression), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Cron(Input<string> cronExpression, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public Cron(Input<string> cronExpression, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         CronExpression = cronExpression;
     }
@@ -33,7 +33,7 @@ public class Cron : EventGenerator
     /// The interval at which the timer should execute.
     /// </summary>
     [Input(Description = "The CRON expression at which the timer should execute.")]
-    public Input<string> CronExpression { get; set; } = default!;
+    public Input<string> CronExpression { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -62,5 +62,5 @@ public class Cron : EventGenerator
     /// <summary>
     /// Creates a new <see cref="Cron"/> activity set to trigger at the specified cron expression.
     /// </summary>
-    public static Cron FromCronExpression(string value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(value, source, line);
+    public static Cron FromCronExpression(string value, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) => new(value, source, line);
 }

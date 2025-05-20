@@ -31,5 +31,5 @@ public class OrderDefinition<T, TProp>
     /// <summary>
     /// The key selector to use to order the results.
     /// </summary>
-    public Expression<Func<T, TProp>> KeySelector { get; set; } = default!;
+    public Expression<Func<T, TProp>> KeySelector { get; set; } = null!;
 }

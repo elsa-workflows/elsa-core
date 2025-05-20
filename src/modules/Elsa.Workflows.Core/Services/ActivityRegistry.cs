@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
@@ -25,7 +24,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     }
 
     /// <inheritdoc />
-    public IEnumerable<ActivityDescriptor> ListAll() => _activityDescriptors.Values;
+    public IEnumerable<ActivityDescriptor> ListAll() => _activityDescriptors.Values.DistinctBy(x => x.TypeName);
 
     /// <inheritdoc />
     public IEnumerable<ActivityDescriptor> ListByProvider(Type providerType) => _providedActivityDescriptors.TryGetValue(providerType, out var descriptors) ? descriptors : ArraySegment<ActivityDescriptor>.Empty;
@@ -57,7 +56,9 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
             return;
 
         var activityDescriptor = await activityDescriber.DescribeActivityAsync(activityType, cancellationToken);
-        Add(GetType(), activityDescriptor);
+
+
+        Add(activityDescriptor, _activityDescriptors, _manualActivityDescriptors);
         _manualActivityDescriptors.Add(activityDescriptor);
     }
 
@@ -67,7 +68,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         foreach (var activityType in activityTypes)
             await RegisterAsync(activityType, cancellationToken);
     }
-    
+
     /// <inheritdoc />
     public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default) => new(_manualActivityDescriptors);
 
@@ -75,8 +76,8 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     public async Task RefreshDescriptorsAsync(IEnumerable<IActivityProvider> activityProviders, CancellationToken cancellationToken = default)
     {
         var providersDictionary = new ConcurrentDictionary<Type, ICollection<ActivityDescriptor>>();
-        var activityDescriptors = new ConcurrentDictionary<(string Type, int Version), ActivityDescriptor>();
-        foreach (IActivityProvider activityProvider in activityProviders)
+        var activityDescriptors = new ConcurrentDictionary<(string Type, int Version), ActivityDescriptor>(_activityDescriptors);
+        foreach (var activityProvider in activityProviders)
         {
             var descriptors = (await activityProvider.GetDescriptorsAsync(cancellationToken)).ToList();
             var providerDescriptors = new List<ActivityDescriptor>();
@@ -86,11 +87,26 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
                 Add(descriptor, activityDescriptors, providerDescriptors);
             }
         }
-        
+
         Interlocked.Exchange(ref _activityDescriptors, activityDescriptors);
         Interlocked.Exchange(ref _providedActivityDescriptors, providersDictionary);
     }
-    
+
+    public async Task RefreshDescriptorsAsync(IActivityProvider activityProvider, CancellationToken cancellationToken = default)
+    {
+        var providersDictionary = new ConcurrentDictionary<Type, ICollection<ActivityDescriptor>>(_providedActivityDescriptors);
+        var activityDescriptors = new ConcurrentDictionary<(string Type, int Version), ActivityDescriptor>(_activityDescriptors);
+        var descriptors = (await activityProvider.GetDescriptorsAsync(cancellationToken)).ToList();
+        var providerDescriptors = new List<ActivityDescriptor>();
+        providersDictionary[activityProvider.GetType()] = providerDescriptors;
+
+        foreach (var descriptor in descriptors)
+            Add(descriptor, activityDescriptors, providerDescriptors);
+
+        Interlocked.Exchange(ref _activityDescriptors, activityDescriptors);
+        Interlocked.Exchange(ref _providedActivityDescriptors, providersDictionary);
+    }
+
     private void Add(ActivityDescriptor descriptor, ICollection<ActivityDescriptor> target)
     {
         Add(descriptor, _activityDescriptors, target);
@@ -103,7 +119,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
             logger.LogError("Unable to add a null descriptor");
             return;
         }
-        
+
         foreach (var modifier in modifiers)
             modifier.Modify(descriptor);
 
@@ -121,13 +137,31 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         providerDescriptors.Add(descriptor);
     }
 
+    /// <inheritdoc />
+    public void Clear()
+    {
+        _activityDescriptors.Clear();
+        _providedActivityDescriptors.Clear();
+    }
+
+    /// <inheritdoc />
+    public void ClearProvider(Type providerType)
+    {
+        var descriptors = ListByProvider(providerType).ToList();
+
+        foreach (var descriptor in descriptors)
+            _activityDescriptors.Remove((descriptor.TypeName, descriptor.Version), out _);
+
+        _providedActivityDescriptors.Remove(providerType, out _);
+    }
+
     private ICollection<ActivityDescriptor> GetOrCreateDescriptors(Type provider)
     {
         if (_providedActivityDescriptors.TryGetValue(provider, out var descriptors))
             return descriptors;
 
         descriptors = new List<ActivityDescriptor>();
-        _providedActivityDescriptors[provider]= descriptors;
+        _providedActivityDescriptors[provider] = descriptors;
 
         return descriptors;
     }

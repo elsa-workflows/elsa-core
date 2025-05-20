@@ -1,6 +1,5 @@
 using Elsa.Http.Abstractions;
 using Elsa.Http.Contexts;
-using Elsa.Http.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Http.DownloadableContentHandlers;

@@ -1,5 +1,4 @@
 using DEDrake;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows;
 

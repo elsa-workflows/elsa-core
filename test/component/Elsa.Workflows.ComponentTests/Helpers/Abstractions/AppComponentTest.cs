@@ -1,6 +1,7 @@
+using Elsa.Workflows.ComponentTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.ComponentTests.Helpers;
+namespace Elsa.Workflows.ComponentTests.Abstractions;
 
 [Collection(nameof(AppCollection))]
 public abstract class AppComponentTest(App app) : IDisposable
@@ -12,7 +13,9 @@ public abstract class AppComponentTest(App app) : IDisposable
 
     void IDisposable.Dispose()
     {
-        Scope.Dispose();
+        // Disposing the Scope here and in other places where it is created somehow seems to cause the test runner to hang when running other test projects.
+        // Let's comment it out for the time being.
+        //Scope.Dispose();
         OnDispose();
     }
 

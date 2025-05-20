@@ -4,7 +4,7 @@ using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Services;
 using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
@@ -14,7 +14,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Modules.Runtime.Stores;
 
+/// <summary>
 /// A Dapper-based <see cref="IBookmarkQueueStore"/> implementation.
+/// </summary>
 [UsedImplicitly]
 internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IPayloadSerializer payloadSerializer) : IBookmarkQueueStore
 {
@@ -39,9 +41,21 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
         return record != null ? Map(record) : default;
     }
 
+    public async Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
+    {
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
+        return Map(records);
+    }
+
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
         var records = await store.ListAsync(pageArgs, orderBy.KeySelector.GetPropertyName(), orderBy.Direction, cancellationToken);
+        return Map(records);
+    }
+
+    public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
+    {
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, orderBy.KeySelector.GetPropertyName(), orderBy.Direction, cancellationToken);
         return Map(records);
     }
 

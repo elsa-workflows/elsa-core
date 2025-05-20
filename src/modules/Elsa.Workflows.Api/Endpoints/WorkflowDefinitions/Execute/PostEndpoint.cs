@@ -1,4 +1,3 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
@@ -10,10 +9,11 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 /// </summary>
 [PublicAPI]
 internal class PostEndpoint(
-    IWorkflowDefinitionService workflowDefinitionService, 
-    IWorkflowRuntime workflowRuntime, 
-    IApiSerializer apiSerializer) 
-    : EndpointBase<PostRequest>(workflowDefinitionService, workflowRuntime, apiSerializer)
+    IWorkflowDefinitionService workflowDefinitionService,
+    IWorkflowRuntime workflowRuntime,
+    IWorkflowStarter workflowStarter,
+    IApiSerializer apiSerializer)
+    : EndpointBase<PostRequest>(workflowDefinitionService, workflowRuntime, workflowStarter, apiSerializer)
 {
     /// <inheritdoc />
     public override void Configure()

@@ -2,7 +2,6 @@ using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using FluentStorage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +26,7 @@ public class TestApplicationBuilder
     public TestApplicationBuilder(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
-        _services = new ServiceCollection();
+        _services = new();
 
         _services
             .AddSingleton(testOutputHelper)

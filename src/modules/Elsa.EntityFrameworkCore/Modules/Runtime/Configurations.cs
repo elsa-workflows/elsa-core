@@ -14,7 +14,8 @@ public class Configurations :
     IEntityTypeConfiguration<ActivityExecutionRecord>,
     IEntityTypeConfiguration<StoredBookmark>,
     IEntityTypeConfiguration<BookmarkQueueItem>,
-    IEntityTypeConfiguration<SerializedKeyValuePair>
+    IEntityTypeConfiguration<SerializedKeyValuePair>,
+    IEntityTypeConfiguration<WorkflowInboxMessage>
 {
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<ActivityExecutionRecord> builder)
@@ -31,7 +32,6 @@ public class Configurations :
         builder.Property<string>("SerializedOutputs");
         builder.Property<string>("SerializedProperties");
         builder.Property(x => x.Status).HasConversion<string>();
-
         builder.HasIndex(x => x.WorkflowInstanceId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.WorkflowInstanceId)}");
         builder.HasIndex(x => x.ActivityId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.ActivityId)}");
         builder.HasIndex(x => x.ActivityNodeId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.ActivityNodeId)}");
@@ -54,7 +54,6 @@ public class Configurations :
     {
         builder.Ignore(x => x.Options);
         builder.Property<string>("SerializedOptions");
-        builder.HasKey(x => x.Id);
         builder.HasIndex(x => x.StimulusHash, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.StimulusHash)}");
         builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.WorkflowInstanceId)}");
         builder.HasIndex(x => x.CorrelationId, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.CorrelationId)}");
@@ -68,6 +67,7 @@ public class Configurations :
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<SerializedKeyValuePair> builder)
     {
+        builder.HasKey(x => x.Id);
         builder.Ignore(x => x.Key);
         builder.HasIndex(x => x.TenantId, $"IX_{nameof(SerializedKeyValuePair)}_{nameof(SerializedKeyValuePair.TenantId)}");
     }
@@ -77,10 +77,11 @@ public class Configurations :
     {
         builder.Ignore(x => x.Payload);
         builder.Ignore(x => x.Metadata);
+        builder.HasKey(b => b.Id);
         builder.Property<string>("SerializedPayload");
         builder.Property<string>("SerializedMetadata");
-        builder.HasKey(x => x.Id);
         builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}");
+        builder.HasIndex(x => x.Name, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.Name)}");
         builder.HasIndex(x => x.Hash, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.Hash)}");
         builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.WorkflowInstanceId)}");
         builder.HasIndex(x => x.ActivityInstanceId, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityInstanceId)}");
@@ -96,6 +97,17 @@ public class Configurations :
                 x.Hash,
                 x.WorkflowInstanceId
             }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}_{nameof(StoredBookmark.Hash)}_{nameof(StoredBookmark.WorkflowInstanceId)}");
+        builder.HasIndex(x => new
+            {
+                ActivityTypeName = x.Name,
+                x.Hash
+            }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.Name)}_{nameof(StoredBookmark.Hash)}");
+        builder.HasIndex(x => new
+            {
+                ActivityTypeName = x.Name,
+                x.Hash,
+                x.WorkflowInstanceId
+            }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.Name)}_{nameof(StoredBookmark.Hash)}_{nameof(StoredBookmark.WorkflowInstanceId)}");
         builder.HasIndex(x => x.TenantId, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.TenantId)}");
     }
 
@@ -118,7 +130,6 @@ public class Configurations :
         builder.Ignore(x => x.Payload);
         builder.Property<string>("SerializedActivityState");
         builder.Property<string>("SerializedPayload");
-
         builder.HasIndex(x => x.Timestamp).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.Timestamp)}");
         builder.HasIndex(x => x.Sequence).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.Sequence)}");
         builder.HasIndex(x => new
@@ -144,5 +155,20 @@ public class Configurations :
         builder.HasIndex(x => x.WorkflowInstanceId).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.WorkflowInstanceId)}");
         builder.HasIndex(x => x.WorkflowVersion).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.WorkflowVersion)}");
         builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.TenantId)}");
+    }
+    
+    public void Configure(EntityTypeBuilder<WorkflowInboxMessage> builder)
+    {
+        builder.Ignore(x => x.Input);
+        builder.Ignore(x => x.BookmarkPayload);
+        builder.Property<string>("SerializedInput");
+        builder.Property<string>("SerializedBookmarkPayload");
+        builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ActivityTypeName)}");
+        builder.HasIndex(x => x.Hash, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.Hash)}");
+        builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.WorkflowInstanceId)}");
+        builder.HasIndex(x => x.CorrelationId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.CorrelationId)}");
+        builder.HasIndex(x => x.ActivityInstanceId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ActivityInstanceId)}");
+        builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.CreatedAt)}");
+        builder.HasIndex(x => x.ExpiresAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ExpiresAt)}");
     }
 }

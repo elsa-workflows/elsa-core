@@ -1,11 +1,13 @@
+using System.Linq.Expressions;
 using Dapper;
-using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Records;
+using Elsa.Extensions;
 using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Services;
@@ -14,7 +16,7 @@ namespace Elsa.Dapper.Services;
 /// Provides a generic store using Dapper.
 /// </summary>
 [PublicAPI]
-public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolver tenantResolver, string tableName, string primaryKey = "Id")
+public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccessor tenantAccessor, string tableName, string primaryKey = "Id")
     where T : notnull
 {
     /// <summary>
@@ -75,7 +77,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     public async Task<T?> FindAsync(Action<ParameterizedQuery> filter, string? orderKey = null, OrderDirection? orderDirection = null, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
         var query = dbConnectionProvider.CreateQuery().From(TableName);
-        await ApplyTenantFilterAsync(query, tenantAgnostic, cancellationToken);
+        ApplyTenantFilter(query, tenantAgnostic);
         filter(query);
 
         if (orderKey != null && orderDirection != null)
@@ -215,7 +217,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery>? filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, bool tenantAgnostic, CancellationToken cancellationToken = default)
     {
         var query = dbConnectionProvider.CreateQuery().From(TableName);
-        await ApplyTenantFilterAsync(query, tenantAgnostic, cancellationToken);
+        ApplyTenantFilter(query, tenantAgnostic);
         filter?.Invoke(query);
         query = query.OrderBy(orderFields.ToArray()).Page(pageArgs);
 
@@ -275,7 +277,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     {
         using var connection = dbConnectionProvider.GetConnection();
         var query = dbConnectionProvider.CreateQuery().From(TableName);
-        await ApplyTenantFilterAsync(query, tenantAgnostic, cancellationToken);
+        ApplyTenantFilter(query, tenantAgnostic);
         filter(query);
         return await query.QueryAsync<TShape>(connection);
     }
@@ -333,7 +335,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     {
         using var connection = dbConnectionProvider.GetConnection();
         var query = dbConnectionProvider.CreateQuery().From(TableName);
-        await ApplyTenantFilterAsync(query, tenantAgnostic, cancellationToken);
+        ApplyTenantFilter(query, tenantAgnostic);
         filter(query);
         query = query.OrderBy(orderKey, orderDirection);
         return await query.QueryAsync<TShape>(connection);
@@ -347,7 +349,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     public async Task SaveAsync(T record, CancellationToken cancellationToken = default)
     {
         using var connection = dbConnectionProvider.GetConnection();
-        await SetTenantIdAsync(record, cancellationToken);
+        SetTenantId(record);
         var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Upsert(TableName, PrimaryKey, record);
         await query.ExecuteAsync(connection);
     }
@@ -370,7 +372,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
         foreach (var record in recordsList)
         {
             var index = currentIndex;
-            await SetTenantIdAsync(record, cancellationToken);
+            SetTenantId(record);
             query.Upsert(TableName, PrimaryKey, record, field => $"{field}_{index}");
             currentIndex++;
         }
@@ -387,7 +389,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     public async Task AddAsync(T record, CancellationToken cancellationToken = default)
     {
         using var connection = dbConnectionProvider.GetConnection();
-        await SetTenantIdAsync(record, cancellationToken);
+        SetTenantId(record);
         var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Insert(TableName, record);
         await query.ExecuteAsync(connection);
     }
@@ -410,6 +412,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
         foreach (var record in recordsList)
         {
             var index = currentIndex;
+            SetTenantId(record);
             query.Insert(TableName, record, field => $"{field}_{index}");
             currentIndex++;
         }
@@ -426,7 +429,17 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     public async Task UpdateAsync(T record, CancellationToken cancellationToken = default)
     {
         using var connection = dbConnectionProvider.GetConnection();
-        var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Insert(TableName, record);
+        SetTenantId(record);
+        var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Update(TableName, record, PrimaryKey);
+        await query.ExecuteAsync(connection);
+    }
+    
+    public async Task UpdateAsync(T record, Expression<Func<T, object>>[] props, CancellationToken cancellationToken = default)
+    {
+        using var connection = dbConnectionProvider.GetConnection();
+        SetTenantId(record);
+        var fields = props.Select(x => x.GetPropertyName()).ToArray();
+        var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Update(TableName, record, PrimaryKey, fields);
         await query.ExecuteAsync(connection);
     }
 
@@ -439,13 +452,13 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     public async Task<long> DeleteAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
         var query = dbConnectionProvider.CreateQuery().Delete(TableName);
+        filter(query);
 
         // If there are no conditions, we don't want to delete all records.
         if (!query.Parameters.ParameterNames.Any())
             return 0;
 
-        await ApplyTenantFilterAsync(query, false, cancellationToken);
-        filter(query);
+        ApplyTenantFilter(query);
 
         using var connection = dbConnectionProvider.GetConnection();
         return await query.ExecuteAsync(connection);
@@ -463,13 +476,13 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     public async Task<long> DeleteAsync(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, string primaryKey = "Id", CancellationToken cancellationToken = default)
     {
         var selectQuery = dbConnectionProvider.CreateQuery().From(TableName, primaryKey);
+        filter(selectQuery);
 
         // If there are no conditions, we don't want to delete all records.
         if (!selectQuery.Parameters.ParameterNames.Any())
             return 0;
 
-        await ApplyTenantFilterAsync(selectQuery, false, cancellationToken);
-        filter(selectQuery);
+        ApplyTenantFilter(selectQuery, false);
         selectQuery = selectQuery.OrderBy(orderFields.ToArray()).Page(pageArgs);
 
         var deleteQuery = dbConnectionProvider.CreateQuery().Delete(TableName, primaryKey, selectQuery);
@@ -486,7 +499,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     public async Task<bool> AnyAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
         var query = dbConnectionProvider.CreateQuery().From(TableName, PrimaryKey);
-        await ApplyTenantFilterAsync(query, false, cancellationToken);
+        ApplyTenantFilter(query, false);
         filter(query);
         using var connection = dbConnectionProvider.GetConnection();
         return await connection.QueryFirstOrDefaultAsync<object>(query.Sql.ToString(), query.Parameters) != null;
@@ -501,28 +514,28 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     public async Task<long> CountAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
         var countQuery = dbConnectionProvider.CreateQuery().Count(TableName);
-        await ApplyTenantFilterAsync(countQuery, false, cancellationToken);
+        ApplyTenantFilter(countQuery, false);
         filter(countQuery);
         using var connection = dbConnectionProvider.GetConnection();
         return await countQuery.SingleAsync<long>(connection);
     }
 
-    private async Task ApplyTenantFilterAsync(ParameterizedQuery query, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    private void ApplyTenantFilter(ParameterizedQuery query, bool tenantAgnostic = false)
     {
         if (tenantAgnostic)
             return;
 
-        var tenant = await tenantResolver.GetTenantAsync(cancellationToken);
+        var tenant = tenantAccessor.Tenant;
         var tenantId = tenant?.Id;
         query.Is(nameof(Record.TenantId), (object?)tenantId ?? DBNull.Value);
     }
 
-    private async Task SetTenantIdAsync(T record, CancellationToken cancellationToken)
+    private void SetTenantId(T record)
     {
         if (record is not Record recordWithTenant)
             return;
 
-        var tenant = await tenantResolver.GetTenantAsync(cancellationToken);
+        var tenant = tenantAccessor.Tenant;
         var tenantId = tenant?.Id;
         recordWithTenant.TenantId = tenantId;
     }

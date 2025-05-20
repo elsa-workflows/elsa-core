@@ -1,4 +1,3 @@
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.KeyValues.Contracts;
 using Elsa.KeyValues.Entities;
 using Elsa.KeyValues.Models;
@@ -6,7 +5,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
+/// <summary>
 /// Entity Framework implementation of the <see cref="IKeyValueStore"/>
+/// </summary>
 [UsedImplicitly]
 public class EFCoreKeyValueStore(Store<RuntimeElsaDbContext, SerializedKeyValuePair> store) : IKeyValueStore
 {

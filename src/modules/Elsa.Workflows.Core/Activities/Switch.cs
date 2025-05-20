@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;

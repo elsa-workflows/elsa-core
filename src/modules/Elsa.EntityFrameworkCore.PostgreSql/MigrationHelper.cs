@@ -1,4 +1,3 @@
-using Elsa.EntityFrameworkCore.Common.Contracts;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.EntityFrameworkCore.PostgreSql;

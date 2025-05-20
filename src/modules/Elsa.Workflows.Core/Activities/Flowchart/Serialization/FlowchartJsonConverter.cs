@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Serialization.Converters;
 
@@ -25,9 +24,9 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
             throw new JsonException("Failed to parse JsonDocument");
 
         var id = doc.RootElement.TryGetProperty("id", out var idAttribute) ? idAttribute.GetString()! : identityGenerator.GenerateId();
-        var nodeId = doc.RootElement.TryGetProperty("nodeId", out var nodeIdAttribute) ? nodeIdAttribute.GetString() : default;
-        var name = doc.RootElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : default;
-        var type = doc.RootElement.TryGetProperty("type", out var typeElement) ? typeElement.GetString() : default;
+        var nodeId = doc.RootElement.TryGetProperty("nodeId", out var nodeIdAttribute) ? nodeIdAttribute.GetString() : null;
+        var name = doc.RootElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
+        var type = doc.RootElement.TryGetProperty("type", out var typeElement) ? typeElement.GetString() : null;
         var version = doc.RootElement.TryGetProperty("version", out var versionElement) ? versionElement.GetInt32() : 1;
 
         var connectionsElement = doc.RootElement.TryGetProperty("connections", out var connectionsEl) ? connectionsEl : default;
@@ -166,8 +165,8 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
             connectionSerializerOptions.Converters.Add(new ObsoleteConnectionJsonConverter(activityDictionary));
 
             var obsoleteConnections = connectionsElement.ValueKind != JsonValueKind.Undefined
-                ? connectionsElement.Deserialize<ICollection<ObsoleteConnection>>(connectionSerializerOptions)?.Where(x => x.Source != null! && x.Target != null!).ToList() ?? new List<ObsoleteConnection>()
-                : new List<ObsoleteConnection>();
+                ? connectionsElement.Deserialize<ICollection<ObsoleteConnection>>(connectionSerializerOptions)?.Where(x => x.Source != null! && x.Target != null!).ToList() ?? []
+                : [];
 
             return obsoleteConnections.Select(x => new Connection(new Endpoint(x.Source, x.SourcePort), new Endpoint(x.Target, x.TargetPort))).ToList();
         }
@@ -175,7 +174,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
         connectionSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary));
 
         return connectionsElement.ValueKind != JsonValueKind.Undefined
-            ? connectionsElement.Deserialize<ICollection<Connection>>(connectionSerializerOptions)?.Where(x => x.Source != null! && x.Target != null!).ToList() ?? new List<Connection>()
-            : new List<Connection>();
+            ? connectionsElement.Deserialize<ICollection<Connection>>(connectionSerializerOptions)?.Where(x => x.Source != null! && x.Target != null!).ToList() ?? []
+            : [];
     }
 }

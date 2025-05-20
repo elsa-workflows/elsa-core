@@ -43,14 +43,14 @@ public class BookmarkFilter
     public string? CorrelationId { get; set; }
 
     /// <summary>
-    /// Gets or sets the activity type name of the bookmark to find.
+    /// Gets or sets the name of the bookmark to find.
     /// </summary>
-    public string? ActivityTypeName { get; set; }
+    public string? Name { get; set; }
 
     /// <summary>
-    /// Gets or sets the activity type names of the bookmarks to find.
+    /// Gets or sets the names of the bookmarks to find.
     /// </summary>
-    public ICollection<string>? ActivityTypeNames { get; set; }
+    public ICollection<string>? Names { get; set; }
 
     /// <summary>
     /// Gets or sets the activity instance ID of the bookmark to find.
@@ -75,10 +75,15 @@ public class BookmarkFilter
         if (filter.Hashes != null) query = query.Where(x => filter.Hashes.Contains(x.Hash));
         if (filter.WorkflowInstanceId != null) query = query.Where(x => x.WorkflowInstanceId == filter.WorkflowInstanceId);
         if (filter.WorkflowInstanceIds != null) query = query.Where(x => filter.WorkflowInstanceIds.Contains(x.WorkflowInstanceId));
-        if (filter.ActivityTypeName != null) query = query.Where(x => x.ActivityTypeName == filter.ActivityTypeName);
-        if (filter.ActivityTypeNames != null) query = query.Where(x => filter.ActivityTypeNames.Contains(x.ActivityTypeName));
+        if (filter.Name != null) query = query.Where(x => x.Name == filter.Name);
+        if (filter.Names != null) query = query.Where(x => filter.Names.Contains(x.Name!));
         if (filter.ActivityInstanceId != null) query = query.Where(x => x.ActivityInstanceId == filter.ActivityInstanceId);
 
         return query;
     }
+
+    public static BookmarkFilter ByActivityTypeNames(IEnumerable<string> activityTypeNames) => new()
+    {
+        Names = activityTypeNames.ToList()
+    };
 }

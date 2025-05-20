@@ -21,41 +21,43 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
     /// <inheritdoc />
     public Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        return mongoDbStore.FindAsync(queryable => Filter(queryable, filter), cancellationToken);
+        return mongoDbStore.FindAsync(queryable => Filter(queryable, filter), filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />
     public Task<WorkflowDefinition?> FindAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        return mongoDbStore.FindAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken);
+        return mongoDbStore.FindAsync(queryable => Order(Filter(queryable, filter), order), filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await mongoDbStore.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
-        var results = await mongoDbStore.FindManyAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), cancellationToken).ToList();
+        var tenantAgnostic = filter.TenantAgnostic;
+        var count = await mongoDbStore.CountAsync(queryable => Filter(queryable, filter), tenantAgnostic, cancellationToken);
+        var results = await mongoDbStore.FindManyAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), tenantAgnostic, cancellationToken).ToList();
         return new Page<WorkflowDefinition>(results, count);
     }
 
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await mongoDbStore.CountAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken);
-        var results = await mongoDbStore.FindManyAsync(queryable => OrderAndPaginate(Filter(queryable, filter), order, pageArgs), cancellationToken).ToList();
+        var tenantAgnostic = filter.TenantAgnostic;
+        var count = await mongoDbStore.CountAsync(queryable => Order(Filter(queryable, filter), order), tenantAgnostic, cancellationToken);
+        var results = await mongoDbStore.FindManyAsync(queryable => OrderAndPaginate(Filter(queryable, filter), order, pageArgs), tenantAgnostic, cancellationToken).ToList();
         return new Page<WorkflowDefinition>(results, count);
     }
 
     /// <inheritdoc />
     public Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        return mongoDbStore.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken);
+        return mongoDbStore.FindManyAsync(queryable => Filter(queryable, filter), filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />
     public Task<IEnumerable<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        return mongoDbStore.FindManyAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken);
+        return mongoDbStore.FindManyAsync(queryable => Order(Filter(queryable, filter), order), filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -64,7 +66,7 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
         var collection = mongoDbStore.GetCollection();
         var queryable = Filter(collection.AsQueryable(), filter);
         var count = queryable.LongCount();
-        queryable = (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowDefinition>)!;
+        queryable = queryable.Paginate(pageArgs)!;
         var documents = await queryable.Select(ExpressionHelpers.WorkflowDefinitionSummary).ToListAsync(cancellationToken);
 
         return Page.Of(documents, count);
@@ -76,7 +78,7 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
         var collection = mongoDbStore.GetCollection();
         var queryable = Order(Filter(collection.AsQueryable(), filter), order);
         var count = queryable.LongCount();
-        var mongoQueryable = (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowDefinition>)!;
+        var mongoQueryable = queryable.Paginate(pageArgs)!;
         var documents = await mongoQueryable.Select(ExpressionHelpers.WorkflowDefinitionSummary).ToListAsync(cancellationToken);
 
         return Page.Of(documents, count);
@@ -88,6 +90,7 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
         return mongoDbStore.FindManyAsync(
                 query => Filter(query, filter),
                 ExpressionHelpers.WorkflowDefinitionSummary,
+                filter.TenantAgnostic,
                 cancellationToken)
             .ToList()
             .AsEnumerable();
@@ -99,6 +102,7 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
         return mongoDbStore.FindManyAsync(
                 query => Order(Filter(query, filter), order),
                 ExpressionHelpers.WorkflowDefinitionSummary,
+                filter.TenantAgnostic,
                 cancellationToken)
             .ToList()
             .AsEnumerable();
@@ -108,7 +112,7 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
     public Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken)
     {
         var order = new WorkflowDefinitionOrder<int>(x => x.Version, OrderDirection.Descending);
-        return mongoDbStore.FindAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken);
+        return mongoDbStore.FindAsync(queryable => Order(Filter(queryable, filter), order), filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -128,13 +132,13 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
     {
         var queryable = mongoDbStore.GetCollection().AsQueryable();
         var ids = await Filter(queryable, filter).Select(x => x.Id).Distinct().ToListAsync(cancellationToken);
-        return await mongoDbStore.DeleteWhereAsync(x => ids.Contains(x.Id), cancellationToken);
+        return await mongoDbStore.DeleteWhereAsync(x => ids.Contains(x.Id), filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />
     public Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        return mongoDbStore.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken).Any();
+        return mongoDbStore.FindManyAsync(queryable => Filter(queryable, filter), filter.TenantAgnostic, cancellationToken).Any();
     }
 
     /// <inheritdoc />
@@ -150,22 +154,22 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
         return !exists;
     }
 
-    private IMongoQueryable<WorkflowDefinition> Filter(IMongoQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter)
+    private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter)
     {
-        return (filter.Apply(queryable) as IMongoQueryable<WorkflowDefinition>)!;
+        return filter.Apply(queryable)!;
     }
 
-    private IMongoQueryable<WorkflowDefinition> Order<TOrderBy>(IMongoQueryable<WorkflowDefinition> queryable, WorkflowDefinitionOrder<TOrderBy> order)
+    private IQueryable<WorkflowDefinition> Order<TOrderBy>(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionOrder<TOrderBy> order)
     {
-        return (queryable.OrderBy(order) as IMongoQueryable<WorkflowDefinition>)!;
+        return queryable.OrderBy(order)!;
     }
 
-    private IMongoQueryable<WorkflowDefinition> Paginate(IMongoQueryable<WorkflowDefinition> queryable, PageArgs pageArgs) =>
+    private IQueryable<WorkflowDefinition> Paginate(IQueryable<WorkflowDefinition> queryable, PageArgs pageArgs) =>
         
-        (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowDefinition>)!;
+        queryable.Paginate(pageArgs)!;
 
-    private IMongoQueryable<WorkflowDefinition> OrderAndPaginate<TOrderBy>(IMongoQueryable<WorkflowDefinition> queryable, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs)
+    private IQueryable<WorkflowDefinition> OrderAndPaginate<TOrderBy>(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs)
     {
-        return (queryable.OrderBy(order).Paginate(pageArgs) as IMongoQueryable<WorkflowDefinition>)!;
+        return queryable.OrderBy(order).Paginate(pageArgs)!;
     }
 }

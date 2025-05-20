@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Behaviors;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
@@ -22,7 +21,7 @@ public abstract class Activity : IActivity, ISignalHandler
     /// <summary>
     /// Constructor.
     /// </summary>
-    protected Activity(string? source = default, int? line = default)
+    protected Activity(string? source = null, int? line = null)
     {
         this.SetSource(source, line);
         Type = ActivityTypeNameHelper.GenerateTypeName(GetType());
@@ -31,17 +30,17 @@ public abstract class Activity : IActivity, ISignalHandler
     }
 
     /// <inheritdoc />
-    protected Activity(string activityType, int version = 1, string? source = default, int? line = default) : this(source, line)
+    protected Activity(string activityType, int version = 1, string? source = null, int? line = null) : this(source, line)
     {
         Type = activityType;
         Version = version;
     }
 
     /// <inheritdoc />
-    public string Id { get; set; } = default!;
+    public string Id { get; set; } = null!;
     
     /// <inheritdoc />
-    public string NodeId { get; set; } = default!;
+    public string NodeId { get; set; } = null!;
     
     /// <inheritdoc />
     public string? Name { get; set; }
@@ -73,6 +72,13 @@ public abstract class Activity : IActivity, ISignalHandler
     {
         get => this.GetRunAsynchronously();
         set => this.SetRunAsynchronously(value);
+    }
+    
+    [JsonIgnore]
+    public string? CommitStrategy
+    {
+        get => this.GetCommitStrategy();
+        set => this.SetCommitStrategy(value);
     }
 
     /// <inheritdoc />

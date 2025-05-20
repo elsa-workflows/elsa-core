@@ -34,7 +34,7 @@ public class CustomConstructorConfigurator : SerializationOptionsConfiguratorBas
         {
             // If we have a default constructor, use that one.
             if (!constructor.GetParameters().Any())
-                return () => constructor.Invoke(default, Array.Empty<object>())!;
+                return () => constructor.Invoke(default, [])!;
 
             // Else, find a constructor with the following signature: (string?, int?).
             // Check for a constructor with the following signature:
@@ -57,7 +57,7 @@ public class CustomConstructorConfigurator : SerializationOptionsConfiguratorBas
                 parameters[1].DefaultValue != null ||
                 (parameters[1].GetCustomAttribute<CallerLineNumberAttribute>() == null && !isJsonConstructor)) continue;
 
-            return () => constructor.Invoke(new object[] { null!, 0 });
+            return () => constructor.Invoke([null!, 0]);
         }
 
         return null;

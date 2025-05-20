@@ -5,7 +5,6 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Api.Requirements;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
@@ -44,22 +43,22 @@ internal class Post(
 
         var draft = !string.IsNullOrWhiteSpace(definitionId)
             ? await workflowDefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest, cancellationToken)
-            : default;
+            : null;
 
         var isNew = draft == null;
 
         // Create a new workflow in case no existing definition was found.
         if (isNew)
         {
-            draft = workflowDefinitionPublisher.New();
+            draft = await workflowDefinitionPublisher.NewAsync(cancellationToken: cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(definitionId))
                 draft.DefinitionId = definitionId;
         }
 
-        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(draft), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(draft), AuthorizationPolicies.NotReadOnlyPolicy);
 
-        if (!authorizationResult.Result.Succeeded)
+        if (!authorizationResult.Succeeded)
         {
             await SendForbiddenAsync(cancellationToken);
             return;
@@ -88,7 +87,7 @@ internal class Post(
 
         PublishWorkflowDefinitionResult? result = null;
 
-        if (request.Publish.GetValueOrDefault(false))
+        if (request.Publish == true)
         {
             result = await workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);
 
@@ -107,7 +106,8 @@ internal class Post(
         }
 
         var mappedDefinition = await linker.MapAsync(draft, cancellationToken);
-        var response = new Response(mappedDefinition, false, result?.ConsumingWorkflows?.Count() ?? 0);
+        var affectedWorkflows = result?.AffectedWorkflows?.WorkflowDefinitions ?? [];
+        var response = new Response(mappedDefinition, false, affectedWorkflows.Count);
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
     }
 }

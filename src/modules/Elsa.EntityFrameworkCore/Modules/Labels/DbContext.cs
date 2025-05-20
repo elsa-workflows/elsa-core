@@ -1,5 +1,4 @@
-﻿using Elsa.EntityFrameworkCore.Common;
-using Elsa.Labels.Entities;
+﻿using Elsa.Labels.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Modules.Labels;

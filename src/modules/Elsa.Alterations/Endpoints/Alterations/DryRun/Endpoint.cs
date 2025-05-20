@@ -6,7 +6,7 @@ using JetBrains.Annotations;
 namespace Elsa.Alterations.Endpoints.Alterations.DryRun;
 
 /// <summary>
-/// Executes an alteration plan.
+/// Determines which workflow instances a "Submit" request would target without actually running an alteration.
 /// </summary>
 [PublicAPI]
 public class DryRun(IWorkflowInstanceFinder workflowInstanceFinder) : ElsaEndpoint<AlterationWorkflowInstanceFilter, Response>
@@ -22,8 +22,6 @@ public class DryRun(IWorkflowInstanceFinder workflowInstanceFinder) : ElsaEndpoi
     public override async Task HandleAsync(AlterationWorkflowInstanceFilter filter, CancellationToken cancellationToken)
     {
         var workflowInstanceIds = await workflowInstanceFinder.FindAsync(filter, cancellationToken);
-
-        // Write response.
         var response = new Response(workflowInstanceIds.ToList());
         await SendOkAsync(response, cancellationToken);
     }

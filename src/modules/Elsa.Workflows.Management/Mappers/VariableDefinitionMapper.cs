@@ -4,42 +4,51 @@ using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Management.Mappers;
 
 /// <summary>
 /// Maps <see cref="Variable"/>s to <see cref="VariableDefinition"/>s and vice versa.
 /// </summary>
-public class VariableDefinitionMapper
+public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegistry, IServiceScopeFactory scopeFactory, ILogger<VariableDefinitionMapper> logger)
 {
-    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegistry)
-    {
-        _wellKnownTypeRegistry = wellKnownTypeRegistry;
-    }
-
     /// <summary>
     /// Maps a <see cref="VariableDefinition"/> to a <see cref="Variable"/>.
     /// </summary>
     public Variable? Map(VariableDefinition source)
     {
-        if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(source.TypeName, out var type))
-            return null;
+        var aliasedType = wellKnownTypeRegistry.TryGetType(source.TypeName, out var aliasedTypeValue) ? aliasedTypeValue : null;
+        var type = aliasedType ?? Type.GetType(source.TypeName);
 
-        var valueType = source.IsArray ? typeof(ICollection<>).MakeGenericType(type) : type;
+        if (type == null)
+        {
+            logger.LogWarning("Failed to resolve the type {TypeName} of variable {VariableName}. Variable will not be mapped.", source.TypeName, source.Name);
+            return null;
+        }
+
+        var valueType = aliasedType is { IsArray: true } ? source.IsArray ? aliasedType.MakeArrayType() : aliasedType : source.IsArray ? type.MakeArrayType() : type;
         var variableGenericType = typeof(Variable<>).MakeGenericType(valueType);
         var variable = (Variable)Activator.CreateInstance(variableGenericType)!;
 
-        if(!string.IsNullOrEmpty(source.Id))
+        if (!string.IsNullOrEmpty(source.Id))
             variable.Id = source.Id;
-        
+
         variable.Name = source.Name;
-        variable.Value = source.Value.ConvertTo(valueType);
-        variable.StorageDriverType = !string.IsNullOrEmpty(source.StorageDriverTypeName) ? Type.GetType(source.StorageDriverTypeName) : default;
+
+        if (!string.IsNullOrWhiteSpace(source.Value))
+        {
+            source.Value?.TryConvertTo(valueType).OnSuccess(value =>
+            {
+                variable.Value = value;
+            }).OnFailure(ex =>
+            {
+                logger.LogWarning(ex, "Failed to convert the default value {DefaultValue} of variable {VariableName} to its type {VariableType}. Default value will not be set.", source.Value, source.Name, valueType);
+            });
+        }
+
+        variable.StorageDriverType = GetStorageDriverType(source.StorageDriverTypeName);
 
         return variable;
     }
@@ -52,7 +61,7 @@ public class VariableDefinitionMapper
             .Select(Map)
             .Where(x => x != null)
             .Select(x => x!)
-        ?? Enumerable.Empty<Variable>();
+        ?? [];
 
     /// <summary>
     /// Maps a <see cref="Variable"/> to a <see cref="VariableDefinition"/>.
@@ -61,19 +70,49 @@ public class VariableDefinitionMapper
     {
         var variableType = source.GetType();
         var valueType = variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object);
-        var isArray = valueType.IsCollectionType();
-        var elementValueType = isArray ? valueType.GenericTypeArguments[0] : valueType; 
+        var valueTypeAlias = wellKnownTypeRegistry.TryGetAlias(valueType, out var alias) ? alias : null;
         var value = source.Value;
-        
-        var valueTypeAlias = _wellKnownTypeRegistry.GetAliasOrDefault(elementValueType);
-        var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
         var serializedValue = value.Format();
+        var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
 
-        return new VariableDefinition(source.Id, source.Name, valueTypeAlias, isArray, serializedValue, storageDriverTypeName);
+        // Handles the case where an alias exists for an array or collection type. E.g. byte[] -> ByteArray.
+        if (valueTypeAlias != null && (valueType.IsArray || valueType.IsCollectionType()))
+            return new(source.Id, source.Name, valueTypeAlias, false, serializedValue, storageDriverTypeName);
+
+        var isArray = valueType.IsArray;
+        var isCollection = valueType.IsCollectionType();
+        var elementValueType = isArray ? valueType.GetElementType() : isCollection ? valueType.GenericTypeArguments[0] : valueType;
+        var elementTypeAlias = wellKnownTypeRegistry.GetAliasOrDefault(elementValueType);
+
+        return new(source.Id, source.Name, elementTypeAlias, isArray, serializedValue, storageDriverTypeName);
     }
 
     /// <summary>
     /// Maps a list of <see cref="Variable"/>s to a list of <see cref="VariableDefinition"/>s.
     /// </summary>
-    public IEnumerable<VariableDefinition> Map(IEnumerable<Variable>? source) => source?.Select(Map) ?? Enumerable.Empty<VariableDefinition>();
+    public IEnumerable<VariableDefinition> Map(IEnumerable<Variable>? source) => source?.Select(Map) ?? [];
+    
+    private Type? GetStorageDriverType(string? storageDriverTypeName)
+    {
+        if (string.IsNullOrEmpty(storageDriverTypeName))
+            return null;
+
+        var type = Type.GetType(storageDriverTypeName);
+
+        if (type != null)
+            return type;
+
+        // TODO: The following code handles backward compatibility with variable definitions referencing older .NET type namespaces.
+        // We will refactor this by storing a driver identifier rather than its full type name - which is brittle in case we move namespaces.
+        using var scope = scopeFactory.CreateScope();
+        var storageDrivers = scope.ServiceProvider.GetServices<IStorageDriver>();
+        foreach (var storageDriver in storageDrivers)
+        {
+            var typeName = storageDriver.GetType().Name;
+            if (storageDriverTypeName.Contains(typeName, StringComparison.OrdinalIgnoreCase))
+                return storageDriver.GetType();
+        }
+
+        return null;
+    }
 }

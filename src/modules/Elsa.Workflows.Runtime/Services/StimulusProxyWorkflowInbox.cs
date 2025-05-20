@@ -1,5 +1,5 @@
-using Elsa.Common.Contracts;
-using Elsa.Workflows.Contracts;
+using Elsa.Common;
+using Elsa.Extensions;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
@@ -181,7 +181,9 @@ public class StimulusProxyWorkflowInbox(
             response.Status,
             response.SubStatus,
             new List<Bookmark>(),
-            response.Incidents)
+            response.Incidents,
+            null,
+            null)
         );
     }
 }

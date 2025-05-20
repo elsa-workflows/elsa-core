@@ -1,0 +1,55 @@
+﻿version: '3.8'
+
+services:
+  yb-master:
+    image: yugabytedb/yugabyte:latest
+    container_name: yb-master
+    command: ["/home/yugabyte/bin/yb-master", "--fs_data_dirs=/mnt/data", "--master_addresses=yb-master:7100"]
+    ports:
+      - "7001:7000"  # Master UI
+    networks:
+      - yugabytedb
+    environment:
+      - YB_ENABLED_IN_POSTGRES_MODE=1
+    volumes:
+      - yb-master-data:/mnt/data
+
+  yb-tserver-1:
+    image: yugabytedb/yugabyte:latest
+    container_name: yb-tserver-1
+    command: ["/home/yugabyte/bin/yb-tserver", "--fs_data_dirs=/mnt/data", "--tserver_master_addrs=yb-master:7100", "--pgsql_proxy_bind_address=0.0.0.0:5433"]
+    ports:
+      - "5543:5433"  # Changed from 5433 -> 5543 for PostgreSQL
+      - "9000:9000"  # TServer UI
+    networks:
+      - yugabytedb
+    depends_on:
+      - yb-master
+    environment:
+      - YB_ENABLED_IN_POSTGRES_MODE=1
+    volumes:
+      - yb-tserver-1-data:/mnt/data
+
+  yb-tserver-2:
+    image: yugabytedb/yugabyte:latest
+    container_name: yb-tserver-2
+    command: ["/home/yugabyte/bin/yb-tserver", "--fs_data_dirs=/mnt/data", "--tserver_master_addrs=yb-master:7100", "--pgsql_proxy_bind_address=0.0.0.0:5433"]
+    ports:
+      - "5544:5433"  # Second worker node (internal)
+      - "9001:9000"  # TServer UI
+    networks:
+      - yugabytedb
+    depends_on:
+      - yb-master
+    environment:
+      - YB_ENABLED_IN_POSTGRES_MODE=1
+    volumes:
+      - yb-tserver-2-data:/mnt/data
+
+networks:
+  yugabytedb:
+
+volumes:
+  yb-master-data:
+  yb-tserver-1-data:
+  yb-tserver-2-data:

@@ -1,4 +1,3 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using JetBrains.Annotations;
 
@@ -53,7 +52,7 @@ public abstract class WorkflowBase<TResult> : WorkflowBase
     /// <inheritdoc />
     protected WorkflowBase()
     {
-        Result = new Variable<TResult>();
+        Result = new("Result", default!);
     }
     
     /// <summary>

@@ -3,6 +3,7 @@ using System;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -17,8 +18,10 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.20")
+                .HasAnnotation("ProductVersion", "9.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
+
+            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
                 {
@@ -60,6 +63,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .HasColumnType("varchar(255)");
 
                     b.Property<int>("ActivityTypeVersion")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AggregateFaultCount")
                         .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("CompletedAt")
@@ -216,6 +222,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("Name")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("SerializedMetadata")
                         .HasColumnType("longtext");
 
@@ -243,6 +252,12 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 
                     b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
 
+                    b.HasIndex(new[] { "Name" }, "IX_StoredBookmark_Name");
+
+                    b.HasIndex(new[] { "Name", "Hash" }, "IX_StoredBookmark_Name_Hash");
+
+                    b.HasIndex(new[] { "Name", "Hash", "WorkflowInstanceId" }, "IX_StoredBookmark_Name_Hash_WorkflowInstanceId");
+
                     b.HasIndex(new[] { "TenantId" }, "IX_StoredBookmark_TenantId");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
@@ -263,7 +278,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("SerializedPayload")
@@ -423,6 +437,62 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp_Sequence");
 
                     b.ToTable("WorkflowExecutionLogRecords", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowInboxMessage", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ActivityInstanceId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ActivityTypeName")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("SerializedBookmarkPayload")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SerializedInput")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "ActivityInstanceId" }, "IX_WorkflowInboxMessage_ActivityInstanceId");
+
+                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_WorkflowInboxMessage_ActivityTypeName");
+
+                    b.HasIndex(new[] { "CorrelationId" }, "IX_WorkflowInboxMessage_CorrelationId");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_WorkflowInboxMessage_CreatedAt");
+
+                    b.HasIndex(new[] { "ExpiresAt" }, "IX_WorkflowInboxMessage_ExpiresAt");
+
+                    b.HasIndex(new[] { "Hash" }, "IX_WorkflowInboxMessage_Hash");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_WorkflowInboxMessage_WorkflowInstanceId");
+
+                    b.ToTable("WorkflowInboxMessages", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

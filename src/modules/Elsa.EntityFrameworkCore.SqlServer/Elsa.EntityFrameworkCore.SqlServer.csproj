@@ -16,11 +16,4 @@
         <ProjectReference Include="..\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
     </ItemGroup>
 
-    <!--Overridden for vulnerability reasons with dependencies referencing older versions.-->
-    <ItemGroup>
-        <PackageReference Include="Azure.Identity" />
-        <PackageReference Include="Microsoft.Identity.Client" />
-        <PackageReference Include="System.Formats.Asn1" />
-    </ItemGroup>
-
 </Project>

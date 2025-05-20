@@ -33,32 +33,31 @@ public class WorkflowInstanceSummary
     /// <summary>
     /// Returns a summary view of the specified <see cref="WorkflowInstance"/>.
     /// </summary>
-    public static Expression<Func<WorkflowInstance, WorkflowInstanceSummary>> FromInstanceExpression()
-        => workflowInstance => new WorkflowInstanceSummary
-        {
-            Id = workflowInstance.Id,
-            DefinitionId = workflowInstance.DefinitionId,
-            DefinitionVersionId = workflowInstance.DefinitionVersionId,
-            Version = workflowInstance.Version,
-            Status = workflowInstance.Status,
-            SubStatus = workflowInstance.SubStatus,
-            CorrelationId = workflowInstance.CorrelationId,
-            Name = workflowInstance.Name,
-            IncidentCount = workflowInstance.IncidentCount,
-            CreatedAt = workflowInstance.CreatedAt,
-            UpdatedAt = workflowInstance.UpdatedAt,
-            FinishedAt = workflowInstance.FinishedAt
-        };
+    public static Expression<Func<WorkflowInstance, WorkflowInstanceSummary>> FromInstanceExpression() => workflowInstance => new()
+    {
+        Id = workflowInstance.Id,
+        DefinitionId = workflowInstance.DefinitionId,
+        DefinitionVersionId = workflowInstance.DefinitionVersionId,
+        Version = workflowInstance.Version,
+        Status = workflowInstance.Status,
+        SubStatus = workflowInstance.SubStatus,
+        CorrelationId = workflowInstance.CorrelationId,
+        Name = workflowInstance.Name,
+        IncidentCount = workflowInstance.IncidentCount,
+        CreatedAt = workflowInstance.CreatedAt,
+        UpdatedAt = workflowInstance.UpdatedAt,
+        FinishedAt = workflowInstance.FinishedAt
+    };
 
 
     /// <summary>The ID of the workflow instance.</summary>
-    public string Id { get; set; } = default!;
+    public string Id { get; set; } = null!;
 
     /// <summary>The ID of the workflow definition.</summary>
-    public string DefinitionId { get; set; } = default!;
+    public string DefinitionId { get; set; } = null!;
 
     /// <summary>The version ID of the workflow definition.</summary>
-    public string DefinitionVersionId { get; set; } = default!;
+    public string DefinitionVersionId { get; set; } = null!;
 
     /// <summary>The version of the workflow definition.</summary>
     public int Version { get; set; }

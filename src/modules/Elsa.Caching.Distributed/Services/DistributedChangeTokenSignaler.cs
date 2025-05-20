@@ -4,7 +4,9 @@ using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Caching.Distributed.Services;
 
+/// <summary>
 /// Decorates an <see cref="IChangeTokenSignaler"/> and publishes a signal after the signal has been triggered.
+/// </summary>
 [UsedImplicitly]
 public class DistributedChangeTokenSignaler(IChangeTokenSignaler decoratedSignaler, IChangeTokenSignalPublisher signalPublisher, IChangeTokenSignalInvoker invoker) : IChangeTokenSignaler
 {

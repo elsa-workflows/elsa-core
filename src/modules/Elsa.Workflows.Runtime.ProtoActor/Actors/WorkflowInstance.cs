@@ -1,4 +1,4 @@
-using Elsa.Workflows.Contracts;
+using Elsa.Extensions;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
@@ -22,7 +22,7 @@ internal class WorkflowInstance(
     private string? _workflowInstanceId;
     private WorkflowGraph? _workflowGraph;
     private WorkflowState? _workflowState;
-    private CancellationTokenSource _linkedTokenSource = default!;
+    private CancellationTokenSource _linkedTokenSource = null!;
     private CancellationToken _linkedCancellationToken;
     private readonly Queue<RunWorkflowOptions> _queuedRunWorkflowOptions = new();
     private bool _isRunning;
@@ -42,7 +42,7 @@ internal class WorkflowInstance(
 
     public override Task OnStarted()
     {
-        _linkedTokenSource = new CancellationTokenSource();
+        _linkedTokenSource = new();
         _linkedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(Context.CancellationToken, _linkedTokenSource.Token).Token;
         return Task.CompletedTask;
     }
@@ -62,7 +62,7 @@ internal class WorkflowInstance(
             if (result.IsFaulted)
                 onError(result.Exception.Message);
             else
-                respond(new CreateWorkflowInstanceResponse());
+                respond(new());
         });
 
         return Task.CompletedTask;
@@ -138,8 +138,8 @@ internal class WorkflowInstance(
             ActivityHandle = mappers.ActivityHandleMapper.Map(request.ActivityHandle),
             Properties = request.Properties.DeserializeProperties(),
             Input = request.Input.DeserializeInput(),
-            CorrelationId = request.CorrelationId,
-            TriggerActivityId = request.TriggerActivityId
+            CorrelationId = request.CorrelationId.NullIfEmpty(),
+            TriggerActivityId = request.TriggerActivityId.NullIfEmpty()
         };
 
         var result = await RunAsync(runWorkflowOptions);
@@ -162,14 +162,16 @@ internal class WorkflowInstance(
         await using var scope = scopeFactory.CreateAsyncScope();
         var serviceProvider = scope.ServiceProvider;
         var workflowCanceler = serviceProvider.GetRequiredService<IWorkflowCanceler>();
-        _workflowState = await workflowCanceler.CancelWorkflowAsync(WorkflowGraph, WorkflowState, Context.CancellationToken);
+        WorkflowState = await workflowCanceler.CancelWorkflowAsync(WorkflowGraph, WorkflowState, Context.CancellationToken);
+        var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
+        await workflowInstanceManager.SaveAsync(WorkflowState, Context.CancellationToken);
     }
 
     public override async Task<ExportWorkflowStateResponse> ExportState()
     {
         await EnsureStateAsync();
         var json = mappers.WorkflowStateJsonMapper.Map(WorkflowState);
-        return new ExportWorkflowStateResponse
+        return new()
         {
             SerializedWorkflowState = json
         };
@@ -180,6 +182,18 @@ internal class WorkflowInstance(
         var workflowState = mappers.WorkflowStateJsonMapper.Map(request.SerializedWorkflowState);
         await EnsureStateAsync();
         WorkflowState = workflowState;
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
+        await workflowInstanceManager.SaveAsync(WorkflowState, Context.CancellationToken);
+    }
+
+    public override Task<InstanceExistsResponse> InstanceExists()
+    {
+        var exists = _workflowInstanceId != null;
+        return Task.FromResult(new InstanceExistsResponse
+        {
+            Exists = exists
+        });
     }
 
     private async Task<RunWorkflowResult> RunAsync(RunWorkflowOptions runWorkflowOptions)
@@ -187,7 +201,7 @@ internal class WorkflowInstance(
         if (_isRunning)
         {
             _queuedRunWorkflowOptions.Enqueue(runWorkflowOptions);
-            return new RunWorkflowResult(null!, null!, null);
+            return new(null!, null!, null!, null);
         }
 
         _isRunning = true;
@@ -212,6 +226,8 @@ internal class WorkflowInstance(
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
         var workflowResult = await workflowRunner.RunAsync(WorkflowGraph, WorkflowState, runWorkflowOptions, _linkedCancellationToken);
         WorkflowState = workflowResult.WorkflowState;
+        var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
+        await workflowInstanceManager.SaveAsync(WorkflowState, Context.CancellationToken);
 
         return workflowResult;
     }
@@ -251,12 +267,12 @@ internal class WorkflowInstance(
             CorrelationId = request.CorrelationId.NullIfEmpty(),
             Input = request.Input.DeserializeInput(),
             Properties = request.Properties.DeserializeProperties(),
-            ParentWorkflowInstanceId = request.ParentId
+            ParentWorkflowInstanceId = request.ParentId.NullIfEmpty()
         };
 
         await using var scope = scopeFactory.CreateAsyncScope();
         var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
-        var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(workflowGraph.Workflow, workflowInstanceOptions, cancellationToken);
+        var workflowInstance = await workflowInstanceManager.CreateAndCommitWorkflowInstanceAsync(workflowGraph.Workflow, workflowInstanceOptions, cancellationToken);
         var workflowState = workflowInstance.WorkflowState;
         _workflowInstanceId = workflowState.Id;
         WorkflowGraph = workflowGraph;

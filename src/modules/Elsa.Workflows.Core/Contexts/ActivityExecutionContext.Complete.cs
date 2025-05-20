@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Signals;
 
 namespace Elsa.Workflows;
@@ -10,7 +9,7 @@ public partial class ActivityExecutionContext
     /// <summary>
     /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
     /// </summary>
-    public async ValueTask CompleteActivityAsync(object? result = default)
+    public async ValueTask CompleteActivityAsync(object? result = null)
     {
         var outcomes = result as Outcomes;
 
@@ -29,8 +28,8 @@ public partial class ActivityExecutionContext
             return;
 
         // Cancel any non-completed child activities.
-        var childContexts = WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == this && x.CanCancelActivity()).ToList();
-
+        var childContexts = Children.Where(x => x.CanCancelActivity()).ToList();
+        
         foreach (var childContext in childContexts)
             await childContext.CancelActivityAsync();
 
@@ -42,7 +41,7 @@ public partial class ActivityExecutionContext
             JournalData["Outcomes"] = outcomes.Names;
 
         // Add an execution log entry.
-        AddExecutionLogEntry("Completed", payload: JournalData);
+        AddExecutionLogEntry("Completed");
 
         // Send a signal.
         await this.SendSignalAsync(new ActivityCompleted(result));

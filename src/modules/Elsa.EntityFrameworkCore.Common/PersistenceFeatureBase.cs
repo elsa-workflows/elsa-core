@@ -1,11 +1,13 @@
 using Elsa.Common.Entities;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.EntityFrameworkCore.Common;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// Base class for features that require Entity Framework Core.
@@ -13,22 +15,18 @@ namespace Elsa.EntityFrameworkCore.Common;
 /// <typeparam name="TDbContext">The type of the database context.</typeparam>
 /// <typeparam name="TFeature">The type of the feature.</typeparam>
 [DependsOn(typeof(CommonPersistenceFeature))]
-public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase where TDbContext : ElsaDbContextBase
+public abstract class PersistenceFeatureBase<TFeature, TDbContext>(IModule module) : FeatureBase(module)
+    where TDbContext : ElsaDbContextBase
 {
-    /// <inheritdoc />
-    protected PersistenceFeatureBase(IModule module) : base(module)
-    {
-    }
-
     /// <summary>
     /// Gets or sets a value indicating whether to use context pooling.
     /// </summary>
-    public bool UseContextPooling { get; set; }
+    public virtual bool UseContextPooling { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to run migrations.
     /// </summary>
-    public bool RunMigrations { get; set; } = true;
+    public virtual bool RunMigrations { get; set; } = true;
 
     /// <summary>
     /// Gets or sets the lifetime of the <see cref="IDbContextFactory{TContext}"/>. Defaults to <see cref="ServiceLifetime.Singleton"/>.
@@ -38,26 +36,37 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase
     /// <summary>
     /// Gets or sets the callback used to configure the <see cref="DbContextOptionsBuilder"/>.
     /// </summary>
-    public Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder = (_, options) => options
-        .UseElsaDbContextOptions(default)
-        .UseSqlite("Data Source=elsa.sqlite.db;Cache=Shared;", sqlite => sqlite
-            .MigrationsAssembly("Elsa.EntityFrameworkCore.Sqlite")
-            .MigrationsHistoryTable(ElsaDbContextBase.MigrationsHistoryTable, ElsaDbContextBase.ElsaSchema));
+    public virtual Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder { get; set; } = null!;
 
-    /// <inheritdoc />
     public override void ConfigureHostedServices()
     {
         if (RunMigrations)
-            Module.ConfigureHostedService<RunMigrationsHostedService<TDbContext>>(-100); // Migrations need to run before other hosted services that depend on DB access.
+            ConfigureMigrations();
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
+        if (DbContextOptionsBuilder == null)
+            throw new InvalidOperationException("The DbContextOptionsBuilder must be configured.");
+
+        Action<IServiceProvider, DbContextOptionsBuilder> setup = (sp, opts) =>
+        {
+            opts.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+            DbContextOptionsBuilder(sp, opts);
+        };
+
         if (UseContextPooling)
-            Services.AddPooledDbContextFactory<TDbContext>(DbContextOptionsBuilder);
+            Services.AddPooledDbContextFactory<TDbContext>(setup);
         else
-            Services.AddDbContextFactory<TDbContext>(DbContextOptionsBuilder, DbContextFactoryLifetime);
+            Services.AddDbContextFactory<TDbContext>(setup, DbContextFactoryLifetime);
+
+        Services.Decorate<IDbContextFactory<TDbContext>, TenantAwareDbContextFactory<TDbContext>>();
+    }
+
+    protected virtual void ConfigureMigrations()
+    {
+        Services.AddStartupTask<RunMigrationsStartupTask<TDbContext>>();
     }
 
     /// <summary>

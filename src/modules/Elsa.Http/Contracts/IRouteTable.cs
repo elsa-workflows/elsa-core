@@ -1,15 +1,21 @@
-namespace Elsa.Http.Contracts;
+namespace Elsa.Http;
 
 /// <summary>
 /// Stores a list of all routes provided by <see cref="HttpEndpoint"/> activities.
 /// </summary>
-public interface IRouteTable : IEnumerable<string>
+public interface IRouteTable : IEnumerable<HttpRouteData>
 {
     /// <summary>
     /// Adds a route to the table.
     /// </summary>
     /// <param name="route">The route to add.</param>
     void Add(string route);
+
+    /// <summary>
+    /// Adds a route to the table.
+    /// </summary>
+    /// <param name="httpRouteData">The route to add.</param>
+    void Add(HttpRouteData httpRouteData);
 
     /// <summary>
     /// Removes a route from the table.

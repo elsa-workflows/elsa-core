@@ -1,5 +1,5 @@
+using Elsa.Http;
 using Elsa.Http.Contexts;
-using Elsa.Http.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
 

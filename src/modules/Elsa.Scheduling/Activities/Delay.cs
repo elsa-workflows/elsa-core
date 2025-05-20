@@ -1,12 +1,9 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Elsa.Common.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 
@@ -19,28 +16,28 @@ namespace Elsa.Scheduling.Activities;
 public class Delay : Activity, IActivityPropertyDefaultValueProvider
 {
     /// <inheritdoc />
-    public Delay([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Delay([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
     public Delay(
         Func<ExpressionExecutionContext, TimeSpan> timeSpan,
-        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Input<TimeSpan>(timeSpan), source, line)
+        [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(new Input<TimeSpan>(timeSpan), source, line)
     {
     }
 
     /// <inheritdoc />
     public Delay(
         Func<ExpressionExecutionContext, ValueTask<TimeSpan>> timeSpan,
-        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Input<TimeSpan>(timeSpan), source, line)
+        [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(new Input<TimeSpan>(timeSpan), source, line)
     {
     }
 
     /// <inheritdoc />
     public Delay(
         Input<TimeSpan> timeSpan,
-        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+        [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         TimeSpan = timeSpan;
     }
@@ -48,7 +45,7 @@ public class Delay : Activity, IActivityPropertyDefaultValueProvider
     /// <inheritdoc />
     public Delay(
         TimeSpan timeSpan,
-        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+        [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         TimeSpan = new Input<TimeSpan>(timeSpan);
     }
@@ -56,7 +53,7 @@ public class Delay : Activity, IActivityPropertyDefaultValueProvider
     /// <inheritdoc />
     public Delay(
         Variable<TimeSpan> timeSpan,
-        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+        [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         TimeSpan = new Input<TimeSpan>(timeSpan);
     }
@@ -68,18 +65,13 @@ public class Delay : Activity, IActivityPropertyDefaultValueProvider
         Description = "The timespan to delay workflow execution.",
         DefaultValueProvider = typeof(Delay)
     )]
-    public Input<TimeSpan> TimeSpan { get; set; } = default!;
+    public Input<TimeSpan> TimeSpan { get; set; } = null!;
 
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
     {
-        var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();
         var timeSpan = context.ExpressionExecutionContext.Get(TimeSpan);
-        var resumeAt = clock.UtcNow.Add(timeSpan);
-        var payload = new DelayPayload(resumeAt);
-
-        context.JournalData["ResumeAt"] = resumeAt;
-        context.CreateBookmark(payload);
+        context.DelayFor(timeSpan);
     }
 
     /// <summary>
@@ -87,35 +79,35 @@ public class Delay : Activity, IActivityPropertyDefaultValueProvider
     /// </summary>
     public static Delay FromMilliseconds(
         double value,
-        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromMilliseconds(value), source, line);
+        [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) => new(System.TimeSpan.FromMilliseconds(value), source, line);
 
     /// <summary>
     /// Creates a new <see cref="Delay"/> from the specified number of seconds.
     /// </summary>
     public static Delay FromSeconds(
         double value,
-        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromSeconds(value), source, line);
+        [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) => new(System.TimeSpan.FromSeconds(value), source, line);
 
     /// <summary>
     /// Creates a new <see cref="Delay"/> from the specified number of minutes.
     /// </summary>
     public static Delay FromMinutes(
         double value,
-        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromMinutes(value), source, line);
+        [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) => new(System.TimeSpan.FromMinutes(value), source, line);
 
     /// <summary>
     /// Creates a new <see cref="Delay"/> from the specified number of hours.
     /// </summary>
     public static Delay FromHours(
         double value,
-        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromHours(value), source, line);
+        [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) => new(System.TimeSpan.FromHours(value), source, line);
 
     /// <summary>
     /// Creates a new <see cref="Delay"/> from the specified number of days.
     /// </summary>
     public static Delay FromDays(
         double value,
-        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromDays(value), source, line);
+        [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) => new(System.TimeSpan.FromDays(value), source, line);
 
     object IActivityPropertyDefaultValueProvider.GetDefaultValue(PropertyInfo property) => System.TimeSpan.FromMinutes(1);
 }

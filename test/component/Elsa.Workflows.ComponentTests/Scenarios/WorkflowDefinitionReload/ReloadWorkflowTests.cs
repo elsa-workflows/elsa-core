@@ -1,11 +1,12 @@
 ﻿using System.Net;
 using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.ComponentTests.Helpers;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows.ComponentTests.Abstractions;
+using Elsa.Workflows.ComponentTests.Fixtures;
+using Elsa.Workflows.ComponentTests.Materializers;
+using Elsa.Workflows.ComponentTests.WorkflowProviders;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -37,7 +38,7 @@ public class ReloadWorkflowTests : AppComponentTest
         var client = WorkflowServer.CreateHttpWorkflowClient();
         await _workflowDefinitionManager.DeleteByDefinitionIdAsync("f68b09bc-2013-4617-b82f-d76b6819a624", CancellationToken.None);
         var firstResponse = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "reload-test"));
-        await _workflowDefinitionsReloader.ReloadWorkflowDefinitionsAsync(CancellationToken.None);
+        await _workflowDefinitionsReloader.ReloadWorkflowDefinitionsAsync();
         var secondResponse = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "reload-test"));
         Assert.Equal(HttpStatusCode.NotFound, firstResponse.StatusCode);
         Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
@@ -67,6 +68,9 @@ public class ReloadWorkflowTests : AppComponentTest
         // Assert that the workflow definition service finds the updated workflow version.
         var definitionV2 = await _workflowDefinitionService.FindWorkflowGraphAsync(definitionId, VersionOptions.Latest);
         Assert.Equal(definitionVersionId2, definitionV2!.Workflow.Identity.Id);
+        
+        // Cleanup: Delete the workflow definition and its versions.
+        await _workflowDefinitionManager.DeleteByDefinitionIdAsync(definitionId, CancellationToken.None);
     }
 
     [Fact]
@@ -94,6 +98,9 @@ public class ReloadWorkflowTests : AppComponentTest
         // Assert that the activity registry contains a new activity descriptor representing the new workflow version.
         var activityV2 = _activityRegistry.Find(activityTypeName)!;
         Assert.Equal(2, activityV2.Version);
+        
+        // Cleanup: Delete the workflow definition and its versions.
+        await _workflowDefinitionManager.DeleteByDefinitionIdAsync(definitionId, CancellationToken.None);
     }
 
     private async Task<MaterializedWorkflow> BuildWorkflowAsync(string definitionId, string definitionVersionId, int version)

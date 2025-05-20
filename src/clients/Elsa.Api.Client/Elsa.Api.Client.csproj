@@ -16,10 +16,9 @@
         <PackageReference Include="Refit" />
         <PackageReference Include="Refit.HttpClientFactory" />
     </ItemGroup>
-    
-    <!--Overridden for vulnerability reasons with dependencies referencing older versions.-->
+
     <ItemGroup>
-        <PackageReference Include="System.Text.Json" />
+      <ProjectReference Include="..\..\modules\Elsa.Expressions\Elsa.Expressions.csproj" />
     </ItemGroup>
 
 </Project>

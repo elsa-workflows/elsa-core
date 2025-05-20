@@ -5,7 +5,7 @@ using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Services;
 using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
@@ -104,12 +104,12 @@ internal class DapperWorkflowExecutionLogStore(Store<WorkflowExecutionLogRecordR
 
     private Page<WorkflowExecutionLogRecord> Map(Page<WorkflowExecutionLogRecordRecord> source)
     {
-        return new Page<WorkflowExecutionLogRecord>(source.Items.Select(Map).ToList(), source.TotalCount);
+        return new(source.Items.Select(Map).ToList(), source.TotalCount);
     }
 
     private WorkflowExecutionLogRecordRecord Map(WorkflowExecutionLogRecord source)
     {
-        return new WorkflowExecutionLogRecordRecord
+        return new()
         {
             Id = source.Id,
             WorkflowDefinitionId = source.WorkflowDefinitionId,
@@ -128,15 +128,24 @@ internal class DapperWorkflowExecutionLogStore(Store<WorkflowExecutionLogRecordR
             EventName = source.EventName,
             Message = source.Message,
             Source = source.Source,
-            SerializedActivityState = source.ActivityState != null ? payloadSerializer.Serialize(source.ActivityState) : null,
-            SerializedPayload = source.Payload != null ? payloadSerializer.Serialize(source.Payload) : null,
+            SerializedPayload = ShouldSerializePayload(source) ? payloadSerializer.Serialize(source.Payload!) : null,
             TenantId = source.TenantId
+        };
+    }
+
+    private bool ShouldSerializePayload(WorkflowExecutionLogRecord source)
+    {
+        return source.Payload switch
+        {
+            null => false,
+            IDictionary<string, object> dictionary => dictionary.Count > 0,
+            _ => true
         };
     }
 
     private WorkflowExecutionLogRecord Map(WorkflowExecutionLogRecordRecord source)
     {
-        return new WorkflowExecutionLogRecord
+        return new()
         {
             Id = source.Id,
             WorkflowDefinitionId = source.WorkflowDefinitionId,
@@ -155,7 +164,6 @@ internal class DapperWorkflowExecutionLogStore(Store<WorkflowExecutionLogRecordR
             EventName = source.EventName,
             Message = source.Message,
             Source = source.Source,
-            ActivityState = source.SerializedActivityState != null ? payloadSerializer.Deserialize<IDictionary<string, object>>(source.SerializedActivityState) : null,
             Payload = source.SerializedPayload != null ? payloadSerializer.Deserialize(source.SerializedPayload) : null,
             TenantId = source.TenantId
         };

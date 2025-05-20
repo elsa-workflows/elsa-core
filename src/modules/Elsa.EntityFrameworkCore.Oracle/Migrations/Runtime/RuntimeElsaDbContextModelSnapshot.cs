@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.20")
+                .HasAnnotation("ProductVersion", "9.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -65,29 +65,32 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                     b.Property<int>("ActivityTypeVersion")
                         .HasColumnType("NUMBER(10)");
 
+                    b.Property<int>("AggregateFaultCount")
+                        .HasColumnType("NUMBER(10)");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<bool>("HasBookmarks")
-                        .HasColumnType("NUMBER(1)");
+                        .HasColumnType("BOOLEAN");
 
                     b.Property<string>("SerializedActivityState")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("SerializedActivityStateCompressionAlgorithm")
                         .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedException")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("SerializedOutputs")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("SerializedProperties")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
@@ -219,11 +222,14 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
+                    b.Property<string>("Name")
+                        .HasColumnType("NVARCHAR2(450)");
+
                     b.Property<string>("SerializedMetadata")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("NVARCHAR2(450)");
@@ -246,6 +252,12 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 
                     b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
 
+                    b.HasIndex(new[] { "Name" }, "IX_StoredBookmark_Name");
+
+                    b.HasIndex(new[] { "Name", "Hash" }, "IX_StoredBookmark_Name_Hash");
+
+                    b.HasIndex(new[] { "Name", "Hash", "WorkflowInstanceId" }, "IX_StoredBookmark_Name_Hash_WorkflowInstanceId");
+
                     b.HasIndex(new[] { "TenantId" }, "IX_StoredBookmark_TenantId");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
@@ -266,11 +278,10 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("NVARCHAR2(450)");
@@ -343,10 +354,10 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                         .HasColumnType("NUMBER(19)");
 
                     b.Property<string>("SerializedActivityState")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("Source")
                         .HasColumnType("NVARCHAR2(2000)");
@@ -426,6 +437,62 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp_Sequence");
 
                     b.ToTable("WorkflowExecutionLogRecords", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowInboxMessage", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("ActivityInstanceId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("ActivityTypeName")
+                        .IsRequired()
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("SerializedBookmarkPayload")
+                        .HasColumnType("NCLOB");
+
+                    b.Property<string>("SerializedInput")
+                        .HasColumnType("NCLOB");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "ActivityInstanceId" }, "IX_WorkflowInboxMessage_ActivityInstanceId");
+
+                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_WorkflowInboxMessage_ActivityTypeName");
+
+                    b.HasIndex(new[] { "CorrelationId" }, "IX_WorkflowInboxMessage_CorrelationId");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_WorkflowInboxMessage_CreatedAt");
+
+                    b.HasIndex(new[] { "ExpiresAt" }, "IX_WorkflowInboxMessage_ExpiresAt");
+
+                    b.HasIndex(new[] { "Hash" }, "IX_WorkflowInboxMessage_Hash");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_WorkflowInboxMessage_WorkflowInstanceId");
+
+                    b.ToTable("WorkflowInboxMessages", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

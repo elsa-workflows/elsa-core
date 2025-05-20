@@ -10,7 +10,9 @@ using MongoDB.Driver.Linq;
 
 namespace Elsa.MongoDb.Modules.Runtime;
 
+/// <summary>
 /// A MongoDb implementation of <see cref="IBookmarkQueueStore"/>.
+/// </summary>
 [UsedImplicitly]
 public class MongoBookmarkQueueStore(MongoDbStore<BookmarkQueueItem> mongoDbStore) : IBookmarkQueueStore
 {
@@ -32,10 +34,22 @@ public class MongoBookmarkQueueStore(MongoDbStore<BookmarkQueueItem> mongoDbStor
         return await mongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
     }
 
+    public async Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await mongoDbStore.FindManyAsync(query => Filter(query, filter), cancellationToken);
+    }
+
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
         var results = await mongoDbStore.FindManyAsync(query => Paginate(Order(query, orderBy), pageArgs), cancellationToken);
         var count = await mongoDbStore.CountAsync(queryable => Order(queryable, orderBy), cancellationToken);
+        return Page.Of(results.ToList(), count);
+    }
+
+    public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
+    {
+        var results = await mongoDbStore.FindManyAsync(query => Paginate(Order(Filter(query, filter), orderBy), pageArgs), cancellationToken);
+        var count = await mongoDbStore.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
         return Page.Of(results.ToList(), count);
     }
 
@@ -45,18 +59,18 @@ public class MongoBookmarkQueueStore(MongoDbStore<BookmarkQueueItem> mongoDbStor
         return await mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
     }
 
-    private IMongoQueryable<BookmarkQueueItem> Filter(IMongoQueryable<BookmarkQueueItem> queryable, BookmarkQueueFilter filter)
+    private IQueryable<BookmarkQueueItem> Filter(IQueryable<BookmarkQueueItem> queryable, BookmarkQueueFilter filter)
     {
-        return (filter.Apply(queryable) as IMongoQueryable<BookmarkQueueItem>)!;
+        return filter.Apply(queryable);
     }
     
-    private IMongoQueryable<BookmarkQueueItem> Order<TOrderBy>(IMongoQueryable<BookmarkQueueItem> queryable, BookmarkQueueItemOrder<TOrderBy> order)
+    private IQueryable<BookmarkQueueItem> Order<TOrderBy>(IQueryable<BookmarkQueueItem> queryable, BookmarkQueueItemOrder<TOrderBy> order)
     {
-        return (queryable.OrderBy(order) as IMongoQueryable<BookmarkQueueItem>)!;
+        return queryable.OrderBy(order);
     }
 
-    private IMongoQueryable<BookmarkQueueItem> Paginate(IMongoQueryable<BookmarkQueueItem> queryable, PageArgs pageArgs)
+    private IQueryable<BookmarkQueueItem> Paginate(IQueryable<BookmarkQueueItem> queryable, PageArgs pageArgs)
     {
-        return (queryable.Paginate(pageArgs) as IMongoQueryable<BookmarkQueueItem>)!;
+        return queryable.Paginate(pageArgs);
     }
 }

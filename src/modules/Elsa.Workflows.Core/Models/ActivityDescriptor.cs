@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Models;
 
@@ -14,17 +13,17 @@ public class ActivityDescriptor
     /// <summary>
     /// The fully qualified name of the activity type.
     /// </summary>
-    public string TypeName { get; set; } = default!;
+    public string TypeName { get; set; } = null!;
 
     /// <summary>
     /// The namespace of the activity type.
     /// </summary>
-    public string Namespace { get; set; } = default!;
+    public string Namespace { get; set; } = null!;
     
     /// <summary>
     /// The name of the activity type.
     /// </summary>
-    public string Name { get; set; } = default!;
+    public string Name { get; set; } = null!;
     
     /// <summary>
     /// The version of the activity type.
@@ -34,7 +33,7 @@ public class ActivityDescriptor
     /// <summary>
     /// The category of the activity type.
     /// </summary>
-    public string Category { get; set; } = default!;
+    public string Category { get; set; } = null!;
     
     /// <summary>
     /// The display name of the activity type.
@@ -65,7 +64,7 @@ public class ActivityDescriptor
     /// Instantiates a concrete instance of an <see cref="IActivity"/>.
     /// </summary>
     [JsonIgnore]
-    public Func<ActivityConstructorContext, IActivity> Constructor { get; set; } = default!;
+    public Func<ActivityConstructorContext, IActivity> Constructor { get; set; } = null!;
 
     /// <summary>
     /// The kind of activity.

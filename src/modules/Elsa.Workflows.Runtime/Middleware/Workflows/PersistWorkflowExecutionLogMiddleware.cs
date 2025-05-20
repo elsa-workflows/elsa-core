@@ -1,19 +1,17 @@
 using Elsa.Workflows.Pipelines.WorkflowExecution;
-using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
 /// <summary>
 /// Takes care of persisting workflow execution log entries.
 /// </summary>
-public class PersistWorkflowExecutionLogMiddleware(WorkflowMiddlewareDelegate next, ILogRecordSink<WorkflowExecutionLogRecord> sink) : WorkflowExecutionMiddleware(next)
+[Obsolete("This middleware is no longer used and will be removed in a future version. Execution logs are now persisted through the commit state handler.")]
+public class PersistWorkflowExecutionLogMiddleware(WorkflowMiddlewareDelegate next) : WorkflowExecutionMiddleware(next)
 {
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         // Invoke next middleware.
         await Next(context);
-
-        await sink.PersistExecutionLogsAsync(context);
     }
 }

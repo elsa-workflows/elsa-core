@@ -1,7 +1,7 @@
 using Elsa.Workflows.Activities;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Http.Models;
+namespace Elsa.Http;
 
 /// <summary>
 /// Represents the context for authorizing an HTTP endpoint.

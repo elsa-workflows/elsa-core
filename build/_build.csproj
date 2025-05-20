@@ -1,12 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <RootNamespace/>
     <NoWarn>CS0649;CS0169;CA1050;CA1822;CA2211;IDE1006</NoWarn>
-    <NukeRootDirectory>../scripts/nuke</NukeRootDirectory>
-    <NukeScriptDirectory>../scripts/nuke</NukeScriptDirectory>
+    <NukeRootDirectory>..</NukeRootDirectory>
+    <NukeScriptDirectory>..</NukeScriptDirectory>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
     <NukeExcludeLogs>true</NukeExcludeLogs>
     <NukeExcludeDirectoryBuild>true</NukeExcludeDirectoryBuild>
@@ -19,16 +19,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nuke.Components" Version="8.0.0" />
+    <PackageReference Include="Nuke.Components" Version="9.0.4" />
   </ItemGroup>
 
   <!--Overridden for vulnerability reasons with dependencies referencing older versions.-->
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.12.0" />
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.61.3" />
-    <PackageReference Include="NuGet.Packaging" Version="6.10.1" />
-    <PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
-    <PackageReference Include="System.Text.Json" Version="8.0.4" />
+    <PackageReference Include="System.Formats.Asn1" Version="9.0.2" />
   </ItemGroup>
 
 </Project>

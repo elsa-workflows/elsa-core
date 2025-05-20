@@ -1,7 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
-using Elsa.Http.Contracts;
-using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Workflows.Runtime.Filters;
 using JetBrains.Annotations;
@@ -16,7 +14,8 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Entities;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
-using Elsa.Workflows.Contracts;
+using Elsa.Common.Multitenancy;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Models;
@@ -32,15 +31,14 @@ namespace Elsa.Http.Middleware;
 [PublicAPI]
 public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivityOptions> options)
 {
-    private readonly string _activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-
     /// <summary>
     /// Attempts to match the inbound request path to an associated workflow and then run that workflow.
     /// </summary>
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
     public async Task InvokeAsync(HttpContext httpContext, IServiceProvider serviceProvider)
     {
-        var path = GetPath(httpContext);
+        var path = httpContext.Request.Path.Value!.NormalizeRoute();
+        var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
         var basePath = options.Value.BasePath?.ToString().NormalizeRoute();
 
         // If the request path does not match the configured base path to handle workflows, then skip.
@@ -53,14 +51,15 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
             }
 
             // Strip the base path.
-            path = path[basePath.Length..];
+            matchingPath = matchingPath[basePath.Length..];
         }
 
-        var matchingPath = GetMatchingRoute(serviceProvider, path);
+        matchingPath = matchingPath.NormalizeRoute();
+        
         var input = new Dictionary<string, object>
         {
             [HttpEndpoint.HttpContextInputKey] = true,
-            [HttpEndpoint.RequestPathInputKey] = path
+            [HttpEndpoint.PathInputKey] = path
         };
 
         var cancellationToken = httpContext.RequestAborted;
@@ -148,7 +147,8 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         {
             Hash = bookmarkHash,
             WorkflowInstanceId = workflowInstanceId,
-            CorrelationId = correlationId
+            CorrelationId = correlationId,
+            TenantAgnostic = true
         };
         return await bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken);
     }
@@ -208,8 +208,11 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var cancellationToken = httpContext.RequestAborted;
         var workflow = workflowGraph.Workflow;
 
-        if (await AuthorizeAsync(serviceProvider, httpContext, workflow, bookmarkPayload, cancellationToken))
+        if (!await AuthorizeAsync(serviceProvider, httpContext, workflow, bookmarkPayload, cancellationToken))
+        {
+            httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
             return;
+        }
 
         var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
         var result = await ExecuteWithinTimeoutAsync(async ct =>
@@ -245,23 +248,23 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         return result;
     }
 
-    private string GetMatchingRoute(IServiceProvider serviceProvider, string path)
+    private HttpRouteData GetMatchingRoute(IServiceProvider serviceProvider, string path)
     {
         var routeMatcher = serviceProvider.GetRequiredService<IRouteMatcher>();
         var routeTable = serviceProvider.GetRequiredService<IRouteTable>();
 
         var matchingRouteQuery =
-            from route in routeTable
-            let routeValues = routeMatcher.Match(route, path)
+            from routeData in routeTable
+            let routeValues = routeMatcher.Match(routeData.Route, path)
             where routeValues != null
             select new
             {
-                route,
+                route = routeData,
                 routeValues
             };
 
         var matchingRoute = matchingRouteQuery.FirstOrDefault();
-        var routeTemplate = matchingRoute?.route ?? path;
+        var routeTemplate = matchingRoute?.route ?? new HttpRouteData(path);
 
         return routeTemplate;
     }
@@ -320,8 +323,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         }
     }
 
-    private string GetPath(HttpContext httpContext) => httpContext.Request.Path.Value!.NormalizeRoute();
-
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
     private async Task<bool> HandleMultipleWorkflowsFoundAsync(HttpContext httpContext, Func<IEnumerable<object>> workflowMatches, CancellationToken cancellationToken)
     {
@@ -346,7 +347,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var httpEndpointFaultHandler = serviceProvider.GetRequiredService<IHttpEndpointFaultHandler>();
         var workflowInstanceManager = serviceProvider.GetRequiredService<IWorkflowInstanceManager>();
         var workflowState = (await workflowInstanceManager.FindByIdAsync(workflowExecutionResult.WorkflowState.Id, cancellationToken))!;
-        await httpEndpointFaultHandler.HandleAsync(new HttpEndpointFaultContext(httpContext, workflowState.WorkflowState, cancellationToken));
+        await httpEndpointFaultHandler.HandleAsync(new(httpContext, workflowState.WorkflowState, cancellationToken));
         return true;
     }
 
@@ -359,22 +360,16 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
     {
         var httpEndpointAuthorizationHandler = serviceProvider.GetRequiredService<IHttpEndpointAuthorizationHandler>();
 
-        if (!(bookmarkPayload.Authorize ?? false))
-            return false;
+        if (bookmarkPayload.Authorize == false)
+            return true;
 
-        var authorized = await httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, workflow, bookmarkPayload.Policy));
-
-        if (!authorized)
-            httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-
-        return !authorized;
+        return await httpEndpointAuthorizationHandler.AuthorizeAsync(new(httpContext, workflow, bookmarkPayload.Policy));
     }
 
     private string ComputeBookmarkHash(IServiceProvider serviceProvider, string path, string method)
     {
         var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
         var bookmarkHasher = serviceProvider.GetRequiredService<IStimulusHasher>();
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-        return bookmarkHasher.Hash(activityTypeName, bookmarkPayload);
+        return bookmarkHasher.Hash(HttpStimulusNames.HttpEndpoint, bookmarkPayload);
     }
 }

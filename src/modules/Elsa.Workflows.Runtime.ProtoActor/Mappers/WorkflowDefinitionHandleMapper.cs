@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Workflows.Runtime.ProtoActor.Extensions;
 using Elsa.Workflows.Models;
 using ProtoWorkflowDefinitionHandle = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.WorkflowDefinitionHandle;

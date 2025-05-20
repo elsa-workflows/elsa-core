@@ -2,7 +2,6 @@ using System.ComponentModel;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Memory;
@@ -52,7 +51,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         var serviceProvider = context.ServiceProvider;
         var cancellationToken = context.CancellationToken;
 
-        // Find the workflow definition and not the graph; the graph must be computed at runtime, since one NodeIds will vary across graphs.
+        // Find the workflow definition and not the graph; the graph must be computed at runtime, since NodeIds will vary across graphs.
         var workflowDefinition = await GetWorkflowDefinitionAsync(serviceProvider, cancellationToken);
 
         if (workflowDefinition == null)

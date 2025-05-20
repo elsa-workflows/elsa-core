@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.EntityFrameworkCore.Common;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// Provides options for configuring Elsa's Entity Framework Core integration.
@@ -33,6 +33,5 @@ public class ElsaDbContextOptionsExtension : IDbContextOptionsExtension
     /// <inheritdoc />
     public void Validate(IDbContextOptions options)
     {
-
     }
 }

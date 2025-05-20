@@ -1,7 +1,5 @@
 using Elsa.Common.Models;
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
@@ -11,20 +9,24 @@ using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using Elsa.Common.Entities;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 
 /// <inheritdoc />
 [UsedImplicitly]
-public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, WorkflowDefinition> store, IPayloadSerializer payloadSerializer)
+public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, WorkflowDefinition> store, IPayloadSerializer payloadSerializer, ILogger<EFCoreWorkflowDefinitionStore> logger)
     : IWorkflowDefinitionStore
 {
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        return await store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, filter.TenantAgnostic, cancellationToken).FirstOrDefault();
+        var orderBy = new WorkflowDefinitionOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await FindAsync(filter, orderBy, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -36,9 +38,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await store.QueryAsync(queryable => Filter(queryable, filter), cancellationToken).LongCount();
-        var results = await store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
-        return new(results, count);
+        var orderBy = new WorkflowDefinitionOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await FindManyAsync(filter, orderBy, pageArgs, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -52,7 +53,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        return await store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
+        var orderBy = new WorkflowDefinitionOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await FindManyAsync(filter, orderBy, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -65,18 +67,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     [RequiresUnreferencedCode("The method 'FindSummariesAsync' is used for serialization and requires unreferenced code to be preserved.")]
     public async Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
-        var set = dbContext.WorkflowDefinitions.AsNoTracking();
-        var queryable = Filter(set.AsQueryable(), filter);
-
-        if (filter.TenantAgnostic)
-            queryable = queryable.IgnoreQueryFilters();
-        
-        var count = await queryable.LongCountAsync(cancellationToken);
-        queryable = Paginate(queryable, pageArgs);
-        var results = await queryable.Select(WorkflowDefinitionSummary.FromDefinitionExpression()).ToListAsync(cancellationToken);
-
-        return Page.Of(results, count);
+        var orderBy = new WorkflowDefinitionOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await FindSummariesAsync(filter, orderBy, pageArgs, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -100,14 +92,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     [RequiresUnreferencedCode("The method 'FindSummariesAsync' is used for serialization and requires unreferenced code to be preserved.")]
     public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
-        var set = dbContext.WorkflowDefinitions.AsNoTracking();
-        var queryable = Filter(set.AsQueryable(), filter);
-        
-        if (filter.TenantAgnostic)
-            queryable = queryable.IgnoreQueryFilters();
-        
-        return await queryable.Select(WorkflowDefinitionSummary.FromDefinitionExpression()).ToListAsync(cancellationToken);
+        var orderBy = new WorkflowDefinitionOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await FindSummariesAsync(filter, orderBy, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -193,8 +179,15 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
-        if (!string.IsNullOrWhiteSpace(json))
-            data = payloadSerializer.Deserialize<WorkflowDefinitionState>(json);
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(json))
+                data = payloadSerializer.Deserialize<WorkflowDefinitionState>(json);
+        }
+        catch (Exception exp)
+        {
+            logger.LogError(exp, "Could not deserialize workflow definition state: {DefinitionId}. Reverting to default state", entity.DefinitionId);
+        }
 
         entity.Options = data.Options;
         entity.Variables = data.Variables;
@@ -221,7 +214,7 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         if (filter.Name != null) queryable = queryable.Where(x => x.Name == filter.Name);
         if (filter.Names != null) queryable = queryable.Where(x => filter.Names.Contains(x.Name!));
         if (filter.UsableAsActivity != null) queryable = queryable.Where(x => EF.Property<bool>(x, "UsableAsActivity") == filter.UsableAsActivity);
-        if (!string.IsNullOrWhiteSpace(filter.SearchTerm)) queryable = queryable.Where(x => x.Name!.Contains(filter.SearchTerm) || x.Description!.Contains(filter.SearchTerm) || x.Id.Contains(filter.SearchTerm) || x.DefinitionId.Contains(filter.SearchTerm));
+        if (!string.IsNullOrWhiteSpace(filter.SearchTerm)) queryable = queryable.Where(x => x.Name!.ToLower().Contains(filter.SearchTerm.ToLower()) || x.Description!.ToLower().Contains(filter.SearchTerm.ToLower()) || x.Id.Contains(filter.SearchTerm) || x.DefinitionId.Contains(filter.SearchTerm));
 
         // TEMP: IsSystem may be null when upgrading from older versions of Elsa to 3.2. See issue #5366.
         // In a future version, we should remove this check and simply do queryable.Where(x => x.IsSystem == filter.IsSystem).

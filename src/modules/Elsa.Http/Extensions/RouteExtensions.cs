@@ -8,7 +8,7 @@ namespace Elsa.Extensions;
 public static class RouteExtensions
 {
     /// <summary>
-    /// Normalizes a route by ensuring a leading slash, removing any trailing slash and converting the path to lowercase.
+    /// Normalizes a route by ensuring a leading slash, removing any trailing slash.
     /// </summary>
-    public static string NormalizeRoute(this string path) => $"/{path.Trim('/').ToLowerInvariant()}";
+    public static string NormalizeRoute(this string path) => $"/{path.Trim('/')}";
 }

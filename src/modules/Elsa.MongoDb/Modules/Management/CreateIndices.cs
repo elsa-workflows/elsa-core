@@ -71,6 +71,7 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                         new(indexBuilder
                             .Ascending(x => x.DefinitionId)
                             .Ascending(x => x.SubStatus)),
+                        new(indexBuilder.Ascending(x => x.IsExecuting)),
                         new(indexBuilder.Ascending(x => x.DefinitionId)),
                         new(indexBuilder.Ascending(x => x.Status)),
                         new(indexBuilder.Ascending(x => x.SubStatus)),

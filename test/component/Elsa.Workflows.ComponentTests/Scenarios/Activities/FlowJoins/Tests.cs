@@ -1,5 +1,5 @@
-﻿using Elsa.Workflows.ComponentTests.Helpers;
-using Elsa.Workflows.Contracts;
+﻿using Elsa.Workflows.ComponentTests.Abstractions;
+using Elsa.Workflows.ComponentTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.FlowJoins;

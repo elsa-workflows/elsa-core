@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.ActivityOutputs;
@@ -9,8 +8,8 @@ public class SumWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        var a = new Variable<int>();
-        var b = new Variable<int>();
+        var a = new Variable<int>("A", 0);
+        var b = new Variable<int>("B", 0);
 
         var sumActivity = new SumActivity(a, b);
 

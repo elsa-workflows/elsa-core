@@ -1,5 +1,4 @@
 using System.Reflection;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Models;
 
@@ -88,6 +87,12 @@ public class InputDescriptor : PropertyDescriptor
     /// True if the input is readonly, false otherwise.
     /// </summary>
     public bool? IsReadOnly { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether this input can contain secrets.
+    /// When set to true, the input will be treated as a secret and will be encrypted, masked or otherwise protected, depending on the configured policy.
+    /// </summary>
+    public bool IsSensitive { get; set; }
 
     /// <summary>
     /// The storage driver type to use for persistence.

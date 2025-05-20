@@ -6,12 +6,16 @@ using Elsa.Extensions;
 
 namespace Elsa.Expressions.Options;
 
+/// <summary>
 /// Options for the expression feature.
+/// </summary>
 public class ExpressionOptions
 {
     private readonly IDictionary<string, Type> _aliasTypeDictionary = new Dictionary<string, Type>();
     
+    /// <summary>
     /// Initializes a new instance of the <see cref="ExpressionOptions"/> class.
+    /// </summary>
     public ExpressionOptions()
     {
         AliasTypeDictionary = new ReadOnlyDictionary<string, Type>(_aliasTypeDictionary);
@@ -42,10 +46,14 @@ public class ExpressionOptions
         this.AddTypeAlias<Dictionary<string, object>>("ObjectMap");
     }
     
+    /// <summary>
     /// Gets the type alias dictionary.
+    /// </summary>
     public IDictionary<string, Type> AliasTypeDictionary { get; set; }
     
+    /// <summary>
     /// Registers a well-known type alias.
+    /// </summary>
     public ExpressionOptions RegisterTypeAlias(Type type, string alias)
     {
         _aliasTypeDictionary[alias] = type;

@@ -3,7 +3,7 @@ using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Notifications;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Mediator.Contracts;
 
 namespace Elsa.Alterations.Services;
@@ -25,7 +25,7 @@ public class AlterationPlanManager(IAlterationPlanStore planStore, IAlterationJo
         var jobFilter = new AlterationJobFilter
         {
             PlanId = planId,
-            Statuses = new[] { AlterationJobStatus.Pending, AlterationJobStatus.Running }
+            Statuses = [AlterationJobStatus.Pending, AlterationJobStatus.Running]
         };
         
         return await jobStore.CountAsync(jobFilter, cancellationToken) == 0;

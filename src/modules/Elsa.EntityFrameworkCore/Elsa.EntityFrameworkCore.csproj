@@ -11,11 +11,6 @@
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     </ItemGroup>
 
-    <!--Overridden for vulnerability reasons with dependencies referencing older versions.-->
-    <ItemGroup>
-        <PackageReference Include="System.Text.Json" />
-    </ItemGroup>
-    
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Alterations.Core\Elsa.Alterations.Core.csproj" />
         <ProjectReference Include="..\Elsa.Alterations\Elsa.Alterations.csproj" />

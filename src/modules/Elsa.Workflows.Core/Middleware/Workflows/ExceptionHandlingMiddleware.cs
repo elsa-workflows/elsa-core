@@ -1,5 +1,4 @@
-using Elsa.Common.Contracts;
-using Elsa.Workflows.Contracts;
+using Elsa.Common;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.State;
@@ -50,7 +49,7 @@ public class ExceptionHandlingMiddleware : IWorkflowExecutionMiddleware
             var exceptionState = ExceptionState.FromException(e);
             var now = _systemClock.UtcNow;
             var activity = context.Workflow;
-            var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, exceptionState, now);
+            var incident = new ActivityIncident(activity.Id, activity.NodeId ,activity.Type, e.Message, exceptionState, now);
             context.Incidents.Add(incident);
             context.TransitionTo(WorkflowSubStatus.Faulted);
             context.AddExecutionLogEntry("Faulted", e.Message, exceptionState);

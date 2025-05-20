@@ -14,4 +14,9 @@ public sealed class TypeDefinitionsDocument
     /// A collection of type definitions.
     /// </summary>
     public ICollection<TypeDefinition> Types { get; set; } = new List<TypeDefinition>();
+    
+    /// <summary>
+    /// A collection of global variables.
+    /// </summary>
+    public ICollection<VariableDefinition> Variables { get; set; } = new List<VariableDefinition>();
 }

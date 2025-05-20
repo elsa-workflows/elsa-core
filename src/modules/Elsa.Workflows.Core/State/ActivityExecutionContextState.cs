@@ -55,6 +55,16 @@ public class ActivityExecutionContextState
     /// The status of the activity.
     /// </summary>
     public ActivityStatus Status { get; set; }
+    
+    /// <summary>
+    /// Gets or sets a value indicating whether the activity is actively executing. 
+    /// </summary>
+    public bool IsExecuting { get; set; }
+
+    /// <summary>
+    /// The number of faults recorded by this activity for itself and descendants.
+    /// </summary>
+    public int FaultCount { get; set; }
 
     /// <summary>
     /// The time at which the activity execution began.

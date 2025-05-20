@@ -3,7 +3,6 @@ using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
@@ -24,6 +23,7 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly ITriggerStore _triggerStore;
+    private readonly IActivityRegistry _activityRegistry;
     private readonly INotificationSender _notificationSender;
     private readonly IServiceProvider _serviceProvider;
     private readonly IStimulusHasher _hasher;
@@ -38,6 +38,7 @@ public class TriggerIndexer : ITriggerIndexer
         IExpressionEvaluator expressionEvaluator,
         IIdentityGenerator identityGenerator,
         ITriggerStore triggerStore,
+        IActivityRegistry activityRegistry,
         INotificationSender notificationSender,
         IServiceProvider serviceProvider,
         IStimulusHasher hasher,
@@ -47,6 +48,7 @@ public class TriggerIndexer : ITriggerIndexer
         _expressionEvaluator = expressionEvaluator;
         _identityGenerator = identityGenerator;
         _triggerStore = triggerStore;
+        _activityRegistry = activityRegistry;
         _notificationSender = notificationSender;
         _serviceProvider = serviceProvider;
         _hasher = hasher;
@@ -154,11 +156,19 @@ public class TriggerIndexer : ITriggerIndexer
     {
         var workflow = context.Workflow;
         var cancellationToken = context.CancellationToken;
-        var expressionExecutionContext = await trigger.CreateExpressionExecutionContextAsync(_serviceProvider, context, _expressionEvaluator, _logger);
-
+        var activityTypeName = trigger.Type;
+        var triggerDescriptor = _activityRegistry.Find(activityTypeName, trigger.Version);
+        
+        if (triggerDescriptor == null)
+        {
+            _logger.LogWarning("Could not find activity descriptor for activity type {ActivityType}", activityTypeName);
+            return new List<StoredTrigger>(0);
+        }
+        
+        var expressionExecutionContext = await trigger.CreateExpressionExecutionContextAsync(triggerDescriptor, _serviceProvider, context, _expressionEvaluator, _logger);
         var triggerIndexingContext = new TriggerIndexingContext(context, expressionExecutionContext, trigger, cancellationToken);
         var triggerData = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
-        var triggerTypeName = trigger.Type;
+        var triggerName = triggerIndexingContext.TriggerName;
 
         // If no trigger payloads were returned, create a null payload.
         if (!triggerData.Any()) triggerData.Add(null!);
@@ -168,9 +178,9 @@ public class TriggerIndexer : ITriggerIndexer
             Id = _identityGenerator.GenerateId(),
             WorkflowDefinitionId = workflow.Identity.DefinitionId,
             WorkflowDefinitionVersionId = workflow.Identity.Id,
-            Name = triggerTypeName,
+            Name = triggerName,
             ActivityId = trigger.Id,
-            Hash = _hasher.Hash(triggerTypeName, payload),
+            Hash = _hasher.Hash(triggerName, payload),
             Payload = payload
         });
 
@@ -188,6 +198,6 @@ public class TriggerIndexer : ITriggerIndexer
             _logger.LogWarning(e, "Failed to get trigger data for activity {ActivityId}", trigger.Id);
         }
 
-        return new List<object>(0);
+        return new(0);
     }
 }

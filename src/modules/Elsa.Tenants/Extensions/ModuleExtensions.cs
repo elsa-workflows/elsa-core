@@ -10,11 +10,29 @@ namespace Elsa.Tenants.Extensions;
 public static class ModuleExtensions
 {
     /// <summary>
-    /// Installs & configures the <see cref="TenantsFeature"/> feature.
+    /// Installs and configures the <see cref="TenantsFeature"/> feature.
     /// </summary>
     public static IModule UseTenants(this IModule module, Action<TenantsFeature>? configure = default)
     {
         module.Configure(configure);
         return module;
+    }
+
+    /// <summary>
+    /// Installs and configures the <see cref="TenantManagementEndpointsFeature"/> feature.
+    /// </summary>
+    public static TenantsFeature UseTenantManagementEndpoints(this TenantsFeature feature, Action<TenantManagementEndpointsFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
+
+    /// <summary>
+    /// Installs and configures the <see cref="TenantManagementFeature"/> feature.
+    /// </summary>
+    public static TenantsFeature UseTenantManagement(this TenantsFeature feature, Action<TenantManagementFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
     }
 }

@@ -35,9 +35,9 @@ internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
             return;
         }
 
-        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
 
-        if (!authorizationResult.Result.Succeeded)
+        if (!authorizationResult.Succeeded)
         {
             await SendForbiddenAsync(cancellationToken);
             return;
@@ -46,7 +46,7 @@ internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
         var isPublished = definition.IsPublished;
         var result = !isPublished ? await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken) : null;
         var mappedDefinition = await linker.MapAsync(definition, cancellationToken);
-        var response = new Response(mappedDefinition, isPublished, result?.ConsumingWorkflows?.Count() ?? 0);
+        var response = new Response(mappedDefinition, isPublished, result?.AffectedWorkflows.WorkflowDefinitions.Count ?? 0);
         await SendOkAsync(response, cancellationToken);
     }
 }

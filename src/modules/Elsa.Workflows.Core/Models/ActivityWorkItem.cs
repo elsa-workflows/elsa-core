@@ -1,4 +1,3 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 
 namespace Elsa.Workflows.Models;
@@ -13,11 +12,11 @@ public class ActivityWorkItem
     /// </summary>
     public ActivityWorkItem(
         IActivity activity,
-        ActivityExecutionContext? owner = default,
-        object? tag = default,
-        IEnumerable<Variable>? variables = default,
-        ActivityExecutionContext? existingActivityExecutionContext = default,
-        IDictionary<string, object>? input = default)
+        ActivityExecutionContext? owner = null,
+        object? tag = null,
+        IEnumerable<Variable>? variables = null,
+        ActivityExecutionContext? existingActivityExecutionContext = null,
+        IDictionary<string, object>? input = null)
     {
         Activity = activity;
         Owner = owner;

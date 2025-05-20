@@ -2,9 +2,7 @@ using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Helpers;
-using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Management.Requests;
-using Elsa.Workflows.Management.Responses;
+using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Filters;
 using JetBrains.Annotations;
@@ -15,7 +13,7 @@ namespace Elsa.Http.Handlers;
 /// A <see cref="ValidateWorkflowRequest"/> handler that validates a workflow path and return any errors.
 /// </summary>
 [UsedImplicitly]
-public class ValidateWorkflowRequestHandler : IRequestHandler<ValidateWorkflowRequest, ValidateWorkflowResponse>
+public class ValidateWorkflowRequestHandler : INotificationHandler<WorkflowDefinitionValidating>
 {
     private readonly ITriggerStore _triggerStore;
     private readonly ITriggerIndexer _triggerIndexer;
@@ -28,14 +26,17 @@ public class ValidateWorkflowRequestHandler : IRequestHandler<ValidateWorkflowRe
         _triggerStore = triggerStore;
         _triggerIndexer = triggerIndexer;
     }
-
-    /// <inheritdoc />
-    public async Task<ValidateWorkflowResponse> HandleAsync(ValidateWorkflowRequest request, CancellationToken cancellationToken)
+    
+    public async Task HandleAsync(WorkflowDefinitionValidating notification, CancellationToken cancellationToken)
     {
-        var workflow = request.Workflow;
+        var workflow = notification.Workflow;
         var httpEndpointTriggers = (await _triggerIndexer.GetTriggersAsync(workflow, cancellationToken)).Where(x => x.Payload is HttpEndpointBookmarkPayload).ToList();
-        var publishedWorkflowsTriggers = (await _triggerStore.FindManyAsync(new TriggerFilter { Name = ActivityTypeNameHelper.GenerateTypeName(typeof(HttpEndpoint)), TenantAgnostic = true }, cancellationToken)).ToList();
-        var validationErrors = new List<WorkflowValidationError>();
+        var filter = new TriggerFilter
+        {
+            Name = ActivityTypeNameHelper.GenerateTypeName(typeof(HttpEndpoint))
+        };
+        var publishedWorkflowsTriggers = (await _triggerStore.FindManyAsync(filter, cancellationToken)).ToList();
+        var validationErrors = notification.ValidationErrors;
 
         foreach (var httpEndpointTrigger in httpEndpointTriggers)
         {
@@ -53,9 +54,7 @@ public class ValidateWorkflowRequestHandler : IRequestHandler<ValidateWorkflowRe
                 continue;
 
             var message = $"The {triggerPayload.Path} path and {triggerPayload.Method} method are already in use by another workflow!";
-            validationErrors.Add(new WorkflowValidationError(message, httpEndpointTrigger.ActivityId));
+            validationErrors.Add(new(message, httpEndpointTrigger.ActivityId));
         }
-
-        return new ValidateWorkflowResponse(validationErrors);
     }
 }

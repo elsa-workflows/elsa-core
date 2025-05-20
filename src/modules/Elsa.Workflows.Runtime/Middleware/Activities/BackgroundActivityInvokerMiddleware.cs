@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -11,14 +11,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Middleware.Activities;
 
+/// <summary>
 /// Collects the current activity for scheduling for execution from a background job if the activity is of kind <see cref="ActivityKind.Job"/> or <see cref="Task"/>.
+/// </summary>
 [UsedImplicitly]
 public class BackgroundActivityInvokerMiddleware(
     ActivityMiddlewareDelegate next,
     ILogger<BackgroundActivityInvokerMiddleware> logger,
     IIdentityGenerator identityGenerator,
-    IBackgroundActivityScheduler backgroundActivityScheduler)
-    : DefaultActivityInvokerMiddleware(next, logger)
+    IBackgroundActivityScheduler backgroundActivityScheduler,
+    ICommitStrategyRegistry commitStrategyRegistry)
+    : DefaultActivityInvokerMiddleware(next, commitStrategyRegistry, logger)
 {
     internal static string GetBackgroundActivityOutputKey(string activityNodeId) => $"__BackgroundActivityOutput:{activityNodeId}";
     internal static string GetBackgroundActivityOutcomesKey(string activityNodeId) => $"__BackgroundActivityOutcomes:{activityNodeId}";
@@ -53,7 +56,9 @@ public class BackgroundActivityInvokerMiddleware(
         }
     }
 
+    /// <summary>
     /// Schedules the current activity for execution in the background.
+    /// </summary>
     private async Task ScheduleBackgroundActivityAsync(ActivityExecutionContext context)
     {
         var cancellationToken = context.CancellationToken;
@@ -81,7 +86,9 @@ public class BackgroundActivityInvokerMiddleware(
         });
     }
 
+    /// <summary>
     /// Determines whether the current activity should be executed in the background.
+    /// </summary>
     private static bool GetShouldRunInBackground(ActivityExecutionContext context)
     {
         var activity = context.Activity;
@@ -95,7 +102,9 @@ public class BackgroundActivityInvokerMiddleware(
 
     private static bool GetIsBackgroundExecution(ActivityExecutionContext context) => context.TransientProperties.ContainsKey(BackgroundActivityExecutionContextExtensions.IsBackgroundExecution);
     
+    /// <summary>
     /// If the input contains captured output from the background activity invoker, apply that to the execution context.
+    /// </summary>
     private static void CaptureOutputIfAny(ActivityExecutionContext context)
     {
         var activity = context.Activity;
@@ -115,7 +124,7 @@ public class BackgroundActivityInvokerMiddleware(
                 continue;
 
             var output = (Output?)outputDescriptor.ValueGetter(activity);
-            context.Set(output, outputEntry.Value);
+            context.Set(output, outputEntry.Value, outputDescriptor.Name);
         }
     }
 

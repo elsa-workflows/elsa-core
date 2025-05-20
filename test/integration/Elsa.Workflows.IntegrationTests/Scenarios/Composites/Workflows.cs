@@ -1,7 +1,6 @@
 using Elsa.Extensions;
 using Elsa.JavaScript.Activities;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 
@@ -14,12 +13,12 @@ public class Sum : Composite<int>
 {
     private readonly RunJavaScript _runJavaScript;
 
-    public Input<int> A { get; set; } = default!;
-    public Input<int> B { get; set; } = default!;
+    public Input<int> A { get; set; } = null!;
+    public Input<int> B { get; set; } = null!;
 
     public Sum()
     {
-        _runJavaScript = new RunJavaScript
+        _runJavaScript = new()
         {
             Script = new("getA() + getB();"),
         };
@@ -43,7 +42,7 @@ public class Sum : Composite<int>
 
         // If the call site set a result variable, assign it to the JavaScript activity's result.
         if (Result != null)
-            _runJavaScript.Result = new Output<object>(Result.MemoryBlockReference)!;
+            _runJavaScript.Result = new(Result.MemoryBlockReference)!;
     }
 }
 
@@ -54,11 +53,10 @@ public class SumWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        var sum = new Variable<int>();
+        var sum = workflow.WithVariable<int>("Sum", 0);
 
         workflow.Root = new Sequence
         {
-            Variables = { sum },
             Activities =
             {
                 new Sum

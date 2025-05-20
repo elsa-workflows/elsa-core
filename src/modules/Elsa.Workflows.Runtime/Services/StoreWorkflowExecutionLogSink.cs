@@ -1,6 +1,7 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Notifications;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Runtime;
 
@@ -12,7 +13,11 @@ public class StoreWorkflowExecutionLogSink(IWorkflowExecutionLogStore store, ILo
     /// <inheritdoc />
     public async Task PersistExecutionLogsAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
     {
-        var records = extractor.ExtractLogRecords(context).ToList();
+        var records = await extractor.ExtractLogRecordsAsync(context).ToList();
+        
+        if(records.Count == 0)
+            return;
+        
         await store.AddManyAsync(records, context.CancellationToken);
         await notificationSender.SendAsync(new WorkflowExecutionLogUpdated(context), context.CancellationToken);
     }

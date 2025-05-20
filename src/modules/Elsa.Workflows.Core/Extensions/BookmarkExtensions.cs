@@ -1,4 +1,4 @@
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 
@@ -19,7 +19,12 @@ public static class BookmarkExtensions
     public static IEnumerable<Bookmark> Filter<T>(this IEnumerable<Bookmark> bookmarks) where T : IActivity
     {
         var bookmarkName = ActivityTypeNameHelper.GenerateTypeName<T>();
-        return bookmarks.Where(x => x.Name == bookmarkName);
+        return bookmarks.Filter(bookmarkName);
+    }
+    
+    public static IEnumerable<Bookmark> Filter(this IEnumerable<Bookmark> bookmarks, string name)
+    {
+        return bookmarks.Where(x => x.Name == name);
     }
     
     /// <summary>

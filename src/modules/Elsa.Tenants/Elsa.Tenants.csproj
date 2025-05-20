@@ -2,16 +2,13 @@
 
     <PropertyGroup>
         <Description>
-            Provides multi-tenancy to Elsa.
+            Provides multitenancy services.
         </Description>
         <PackageTags>elsa module multitenancy</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
-    </ItemGroup>
-
-    <ItemGroup>
+        <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
         <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj"/>
         <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj"/>
     </ItemGroup>

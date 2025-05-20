@@ -1,9 +1,13 @@
 namespace Elsa.Mediator.Contracts;
 
+/// <summary>
 /// Manages jobs.
+/// </summary>
 public interface IJobQueue
 {
+    /// <summary>
     /// Creates a pending job. The caller must use the returned ID to schedule the job for execution.
+    /// </summary>
     string Create(Func<CancellationToken, Task> job);
     
     /// <summary>
@@ -18,6 +22,13 @@ public interface IJobQueue
     /// <param name="job">The job to enqueue.</param>
     /// <returns>The ID of the job.</returns>
     string Enqueue(Func<CancellationToken, Task> job);
+    
+    /// <summary>
+    /// Dequeues a job.
+    /// </summary>
+    /// <param name="jobId">The ID of the job to dequeue.</param>
+    /// <returns><c>true</c> if the job was dequeued; otherwise, <c>false</c>.</returns>
+    bool Dequeue(string jobId);
     
     /// <summary>
     /// Cancels a job.

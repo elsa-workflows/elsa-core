@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Reflection;
 using Elsa.Alterations.Extensions;
 using Elsa.Caching;
@@ -10,10 +9,12 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
-using Elsa.Tenants.Extensions;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
-using Elsa.Workflows.ComponentTests.Helpers.Services;
+using Elsa.Workflows.ComponentTests.Consumers;
+using Elsa.Workflows.ComponentTests.Decorators;
+using Elsa.Workflows.ComponentTests.Materializers;
+using Elsa.Workflows.ComponentTests.WorkflowProviders;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
@@ -25,7 +26,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Refit;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
-namespace Elsa.Workflows.ComponentTests.Helpers;
+namespace Elsa.Workflows.ComponentTests.Fixtures;
 
 [UsedImplicitly]
 public class WorkflowServer(Infrastructure infrastructure, string url) : WebApplicationFactory<Program>
@@ -33,15 +34,15 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
     public TClient CreateApiClient<TClient>()
     {
         var client = CreateClient();
-        client.BaseAddress = new Uri(client.BaseAddress!, "/elsa/api");
+        client.BaseAddress = new(client.BaseAddress!, "/elsa/api");
         client.Timeout = TimeSpan.FromMinutes(1);
-        return RestService.For<TClient>(client, CreateRefitSettings());
+        return RestService.For<TClient>(client, CreateRefitSettings(Services));
     }
 
     public HttpClient CreateHttpWorkflowClient()
     {
         var client = CreateClient();
-        client.BaseAddress = new Uri(client.BaseAddress!, "/workflows/");
+        client.BaseAddress = new(client.BaseAddress!, "/workflows/");
         client.Timeout = TimeSpan.FromMinutes(1);
         return client;
     }
@@ -73,7 +74,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 });
                 elsa.UseMassTransit(massTransit =>
                 {
-                    massTransit.UseRabbitMq(rabbitMqConnectionString);
+                    //massTransit.UseRabbitMq(rabbitMqConnectionString);
+                    massTransit.Services.AddSingleton<WorkflowDefinitionEvents>();
                     massTransit.AddConsumer<WorkflowDefinitionEventConsumer>("elsa-test-workflow-definition-updates", true);
                 });
                 elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));
@@ -88,8 +90,11 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
                     runtime.UseCache();
                     runtime.UseMassTransitDispatcher();
-                    runtime.UseProtoActor();
-                    //runtime.UseDistributedRuntime();
+                    runtime.UseDistributedRuntime();
+                });
+                elsa.UseDistributedCache(distributedCaching =>
+                {
+                    distributedCaching.UseMassTransit();
                 });
                 elsa.UseJavaScript(options =>
                 {
@@ -107,11 +112,6 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     http.UseCache();
                 });
-                elsa.UseTenants(tenants =>
-                {
-                    tenants.UseTenantsProvider(_ => new TestTenantsProvider("Tenant1", "Tenant2"));
-                    tenants.TenantsOptions = options => options.TenantResolutionPipelineBuilder.Append<TestTenantResolutionStrategy>();
-                });
             };
         }
 
@@ -119,8 +119,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
         {
             services
                 .AddSingleton<SignalManager>()
-                .AddSingleton<WorkflowEvents>()
-                .AddSingleton<WorkflowDefinitionEvents>()
+                .AddScoped<WorkflowEvents>()
+                .AddScoped<WorkflowDefinitionEvents>()
                 .AddSingleton<TriggerChangeTokenSignalEvents>()
                 .AddScoped<IWorkflowMaterializer, TestWorkflowMaterializer>()
                 .AddNotificationHandlersFrom<WorkflowServer>()
@@ -133,6 +133,6 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
     protected override void ConfigureClient(HttpClient client)
     {
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("ApiKey", AdminApiKeyProvider.DefaultApiKey);
+        client.DefaultRequestHeaders.Authorization = new("ApiKey", AdminApiKeyProvider.DefaultApiKey);
     }
 }

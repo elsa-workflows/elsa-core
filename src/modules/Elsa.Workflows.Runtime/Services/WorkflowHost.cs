@@ -1,5 +1,4 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -72,7 +71,7 @@ public class WorkflowHost : IWorkflowHost
         if (WorkflowState.Status != WorkflowStatus.Running)
         {
             _logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that is not in the Running state. The actual state is {ActualWorkflowStatus}", WorkflowState.Id, WorkflowState.Status);
-            return new RunWorkflowResult(WorkflowState, Workflow, null);
+            return new RunWorkflowResult(null!, WorkflowState, Workflow, null);
         }
         
         var runOptions = new RunWorkflowOptions

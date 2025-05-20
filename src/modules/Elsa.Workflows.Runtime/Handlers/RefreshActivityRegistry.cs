@@ -1,5 +1,4 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
@@ -7,7 +6,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
+/// <summary>
 /// Refreshes the <see cref="IActivityRegistry"/> for the <see cref="WorkflowDefinitionActivityProvider"/> provider whenever workflow definitions are reloaded.
+/// </summary>
 [PublicAPI]
 public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater workflowDefinitionActivityRegistryUpdater) : INotificationHandler<WorkflowDefinitionsReloaded>
 {

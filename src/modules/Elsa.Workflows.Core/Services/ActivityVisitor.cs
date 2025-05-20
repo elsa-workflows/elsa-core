@@ -1,4 +1,3 @@
-using Elsa.Workflows.Contracts;
 using ActivityNode = Elsa.Workflows.Models.ActivityNode;
 
 namespace Elsa.Workflows;
@@ -22,14 +21,12 @@ public class ActivityVisitor : IActivityVisitor
     public async Task<ActivityNode> VisitAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var graph = new ActivityNode(activity, "Root");
-        var collectedNodes = new HashSet<ActivityNode>(new[]
-        {
+        var collectedNodes = new HashSet<ActivityNode>([
             graph
-        });
-        var collectedActivities = new HashSet<IActivity>(new[]
-        {
+        ]);
+        var collectedActivities = new HashSet<IActivity>([
             activity
-        });
+        ]);
         var visitorContext = new ActivityVisitorContext
         {
             CollectedActivities = collectedActivities,
@@ -74,12 +71,12 @@ public class ActivityVisitor : IActivityVisitor
 
                 if (childNode == null)
                 {
-                    childNode = new ActivityNode(activity, activityPort.PortName);
+                    childNode = new(activity, activityPort.PortName);
                     collectedNodes.Add(childNode);
                 }
 
-                childNode.Parents.Add(pair.Node);
-                pair.Node.Children.Add(childNode);
+                childNode.AddParent(pair.Node);
+                pair.Node.AddChild(childNode);
                 collectedActivities.Add(activity);
                 await VisitRecursiveAsync((childNode, activity), visitorContext, cancellationToken);
             }
@@ -88,7 +85,7 @@ public class ActivityVisitor : IActivityVisitor
 
     private class ActivityVisitorContext
     {
-        public HashSet<IActivity> CollectedActivities { get; set; } = new();
-        public HashSet<ActivityNode> CollectedNodes { get; set; } = new();
+        public HashSet<IActivity> CollectedActivities { get; set; } = [];
+        public HashSet<ActivityNode> CollectedNodes { get; set; } = [];
     }
 }

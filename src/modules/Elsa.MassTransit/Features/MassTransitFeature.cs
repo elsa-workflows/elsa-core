@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using System.Reflection;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
@@ -32,7 +32,9 @@ public class MassTransitFeature : FeatureBase
     {
     }
 
+    /// <summary>
     /// The number of messages to prefetch.
+    /// </summary>
     [Obsolete("PrefetchCount has been moved to be included in MassTransitOptions")]
     public int? PrefetchCount { get; set; }
 
@@ -79,7 +81,7 @@ public class MassTransitFeature : FeatureBase
                 var category = categoryAttr?.Category ?? activityAttr?.Category ?? "MassTransit";
                 var descriptionAttr = messageType.GetCustomAttribute<DescriptionAttribute>();
                 var description = descriptionAttr?.Description ?? activityAttr?.Description;
-                options.VariableDescriptors.Add(new VariableDescriptor(messageType, category, description));
+                options.VariableDescriptors.Add(new(messageType, category, description));
             }
         });
     }
@@ -87,6 +89,7 @@ public class MassTransitFeature : FeatureBase
     /// <summary>
     /// Adds MassTransit to the service container and registers all collected assemblies for discovery of consumers.
     /// </summary>
+    /// <param name="busConfigurator">The bus configurator used to configure the MassTransit Bus.</param>
     private void AddMassTransit(Action<IBusRegistrationConfigurator> busConfigurator)
     {
         // For each message type, create a concrete WorkflowMessageConsumer<T>.
@@ -117,24 +120,27 @@ public class MassTransitFeature : FeatureBase
         });
     }
 
+    /// <summary>
+    /// Configures MassTransit to use the in-memory transport when no other transport has been configured.
+    /// </summary>
+    /// <param name="configure"><see cref="IBusRegistrationConfigurator"/> reference to the MassTransit bus to configure for and in-memory transport</param>
     private void ConfigureInMemoryTransport(IBusRegistrationConfigurator configure)
     {
         var consumers = this.GetConsumers().ToList();
-        var temporaryConsumers = consumers
-            .Where(c => c.IsTemporary)
-            .ToList();
+        var temporaryConsumers = consumers.Where(c => c.IsTemporary).ToList();
 
         // Consumers need to be added before the UsingInMemory statement to prevent exceptions.
         foreach (var consumer in temporaryConsumers)
             configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
 
-        configure.UsingInMemory((context, busFactoryConfigurator) =>
+        configure.UsingInMemory((context, bus) =>
         {
             var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
+            var busOptions = context.GetRequiredService<IOptions<MassTransitOptions>>().Value;
 
             foreach (var consumer in temporaryConsumers)
             {
-                busFactoryConfigurator.ReceiveEndpoint(consumer.Name!, endpoint =>
+                bus.ReceiveEndpoint(consumer.Name!, endpoint =>
                 {
                     endpoint.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
                     endpoint.ConfigureConsumer(context, consumer.ConsumerType);
@@ -144,19 +150,21 @@ public class MassTransitFeature : FeatureBase
             if (!DisableConsumers)
             {
                 if (Module.HasFeature<MassTransitWorkflowDispatcherFeature>())
-                    busFactoryConfigurator.SetupWorkflowDispatcherEndpoints(context);
+                    bus.SetupWorkflowDispatcherEndpoints(context);
             }
 
-            busFactoryConfigurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+            bus.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
 
-            busFactoryConfigurator.ConfigureJsonSerializerOptions(serializerOptions =>
+            bus.ConfigureJsonSerializerOptions(serializerOptions =>
             {
                 var serializer = context.GetRequiredService<IJsonSerializer>();
                 serializer.ApplyOptions(serializerOptions);
                 return serializerOptions;
             });
 
-            if (PrefetchCount != null) busFactoryConfigurator.PrefetchCount = PrefetchCount.Value;
+            if (busOptions.PrefetchCount.HasValue) bus.PrefetchCount = busOptions.PrefetchCount.Value;
+
+            bus.ConfigureTenantMiddleware(context);
         });
     }
 }

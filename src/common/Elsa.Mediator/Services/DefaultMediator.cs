@@ -41,23 +41,20 @@ public class DefaultMediator : IMediator
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<T>> SendAsync<T>(IRequest<T> request, CancellationToken cancellationToken = default)
+    public async Task<T> SendAsync<T>(IRequest<T> request, CancellationToken cancellationToken = default)
     {
         var responseType = typeof(T);
         var context = new RequestContext(request, responseType, cancellationToken);
         await _requestPipeline.ExecuteAsync(context);
 
-        if (context.Responses.All(x => x is T))
-            return context.Responses.Cast<T>().AsEnumerable();
-
-        throw new InvalidCastException($"Unable to cast objects in Responses property to type {typeof(T)}");
+        return (T)context.Response;
     }
 
     /// <inheritdoc />
     public async Task SendAsync(ICommand command, CancellationToken cancellationToken = default) => await SendAsync(command, _defaultCommandStrategy, cancellationToken);
 
     /// <inheritdoc />
-    public async Task SendAsync(ICommand command, ICommandStrategy? strategy = default, CancellationToken cancellationToken = default)
+    public async Task SendAsync(ICommand command, ICommandStrategy? strategy = null, CancellationToken cancellationToken = default)
     {
         var resultType = typeof(Unit);
         strategy ??= _defaultCommandStrategy;
@@ -69,7 +66,7 @@ public class DefaultMediator : IMediator
     public async Task<T> SendAsync<T>(ICommand<T> command, CancellationToken cancellationToken = default) => await SendAsync(command, _defaultCommandStrategy, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<T> SendAsync<T>(ICommand<T> command, ICommandStrategy strategy, CancellationToken cancellationToken = default)
+    public async Task<T> SendAsync<T>(ICommand<T> command, ICommandStrategy? strategy, CancellationToken cancellationToken = default)
     {
         var resultType = typeof(T);
         strategy ??= _defaultCommandStrategy;
@@ -83,7 +80,7 @@ public class DefaultMediator : IMediator
     public async Task SendAsync(INotification notification, CancellationToken cancellationToken = default) => await SendAsync(notification, _defaultPublishingStrategy, cancellationToken);
 
     /// <inheritdoc />
-    public async Task SendAsync(INotification notification, IEventPublishingStrategy? strategy = default, CancellationToken cancellationToken = default)
+    public async Task SendAsync(INotification notification, IEventPublishingStrategy? strategy = null, CancellationToken cancellationToken = default)
     {
         strategy ??= _defaultPublishingStrategy;
         var context = new NotificationContext(notification, strategy, cancellationToken);

@@ -1,9 +1,8 @@
 using System.Linq.Expressions;
-using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.MongoDb.Extensions;
-using Elsa.Tenants;
 using JetBrains.Annotations;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
@@ -15,7 +14,7 @@ namespace Elsa.MongoDb.Common;
 /// </summary>
 /// <typeparam name="TDocument">The type of the document.</typeparam>
 [PublicAPI]
-public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITenantResolver tenantResolver)
+public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITenantAccessor tenantAccessor)
     where TDocument : class
 {
     /// <summary>
@@ -30,7 +29,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task<TDocument> AddAsync(TDocument document, CancellationToken cancellationToken = default)
     {
-        await ApplyTenantIdAsync(document, cancellationToken);
+        ApplyTenantId(document);
         await collection.InsertOneAsync(document, new InsertOneOptions(), cancellationToken);
         return document;
     }
@@ -43,7 +42,11 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     public async Task AddManyAsync(IEnumerable<TDocument> documents, CancellationToken cancellationToken = default)
     {
         var documentsList = documents.ToList();
-        await ApplyTenantIdAsync(documentsList, cancellationToken);
+
+        if (!documentsList.Any())
+            return;
+
+        ApplyTenantId(documentsList);
         await collection.InsertManyAsync(documentsList, new InsertManyOptions(), cancellationToken);
     }
 
@@ -54,7 +57,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task<TDocument> SaveAsync(TDocument document, CancellationToken cancellationToken = default)
     {
-        await ApplyTenantIdAsync(document, cancellationToken);
+        ApplyTenantId(document);
         return await collection.FindOneAndReplaceAsync(document.BuildIdFilter(), document, new FindOneAndReplaceOptions<TDocument>
         {
             ReturnDocument = ReturnDocument.After,
@@ -70,7 +73,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task<TDocument> SaveAsync<TResult>(TDocument document, Expression<Func<TDocument, TResult>> selector, CancellationToken cancellationToken = default)
     {
-        await ApplyTenantIdAsync(document, cancellationToken);
+        ApplyTenantId(document);
         return await collection.FindOneAndReplaceAsync(document.BuildExpression(selector), document, new FindOneAndReplaceOptions<TDocument>
         {
             ReturnDocument = ReturnDocument.After,
@@ -86,7 +89,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     public async Task SaveManyAsync(IEnumerable<TDocument> documents, CancellationToken cancellationToken = default)
     {
         var documentsList = documents.ToList();
-        await ApplyTenantIdAsync(documentsList, cancellationToken);
+        ApplyTenantId(documentsList);
         var writes = new List<WriteModel<TDocument>>();
 
         foreach (var document in documentsList)
@@ -113,7 +116,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     public async Task SaveManyAsync(IEnumerable<TDocument> documents, string primaryKey = nameof(Entity.Id), CancellationToken cancellationToken = default)
     {
         var documentsList = documents.ToList();
-        await ApplyTenantIdAsync(documentsList, cancellationToken);
+        ApplyTenantId(documentsList);
         var writes = new List<WriteModel<TDocument>>();
 
         foreach (var document in documentsList)
@@ -129,6 +132,29 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
             return;
 
         await collection.BulkWriteAsync(writes, cancellationToken: cancellationToken);
+    }
+    
+    public async Task UpdatePartialAsync(
+        string id,
+        IDictionary<string, object> updatedFields,
+        string primaryKey = nameof(Entity.Id),
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(id))
+            throw new ArgumentNullException(nameof(id));
+
+        if (updatedFields == null || updatedFields.Count == 0)
+            throw new ArgumentException("No fields to update were provided.", nameof(updatedFields));
+
+        var filter = Builders<TDocument>.Filter.Eq(primaryKey, id);
+        var updateDefinition = Builders<TDocument>.Update.Combine(
+            updatedFields.Select(field => Builders<TDocument>.Update.Set(field.Key, field.Value))
+        );
+
+        var updateResult = await collection.UpdateOneAsync(filter, updateDefinition, cancellationToken: cancellationToken);
+
+        if (updateResult.MatchedCount == 0)
+            throw new InvalidOperationException($"No document found with ID '{id}'.");
     }
 
     /// <summary>
@@ -151,7 +177,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// <returns>The document if found, otherwise <c>null</c>.</returns>
     public async Task<TDocument?> FindAsync(Expression<Func<TDocument, bool>> predicate, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
-        var queryable = await GetQueryableCollectionAsync(tenantAgnostic, cancellationToken);
+        var queryable = GetQueryableCollection(tenantAgnostic);
         return await queryable.Where(predicate).FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -161,7 +187,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// <param name="query">The query to use</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The document if found, otherwise <c>null</c></returns>
-    public async Task<TDocument?> FindAsync(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, CancellationToken cancellationToken = default)
+    public async Task<TDocument?> FindAsync(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, CancellationToken cancellationToken = default)
     {
         return await FindAsync(query, false, cancellationToken);
     }
@@ -173,9 +199,9 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// <param name="tenantAgnostic">Whether to include results across tenants</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The document if found, otherwise <c>null</c></returns>
-    public async Task<TDocument?> FindAsync(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    public async Task<TDocument?> FindAsync(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
-        var queryable = await GetQueryableCollectionAsync(tenantAgnostic, cancellationToken);
+        var queryable = GetQueryableCollection(tenantAgnostic);
         return await query(queryable).FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -192,14 +218,14 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// </summary>
     public async Task<IEnumerable<TDocument>> FindManyAsync(Expression<Func<TDocument, bool>> predicate, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
-        var queryable = await GetQueryableCollectionAsync(tenantAgnostic, cancellationToken);
+        var queryable = GetQueryableCollection(tenantAgnostic);
         return await queryable.Where(predicate).ToListAsync(cancellationToken);
     }
 
     /// <summary>
     /// Queries the database using a query and a selector.
     /// </summary>
-    public async Task<IEnumerable<TResult>> FindManyAsync<TResult>(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, Expression<Func<TDocument, TResult>> selector, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TResult>> FindManyAsync<TResult>(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, Expression<Func<TDocument, TResult>> selector, CancellationToken cancellationToken = default)
     {
         return await FindManyAsync(query, selector, false, cancellationToken);
     }
@@ -207,16 +233,16 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// <summary>
     /// Queries the database using a query and a selector.
     /// </summary>
-    public async Task<IEnumerable<TResult>> FindManyAsync<TResult>(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, Expression<Func<TDocument, TResult>> selector, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TResult>> FindManyAsync<TResult>(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, Expression<Func<TDocument, TResult>> selector, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
-        var queryable = await GetQueryableCollectionAsync(tenantAgnostic, cancellationToken);
+        var queryable = GetQueryableCollection(tenantAgnostic);
         return await query(queryable).Select(selector).ToListAsync(cancellationToken);
     }
 
     /// <summary>
     /// Finds a list of documents using a query
     /// </summary>
-    public async Task<IEnumerable<TDocument>> FindManyAsync(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TDocument>> FindManyAsync(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, CancellationToken cancellationToken = default)
     {
         return await FindManyAsync(query, false, cancellationToken);
     }
@@ -224,16 +250,16 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// <summary>
     /// Finds a list of documents using a query
     /// </summary>
-    public async Task<IEnumerable<TDocument>> FindManyAsync(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TDocument>> FindManyAsync(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
-        var queryable = await GetQueryableCollectionAsync(tenantAgnostic, cancellationToken);
+        var queryable = GetQueryableCollection(tenantAgnostic);
         return await query(queryable).ToListAsync(cancellationToken);
     }
 
     /// <summary>
     /// Queries the database using a query and a selector.
     /// </summary>
-    public async Task<IEnumerable<TResult>> FindMany<TResult>(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, Expression<Func<TDocument, TResult>> selector, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TResult>> FindMany<TResult>(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, Expression<Func<TDocument, TResult>> selector, CancellationToken cancellationToken = default)
     {
         return await FindMany(query, selector, false, cancellationToken);
     }
@@ -241,16 +267,16 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// <summary>
     /// Queries the database using a query and a selector.
     /// </summary>
-    public async Task<IEnumerable<TResult>> FindMany<TResult>(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, Expression<Func<TDocument, TResult>> selector, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TResult>> FindMany<TResult>(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, Expression<Func<TDocument, TResult>> selector, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
-        var queryable = await GetQueryableCollectionAsync(tenantAgnostic, cancellationToken);
+        var queryable = GetQueryableCollection(tenantAgnostic);
         return await query(queryable).Select(selector).ToListAsync(cancellationToken);
     }
 
     /// <summary>
     /// Counts documents in the collection using a filter.
     /// </summary>
-    public async Task<long> CountAsync(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, CancellationToken cancellationToken = default)
+    public async Task<long> CountAsync(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, CancellationToken cancellationToken = default)
     {
         return await CountAsync(query, false, cancellationToken);
     }
@@ -258,16 +284,16 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// <summary>
     /// Counts documents in the collection using a filter.
     /// </summary>
-    public async Task<long> CountAsync(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    public async Task<long> CountAsync(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
-        var queryable = await GetQueryableCollectionAsync(tenantAgnostic, cancellationToken);
+        var queryable = GetQueryableCollection(tenantAgnostic);
         return await query(queryable).LongCountAsync(cancellationToken);
     }
 
     /// <summary>
     /// Counts documents in the collection using a filter and distinct by a key selector.
     /// </summary>
-    public async Task<long> CountAsync<TProperty>(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, Expression<Func<TDocument, TProperty>> propertySelector, CancellationToken cancellationToken = default)
+    public async Task<long> CountAsync<TProperty>(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, Expression<Func<TDocument, TProperty>> propertySelector, CancellationToken cancellationToken = default)
     {
         return await CountAsync(query, propertySelector, false, cancellationToken);
     }
@@ -275,10 +301,19 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// <summary>
     /// Counts documents in the collection using a filter and distinct by a key selector.
     /// </summary>
-    public async Task<long> CountAsync<TProperty>(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, Expression<Func<TDocument, TProperty>> propertySelector, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    public async Task<long> CountAsync<TProperty>(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, Expression<Func<TDocument, TProperty>> propertySelector, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
-        var queryable = await GetQueryableCollectionAsync(tenantAgnostic, cancellationToken);
-        return await query((IMongoQueryable<TDocument>)queryable.DistinctBy(propertySelector)).LongCountAsync(cancellationToken);
+        var queryable = GetQueryableCollection(tenantAgnostic);
+        return await query(queryable.DistinctBy(propertySelector)).LongCountAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Lists all documents.
+    /// </summary>
+    public async Task<IEnumerable<TDocument>> ListAsync(bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    {
+        var queryable = GetQueryableCollection(tenantAgnostic);
+        return await queryable.ToListAsync(cancellationToken);
     }
 
     /// <summary>
@@ -294,7 +329,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// </summary>
     public async Task<bool> AnyAsync(Expression<Func<TDocument, bool>> predicate, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
-        var queryable = await GetQueryableCollectionAsync(tenantAgnostic, cancellationToken);
+        var queryable = GetQueryableCollection(tenantAgnostic);
         return await queryable.Where(predicate).AnyAsync(cancellationToken);
     }
 
@@ -331,7 +366,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// <returns>The number of documents deleted.</returns>
     public async Task<long> DeleteWhereAsync(Expression<Func<TDocument, bool>> predicate, string key, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
-        var queryable = await GetQueryableCollectionAsync(tenantAgnostic, cancellationToken);
+        var queryable = GetQueryableCollection(tenantAgnostic);
         var documentsToDelete = await queryable.Where(predicate).ToListAsync(cancellationToken);
         var count = documentsToDelete.LongCount();
         var filter = documentsToDelete.BuildIdFilterForList(key);
@@ -344,7 +379,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// Deletes documents using a query.
     /// </summary>
     /// <returns>The number of documents deleted.</returns>
-    public async Task<long> DeleteWhereAsync<TKey>(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, Expression<Func<TDocument, TKey>> keySelector, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteWhereAsync<TKey>(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, Expression<Func<TDocument, TKey>> keySelector, CancellationToken cancellationToken = default)
     {
         return await DeleteWhereAsync(query, keySelector, false, cancellationToken);
     }
@@ -353,7 +388,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// Deletes documents using a query.
     /// </summary>
     /// <returns>The number of documents deleted.</returns>
-    public async Task<long> DeleteWhereAsync<TKey>(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, Expression<Func<TDocument, TKey>> keySelector, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteWhereAsync<TKey>(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, Expression<Func<TDocument, TKey>> keySelector, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
         var key = keySelector.GetPropertyName();
         return await DeleteWhereAsync(query, key, tenantAgnostic, cancellationToken);
@@ -363,7 +398,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// Deletes documents using a query.
     /// </summary>
     /// <returns>The number of documents deleted.</returns>
-    public async Task<long> DeleteWhereAsync(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, string key = nameof(Entity.Id), CancellationToken cancellationToken = default)
+    public async Task<long> DeleteWhereAsync(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, string key = nameof(Entity.Id), CancellationToken cancellationToken = default)
     {
         return await DeleteWhereAsync(query, key, false, cancellationToken);
     }
@@ -372,9 +407,9 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// Deletes documents using a query.
     /// </summary>
     /// <returns>The number of documents deleted.</returns>
-    public async Task<long> DeleteWhereAsync(Func<IMongoQueryable<TDocument>, IMongoQueryable<TDocument>> query, string key = nameof(Entity.Id), bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteWhereAsync(Func<IQueryable<TDocument>, IQueryable<TDocument>> query, string key = nameof(Entity.Id), bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
-        var queryable = await GetQueryableCollectionAsync(tenantAgnostic, cancellationToken);
+        var queryable = GetQueryableCollection(tenantAgnostic);
         var documentsToDelete = await query(queryable).ToListAsync(cancellationToken);
         var count = documentsToDelete.LongCount();
         var filter = documentsToDelete.BuildIdFilterForList(key);
@@ -382,42 +417,42 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
 
         return count;
     }
-    
-    private async Task<IMongoQueryable<TDocument>> GetQueryableCollectionAsync(bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+
+    private IQueryable<TDocument> GetQueryableCollection(bool tenantAgnostic = false)
     {
         var queryable = collection.AsQueryable();
-        
-        if(tenantAgnostic)
+
+        if (tenantAgnostic)
             return queryable;
-        
-        if(typeof(Entity).IsAssignableFrom(typeof(TDocument)))
+
+        if (typeof(Entity).IsAssignableFrom(typeof(TDocument)))
         {
-            var tenant = await tenantResolver.GetTenantAsync(cancellationToken);
-            var tenantId = tenant?.Id;
+            var tenant = tenantAccessor.Tenant;
+            var tenantId = tenant?.Id.EmptyToNull();
             queryable = queryable.Where(x => (x as Entity)!.TenantId == tenantId);
         }
-        
+
         return queryable;
     }
 
-    private async Task ApplyTenantIdAsync(TDocument document, CancellationToken cancellationToken)
+    private void ApplyTenantId(TDocument document)
     {
-        var tenant = await tenantResolver.GetTenantAsync(cancellationToken);
+        var tenant = tenantAccessor.Tenant;
         var tenantId = tenant?.Id;
 
         if (document is Entity tenantDocument)
-            tenantDocument.TenantId = tenantId;
+            tenantDocument.TenantId = tenantId.EmptyToNull();
     }
 
-    private async Task ApplyTenantIdAsync(IEnumerable<TDocument> documents, CancellationToken cancellationToken)
+    private void ApplyTenantId(IEnumerable<TDocument> documents)
     {
-        var tenant = await tenantResolver.GetTenantAsync(cancellationToken);
+        var tenant = tenantAccessor.Tenant;
         var tenantId = tenant?.Id;
 
         foreach (var document in documents)
         {
             if (document is Entity tenantDocument)
-                tenantDocument.TenantId = tenantId;
+                tenantDocument.TenantId = tenantId.EmptyToNull();
         }
     }
 }

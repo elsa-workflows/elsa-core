@@ -81,13 +81,15 @@ public class Tests
 
     [Theory(DisplayName = "Can sort array and list properties as mutable arrays")]
     [MemberData(nameof(ArraySortEnumerableData))]
-    // See also: https://github.com/sebastienros/jint/issues/1942
+    // See also:
+    //  - https://github.com/sebastienros/jint/issues/1942
+    //  - https://github.com/elsa-workflows/elsa-core/issues/5912
     public async Task Test5(IEnumerable<double> collection)
     {
         dynamic dynamicObject = new ExpandoObject();
         dynamicObject.Items = collection;
         var script = """
-                     const model = getModel();
+                     const model = variables.Model;
                      model.Items.sort((a, b) => a - b);
                      return model;
                      """;

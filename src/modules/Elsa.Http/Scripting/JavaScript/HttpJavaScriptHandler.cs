@@ -1,10 +1,11 @@
 using Elsa.Extensions;
-using Elsa.Http.Models;
+using Elsa.Http.Resilience;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.TypeDefinitions.Builders;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows;
 using JetBrains.Annotations;
 
 namespace Elsa.Http.Scripting.JavaScript;
@@ -31,6 +32,7 @@ public class HttpJavaScriptHandler : INotificationHandler<EvaluatingJavaScript>,
         var engine = notification.Engine;
         engine.RegisterType<HttpHeaders>();
         engine.RegisterType<Downloadable>();
+        engine.RegisterType<HttpResilienceStrategy>();
 
         var activityExecutionContext = notification.Context;
 
@@ -64,6 +66,7 @@ public class HttpJavaScriptHandler : INotificationHandler<EvaluatingJavaScript>,
     {
         yield return _typeDescriber.DescribeType(typeof(HttpHeaders));
         yield return _typeDescriber.DescribeType(typeof(Downloadable));
+        yield return _typeDescriber.DescribeType(typeof(HttpResilienceStrategy));
     }
 
     private IEnumerable<FunctionDefinition> GetFunctionDefinitions(TypeDefinitionContext context)

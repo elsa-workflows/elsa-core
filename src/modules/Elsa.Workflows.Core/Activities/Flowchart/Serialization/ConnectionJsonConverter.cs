@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Activities.Flowchart.Models;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 
@@ -30,15 +29,23 @@ public class ConnectionJsonConverter : JsonConverter<Connection>
         var sourceElement = doc.RootElement.GetProperty("source");
         var targetElement = doc.RootElement.GetProperty("target");
         var sourceId = sourceElement.GetProperty("activity").GetString()!;
-        var targetId = targetElement.TryGetProperty("activity", out var targetIdValue) ? targetIdValue.GetString() : default;
-        var sourcePort = sourceElement.TryGetProperty("port", out var sourcePortValue) ? sourcePortValue.GetString() : default;
-        var targetPort = targetElement.TryGetProperty("port", out var targetPortValue) ? targetPortValue.GetString() : default;
-
-        var sourceActivity = _activities.TryGetValue(sourceId, out var s) ? s : default!;
-        var targetActivity = targetId != null ? _activities.TryGetValue(targetId, out var t) ? t : default! : default!;
+        var targetId = targetElement.TryGetProperty("activity", out var targetIdValue) ? targetIdValue.GetString() : null;
+        var sourcePort = sourceElement.TryGetProperty("port", out var sourcePortValue) ? sourcePortValue.GetString() : null;
+        var targetPort = targetElement.TryGetProperty("port", out var targetPortValue) ? targetPortValue.GetString() : null;
+        var sourceActivity = _activities.TryGetValue(sourceId, out var s) ? s : null!;
+        var targetActivity = targetId != null ? _activities.TryGetValue(targetId, out var t) ? t : null! : null!;
         var source = new Endpoint(sourceActivity, sourcePort);
         var target = new Endpoint(targetActivity, targetPort);
-        return new Connection(source, target);
+        var verticesElement = doc.RootElement.TryGetProperty("vertices", out var verticesValue) ? verticesValue : default;
+        var vertices = Array.Empty<Position>();
+
+        if (verticesElement.ValueKind == JsonValueKind.Array) 
+            vertices = verticesElement.Deserialize<Position[]>(options)!;
+        
+        return new(source, target)
+        {
+            Vertices = vertices
+        };
     }
 
     /// <inheritdoc />
@@ -58,7 +65,8 @@ public class ConnectionJsonConverter : JsonConverter<Connection>
             {
                 Activity = value.Target.Activity.Id,
                 Port = value.Target.Port
-            }
+            },
+            Vertices = value.Vertices
         };
 
         JsonSerializer.Serialize(writer, model, options);

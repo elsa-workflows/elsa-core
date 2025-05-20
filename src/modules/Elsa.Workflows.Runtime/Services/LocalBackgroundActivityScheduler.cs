@@ -27,6 +27,12 @@ public class LocalBackgroundActivityScheduler(IJobQueue jobQueue, IServiceScopeF
         return Task.FromResult(jobId);
     }
 
+    public Task UnscheduledAsync(string jobId, CancellationToken cancellationToken = default)
+    {
+        jobQueue.Dequeue(jobId);
+        return Task.CompletedTask;
+    }
+
     /// <inheritdoc />
     public Task CancelAsync(string jobId, CancellationToken cancellationToken = default)
     {

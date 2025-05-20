@@ -1,8 +1,8 @@
 using Elsa.Common.Entities;
-using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.Extensions;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-namespace Elsa.EntityFrameworkCore.Common.EntityHandlers;
+namespace Elsa.EntityFrameworkCore.EntityHandlers;
 
 /// <summary>
 /// Represents a handler for applying the tenant ID to an entity before saving changes.
@@ -13,7 +13,7 @@ public class ApplyTenantId : IEntitySavingHandler
     public ValueTask HandleAsync(ElsaDbContextBase dbContext, EntityEntry entry, CancellationToken cancellationToken = default)
     {
         if (entry.Entity is Entity entity) 
-            entity.TenantId = dbContext.TenantId;
+            entity.TenantId = dbContext.TenantId.NullIfEmpty();
 
         return default;
     }

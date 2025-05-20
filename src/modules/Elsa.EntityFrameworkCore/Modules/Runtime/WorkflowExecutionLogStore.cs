@@ -1,8 +1,7 @@
 using System.Text.Json;
 using Elsa.Common.Models;
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Extensions;
@@ -75,8 +74,7 @@ public class EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, W
     private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity, CancellationToken cancellationToken)
     {
         entity = entity.SanitizeLogMessage();
-        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState?.Any() == true ? await safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : default;
-        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? await safeSerializer.SerializeAsync(entity.Payload, cancellationToken) : default;
+        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = ShouldSerializePayload(entity) ? safeSerializer.Serialize(entity.Payload) : null;
     }
 
     private async ValueTask OnLoadAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord? entity, CancellationToken cancellationToken)
@@ -85,7 +83,6 @@ public class EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, W
             return;
 
         entity.Payload = await LoadPayload(dbContext, entity);
-        entity.ActivityState = await LoadActivityState(dbContext, entity);
     }
 
     private ValueTask<object?> LoadPayload(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity)
@@ -94,10 +91,14 @@ public class EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, W
         return new(!string.IsNullOrEmpty(json) ? JsonSerializer.Deserialize<object>(json) : null);
     }
 
-    private ValueTask<IDictionary<string, object>?> LoadActivityState(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity)
+    private bool ShouldSerializePayload(WorkflowExecutionLogRecord source)
     {
-        var json = dbContext.Entry(entity).Property<string>("SerializedActivityState").CurrentValue;
-        return new(!string.IsNullOrEmpty(json) ? JsonSerializer.Deserialize<IDictionary<string, object>>(json) : null);
+        return source.Payload switch
+        {
+            null => false,
+            IDictionary<string, object> dictionary => dictionary.Count > 0,
+            _ => true
+        };
     }
 
     private static IQueryable<WorkflowExecutionLogRecord> Filter(IQueryable<WorkflowExecutionLogRecord> queryable, WorkflowExecutionLogRecordFilter filter) => filter.Apply(queryable);

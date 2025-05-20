@@ -7,7 +7,6 @@ using Elsa.Dapper.Modules.Management.Records;
 using Elsa.Dapper.Services;
 using Elsa.Extensions;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -161,6 +160,16 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
         return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
 
+    public async Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default)
+    {
+        var record = new WorkflowInstanceRecord
+        {
+            Id = workflowInstanceId,
+            UpdatedAt = value
+        };
+        await store.UpdateAsync(record, [x => x.UpdatedAt], cancellationToken);
+    }
+
     private void ApplyFilter(ParameterizedQuery query, WorkflowInstanceFilter filter)
     {
         query
@@ -178,6 +187,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
             .In(nameof(WorkflowInstance.CorrelationId), filter.CorrelationIds)
             .In(nameof(WorkflowInstance.Status), filter.WorkflowStatuses?.Select(x => x.ToString()))
             .In(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatuses?.Select(x => x.ToString()))
+            .Is(nameof(WorkflowInstance.IsExecuting), filter.IsExecuting)
             .AndWorkflowInstanceSearchTerm(filter.SearchTerm);
     }
 
@@ -191,7 +201,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceRecord> source)
     {
-        return source.Select( Map);
+        return source.Select(Map);
     }
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
@@ -204,7 +214,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     private WorkflowInstance Map(WorkflowInstanceRecord source)
     {
         var workflowState = workflowStateSerializer.Deserialize(source.WorkflowState);
-        return new WorkflowInstance
+        return new()
         {
             Id = source.Id,
             DefinitionId = source.DefinitionId,
@@ -219,6 +229,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
             FinishedAt = source.FinishedAt,
             Status = Enum.Parse<WorkflowStatus>(source.Status),
             SubStatus = Enum.Parse<WorkflowSubStatus>(source.SubStatus),
+            IsExecuting = source.IsExecuting,
             CorrelationId = source.CorrelationId,
             TenantId = source.TenantId
         };
@@ -228,7 +239,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     private WorkflowInstanceRecord Map(WorkflowInstance source)
     {
         var workflowState = workflowStateSerializer.Serialize(source.WorkflowState);
-        return new WorkflowInstanceRecord
+        return new()
         {
             Id = source.Id,
             DefinitionId = source.DefinitionId,
@@ -243,6 +254,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
             FinishedAt = source.FinishedAt,
             Status = source.Status.ToString(),
             SubStatus = source.SubStatus.ToString(),
+            IsExecuting = source.IsExecuting,
             CorrelationId = source.CorrelationId,
             TenantId = source.TenantId
         };

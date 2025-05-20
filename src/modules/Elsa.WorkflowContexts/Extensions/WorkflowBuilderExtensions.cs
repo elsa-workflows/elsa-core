@@ -1,13 +1,15 @@
 using System.Text.Json.Nodes;
 using Elsa.WorkflowContexts;
 using Elsa.WorkflowContexts.Contracts;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
+/// <summary>
 /// Adds extension methods to <see cref="IWorkflowBuilder"/>.
+/// </summary>
 [PublicAPI]
 public static class WorkflowBuilderExtensions
 {

@@ -1,31 +1,29 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.KeyValues.Entities;
+using Elsa.MongoDb.Contracts;
+using Elsa.MongoDb.NamingStrategies;
 using Elsa.MongoDb.Options;
 using Elsa.MongoDb.Serializers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
-using MongoDB.Driver.Core.Extensions.DiagnosticSources;
 
 namespace Elsa.MongoDb.Features;
 
 /// <summary>
 /// Configures MongoDb.
 /// </summary>
-public class MongoDbFeature : FeatureBase
+public class MongoDbFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public MongoDbFeature(IModule module) : base(module)
-    {
-    }
-
     /// <summary>
     /// The MongoDB connection string.
     /// </summary>
@@ -36,12 +34,22 @@ public class MongoDbFeature : FeatureBase
     /// </summary>
     public Action<MongoDbOptions> Options { get; set; } = _ => { };
 
+    /// <summary>
+    /// A delegate that creates an instance of an implementation of <see cref="ICollectionNamingStrategy"/>.
+    /// </summary>
+    public Func<IServiceProvider, ICollectionNamingStrategy> CollectionNamingStrategy { get; set; } = sp => sp.GetRequiredService<DefaultNamingStrategy>();
+
     /// <inheritdoc />
     public override void Apply()
     {
         Services.Configure(Options);
 
-        Services.AddScoped(sp => CreateDatabase(sp, ConnectionString));
+        var mongoUrl = new MongoUrl(ConnectionString);
+        Services.AddSingleton(sp => CreateMongoClient(sp, mongoUrl));
+        Services.AddScoped(sp => CreateDatabase(sp, mongoUrl));
+        
+        Services.TryAddScoped<DefaultNamingStrategy>();
+        Services.AddScoped(CollectionNamingStrategy);
 
         RegisterSerializers();
         RegisterClassMaps();
@@ -54,6 +62,7 @@ public class MongoDbFeature : FeatureBase
         TryRegisterSerializerOrSkipWhenExist(typeof(Variable), new VariableSerializer());
         TryRegisterSerializerOrSkipWhenExist(typeof(Version), new VersionSerializer());
         TryRegisterSerializerOrSkipWhenExist(typeof(JsonElement), new JsonElementSerializer());
+        TryRegisterSerializerOrSkipWhenExist(typeof(JsonNode), new JsonNodeBsonConverter());
     }
 
     private static void RegisterClassMaps()
@@ -67,6 +76,7 @@ public class MongoDbFeature : FeatureBase
         {
             map.AutoMap();
             map.SetIgnoreExtraElements(true); // Needed for missing ID property
+            map.MapProperty(x => x.Key); // Needed for non-setter property
         });
     }
 
@@ -81,14 +91,15 @@ public class MongoDbFeature : FeatureBase
        }
     }
     
-    private static IMongoDatabase CreateDatabase(IServiceProvider sp, string connectionString)
+    private static IMongoClient CreateMongoClient(IServiceProvider sp, MongoUrl mongoUrl)
     {
         var options = sp.GetRequiredService<IOptions<MongoDbOptions>>().Value;
 
-        var mongoUrl = new MongoUrl(connectionString);
         var settings = MongoClientSettings.FromUrl(mongoUrl);
 
-        settings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityEventSubscriber());
+        // TODO: Uncomment once https://github.com/jbogard/MongoDB.Driver.Core.Extensions.DiagnosticSources/pull/41 is merged and deployed.
+        //settings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityEventSubscriber());
+        
         settings.ApplicationName = GetApplicationName(settings);
         settings.WriteConcern = options.WriteConcern;
         settings.ReadConcern = options.ReadConcern;
@@ -97,10 +108,17 @@ public class MongoDbFeature : FeatureBase
         settings.RetryWrites = options.RetryWrites;
         settings.SslSettings = options.SslSettings;
 
-        var mongoClient = new MongoClient(settings);
-        return mongoClient.GetDatabase(options.DatabaseName ?? mongoUrl.DatabaseName);
+        return new MongoClient(settings);
     }
 
-    private static string GetApplicationName(MongoClientSettings settings) =>
-        string.IsNullOrWhiteSpace(settings.ApplicationName) ? "elsa_workflows" : settings.ApplicationName;
+    private static IMongoDatabase CreateDatabase(IServiceProvider sp, MongoUrl mongoUrl)
+    {
+        var client = sp.GetRequiredService<IMongoClient>();
+        return client.GetDatabase(mongoUrl.DatabaseName);
+    }
+
+    private static string GetApplicationName(MongoClientSettings settings)
+    {
+        return string.IsNullOrWhiteSpace(settings.ApplicationName) ? "elsa_workflows" : settings.ApplicationName;
+    }
 }

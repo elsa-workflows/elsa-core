@@ -25,7 +25,7 @@ public class Fault : Activity
     /// </summary>
     public static Fault Create(string code, string category, string type, string? message = null, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
     {
-        return new Fault(source, line)
+        return new(source, line)
         {
             Code = new(code),
             Message = new(message),
@@ -38,13 +38,13 @@ public class Fault : Activity
     /// Code to categorize the fault.
     /// </summary>
     [Input(Description = "Code to categorize the fault.")]
-    public Input<string> Code { get; set; } = default!;
+    public Input<string> Code { get; set; } = null!;
     
     /// <summary>
     /// Category to categorize the fault. Examples: HTTP, Alteration, Azure, etc.
     /// </summary>
     [Input(Description = "Category to categorize the fault. Examples: HTTP, Alteration, Azure, etc.")]
-    public Input<string> Category { get; set; } = default!;
+    public Input<string> Category { get; set; } = null!;
     
     /// <summary>
     /// The type of fault. Examples: System, Business, Integration, etc.
@@ -53,13 +53,13 @@ public class Fault : Activity
         DisplayName = "Type",
         Description = "The type of fault. Examples: System, Business, Integration, etc."
         )]
-    public Input<string> FaultType { get; set; } = default!;
+    public Input<string> FaultType { get; set; } = null!;
 
     /// <summary>
     /// The message to include with the fault.
     /// </summary>
     [Input(Description = "The message to include with the fault.")]
-    public Input<string?> Message { get; set; } = default!;
+    public Input<string?> Message { get; set; } = null!;
 
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)

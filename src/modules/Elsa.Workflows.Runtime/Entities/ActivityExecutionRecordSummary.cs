@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
-using Elsa.Workflows.Management.Entities;
 
 namespace Elsa.Workflows.Runtime.Entities;
 
@@ -12,22 +11,22 @@ public class ActivityExecutionRecordSummary : Entity
     /// <summary>
     /// Gets or sets the workflow instance ID.
     /// </summary>
-    public string WorkflowInstanceId { get; set; } = default!;
+    public string WorkflowInstanceId { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the activity ID.
     /// </summary>
-    public string ActivityId { get; set; } = default!;
+    public string ActivityId { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the activity node ID.
     /// </summary>
-    public string ActivityNodeId { get; set; } = default!;
+    public string ActivityNodeId { get; set; } = null!;
 
     /// <summary>
     /// The type of the activity.
     /// </summary>
-    public string ActivityType { get; set; } = default!;
+    public string ActivityType { get; set; } = null!;
 
     /// <summary>
     /// The version of the activity type.
@@ -42,7 +41,7 @@ public class ActivityExecutionRecordSummary : Entity
     /// <summary>
     /// Gets or sets the time at which the activity execution began.
     /// </summary>
-    public DateTimeOffset StartedAt { get; set; } = default!;
+    public DateTimeOffset StartedAt { get; set; }
 
     /// <summary>
     /// Gets or sets whether the activity has any bookmarks.
@@ -53,6 +52,11 @@ public class ActivityExecutionRecordSummary : Entity
     /// Gets or sets the status of the activity.
     /// </summary>
     public ActivityStatus Status { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the aggregated count of faults encountered during the execution of the activity instance and its descendants.
+    /// </summary>
+    public int AggregateFaultCount { get; set; }
 
     /// <summary>
     /// Gets or sets the time at which the activity execution completed.
@@ -60,11 +64,11 @@ public class ActivityExecutionRecordSummary : Entity
     public DateTimeOffset? CompletedAt { get; set; }
 
     /// <summary>
-    /// Returns a summary view of the specified <see cref="WorkflowInstance"/>.
+    /// Returns a summary view of the specified <see cref="ActivityExecutionRecord"/>.
     /// </summary>
     public static ActivityExecutionRecordSummary FromRecord(ActivityExecutionRecord record)
     {
-        return new ActivityExecutionRecordSummary
+        return new()
         {
             Id = record.Id,
             WorkflowInstanceId = record.WorkflowInstanceId,
@@ -76,16 +80,17 @@ public class ActivityExecutionRecordSummary : Entity
             StartedAt = record.StartedAt,
             HasBookmarks = record.HasBookmarks,
             Status = record.Status,
-            CompletedAt = record.CompletedAt
+            AggregateFaultCount = record.AggregateFaultCount,
+            CompletedAt = record.CompletedAt,
         };
     }
     
     /// <summary>
-    /// Returns a summary view of the specified <see cref="WorkflowInstance"/>.
+    /// Returns a summary view of the specified <see cref="ActivityExecutionRecord"/>.
     /// </summary>
     public static Expression<Func<ActivityExecutionRecord, ActivityExecutionRecordSummary>> FromRecordExpression()
     {
-        return record => new ActivityExecutionRecordSummary
+        return record => new()
         {
             Id = record.Id,
             WorkflowInstanceId = record.WorkflowInstanceId,
@@ -97,6 +102,7 @@ public class ActivityExecutionRecordSummary : Entity
             StartedAt = record.StartedAt,
             HasBookmarks = record.HasBookmarks,
             Status = record.Status,
+            AggregateFaultCount = record.AggregateFaultCount,
             CompletedAt = record.CompletedAt
         };
     }

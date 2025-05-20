@@ -1,6 +1,8 @@
+using Elsa.Common.Models;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
-using Elsa.Workflows.ComponentTests.Helpers;
+using Elsa.Workflows.ComponentTests.Abstractions;
+using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.ComponentTests.Scenarios.Variables.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
@@ -24,11 +26,11 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
         var bookmarkStore = Scope.ServiceProvider.GetRequiredService<IBookmarkStore>();
         var runAndCreateRequest = new CreateAndRunWorkflowInstanceRequest
         {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(CountdownWorkflow.DefinitionId),
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(CountdownWorkflow.DefinitionId, VersionOptions.Latest),
         };
         var runResponse = await workflowClient.CreateAndRunInstanceAsync(runAndCreateRequest);
         var workflowInstanceId = runResponse.WorkflowInstanceId;
-        var createdBookmarks = await bookmarkStore.FindManyAsync(new BookmarkFilter
+        var createdBookmarks = await bookmarkStore.FindManyAsync(new()
         {
             WorkflowInstanceId = workflowInstanceId
         });
@@ -41,7 +43,7 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
             var workflowState = workflowInstance!.WorkflowState;
             var rootWorkflowActivityExecutionContext = workflowState.ActivityExecutionContexts.Single(x => x.ParentContextId == null);
             var variables = GetVariablesDictionary(rootWorkflowActivityExecutionContext);
-            var actualCounter = variables["Workflow1:variable-1"].ConvertTo<int>();
+            var actualCounter = variables["counterVariable"].ConvertTo<int>();
             Assert.Equal(--expectedCounter, actualCounter);
 
             var bookmark = bookmarks.Pop();
@@ -52,7 +54,7 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
             
             await workflowClient.RunInstanceAsync(runRequest);
 
-            createdBookmarks = await bookmarkStore.FindManyAsync(new BookmarkFilter
+            createdBookmarks = await bookmarkStore.FindManyAsync(new()
             {
                 WorkflowInstanceId = workflowInstanceId
             });
@@ -62,8 +64,8 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
         }
     }
 
-    private IDictionary<string, object> GetVariablesDictionary(ActivityExecutionContextState context)
+    private VariablesDictionary GetVariablesDictionary(ActivityExecutionContextState context)
     {
-        return context.Properties.GetOrAdd(WorkflowStorageDriver.VariablesDictionaryStateKey, () => new Dictionary<string, object>());
+        return context.Properties.GetOrAdd(WorkflowInstanceStorageDriver.VariablesDictionaryStateKey, () => new VariablesDictionary());
     }
 }

@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Common.Entities;
 using Elsa.Workflows.State;
 
@@ -12,22 +12,22 @@ public class ActivityExecutionRecord : Entity, ILogRecord
     /// <summary>
     /// Gets or sets the workflow instance ID.
     /// </summary>
-    public string WorkflowInstanceId { get; set; } = default!;
+    public string WorkflowInstanceId { get; set; } = null!;
     
     /// <summary>
     /// Gets or sets the activity ID.
     /// </summary>
-    public string ActivityId { get; set; } = default!;
+    public string ActivityId { get; set; } = null!;
     
     /// <summary>
     /// Gets or sets the activity node ID.
     /// </summary>
-    public string ActivityNodeId { get; set; } = default!;
+    public string ActivityNodeId { get; set; } = null!;
 
     /// <summary>
     /// The type of the activity.
     /// </summary>
-    public string ActivityType { get; set; } = default!;
+    public string ActivityType { get; set; } = null!;
 
     /// <summary>
     /// The version of the activity type.
@@ -42,7 +42,7 @@ public class ActivityExecutionRecord : Entity, ILogRecord
     /// <summary>
     /// The state of the activity at the time this record is created or last updated.
     /// </summary>
-    public IDictionary<string, object>? ActivityState { get; set; }
+    public IDictionary<string, object?>? ActivityState { get; set; }
     
     /// <summary>
     /// Any additional payload associated with the log record.
@@ -57,7 +57,7 @@ public class ActivityExecutionRecord : Entity, ILogRecord
     /// <summary>
     /// Any properties provided by the activity.
     /// </summary>
-    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object>? Properties { get; set; }
 
     /// <summary>
     /// Gets or sets the exception that occurred during the activity execution.
@@ -78,6 +78,11 @@ public class ActivityExecutionRecord : Entity, ILogRecord
     /// Gets or sets the status of the activity.
     /// </summary>
     public ActivityStatus Status { get; set; }
+
+    /// <summary>
+    /// Gets or sets the aggregated count of faults encountered during the execution of the activity instance and its descendants.
+    /// </summary>
+    public int AggregateFaultCount { get; set; }
     
     /// <summary>
     /// Gets or sets the time at which the activity execution completed.

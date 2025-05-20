@@ -1,7 +1,6 @@
-#nullable disable
-
-using Elsa.EntityFrameworkCore.Common.Contracts;
 using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Identity
 {
@@ -19,11 +18,13 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Identity
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+
         }
     }
 }

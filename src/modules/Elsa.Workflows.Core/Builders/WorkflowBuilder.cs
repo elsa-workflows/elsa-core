@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 
@@ -73,9 +72,10 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
     }
 
     /// <inheritdoc />
+    [Obsolete("Use the overload that takes a name instead. This overload will be removed in a future version.")]
     public Variable<T> WithVariable<T>()
     {
-        var variable = new Variable<T>();
+        var variable = new Variable<T>(null!, default!);
         Variables.Add(variable);
         variable.WithWorkflowStorage();
         variable.Id = null!; // This ensures that a deterministic ID is assigned by the builder.  
@@ -85,13 +85,13 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
     /// <inheritdoc />
     public Variable<T> WithVariable<T>(string name, T value)
     {
-        var variable = WithVariable<T>();
-        variable.Name = name;
-        variable.Value = value;
+        var variable = new Variable<T>(name, value);
+        Variables.Add(variable);
         return variable;
     }
 
     /// <inheritdoc />
+    [Obsolete("Use the overload that takes a name instead. This overload will be removed in a future version.")]
     public Variable<T> WithVariable<T>(T value)
     {
         var variable = WithVariable<T>();
@@ -124,14 +124,7 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
     /// <inheritdoc />
     public InputDefinition WithInput<T>(string name, string? description = default)
     {
-        return WithInput(inputDefinition =>
-        {
-            inputDefinition.Name = name;
-            inputDefinition.Type = typeof(T);
-
-            if (description != null)
-                inputDefinition.Description = description;
-        });
+        return WithInput(name, typeof(T), description);
     }
 
     /// <inheritdoc />
@@ -174,6 +167,46 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
         return this;
     }
 
+    public OutputDefinition WithOutput<T>(string name, string? description = default)
+    {
+        return WithOutput(name, typeof(T), description);
+    }
+
+    public OutputDefinition WithOutput(string name, Type type, string? description = default)
+    {
+        return WithOutput(outputDefinition =>
+        {
+            outputDefinition.Name = name;
+            outputDefinition.Type = type;
+
+            if (description != null)
+                outputDefinition.Description = description;
+        });
+    }
+
+    public OutputDefinition WithOutput(string name, Type type, Action<OutputDefinition>? setup = default)
+    {
+        return WithOutput(outputDefinition =>
+        {
+            outputDefinition.Name = name;
+            outputDefinition.Type = type;
+            setup?.Invoke(outputDefinition);
+        });
+    }
+
+    public OutputDefinition WithOutput(Action<OutputDefinition> setup)
+    {
+        var outputDefinition = new OutputDefinition();
+        setup(outputDefinition);
+        return WithOutput(outputDefinition);
+    }
+
+    public OutputDefinition WithOutput(OutputDefinition outputDefinition)
+    {
+        Outputs.Add(outputDefinition);
+        return outputDefinition;
+    }
+
     /// <inheritdoc />
     public IWorkflowBuilder WithCustomProperty(string name, object value)
     {
@@ -210,8 +243,8 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
     /// <inheritdoc />
     public async Task<Workflow> BuildWorkflowAsync(CancellationToken cancellationToken = default)
     {
-        var definitionId = string.IsNullOrEmpty(DefinitionId) ? identityGenerator.GenerateId() : DefinitionId;
-        var id = string.IsNullOrEmpty(Id) ? $"{definitionId}:{Version}" : Id;
+        var definitionId = string.IsNullOrEmpty(DefinitionId) ? string.Empty : DefinitionId;
+        var id = string.IsNullOrEmpty(Id) ? string.Empty : Id;
         var tenantId = string.IsNullOrEmpty(TenantId) ? null : TenantId;
         var root = Root ?? new Sequence();
         var identity = new WorkflowIdentity(definitionId, Version, id, tenantId);

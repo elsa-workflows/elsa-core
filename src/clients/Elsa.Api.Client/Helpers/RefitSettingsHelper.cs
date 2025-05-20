@@ -10,16 +10,14 @@ namespace Elsa.Api.Client;
 /// </summary>
 public static class RefitSettingsHelper
 {
-    private static JsonSerializerOptions? _jsonSerializerOptions;
-
     /// <summary>
     /// Creates a <see cref="RefitSettings"/> instance configured for Elsa. 
     /// </summary>
-    public static RefitSettings CreateRefitSettings()
+    public static RefitSettings CreateRefitSettings(IServiceProvider serviceProvider, Action<IServiceProvider, JsonSerializerOptions>? configureJsonSerializerOptions = null)
     {
         var settings = new RefitSettings
         {
-            ContentSerializer = new SystemTextJsonContentSerializer(CreateJsonSerializerOptions())
+            ContentSerializer = new SystemTextJsonContentSerializer(CreateJsonSerializerOptions(serviceProvider, configureJsonSerializerOptions))
         };
 
         return settings;
@@ -28,11 +26,8 @@ public static class RefitSettingsHelper
     /// <summary>
     /// Creates a <see cref="JsonSerializerOptions"/> instance configured for Elsa.
     /// </summary>
-    public static JsonSerializerOptions CreateJsonSerializerOptions()
+    public static JsonSerializerOptions CreateJsonSerializerOptions(IServiceProvider serviceProvider, Action<IServiceProvider, JsonSerializerOptions>? configureJsonSerializerOptions = null)
     {
-        if (_jsonSerializerOptions != null)
-            return _jsonSerializerOptions;
-
         var options = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -40,7 +35,10 @@ public static class RefitSettingsHelper
 
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(new VersionOptionsJsonConverter());
+        options.Converters.Add(new TypeJsonConverter());
 
-        return _jsonSerializerOptions = options;
+        configureJsonSerializerOptions?.Invoke(serviceProvider, options);
+
+        return options;
     }
 }

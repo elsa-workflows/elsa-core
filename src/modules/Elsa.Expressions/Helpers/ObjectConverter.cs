@@ -1,6 +1,7 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.SymbolStore;
 using System.Dynamic;
 using System.Globalization;
 using System.Text.Encodings.Web;
@@ -19,13 +20,15 @@ namespace Elsa.Expressions.Helpers;
 /// <summary>
 /// Provides options to the conversion method.
 /// </summary>
-public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = default, IWellKnownTypeRegistry? WellKnownTypeRegistry = default);
+public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = null, IWellKnownTypeRegistry? WellKnownTypeRegistry = null, bool DeserializeJsonObjectToObject = false);
 
 /// <summary>
 /// A helper that attempts many strategies to try and convert the source value into the destination type. 
 /// </summary>
 public static class ObjectConverter
 {
+    public static bool StrictMode = false; // Set to true to opt into strict mode.
+
     /// <summary>
     /// Attempts to convert the source value into the destination type.
     /// </summary>
@@ -40,11 +43,11 @@ public static class ObjectConverter
         try
         {
             var convertedValue = value.ConvertTo(targetType, converterOptions);
-            return new Result(true, convertedValue, null);
+            return new(true, convertedValue, null);
         }
         catch (Exception e)
         {
-            return new Result(false, null, e);
+            return new(false, null, e);
         }
     }
 
@@ -52,20 +55,23 @@ public static class ObjectConverter
     /// Attempts to convert the source value into the destination type.
     /// </summary>
     public static T? ConvertTo<T>(this object? value, ObjectConverterOptions? converterOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), converterOptions) : default;
-    
+
     private static JsonSerializerOptions? _defaultSerializerOptions;
     private static JsonSerializerOptions? _internalSerializerOptions;
-    
-    private static JsonSerializerOptions DefaultSerializerOptions => _defaultSerializerOptions ??= new JsonSerializerOptions
+
+    private static JsonSerializerOptions DefaultSerializerOptions => _defaultSerializerOptions ??= new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
         ReferenceHandler = ReferenceHandler.Preserve,
-        Converters = { new JsonStringEnumConverter() },
+        Converters =
+        {
+            new JsonStringEnumConverter()
+        },
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
     };
-    
-    private static JsonSerializerOptions InternalSerializerOptions => _internalSerializerOptions ??= new JsonSerializerOptions
+
+    private static JsonSerializerOptions InternalSerializerOptions => _internalSerializerOptions ??= new()
     {
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
     };
@@ -77,11 +83,11 @@ public static class ObjectConverter
     public static object? ConvertTo(this object? value, Type targetType, ObjectConverterOptions? converterOptions = null)
     {
         if (value == null)
-            return default!;
+            return null;
 
         var sourceType = value.GetType();
 
-        if (sourceType == targetType)
+        if (targetType.IsAssignableFrom(sourceType))
             return value;
 
         var serializerOptions = converterOptions?.SerializerOptions ?? DefaultSerializerOptions;
@@ -101,24 +107,50 @@ public static class ObjectConverter
 
         if (value is JsonNode jsonNode)
         {
-            return underlyingTargetType switch
+            if (jsonNode is not JsonArray jsonArray)
             {
-                { } t when t == typeof(string) => jsonNode.ToString(),
-                { } t when t != typeof(object) => jsonNode.Deserialize(targetType, serializerOptions),
-                _ => jsonNode
-            };
+                var valueKind = jsonNode.GetValueKind();
+                if (valueKind == JsonValueKind.Null)
+                    return null;
+
+                if (valueKind == JsonValueKind.Undefined)
+                    return null;
+
+                return underlyingTargetType switch
+                {
+                    { } t when t == typeof(bool) && valueKind == JsonValueKind.False => false,
+                    { } t when t == typeof(bool) && valueKind == JsonValueKind.True => true,
+                    { } t when t.IsNumericType() && valueKind == JsonValueKind.Number => ConvertTo(jsonNode.ToString(), t),
+                    { } t when t == typeof(string) && valueKind == JsonValueKind.String => jsonNode.ToString(),
+                    { } t when t == typeof(string) => jsonNode.ToString(),
+                    { } t when t == typeof(ExpandoObject) && jsonNode.GetValueKind() == JsonValueKind.Object => JsonSerializer.Deserialize<ExpandoObject>(jsonNode.ToJsonString()),
+                    { } t when t != typeof(object) || converterOptions?.DeserializeJsonObjectToObject == true => jsonNode.Deserialize(targetType, serializerOptions),
+                    _ => jsonNode
+                };
+            }
+
+            // Convert to target type if target type is an array or a generic collection.
+            if (targetType.IsArray || targetType.IsCollectionType())
+            {
+                // The element type of the source array is JsonObject. If the element type of the target array is Object then return the source array as an array of JsonObjects.
+                // Deserializing normally would return an array of JsonElement instead of JsonObject, but we want to keep JsonObject elements:
+                var targetElementType = targetType.IsArray ? targetType.GetElementType()! : targetType.GenericTypeArguments[0];
+
+                if (targetElementType != typeof(object))
+                    return jsonArray.Deserialize(targetType, serializerOptions);
+            }
         }
 
         if (underlyingSourceType == typeof(string) && !underlyingTargetType.IsPrimitive && underlyingTargetType != typeof(object))
         {
             var stringValue = (string)value;
-            
+
             if (underlyingTargetType == typeof(byte[]))
             {
                 // Byte arrays are serialized to base64, so in this case, we convert the string back to the requested target type of byte[].
                 return Convert.FromBase64String(stringValue);
             }
-            
+
             try
             {
                 var firstChar = stringValue.TrimStart().FirstOrDefault();
@@ -145,8 +177,8 @@ public static class ObjectConverter
             return ConvertAnyDateType(value, underlyingTargetType);
 
         var internalSerializerOptions = InternalSerializerOptions;
-        
-        if (typeof(IDictionary<string, object>).IsAssignableFrom(underlyingSourceType) && underlyingTargetType.IsClass)
+
+        if (typeof(IDictionary<string, object>).IsAssignableFrom(underlyingSourceType) && (underlyingTargetType.IsClass || underlyingTargetType.IsInterface))
         {
             if (typeof(ExpandoObject) == underlyingTargetType)
             {
@@ -169,14 +201,22 @@ public static class ObjectConverter
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);
 
         if (targetTypeConverter.CanConvertFrom(underlyingSourceType))
-            return targetTypeConverter.IsValid(value)
-                ? targetTypeConverter.ConvertFrom(null, CultureInfo.InvariantCulture, value)
-                : targetType.GetDefaultValue();
+        {
+            var isValid = targetTypeConverter.IsValid(value);
+
+            if (isValid)
+                return targetTypeConverter.ConvertFrom(null, CultureInfo.InvariantCulture, value);
+        }
 
         var sourceTypeConverter = TypeDescriptor.GetConverter(underlyingSourceType);
 
         if (sourceTypeConverter.CanConvertTo(underlyingTargetType))
-            return sourceTypeConverter.ConvertTo(value, underlyingTargetType);
+        {
+            var isValid = targetTypeConverter.IsValid(value);
+
+            if (isValid)
+                return sourceTypeConverter.ConvertTo(value, underlyingTargetType);
+        }
 
         if (underlyingTargetType.IsEnum)
         {
@@ -188,7 +228,7 @@ public static class ObjectConverter
 
             if (underlyingSourceType == typeof(double))
                 return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int), CultureInfo.InvariantCulture));
-            
+
             if (underlyingSourceType == typeof(long))
                 return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int), CultureInfo.InvariantCulture));
         }
@@ -203,7 +243,10 @@ public static class ObjectConverter
 
             // Perhaps it's a bit of a leap, but if the input is a string and the target type is IEnumerable<string>, then let's assume the string is a comma-separated list of strings.
             if (typeof(IEnumerable<string>).IsAssignableFrom(underlyingTargetType))
-                return new[] { s };
+                return new[]
+                {
+                    s
+                };
         }
 
         if (value is IEnumerable enumerable)
@@ -227,28 +270,54 @@ public static class ObjectConverter
                     return collection;
                 }
             }
+
+            if (underlyingTargetType.IsArray)
+            {
+                var executedEnumerable = enumerable.Cast<object>().ToList();
+                var underlyingTargetElementType = underlyingTargetType.GetElementType()!;
+                var array = Array.CreateInstance(underlyingTargetElementType, executedEnumerable.Count);
+                var index = 0;
+                foreach (var item in executedEnumerable)
+                {
+                    var convertedItem = ConvertTo(item, underlyingTargetElementType);
+                    array.SetValue(convertedItem, index);
+                    index++;
+                }
+
+                return array;
+            }
         }
 
         try
         {
             return Convert.ChangeType(value, underlyingTargetType, CultureInfo.InvariantCulture);
         }
+        catch (FormatException e)
+        {
+            return ReturnOrThrow(e);
+        }
         catch (InvalidCastException e)
         {
+            return ReturnOrThrow(e);
+        }
+
+        object ReturnOrThrow(Exception e)
+        {
+            if (!StrictMode)
+                return value;
+
             throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
         }
     }
 
     /// <summary>
-    /// Returns true if the specified type is date-like type, false otherwise.
+    /// Returns true if the specified type is a date-like type, false otherwise.
     /// </summary>
     private static bool IsDateType(Type type)
     {
         var dateTypes = new[]
         {
-            typeof(DateTime),
-            typeof(DateTimeOffset),
-            typeof(DateOnly)
+            typeof(DateTime), typeof(DateTimeOffset), typeof(DateOnly)
         };
 
         return dateTypes.Contains(type);
@@ -269,20 +338,20 @@ public static class ObjectConverter
             {
                 DateTime dateTime => dateTime,
                 DateTimeOffset dateTimeOffset => dateTimeOffset.DateTime,
-                DateOnly date => new DateTime(date.Year, date.Month, date.Day),
+                DateOnly date => new(date.Year, date.Month, date.Day),
                 _ => throw new ArgumentException("Invalid value type.")
             },
             { } t when t == typeof(DateTimeOffset) => value switch
             {
-                DateTime dateTime => new DateTimeOffset(dateTime),
+                DateTime dateTime => new(dateTime),
                 DateTimeOffset dateTimeOffset => dateTimeOffset,
-                DateOnly date => new DateTimeOffset(date.Year, date.Month, date.Day, 0, 0, 0, TimeSpan.Zero),
+                DateOnly date => new(date.Year, date.Month, date.Day, 0, 0, 0, TimeSpan.Zero),
                 _ => throw new ArgumentException("Invalid value type.")
             },
             { } t when t == typeof(DateOnly) => value switch
             {
-                DateTime dateTime => new DateOnly(dateTime.Year, dateTime.Month, dateTime.Day),
-                DateTimeOffset dateTimeOffset => new DateOnly(dateTimeOffset.Year, dateTimeOffset.Month, dateTimeOffset.Day),
+                DateTime dateTime => new(dateTime.Year, dateTime.Month, dateTime.Day),
+                DateTimeOffset dateTimeOffset => new(dateTimeOffset.Year, dateTimeOffset.Month, dateTimeOffset.Day),
                 DateOnly date => date,
                 _ => throw new ArgumentException("Invalid value type.")
             },

@@ -1,0 +1,3 @@
+namespace Elsa.Workflows.CommitStates;
+
+public record ActivityCommitStateStrategyContext(ActivityExecutionContext ActivityExecutionContext, ActivityLifetimeEvent LifetimeEvent);

@@ -1,7 +1,7 @@
-﻿#nullable disable
-
-using Elsa.EntityFrameworkCore.Common.Contracts;
+﻿
 using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Labels
 {
@@ -9,12 +9,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Labels
     public partial class Initial : Migration
     {
         private readonly IElsaDbContextSchema _schema;
-
         public Initial(IElsaDbContextSchema schema)
         {
             _schema = schema ?? throw new ArgumentNullException(nameof(schema));
         }
-
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {

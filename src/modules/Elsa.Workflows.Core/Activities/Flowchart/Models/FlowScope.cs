@@ -1,8 +1,10 @@
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Activities.Flowchart.Models;
 
+/// <summary>
+/// Represents a scope for tracking activity and connection visits within a flowchart execution.
+/// </summary>
 public class FlowScope
 {
     [JsonConstructor]
@@ -10,81 +12,99 @@ public class FlowScope
     {
     }
 
-    public FlowScope(string ownerActivityId)
+    [JsonInclude]
+    private Dictionary<string, long> ActivitiesVisitCount { get; init; } = new();
+
+    [JsonInclude]
+    private Dictionary<string, long> ConnectionVisitCount { get; init; } = new();
+
+    [JsonInclude]
+    private Dictionary<string, bool> ConnectionLastVisitFollowed { get; init; } = new();
+
+    /// <summary>
+    /// Registers a visit to the specified activity, incrementing its visit count.
+    /// </summary>
+    /// <param name="activity">The activity being visited.</param>
+    public void RegisterActivityVisit(IActivity activity)
     {
-        OwnerActivityId = ownerActivityId;
-        Activities.Add(ownerActivityId, new ActivityFlowState(ownerActivityId, 1));
+        string activityId = activity.Id;
+        ActivitiesVisitCount.TryAdd(activityId, 0);
+        ActivitiesVisitCount[activityId]++;
     }
 
     /// <summary>
-    /// The activity from which the scope was created.
+    /// Gets the number of times the specified activity has been visited.
     /// </summary>
-    public string OwnerActivityId { get; set; } = default!;
+    /// <param name="activity">The activity to check.</param>
+    /// <returns>The visit count of the activity.</returns>
+    private long GetActivityVisitCount(IActivity activity) => ActivitiesVisitCount.TryGetValue(activity.Id, out var count) ? count : 0;
 
     /// <summary>
-    /// A list of scheduled activity IDs and a flag whether they executed or not.
+    /// Registers a visit to the specified connection and records whether it was followed.
     /// </summary>
-    public IDictionary<string, ActivityFlowState> Activities { get; set; } =
-        new Dictionary<string, ActivityFlowState>();
-
-    public void AddActivities(IEnumerable<IActivity> activities, long executionCount = 0)
+    /// <param name="connection">The connection being visited.</param>
+    /// <param name="followed">Indicates whether the connection was followed.</param>
+    public void RegisterConnectionVisit(Connection connection, bool followed)
     {
-        foreach (var activity in activities)
-            AddActivity(activity, executionCount);
-    }
-    
-    public void AddActivity(IActivity activity, long executionCount = 0) => EnsureActivity(activity, executionCount);
-
-    public ActivityFlowState EnsureActivity(IActivity activity, long executionCount = 0)
-    {
-        if (Activities.ContainsKey(activity.Id)) 
-            return Activities[activity.Id];
-        
-        var state = new ActivityFlowState(activity.Id, executionCount);
-        Activities.Add(activity.Id, state);
-        return state;
-
-    }
-
-    public bool ContainsActivity(IActivity activity)
-    {
-        return Activities.ContainsKey(activity.Id);
-    }
-    
-    public void RegisterActivityExecution(IActivity activity)
-    {
-        var state = Activities.TryGetValue(activity.Id, out var s) ? s : default;
-
-        if (state == null)
-        {
-            state = new ActivityFlowState(activity.Id);
-            Activities[activity.Id] = state;
-        }
-
-        state.ExecutionCount++;
+        string connectionId = connection.ToString();
+        ConnectionVisitCount.TryAdd(connectionId, 0);
+        ConnectionVisitCount[connectionId]++;
+        ConnectionLastVisitFollowed[connectionId] = followed;
     }
 
     /// <summary>
-    /// Return a list excluding any activities that already executed.
+    /// Gets the number of times the specified connection has been visited.
     /// </summary>
-    public IEnumerable<IActivity> ExcludeExecutedActivities(IEnumerable<IActivity> activities) =>
-        activities.Where(x => !Activities.ContainsKey(x.Id) || Activities[x.Id].ExecutionCount == 0);
+    /// <param name="connection">The connection to check.</param>
+    /// <returns>The visit count of the connection.</returns>
+    private long GetConnectionVisitCount(Connection connection) => ConnectionVisitCount.TryGetValue(connection.ToString(), out var count) ? count : 0;
 
-    public bool HasPendingActivities()
+    /// <summary>
+    /// Determines whether the last visit to the specified connection was followed.
+    /// </summary>
+    /// <param name="connection">The connection to check.</param>
+    /// <returns>True if the connection was followed on the last visit, otherwise false.</returns>
+    private bool GetConnectionLastVisitFollowed(Connection connection) => ConnectionLastVisitFollowed.TryGetValue(connection.ToString(), out var followed) ? followed : false;
+
+    /// <summary>
+    /// Determines whether all inbound connections to the specified activity have been visited.
+    /// </summary>
+    /// <param name="flowGraph">The flow graph containing connections.</param>
+    /// <param name="activity">The activity to check.</param>
+    /// <returns>True if all inbound connections have been visited, otherwise false.</returns>
+    public bool AllInboundConnectionsVisited(FlowGraph flowGraph, IActivity activity)
     {
-        var sample = Activities.Values.First().ExecutionCount;
-        return Activities.Values.Any(x => x.ExecutionCount != sample);
+        var forwardInboundConnections = flowGraph.GetForwardInboundConnections(activity);
+        var outboundActivityVisitCount = GetActivityVisitCount(activity);
+        var minConnectionVisitCount = forwardInboundConnections.Min(c => GetConnectionVisitCount(c));
+        return minConnectionVisitCount > outboundActivityVisitCount;
     }
 
-    public long GetExecutionCount(IActivity activity) => Activities.ContainsKey(activity.Id) ? Activities[activity.Id].ExecutionCount : 0;
-
-    public void Clear() => Activities.Clear();
-    
-    public void Remove(IActivity activity)
+    /// <summary>
+    /// Determines whether any inbound connection to the specified activity has been followed.
+    /// </summary>
+    /// <param name="flowGraph">The flow graph containing connections.</param>
+    /// <param name="activity">The activity to check.</param>
+    /// <returns>True if any inbound connection has been followed, otherwise false.</returns>
+    public bool HasFollowedInboundConnection(FlowGraph flowGraph, IActivity activity)
     {
-        if (Activities.ContainsKey(activity.Id))
-        {
-            Activities.Remove(activity.Id);
-        } 
+        var forwardInboundConnections = flowGraph.GetForwardInboundConnections(activity);
+        var outboundActivityVisitCount = GetActivityVisitCount(activity);
+        var maxConnectionVisitCount = forwardInboundConnections.Max(c => GetConnectionVisitCount(c));
+        return maxConnectionVisitCount > outboundActivityVisitCount 
+            && forwardInboundConnections.Any(c => GetConnectionVisitCount(c) == maxConnectionVisitCount && GetConnectionLastVisitFollowed(c));
+    }
+
+    /// <summary>
+    /// Determines whether a connection should be ignored based on visit counts.
+    /// </summary>
+    /// <param name="connection">The connection to check.</param>
+    /// <param name="activity">The activity associated with the connection.</param>
+    /// <returns>True if the connection should be ignored, otherwise false.</returns>
+    public bool ShouldIgnoreConnection(Connection connection, IActivity activity)
+    {
+        var connectionVisitCount = GetConnectionVisitCount(connection);
+        var activityVisitCount = GetActivityVisitCount(activity);
+        return connectionVisitCount <= activityVisitCount;
     }
 }

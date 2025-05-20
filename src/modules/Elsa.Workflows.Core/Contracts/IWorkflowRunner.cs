@@ -3,7 +3,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Runs a given workflow by scheduling its root activity.

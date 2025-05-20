@@ -3,23 +3,23 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Webhooks.ActivityProviders;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using WebhooksCore;
 using WebhooksCore.Options;
 
 namespace Elsa.Webhooks.Features;
 
+/// <summary>
 /// Installs and configures webhook services.
-public class WebhooksFeature : FeatureBase
+/// </summary>
+public class WebhooksFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public WebhooksFeature(IModule module) : base(module)
-    {
-    }
+    public Action<WebhookSinksOptions> ConfigureSinks { get; set; } = _ => { };
+    public Action<WebhookSourcesOptions> ConfigureSources { get; set; } = _ => { };
+    public Action<IHttpClientBuilder> ConfigureHttpClient { get; set; } = _ => { };
 
-    public Action<IOptions<WebhookSinksOptions>> ConfigureSinks { get; set; } = options => { };
-
+    /// <summary>
     /// Registers the specified webhook with <see cref="WebhookSinksOptions"/>
+    /// </summary>
     public WebhooksFeature RegisterWebhookSink(Uri endpoint)
     {
         var sink = new WebhookSink
@@ -30,24 +30,31 @@ public class WebhooksFeature : FeatureBase
         return RegisterSink(sink);
     }
     
+    /// <summary>
     /// Registers the specified webhook with <see cref="WebhookSinksOptions"/>
+    /// </summary>
     public WebhooksFeature RegisterSink(WebhookSink sink) => RegisterSinks(sink);
     
+    /// <summary>
     /// Registers the specified webhooks with <see cref="WebhookSinksOptions"/>
+    /// </summary>
     public WebhooksFeature RegisterSinks(params WebhookSink[] sinks)
     {
-        Services.Configure(ConfigureSinks);
-        Services.Configure<WebhookSinksOptions>(options => options.Sinks.AddRange(sinks));
+        ConfigureSinks += options => options.Sinks.AddRange(sinks);
         return this;
     }
     
+    /// <summary>
     /// Registers the specified webhook source with <see cref="WebhookSourcesOptions"/>
+    /// </summary>
     public WebhooksFeature RegisterWebhookSource(WebhookSource source) => RegisterWebhookSources(source);
     
+    /// <summary>
     /// Registers the specified webhook sources with <see cref="WebhookSourcesOptions"/>
+    /// </summary>
     public WebhooksFeature RegisterWebhookSources(params WebhookSource[] sources)
     {
-        Services.Configure<WebhookSourcesOptions>(options => options.Sources.AddRange(sources));
+        ConfigureSources += options => options.Sources.AddRange(sources);
         return this;
     }
 
@@ -61,8 +68,12 @@ public class WebhooksFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
+        Services.Configure(ConfigureSinks);
+        Services.Configure(ConfigureSources);
+        
         Services
-            .AddWebhooksCore()
-            .AddActivityProvider<WebhookEventActivityProvider>();
+            .AddWebhooksCore(ConfigureHttpClient)
+            .AddActivityProvider<WebhookEventActivityProvider>()
+            .AddNotificationHandlersFrom<WebhooksFeature>();
     }
 }

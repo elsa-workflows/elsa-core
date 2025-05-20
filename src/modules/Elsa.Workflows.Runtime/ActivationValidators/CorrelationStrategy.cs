@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 
@@ -19,6 +18,7 @@ public class CorrelationStrategy(IWorkflowInstanceStore workflowInstanceStore) :
         var filter = new WorkflowInstanceFilter
         {
             CorrelationId = context.CorrelationId,
+            WorkflowStatus = WorkflowStatus.Running
         };
 
         var count = await workflowInstanceStore.CountAsync(filter);

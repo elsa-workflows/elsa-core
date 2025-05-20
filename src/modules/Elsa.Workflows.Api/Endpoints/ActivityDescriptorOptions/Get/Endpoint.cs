@@ -1,5 +1,4 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptorOptions.Get;

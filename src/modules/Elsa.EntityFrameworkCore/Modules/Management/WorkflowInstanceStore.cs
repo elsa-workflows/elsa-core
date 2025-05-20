@@ -1,16 +1,18 @@
 using System.Diagnostics.CodeAnalysis;
+using Elsa.Common;
+using Elsa.Common.Codecs;
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
 
@@ -26,6 +28,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly ICompressionCodecResolver _compressionCodecResolver;
     private readonly IOptions<ManagementOptions> _options;
+    private readonly ILogger<EFCoreWorkflowInstanceStore> _logger;
 
     /// <summary>
     /// Constructor.
@@ -34,12 +37,14 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         EntityStore<ManagementElsaDbContext, WorkflowInstance> store,
         IWorkflowStateSerializer workflowStateSerializer,
         ICompressionCodecResolver compressionCodecResolver,
-        IOptions<ManagementOptions> options)
+        IOptions<ManagementOptions> options,
+        ILogger<EFCoreWorkflowInstanceStore> logger)
     {
         _store = store;
         _workflowStateSerializer = workflowStateSerializer;
         _compressionCodecResolver = compressionCodecResolver;
         _options = options;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -51,9 +56,8 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await _store.QueryAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
-        var entities = await _store.QueryAsync(query => Filter(query, filter).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
-        return Page.Of(entities, count);
+        var orderBy = new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await FindManyAsync(filter, pageArgs, orderBy, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -67,7 +71,8 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.QueryAsync(query => Filter(query, filter), OnLoadAsync, cancellationToken).ToList().AsEnumerable();
+        var orderBy = new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await FindManyAsync(filter, orderBy, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -86,9 +91,8 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await _store.QueryAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
-        var entities = await _store.QueryAsync<WorkflowInstanceSummary>(query => Filter(query, filter).Paginate(pageArgs), WorkflowInstanceSummary.FromInstanceExpression(), cancellationToken).ToList();
-        return Page.Of(entities, count);
+        var orderBy = new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await SummarizeManyAsync(filter, pageArgs, orderBy, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -107,7 +111,8 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.QueryAsync(query => Filter(query, filter), WorkflowInstanceSummary.FromInstanceExpression(), cancellationToken).ToList().AsEnumerable();
+        var orderBy = new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await SummarizeManyAsync(filter, orderBy, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -119,17 +124,15 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var entities = await _store.QueryAsync(query => Filter(query, filter), WorkflowInstanceId.FromInstanceExpression(), cancellationToken).ToList().AsEnumerable();
+        var entities = await _store.QueryAsync(query => Filter(query, filter).OrderBy(x => x.CreatedAt), WorkflowInstanceId.FromInstanceExpression(), cancellationToken).ToList().AsEnumerable();
         return entities.Select(x => x.Id).ToList();
     }
 
     /// <inheritdoc />
     public async ValueTask<Page<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await _store.QueryAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
-        var entities = await _store.QueryAsync(query => Filter(query, filter).Paginate(pageArgs), WorkflowInstanceId.FromInstanceExpression(), cancellationToken).ToList();
-        var ids = entities.Select(x => x.Id).ToList();
-        return Page.Of(ids, count);
+        var orderBy = new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
+        return await FindManyIdsAsync(filter, pageArgs, orderBy, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -150,6 +153,44 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         return await _store.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
+    }
+
+    public async Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default)
+    {
+        var entity = new WorkflowInstance
+        {
+            Id = workflowInstanceId,
+            UpdatedAt = value
+        };
+
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        dbContext.Attach(entity);
+        dbContext.Entry(entity).Property(x => x.UpdatedAt).IsModified = true;
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException e)
+        {
+            foreach (var entry in e.Entries)
+            {
+                var proposedValues = entry.CurrentValues;
+                var databaseValues = await entry.GetDatabaseValuesAsync(cancellationToken);
+                
+                if(databaseValues == null)
+                    continue;
+                
+                var updatedAtProperty = entry.Metadata.GetProperty(nameof(WorkflowInstance.UpdatedAt));
+                var proposedValue = (DateTimeOffset)proposedValues[updatedAtProperty]!;
+                var databaseValue = (DateTimeOffset)databaseValues[updatedAtProperty]!;
+
+                if (proposedValue > databaseValue)
+                    proposedValues[updatedAtProperty] = proposedValue;
+
+                entry.OriginalValues.SetValues(databaseValues);
+            }
+        }
     }
 
     /// <inheritdoc />
@@ -200,12 +241,18 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         var compressionAlgorithm = (string?)managementElsaDbContext.Entry(entity).Property("DataCompressionAlgorithm").CurrentValue ?? nameof(None);
         var compressionStrategy = _compressionCodecResolver.Resolve(compressionAlgorithm);
 
-        if (!string.IsNullOrWhiteSpace(json))
+        try
         {
-            json = await compressionStrategy.DecompressAsync(json, cancellationToken);
-            data = _workflowStateSerializer.Deserialize(json);
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                json = await compressionStrategy.DecompressAsync(json, cancellationToken);
+                data = _workflowStateSerializer.Deserialize(json);
+            }
         }
-
+        catch (Exception exp)
+        {
+            _logger.LogWarning(exp, "Exception while deserializing workflow instance state: {InstanceId}. Reverting to default state", entity.Id);
+        }
         entity.WorkflowState = data;
     }
 

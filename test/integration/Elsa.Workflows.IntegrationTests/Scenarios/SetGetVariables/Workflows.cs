@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.SetGetVariables;
@@ -9,7 +8,7 @@ class SetGetVariableWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        var variable1 = new Variable<string>();
+        var variable1 = new Variable<string>("Variable1", "");
 
         workflow.Root = new Sequence
         {
@@ -31,8 +30,8 @@ class SetGetVariablesWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        var variable1 = new Variable<string>();
-        var variable2 = new Variable<string>();
+        var variable1 = new Variable<string>("Variable1", "");
+        var variable2 = new Variable<string>("Variable2", "");
 
         workflow.Root = new Sequence
         {

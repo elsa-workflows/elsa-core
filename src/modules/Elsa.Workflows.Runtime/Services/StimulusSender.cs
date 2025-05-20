@@ -1,8 +1,8 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Results;
+using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Runtime;
@@ -13,7 +13,9 @@ public class StimulusSender(
     ITriggerBoundWorkflowService triggerBoundWorkflowService,
     IBookmarkBoundWorkflowService bookmarkBoundWorkflowService,
     IBookmarkQueue bookmarkQueue,
-    IWorkflowRuntime workflowRuntime) : IStimulusSender
+    IWorkflowRuntime workflowRuntime,
+    ITriggerInvoker triggerInvoker,
+    ILogger<StimulusSender> logger) : IStimulusSender
 {
     /// <inheritdoc />
     public Task<SendStimulusResult> SendAsync(string activityTypeName, object stimulus, StimulusMetadata? metadata = null, CancellationToken cancellationToken = default)
@@ -35,7 +37,7 @@ public class StimulusSender(
 
         var resumed = await ResumeExistingWorkflowsAsync(stimulusHash, metadata, cancellationToken);
         responses.AddRange(resumed);
-        return new SendStimulusResult(responses);
+        return new(responses);
     }
 
     private async Task<ICollection<RunWorkflowInstanceResponse>> TriggerNewWorkflowsAsync(string stimulusHash, StimulusMetadata? metadata = null, CancellationToken cancellationToken = default)
@@ -51,21 +53,28 @@ public class StimulusSender(
         {
             var workflowGraph = triggerBoundWorkflow.WorkflowGraph;
             var workflow = workflowGraph.Workflow;
-            var workflowClient = await workflowRuntime.CreateClientAsync(cancellationToken);
 
             foreach (var trigger in triggerBoundWorkflow.Triggers)
             {
-                var createWorkflowInstanceRequest = new CreateAndRunWorkflowInstanceRequest
+                var triggerRequest = new InvokeTriggerRequest
                 {
-                    WorkflowDefinitionHandle = workflow.DefinitionHandle,
-                    TriggerActivityId = trigger.ActivityId,
                     CorrelationId = correlationId,
+                    Workflow = workflow,
+                    ActivityId = trigger.ActivityId,
                     Input = input,
                     Properties = properties,
-                    ParentId = parentId,
+                    ParentWorkflowInstanceId = parentId
                 };
-                var response = await workflowClient.CreateAndRunInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
-                responses.Add(response);
+                
+                var response = await triggerInvoker.InvokeAsync(triggerRequest, cancellationToken);
+                
+                if (response.CannotStart)
+                {
+                    logger.LogWarning("Workflow activation strategy disallowed starting workflow {WorkflowDefinitionHandle} with correlation ID {CorrelationId}", workflow.DefinitionHandle, correlationId);
+                    continue;
+                }
+                
+                responses.Add(response.ToRunWorkflowInstanceResponse());
             }
         }
 
@@ -111,27 +120,22 @@ public class StimulusSender(
         }
         else
         {
-            // If no bookmarks were matched, but bookmark-specific details were given, enqueue the request in case a matching bookmark is created in the near future.
+            // If no bookmarks were matched, enqueue the request in case a matching bookmark is created in the near future.
             var workflowInstanceId = metadata?.WorkflowInstanceId;
-            var bookmarkId = metadata?.BookmarkId;
-            var activityInstanceId = metadata?.ActivityInstanceId;
-            var correlationId = metadata?.CorrelationId;
 
-            if (workflowInstanceId != null || bookmarkId != null || activityInstanceId != null || correlationId != null)
+            var bookmarkQueueItem = new NewBookmarkQueueItem
             {
-                var bookmarkQueueItem = new NewBookmarkQueueItem
+                WorkflowInstanceId = workflowInstanceId,
+                BookmarkId = metadata?.BookmarkId,
+                CorrelationId = metadata?.CorrelationId,
+                StimulusHash = stimulusHash,
+                Options = new()
                 {
-                    WorkflowInstanceId = workflowInstanceId,
-                    BookmarkId = metadata?.BookmarkId,
-                    StimulusHash = stimulusHash,
-                    Options = new ResumeBookmarkOptions
-                    {
-                        Input = input,
-                        Properties = properties
-                    }
-                };
-                await bookmarkQueue.EnqueueAsync(bookmarkQueueItem, cancellationToken);
-            }
+                    Input = input,
+                    Properties = properties
+                }
+            };
+            await bookmarkQueue.EnqueueAsync(bookmarkQueueItem, cancellationToken);
         }
 
         return responses;

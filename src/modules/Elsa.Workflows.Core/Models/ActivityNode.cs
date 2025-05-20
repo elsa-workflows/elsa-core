@@ -1,6 +1,3 @@
-using System.Text.Json.Serialization;
-using Elsa.Workflows.Contracts;
-
 namespace Elsa.Workflows.Models;
 
 /// <summary>
@@ -8,6 +5,10 @@ namespace Elsa.Workflows.Models;
 /// </summary>
 public class ActivityNode
 {
+    private readonly List<ActivityNode> _parents = new();
+    private readonly List<ActivityNode> _children = new();
+    private string? _nodeId;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ActivityNode"/> class.
     /// </summary>
@@ -26,8 +27,13 @@ public class ActivityNode
     {
         get
         {
-            var ancestorIds = Ancestors().Reverse().Select(x => x.Activity.Id).ToList();
-            return ancestorIds.Any() ? $"{string.Join(":", ancestorIds)}:{Activity.Id}" : Activity.Id;
+            if (_nodeId == null)
+            {
+                var ancestorIds = Ancestors().Reverse().Select(x => x.Activity.Id).ToList();
+                _nodeId = ancestorIds.Any() ? $"{string.Join(":", ancestorIds)}:{Activity.Id}" : Activity.Id;
+            }
+
+            return _nodeId;
         }
     }
 
@@ -44,12 +50,23 @@ public class ActivityNode
     /// <summary>
     /// Gets the parents of this node.
     /// </summary>
-    public ICollection<ActivityNode> Parents { get; set; } = new List<ActivityNode>();
-    
+    public IReadOnlyCollection<ActivityNode> Parents => _parents.AsReadOnly();
+
     /// <summary>
     /// Gets the children of this node.
     /// </summary>
-    public ICollection<ActivityNode> Children { get; set; } = new List<ActivityNode>();
+    public ICollection<ActivityNode> Children => _children.AsReadOnly();
+
+    public void AddParent(ActivityNode parent)
+    {
+        _parents.Add(parent);
+        _nodeId = null;
+    }
+    
+    public void AddChild(ActivityNode child)
+    {
+        _children.Add(child);
+    }
 
     /// <summary>
     /// Gets the descendants of this node.
@@ -88,7 +105,7 @@ public class ActivityNode
     /// Gets the siblings of this node.
     /// </summary>
     public IEnumerable<ActivityNode> Siblings() => Parents.SelectMany(parent => parent.Children);
-    
+
     /// <summary>
     /// Gets the siblings and cousins of this node.
     /// </summary>

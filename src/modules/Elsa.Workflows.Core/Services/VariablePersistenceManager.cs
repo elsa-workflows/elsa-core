@@ -1,18 +1,20 @@
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows;
 
 /// <inheritdoc />
-public class VariablePersistenceManager(IStorageDriverManager storageDriverManager) : IVariablePersistenceManager
+public class VariablePersistenceManager(IStorageDriverManager storageDriverManager, ILogger<VariablePersistenceManager> logger) : IVariablePersistenceManager
 {
     /// <inheritdoc />
-    public async Task LoadVariablesAsync(WorkflowExecutionContext workflowExecutionContext)
+    public async Task LoadVariablesAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<string>? excludeTags = null)
     {
         var cancellationToken = workflowExecutionContext.CancellationToken;
         var contexts = workflowExecutionContext.ActivityExecutionContexts.ToList();
+        var excludeTagsList = excludeTags?.ToList();
 
         foreach (var context in contexts)
         {
@@ -21,7 +23,7 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
             foreach (var variable in variables)
             {
                 context.ExpressionExecutionContext.Memory.Declare(variable);
-                var storageDriverContext = new StorageDriverContext(context, cancellationToken);
+                var storageDriverContext = new StorageDriverContext(context, variable, cancellationToken);
                 var register = context.ExpressionExecutionContext.Memory;
                 var block = EnsureBlock(register, variable);
                 var metadata = (VariableBlockMetadata)block.Metadata!;
@@ -35,13 +37,33 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
                 if (driver == null)
                     continue;
 
-                var id = GetStateId(variable);
-                var value = await driver.ReadAsync(id, storageDriverContext);
-                if (value == null) continue;
+                if (excludeTagsList != null && driver.Tags.Any(excludeTagsList.Contains))
+                    continue;
 
-                var parsedValue = variable.ParseValue(value);
-                register.Declare(variable);
-                variable.Set(register, parsedValue);
+                var id = GetStateId(variable);
+
+                try
+                {
+                    var value = await driver.ReadAsync(id, storageDriverContext);
+                    if (value == null) continue;
+
+                    register.Declare(variable);
+
+                    if (!variable.TryParseValue(value, out var parsedValue))
+                    {
+                        logger.LogWarning("Failed to parse value for variable {VariableId} of type {VariableType} with value {Value}", variable.Id, variable.GetVariableType().FullName, value);
+
+                        if (!ObjectConverter.StrictMode)
+                            variable.Set(register, value);
+                        continue;
+                    }
+
+                    variable.Set(register, parsedValue);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "Failed to read variable {VariableId} from storage driver {StorageDriverType}", variable.Id, driver.GetType().FullName);
+                }
             }
         }
     }
@@ -55,7 +77,6 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
         foreach (var context in contexts)
         {
             var variables = GetLocalVariables(context).ToList();
-            var storageDriverContext = new StorageDriverContext(context, cancellationToken);
 
             foreach (var variable in variables)
             {
@@ -68,6 +89,7 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
 
                 var id = GetStateId(variable);
                 var value = block.Value;
+                var storageDriverContext = new StorageDriverContext(context, variable, cancellationToken);
 
                 if (value == null)
                     await driver.DeleteAsync(id, storageDriverContext);
@@ -78,12 +100,12 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
     }
 
     /// <inheritdoc />
-    public async Task DeleteVariablesAsync(ActivityExecutionContext context)
+    public async Task DeleteVariablesAsync(ActivityExecutionContext context, IEnumerable<string>? includeTags = default)
     {
         var register = context.ExpressionExecutionContext.Memory;
         var variableList = GetLocalVariables(context).ToList();
         var cancellationToken = context.CancellationToken;
-        var storageDriverContext = new StorageDriverContext(context, cancellationToken);
+        var includeTagsList = includeTags?.ToList();
 
         foreach (var variable in variableList)
         {
@@ -95,10 +117,26 @@ public class VariablePersistenceManager(IStorageDriverManager storageDriverManag
 
             if (driver == null)
                 continue;
+            
+            if (includeTagsList != null && !driver.Tags.Any(includeTagsList.Contains))
+                continue;
 
             var id = GetStateId(variable);
+            var storageDriverContext = new StorageDriverContext(context, variable, cancellationToken);
             await driver.DeleteAsync(id, storageDriverContext);
             register.Blocks.Remove(variable.Id);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteVariablesAsync(WorkflowExecutionContext context, IEnumerable<string>? includeTags = default)
+    {
+        var activityContexts = context.ActivityExecutionContexts.ToList();
+        var includeTagsList = includeTags?.ToList();
+        
+        foreach (var activityContext in activityContexts)
+        {
+            await DeleteVariablesAsync(activityContext, includeTagsList);
         }
     }
 

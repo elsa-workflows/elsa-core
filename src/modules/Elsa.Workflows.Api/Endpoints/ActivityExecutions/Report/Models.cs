@@ -10,12 +10,12 @@ internal class Request
     /// <summary>
     /// The ID of the workflow instance to get the execution log for.
     /// </summary>
-    public string WorkflowInstanceId { get; set; } = default!;
+    public string WorkflowInstanceId { get; set; } = null!;
 
     /// <summary>
     /// The node IDs of the activities to get the execution records for.
     /// </summary>
-    public ICollection<string> ActivityNodeIds { get; set; } = default!;
+    public ICollection<string> ActivityNodeIds { get; set; } = null!;
 }
 
 internal class Response

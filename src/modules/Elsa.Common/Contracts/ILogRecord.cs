@@ -1,4 +1,6 @@
-namespace Elsa.Common.Contracts;
+namespace Elsa.Common;
 
+/// <summary>
 /// Represents a log record.
+/// </summary>
 public interface ILogRecord;

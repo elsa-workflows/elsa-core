@@ -1,42 +1,49 @@
-using Elsa.EntityFrameworkCore.Common;
-using Elsa.EntityFrameworkCore.Common.Contracts;
-using Elsa.EntityFrameworkCore.Handlers;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Features;
 using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 
 /// <summary>
 /// Configures the <see cref="WorkflowInstancesFeature"/> and <see cref="WorkflowDefinitionsFeature"/> features with an Entity Framework Core persistence provider.
 /// </summary>
-[DependsOn(typeof(WorkflowManagementFeature))]
-[DependsOn(typeof(WorkflowInstancesFeature))]
-[DependsOn(typeof(WorkflowDefinitionsFeature))]
+[DependsOn(typeof(EFCoreWorkflowInstancePersistenceFeature))]
+[DependsOn(typeof(EFCoreWorkflowDefinitionPersistenceFeature))]
 [PublicAPI]
 public class WorkflowManagementPersistenceFeature(IModule module) : PersistenceFeatureBase<WorkflowManagementPersistenceFeature, ManagementElsaDbContext>(module)
 {
-    /// Delegate for determining the exception handler.
-    public Func<IServiceProvider, IDbExceptionHandler<ManagementElsaDbContext>> DbExceptionHandler { get; set; } = _ => new RethrowDbExceptionHandler(); 
-
-    /// <inheritdoc />
-    public override void Configure()
+    public override Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder
     {
-        Module.Configure<WorkflowInstancesFeature>(feature => feature.WorkflowInstanceStore = sp => sp.GetRequiredService<EFCoreWorkflowInstanceStore>());
-        Module.Configure<WorkflowDefinitionsFeature>(feature => feature.WorkflowDefinitionStore = sp => sp.GetRequiredService<EFCoreWorkflowDefinitionStore>());
+        get => base.DbContextOptionsBuilder;
+        set
+        {
+            base.DbContextOptionsBuilder = value;
+            Module.Configure<EFCoreWorkflowDefinitionPersistenceFeature>(x => x.DbContextOptionsBuilder = value);
+            Module.Configure<EFCoreWorkflowInstancePersistenceFeature>(x => x.DbContextOptionsBuilder = value);
+        }
     }
 
-    /// <inheritdoc />
-    public override void Apply()
+    public override bool UseContextPooling
     {
-        base.Apply();
+        get => base.UseContextPooling; 
+        set
+        {
+            base.UseContextPooling = value;
+            Module.Configure<EFCoreWorkflowDefinitionPersistenceFeature>(x => x.UseContextPooling = value);
+            Module.Configure<EFCoreWorkflowInstancePersistenceFeature>(x => x.UseContextPooling = value);
+        }
+    }
 
-        Services.AddScoped(DbExceptionHandler);
-
-        AddEntityStore<WorkflowInstance, EFCoreWorkflowInstanceStore>();
-        AddEntityStore<WorkflowDefinition, EFCoreWorkflowDefinitionStore>();
+    public override bool RunMigrations
+    {
+        get => base.RunMigrations; 
+        set
+        {
+            base.RunMigrations = value;
+            Module.Configure<EFCoreWorkflowDefinitionPersistenceFeature>(x => x.RunMigrations = value);
+            Module.Configure<EFCoreWorkflowInstancePersistenceFeature>(x => x.RunMigrations = value);
+        }
     }
 }

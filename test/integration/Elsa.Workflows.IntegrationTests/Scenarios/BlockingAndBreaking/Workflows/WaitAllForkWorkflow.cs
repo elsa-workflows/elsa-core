@@ -1,5 +1,4 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime.Activities;
 
@@ -9,7 +8,7 @@ public class WaitAllForkWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        var currentValue = new Variable<int?>(0);
+        var currentValue = new Variable<int?>("CurrentValue", 0);
 
         workflow.WithVariable(currentValue);
 

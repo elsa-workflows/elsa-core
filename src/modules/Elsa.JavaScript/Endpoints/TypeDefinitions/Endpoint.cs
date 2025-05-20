@@ -4,7 +4,6 @@ using Elsa.Common.Models;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 

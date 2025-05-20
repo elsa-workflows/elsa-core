@@ -1,19 +1,26 @@
 using Elsa.JavaScript.Contracts;
+using Elsa.JavaScript.Helpers;
+using Elsa.JavaScript.Options;
 using Elsa.JavaScript.TypeDefinitions.Abstractions;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Management;
 using Humanizer;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.JavaScript.Providers;
 
+/// <summary>
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
+/// </summary>
 [UsedImplicitly]
-internal class InputFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry) : FunctionDefinitionProvider
+internal class InputFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry, IOptions<JintOptions> options) : FunctionDefinitionProvider
 {
     protected override ValueTask<IEnumerable<FunctionDefinition>> GetFunctionDefinitionsAsync(TypeDefinitionContext context)
     {
+        if(options.Value.DisableWrappers)
+            return ValueTask.FromResult<IEnumerable<FunctionDefinition>>([]);
+        
         var workflow = context.WorkflowGraph.Workflow;
         return ValueTask.FromResult(GetFunctionDefinitionsAsync(workflow));
     }
@@ -21,7 +28,7 @@ internal class InputFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegi
     private IEnumerable<FunctionDefinition> GetFunctionDefinitionsAsync(Workflow workflow)
     {
         // Input argument getters.
-        foreach (var input in workflow.Inputs)
+        foreach (var input in workflow.Inputs.Where(x => VariableNameValidator.IsValidVariableName(x.Name)))
         {
             var pascalName = input.Name.Pascalize();
             var variableType = input.Type;

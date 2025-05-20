@@ -1,7 +1,5 @@
 using System.Text.Json;
 using Elsa.Common.Serialization;
-using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.Workflows.Serialization.Serializers;
@@ -39,5 +37,6 @@ public class JsonActivitySerializer(IServiceProvider serviceProvider) : Configur
         options.Converters.Add(CreateInstance<InputJsonConverterFactory>());
         options.Converters.Add(CreateInstance<OutputJsonConverterFactory>());
         options.Converters.Add(CreateInstance<ExpressionJsonConverterFactory>());
+        options.Converters.Add(CreateInstance<FuncExpressionValueConverter>());
     }
 }

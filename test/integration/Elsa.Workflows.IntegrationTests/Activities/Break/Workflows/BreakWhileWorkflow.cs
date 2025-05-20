@@ -1,5 +1,4 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 
 namespace Elsa.Workflows.IntegrationTests.Activities.Workflows;
@@ -8,7 +7,7 @@ public class BreakWhileWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        var currentValue = new Variable<int?>(0);
+        var currentValue = new Variable<int?>("CurrentValue", 0);
 
         workflow.Root = new Sequence
         {

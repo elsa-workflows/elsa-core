@@ -15,6 +15,7 @@ public class ActivityExecutionPipelinePipelineBuilder(IServiceProvider servicePr
         return this;
     }
 
+    /// <inheritdoc />
     public IActivityExecutionPipelineBuilder Insert(int index, Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate> middleware)
     {
         _components.Insert(index, middleware);

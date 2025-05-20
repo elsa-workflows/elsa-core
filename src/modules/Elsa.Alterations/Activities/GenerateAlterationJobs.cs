@@ -5,11 +5,10 @@ using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Models;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
@@ -20,7 +19,7 @@ namespace Elsa.Alterations.Activities;
 /// Submits an alteration plan for execution.
 /// </summary>
 [Browsable(false)]
-[Activity("Elsa", "Alterations", "Generates jobs for the specified Alteration Plan", Kind = ActivityKind.Job)]
+[Activity("Elsa", "Alterations", "Generates jobs for the specified Alteration Plan", Kind = ActivityKind.Task)]
 public class GenerateAlterationJobs : CodeActivity<int>
 {
     /// <inheritdoc />

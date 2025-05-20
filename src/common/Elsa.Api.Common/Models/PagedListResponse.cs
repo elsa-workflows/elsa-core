@@ -16,4 +16,6 @@ public record PagedListResponse<T>: LinkedResource
 
     public ICollection<T> Items { get; set; } = default!;
     public long TotalCount { get; set; }
+    
+    public static PagedListResponse<T> From(Page<T> page) => new(page);
 }

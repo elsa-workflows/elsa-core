@@ -1,6 +1,3 @@
-using Elsa.EntityFrameworkCore.Common;
-using Elsa.EntityFrameworkCore.Common.Contracts;
-using Elsa.EntityFrameworkCore.Handlers;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Identity.Entities;
@@ -17,9 +14,6 @@ namespace Elsa.EntityFrameworkCore.Modules.Identity;
 [PublicAPI]
 public class EFCoreIdentityPersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreIdentityPersistenceFeature, IdentityElsaDbContext>(module)
 {
-    /// Delegate for determining the exception handler.
-    public Func<IServiceProvider, IDbExceptionHandler<IdentityElsaDbContext>> DbExceptionHandler { get; set; } = _ => new RethrowDbExceptionHandler();
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -35,9 +29,6 @@ public class EFCoreIdentityPersistenceFeature(IModule module) : PersistenceFeatu
     public override void Apply()
     {
         base.Apply();
-
-        Services.AddScoped(DbExceptionHandler);
-
         AddEntityStore<User, EFCoreUserStore>();
         AddEntityStore<Application, EFCoreApplicationStore>();
         AddEntityStore<Role, EFCoreRoleStore>();

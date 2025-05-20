@@ -1,4 +1,3 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Options;
@@ -7,14 +6,14 @@ using Elsa.Workflows.Runtime.Stimuli;
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class TaskReporter(IBookmarkQueue stimulusSender, IStimulusHasher stimulusHasher) : ITaskReporter
+public class TaskReporter(IBookmarkQueue bookmarkQueue, IStimulusHasher stimulusHasher) : ITaskReporter
 {
     private static readonly string ActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<RunTask>();
     
     /// <inheritdoc />
-    public async Task ReportCompletionAsync(string taskId, object? result = default, CancellationToken cancellationToken = default)
+    public async Task ReportCompletionAsync(string taskId, object? result = null, CancellationToken cancellationToken = default)
     {
-        var stimulus = new RunTaskStimulus(taskId, default!);
+        var stimulus = new RunTaskStimulus(taskId, null!);
 
         var input = new Dictionary<string, object>
         {
@@ -25,12 +24,12 @@ public class TaskReporter(IBookmarkQueue stimulusSender, IStimulusHasher stimulu
         {
             ActivityTypeName = ActivityTypeName,
             StimulusHash = stimulusHasher.Hash(ActivityTypeName, stimulus),
-            Options = new ResumeBookmarkOptions
+            Options = new()
             {
                 Input = input
             }
         };
         
-        await stimulusSender.EnqueueAsync(bookmarkQueueItem, cancellationToken);
+        await bookmarkQueue.EnqueueAsync(bookmarkQueueItem, cancellationToken);
     }
 }

@@ -4,7 +4,6 @@ using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Services;
 using Elsa.Extensions;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
@@ -24,36 +23,43 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
     /// <inheritdoc />
     public async Task SaveAsync(ActivityExecutionRecord record, CancellationToken cancellationToken = default)
     {
-        var mappedRecord = await Map(record, cancellationToken);
+        var mappedRecord = Map(record);
         await store.SaveAsync(mappedRecord, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<ActivityExecutionRecord> records, CancellationToken cancellationToken = default)
     {
-        var mappedRecords = await Task.WhenAll(records.Select(async x => await Map(x, cancellationToken)));
+        var mappedRecords = records.Select(Map).ToList();
         await store.SaveManyAsync(mappedRecords, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task AddManyAsync(IEnumerable<ActivityExecutionRecord> records, CancellationToken cancellationToken = default)
+    {
+        var mappedRecords = records.Select(Map).ToList();
+        await store.AddManyAsync(mappedRecords, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<ActivityExecutionRecord?> FindAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
     {
         var record = await store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
-        return record == null ? null : await MapAsync(record, cancellationToken);
+        return record == null ? null : Map(record);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var records = await store.FindManyAsync(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
-        return await Task.WhenAll(records.Select(async x => await MapAsync(x, cancellationToken)));
+        return records.Select(Map).ToList();
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
     {
         var records = await store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
-        return await Task.WhenAll(records.Select(async x => await MapAsync(x, cancellationToken)));
+        return records.Select(Map).ToList();
     }
 
     /// <inheritdoc />
@@ -101,9 +107,9 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
         }
     }
 
-    private async ValueTask<ActivityExecutionRecordRecord> Map(ActivityExecutionRecord source, CancellationToken cancellationToken)
+    private ActivityExecutionRecordRecord Map(ActivityExecutionRecord source)
     {
-        return new ActivityExecutionRecordRecord
+        return new()
         {
             Id = source.Id,
             ActivityId = source.ActivityId,
@@ -116,18 +122,18 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
             HasBookmarks = source.HasBookmarks,
             Status = source.Status.ToString(),
             ActivityTypeVersion = source.ActivityTypeVersion,
-            SerializedActivityState = source.ActivityState != null ? await safeSerializer.SerializeAsync(source.ActivityState, cancellationToken) : null,
-            SerializedPayload = source.Payload != null ? await safeSerializer.SerializeAsync(source.Payload, cancellationToken) : null,
-            SerializedOutputs = source.Outputs != null ? await safeSerializer.SerializeAsync(source.Outputs, cancellationToken) : null,
+            SerializedActivityState = source.ActivityState?.Any() == true ? safeSerializer.Serialize(source.ActivityState) : null,
+            SerializedPayload = source.Payload?.Any() == true ? safeSerializer.Serialize(source.Payload) : null,
+            SerializedOutputs = source.Outputs?.Any() == true ? safeSerializer.Serialize(source.Outputs) : null,
             SerializedException = source.Exception != null ? payloadSerializer.Serialize(source.Exception) : null,
-            SerializedProperties = source.Properties.Any() ? await safeSerializer.SerializeAsync(source.Properties, cancellationToken) : null,
+            SerializedProperties = source.Properties?.Any() == true ? safeSerializer.Serialize(source.Properties) : null,
             TenantId = source.TenantId
         };
     }
 
-    private async ValueTask<ActivityExecutionRecord> MapAsync(ActivityExecutionRecordRecord source, CancellationToken cancellationToken)
+    private ActivityExecutionRecord Map(ActivityExecutionRecordRecord source)
     {
-        return new ActivityExecutionRecord
+        return new()
         {
             Id = source.Id,
             ActivityId = source.ActivityId,
@@ -140,18 +146,18 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
             HasBookmarks = source.HasBookmarks,
             Status = Enum.Parse<ActivityStatus>(source.Status),
             ActivityTypeVersion = source.ActivityTypeVersion,
-            ActivityState = source.SerializedActivityState != null ? payloadSerializer.Deserialize<IDictionary<string, object>>(source.SerializedActivityState) : default,
-            Payload = source.SerializedPayload != null ? await safeSerializer.DeserializeAsync<IDictionary<string, object>>(source.SerializedPayload, cancellationToken) : default,
-            Outputs = source.SerializedOutputs != null ? await safeSerializer.DeserializeAsync<IDictionary<string, object?>>(source.SerializedOutputs, cancellationToken) : default,
-            Exception = source.SerializedException != null ? payloadSerializer.Deserialize<ExceptionState>(source.SerializedException) : default,
-            Properties = source.SerializedProperties != null ? await safeSerializer.DeserializeAsync<IDictionary<string, object>>(source.SerializedProperties, cancellationToken) : new Dictionary<string, object>(),
+            ActivityState = source.SerializedActivityState != null ? payloadSerializer.Deserialize<IDictionary<string, object?>>(source.SerializedActivityState) : null,
+            Payload = source.SerializedPayload != null ? safeSerializer.Deserialize<IDictionary<string, object>>(source.SerializedPayload) : null,
+            Outputs = source.SerializedOutputs != null ? safeSerializer.Deserialize<IDictionary<string, object?>>(source.SerializedOutputs) : null,
+            Exception = source.SerializedException != null ? payloadSerializer.Deserialize<ExceptionState>(source.SerializedException) : null,
+            Properties = source.SerializedProperties != null ? safeSerializer.Deserialize<IDictionary<string, object>>(source.SerializedProperties) : null,
             TenantId = source.TenantId
         };
     }
 
     private ActivityExecutionRecordSummary MapSummary(ActivityExecutionSummaryRecord source)
     {
-        return new ActivityExecutionRecordSummary
+        return new()
         {
             Id = source.Id,
             ActivityId = source.ActivityId,

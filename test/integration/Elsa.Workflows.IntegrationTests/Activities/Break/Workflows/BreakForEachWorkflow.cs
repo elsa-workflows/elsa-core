@@ -1,7 +1,5 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
-using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.IntegrationTests.Activities.Workflows;
 
@@ -10,7 +8,7 @@ class BreakForEachWorkflow : WorkflowBase
     protected override void Build(IWorkflowBuilder workflow)
     {
         var items = new[] { "C#", "Rust", "Go" };
-        var currentItem = new Variable<string>();
+        var currentItem = new Variable<string>("CurrentItem", "");
 
         workflow.Root = new Sequence
         {
@@ -19,7 +17,7 @@ class BreakForEachWorkflow : WorkflowBase
                 new WriteLine("Start"),
                 new ForEach<string>
                 {
-                    Items = new Input<ICollection<string>>(items),
+                    Items = new(items),
                     CurrentValue = new (currentItem),
                     Body = new Sequence
                     {

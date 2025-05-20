@@ -1,8 +1,6 @@
 using System.Runtime.CompilerServices;
-using Elsa.Http.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Http;
 
@@ -13,7 +11,7 @@ namespace Elsa.Http;
 public class SendHttpRequest : SendHttpRequestBase
 {
     /// <inheritdoc />
-    public SendHttpRequest([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public SendHttpRequest([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 

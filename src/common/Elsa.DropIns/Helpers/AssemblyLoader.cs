@@ -10,7 +10,14 @@ public static class AssemblyLoader
     {
         var loadContext = new DirectoryAssemblyLoadContext(path);
         var assemblyName = AssemblyLoadContext.GetAssemblyName(path);
-        var assembly = loadContext.LoadFromAssemblyName(assemblyName);
+        
+        // Copy drop in to memory stream to avoid file locking
+        using var fileStream = File.OpenRead(path);
+        using var memoryStream = new MemoryStream();
+        fileStream.CopyTo(memoryStream);
+        memoryStream.Seek(0, SeekOrigin.Begin);
+        fileStream.Close();
+        var assembly = loadContext.LoadFromStream(memoryStream);
 
         return assembly;
     }

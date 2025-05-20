@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Memory;
@@ -20,7 +21,7 @@ public static class OutputExtensions
     /// <summary>
     /// Sets the output to the specified value.
     /// </summary>
-    public static void Set<T>(this Output<T>? output, ActivityExecutionContext context, T? value, [CallerArgumentExpression("output")] string? outputName = default) => context.Set(output, value, outputName);
+    public static void Set<T>(this Output<T>? output, ActivityExecutionContext context, T? value, [CallerArgumentExpression("output")] string? outputName = null) => context.Set(output, value, outputName);
     
     /// <summary>
     /// Sets the output to the specified value.
@@ -45,10 +46,10 @@ public static class OutputExtensions
         var memoryBlockReference = output?.MemoryBlockReference();
         
         if (memoryBlockReference is null)
-            return default;
+            return null;
 
         if(!context.ExpressionExecutionContext.TryGetBlock(memoryBlockReference, out var memoryBlock))
-            return default;
+            return null;
         
         var parsedContentVariableType = (memoryBlock.Metadata as VariableBlockMetadata)?.Variable.GetType();
         return parsedContentVariableType?.GenericTypeArguments.FirstOrDefault();
@@ -61,5 +62,11 @@ public static class OutputExtensions
     {
         var memoryBlockReference = output?.MemoryBlockReference();
         return memoryBlockReference is not null && context.ExpressionExecutionContext.TryGetBlock(memoryBlockReference, out _);
+    }
+    
+    public static object? ParseValue(this Output output, object? value)
+    {
+        var genericType = output.GetType();
+        return VariableExtensions.ParseValue(genericType, value);
     }
 }

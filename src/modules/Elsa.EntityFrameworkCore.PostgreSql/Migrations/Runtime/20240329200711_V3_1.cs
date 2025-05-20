@@ -1,17 +1,16 @@
-#nullable disable
-
-using Elsa.EntityFrameworkCore.Common.Contracts;
 using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_1 : Migration
     {
-        private readonly IElsaDbContextSchema _schema;
+        private readonly Elsa.EntityFrameworkCore.IElsaDbContextSchema _schema;
 
         /// <inheritdoc />
-        public V3_1(IElsaDbContextSchema schema)
+        public V3_1(Elsa.EntityFrameworkCore.IElsaDbContextSchema schema)
         {
             _schema = schema;
         }

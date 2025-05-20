@@ -1,5 +1,4 @@
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.IntegrationTests.Scenarios.CanExecute.Activities;
 using Elsa.Workflows.IntegrationTests.Scenarios.CanExecute.Workflows;
 using Elsa.Workflows.Options;

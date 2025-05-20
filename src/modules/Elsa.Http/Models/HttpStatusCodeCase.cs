@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 
-namespace Elsa.Http.Models;
+namespace Elsa.Http;
 
 /// <summary>
 /// A binding between an HTTP status code and an activity.

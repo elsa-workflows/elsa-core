@@ -32,39 +32,40 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
     public async Task<object?> EvaluateAsync(string expression,
         Type returnType,
         ExpressionExecutionContext context,
-        ExpressionEvaluatorOptions? options = default,
-        Action<Engine>? configureEngine = default,
+        ExpressionEvaluatorOptions? options = null,
+        Action<Engine>? configureEngine = null,
         CancellationToken cancellationToken = default)
     {
         var engine = await GetConfiguredEngine(configureEngine, context, options, cancellationToken);
+        await mediator.SendAsync(new EvaluatingJavaScript(engine, context, expression), cancellationToken);
         var result = ExecuteExpressionAndGetResult(engine, expression);
+        await mediator.SendAsync(new EvaluatedJavaScript(engine, context, expression, result), cancellationToken);
 
         return result.ConvertTo(returnType);
     }
 
     private async Task<Engine> GetConfiguredEngine(Action<Engine>? configureEngine, ExpressionExecutionContext context, ExpressionEvaluatorOptions? options, CancellationToken cancellationToken)
     {
-        options ??= new ExpressionEvaluatorOptions();
+        options ??= new();
 
-        var engineOptions = new Jint.Options();
-
-        if (_jintOptions.AllowClrAccess)
-            engineOptions.AllowClr();
+        var engineOptions = new Jint.Options
+        {
+            ExperimentalFeatures = ExperimentalFeature.TaskInterop,
+        };
 
         ConfigureClrAccess(engineOptions);
         ConfigureObjectWrapper(engineOptions);
         ConfigureObjectConverters(engineOptions);
 
-        engineOptions.Interop.ObjectConverters.Add(new ByteArrayConverter());
-
         await mediator.SendAsync(new CreatingJavaScriptEngine(engineOptions, context), cancellationToken);
+        _jintOptions.ConfigureEngineOptionsCallback(engineOptions, context);
+
         var engine = new Engine(engineOptions);
 
         configureEngine?.Invoke(engine);
         ConfigureArgumentGetters(engine, options);
         ConfigureConfigurationAccess(engine);
         _jintOptions.ConfigureEngineCallback(engine, context);
-        await mediator.SendAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
 
         return engine;
     }
@@ -74,7 +75,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         if (_jintOptions.AllowClrAccess)
             options.AllowClr();
     }
-    
+
     private void ConfigureObjectWrapper(Jint.Options options)
     {
         options.SetWrapObjectHandler((engine, target, type) =>
@@ -90,7 +91,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
     private void ConfigureObjectConverters(Jint.Options options)
     {
-        options.Interop.ObjectConverters.AddRange([new ByteArrayConverter(), new ExpandoObjectConverter()]);
+        options.Interop.ObjectConverters.AddRange([new ByteArrayConverter(), new EnumToStringConverter(), new JsonElementConverter()]);
     }
 
     private void ConfigureArgumentGetters(Engine engine, ExpressionEvaluatorOptions options)
@@ -98,7 +99,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         foreach (var argument in options.Arguments)
             engine.SetValue($"get{argument.Key}", (Func<object?>)(() => argument.Value));
     }
-    
+
     private void ConfigureConfigurationAccess(Engine engine)
     {
         if (_jintOptions.AllowConfigurationAccess)
@@ -109,7 +110,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
     {
         var preparedScript = GetOrCreatePrepareScript(expression);
         var result = engine.Evaluate(preparedScript);
-        return result.ToObject();
+        return result.UnwrapIfPromise().ToObject();
     }
 
     private Prepared<Script> GetOrCreatePrepareScript(string expression)
@@ -119,7 +120,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         return memoryCache.GetOrCreate(cacheKey, entry =>
         {
             if (_jintOptions.ScriptCacheTimeout.HasValue)
-                entry.SetAbsoluteExpiration(_jintOptions.ScriptCacheTimeout.Value);
+                entry.SetSlidingExpiration(_jintOptions.ScriptCacheTimeout.Value);
 
             return PrepareScript(expression);
         })!;
@@ -129,7 +130,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
     {
         var prepareOptions = new ScriptPreparationOptions
         {
-            ParsingOptions = new ScriptParsingOptions
+            ParsingOptions = new()
             {
                 AllowReturnOutsideFunction = true
             }

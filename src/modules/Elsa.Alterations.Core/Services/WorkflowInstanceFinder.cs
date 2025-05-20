@@ -4,7 +4,6 @@ using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
 
 namespace Elsa.Alterations.Core.Services;
@@ -18,12 +17,16 @@ public class WorkflowInstanceFinder(IWorkflowInstanceStore workflowInstanceStore
         var workflowInstanceFilter = new WorkflowInstanceFilter
         {
             Ids = filter.WorkflowInstanceIds?.ToList(),
+            DefinitionIds = filter.DefinitionIds,
             DefinitionVersionIds = filter.DefinitionVersionIds?.ToList(),
             CorrelationIds = filter.CorrelationIds?.ToList(),
             HasIncidents = filter.HasIncidents,
             IsSystem = filter.IsSystem,
             TimestampFilters = filter.TimestampFilters?.ToList(),
-            WorkflowStatus = WorkflowStatus.Running
+            WorkflowStatuses = filter.Statuses?.ToList(),
+            WorkflowSubStatuses = filter.SubStatuses?.ToList(),
+            Names = filter.Names?.ToList(),
+            SearchTerm = filter.SearchTerm,
         };
         var activityExecutionFilters = filter.ActivityFilters?.Select(x => new ActivityExecutionRecordFilter
         {
@@ -34,9 +37,10 @@ public class WorkflowInstanceFinder(IWorkflowInstanceStore workflowInstanceStore
             Status = x.Status,
         }).ToList();
 
+        var emptyFilterSelectsAll = filter.EmptyFilterSelectsAll;
         var workflowInstanceFilterIsEmpty = WorkflowFilterIsEmpty(workflowInstanceFilter);
 
-        var workflowInstanceIds = workflowInstanceFilterIsEmpty
+        var workflowInstanceIds = workflowInstanceFilterIsEmpty && !emptyFilterSelectsAll
             ? Enumerable.Empty<string>().ToHashSet()
             : (await workflowInstanceStore.FindManyIdsAsync(workflowInstanceFilter, cancellationToken)).ToHashSet();
 

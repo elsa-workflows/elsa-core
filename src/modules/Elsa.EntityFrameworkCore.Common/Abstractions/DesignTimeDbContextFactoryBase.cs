@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
 using System.CommandLine;
 using System.CommandLine.Parsing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.EntityFrameworkCore.Common.Abstractions;
+namespace Elsa.EntityFrameworkCore.Abstractions;
 
 /// <summary>
 /// A design-time factory base class that can be inherited from by provider-specific implementations.
@@ -27,7 +27,7 @@ public abstract class DesignTimeDbContextFactoryBase<TDbContext> : IDesignTimeDb
 
         ConfigureBuilder(builder, connectionString);
 
-        return (TDbContext)Activator.CreateInstance(typeof(TDbContext), builder.Options, serviceProvider);
+        return (TDbContext)ActivatorUtilities.CreateInstance(serviceProvider, typeof(TDbContext), builder.Options);
     }
 
     /// <summary>

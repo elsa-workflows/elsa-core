@@ -1,7 +1,6 @@
 ﻿using Elsa.Liquid.Contracts;
 using Elsa.Liquid.Options;
 using Fluid;
-using Fluid.Filters;
 using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace

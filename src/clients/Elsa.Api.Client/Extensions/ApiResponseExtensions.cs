@@ -16,7 +16,8 @@ public static class ApiResponseExtensions
 
         if (response.Headers.TryGetValues("content-disposition", out var contentDispositionHeader)) // Only available if the Elsa Server exposes the "Content-Disposition" header.
         {
-            var values = contentDispositionHeader.ToList() ?? new List<string>();
+            // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+            var values = contentDispositionHeader.ToList() ?? [];
 
             if (values.Count >= 2)
                 fileName = values[1].Split('=')[1];

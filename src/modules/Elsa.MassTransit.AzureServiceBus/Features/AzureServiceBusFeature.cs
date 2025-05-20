@@ -1,4 +1,5 @@
 using Azure.Messaging.ServiceBus.Administration;
+using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -21,8 +22,10 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.MassTransit.AzureServiceBus.Features;
 
+/// <summary>
 /// Configures MassTransit to use the Azure Service Bus transport.
 /// See https://masstransit.io/documentation/configuration/transports/azure-service-bus
+/// </summary>
 [DependsOn(typeof(MassTransitFeature))]
 [DependsOn(typeof(ClusteringFeature))]
 public class AzureServiceBusFeature : FeatureBase
@@ -32,7 +35,9 @@ public class AzureServiceBusFeature : FeatureBase
     {
     }
 
+    /// <summary>
     /// An Azure Service Bus connection string.
+    /// </summary>
     public string? ConnectionString { get; set; }
 
     /// <summary>
@@ -48,7 +53,19 @@ public class AzureServiceBusFeature : FeatureBase
     /// <summary>
     /// A delegate that configures the Azure Service Bus transport options.
     /// </summary>
+    /// <remarks>This method is being marked as obsolete in favor of the ConfigureTransportBus which will provide additional access to the <see cref="IBusRegistrationContext"/></remarks>
+    [Obsolete("Use ConfigureTransportBus instead which provides a reference to IBusRegistrationContext.")]
     public Action<IServiceBusBusFactoryConfigurator>? ConfigureServiceBus { get; set; }
+
+    /// <summary>
+    /// Configures the Azure Service Bus within MassTransit for additional transport level components or features.
+    /// This action provides access to the <see cref="IBusRegistrationContext"/> and <see cref="IServiceBusBusFactoryConfigurator"/>.
+    /// </summary>
+    /// <remarks>
+    /// Use this action to configure advanced settings and features for the Azure Service Bus, such as middleware 
+    /// or additional endpoints. This action will run in addition to the Elsa required configuration.
+    /// </remarks>
+    public Action<IBusRegistrationContext, IServiceBusBusFactoryConfigurator> ConfigureTransportBus { get; set; }
 
     /// <summary>
     /// A delegate to configure <see cref="AzureServiceBusOptions"/>.
@@ -99,6 +116,7 @@ public class AzureServiceBusFeature : FeatureBase
 
                     configurator.UseServiceBusMessageScheduler();
                     ConfigureServiceBus?.Invoke(configurator);
+                    ConfigureTransportBus?.Invoke(context, configurator);
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
 
                     foreach (var consumer in temporaryConsumers)
@@ -121,6 +139,15 @@ public class AzureServiceBusFeature : FeatureBase
                     }
 
                     configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                    
+                    configurator.ConfigureJsonSerializerOptions(serializerOptions =>
+                    {
+                        var serializer = context.GetRequiredService<IJsonSerializer>();
+                        serializer.ApplyOptions(serializerOptions);
+                        return serializerOptions;
+                    });
+                    
+                    configurator.ConfigureTenantMiddleware(context);
                 });
             };
         });

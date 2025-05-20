@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 
 namespace Elsa.Workflows.Activities;
@@ -10,7 +9,7 @@ namespace Elsa.Workflows.Activities;
 public abstract class Container : Activity, IVariableContainer
 {
     /// <inheritdoc />
-    protected Container(string? source = default, int? line = default) : base(source, line)
+    protected Container(string? source = null, int? line = null) : base(source, line)
     {
     }
 

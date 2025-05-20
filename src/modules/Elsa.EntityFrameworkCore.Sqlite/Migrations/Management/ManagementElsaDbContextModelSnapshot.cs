@@ -15,7 +15,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.20");
+            modelBuilder
+                .HasDefaultSchema("Elsa")
+                .HasAnnotation("ProductVersion", "8.0.12");
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowDefinition", b =>
                 {
@@ -105,7 +107,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                         .IsUnique()
                         .HasDatabaseName("IX_WorkflowDefinition_DefinitionId_Version");
 
-                    b.ToTable("WorkflowDefinitions");
+                    b.ToTable("WorkflowDefinitions", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowInstance", b =>
@@ -137,6 +139,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                         .HasColumnType("TEXT");
 
                     b.Property<int>("IncidentCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsExecuting")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsSystem")
@@ -179,6 +184,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.HasIndex("FinishedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FinishedAt");
 
+                    b.HasIndex("IsExecuting")
+                        .HasDatabaseName("IX_WorkflowInstance_IsExecuting");
+
                     b.HasIndex("IsSystem")
                         .HasDatabaseName("IX_WorkflowInstance_IsSystem");
 
@@ -209,7 +217,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.HasIndex("Status", "SubStatus", "DefinitionId", "Version")
                         .HasDatabaseName("IX_WorkflowInstance_Status_SubStatus_DefinitionId_Version");
 
-                    b.ToTable("WorkflowInstances");
+                    b.ToTable("WorkflowInstances", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

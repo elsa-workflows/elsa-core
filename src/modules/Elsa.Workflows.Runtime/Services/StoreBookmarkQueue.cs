@@ -1,5 +1,4 @@
-using Elsa.Common.Contracts;
-using Elsa.Workflows.Contracts;
+using Elsa.Common;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Microsoft.Extensions.Logging;
@@ -19,27 +18,29 @@ public class StoreBookmarkQueue(
         var filter = new BookmarkFilter
         {
             BookmarkId = item.BookmarkId,
+            CorrelationId = item.CorrelationId,
             Hash = item.StimulusHash,
             WorkflowInstanceId = item.WorkflowInstanceId,
-            ActivityTypeName = item.ActivityTypeName
+            Name = item.ActivityTypeName
         };
 
         var result = await resumer.ResumeAsync(filter, item.Options, cancellationToken);
 
         if (result.Matched)
         {
-            logger.LogDebug("Successfully resumed workflow instance {WorkflowInstance} using bookmark {BookmarkId}", item.WorkflowInstanceId, item.BookmarkId);
+            logger.LogDebug("Successfully resumed workflow instance {WorkflowInstance} using bookmark {BookmarkId} for activity type {ActivityType}", item.WorkflowInstanceId, item.BookmarkId, item.ActivityTypeName);
             return;
         }
 
         // There was no matching bookmark yet. Store the queue item for the system to pick up whenever the bookmark becomes present.
-        logger.LogDebug("No bookmark with ID {BookmarkId} found for workflow {WorkflowInstance}. Adding the request to the bookmark queue", item.BookmarkId, item.WorkflowInstanceId);
+        logger.LogDebug("No bookmark with ID {BookmarkId} found for workflow {WorkflowInstance} for activity type {ActivityType}. Adding the request to the bookmark queue", item.BookmarkId, item.WorkflowInstanceId, item.ActivityTypeName);
         
         var entity = new BookmarkQueueItem
         {
             Id = identityGenerator.GenerateId(),
             WorkflowInstanceId = item.WorkflowInstanceId,
             BookmarkId = item.BookmarkId,
+            CorrelationId = item.CorrelationId,
             StimulusHash = item.StimulusHash,
             ActivityInstanceId = item.ActivityInstanceId,
             ActivityTypeName = item.ActivityTypeName,
@@ -50,6 +51,6 @@ public class StoreBookmarkQueue(
         await store.AddAsync(entity, cancellationToken);
 
         // Trigger the bookmark queue processor.
-        bookmarkQueueSignaler.Trigger();
+        await bookmarkQueueSignaler.TriggerAsync(cancellationToken);
     }
 }

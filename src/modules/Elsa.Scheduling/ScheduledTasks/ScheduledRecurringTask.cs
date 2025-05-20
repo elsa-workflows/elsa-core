@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Mediator.Contracts;
 using Elsa.Scheduling.Commands;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,7 +34,7 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
         _scopeFactory = scopeFactory;
         _startAt = startAt;
         _interval = interval;
-        _cancellationTokenSource = new CancellationTokenSource();
+        _cancellationTokenSource = new();
 
         Schedule();
     }
@@ -71,7 +71,7 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
     {
         if (delay < TimeSpan.Zero) delay = TimeSpan.FromSeconds(1);
 
-        _timer = new Timer(delay.TotalMilliseconds) { Enabled = true };
+        _timer = new(delay.TotalMilliseconds) { Enabled = true };
 
         _timer.Elapsed += async (_, _) =>
         {

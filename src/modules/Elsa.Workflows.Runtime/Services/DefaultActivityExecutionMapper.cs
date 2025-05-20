@@ -1,70 +1,23 @@
-using Elsa.Extensions;
-using Elsa.Workflows.Activities;
-using Elsa.Workflows.Management.Options;
-using Elsa.Workflows.Models;
+using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.State;
-using Humanizer;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class DefaultActivityExecutionMapper(IOptions<ManagementOptions> options) : IActivityExecutionMapper
+public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 {
-    private const string LogPersistenceModeKey = "logPersistenceMode";
-
-    /// <inheritdoc />
     public ActivityExecutionRecord Map(ActivityExecutionContext source)
     {
-        /*
-         * {
-         *      "logPersistenceMode": {
-         *          "default": "default",
-         *          "inputs": { k : v },
-         *          "outputs": { k: v }
-         *          }
-         *  }
-         */
+        var outputs = source.GetOutputs();
+        var inputs = source.GetInputs();
+        var persistenceMap = source.GetLogPersistenceModeMap();
+        var persistableInputs = GetPersistableInputOutput(inputs, persistenceMap.Inputs);
+        var persistableOutputs = GetPersistableInputOutput(outputs, persistenceMap.Outputs);
+        var persistableProperties = GetPersistableDictionary(source.Properties!, persistenceMap.InternalState);
+        var persistableJournalData = GetPersistableDictionary(source.JournalData!, persistenceMap.InternalState);
 
-        var workflow = (Workflow?)source.GetAncestors().FirstOrDefault(x => x.Activity is Workflow)?.Activity ?? source.WorkflowExecutionContext.Workflow;
-        var workflowPersistenceProperty = GetDefaultPersistenceMode(workflow.CustomProperties, () => options.Value.LogPersistenceMode);
-        var activityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceModeKey, () => new Dictionary<string, object?>());
-        var activityPersistencePropertyDefault = GetDefaultPersistenceMode(source.Activity.CustomProperties, () => workflowPersistenceProperty);
-
-        // Get any outcomes that were added to the activity execution context.
-        var outcomes = source.JournalData.TryGetValue("Outcomes", out var resultValue) ? resultValue as string[] : default;
-        var payload = new Dictionary<string, object>();
-
-        if (outcomes != null)
-            payload.Add("Outcomes", outcomes);
-
-        // Get any outputs that were added to the activity execution context.
-        var activity = source.Activity;
-        var expressionExecutionContext = source.ExpressionExecutionContext;
-        var activityDescriptor = source.ActivityDescriptor;
-        var outputDescriptors = activityDescriptor.Outputs;
-
-        var outputs = outputDescriptors.ToDictionary(x => x.Name, x =>
-        {
-            if (x.IsSerializable == false)
-                return "(not serializable)";
-
-            var cachedValue = activity.GetOutput(expressionExecutionContext, x.Name);
-
-            if (cachedValue != default)
-                return cachedValue;
-
-            if (x.ValueGetter(activity) is Output output && source.TryGet(output.MemoryBlockReference(), out var outputValue))
-                return outputValue;
-
-            return default;
-        });
-
-        outputs = StorePropertyUsingPersistenceMode(outputs, activityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
-        var activityState = StorePropertyUsingPersistenceMode(source.ActivityState, activityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
-
-        return new ActivityExecutionRecord
+        return new()
         {
             Id = source.Id,
             ActivityId = source.Activity.Id,
@@ -72,54 +25,41 @@ public class DefaultActivityExecutionMapper(IOptions<ManagementOptions> options)
             WorkflowInstanceId = source.WorkflowExecutionContext.Id,
             ActivityType = source.Activity.Type,
             ActivityName = source.Activity.Name,
-            ActivityState = activityState,
-            Outputs = outputs,
-            Properties = source.Properties,
-            Payload = payload,
+            ActivityState = persistableInputs,
+            Outputs = persistableOutputs,
+            Properties = persistableProperties,
+            Payload = persistableJournalData!,
             Exception = ExceptionState.FromException(source.Exception),
             ActivityTypeVersion = source.Activity.Version,
             StartedAt = source.StartedAt,
             HasBookmarks = source.Bookmarks.Any(),
-            Status = GetAggregateStatus(source),
+            Status = source.Status,
+            AggregateFaultCount = source.AggregateFaultCount,
             CompletedAt = source.CompletedAt
         };
     }
 
-    private static LogPersistenceMode GetDefaultPersistenceMode(IDictionary<string, object> customProperties, Func<LogPersistenceMode> defaultFactory)
+    /// <inheritdoc />
+    public Task<ActivityExecutionRecord> MapAsync(ActivityExecutionContext source)
     {
-        var properties = customProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceModeKey, () => new Dictionary<string, object?>());
-        var persistencePropertyDefault = properties!.GetValueOrDefault("default", defaultFactory);
-
-        if (persistencePropertyDefault == LogPersistenceMode.Inherit)
-            return defaultFactory();
-        return persistencePropertyDefault;
+        return Task.FromResult(Map(source));
     }
 
-    private static Dictionary<string, object?> StorePropertyUsingPersistenceMode(IDictionary<string, object?> inputs,
-        IDictionary<string, object> persistenceModeConfiguration,
-        LogPersistenceMode defaultLogPersistenceMode)
+    private IDictionary<string, object?> GetPersistableInputOutput(IDictionary<string, object> state, IDictionary<string, LogPersistenceMode> map)
     {
         var result = new Dictionary<string, object?>();
-
-        foreach (var input in inputs)
+        foreach (var stateEntry in state)
         {
-            var persistence = persistenceModeConfiguration.GetValueOrDefault(input.Key.Camelize(), () => defaultLogPersistenceMode);
-            if (persistence.Equals(LogPersistenceMode.Include)
-                || (persistence.Equals(LogPersistenceMode.Inherit) && defaultLogPersistenceMode is LogPersistenceMode.Include or LogPersistenceMode.Inherit))
-                result.Add(input.Key, input.Value);
+            var mode = map.TryGetValue(stateEntry.Key, out var value) ? value : LogPersistenceMode.Include;
+            if (mode == LogPersistenceMode.Include)
+                result.Add(stateEntry.Key, stateEntry.Value);
         }
 
         return result;
     }
 
-    private ActivityStatus GetAggregateStatus(ActivityExecutionContext context)
+    private IDictionary<string, object?>? GetPersistableDictionary(IDictionary<string, object?> dictionary, LogPersistenceMode mode)
     {
-        // If any child activity is faulted, the aggregate status is faulted.
-        var descendantContexts = context.GetDescendants().ToList();
-
-        if (descendantContexts.Any(x => x.Status == ActivityStatus.Faulted))
-            return ActivityStatus.Faulted;
-
-        return context.Status;
+        return mode == LogPersistenceMode.Include ? dictionary : null;
     }
 }

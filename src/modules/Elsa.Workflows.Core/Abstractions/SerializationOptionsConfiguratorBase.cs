@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 
 namespace Elsa.Workflows;
 

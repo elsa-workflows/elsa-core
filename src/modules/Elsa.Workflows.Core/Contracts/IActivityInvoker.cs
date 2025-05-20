@@ -1,6 +1,6 @@
 using Elsa.Workflows.Options;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Invokes activities.

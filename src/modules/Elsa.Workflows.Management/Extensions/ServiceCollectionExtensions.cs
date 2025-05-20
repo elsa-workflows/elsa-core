@@ -1,6 +1,9 @@
-using Elsa.Workflows.Contracts;
+
 
 // ReSharper disable once CheckNamespace
+
+using Elsa.Workflows;
+
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
@@ -11,5 +14,10 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Registers a <see cref="IActivityProvider"/>.
     /// </summary>
-    public static IServiceCollection AddActivityProvider<T>(this IServiceCollection services) where T : class, IActivityProvider => services.AddScoped<IActivityProvider, T>();
+    public static IServiceCollection AddActivityProvider<T>(this IServiceCollection services) where T : class, IActivityProvider
+    {
+        return services
+            .AddScoped<T>()
+            .AddScoped<IActivityProvider, T>(sp => sp.GetRequiredService<T>());
+    }
 }

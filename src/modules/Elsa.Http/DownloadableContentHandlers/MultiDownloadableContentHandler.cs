@@ -1,7 +1,6 @@
 using System.Collections;
 using Elsa.Http.Abstractions;
 using Elsa.Http.Contexts;
-using Elsa.Http.Models;
 
 namespace Elsa.Http.DownloadableContentHandlers;
 

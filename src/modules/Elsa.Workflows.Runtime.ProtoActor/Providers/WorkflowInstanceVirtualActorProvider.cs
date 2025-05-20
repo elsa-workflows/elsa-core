@@ -7,7 +7,7 @@ using Proto.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Providers;
 
-public class WorkflowInstanceVirtualActorProvider  : VirtualActorsProviderBase
+public class WorkflowInstanceVirtualActorProvider : VirtualActorsProviderBase
 {
     public override IEnumerable<ClusterKind> GetClusterKinds(ActorSystem system)
     {

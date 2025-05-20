@@ -1,6 +1,5 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Options;
@@ -15,13 +14,14 @@ public class WorkflowInstanceFactory(IIdentityGenerator identityGenerator, ISyst
     public WorkflowState CreateWorkflowState(Workflow workflow, WorkflowInstanceOptions? options = null)
     {
         var now = systemClock.UtcNow;
-        return new WorkflowState
+        return new()
         {
             Id = string.IsNullOrEmpty(options?.WorkflowInstanceId) ? identityGenerator.GenerateId() : options.WorkflowInstanceId,
             DefinitionId = workflow.Identity.DefinitionId,
             DefinitionVersionId = workflow.Identity.Id,
             DefinitionVersion = workflow.Identity.Version,
             CorrelationId = options?.CorrelationId,
+            Name = options?.Name,
             Input = options?.Input ?? new Dictionary<string, object>(),
             Properties = options?.Properties ?? new Dictionary<string, object>(),
             Status = WorkflowStatus.Running,
@@ -37,7 +37,7 @@ public class WorkflowInstanceFactory(IIdentityGenerator identityGenerator, ISyst
     public WorkflowInstance CreateWorkflowInstance(Workflow workflow, WorkflowInstanceOptions? options = null)
     {
         var workflowState = CreateWorkflowState(workflow, options);
-        return new WorkflowInstance
+        return new()
         {
             Id = workflowState.Id,
             ParentWorkflowInstanceId = workflowState.ParentWorkflowInstanceId,
@@ -46,6 +46,7 @@ public class WorkflowInstanceFactory(IIdentityGenerator identityGenerator, ISyst
             DefinitionVersionId = workflowState.DefinitionVersionId,
             Version = workflowState.DefinitionVersion,
             CorrelationId = workflowState.CorrelationId,
+            Name = workflowState.Name,
             Status = workflowState.Status,
             SubStatus = workflowState.SubStatus,
             IncidentCount = workflowState.Incidents.Count,
