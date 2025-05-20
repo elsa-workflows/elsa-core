@@ -1,4 +1,4 @@
-using Elsa.Dsl.Contracts;
+using Elsa.Expressions.Dsl.Contracts;
 using Elsa.Workflows.Management.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

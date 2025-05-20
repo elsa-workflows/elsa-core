@@ -5,28 +5,26 @@ using Elsa.Caching.Options;
 using Elsa.Common.Codecs;
 using Elsa.Common.DistributedHosting.DistributedLocks;
 using Elsa.Common.RecurringTasks;
-using Elsa.Dapper.Extensions;
-using Elsa.Dapper.Services;
 using Elsa.DropIns.Extensions;
-using Elsa.EntityFrameworkCore.Extensions;
-using Elsa.EntityFrameworkCore.Modules.Alterations;
-using Elsa.EntityFrameworkCore.Modules.Identity;
-using Elsa.EntityFrameworkCore.Modules.Management;
-using Elsa.EntityFrameworkCore.Modules.Runtime;
-using Elsa.EntityFrameworkCore.Modules.Tenants;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Identity.Multitenancy;
-using Elsa.Kafka;
-using Elsa.MassTransit.Extensions;
-using Elsa.MongoDb.Extensions;
-using Elsa.MongoDb.Modules.Alterations;
-using Elsa.MongoDb.Modules.Identity;
-using Elsa.MongoDb.Modules.Management;
-using Elsa.MongoDb.Modules.Runtime;
-using Elsa.MongoDb.Modules.Tenants;
 using Elsa.OpenTelemetry.Middleware;
+using Elsa.Persistence.Dapper.Extensions;
+using Elsa.Persistence.Dapper.Services;
+using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Persistence.EFCore.Modules.Alterations;
+using Elsa.Persistence.EFCore.Modules.Identity;
+using Elsa.Persistence.EFCore.Modules.Management;
+using Elsa.Persistence.EFCore.Modules.Runtime;
+using Elsa.Persistence.EFCore.Modules.Tenants;
+using Elsa.Persistence.MongoDb.Extensions;
+using Elsa.Persistence.MongoDb.Modules.Alterations;
+using Elsa.Persistence.MongoDb.Modules.Identity;
+using Elsa.Persistence.MongoDb.Modules.Management;
+using Elsa.Persistence.MongoDb.Modules.Runtime;
+using Elsa.Persistence.MongoDb.Modules.Tenants;
 using Elsa.Retention.Extensions;
 using Elsa.Retention.Models;
 using Elsa.Secrets.Extensions;
@@ -35,6 +33,13 @@ using Elsa.Secrets.Persistence;
 using Elsa.Server.Web;
 using Elsa.Server.Web.Extensions;
 using Elsa.Server.Web.Filters;
+using Elsa.ServiceBus.Kafka;
+using Elsa.ServiceBus.MassTransit.Extensions;
+using Elsa.Sql.Extensions;
+using Elsa.Sql.MySql;
+using Elsa.Sql.Sqlite;
+using Elsa.Sql.PostgreSql;
+using Elsa.Sql.SqlServer;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
@@ -328,7 +333,7 @@ services
                         if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                         {
                             //ef.UseSqlServer(sqlServerConnectionString, new ElsaDbContextOptions);
-                            var migrationsAssembly = typeof(Elsa.EntityFrameworkCore.SqlServer.IdentityDbContextFactory).Assembly;
+                            var migrationsAssembly = typeof(Elsa.Persistence.EFCore.SqlServer.IdentityDbContextFactory).Assembly;
                             var connectionString = sqlServerConnectionString;
                             ef.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(migrationsAssembly, connectionString, null, configure => configure.CommandTimeout(60000));
                         }
@@ -424,17 +429,17 @@ services
                 options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
                 options.AppendScript("string SayHelloWorld() => Greet(\"World\");");
             })
-            .UseJavaScript(options =>
-            {
-                options.AllowClrAccess = true;
-                options.DisableWrappers = disableVariableWrappers;
-                options.DisableVariableCopying = disableVariableCopying;
-                options.ConfigureEngine(engine =>
-                {
-                    engine.Execute("function greet(name) { return `Hello ${name}!`; }");
-                    engine.Execute("function sayHelloWorld() { return greet('World'); }");
-                });
-            })
+            //.UseJavaScript(options =>
+            //{
+            //    options.AllowClrAccess = true;
+            //    options.DisableWrappers = disableVariableWrappers;
+            //    options.DisableVariableCopying = disableVariableCopying;
+            //    options.ConfigureEngine(engine =>
+            //    {
+            //        engine.Execute("function greet(name) { return `Hello ${name}!`; }");
+            //        engine.Execute("function sayHelloWorld() { return greet('World'); }");
+            //    });
+            //})
             .UsePython(python =>
             {
                 python.PythonOptions += options =>
@@ -457,6 +462,16 @@ services
 
                 if (useCaching)
                     http.UseCache();
+            })
+            .UseSql(options =>
+            {
+                options.Clients = client =>
+                {
+                    client.Register<MySqlClient>("MySql");
+                    client.Register<PostgreSqlClient>("PostgreSql");
+                    client.Register<SqliteClient>("Sqlite");
+                    client.Register<SqlServerClient>("Sql Server");
+                };
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseAlterations(alterations =>

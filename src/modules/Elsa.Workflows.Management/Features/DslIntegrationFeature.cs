@@ -1,5 +1,5 @@
-using Elsa.Dsl.Features;
-using Elsa.Dsl.Models;
+using Elsa.Expressions.Dsl.Features;
+using Elsa.Expressions.Dsl.Models;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;

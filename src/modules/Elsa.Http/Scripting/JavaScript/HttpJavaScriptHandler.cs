@@ -1,9 +1,9 @@
 using Elsa.Extensions;
 using Elsa.Http.Resilience;
-using Elsa.Scripting.JavaScript.Notifications;
-using Elsa.Scripting.JavaScript.TypeDefinitions.Builders;
-using Elsa.Scripting.JavaScript.TypeDefinitions.Contracts;
-using Elsa.Scripting.JavaScript.TypeDefinitions.Models;
+using Elsa.Expressions.JavaScript.Notifications;
+using Elsa.Expressions.JavaScript.TypeDefinitions.Builders;
+using Elsa.Expressions.JavaScript.TypeDefinitions.Contracts;
+using Elsa.Expressions.JavaScript.TypeDefinitions.Models;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows;
 using JetBrains.Annotations;

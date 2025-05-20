@@ -2,7 +2,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Http.Scripting.JavaScript;
-using Elsa.Scripting.JavaScript.Features;
+using Elsa.Expressions.JavaScript.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Http.Features;
