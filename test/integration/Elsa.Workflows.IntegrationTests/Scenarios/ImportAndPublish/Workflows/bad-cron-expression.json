@@ -1,0 +1,117 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "868f0fa68d846638",
+  "definitionId": "311cedd544cfe691",
+  "name": "CronWorkflow",
+  "createdAt": "2025-05-12T12:16:06.603274+00:00",
+  "version": 1,
+  "toolVersion": "3.3.0.0",
+  "variables": [
+  ],
+  "inputs": [
+  ],
+  "outputs": [
+  ],
+  "outcomes": [
+  ],
+  "customProperties": {
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": false,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "57363d0e76c3e9d2",
+    "nodeId": "Workflow1:57363d0e76c3e9d2",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [
+      ],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {
+    },
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Hello every hour"
+          }
+        },
+        "id": "1bf2412c9603f5d3",
+        "nodeId": "Workflow1:57363d0e76c3e9d2:1bf2412c9603f5d3",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -39.899993896484375,
+              "y": -88.600006103515625
+            },
+            "size": {
+              "width": 138.02500915527344,
+              "height": 49.600002288818359
+            }
+          }
+        }
+      },
+      {
+        "cronExpression": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "BadCronExpression"
+          }
+        },
+        "id": "13658e4b3bfafaaf",
+        "nodeId": "Workflow1:57363d0e76c3e9d2:13658e4b3bfafaaf",
+        "name": "Cron1",
+        "type": "Elsa.Cron",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": true,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -206.89999389648438,
+              "y": -88.600006103515625
+            },
+            "size": {
+              "width": 100.59999847412109,
+              "height": 49.600002288818359
+            }
+          }
+        }
+      }
+    ],
+    "variables": [
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "13658e4b3bfafaaf",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "1bf2412c9603f5d3",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}
