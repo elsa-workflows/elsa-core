@@ -1,0 +1,9 @@
+variable start: int = 1;
+variable end: int = read();
+
+print(js => `Counting numbers from ${start} to ${end}:`);
+
+for(i = start; i < end; i++)
+{
+    print(js => `Current value: ${i}`);
+}

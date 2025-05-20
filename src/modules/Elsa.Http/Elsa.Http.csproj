@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides HTTP activities to listen for and send out HTTP requests.
+        </Description>
+        <PackageTags>elsa module http activities</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+		<PackageReference Include="FluentStorage" />
+		<PackageReference Include="Elsa.Resilience" />
+		<PackageReference Include="Elsa.SasTokens" />
+		<PackageReference Include="Elsa.Workflows.Runtime" />
+        <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+        <PackageReference Include="Microsoft.Extensions.Resilience" />
+        <PackageReference Include="Polly" />
+		
+		<!-- Used to resolve the FluentStoage package warning. -->
+		<PackageReference Include="System.Text.Json" />
+    </ItemGroup>
+
+    <ItemGroup>
+		<ProjectReference Include="..\..\scripting\Elsa.Scripting.JavaScript\Elsa.Scripting.JavaScript.csproj" />
+		<ProjectReference Include="..\..\scripting\Elsa.Scripting.Liquid\Elsa.Scripting.Liquid.csproj" />
+    </ItemGroup>
+
+</Project>

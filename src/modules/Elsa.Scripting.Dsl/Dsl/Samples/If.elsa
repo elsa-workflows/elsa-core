@@ -1,0 +1,14 @@
+print("What's your age?");
+variable age = ReadLine;
+
+if age > 16 then
+{
+    print("Enjoy your driver's license!");
+    // delay(5000);
+    // await signal
+    print("But be careful!");
+}
+else
+    print("Enjoy your bicycle!");
+                        
+print("Goodbye.");
