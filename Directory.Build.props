@@ -36,4 +36,9 @@
         <!-- IL trimming warnings -->
         <NoWarn>$(NoWarn);IL2026;IL2046;IL2057;IL2067;IL2070;IL2072;IL2075;IL2087;IL2091</NoWarn>
     </PropertyGroup>
+
+	<PropertyGroup Label="PackageVersions">
+		<ElsaStudioVersion>3.6.0-preview.1018</ElsaStudioVersion>
+		<ElsaExtensionsVersion>3.6.0-preview.28</ElsaExtensionsVersion>
+	</PropertyGroup>
 </Project>
