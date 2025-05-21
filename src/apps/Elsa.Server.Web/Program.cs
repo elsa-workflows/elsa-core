@@ -38,7 +38,6 @@ using Elsa.Secrets.Persistence;
 using Elsa.Server.Web;
 using Elsa.Server.Web.Extensions;
 using Elsa.Server.Web.Filters;
-using Elsa.Server.Web.Messages;
 using Elsa.Sql.Extensions;
 using Elsa.Sql.MySql;
 using Elsa.Sql.PostgreSql;
@@ -129,10 +128,6 @@ var redisConnectionString = configuration.GetConnectionString("Redis")!;
 var distributedLockProviderName = configuration.GetSection("Runtime:DistributedLocking")["Provider"];
 var appRole = Enum.Parse<ApplicationRole>(configuration["AppRole"] ?? "Default");
 var sqlDatabaseProvider = Enum.Parse<SqlDatabaseProvider>(configuration["DatabaseProvider"] ?? "Sqlite");
-
-// Optionally create type aliases for easier configuration.
-TypeAliasRegistry.RegisterAlias("OrderReceivedProducerFactory", typeof(GenericProducerFactory<string, OrderReceived>));
-TypeAliasRegistry.RegisterAlias("OrderReceivedConsumerFactory", typeof(GenericConsumerFactory<string, OrderReceived>));
 
 if (useManualOtelInstrumentation)
 {
@@ -333,7 +328,6 @@ services
 
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
                 management.UseReadOnlyMode(useReadOnlyMode);
-                management.AddVariableTypeAndAlias<OrderReceived>("Application");
             })
             .UseWorkflowRuntime(runtime =>
             {
@@ -449,7 +443,6 @@ services
                 options.AllowClrAccess = true;
                 options.DisableWrappers = disableVariableWrappers;
                 options.DisableVariableCopying = disableVariableCopying;
-                options.RegisterType<OrderReceived>();
                 options.ConfigureEngine(engine =>
                 {
                     engine.Execute("function greet(name) { return `Hello ${name}!`; }");
@@ -560,7 +553,6 @@ services
             elsa.UseMassTransit(massTransit =>
             {
                 massTransit.DisableConsumers = appRole == ApplicationRole.Api;
-                massTransit.AddMessageType<OrderReceived>();
 
                 if (massTransitBroker == MassTransitBroker.AzureServiceBus)
                 {
