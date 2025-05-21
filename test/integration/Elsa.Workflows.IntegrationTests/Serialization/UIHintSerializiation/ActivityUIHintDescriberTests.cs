@@ -1,13 +1,11 @@
-﻿using Elsa.Expressions.Models;
-using Elsa.Extensions;
+﻿using Elsa.Extensions;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Memory;
-using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.UIHints.Dropdown;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit.Abstractions;
 
-namespace Elsa.Workflows.Core.UnitTests;
+namespace Elsa.Workflows.IntegrationTests.Serialization.UIHintSerializiation;
 
 public class Tests
 {

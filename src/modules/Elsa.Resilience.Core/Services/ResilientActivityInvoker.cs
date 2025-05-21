@@ -1,7 +1,9 @@
 using Elsa.Expressions.Helpers;
+using Elsa.Resilience.Diagnostics;
 using Elsa.Resilience.Models;
 using Elsa.Workflows;
 using Polly;
+using Polly.Telemetry;
 
 namespace Elsa.Resilience;
 
@@ -13,13 +15,34 @@ public class ResilientActivityInvoker(IResilienceStrategyConfigEvaluator configE
     {
         var strategyConfig = GetStrategyConfig(activity);
         var strategy = await configEvaluator.EvaluateAsync(strategyConfig, context.ExpressionExecutionContext, cancellationToken);
-        var resilienceContext = new Context
+        
+        if (strategy == null)
+            return await action();
+        
+        var telemetryOptions = new TelemetryOptions();
+        telemetryOptions.TelemetryListeners.Add(new RetryTelemetryListener());
+        var builder = new ResiliencePipelineBuilder<T>().ConfigureTelemetry(telemetryOptions);
+        var ctx = ResilienceContextPool.Shared.Get(cancellationToken);
+        var retries = new List<RetryAttempt>();
+        context.TransientProperties[RetryAttempt.RetriesKey] = retries;
+        
+        try
         {
-            {
-                nameof(ActivityExecutionContext), context
-            }
-        };
-        return strategy == null ? await action() : await strategy.ExecuteAsync(c => action(), resilienceContext);
+            
+            ctx.Properties.Set(new(nameof(ActivityExecutionContext)), context);
+            await strategy.ConfigurePipeline(builder, ctx);
+            var pipeline = builder.Build();
+            var result = await pipeline.ExecuteAsync<T>(async c => await action(), ctx);
+            
+            // TODO: Persist retry attempts, if any.
+            
+            return result;
+        }
+        finally
+        {
+            ResilienceContextPool.Shared.Return(ctx);
+        }
+        
     }
 
     private ResilienceStrategyConfig? GetStrategyConfig(IResilientActivity resilientActivity)

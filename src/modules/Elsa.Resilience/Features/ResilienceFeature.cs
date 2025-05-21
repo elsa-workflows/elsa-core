@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
@@ -31,7 +30,6 @@ public class ResilienceFeature(IModule module) : FeatureBase(module)
 
     public override void Apply()
     {
-        DiagnosticListener.AllListeners.Subscribe(new PollyDiagnosticListener());
         Services.AddOptions<ResilienceOptions>();
 
         Services

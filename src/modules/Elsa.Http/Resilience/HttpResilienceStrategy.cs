@@ -1,3 +1,4 @@
+using Elsa.Http.Extensions;
 using Elsa.Resilience;
 using Polly;
 using Polly.Retry;
@@ -9,18 +10,30 @@ public class HttpResilienceStrategy : IResilienceStrategy
 {
     public string Id { get; set; } = null!;
     public string DisplayName { get; set; } = null!;
-    public int RetryCount { get; set; } = 3;
-    public double BackoffFactor { get; set; } = 2.0;
+    public int MaxRetryAttempts { get; set; } = 3;
+    public bool UseJitter { get; set; }
+    public TimeSpan Delay { get; set; } = TimeSpan.FromSeconds(1);
+    public DelayBackoffType BackoffType { get; set; } = DelayBackoffType.Exponential;
 
-    public async Task<T> ExecuteAsync<T>(Func<Context, Task<T>> action, IDictionary<string, object> context)
+    public Task ConfigurePipeline<T>(ResiliencePipelineBuilder<T> pipelineBuilder, ResilienceContext context)
     {
-        var policy = Policy
-            .Handle<Exception>()
-            .WaitAndRetryAsync(
-                RetryCount,
-                retryAttempt => TimeSpan.FromSeconds(Math.Pow(BackoffFactor, retryAttempt))
-            );
-
-        return await policy.ExecuteAsync(action, context);
+        if (typeof(T) != typeof(HttpResponseMessage))
+            throw new NotSupportedException($"{nameof(HttpResilienceStrategy)} only supports HttpResponseMessage.");
+        
+        var options = new RetryStrategyOptions<T>
+        {
+            ShouldHandle = new PredicateBuilder<T>()
+                .Handle<TimeoutException>()
+                .Handle<HttpRequestException>()
+                .HandleResult(response => ((HttpResponseMessage)(object)response!).StatusCode.IsTransientStatusCode()),
+            MaxRetryAttempts = MaxRetryAttempts,
+            Delay = Delay,
+            UseJitter = UseJitter,
+            BackoffType = BackoffType,
+            Name = DisplayName
+        };
+        
+        pipelineBuilder.AddRetry(options);
+        return Task.CompletedTask;
     }
 }
