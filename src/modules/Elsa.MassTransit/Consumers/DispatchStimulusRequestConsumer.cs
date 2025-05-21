@@ -16,16 +16,19 @@ public class DispatchStimulusRequestConsumer(IStimulusSender stimulusSender, IPa
         var message = context.Message;
         var json = message.SerializedRequest;
         var request = payloadSerializer.Deserialize<DispatchStimulusRequest>(json);
-        
-        if(request.ActivityTypeName != null)
+
+        if (request.ActivityTypeName != null)
         {
             await stimulusSender.SendAsync(request.ActivityTypeName, request.Stimulus!, request.Metadata, cancellationToken);
             return;
         }
-        
-        if(request.StimulusHash != null)
+
+        if (request.StimulusHash != null)
+        {
             await stimulusSender.SendAsync(request.StimulusHash!, request.Metadata, cancellationToken);
-        
+            return;
+        }
+
         throw new InvalidOperationException("Either ActivityTypeName or StimulusHash must be specified.");
     }
 }
