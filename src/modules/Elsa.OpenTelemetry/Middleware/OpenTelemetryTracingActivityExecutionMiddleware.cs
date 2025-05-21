@@ -14,7 +14,7 @@ namespace Elsa.OpenTelemetry.Middleware;
 
 /// <inheritdoc />
 [UsedImplicitly]
-public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareDelegate next, ISystemClock systemClock) : IActivityExecutionMiddleware
+public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareDelegate next) : IActivityExecutionMiddleware
 {
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)

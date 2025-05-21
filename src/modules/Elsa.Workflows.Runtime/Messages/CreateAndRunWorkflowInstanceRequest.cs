@@ -53,4 +53,9 @@ public class CreateAndRunWorkflowInstanceRequest
     /// The handle of the activity to schedule, if any.
     /// </summary>
     public ActivityHandle? ActivityHandle { get; set; }
+
+    /// <summary>
+    /// When set to <c>true</c>, include workflow output in the response.
+    /// </summary>
+    public bool IncludeWorkflowOutput { get; set; }
 }

@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 public class FlowFork : Activity
 {
     /// <inheritdoc />
-    public FlowFork([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public FlowFork([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -26,7 +26,7 @@ public class FlowFork : Activity
         Description = "A list of expected outcomes to handle.",
         UIHint = InputUIHints.DynamicOutcomes
     )]
-    public Input<ICollection<string>> Branches { get; set; } = default!;
+    public Input<ICollection<string>> Branches { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

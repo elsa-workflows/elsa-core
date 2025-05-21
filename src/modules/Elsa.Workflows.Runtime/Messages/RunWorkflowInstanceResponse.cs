@@ -10,7 +10,7 @@ public record RunWorkflowInstanceResponse
     /// <summary>
     /// The ID of the workflow instance.
     /// </summary>
-    public string WorkflowInstanceId { get; set; } = default!; 
+    public string WorkflowInstanceId { get; set; } = null!; 
     
     /// <summary>
     /// The status of the workflow instance.
@@ -28,4 +28,9 @@ public record RunWorkflowInstanceResponse
     /// Any incidents that occurred during the execution of the workflow instance.
     /// </summary>
     public ICollection<ActivityIncident> Incidents { get; set; } = new List<ActivityIncident>();
+
+    /// <summary>
+    /// The output produced by the workflow instance.
+    /// </summary>
+    public IDictionary<string, object>? Output { get; set; }
 }

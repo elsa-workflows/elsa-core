@@ -30,7 +30,7 @@ public class BulkDispatchWorkflows : Activity
     private const string CompletedInstancesCountKey = nameof(CompletedInstancesCountKey);
 
     /// <inheritdoc />
-    public BulkDispatchWorkflows([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public BulkDispatchWorkflows([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -42,13 +42,13 @@ public class BulkDispatchWorkflows : Activity
         Description = "The definition ID of the workflows to dispatch.",
         UIHint = InputUIHints.WorkflowDefinitionPicker
     )]
-    public Input<string> WorkflowDefinitionId { get; set; } = default!;
+    public Input<string> WorkflowDefinitionId { get; set; } = null!;
 
     /// <summary>
     /// The data source to use for dispatching the workflows.
     /// </summary>
     [Input(Description = "The data source to use for dispatching the workflows.")]
-    public Input<object> Items { get; set; } = default!;
+    public Input<object> Items { get; set; } = null!;
 
     /// <summary>
     /// The default key to use for the item input. Will not be used if the Items contain a list of dictionaries.
@@ -69,7 +69,7 @@ public class BulkDispatchWorkflows : Activity
     /// The input to send to the workflows.
     /// </summary>
     [Input(Description = "Additional input to send to the workflows being dispatched.")]
-    public Input<IDictionary<string, object>?> Input { get; set; } = default!;
+    public Input<IDictionary<string, object>?> Input { get; set; } = null!;
 
     /// <summary>
     /// True to wait for the child workflow to complete before completing this activity, false to "fire and forget".
@@ -78,12 +78,12 @@ public class BulkDispatchWorkflows : Activity
         Description = "Wait for the dispatched workflows to complete before completing this activity.",
         DefaultValue = true)]
     public Input<bool> WaitForCompletion { get; set; } = new(true);
-    
+
     /// <summary>
     /// Indicates whether a new trace context should be started for the workflow execution.
     /// </summary>
     [Input(Description = "Start a new trace context when using Open Telemetry.", Category = "Open Telemetry")]
-    public Input<bool> StartNewTrace { get; set; }
+    public Input<bool> StartNewTrace { get; set; } = new(false);
 
     /// <summary>
     /// The channel to dispatch the workflow to.
@@ -94,7 +94,7 @@ public class BulkDispatchWorkflows : Activity
         UIHint = InputUIHints.DropDown,
         UIHandler = typeof(DispatcherChannelOptionsProvider)
     )]
-    public Input<string?> ChannelName { get; set; } = default!;
+    public Input<string?> ChannelName { get; set; } = null!;
 
     /// <summary>
     /// An activity to execute when the child workflow finishes.
@@ -238,17 +238,17 @@ public class BulkDispatchWorkflows : Activity
                 await context.ScheduleActivityAsync(ChildCompleted, options);
                 return;
             default:
-                await CheckIfCompletedAsync(context);
+                await AttemptToCompleteAsync(context);
                 break;
         }
     }
 
     private async ValueTask OnChildFinishedCompletedAsync(ActivityCompletedContext context)
     {
-        await CheckIfCompletedAsync(context.TargetContext);
+        await AttemptToCompleteAsync(context.TargetContext);
     }
 
-    private async ValueTask CheckIfCompletedAsync(ActivityExecutionContext context)
+    private async ValueTask AttemptToCompleteAsync(ActivityExecutionContext context)
     {
         var dispatchedInstancesCount = context.GetProperty<long>(DispatchedInstancesCountKey);
         var finishedInstancesCount = context.GetProperty<long>(CompletedInstancesCountKey);

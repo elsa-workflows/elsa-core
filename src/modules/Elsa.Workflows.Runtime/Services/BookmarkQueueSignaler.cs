@@ -1,43 +1,30 @@
+using System.Threading.Channels;
+
 namespace Elsa.Workflows.Runtime;
 
 public class BookmarkQueueSignaler : IBookmarkQueueSignaler
 {
-    private readonly object _lock = new();
-    private TaskCompletionSource<object?> _tcs = new();
+    private readonly Channel<object?> _channel;
 
-    public async Task AwaitAsync(CancellationToken cancellationToken)
+    public BookmarkQueueSignaler()
     {
-        Task waitTask;
-        lock (_lock)
+        var options = new BoundedChannelOptions(1)
         {
-            // Capture the current TCS and await it
-            waitTask = _tcs.Task;
-        }
+            SingleReader = true,
+            SingleWriter = false,
+            AllowSynchronousContinuations = false
+        };
+        _channel = Channel.CreateBounded<object?>(options);
+    }
 
-        await WaitAndResetAsync(waitTask);
+    public Task AwaitAsync(CancellationToken cancellationToken)
+    {
+        return _channel.Reader.ReadAsync(cancellationToken).AsTask();
     }
 
     public Task TriggerAsync(CancellationToken cancellationToken)
     {
-        lock (_lock)
-        {
-            // If TCS is already in a completed state, no need to set it again.
-            if (!_tcs.Task.IsCompleted)
-            {
-                _tcs.SetResult(null);
-            }
-        }
-        
+        _channel.Writer.TryWrite(null);
         return Task.CompletedTask;
-    }
-
-    private async Task WaitAndResetAsync(Task waitTask)
-    {
-        await waitTask;
-        lock (_lock)
-        {
-            // Reset the TCS for the next wait
-            _tcs = new();
-        }
     }
 }

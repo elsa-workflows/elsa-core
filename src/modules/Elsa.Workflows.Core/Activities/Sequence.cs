@@ -18,7 +18,7 @@ public class Sequence : Container
     private const string CurrentIndexProperty = "CurrentIndex";
 
     /// <inheritdoc />
-    public Sequence([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Sequence([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         OnSignalReceived<BreakSignal>(OnBreakSignalReceived);
     }

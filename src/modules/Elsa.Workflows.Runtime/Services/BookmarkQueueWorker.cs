@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Runtime;
 public class BookmarkQueueWorker : IBookmarkQueueWorker
 {
     private readonly RateLimitedFunc<CancellationToken, Task> _rateLimitedProcessAsync;
-    private CancellationTokenSource _cts = default!;
+    private CancellationTokenSource _cts = null!;
     private bool _running;
     private readonly IBookmarkQueueSignaler _signaler;
     private readonly IServiceScopeFactory _scopeFactory;
@@ -18,7 +18,7 @@ public class BookmarkQueueWorker : IBookmarkQueueWorker
         _signaler = signaler;
         _scopeFactory = scopeFactory;
         _logger = logger;
-        _rateLimitedProcessAsync = Debouncer.Debounce<CancellationToken, Task>(ProcessAsync, TimeSpan.FromMilliseconds(500));
+        _rateLimitedProcessAsync = Throttler.Throttle<CancellationToken, Task>(ProcessAsync, TimeSpan.FromMilliseconds(500));
     }
 
     public void Start()
@@ -47,8 +47,19 @@ public class BookmarkQueueWorker : IBookmarkQueueWorker
     {
         while (!_cts.IsCancellationRequested)
         {
-            await _signaler.AwaitAsync(_cts.Token);
-            await _rateLimitedProcessAsync.InvokeAsync(_cts.Token);
+            try
+            {
+                await _signaler.AwaitAsync(_cts.Token);
+                await _rateLimitedProcessAsync.InvokeAsync(_cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                break; // Stop() was called
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "BookmarkQueueWorker error – continuing loop");
+            }
         }
     }
 

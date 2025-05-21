@@ -14,7 +14,7 @@ public class Parallel : Container
     private const string ScheduledChildrenProperty = "ScheduledChildren";
 
     /// <inheritdoc />
-    public Parallel([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Parallel([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
     

@@ -40,7 +40,10 @@ public class ElsaFeature : FeatureBase
             .UseWorkflowManagement(management =>
             {
                 if (!DisableAutomaticActivityRegistration)
-                    management.AddActivitiesFrom<WriteLine>();
+                    management
+                        .AddActivitiesFrom<WriteLine>()
+                        .RemoveActivity<ReadLine>() // ReadLine is not commonly used and can cause "hanging" containers when awaiting user input. Better to opt-in explicitly. 
+                        ;
             });
     }
 }
