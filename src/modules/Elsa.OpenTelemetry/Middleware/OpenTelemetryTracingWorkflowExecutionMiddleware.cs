@@ -18,7 +18,7 @@ namespace Elsa.OpenTelemetry.Middleware;
 /// Middleware that traces workflow execution using OpenTelemetry.
 /// </summary>
 [UsedImplicitly]
-public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, ISystemClock systemClock, IOptions<OpenTelemetryOptions> options) : WorkflowExecutionMiddleware(next)
+public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, IOptions<OpenTelemetryOptions> options) : WorkflowExecutionMiddleware(next)
 {
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
