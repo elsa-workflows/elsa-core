@@ -7,7 +7,7 @@ using Polly.Telemetry;
 
 namespace Elsa.Resilience;
 
-public class ResilientActivityInvoker(IResilienceStrategyConfigEvaluator configEvaluator) : IResilientActivityInvoker
+public class ResilientActivityInvoker(IResilienceStrategyConfigEvaluator configEvaluator, IRetryAttemptRecorder retryAttemptRecorder) : IResilientActivityInvoker
 {
     private const string ResilienceStrategyIdPropKey = "resilienceStrategy";
 
@@ -34,7 +34,11 @@ public class ResilientActivityInvoker(IResilienceStrategyConfigEvaluator configE
             var pipeline = builder.Build();
             var result = await pipeline.ExecuteAsync<T>(async c => await action(), ctx);
             
-            // TODO: Persist retry attempts, if any.
+            if (retries.Count > 0)
+            {
+                var recordContext = new RecordRetryAttemptsContext(context, retries, cancellationToken);
+                await retryAttemptRecorder.RecordAsync(recordContext);
+            }
             
             return result;
         }
