@@ -49,7 +49,7 @@ public class InputOutputLoggingTests(App app) : AppComponentTest(app)
         Assert.True(output2IsIncluded);
     }
     
-    [Fact(Skip = "Although the scenario works reliably, for some reason the test fails, most of the time, when run from the CLI and not using the IDE (Rider).")]
+    [Fact(Skip = "Although this functionality works in practice, the component test fails from time to time for no clear reason (yet).")]
     public async Task WorkflowAsActivityInternal_ShouldHonorSettings_WhenExecuting()
     {
         await ExecuteWorkflowAsync("input-output-logging-3");

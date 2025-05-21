@@ -4,6 +4,7 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
+using Elsa.Workflows.Runtime.Exceptions;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.Logging;
@@ -166,7 +167,7 @@ public class LocalWorkflowClient(
     private async Task<WorkflowInstance> GetWorkflowInstanceAsync(CancellationToken cancellationToken)
     {
         var workflowInstance = await workflowInstanceManager.FindByIdAsync(WorkflowInstanceId, cancellationToken);
-        if (workflowInstance == null) throw new InvalidOperationException($"Workflow instance {WorkflowInstanceId} not found.");
+        if (workflowInstance == null) throw new WorkflowInstanceNotFoundException($"Workflow instance not found.", WorkflowInstanceId);
         return workflowInstance;
     }
 
@@ -179,7 +180,7 @@ public class LocalWorkflowClient(
     private async Task<WorkflowGraph> GetWorkflowGraphAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken)
     {
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(definitionHandle, cancellationToken);
-        if (workflowGraph == null) throw new InvalidOperationException($"Workflow graph with handle {definitionHandle} not found.");
+        if (workflowGraph == null) throw new WorkflowGraphNotFoundException($"Workflow graph not found.", definitionHandle);
         return workflowGraph;
     }
 }

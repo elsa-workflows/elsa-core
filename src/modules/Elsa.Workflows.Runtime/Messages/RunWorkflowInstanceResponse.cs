@@ -10,7 +10,7 @@ public record RunWorkflowInstanceResponse
     /// <summary>
     /// The ID of the workflow instance.
     /// </summary>
-    public string WorkflowInstanceId { get; set; } = default!; 
+    public string WorkflowInstanceId { get; set; } = null!; 
     
     /// <summary>
     /// The status of the workflow instance.

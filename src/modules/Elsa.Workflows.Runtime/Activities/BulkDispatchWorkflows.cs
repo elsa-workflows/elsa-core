@@ -78,12 +78,12 @@ public class BulkDispatchWorkflows : Activity
         Description = "Wait for the dispatched workflows to complete before completing this activity.",
         DefaultValue = true)]
     public Input<bool> WaitForCompletion { get; set; } = new(true);
-    
+
     /// <summary>
     /// Indicates whether a new trace context should be started for the workflow execution.
     /// </summary>
     [Input(Description = "Start a new trace context when using Open Telemetry.", Category = "Open Telemetry")]
-    public Input<bool> StartNewTrace { get; set; }
+    public Input<bool> StartNewTrace { get; set; } = new(false);
 
     /// <summary>
     /// The channel to dispatch the workflow to.
@@ -238,17 +238,17 @@ public class BulkDispatchWorkflows : Activity
                 await context.ScheduleActivityAsync(ChildCompleted, options);
                 return;
             default:
-                await CheckIfCompletedAsync(context);
+                await AttemptToCompleteAsync(context);
                 break;
         }
     }
 
     private async ValueTask OnChildFinishedCompletedAsync(ActivityCompletedContext context)
     {
-        await CheckIfCompletedAsync(context.TargetContext);
+        await AttemptToCompleteAsync(context.TargetContext);
     }
 
-    private async ValueTask CheckIfCompletedAsync(ActivityExecutionContext context)
+    private async ValueTask AttemptToCompleteAsync(ActivityExecutionContext context)
     {
         var dispatchedInstancesCount = context.GetProperty<long>(DispatchedInstancesCountKey);
         var finishedInstancesCount = context.GetProperty<long>(CompletedInstancesCountKey);
