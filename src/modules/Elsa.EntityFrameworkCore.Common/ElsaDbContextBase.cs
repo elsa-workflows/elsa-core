@@ -19,7 +19,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     };
 
     protected IServiceProvider ServiceProvider { get; }
-    private readonly ElsaDbContextOptions? _elsaDbContextOptions;
+    private readonly ElsaDbContextOptions? elsaDbContextOptions;
     public string? TenantId { get; set; }
 
     /// <summary>
@@ -41,10 +41,10 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     protected ElsaDbContextBase(DbContextOptions options, IServiceProvider serviceProvider) : base(options)
     {
         ServiceProvider = serviceProvider;
-        _elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
-        
+        elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
+
         // ReSharper disable once VirtualMemberCallInConstructor
-        Schema = !string.IsNullOrWhiteSpace(_elsaDbContextOptions?.SchemaName) ? _elsaDbContextOptions.SchemaName : ElsaSchema;
+        Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
 
         var tenantAccessor = serviceProvider.GetService<ITenantAccessor>();
         var tenantId = tenantAccessor?.Tenant?.Id;
@@ -63,11 +63,11 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        if (!string.IsNullOrWhiteSpace(Schema)) 
+        if (!string.IsNullOrWhiteSpace(Schema))
             modelBuilder.HasDefaultSchema(Schema);
 
-        var additionalConfigurations = _elsaDbContextOptions?.GetModelConfigurations(this);
-        
+        var additionalConfigurations = elsaDbContextOptions?.GetModelConfigurations(this);
+
         additionalConfigurations?.Invoke(modelBuilder);
 
         using var scope = ServiceProvider.CreateScope();
@@ -75,7 +75,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
         {
-            foreach (var handler in entityTypeHandlers) 
+            foreach (var handler in entityTypeHandlers)
                 handler.Handle(this, modelBuilder, entityType);
         }
     }
