@@ -12,15 +12,15 @@ public class HttpResilienceStrategy : IResilienceStrategy
     public int RetryCount { get; set; } = 3;
     public double BackoffFactor { get; set; } = 2.0;
 
-    public async Task<T> ExecuteAsync<T>(Func<Task<T>> action)
+    public async Task<T> ExecuteAsync<T>(Func<Context, Task<T>> action, IDictionary<string, object> context)
     {
-        AsyncRetryPolicy policy = Policy
+        var policy = Policy
             .Handle<Exception>()
             .WaitAndRetryAsync(
                 RetryCount,
                 retryAttempt => TimeSpan.FromSeconds(Math.Pow(BackoffFactor, retryAttempt))
             );
 
-        return await policy.ExecuteAsync(action);
+        return await policy.ExecuteAsync(action, context);
     }
 }

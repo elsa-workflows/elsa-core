@@ -12,4 +12,8 @@
       <ProjectReference Include="..\Elsa.Resilience.Core\Elsa.Resilience.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Polly" />
+    </ItemGroup>
+
 </Project>
