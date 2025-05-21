@@ -1,28 +1,35 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.SasTokens.Extensions;
+using Elsa.SasTokens.Contracts;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.SasTokens.Features;
 
 /// <summary>
 /// Adds the SAS tokens feature to the workflow runtime.
 /// </summary>
-public class SasTokensFeature : FeatureBase
+/// <inheritdoc />
+public class SasTokensFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public SasTokensFeature(IModule module) : base(module)
-    {
-    }
+    /// <summary>
+    /// Configures the <see cref="IDataProtectionBuilder"/> used for setting up data protection.
+    /// Defaults to setting the application name to "Elsa Workflows".
+    /// </summary>
+    public Action<IDataProtectionBuilder> ConfigureDataProtectionBuilder { get; set; } = b => { b.SetApplicationName("Elsa Workflows"); };
 
     /// <summary>
-    /// Gets or sets the data protection provider used to create the <see cref="Microsoft.AspNetCore.DataProtection.IDataProtector"/> used to encrypt and decrypt the SAS tokens.
+    /// Factory method to create an instance of <see cref="ITokenService"/>.
+    /// Defaults to creating a <see cref="DataProtectorTokenService"/> using dependency injection.
     /// </summary>
-    public Func<IServiceProvider, IDataProtectionProvider> DataProtectionProvider { get; set; } = _ => Microsoft.AspNetCore.DataProtection.DataProtectionProvider.Create("Elsa Workflows");
+    public Func<IServiceProvider, ITokenService> TokenService { get; set; } = sp => ActivatorUtilities.CreateInstance<DataProtectorTokenService>(sp);
 
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSasTokens(DataProtectionProvider);
+        var builder = Services.AddDataProtection();
+        ConfigureDataProtectionBuilder(builder);
+
+        Services.AddScoped(TokenService);
     }
 }
