@@ -18,14 +18,14 @@ namespace Elsa.MassTransit.Activities;
 public class PublishMessage : CodeActivity
 {
     /// <inheritdoc />
-    public PublishMessage([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public PublishMessage([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <summary>
     /// The message type to publish.
     /// </summary>
-    public Type MessageType { get; set; } = default!;
+    public Type MessageType { get; set; } = null!;
 
     /// <summary>
     /// The message to send. Must be a concrete implementation of the configured <see cref="MessageType"/>.
@@ -34,7 +34,7 @@ public class PublishMessage : CodeActivity
         Description = "The message to send. Must be a concrete implementation of the configured message type.",
         UIHint = InputUIHints.MultiLine
     )]
-    public Input<object> Message { get; set; } = default!;
+    public Input<object> Message { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

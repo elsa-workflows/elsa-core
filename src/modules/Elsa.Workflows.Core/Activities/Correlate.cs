@@ -16,24 +16,24 @@ namespace Elsa.Workflows.Activities;
 public class Correlate : CodeActivity
 {
     /// <inheritdoc />
-    public Correlate([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Correlate([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public Correlate(string correlationId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
-    {
-        CorrelationId = new(correlationId);
-    }
-
-    /// <inheritdoc />
-    public Correlate(Variable<string> correlationId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Correlate(string correlationId, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         CorrelationId = new(correlationId);
     }
 
     /// <inheritdoc />
-    public Correlate(Func<ExpressionExecutionContext, string> correlationId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Correlate(Variable<string> correlationId, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
+    {
+        CorrelationId = new(correlationId);
+    }
+
+    /// <inheritdoc />
+    public Correlate(Func<ExpressionExecutionContext, string> correlationId, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         CorrelationId = new(correlationId);
     }
@@ -42,7 +42,7 @@ public class Correlate : CodeActivity
     /// The correlation ID to set.
     /// </summary>
     [Description("An expression that evaluates to the value to store as the correlation id")]
-    public Input<string> CorrelationId { get; set; } = default!;
+    public Input<string> CorrelationId { get; set; } = null!;
 
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)

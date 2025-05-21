@@ -23,12 +23,12 @@ namespace Elsa.Alterations.Activities;
 public class GenerateAlterationJobs : CodeActivity<int>
 {
     /// <inheritdoc />
-    public GenerateAlterationJobs([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public GenerateAlterationJobs([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public GenerateAlterationJobs(Variable<string> planId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public GenerateAlterationJobs(Variable<string> planId, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         PlanId = new Input<string>(planId);
     }
@@ -36,7 +36,7 @@ public class GenerateAlterationJobs : CodeActivity<int>
     /// <summary>
     /// The ID of the submitted alteration plan.
     /// </summary>
-    public Input<string> PlanId { get; set; } = default!;
+    public Input<string> PlanId { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

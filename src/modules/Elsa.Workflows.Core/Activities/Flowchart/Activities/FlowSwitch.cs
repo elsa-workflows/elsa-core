@@ -19,7 +19,7 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 public class FlowSwitch : Activity
 {
     /// <inheritdoc />
-    public FlowSwitch([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public FlowSwitch([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 

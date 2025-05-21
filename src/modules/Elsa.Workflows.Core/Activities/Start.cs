@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Activities;
 public class Start : CodeActivity, IStartNode
 {
     /// <inheritdoc />
-    public Start([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Start([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 }

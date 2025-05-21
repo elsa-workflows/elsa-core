@@ -17,20 +17,20 @@ namespace Elsa.Alterations.Activities;
 public class AlterationPlanCompleted : Trigger
 {
     /// <inheritdoc />
-    public AlterationPlanCompleted(Variable<string> planId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public AlterationPlanCompleted(Variable<string> planId, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         PlanId = new Input<string>(planId);
     }
     
     /// <inheritdoc />
-    public AlterationPlanCompleted([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public AlterationPlanCompleted([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
     
     /// <summary>
     /// The ID of the alteration plan.
     /// </summary>
-    public Input<string> PlanId { get; set; } = default!;
+    public Input<string> PlanId { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
