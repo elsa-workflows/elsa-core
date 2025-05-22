@@ -4,22 +4,22 @@
         <Description>
             Provides common utilities that are helpful when writing integration tests against Elsa Workflows functionality.
         </Description>
-        <PackageTags>elsa, integration testing</PackageTags>
+        <PackageTags>elsa integration testing</PackageTags>
         <RootNamespace>Elsa.Testing.Shared</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="xunit.abstractions" />
+		<PackageReference Include="Elsa.Scheduling" />
+		<PackageReference Include="Elsa.WorkflowProviders.BlobStorage" />
+		<PackageReference Include="xunit.abstractions" />
         <PackageReference Include="xunit.extensibility.core" />
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\modules\Elsa.Expressions.CSharp\Elsa.Expressions.CSharp.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Expressions.Liquid\Elsa.Expressions.Liquid.csproj" />
         <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.CSharp\Elsa.CSharp.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
         <ProjectReference Include="..\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
     </ItemGroup>
 

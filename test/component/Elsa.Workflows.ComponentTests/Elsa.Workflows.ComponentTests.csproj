@@ -13,11 +13,14 @@
         <Using Include="Xunit" />
     </ItemGroup>
 
+	<ItemGroup>
+		<PackageReference Include="Elsa.Caching.Distributed.MassTransit" />
+	</ItemGroup>
+	
     <ItemGroup>
-        <ProjectReference Include="..\..\..\src\apps\Elsa.Server.Web\Elsa.Server.Web.csproj"/>
-        <ProjectReference Include="..\..\..\src\clients\Elsa.Api.Client\Elsa.Api.Client.csproj"/>
+        <ProjectReference Include="..\..\..\src\apps\Elsa.Server.Web\Elsa.Server.Web.csproj" />
+        <ProjectReference Include="..\..\..\src\clients\Elsa.Api.Client\Elsa.Api.Client.csproj" />
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Component\Elsa.Testing.Shared.Component.csproj" />
-        <ProjectReference Include="..\..\..\src\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj" />
     </ItemGroup>
 
     <ItemGroup>

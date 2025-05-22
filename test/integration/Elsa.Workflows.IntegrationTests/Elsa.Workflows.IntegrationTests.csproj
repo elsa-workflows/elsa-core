@@ -1,20 +1,20 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     
     <PropertyGroup>
         <ProjectGuid>{ca65b7d5-57e8-4932-b8b8-732d040c9b3a}</ProjectGuid>
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="Proto.Persistence.Sqlite" />
+		<PackageReference Include="Elsa.Scheduling" />
+		<PackageReference Include="Elsa.Workflows.Runtime.Distributed" />
+		<PackageReference Include="Elsa.WorkflowProviders.BlobStorage" />
+		<PackageReference Include="Proto.Persistence.Sqlite" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Integration\Elsa.Testing.Shared.Integration.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />
-        <ProjectReference Include="..\..\..\src\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />
-        <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Runtime.ProtoActor\Elsa.Workflows.Runtime.ProtoActor.csproj" />
-        <ProjectReference Include="..\..\..\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
-        <ProjectReference Include="..\..\..\src\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>

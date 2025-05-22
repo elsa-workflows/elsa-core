@@ -1,5 +1,5 @@
 using Elsa.Common.Multitenancy;
-using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.Persistence.EFCore.Extensions;
 
 namespace Elsa.Server.Web.Extensions;
 

@@ -1,5 +1,5 @@
 ﻿using Elsa.Expressions.Models;
-using Elsa.JavaScript.Activities;
+using Elsa.Expressions.JavaScript.Activities;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 

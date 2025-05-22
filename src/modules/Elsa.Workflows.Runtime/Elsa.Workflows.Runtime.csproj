@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -8,19 +8,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DistributedLock.FileSystem"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions"/>
-        <PackageReference Include="Open.Linq.AsyncExtensions"/>
+		<PackageReference Include="DistributedLock.FileSystem" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+        <PackageReference Include="Open.Linq.AsyncExtensions" />
         <PackageReference Include="ThrottleDebounce" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Caching\Elsa.Caching.csproj"/>
-        <ProjectReference Include="..\Elsa.KeyValues\Elsa.KeyValues.csproj"/>
+        <ProjectReference Include="..\Elsa.Caching\Elsa.Caching.csproj" />
+        <ProjectReference Include="..\Elsa.KeyValues\Elsa.KeyValues.csproj" />
         <ProjectReference Include="..\Elsa.Tenants\Elsa.Tenants.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
     </ItemGroup>
 
 </Project>

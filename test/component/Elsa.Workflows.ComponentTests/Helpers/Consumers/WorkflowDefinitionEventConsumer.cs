@@ -1,4 +1,4 @@
-using Elsa.MassTransit.Messages;
+using Elsa.ServiceBus.MassTransit.Messages;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Services;
 using Hangfire.Annotations;

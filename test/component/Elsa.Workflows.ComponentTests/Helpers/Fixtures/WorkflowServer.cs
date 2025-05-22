@@ -1,14 +1,14 @@
 using System.Reflection;
 using Elsa.Alterations.Extensions;
 using Elsa.Caching;
-using Elsa.EntityFrameworkCore.Extensions;
-using Elsa.EntityFrameworkCore.Modules.Alterations;
-using Elsa.EntityFrameworkCore.Modules.Identity;
-using Elsa.EntityFrameworkCore.Modules.Management;
-using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
-using Elsa.MassTransit.Extensions;
+using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Persistence.EFCore.Modules.Alterations;
+using Elsa.Persistence.EFCore.Modules.Identity;
+using Elsa.Persistence.EFCore.Modules.Management;
+using Elsa.Persistence.EFCore.Modules.Runtime;
+using Elsa.ServiceBus.MassTransit.Extensions;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Consumers;
@@ -96,14 +96,14 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     distributedCaching.UseMassTransit();
                 });
-                elsa.UseJavaScript(options =>
-                {
-                    options.AllowClrAccess = true;
-                    options.ConfigureEngine(engine =>
-                    {
-                        engine.SetValue("getStaticValue", () => StaticValueHolder.Value);
-                    });
-                });
+                //elsa.UseJavaScript(options =>
+                //{
+                //    options.AllowClrAccess = true;
+                //    options.ConfigureEngine(engine =>
+                //    {
+                //        engine.SetValue("getStaticValue", () => StaticValueHolder.Value);
+                //    });
+                //});
                 elsa.UseAlterations(alterations =>
                 {
                     alterations.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));

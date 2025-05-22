@@ -1,5 +1,5 @@
 using Elsa.Extensions;
-using Elsa.JavaScript.Activities;
+using Elsa.Expressions.JavaScript.Activities;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.JavaScriptVariables;
 
