@@ -12,4 +12,13 @@ public class RetryAttemptRecord : Entity
     public TimeSpan RetryDelay { get; set; }
     public string? Result { get; set; }
     public ExceptionState? Exception { get; set; }
+
+    public string GetOutcome()
+    {
+        return !string.IsNullOrWhiteSpace(Result)
+            ? Result!
+            : Exception != null
+                ? Exception.Message
+                : "Unknown";
+    }
 }
