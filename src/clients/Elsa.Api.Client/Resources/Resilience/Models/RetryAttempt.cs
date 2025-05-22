@@ -1,4 +1,3 @@
-using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Api.Client.Shared.Models;
 
 namespace Elsa.Api.Client.Resources.Resilience.Models;
@@ -10,15 +9,5 @@ public class RetryAttemptRecord : Entity
     public string WorkflowInstanceId { get; set; } = null!;
     public int AttemptNumber { get; set; }
     public TimeSpan RetryDelay { get; set; }
-    public string? Result { get; set; }
-    public ExceptionState? Exception { get; set; }
-
-    public string GetOutcome()
-    {
-        return !string.IsNullOrWhiteSpace(Result)
-            ? Result!
-            : Exception != null
-                ? Exception.Message
-                : "Unknown";
-    }
+    public IDictionary<string, string?> Details { get; set; }
 }

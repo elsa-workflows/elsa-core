@@ -1,13 +1,15 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Resilience.Diagnostics;
+using Elsa.Resilience.Entities;
 using Elsa.Resilience.Models;
 using Elsa.Workflows;
+using Elsa.Workflows.State;
 using Polly;
 using Polly.Telemetry;
 
 namespace Elsa.Resilience;
 
-public class ResilientActivityInvoker(IResilienceStrategyConfigEvaluator configEvaluator, IRetryAttemptRecorder retryAttemptRecorder) : IResilientActivityInvoker
+public class ResilientActivityInvoker(IResilienceStrategyConfigEvaluator configEvaluator, IRetryAttemptRecorder retryAttemptRecorder, IIdentityGenerator identityGenerator) : IResilientActivityInvoker
 {
     private const string ResilienceStrategyIdPropKey = "resilienceStrategy";
 
@@ -36,7 +38,8 @@ public class ResilientActivityInvoker(IResilienceStrategyConfigEvaluator configE
             
             if (retries.Count > 0)
             {
-                var recordContext = new RecordRetryAttemptsContext(context, retries, cancellationToken);
+                var records = Map(context, activity, retries);;
+                var recordContext = new RecordRetryAttemptsContext(context, records, cancellationToken);
                 await retryAttemptRecorder.RecordAsync(recordContext);
             }
             
@@ -54,5 +57,25 @@ public class ResilientActivityInvoker(IResilienceStrategyConfigEvaluator configE
         return !resilientActivity.CustomProperties.TryGetValue(ResilienceStrategyIdPropKey, out var value)
             ? null
             : value.ConvertTo<ResilienceStrategyConfig>();
+    }
+    
+    private ICollection<RetryAttemptRecord> Map(ActivityExecutionContext activityExecutionContext, IResilientActivity resilientActivity, ICollection<RetryAttempt> attempts)
+    {
+        return attempts.Select(x => Map(activityExecutionContext, resilientActivity, x)).ToList();
+    }
+
+    private RetryAttemptRecord Map(ActivityExecutionContext activityExecutionContext, IResilientActivity resilientActivity, RetryAttempt attempt)
+    {
+        var details = resilientActivity.CollectRetryDetails(activityExecutionContext, attempt).Where(x => x.Value != null).ToDictionary(x => x.Key, x => x.Value!);
+        return new()
+        {
+            Id = identityGenerator.GenerateId(),
+            ActivityInstanceId = activityExecutionContext.Id,
+            ActivityId = activityExecutionContext.Activity.Id,
+            WorkflowInstanceId = activityExecutionContext.WorkflowExecutionContext.Id,
+            AttemptNumber = attempt.AttemptNumber,
+            RetryDelay = attempt.RetryDelay,
+            Details = details
+        };
     }
 }

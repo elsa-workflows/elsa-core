@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.UIHints;
 using Elsa.Resilience;
+using Elsa.Resilience.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.UIHints;
@@ -122,6 +123,21 @@ public abstract class SendHttpRequestBase(string? source = null, int? line = nul
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         await TrySendAsync(context);
+    }
+
+    public IDictionary<string, string?> CollectRetryDetails(ActivityExecutionContext context, RetryAttempt attempt)
+    {
+        if (attempt.Result is not HttpResponseMessage response)
+            return new Dictionary<string, string?>();
+
+        return new Dictionary<string, string?>
+        {
+            ["StatusCode"] = response.StatusCode.ToString(),
+            ["ReasonPhrase"] = response.ReasonPhrase,
+            ["Content-Type"] = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream",
+            ["Date"] = response.Headers.Date.ToString(),
+            ["Retry-After"] = response.Headers.RetryAfter?.ToString()
+        };
     }
 
     /// <summary>
