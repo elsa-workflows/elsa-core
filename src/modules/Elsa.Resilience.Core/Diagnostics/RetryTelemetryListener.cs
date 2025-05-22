@@ -19,7 +19,7 @@ public class RetryTelemetryListener : TelemetryListener
             var attempt = retryArgs.AttemptNumber;
             var delay = retryArgs.RetryDelay;
             var outcome = retryArgs.Outcome;
-            var record = new RetryAttempt(attempt, delay, outcome.Result, outcome.Exception);
+            var record = new RetryAttempt(activityExecutionContext, attempt, delay, outcome.Result, outcome.Exception);
             var records = (List<RetryAttempt>)activityExecutionContext.TransientProperties[RetryAttempt.RetriesKey];
             records.Add(record);
         }

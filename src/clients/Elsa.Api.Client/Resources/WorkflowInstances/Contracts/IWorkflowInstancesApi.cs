@@ -34,7 +34,7 @@ public interface IWorkflowInstancesApi
     /// <param name="take">The number of records to return.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-instances/{workflowInstanceId}/journal")]
-    Task<PagedListResponse<WorkflowExecutionLogRecord>> GetJournalAsync(string workflowInstanceId, int? skip = default, int? take = default, CancellationToken cancellationToken = default);
+    Task<PagedListResponse<WorkflowExecutionLogRecord>> GetJournalAsync(string workflowInstanceId, int? skip = null, int? take = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns a page of journal records for the specified workflow instance.
@@ -45,7 +45,7 @@ public interface IWorkflowInstancesApi
     /// <param name="take">The number of records to return.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/workflow-instances/{workflowInstanceId}/journal")]
-    Task<PagedListResponse<WorkflowExecutionLogRecord>> GetFilteredJournalAsync(string workflowInstanceId, GetFilteredJournalRequest? filter, int? skip = default, int? take = default, CancellationToken cancellationToken = default);
+    Task<PagedListResponse<WorkflowExecutionLogRecord>> GetFilteredJournalAsync(string workflowInstanceId, GetFilteredJournalRequest? filter, int? skip = null, int? take = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns the execution state of the specified workflow instance.

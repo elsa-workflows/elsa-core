@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 using Elsa.Api.Client.Shared.Models;
 using Refit;
 
-namespace Elsa.Api.Client.Resources.ResilienceStrategies.Contracts;
+namespace Elsa.Api.Client.Resources.Resilience.Contracts;
 
 /// <summary>
 /// Provides operations for managing and retrieving resilience strategies within the application.
