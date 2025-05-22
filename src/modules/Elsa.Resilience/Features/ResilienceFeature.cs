@@ -74,6 +74,7 @@ public class ResilienceFeature(IModule module) : FeatureBase(module)
             .AddSingleton(VoidRetryAttemptReader.Instance)
             .AddScoped<ActivityExecutionContextRetryAttemptRecorder>()
             .AddScoped<ActivityExecutionContextRetryAttemptReader>()
-            .AddScoped(_retryAttemptRecorder);
+            .AddScoped(_retryAttemptRecorder)
+            .AddScoped(_retryAttemptReader);
     }
 }
