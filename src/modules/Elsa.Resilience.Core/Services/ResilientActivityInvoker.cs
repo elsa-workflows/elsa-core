@@ -1,7 +1,9 @@
+using System.Text.Json;
 using Elsa.Expressions.Helpers;
 using Elsa.Resilience.Entities;
 using Elsa.Resilience.Extensions;
 using Elsa.Resilience.Models;
+using Elsa.Resilience.Serialization;
 using Elsa.Workflows;
 using Elsa.Workflows.State;
 using Polly;
@@ -9,7 +11,11 @@ using Polly.Telemetry;
 
 namespace Elsa.Resilience;
 
-public class ResilientActivityInvoker(IResilienceStrategyConfigEvaluator resilienceStrategyConfigEvaluator, IRetryAttemptRecorder retryAttemptRecorder, IIdentityGenerator identityGenerator) : IResilientActivityInvoker
+public class ResilientActivityInvoker(
+    IResilienceStrategyConfigEvaluator resilienceStrategyConfigEvaluator, 
+    IRetryAttemptRecorder retryAttemptRecorder, 
+    IIdentityGenerator identityGenerator, 
+    ResilienceStrategySerializer resilienceStrategySerializer) : IResilientActivityInvoker
 {
     private const string ResilienceStrategyIdPropKey = "resilienceStrategy";
 
@@ -22,6 +28,10 @@ public class ResilientActivityInvoker(IResilienceStrategyConfigEvaluator resilie
         // If no resilience strategy is configured, execute the action as-is.
         if (resilienceStrategy == null)
             return await action();
+        
+        // Record the applied strategy as part of the activity execution context for diagnostics.
+        var resilienceStrategyModel = JsonSerializer.SerializeToNode(resilienceStrategy, resilienceStrategySerializer.SerializerOptions)!;
+        context.SetResilienceStrategy(resilienceStrategyModel);
         
         // Create a resilience pipeline builder.
         var builder = CreateResiliencePipelineBuilder<T>();
