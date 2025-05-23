@@ -44,4 +44,9 @@ public class ActivityExecutionStats
     /// Gets or sets the total count of faults aggregated from the activity execution and its descendants.
     /// </summary>
     public int AggregateFaultCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional properties related to the activity execution.
+    /// </summary>
+    public IDictionary<string, object>? Properties { get; set; }
 }
