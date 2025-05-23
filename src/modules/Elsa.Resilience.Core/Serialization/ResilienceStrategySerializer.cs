@@ -33,7 +33,6 @@ public class ResilienceStrategySerializer
 
                 typeInfo.PolymorphismOptions = polymorphismOptions;
             }),
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true,
             NumberHandling = JsonNumberHandling.AllowReadingFromString
         }.WithConverters(new JsonStringEnumConverter());
