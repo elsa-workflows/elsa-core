@@ -19,7 +19,7 @@ public class SqlSingleValue : Activity
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
-    public SqlSingleValue([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public SqlSingleValue([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -30,7 +30,7 @@ public class SqlSingleValue : Activity
         Description = "Database client.",
         UIHint = InputUIHints.DropDown,
         UIHandler = typeof(SqlClientsDropDownProvider))]
-    public Input<string?> Client { get; set; } = default!;
+    public Input<string?> Client { get; set; } = null!;
 
     /// <summary>
     /// Connection string.
@@ -38,7 +38,7 @@ public class SqlSingleValue : Activity
     [Input(
         Description = "Connection string.",
         CanContainSecrets = true)]
-    public Input<string?> ConnectionString { get; set; } = default!;
+    public Input<string?> ConnectionString { get; set; } = null!;
 
     /// <summary>
     /// Command to run against the database.
@@ -49,7 +49,7 @@ public class SqlSingleValue : Activity
         UIHint = InputUIHints.CodeEditor,
         UIHandler = typeof(SqlCodeOptionsProvider)
     )]
-    public Input<string?> Command { get; set; } = default!;
+    public Input<string?> Command { get; set; } = null!;
 
 
     /// <summary>
@@ -57,7 +57,7 @@ public class SqlSingleValue : Activity
     /// </summary>
     [Output(
         Description = "Command result.")]
-    public Output<object?> Result { get; set; } = default!;
+    public Output<object?> Result { get; set; } = null!;
 
 
     /// <summary>

@@ -62,25 +62,27 @@ public class BackgroundActivityInvoker(
         var journalDataKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityJournalDataKey(activityNodeId);
         var bookmarksKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityBookmarksKey(activityNodeId);
         var scheduledActivitiesKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityScheduledActivitiesKey(activityNodeId);
+        var propsKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityPropertiesKey(activityNodeId);
         var outcomes = activityExecutionContext.GetBackgroundOutcomes()?.ToList();
         var completed = activityExecutionContext.GetBackgroundCompleted();
         var scheduledActivities = activityExecutionContext.GetBackgroundScheduledActivities().ToList();
         var workflowInstanceId = scheduledBackgroundActivity.WorkflowInstanceId;
         var outputValues = await activityPropertyLogPersistenceEvaluator.GetPersistableOutputAsync(activityExecutionContext);
-        var properties = new Dictionary<string, object>
+        var bookmarkProps = new Dictionary<string, object>
         {
             [scheduledActivitiesKey] = JsonSerializer.Serialize(scheduledActivities),
             [inputKey] = outputValues,
             [journalDataKey] = activityExecutionContext.JournalData,
-            [bookmarksKey] = activityExecutionContext.Bookmarks.ToList()
+            [bookmarksKey] = activityExecutionContext.Bookmarks.ToList(),
+            [propsKey] = activityExecutionContext.Properties
         };
 
-        if (outcomes != null) properties[outcomesKey] = outcomes;
-        if (completed != null) properties[completedKey] = completed;
+        if (outcomes != null) bookmarkProps[outcomesKey] = outcomes;
+        if (completed != null) bookmarkProps[completedKey] = completed;
 
         var resumeBookmarkOptions = new ResumeBookmarkOptions
         {
-            Properties = properties,
+            Properties = bookmarkProps,
         };
         var enqueuedBookmark = new NewBookmarkQueueItem
         {

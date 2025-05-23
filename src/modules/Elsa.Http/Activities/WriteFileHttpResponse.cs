@@ -31,37 +31,37 @@ public class WriteFileHttpResponse : Activity
     /// The MIME type of the file to serve.
     /// </summary>
     [Input(Description = "The content type of the file to serve. Leave empty to let the system determine the content type.")]
-    public Input<string?> ContentType { get; set; } = default!;
+    public Input<string?> ContentType { get; set; } = null!;
 
     /// <summary>
     /// The name of the file to serve.
     /// </summary>
     [Input(Description = "The name of the file to serve. Leave empty to let the system determine the file name.")]
-    public Input<string?> Filename { get; set; } = default!;
+    public Input<string?> Filename { get; set; } = null!;
 
     /// <summary>
     /// The Entity Tag of the file to serve.
     /// </summary>
     [Input(Description = "The Entity Tag of the file to serve. Leave empty to let the system determine the Entity Tag.")]
-    public Input<string?> EntityTag { get; set; } = default!;
+    public Input<string?> EntityTag { get; set; } = null!;
 
     /// <summary>
     /// The file content to serve. Supports byte array, streams, string, Uri and an array of the aforementioned types.
     /// </summary>
     [Input(Description = "The file content to serve. Supports various types, such as byte array, stream, string, Uri, Downloadable and a (mixed) array of the aforementioned types.")]
-    public Input<object> Content { get; set; } = default!;
+    public Input<object> Content { get; set; } = null!;
 
     /// <summary>
     /// Whether to enable resumable downloads. When enabled, the client can resume a download if the connection is lost.
     /// </summary>
     [Input(Description = "Whether to enable resumable downloads. When enabled, the client can resume a download if the connection is lost.")]
-    public Input<bool> EnableResumableDownloads { get; set; } = default!;
+    public Input<bool> EnableResumableDownloads { get; set; } = null!;
 
     /// <summary>
     /// The correlation ID of the download. Used to resume a download.
     /// </summary>
     [Input(Description = "The correlation ID of the download used to resume a download. If left empty, the x-download-id header will be used.")]
-    public Input<string> DownloadCorrelationId { get; set; } = default!;
+    public Input<string> DownloadCorrelationId { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -128,9 +128,9 @@ public class WriteFileHttpResponse : Activity
         var downloadable = await downloadableFunc();
         filename = !string.IsNullOrWhiteSpace(filename) ? filename : !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : "file.bin";
         contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : !string.IsNullOrWhiteSpace(downloadable.ContentType) ? downloadable.ContentType : GetContentType(context, filename);
-        eTag = !string.IsNullOrWhiteSpace(eTag) ? eTag : !string.IsNullOrWhiteSpace(downloadable.ETag) ? downloadable.ETag : default;
+        eTag = !string.IsNullOrWhiteSpace(eTag) ? eTag : !string.IsNullOrWhiteSpace(downloadable.ETag) ? downloadable.ETag : null;
 
-        var eTagHeaderValue = !string.IsNullOrWhiteSpace(eTag) ? new EntityTagHeaderValue(eTag) : default;
+        var eTagHeaderValue = !string.IsNullOrWhiteSpace(eTag) ? new EntityTagHeaderValue(eTag) : null;
         var stream = downloadable.Stream;
         await SendFileStream(context, httpContext, stream, contentType, filename, eTagHeaderValue);
     }
@@ -242,7 +242,7 @@ public class WriteFileHttpResponse : Activity
         var result = new FileStreamResult(source, contentType)
         {
             EnableRangeProcessing = enableResumableDownloads,
-            EntityTag = enableResumableDownloads ? eTag != null ? new Microsoft.Net.Http.Headers.EntityTagHeaderValue(eTag.ToString()) : default : default,
+            EntityTag = enableResumableDownloads ? eTag != null ? new Microsoft.Net.Http.Headers.EntityTagHeaderValue(eTag.ToString()) : null : null,
             FileDownloadName = filename
         };
 
@@ -273,7 +273,7 @@ public class WriteFileHttpResponse : Activity
     {
         try
         {
-            return headers.TryGetValue(HeaderNames.Range, out var header) ? RangeHeaderValue.Parse(header.ToString()) : default;
+            return headers.TryGetValue(HeaderNames.Range, out var header) ? RangeHeaderValue.Parse(header.ToString()) : null;
             
         }
         catch (Exception e)
@@ -286,7 +286,7 @@ public class WriteFileHttpResponse : Activity
     {
         try
         {
-            return headers.TryGetValue(HeaderNames.IfMatch, out var header) ? new EntityTagHeaderValue(header.ToString()) : default;
+            return headers.TryGetValue(HeaderNames.IfMatch, out var header) ? new EntityTagHeaderValue(header.ToString()) : null;
             
         }
         catch (Exception e)

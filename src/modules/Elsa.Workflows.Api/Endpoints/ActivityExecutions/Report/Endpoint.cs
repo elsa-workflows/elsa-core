@@ -32,7 +32,7 @@ internal class Report : ElsaEndpoint<Request, Response>
     {
         var stats = (await _activityExecutionStatsService.GetStatsAsync(request.WorkflowInstanceId, request.ActivityNodeIds, cancellationToken)).ToList();
         
-        return new Response
+        return new()
         {
             Stats = stats
         };

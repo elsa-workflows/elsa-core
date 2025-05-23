@@ -25,7 +25,7 @@ public class SubmitAlterationPlan : CodeActivity<string>
     /// <summary>
     /// The parameters for the alteration plan to be submitted.
     /// </summary>
-    public Input<AlterationPlanParams> Params { get; set; } = default!;
+    public Input<AlterationPlanParams> Params { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

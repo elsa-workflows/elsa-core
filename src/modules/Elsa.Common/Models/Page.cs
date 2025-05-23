@@ -21,4 +21,5 @@ public static class Page
     /// <typeparam name="T">The type of the items.</typeparam>
     /// <returns>A new instance of the <see cref="Page{T}"/> class.</returns>
     public static Page<T> Of<T>(ICollection<T> items, long totalCount) => new(items, totalCount);
+    public static Page<T> Empty<T>() => new([], 0);
 }

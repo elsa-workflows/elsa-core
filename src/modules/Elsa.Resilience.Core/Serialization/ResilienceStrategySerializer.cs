@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using Elsa.Common.Converters;
+using Elsa.Extensions;
 using Elsa.Resilience.Options;
 using Microsoft.Extensions.Options;
 
@@ -36,7 +36,7 @@ public class ResilienceStrategySerializer
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true,
             NumberHandling = JsonNumberHandling.AllowReadingFromString
-        };
+        }.WithConverters(new JsonStringEnumConverter());
         
         _serializerOptions = serializerOptions;
     }

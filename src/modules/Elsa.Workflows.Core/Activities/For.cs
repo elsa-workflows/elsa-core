@@ -18,13 +18,13 @@ public class For : Activity
     private const string CurrentStepProperty = "CurrentStep";
 
     /// <inheritdoc />
-    public For([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public For([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         Behaviors.Add<BreakBehavior>(this);
     }
 
     /// <inheritdoc />
-    public For(int start, int end, int step, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public For(int start, int end, int step, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         Start = new Input<int>(start);
         End = new Input<int>(end);

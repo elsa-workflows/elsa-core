@@ -1,7 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 using System.Text.Json;
 using Elsa.Common;
 using Elsa.Common.Codecs;
+using Elsa.Common.Entities;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management.Options;
@@ -12,6 +14,7 @@ using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
 
@@ -60,13 +63,15 @@ public class EFCoreActivityExecutionStore(
     /// <inheritdoc />
     public async Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        return await store.QueryAsync(query => Filter(query, filter), ActivityExecutionRecordSummary.FromRecordExpression(), cancellationToken).ToList().AsEnumerable();
+        var shadowRecords = await store.QueryAsync(query => Filter(query, filter), FromRecordExpression(), cancellationToken).ToList();
+        return Map(shadowRecords);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
     {
-        return await store.QueryAsync(query => Filter(query, filter), ActivityExecutionRecordSummary.FromRecordExpression(), cancellationToken).ToList().AsEnumerable();
+        var shadowRecords = await store.QueryAsync(query => Filter(query, filter), FromRecordExpression(), cancellationToken).ToList();
+        return Map(shadowRecords);
     }
 
     /// <inheritdoc />
@@ -142,4 +147,62 @@ public class EFCoreActivityExecutionStore(
     }
 
     private static IQueryable<ActivityExecutionRecord> Filter(IQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter) => filter.Apply(queryable);
+
+    private static Expression<Func<ActivityExecutionRecord, ShadowActivityExecutionRecordSummary>> FromRecordExpression()
+    {
+        return record => new()
+        {
+            Id = record.Id,
+            WorkflowInstanceId = record.WorkflowInstanceId,
+            ActivityId = record.ActivityId,
+            ActivityNodeId = record.ActivityNodeId,
+            ActivityType = record.ActivityType,
+            ActivityTypeVersion = record.ActivityTypeVersion,
+            ActivityName = record.ActivityName,
+            StartedAt = record.StartedAt,
+            HasBookmarks = record.HasBookmarks,
+            Status = record.Status,
+            AggregateFaultCount = record.AggregateFaultCount,
+            SerializedProperties = EF.Property<string>(record, "SerializedProperties"),
+            CompletedAt = record.CompletedAt
+        };
+    }
+
+    private IEnumerable<ActivityExecutionRecordSummary> Map(IEnumerable<ShadowActivityExecutionRecordSummary> source) => source.Select(Map);
+
+    private ActivityExecutionRecordSummary Map(ShadowActivityExecutionRecordSummary source)
+    {
+        return new()
+        {
+            Id = source.Id,
+            WorkflowInstanceId = source.WorkflowInstanceId,
+            ActivityId = source.ActivityId,
+            ActivityNodeId = source.ActivityNodeId,
+            ActivityType = source.ActivityType,
+            ActivityTypeVersion = source.ActivityTypeVersion,
+            ActivityName = source.ActivityName,
+            StartedAt = source.StartedAt,
+            HasBookmarks = source.HasBookmarks,
+            Status = source.Status,
+            AggregateFaultCount = source.AggregateFaultCount,
+            CompletedAt = source.CompletedAt,
+            Properties = source.SerializedProperties is null ? null : payloadSerializer.Deserialize<IDictionary<string, object>>(source.SerializedProperties)
+        };
+    }
+
+    private class ShadowActivityExecutionRecordSummary : Entity
+    {
+        public string WorkflowInstanceId { get; set; } = null!;
+        public string ActivityId { get; set; } = null!;
+        public string ActivityNodeId { get; set; } = null!;
+        public string ActivityType { get; set; } = null!;
+        public int ActivityTypeVersion { get; set; }
+        public string? ActivityName { get; set; }
+        public DateTimeOffset StartedAt { get; set; }
+        public bool HasBookmarks { get; set; }
+        public ActivityStatus Status { get; set; }
+        public string? SerializedProperties { get; set; }
+        public int AggregateFaultCount { get; set; }
+        public DateTimeOffset? CompletedAt { get; set; }
+    }
 }

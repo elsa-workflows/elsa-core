@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Activities;
 public class Break : CodeActivity, ITerminalNode
 {
     /// <inheritdoc />
-    public Break([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Break([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 

@@ -21,7 +21,7 @@ namespace Elsa.Http;
 public class WriteHttpResponse : Activity
 {
     /// <inheritdoc />
-    public WriteHttpResponse([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public WriteHttpResponse([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -39,7 +39,7 @@ public class WriteHttpResponse : Activity
     /// The content to write back.
     /// </summary>
     [Input(Description = "The content to write back. String values will be sent as-is, while objects will be serialized to a JSON string. Byte arrays and streams will be sent as files.")]
-    public Input<object?> Content { get; set; } = default!;
+    public Input<object?> Content { get; set; } = null!;
 
     /// <summary>
     /// The content type to use when returning the response.
@@ -49,7 +49,7 @@ public class WriteHttpResponse : Activity
         UIHandler = typeof(HttpContentTypeOptionsProvider),
         UIHint = InputUIHints.DropDown
     )]
-    public Input<string?> ContentType { get; set; } = default!;
+    public Input<string?> ContentType { get; set; } = null!;
 
     /// <summary>
     /// The headers to return along with the response.

@@ -19,30 +19,30 @@ namespace Elsa.Workflows.Activities;
 public class Complete : Activity, ITerminalNode
 {
     /// <inheritdoc />
-    public Complete([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Complete([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public Complete(IEnumerable<string> outcomes, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public Complete(IEnumerable<string> outcomes, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(new Input<object>(outcomes.ToList()), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Complete(Func<ExpressionExecutionContext, ICollection<string>> outcomes, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public Complete(Func<ExpressionExecutionContext, ICollection<string>> outcomes, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(new Input<object>(outcomes), source, line)
     {
     }
 
     /// <inheritdoc />
-    public Complete(Func<ExpressionExecutionContext, string> outcome, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public Complete(Func<ExpressionExecutionContext, string> outcome, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(context => [outcome(context)], source, line)
     {
     }
 
     /// <inheritdoc />
-    public Complete(Input<object> outcomes, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public Complete(Input<object> outcomes, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         Outcomes = outcomes;
     }
@@ -55,7 +55,7 @@ public class Complete : Activity, ITerminalNode
         UIHint = InputUIHints.OutcomePicker,
         DefaultSyntax = "Object"
     )]
-    public Input<object> Outcomes { get; set; } = default!;
+    public Input<object> Outcomes { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

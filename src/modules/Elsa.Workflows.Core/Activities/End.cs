@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Activities;
 public class End : CodeActivity, ITerminalNode
 {
     /// <inheritdoc />
-    public End([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public End([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 }

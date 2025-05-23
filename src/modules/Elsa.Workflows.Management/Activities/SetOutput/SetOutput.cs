@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Management.Activities.SetOutput;
 public class SetOutput : CodeActivity
 {
     /// <inheritdoc />
-    public SetOutput([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public SetOutput([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -27,13 +27,13 @@ public class SetOutput : CodeActivity
         Description = "The output to assign.",
         UIHint = InputUIHints.OutputPicker
     )]
-    public Input<string> OutputName { get; set; } = default!;
+    public Input<string> OutputName { get; set; } = null!;
 
     /// <summary>
     /// The value to assign to the output.
     /// </summary>
     [Input(Description = "The value to assign.")]
-    public Input<object?> OutputValue { get; set; } = default!;
+    public Input<object?> OutputValue { get; set; } = null!;
 
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)

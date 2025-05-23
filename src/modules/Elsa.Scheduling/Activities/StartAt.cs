@@ -20,15 +20,15 @@ public class StartAt : Trigger
     private const string InputKey = "ExecuteAt";
 
     /// <inheritdoc />
-    public StartAt([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public StartAt([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public StartAt(Input<DateTimeOffset> dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => DateTime = dateTime;
+    public StartAt(Input<DateTimeOffset> dateTime, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line) => DateTime = dateTime;
 
     /// <inheritdoc />
-    public StartAt(Func<ExpressionExecutionContext, DateTimeOffset> dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public StartAt(Func<ExpressionExecutionContext, DateTimeOffset> dateTime, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(new Input<DateTimeOffset>(dateTime), source, line)
     {
     }
@@ -36,35 +36,35 @@ public class StartAt : Trigger
     /// <inheritdoc />
     public StartAt(
         Func<ExpressionExecutionContext, ValueTask<DateTimeOffset>> dateTime,
-        [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Input<DateTimeOffset>(dateTime), source, line)
+        [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(new Input<DateTimeOffset>(dateTime), source, line)
     {
     }
 
     /// <inheritdoc />
-    public StartAt(Func<ValueTask<DateTimeOffset>> dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public StartAt(Func<ValueTask<DateTimeOffset>> dateTime, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(new Input<DateTimeOffset>(dateTime), source, line)
     {
     }
 
     /// <inheritdoc />
-    public StartAt(Func<DateTimeOffset> dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public StartAt(Func<DateTimeOffset> dateTime, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(new Input<DateTimeOffset>(dateTime), source, line)
     {
     }
 
     /// <inheritdoc />
-    public StartAt(DateTimeOffset dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
+    public StartAt(DateTimeOffset dateTime, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line) =>
         DateTime = new Input<DateTimeOffset>(dateTime);
 
     /// <inheritdoc />
-    public StartAt(Variable<DateTimeOffset> dateTime, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
+    public StartAt(Variable<DateTimeOffset> dateTime, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line) =>
         DateTime = new Input<DateTimeOffset>(dateTime);
 
     /// <summary>
     /// The timestamp at which the workflow should be triggered.
     /// </summary>
     [Input]
-    public Input<DateTimeOffset> DateTime { get; set; } = default!;
+    public Input<DateTimeOffset> DateTime { get; set; } = null!;
 
     /// <inheritdoc />
     protected override object GetTriggerPayload(TriggerIndexingContext context)
@@ -103,5 +103,5 @@ public class StartAt : Trigger
     /// <summary>
     /// Creates a new <see cref="StartAt"/> activity set to trigger at the specified timestamp.
     /// </summary>
-    public static StartAt From(DateTimeOffset value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(value, source, line);
+    public static StartAt From(DateTimeOffset value, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) => new(value, source, line);
 }

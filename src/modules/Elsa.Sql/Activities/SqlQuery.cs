@@ -20,7 +20,7 @@ public class SqlQuery : Activity
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
-    public SqlQuery([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public SqlQuery([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -31,7 +31,7 @@ public class SqlQuery : Activity
         Description = "Database client.",
         UIHint = InputUIHints.DropDown,
         UIHandler = typeof(SqlClientsDropDownProvider))]
-    public Input<string?> Client { get; set; } = default!;
+    public Input<string?> Client { get; set; } = null!;
 
     /// <summary>
     /// Connection string.
@@ -39,7 +39,7 @@ public class SqlQuery : Activity
     [Input(
         Description = "Connection string.",
         CanContainSecrets = true)]
-    public Input<string?> ConnectionString { get; set; } = default!;
+    public Input<string?> ConnectionString { get; set; } = null!;
 
     /// <summary>
     /// Query to run against the database.
@@ -50,7 +50,7 @@ public class SqlQuery : Activity
         UIHint = InputUIHints.CodeEditor,
         UIHandler = typeof(SqlCodeOptionsProvider)
     )]
-    public Input<string?> Query { get; set; } = default!;
+    public Input<string?> Query { get; set; } = null!;
 
 
     /// <summary>
@@ -59,7 +59,7 @@ public class SqlQuery : Activity
     [Output(
         Description = "DataSet of queried results.",
         IsSerializable = false)]
-    public Output<DataSet?> Results { get; set; } = default!;
+    public Output<DataSet?> Results { get; set; } = null!;
 
 
     /// <summary>

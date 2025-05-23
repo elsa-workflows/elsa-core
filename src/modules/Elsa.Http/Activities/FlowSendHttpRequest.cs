@@ -15,7 +15,7 @@ namespace Elsa.Http;
 public class FlowSendHttpRequest : SendHttpRequestBase, IActivityPropertyDefaultValueProvider
 {
     /// <inheritdoc />
-    public FlowSendHttpRequest([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public FlowSendHttpRequest([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -28,7 +28,7 @@ public class FlowSendHttpRequest : SendHttpRequestBase, IActivityPropertyDefault
         DefaultValueProvider = typeof(FlowSendHttpRequest),
         Order = 5.1f
     )]
-    public Input<ICollection<int>> ExpectedStatusCodes { get; set; } = default!;
+    public Input<ICollection<int>> ExpectedStatusCodes { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask HandleResponseAsync(ActivityExecutionContext context, HttpResponseMessage response)
@@ -36,7 +36,7 @@ public class FlowSendHttpRequest : SendHttpRequestBase, IActivityPropertyDefault
         var expectedStatusCodes = ExpectedStatusCodes.GetOrDefault(context) ?? new List<int>(0);
         var statusCode = (int)response.StatusCode;
         var hasMatchingStatusCode = expectedStatusCodes.Contains(statusCode);
-        var outcome = expectedStatusCodes.Any() ? hasMatchingStatusCode ? statusCode.ToString() : "Unmatched status code" : default;
+        var outcome = expectedStatusCodes.Any() ? hasMatchingStatusCode ? statusCode.ToString() : "Unmatched status code" : null;
         var outcomes = new List<string>();
 
         if (outcome != null)
@@ -65,6 +65,6 @@ public class FlowSendHttpRequest : SendHttpRequestBase, IActivityPropertyDefault
             return new List<int> { 200 };
         }
 
-        return default!;
+        return null!;
     }
 }

@@ -19,7 +19,7 @@ public class ObsoleteConnection
     /// <summary>
     /// Initializes a new instance of the <see cref="ObsoleteConnection"/> class.
     /// </summary>
-    public ObsoleteConnection(IActivity source, IActivity target, string? sourcePort = default, string? targetPort = default)
+    public ObsoleteConnection(IActivity source, IActivity target, string? sourcePort = null, string? targetPort = null)
     {
         Source = source;
         Target = target;
@@ -30,12 +30,12 @@ public class ObsoleteConnection
     /// <summary>
     /// The source activity.
     /// </summary>
-    public IActivity Source { get; set; } = default!;
+    public IActivity Source { get; set; } = null!;
     
     /// <summary>
     /// The target activity.
     /// </summary>
-    public IActivity Target { get; set; } = default!;
+    public IActivity Target { get; set; } = null!;
     
     /// <summary>
     /// The source port.

@@ -20,7 +20,7 @@ namespace Elsa.Http;
 public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValueProvider
 {
     /// <inheritdoc />
-    public DownloadHttpFile([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public DownloadHttpFile([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -28,7 +28,7 @@ public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValu
     /// The URL to download the file from.
     /// </summary>
     [Input(DisplayName = "URL", Description = "The URL to download the file from.")]
-    public Input<Uri?> Url { get; set; } = default!;
+    public Input<Uri?> Url { get; set; } = null!;
 
     /// <summary>
     /// The HTTP method to use when sending the request.
@@ -52,13 +52,13 @@ public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValu
         UIHint = InputUIHints.MultiText,
         DefaultValueProvider = typeof(FlowSendHttpRequest)
     )]
-    public Input<ICollection<int>> ExpectedStatusCodes { get; set; } = default!;
+    public Input<ICollection<int>> ExpectedStatusCodes { get; set; } = null!;
 
     /// <summary>
     /// The content to send with the request. Can be a string, an object, a byte array or a stream.
     /// </summary>
     [Input(Name = "Content", Description = "The content to send with the request. Can be a string, an object, a byte array or a stream.")]
-    public Input<object?> RequestContent { get; set; } = default!;
+    public Input<object?> RequestContent { get; set; } = null!;
 
     /// <summary>
     /// The content type to use when sending the request.
@@ -69,20 +69,20 @@ public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValu
         UIHandler = typeof(HttpContentTypeOptionsProvider),
         UIHint = InputUIHints.DropDown
     )]
-    public Input<string?> RequestContentType { get; set; } = default!;
+    public Input<string?> RequestContentType { get; set; } = null!;
 
     /// <summary>
     /// The Authorization header value to send with the request.
     /// </summary>
     /// <example>Bearer {some-access-token}</example>
     [Input(Description = "The Authorization header value to send with the request. For example: Bearer {some-access-token}", Category = "Security")]
-    public Input<string?> Authorization { get; set; } = default!;
+    public Input<string?> Authorization { get; set; } = null!;
 
     /// <summary>
     /// A value that allows to add the Authorization header without validation.
     /// </summary>
     [Input(Description = "A value that allows to add the Authorization header without validation.", Category = "Security")]
-    public Input<bool> DisableAuthorizationHeaderValidation { get; set; } = default!;
+    public Input<bool> DisableAuthorizationHeaderValidation { get; set; } = null!;
 
     /// <summary>
     /// The headers to send along with the request.
@@ -98,37 +98,37 @@ public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValu
     /// The HTTP response.
     /// </summary>
     [Output(IsSerializable = false)]
-    public Output<HttpResponseMessage> Response { get; set; } = default!;
+    public Output<HttpResponseMessage> Response { get; set; } = null!;
 
     /// <summary>
     /// The HTTP response status code
     /// </summary>
     [Output(Description = "The HTTP response status code")]
-    public Output<int> StatusCode { get; set; } = default!;
+    public Output<int> StatusCode { get; set; } = null!;
 
     /// <summary>
     /// The downloaded content stream, if any.
     /// </summary>
     [Output(Description = "The downloaded content stream, if any.", IsSerializable = false)]
-    public Output<Stream?> ResponseContentStream { get; set; } = default!;
+    public Output<Stream?> ResponseContentStream { get; set; } = null!;
 
     /// <summary>
     /// The downloaded content bytes, if any.
     /// </summary>
     [Output(Description = "The downloaded content bytes, if any.", IsSerializable = false)]
-    public Output<byte[]?> ResponseContentBytes { get; set; } = default!;
+    public Output<byte[]?> ResponseContentBytes { get; set; } = null!;
 
     /// <summary>
     /// The response headers that were received.
     /// </summary>
     [Output(Description = "The response headers that were received.")]
-    public Output<HttpHeaders?> ResponseHeaders { get; set; } = default!;
+    public Output<HttpHeaders?> ResponseHeaders { get; set; } = null!;
 
     /// <summary>
     /// The response content headers that were received.
     /// </summary>
     [Output(DisplayName = "Content Headers", Description = "The response content headers that were received.")]
-    public Output<HttpHeaders?> ResponseContentHeaders { get; set; } = default!;
+    public Output<HttpHeaders?> ResponseContentHeaders { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -192,7 +192,7 @@ public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValu
         var expectedStatusCodes = ExpectedStatusCodes.GetOrDefault(context) ?? new List<int>(0);
         var statusCode = (int)response.StatusCode;
         var hasMatchingStatusCode = expectedStatusCodes.Contains(statusCode);
-        var outcome = expectedStatusCodes.Any() ? hasMatchingStatusCode ? statusCode.ToString() : "Unmatched status code" : default;
+        var outcome = expectedStatusCodes.Any() ? hasMatchingStatusCode ? statusCode.ToString() : "Unmatched status code" : null;
         var outcomes = new List<string>();
 
         if (outcome != null)
@@ -285,6 +285,6 @@ public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValu
                 200
             };
 
-        return default!;
+        return null!;
     }
 }

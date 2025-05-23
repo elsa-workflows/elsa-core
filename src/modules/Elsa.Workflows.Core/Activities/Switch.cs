@@ -18,7 +18,7 @@ namespace Elsa.Workflows.Activities;
 public class Switch : Activity
 {
     /// <inheritdoc />
-    public Switch([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public Switch([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -144,7 +144,7 @@ public class SwitchCase
     /// <summary>
     /// The label of the case.
     /// </summary>
-    public string Label { get; set; } = default!;
+    public string Label { get; set; } = null!;
 
     /// <summary>
     /// The condition to evaluate.

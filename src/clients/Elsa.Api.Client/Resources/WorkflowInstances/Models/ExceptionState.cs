@@ -11,7 +11,7 @@ public record ExceptionState(string Type, string Message, string? StackTrace, Ex
     /// Initializes a new instance of the <see cref="ExceptionState"/> class.
     /// </summary>
     [JsonConstructor]
-    public ExceptionState() : this(default!, default!, default, default)
+    public ExceptionState() : this(null!, null!, null, null)
     {
         
     }

@@ -1,4 +1,4 @@
-﻿namespace Elsa.Workflows.Core.UnitTests;
+﻿namespace Elsa.Workflows.IntegrationTests.Serialization.UIHintSerializiation;
 
 public enum TestEnumType
 {

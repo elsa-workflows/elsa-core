@@ -18,12 +18,12 @@ namespace Elsa.JavaScript.Activities;
 public class RunJavaScript : CodeActivity<object?>
 {
     /// <inheritdoc />
-    public RunJavaScript([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public RunJavaScript([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public RunJavaScript(string script, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public RunJavaScript(string script, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         Script = new Input<string>(script);
     }
@@ -43,7 +43,7 @@ public class RunJavaScript : CodeActivity<object?>
     /// A list of possible outcomes. Use "setOutcome()" to set the outcome. Use "setOutcomes" to set multiple outcomes.
     /// </summary>
     [Input(Description = "A list of possible outcomes.", UIHint = InputUIHints.DynamicOutcomes)]
-    public Input<ICollection<string>> PossibleOutcomes { get; set; } = default!;
+    public Input<ICollection<string>> PossibleOutcomes { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

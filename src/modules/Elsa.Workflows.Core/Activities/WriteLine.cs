@@ -16,44 +16,44 @@ public class WriteLine : CodeActivity
 {
     /// <inheritdoc />
     [JsonConstructor]
-    private WriteLine(string? source = default, int? line = default) : base(source, line)
+    private WriteLine(string? source = null, int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public WriteLine(string text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Literal<string>(text), source, line)
+    public WriteLine(string text, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(new Literal<string>(text), source, line)
     {
     }
 
     /// <inheritdoc />
-    public WriteLine(Func<string> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+    public WriteLine(Func<string> text, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
         : this(Expression.DelegateExpression(text), source, line)
     {
     }
 
     /// <inheritdoc />
-    public WriteLine(Func<ExpressionExecutionContext, string?> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
+    public WriteLine(Func<ExpressionExecutionContext, string?> text, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
         : this(Expression.DelegateExpression(text), source, line)
     {
     }
 
     /// <inheritdoc />
-    public WriteLine(Variable<string> variable, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => Text = new Input<string>(variable);
+    public WriteLine(Variable<string> variable, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line) => Text = new Input<string>(variable);
 
     /// <inheritdoc />
-    public WriteLine(Literal<string> literal, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => Text = new Input<string>(literal);
+    public WriteLine(Literal<string> literal, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line) => Text = new Input<string>(literal);
 
     /// <inheritdoc />
-    public WriteLine(Expression expression, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => Text = new Input<string>(expression, new MemoryBlockReference());
+    public WriteLine(Expression expression, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line) => Text = new Input<string>(expression, new MemoryBlockReference());
 
     /// <inheritdoc />
-    public WriteLine(Input<string> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => Text = text;
+    public WriteLine(Input<string> text, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line) => Text = text;
         
     /// <summary>
     /// The text to write.
     /// </summary>
     [Description("The text to write.")]
-    public Input<string> Text { get; set; } = default!;
+    public Input<string> Text { get; set; } = null!;
 
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)

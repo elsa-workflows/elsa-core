@@ -5,7 +5,6 @@ using Elsa.JavaScript.TypeDefinitions.Builders;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows;
 using JetBrains.Annotations;
 
 namespace Elsa.Http.Scripting.JavaScript;

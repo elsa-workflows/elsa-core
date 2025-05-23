@@ -30,55 +30,55 @@ public class RunTask : Activity<object>
     /// The name of the task being requested.
     /// </summary>
     [Input(Description = "The name of the task being requested.")]
-    public Input<string> TaskName { get; set; } = default!;
+    public Input<string> TaskName { get; set; } = null!;
 
     /// <summary>
     /// The name of the task being requested.
     /// </summary>
     [Input(Description = "Any additional parameters to send to the task.")]
-    public Input<IDictionary<string, object>?> Payload { get; set; } = default!;
+    public Input<IDictionary<string, object>?> Payload { get; set; } = null!;
 
     /// <inheritdoc />
     [JsonConstructor]
-    private RunTask(string? source = default, int? line = default) : base(source, line)
+    private RunTask(string? source = null, int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public RunTask(MemoryBlockReference output, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(output, source, line)
+    public RunTask(MemoryBlockReference output, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(output, source, line)
     {
     }
 
     /// <inheritdoc />
-    public RunTask(Output<object>? output, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(output, source, line)
+    public RunTask(Output<object>? output, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(output, source, line)
     {
     }
 
     /// <inheritdoc />
-    public RunTask(string taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Literal<string>(taskName), source, line)
+    public RunTask(string taskName, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(new Literal<string>(taskName), source, line)
     {
     }
 
     /// <inheritdoc />
-    public RunTask(Func<string> taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public RunTask(Func<string> taskName, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(new Input<string>(Expression.DelegateExpression(taskName), new MemoryBlockReference()), source, line)
     {
     }
 
     /// <inheritdoc />
-    public RunTask(Func<ExpressionExecutionContext, string?> taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public RunTask(Func<ExpressionExecutionContext, string?> taskName, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(new Input<string>(Expression.DelegateExpression(taskName), new MemoryBlockReference()), source, line)
     {
     }
 
     /// <inheritdoc />
-    public RunTask(Variable<string> taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line) => TaskName = new Input<string>(taskName);
+    public RunTask(Variable<string> taskName, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line) => TaskName = new Input<string>(taskName);
 
     /// <inheritdoc />
-    public RunTask(Literal<string> taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line) => TaskName = new Input<string>(taskName);
+    public RunTask(Literal<string> taskName, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line) => TaskName = new Input<string>(taskName);
 
     /// <inheritdoc />
-    public RunTask(Input<string> taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => TaskName = taskName;
+    public RunTask(Input<string> taskName, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line) => TaskName = taskName;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

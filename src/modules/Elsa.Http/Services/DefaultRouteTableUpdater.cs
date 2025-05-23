@@ -2,7 +2,6 @@ using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Contexts;
 using Elsa.Workflows;
-using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;

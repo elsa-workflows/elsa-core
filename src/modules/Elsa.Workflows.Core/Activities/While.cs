@@ -25,43 +25,43 @@ public class While : Activity
     };
 
     /// <inheritdoc />
-    public While([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public While([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         Behaviors.Add<BreakBehavior>(this);
     }
 
     /// <inheritdoc />
-    public While(IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public While(IActivity? body = null, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         Body = body;
     }
 
     /// <inheritdoc />
-    public While(Input<bool> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(body, source, line)
+    public While(Input<bool> condition, IActivity? body = null, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(body, source, line)
     {
         Condition = condition;
     }
 
     /// <inheritdoc />
-    public While(Func<ExpressionExecutionContext, ValueTask<bool>> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public While(Func<ExpressionExecutionContext, ValueTask<bool>> condition, IActivity? body = null, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(new Input<bool>(condition), body, source, line)
     {
     }
 
     /// <inheritdoc />
-    public While(Func<ExpressionExecutionContext, bool> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public While(Func<ExpressionExecutionContext, bool> condition, IActivity? body = null, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(new Input<bool>(condition), body, source, line)
     {
     }
 
     /// <inheritdoc />
-    public While(Func<ValueTask<bool>> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public While(Func<ValueTask<bool>> condition, IActivity? body = null, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(new Input<bool>(condition), body, source, line)
     {
     }
 
     /// <inheritdoc />
-    public While(Func<bool> condition, IActivity? body = default, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
+    public While(Func<bool> condition, IActivity? body = null, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : this(new Input<bool>(condition), body, source, line)
     {
     }
