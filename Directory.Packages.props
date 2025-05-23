@@ -31,7 +31,6 @@
     <PackageVersion Include="Elsa.Persistence.Elasticsearch" Version="3.6.0-preview.29" />
     <PackageVersion Include="Elsa.Persistence.MongoDb" Version="3.6.0-preview.29" />
     <PackageVersion Include="Elsa.Retention" Version="3.6.0-preview.29" />
-    <PackageVersion Include="Elsa.SasTokens" Version="3.6.0-preview.29" />
     <PackageVersion Include="Elsa.ServiceBus.Kafka" Version="3.6.0-preview.29" />
     <PackageVersion Include="Elsa.ServiceBus.MassTransit" Version="3.6.0-preview.29" />
     <PackageVersion Include="Elsa.ServiceBus.MassTransit.AzureServiceBus" Version="3.6.0-preview.29" />
