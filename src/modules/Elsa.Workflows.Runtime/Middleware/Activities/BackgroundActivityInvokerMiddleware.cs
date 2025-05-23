@@ -29,6 +29,7 @@ public class BackgroundActivityInvokerMiddleware(
     internal static string GetBackgroundActivityJournalDataKey(string activityNodeId) => $"__BackgroundActivityJournalData:{activityNodeId}";
     internal static string GetBackgroundActivityScheduledActivitiesKey(string activityNodeId) => $"__BackgroundActivityScheduledActivities:{activityNodeId}";
     internal static string GetBackgroundActivityBookmarksKey(string activityNodeId) => $"__BackgroundActivityBookmarks:{activityNodeId}";
+    internal static string GetBackgroundActivityPropertiesKey(string activityNodeId) => $"__BackgroundActivityProperties:{activityNodeId}";
     internal const string BackgroundActivityBookmarkName = "BackgroundActivity";
 
     /// <inheritdoc />
@@ -49,6 +50,7 @@ public class BackgroundActivityInvokerMiddleware(
                 CaptureOutputIfAny(context);
                 CaptureJournalData(context);
                 CaptureBookmarkData(context);
+                CapturePropertiesIfAny(context);
                 await CompleteBackgroundActivityOutcomesAsync(context);
                 await CompleteBackgroundActivityAsync(context);
                 await CompleteBackgroundActivityScheduledActivitiesAsync(context);
@@ -154,6 +156,21 @@ public class BackgroundActivityInvokerMiddleware(
         }
 
         context.WorkflowExecutionContext.Properties.Remove(bookmarksKey);
+    }
+    
+    private void CapturePropertiesIfAny(ActivityExecutionContext context)
+    {
+        var activity = context.Activity;
+        var propertiesKey = GetBackgroundActivityPropertiesKey(activity.NodeId);
+        var capturedProperties = context.WorkflowExecutionContext.GetProperty<IDictionary<string, object>>(propertiesKey);
+
+        context.WorkflowExecutionContext.Properties.Remove(propertiesKey);
+
+        if (capturedProperties == null)
+            return;
+
+        foreach (var property in capturedProperties) 
+            context.Properties[property.Key] = property.Value;
     }
 
     private async Task CompleteBackgroundActivityOutcomesAsync(ActivityExecutionContext context)
