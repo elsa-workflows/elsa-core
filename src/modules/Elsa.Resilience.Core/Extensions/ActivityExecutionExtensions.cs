@@ -16,4 +16,9 @@ public static class ActivityExecutionExtensions
             current = current.ParentActivityExecutionContext;
         }
     }
+    
+    public static bool GetRetriesAttemptedFlag(this ActivityExecutionContext context)
+    {
+        return context.GetProperty(RetriesAttemptedFlag, () => false);
+    }
 }

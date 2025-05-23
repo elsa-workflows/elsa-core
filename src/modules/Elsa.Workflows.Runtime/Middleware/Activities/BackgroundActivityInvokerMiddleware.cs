@@ -1,10 +1,12 @@
 using System.Text.Json;
 using Elsa.Extensions;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Pipelines.ActivityExecution;
+using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Stimuli;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -20,7 +22,8 @@ public class BackgroundActivityInvokerMiddleware(
     ILogger<BackgroundActivityInvokerMiddleware> logger,
     IIdentityGenerator identityGenerator,
     IBackgroundActivityScheduler backgroundActivityScheduler,
-    ICommitStrategyRegistry commitStrategyRegistry)
+    ICommitStrategyRegistry commitStrategyRegistry,
+    IMediator mediator)
     : DefaultActivityInvokerMiddleware(next, commitStrategyRegistry, logger)
 {
     internal static string GetBackgroundActivityOutputKey(string activityNodeId) => $"__BackgroundActivityOutput:{activityNodeId}";
@@ -54,6 +57,7 @@ public class BackgroundActivityInvokerMiddleware(
                 await CompleteBackgroundActivityOutcomesAsync(context);
                 await CompleteBackgroundActivityAsync(context);
                 await CompleteBackgroundActivityScheduledActivitiesAsync(context);
+                await mediator.SendAsync(new BackgroundActivityExecutionCompleted(context), context.CancellationToken);
             }
         }
     }
