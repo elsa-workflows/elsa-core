@@ -264,6 +264,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.SasTokens", "src\modul
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Http.UnitTests", "test\unit\Elsa.Http.UnitTests\Elsa.Http.UnitTests.csproj", "{66ACA2B3-DB48-4F68-B26D-62555F3CE69B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "extensions", "extensions", "{29B87A69-6D2B-4D9D-85BC-04DBA6FEAA07}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MassTransit.Extensions", "src\extensions\Elsa.MassTransit.Extensions\Elsa.MassTransit.Extensions.csproj", "{C7B7EBA1-97FF-4B82-8CBE-524ED336DC50}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -456,6 +460,10 @@ Global
 		{66ACA2B3-DB48-4F68-B26D-62555F3CE69B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{66ACA2B3-DB48-4F68-B26D-62555F3CE69B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{66ACA2B3-DB48-4F68-B26D-62555F3CE69B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7B7EBA1-97FF-4B82-8CBE-524ED336DC50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7B7EBA1-97FF-4B82-8CBE-524ED336DC50}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7B7EBA1-97FF-4B82-8CBE-524ED336DC50}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7B7EBA1-97FF-4B82-8CBE-524ED336DC50}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -534,6 +542,8 @@ Global
 		{9D8FB664-88B4-10BE-58A2-D9A1644AD2E4} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
 		{A7DE02E3-405B-B6BA-7E47-9E27D4BEFB24} = {5948B0A5-7873-4DBB-BA03-EB283D6EA91B}
 		{66ACA2B3-DB48-4F68-B26D-62555F3CE69B} = {18453B51-25EB-4317-A4B3-B10518252E92}
+		{29B87A69-6D2B-4D9D-85BC-04DBA6FEAA07} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
+		{C7B7EBA1-97FF-4B82-8CBE-524ED336DC50} = {29B87A69-6D2B-4D9D-85BC-04DBA6FEAA07}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
