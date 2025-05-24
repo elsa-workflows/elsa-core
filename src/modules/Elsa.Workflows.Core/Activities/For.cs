@@ -52,7 +52,7 @@ public class For : Activity
     /// <summary>
     /// Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default.
     /// </summary>
-    [Input(Description = "Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default.")]
+    [Input(Description = "Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default.", DefaultValue = true)]
     public Input<bool> OuterBoundInclusive { get; set; } = new(true);
 
     /// <summary>
