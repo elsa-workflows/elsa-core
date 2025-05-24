@@ -75,10 +75,18 @@ internal class ConfigureLiquidEngine : INotificationHandler<RenderingLiquidTempl
 
     private Task<FluidValue> GetInput(ExpressionExecutionContext context, string key, TemplateOptions options)
     {
-        var workflowExecutionContext = context.GetWorkflowExecutionContext();
-        var input = workflowExecutionContext.Input.TryGetValue(key, out var value) ? value : default;
+        // First, check if the current activity has inputs
+        if (context.TryGetActivityExecutionContext(out var activityExecutionContext) &&
+            activityExecutionContext.Input.TryGetValue(key, out var activityValue))
+        {
+            return Task.FromResult(activityValue == null ? NilValue.Instance : FluidValue.Create(activityValue, options));
+        }
         
-        return Task.FromResult(input == null ? NilValue.Instance : FluidValue.Create(value, options));
+        // Fall back to workflow inputs if activity inputs don't contain the key
+        var workflowExecutionContext = context.GetWorkflowExecutionContext();
+        var input = workflowExecutionContext.Input.TryGetValue(key, out var workflowValue) ? workflowValue : default;
+        
+        return Task.FromResult(input == null ? NilValue.Instance : FluidValue.Create(workflowValue, options));
     }
 
     private static object? GetVariableInScope(ExpressionExecutionContext context, string variableName)
