@@ -50,4 +50,9 @@ public class Expression
     /// Creates an object expression.
     /// </summary>
     public static Expression CreateObject(string value) => new("Object", value);
+    
+    /// <summary>
+    /// Creates a Power Fx expression.
+    /// </summary>
+    public static Expression CreatePowerFx(string value) => new("PowerFx", value);
 }
