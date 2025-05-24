@@ -21,7 +21,7 @@ public class XmlContentFactory : IHttpContentFactory
     public HttpContent CreateHttpContent(object content, string contentType)
     {
         var text = content as string ?? Serialize(content);
-        return new StringContent(text, Encoding.UTF8, contentType);
+        return new RawStringContent(text, Encoding.UTF8, contentType);
     }
 
     private string Serialize(object value)
