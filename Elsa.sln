@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34003.232
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -262,6 +262,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.Python", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.SasTokens", "src\modules\Elsa.SasTokens\Elsa.SasTokens.csproj", "{A7DE02E3-405B-B6BA-7E47-9E27D4BEFB24}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Http.UnitTests", "test\unit\Elsa.Http.UnitTests\Elsa.Http.UnitTests.csproj", "{66ACA2B3-DB48-4F68-B26D-62555F3CE69B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -450,6 +452,10 @@ Global
 		{A7DE02E3-405B-B6BA-7E47-9E27D4BEFB24}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7DE02E3-405B-B6BA-7E47-9E27D4BEFB24}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7DE02E3-405B-B6BA-7E47-9E27D4BEFB24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66ACA2B3-DB48-4F68-B26D-62555F3CE69B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66ACA2B3-DB48-4F68-B26D-62555F3CE69B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66ACA2B3-DB48-4F68-B26D-62555F3CE69B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66ACA2B3-DB48-4F68-B26D-62555F3CE69B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -527,6 +533,7 @@ Global
 		{6AF53651-99F0-1DE0-D37B-4FF6B0348DBB} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
 		{9D8FB664-88B4-10BE-58A2-D9A1644AD2E4} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
 		{A7DE02E3-405B-B6BA-7E47-9E27D4BEFB24} = {5948B0A5-7873-4DBB-BA03-EB283D6EA91B}
+		{66ACA2B3-DB48-4F68-B26D-62555F3CE69B} = {18453B51-25EB-4317-A4B3-B10518252E92}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

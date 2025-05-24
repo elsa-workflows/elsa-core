@@ -22,6 +22,6 @@ public class JsonContentFactory : IHttpContentFactory
         if (string.IsNullOrWhiteSpace(contentType))
             contentType = MediaTypeNames.Application.Json;
 
-        return new StringContent(text, Encoding.UTF8, contentType);
+        return new RawStringContent(text, Encoding.UTF8, contentType);
     }
 }
