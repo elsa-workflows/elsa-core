@@ -6,6 +6,7 @@ namespace Elsa.Workflows.Middleware.Activities;
 
 /// <summary>
 /// An activity execution middleware component that publishes <see cref="ActivityExecuting"/> and <see cref="ActivityExecuted"/> events as an activity executes.
+/// For <see cref="Notifications.ActivityCompleted"/> events, see <see cref="ActivityExecutionContext.CompleteActivityAsync"/>.
 /// </summary>
 public class NotificationPublishingMiddleware : IActivityExecutionMiddleware
 {

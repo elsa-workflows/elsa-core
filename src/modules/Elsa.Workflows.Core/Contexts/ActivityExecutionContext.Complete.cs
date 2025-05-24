@@ -1,5 +1,7 @@
 using Elsa.Extensions;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Signals;
 
 namespace Elsa.Workflows;
@@ -45,6 +47,10 @@ public partial class ActivityExecutionContext
 
         // Send a signal.
         await this.SendSignalAsync(new ActivityCompleted(result));
+        
+        // Send notification that activity has completed.
+        var notificationSender = WorkflowExecutionContext.GetRequiredService<INotificationSender>();
+        await notificationSender.SendAsync(new Notifications.ActivityCompleted(this));
 
         // Clear bookmarks.
         ClearBookmarks();
