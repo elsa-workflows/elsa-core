@@ -12,7 +12,7 @@ public abstract class CheckListOptionsProviderBase : IPropertyUIHandler
     protected virtual bool RefreshOnChange => false;
 
     /// <inheritdoc />
-    public async ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
+    public virtual async ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
     {
         var items = await GetItemsAsync(propertyInfo, context, cancellationToken);
         var props = new CheckListProps
