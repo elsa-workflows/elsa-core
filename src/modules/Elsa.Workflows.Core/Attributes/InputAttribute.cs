@@ -98,4 +98,15 @@ public class InputAttribute : Attribute
     /// A set of <see cref="IPropertyUIHandler"/> types that can be used to customize the UI for this property.
     /// </summary>
     public Type[]? UIHandlers { get; set; }
+
+    /// <summary>
+    /// A set of states for which this input should be shown
+    /// </summary>
+    public string[]? ShowForStates { get; set; }
+
+    /// <summary>
+    /// The type of the input. 
+    /// To differentiate between state dropdown, conditional input and normal input
+    /// </summary>
+    public InputType InputType { get; set; } = InputType.Default;
 }

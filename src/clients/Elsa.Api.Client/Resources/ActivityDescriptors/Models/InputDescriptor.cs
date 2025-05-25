@@ -53,4 +53,6 @@ public class InputDescriptor : PropertyDescriptor
     /// A dictionary of UI specifications to be used by the UI.
     /// </summary>
     public IDictionary<string, object>? UISpecifications { get; set; }
+
+    public ConditionalDescriptor? ConditionalDescriptor { get; set; }
 }
