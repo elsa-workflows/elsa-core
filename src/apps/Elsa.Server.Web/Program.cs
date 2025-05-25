@@ -155,6 +155,9 @@ if (useManualOtelInstrumentation)
     });
 }
 
+// Register single database provider to prevent conflicts
+services.AddSingleDatabaseProvider(sqlDatabaseProvider);
+
 // Add Elsa services.
 services
     .AddElsa(elsa =>

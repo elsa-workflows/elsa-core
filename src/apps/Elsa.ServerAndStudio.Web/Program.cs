@@ -40,6 +40,9 @@ var sqlDatabaseProvider = Enum.Parse<SqlDatabaseProvider>(configuration["Databas
 services.Configure<MassTransitOptions>(massTransitSection);
 services.Configure<MassTransitWorkflowDispatcherOptions>(massTransitDispatcherSection);
 
+// Add database provider resolver to prevent conflicts
+services.AddSingleDatabaseProvider(sqlDatabaseProvider);
+
 // Add Elsa services.
 services
     .AddElsa(elsa =>
