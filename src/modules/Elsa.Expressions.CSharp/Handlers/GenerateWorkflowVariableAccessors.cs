@@ -1,3 +1,4 @@
+using System.Dynamic;
 using System.Text;
 using Elsa.Expressions.CSharp.Extensions;
 using Elsa.Expressions.CSharp.Notifications;
@@ -38,10 +39,17 @@ public class GenerateWorkflowVariableAccessors(IOptions<CSharpOptions> options) 
             {
                 var variableName = variable.Name.Pascalize();
                 var variableType = variable.GetVariableType();
-                var friendlyTypeName = variableType.GetFriendlyTypeName(Brackets.Angle);
-                sb.AppendLine($"\tpublic {friendlyTypeName} {variableName}");
+                
+                // Check if the variable type is ExpandoObject
+                bool isExpandoObject = variableType == typeof(ExpandoObject);
+                
+                // Use dynamic type for ExpandoObject to enable dot notation but keep the original type for retrieval
+                var displayTypeName = isExpandoObject ? "dynamic" : variableType.GetFriendlyTypeName(Brackets.Angle);
+                var retrieveTypeName = isExpandoObject ? "ExpandoObject" : displayTypeName;
+                
+                sb.AppendLine($"\tpublic {displayTypeName} {variableName}");
                 sb.AppendLine("\t{");
-                sb.AppendLine($"\t\tget => Get<{friendlyTypeName}>(\"{variableName}\");");
+                sb.AppendLine($"\t\tget => Get<{retrieveTypeName}>(\"{variableName}\");");
                 sb.AppendLine($"\t\tset => Set(\"{variableName}\", value);");
                 sb.AppendLine("\t}");
             }
