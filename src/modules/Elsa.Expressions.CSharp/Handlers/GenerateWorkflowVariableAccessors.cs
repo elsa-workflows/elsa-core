@@ -43,24 +43,13 @@ public class GenerateWorkflowVariableAccessors(IOptions<CSharpOptions> options) 
                 // Check if the variable type is ExpandoObject
                 bool isExpandoObject = variableType == typeof(ExpandoObject);
                 
-                // Use dynamic type for ExpandoObject to enable dot notation
-                var typeName = isExpandoObject 
-                    ? "dynamic" 
-                    : variableType.GetFriendlyTypeName(Brackets.Angle);
+                // Use dynamic type for ExpandoObject to enable dot notation but keep the original type for retrieval
+                var displayTypeName = isExpandoObject ? "dynamic" : variableType.GetFriendlyTypeName(Brackets.Angle);
+                var retrieveTypeName = isExpandoObject ? "ExpandoObject" : displayTypeName;
                 
-                sb.AppendLine($"\tpublic {typeName} {variableName}");
+                sb.AppendLine($"\tpublic {displayTypeName} {variableName}");
                 sb.AppendLine("\t{");
-                
-                // For ExpandoObject, still retrieve as ExpandoObject but return as dynamic
-                if (isExpandoObject)
-                {
-                    sb.AppendLine($"\t\tget => Get<ExpandoObject>(\"{variableName}\");");
-                }
-                else 
-                {
-                    sb.AppendLine($"\t\tget => Get<{typeName}>(\"{variableName}\");");
-                }
-                
+                sb.AppendLine($"\t\tget => Get<{retrieveTypeName}>(\"{variableName}\");");
                 sb.AppendLine($"\t\tset => Set(\"{variableName}\", value);");
                 sb.AppendLine("\t}");
             }
