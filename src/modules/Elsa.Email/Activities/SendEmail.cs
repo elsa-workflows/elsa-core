@@ -24,7 +24,7 @@ namespace Elsa.Email.Activities;
 public class SendEmail : Activity
 {
     /// <inheritdoc />
-    public SendEmail([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public SendEmail([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
@@ -32,13 +32,13 @@ public class SendEmail : Activity
     /// The sender's email address.
     /// </summary>
     [Input(Description = "The sender's email address.")]
-    public Input<string?> From { get; set; } = default!;
+    public Input<string?> From { get; set; } = null!;
 
     /// <summary>
     /// The recipients email addresses.
     /// </summary>
     [Input(Description = "The recipients email addresses.", UIHint = InputUIHints.MultiText)]
-    public Input<ICollection<string>> To { get; set; } = default!;
+    public Input<ICollection<string>> To { get; set; } = null!;
 
     /// <summary>
     /// The CC recipient email addresses.
@@ -47,7 +47,7 @@ public class SendEmail : Activity
         Description = "The CC recipient email addresses.",
         UIHint = InputUIHints.MultiText,
         Category = "More")]
-    public Input<ICollection<string>> Cc { get; set; } = default!;
+    public Input<ICollection<string>> Cc { get; set; } = null!;
 
     /// <summary>
     /// The BCC recipients email addresses.
@@ -56,13 +56,13 @@ public class SendEmail : Activity
         Description = "The BCC recipients email addresses.",
         UIHint = InputUIHints.MultiText,
         Category = "More")]
-    public Input<ICollection<string>> Bcc { get; set; } = default!;
+    public Input<ICollection<string>> Bcc { get; set; } = null!;
 
     /// <summary>
     /// The subject of the email message.
     /// </summary>
     [Input(Description = "The subject of the email message.")]
-    public Input<string?> Subject { get; set; } = default!;
+    public Input<string?> Subject { get; set; } = null!;
 
     /// <summary>
     /// The attachments to send with the email message.
@@ -71,7 +71,7 @@ public class SendEmail : Activity
         Description = "The attachments to send with the email message. Can be (an array of) a fully-qualified file path, URL, stream, byte array or instances of EmailAttachment.",
         UIHint = InputUIHints.MultiLine
     )]
-    public Input<object?> Attachments { get; set; } = default!;
+    public Input<object?> Attachments { get; set; } = null!;
 
     /// <summary>
     /// The body of the email message.
@@ -80,7 +80,7 @@ public class SendEmail : Activity
         Description = "The body of the email message.",
         UIHint = InputUIHints.MultiLine
     )]
-    public Input<string> Body { get; set; } = default!;
+    public Input<string> Body { get; set; } = null!;
 
     /// <summary>
     /// The activity to execute when an error occurs while trying to send the email.

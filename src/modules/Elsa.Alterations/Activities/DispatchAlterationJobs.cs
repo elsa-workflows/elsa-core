@@ -19,20 +19,20 @@ namespace Elsa.Alterations.Activities;
 public class DispatchAlterationJobs : CodeActivity
 {
     /// <inheritdoc />
-    public DispatchAlterationJobs(Variable<string> planId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public DispatchAlterationJobs(Variable<string> planId, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         PlanId = new Input<string>(planId);
     }
 
     /// <inheritdoc />
-    public DispatchAlterationJobs([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public DispatchAlterationJobs([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <summary>
     /// The ID of the alteration plan.
     /// </summary>
-    public Input<string> PlanId { get; set; } = default!;
+    public Input<string> PlanId { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

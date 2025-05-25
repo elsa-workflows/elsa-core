@@ -22,7 +22,7 @@ public class ProduceMessage : CodeActivity
         UIHint = InputUIHints.DropDown,
         UIHandler = typeof(TopicDefinitionsDropdownOptionsProvider)
     )]
-    public Input<string> Topic { get; set; } = default!;
+    public Input<string> Topic { get; set; } = null!;
 
     /// <summary>
     /// The producer to use when sending the message.
@@ -33,10 +33,10 @@ public class ProduceMessage : CodeActivity
         UIHint = InputUIHints.DropDown,
         UIHandler = typeof(ProducerDefinitionsDropdownOptionsProvider)
     )]
-    public Input<string> ProducerDefinitionId { get; set; } = default!;
+    public Input<string> ProducerDefinitionId { get; set; } = null!;
 
     [Input(DisplayName = "Local", Description = "When checked, the message will be delivered to this workflow instance only.")]
-    public Input<bool> IsLocal { get; set; } = default!;
+    public Input<bool> IsLocal { get; set; } = null!;
 
     /// <summary>
     /// Optional. The correlation ID to assign to the message.
@@ -45,19 +45,19 @@ public class ProduceMessage : CodeActivity
         DisplayName = "Correlation ID",
         Description = "Optional. The correlation ID to assign to the message."
     )]
-    public Input<string?> CorrelationId { get; set; } = default!;
+    public Input<string?> CorrelationId { get; set; } = null!;
 
     /// <summary>
     /// The content of the message to produce.
     /// </summary>
     [Input(Description = "The content of the message to produce.")]
-    public Input<object> Content { get; set; } = default!;
+    public Input<object> Content { get; set; } = null!;
 
     /// <summary>
     /// The key of the message to send.
     /// </summary>
     [Input(Description = "The key of the message to produce.")]
-    public Input<object?> Key { get; set; } = default!;
+    public Input<object?> Key { get; set; } = null!;
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {

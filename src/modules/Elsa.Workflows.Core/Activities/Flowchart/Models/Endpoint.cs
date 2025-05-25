@@ -20,7 +20,7 @@ public class Endpoint
     /// </summary>
     /// <param name="activity">The activity that the endpoint is connected to.</param>
     /// <param name="port">The port that the endpoint is connected to.</param>
-    public Endpoint(IActivity activity, string? port = default)
+    public Endpoint(IActivity activity, string? port = null)
     {
         Activity = activity;
         Port = port;
@@ -29,7 +29,7 @@ public class Endpoint
     /// <summary>
     /// The activity that the endpoint is connected to.
     /// </summary>
-    public IActivity Activity { get; set; } = default!;
+    public IActivity Activity { get; set; } = null!;
     
     /// <summary>
     /// The port that the endpoint is connected to.

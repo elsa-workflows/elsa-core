@@ -18,7 +18,7 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 public class FlowJoin : Activity, IJoinNode
 {
     /// <inheritdoc />
-    public FlowJoin([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public FlowJoin([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
