@@ -8,6 +8,8 @@ namespace Elsa.Workflows.UIHints.Dropdown;
 /// </summary>
 public abstract class DropDownOptionsProviderBase : IPropertyUIHandler
 {
+    protected virtual bool RefreshOnChange => false;
+
     /// <inheritdoc />
     public async ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
     {
@@ -38,6 +40,8 @@ public abstract class DropDownOptionsProviderBase : IPropertyUIHandler
     /// <returns></returns>
     protected virtual IDictionary<string, object> GetUIPropertyAdditionalOptions()
     {
-        return new Dictionary<String, object>();
+        var options = new Dictionary<string, object>();
+        if (RefreshOnChange) options["Refresh"] = true;
+        return options;
     }
 }
