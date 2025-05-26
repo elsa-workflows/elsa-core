@@ -1,8 +1,8 @@
 using System.Net;
+using Elsa.Extensions;
 using Elsa.Http;
-using Elsa.Resilience.IntegrationTests;
+using Elsa.Resilience.Extensions;
 using Elsa.Resilience.Models;
-using Elsa.Resilience.Recorders;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Microsoft.Extensions.Configuration;
@@ -18,7 +18,7 @@ public class FlowSendHttpRequestResilienceTests
 
     public FlowSendHttpRequestResilienceTests(ITestOutputHelper output)
     {
-        var handler = new SequentialStatusHandler(new[] { HttpStatusCode.TooManyRequests, HttpStatusCode.ServiceUnavailable, HttpStatusCode.OK });
+        var handler = new SequentialStatusHandler([HttpStatusCode.TooManyRequests, HttpStatusCode.ServiceUnavailable, HttpStatusCode.OK]);
 
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -58,13 +58,15 @@ public class FlowSendHttpRequestResilienceTests
         {
             Url = new(new Uri("http://localhost/test")),
             Method = new("GET"),
-            ExpectedStatusCodes = new(new[] { 200 })
-        };
-
-        activity.CustomProperties["resilienceStrategy"] = new ResilienceStrategyConfig
-        {
-            Mode = ResilienceStrategyConfigMode.Identifier,
-            StrategyId = "test"
+            ExpectedStatusCodes = new([200]),
+            CustomProperties =
+            {
+                ["resilienceStrategy"] = new ResilienceStrategyConfig
+                {
+                    Mode = ResilienceStrategyConfigMode.Identifier,
+                    StrategyId = "test"
+                }
+            }
         };
 
         var result = await _services.RunActivityAsync(activity);
@@ -73,7 +75,7 @@ public class FlowSendHttpRequestResilienceTests
         Assert.Equal(200, statusCode);
         Assert.Equal(2, _recorder.Attempts.Count);
         Assert.Collection(_recorder.Attempts,
-            first => Assert.Equal(1, first.AttemptNumber),
-            second => Assert.Equal(2, second.AttemptNumber));
+            first => Assert.Equal(0, first.AttemptNumber),
+            second => Assert.Equal(1, second.AttemptNumber));
     }
 }

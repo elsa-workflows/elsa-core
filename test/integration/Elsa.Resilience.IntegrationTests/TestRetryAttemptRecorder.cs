@@ -1,4 +1,3 @@
-using Elsa.Resilience;
 using Elsa.Resilience.Entities;
 using Elsa.Resilience.Models;
 
