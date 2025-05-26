@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Resilience.Entities;
 using Elsa.Workflows.Runtime;
@@ -14,8 +15,10 @@ public class ActivityExecutionContextRetryAttemptReader(IActivityExecutionStore 
             Id = activityInstanceId
         }, cancellationToken);
 
-        if (record?.Properties == null || !record.Properties.TryGetValue("RetryAttempts", out var value) || value is not ICollection<RetryAttemptRecord> retryAttempts)
+        if (record?.Properties == null || !record.Properties.TryGetValue("RetryAttempts", out var value))
             return Page.Empty<RetryAttemptRecord>();
+
+        var retryAttempts = value.ConvertTo<ICollection<RetryAttemptRecord>>() ?? [];
 
         return retryAttempts.Paginate(pageArgs);
     }
