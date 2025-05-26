@@ -7,6 +7,8 @@ namespace Elsa.Connections.ServiceProvider;
 
 public class ConnectionOptionsProvider(IConnectionStore store) : DropDownOptionsProviderBase
 {
+    protected override bool RefreshOnChange => true;
+
     public new async ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
     {
         var options = await base.GetUIPropertiesAsync(propertyInfo, context, cancellationToken);
@@ -28,13 +30,5 @@ public class ConnectionOptionsProvider(IConnectionStore store) : DropDownOptions
             connection.Add(new(conn.Name, conn.Name));
         
         return connection;
-    }
-
-    protected override IDictionary<string, object> GetUIPropertyAdditionalOptions()
-    {
-        return new Dictionary<string, object>
-        {
-            ["Refresh"] = true
-        };
     }
 }

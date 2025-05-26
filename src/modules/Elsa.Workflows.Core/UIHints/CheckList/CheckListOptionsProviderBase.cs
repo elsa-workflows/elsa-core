@@ -1,4 +1,5 @@
 using System.Reflection;
+using Elsa.Extensions;
 
 namespace Elsa.Workflows.UIHints.CheckList;
 
@@ -8,8 +9,10 @@ namespace Elsa.Workflows.UIHints.CheckList;
 /// </summary>
 public abstract class CheckListOptionsProviderBase : IPropertyUIHandler
 {
+    protected virtual bool RefreshOnChange => false;
+
     /// <inheritdoc />
-    public async ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
+    public virtual async ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
     {
         var items = await GetItemsAsync(propertyInfo, context, cancellationToken);
         var props = new CheckListProps
@@ -25,6 +28,8 @@ public abstract class CheckListOptionsProviderBase : IPropertyUIHandler
             [InputUIHints.CheckList] = props
         };
 
+        options.AddRange(GetUIPropertyAdditionalOptions());
+
         return options;
     }
 
@@ -32,4 +37,11 @@ public abstract class CheckListOptionsProviderBase : IPropertyUIHandler
     /// Implement this to provide items to the dropdown list.
     /// </summary>
     protected abstract ValueTask<ICollection<CheckListItem>> GetItemsAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken);
+
+    protected virtual IDictionary<string, object> GetUIPropertyAdditionalOptions()
+    {
+        var options = new Dictionary<string, object>();
+        if (RefreshOnChange) options["Refresh"] = true;
+        return options;
+    }
 }
