@@ -1,11 +1,15 @@
-﻿using Elsa.Dapper.Extensions;
+﻿using Elsa.Common.Entities;
+using Elsa.Common.Models;
+using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Services;
+using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Modules.Runtime.Stores;
@@ -44,6 +48,17 @@ internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSeri
         return Map(records);
     }
 
+    public ValueTask<Page<StoredTrigger>> FindManyAsync(TriggerFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        return FindManyAsync(filter, pageArgs, new StoredTriggerOrder<string>(x => x.Id, OrderDirection.Ascending), cancellationToken);
+    }
+
+    public async ValueTask<Page<StoredTrigger>> FindManyAsync<TProp>(TriggerFilter filter, PageArgs pageArgs, StoredTriggerOrder<TProp> order, CancellationToken cancellationToken = default)
+    {
+        var page = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        return Map(page);
+    }
+
     /// <inheritdoc />
     public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
@@ -74,6 +89,11 @@ internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSeri
             .In(nameof(StoredTriggerRecord.Name), filter.Names)
             .Is(nameof(StoredTriggerRecord.Hash), filter.Hash)
             ;
+    }
+
+    private Page<StoredTrigger> Map(Page<StoredTriggerRecord> source)
+    {
+        return new(source.Items.Select(Map).ToList(), source.TotalCount);
     }
 
     private IEnumerable<StoredTrigger> Map(IEnumerable<StoredTriggerRecord> source) => source.Select(Map);

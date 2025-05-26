@@ -1,5 +1,8 @@
+using Elsa.Common.Entities;
+using Elsa.Common.Models;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.OrderDefinitions;
 
 namespace Elsa.Workflows.Runtime;
 
@@ -33,6 +36,16 @@ public interface ITriggerStore
     /// Returns all records matching the specified filter.
     /// </summary>
     ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Returns all records matching the specified filter.
+    /// </summary>
+    ValueTask<Page<StoredTrigger>> FindManyAsync(TriggerFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Returns all records matching the specified filter.
+    /// </summary>
+    ValueTask<Page<StoredTrigger>> FindManyAsync<TProp>(TriggerFilter filter, PageArgs pageArgs, StoredTriggerOrder<TProp> order, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Replaces a set of records based on the specified removed and added records.

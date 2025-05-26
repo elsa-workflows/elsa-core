@@ -1,7 +1,9 @@
 using Elsa.Caching;
+using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.OrderDefinitions;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Elsa.Workflows.Runtime.Stores;
@@ -42,6 +44,18 @@ public class CachingTriggerStore(ITriggerStore decoratedStore, ICacheManager cac
     {
         var cacheKey = hasher.Hash(filter);
         return (await GetOrCreateAsync(cacheKey, async () => await decoratedStore.FindManyAsync(filter, cancellationToken)))!;
+    }
+
+    public async ValueTask<Page<StoredTrigger>> FindManyAsync(TriggerFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var cacheKey = hasher.Hash(filter);
+        return (await GetOrCreateAsync(cacheKey, async () => await decoratedStore.FindManyAsync(filter, pageArgs, cancellationToken)))!;
+    }
+
+    public async ValueTask<Page<StoredTrigger>> FindManyAsync<TProp>(TriggerFilter filter, PageArgs pageArgs, StoredTriggerOrder<TProp> order, CancellationToken cancellationToken = default)
+    {
+        var cacheKey = hasher.Hash(filter);
+        return (await GetOrCreateAsync(cacheKey, async () => await decoratedStore.FindManyAsync(filter, pageArgs, order, cancellationToken)))!;
     }
 
     /// <inheritdoc />

@@ -1,3 +1,4 @@
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.MongoDb.Common;
@@ -54,17 +55,15 @@ public class MongoWorkflowExecutionLogStore(MongoDbStore<WorkflowExecutionLogRec
     /// <inheritdoc />
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await mongoDbStore.CountAsync(queryable => Filter(queryable, filter).OrderBy(x => x.Timestamp), cancellationToken);
-        var results = await mongoDbStore.FindManyAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), cancellationToken).ToList();
-        return new Page<WorkflowExecutionLogRecord>(results, count);
+        return await FindManyAsync(filter, pageArgs, new WorkflowExecutionLogRecordOrder<DateTimeOffset>(x => x.Timestamp, OrderDirection.Ascending), cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var count = await mongoDbStore.CountAsync(queryable => Order(Filter(queryable, filter), order), cancellationToken);
-        var results = await mongoDbStore.FindManyAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), cancellationToken).ToList();
-        return new Page<WorkflowExecutionLogRecord>(results, count);
+        var count = await mongoDbStore.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
+        var results = await mongoDbStore.FindManyAsync(queryable => Paginate(Order(Filter(queryable, filter), order), pageArgs), cancellationToken).ToList();
+        return new(results, count);
     }
 
     /// <inheritdoc />
