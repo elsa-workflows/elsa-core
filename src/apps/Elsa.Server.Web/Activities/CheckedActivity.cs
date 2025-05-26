@@ -9,7 +9,7 @@ namespace Elsa.Server.Web.Activities;
 
 public class CheckedActivity : CodeActivity<string[]>
 {
-    [Input(UIHint = InputUIHints.CheckList, UIHandler = typeof(StaticCheckListOptionsProvider), Options = new[]{"A", "B", "C"})]
+    [Input(UIHint = InputUIHints.CheckList, UIHandler = typeof(CustomCheckListOptionsProvider))]
     public Input<string[]> CheckedItems { get; set; }
 
     protected override void Execute(ActivityExecutionContext context)

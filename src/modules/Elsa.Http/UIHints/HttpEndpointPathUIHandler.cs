@@ -8,10 +8,10 @@ namespace Elsa.Http.UIHints;
 /// <summary>
 /// Provides additional options for the Path input field.
 /// </summary>
-public class HttpEndpointPathUIHandler(IHttpEndpointBasePathProvider httpEndpointBasePathProvider) : IPropertyUIHandler
+public class HttpEndpointPathUIHandler(IHttpEndpointBasePathProvider httpEndpointBasePathProvider) : PropertyUIHandlerBase
 {
     /// <inheritdoc />
-    public ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
+    public override ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
     {
         var completeBaseUrl = httpEndpointBasePathProvider.GetBasePath();
 

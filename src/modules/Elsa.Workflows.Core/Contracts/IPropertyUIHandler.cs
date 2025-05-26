@@ -8,6 +8,12 @@ namespace Elsa.Workflows;
 public interface IPropertyUIHandler
 {
     /// <summary>
+    /// Gets the priority value that determines the order in which this handler is applied.
+    /// A higher priority value indicates a higher precedence.
+    /// </summary>
+    float Priority { get; }
+
+    /// <summary>
     /// Returns an object containing properties that will be used to render the UI for the property.
     /// </summary>
     /// <param name="propertyInfo">The property to render.</param>

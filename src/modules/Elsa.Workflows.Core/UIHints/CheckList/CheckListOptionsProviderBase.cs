@@ -7,12 +7,12 @@ namespace Elsa.Workflows.UIHints.CheckList;
 /// A base class for providing options to populate a checklist UI component. This class is intended to be inherited to implement
 /// custom checklist data logic by overriding the `GetItemsAsync` method.
 /// </summary>
-public abstract class CheckListOptionsProviderBase : IPropertyUIHandler
+public abstract class CheckListOptionsProviderBase : PropertyUIHandlerBase
 {
     protected virtual bool RefreshOnChange => false;
 
     /// <inheritdoc />
-    public virtual async ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
+    public override async ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
     {
         var items = await GetItemsAsync(propertyInfo, context, cancellationToken);
         var props = new CheckListProps

@@ -8,6 +8,8 @@ namespace Elsa.Workflows.UIHints.CheckList;
 /// </summary>
 public class StaticCheckListOptionsProvider : CheckListOptionsProviderBase
 {
+    public override float Priority => -1;
+
     /// <inheritdoc />
     protected override ValueTask<ICollection<CheckListItem>> GetItemsAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken)
     {

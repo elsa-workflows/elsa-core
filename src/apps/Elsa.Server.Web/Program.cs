@@ -164,6 +164,7 @@ if (useManualOtelInstrumentation)
 }
 
 // Add Elsa services.
+services.AddScoped<IPropertyUIHandler, CustomCheckListOptionsProvider>();
 services
     .AddElsa(elsa =>
     {

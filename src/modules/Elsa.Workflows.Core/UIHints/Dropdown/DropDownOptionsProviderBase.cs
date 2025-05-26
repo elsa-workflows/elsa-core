@@ -10,6 +10,8 @@ public abstract class DropDownOptionsProviderBase : IPropertyUIHandler
 {
     protected virtual bool RefreshOnChange => false;
 
+    public float Priority { get; }
+
     /// <inheritdoc />
     public virtual async ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
     {

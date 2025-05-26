@@ -9,6 +9,8 @@ namespace Elsa.Workflows.UIHints.Dropdown;
 /// </summary>
 public class StaticDropDownOptionsProvider : IPropertyUIHandler
 {
+    public float Priority => -1;
+
     /// <inheritdoc />
     public ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
     {
