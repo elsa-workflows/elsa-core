@@ -1,11 +1,12 @@
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.State;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class DefaultActivityExecutionMapper : IActivityExecutionMapper
+public class DefaultActivityExecutionMapper(ILogger<DefaultActivityExecutionMapper> logger) : IActivityExecutionMapper
 {
     public ActivityExecutionRecord Map(ActivityExecutionContext source)
     {
@@ -60,6 +61,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 
     private IDictionary<string, object?>? GetPersistableDictionary(IDictionary<string, object?> dictionary, LogPersistenceMode mode)
     {
+        logger.LogDebug("Log Persistence Mode for internal state: {LogPersistenceMode}", mode);
         return mode == LogPersistenceMode.Include ? dictionary : null;
     }
 }
