@@ -62,6 +62,6 @@ public class DefaultActivityExecutionMapper(ILogger<DefaultActivityExecutionMapp
     private IDictionary<string, object?>? GetPersistableDictionary(IDictionary<string, object?> dictionary, LogPersistenceMode mode)
     {
         logger.LogDebug("Log Persistence Mode for internal state: {LogPersistenceMode}", mode);
-        return mode == LogPersistenceMode.Include ? dictionary : null;
+        return mode == LogPersistenceMode.Include ? new Dictionary<string, object?>(dictionary) : null;
     }
 }

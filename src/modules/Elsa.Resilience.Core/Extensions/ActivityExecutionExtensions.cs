@@ -26,6 +26,6 @@ public static class ActivityExecutionExtensions
 
     public static void SetResilienceStrategy(this ActivityExecutionContext context, JsonNode model)
     {
-        context.SetProperty(ResilienceStrategy, model);
+        //context.SetProperty(ResilienceStrategy, model);
     }
 }
