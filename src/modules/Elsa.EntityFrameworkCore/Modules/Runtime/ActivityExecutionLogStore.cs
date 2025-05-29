@@ -15,6 +15,7 @@ using Elsa.Workflows.Runtime.OrderDefinitions;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
 
@@ -29,7 +30,8 @@ public class EFCoreActivityExecutionStore(
     ISafeSerializer safeSerializer,
     IPayloadSerializer payloadSerializer,
     ICompressionCodecResolver compressionCodecResolver,
-    IOptions<ManagementOptions> options) : IActivityExecutionStore
+    IOptions<ManagementOptions> options,
+    ILogger<EFCoreActivityExecutionStore> logger) : IActivityExecutionStore
 {
     /// <inheritdoc />
     public async Task SaveAsync(ActivityExecutionRecord record, CancellationToken cancellationToken = default) => await store.SaveAsync(record, OnSaveAsync, cancellationToken);
@@ -93,10 +95,15 @@ public class EFCoreActivityExecutionStore(
         var serializedActivityState = entity.ActivityState?.Count > 0 ? safeSerializer.Serialize(entity.ActivityState) : null;
         var compressedSerializedActivityState = serializedActivityState != null ? await compressionCodecResolver.Resolve(compressionAlgorithm).CompressAsync(serializedActivityState, cancellationToken) : null;
 
+        var hasProps = entity.Properties?.Any() == true;
+        logger.LogDebug("Activity Execution Record {ActivityExecutionRecordId} Has Props: {HasProps}", entity.Id, hasProps);
+        var serializedProperties = entity.Properties != null ? payloadSerializer.Serialize(entity.Properties) : null;
+        logger.LogDebug("Activity Execution Record {ActivityExecutionRecordId} Serialized Props: {SerializedProps}", entity.Id, serializedProperties);
+        
         dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = compressedSerializedActivityState;
         dbContext.Entry(entity).Property("SerializedActivityStateCompressionAlgorithm").CurrentValue = compressionAlgorithm;
         dbContext.Entry(entity).Property("SerializedOutputs").CurrentValue = entity.Outputs?.Any() == true ? safeSerializer.Serialize(entity.Outputs) : null;
-        dbContext.Entry(entity).Property("SerializedProperties").CurrentValue = entity.Properties?.Any() == true ? payloadSerializer.Serialize(entity.Properties) : null;
+        dbContext.Entry(entity).Property("SerializedProperties").CurrentValue = serializedProperties;
         dbContext.Entry(entity).Property("SerializedException").CurrentValue = entity.Exception != null ? payloadSerializer.Serialize(entity.Exception) : null;
         dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload?.Any() == true ? payloadSerializer.Serialize(entity.Payload) : null;
     }
