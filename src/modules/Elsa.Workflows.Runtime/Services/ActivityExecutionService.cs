@@ -42,7 +42,7 @@ public class ActivityExecutionStatsService : IActivityExecutionStatsService
                 IsBlocked = grouping.Any(x => x.HasBookmarks),
                 IsFaulted = grouping.Any(x => x.Status == ActivityStatus.Faulted),
                 AggregateFaultCount = last.AggregateFaultCount,
-                Properties = last.Properties
+                Metadata = last.Metadata
             };
         }).ToList();
 

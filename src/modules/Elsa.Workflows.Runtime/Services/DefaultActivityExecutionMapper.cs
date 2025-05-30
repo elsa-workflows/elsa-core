@@ -29,6 +29,7 @@ public class DefaultActivityExecutionMapper(ILogger<DefaultActivityExecutionMapp
             ActivityState = persistableInputs,
             Outputs = persistableOutputs,
             Properties = persistableProperties,
+            Metadata = new Dictionary<string, object>(source.Metadata),
             Payload = persistableJournalData!,
             Exception = ExceptionState.FromException(source.Exception),
             ActivityTypeVersion = source.Activity.Version,

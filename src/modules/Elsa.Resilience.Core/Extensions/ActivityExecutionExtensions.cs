@@ -14,18 +14,18 @@ public static class ActivityExecutionExtensions
 
         while (current != null)
         {
-            current.SetProperty(RetriesAttemptedFlag, true);
+            current.SetMetadata(RetriesAttemptedFlag, true);
             current = current.ParentActivityExecutionContext;
         }
     }
 
     public static bool GetRetriesAttemptedFlag(this ActivityExecutionContext context)
     {
-        return context.GetProperty(RetriesAttemptedFlag, () => false);
+        return context.GetMetadata(RetriesAttemptedFlag, () => false);
     }
 
     public static void SetResilienceStrategy(this ActivityExecutionContext context, JsonNode model)
     {
-        //context.SetProperty(ResilienceStrategy, model);
+        context.SetProperty(ResilienceStrategy, model);
     }
 }

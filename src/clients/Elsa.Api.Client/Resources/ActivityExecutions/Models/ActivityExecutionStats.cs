@@ -41,7 +41,7 @@ public class ActivityExecutionStats
     public bool IsFaulted { get; set; }
 
     /// <summary>
-    /// Gets or sets the total count of faults aggregated from the activity execution and its descendants.
+    /// Gets or sets additional metadata associated with the activity execution.
     /// </summary>
-    public IDictionary<string, object>? Properties { get; set; }
+    public IDictionary<string, object>? Metadata { get; set; }
 }

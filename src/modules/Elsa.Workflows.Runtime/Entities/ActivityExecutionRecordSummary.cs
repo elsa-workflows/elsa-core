@@ -54,9 +54,9 @@ public class ActivityExecutionRecordSummary : Entity
     public ActivityStatus Status { get; set; }
 
     /// <summary>
-    /// Gets or sets a dictionary of key-value pairs representing additional properties for the activity execution record summary.
+    /// Gets or sets a dictionary of key-value pairs representing additional metadata for the activity execution record summary.
     /// </summary>
-    public IDictionary<string, object>? Properties { get; set; }
+    public IDictionary<string, object>? Metadata { get; set; }
     
     /// <summary>
     /// Gets or sets the aggregated count of faults encountered during the execution of the activity instance and its descendants.
@@ -86,7 +86,7 @@ public class ActivityExecutionRecordSummary : Entity
             HasBookmarks = record.HasBookmarks,
             Status = record.Status,
             AggregateFaultCount = record.AggregateFaultCount,
-            Properties = record.Properties?.Count > 0 ? record.Properties : null,
+            Metadata = record.Metadata?.Count > 0 ? record.Metadata : null,
             CompletedAt = record.CompletedAt,
         };
     }
@@ -109,7 +109,7 @@ public class ActivityExecutionRecordSummary : Entity
             HasBookmarks = record.HasBookmarks,
             Status = record.Status,
             AggregateFaultCount = record.AggregateFaultCount,
-            Properties = record.Properties,
+            Metadata = record.Metadata,
             CompletedAt = record.CompletedAt
         };
     }
