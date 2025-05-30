@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "8.0.12")
+                .HasAnnotation("ProductVersion", "9.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -65,6 +65,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<int>("ActivityTypeVersion")
                         .HasColumnType("integer");
 
+                    b.Property<int>("AggregateFaultCount")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -78,6 +81,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .HasColumnType("text");
 
                     b.Property<string>("SerializedException")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SerializedMetadata")
                         .HasColumnType("text");
 
                     b.Property<string>("SerializedOutputs")
@@ -219,6 +225,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
                     b.Property<string>("SerializedMetadata")
                         .HasColumnType("text");
 
@@ -246,6 +255,12 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
                     b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
 
+                    b.HasIndex(new[] { "Name" }, "IX_StoredBookmark_Name");
+
+                    b.HasIndex(new[] { "Name", "Hash" }, "IX_StoredBookmark_Name_Hash");
+
+                    b.HasIndex(new[] { "Name", "Hash", "WorkflowInstanceId" }, "IX_StoredBookmark_Name_Hash_WorkflowInstanceId");
+
                     b.HasIndex(new[] { "TenantId" }, "IX_StoredBookmark_TenantId");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
@@ -266,7 +281,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("SerializedPayload")

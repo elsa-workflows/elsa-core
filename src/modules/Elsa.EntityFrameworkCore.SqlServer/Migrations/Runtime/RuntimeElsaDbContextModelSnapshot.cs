@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "8.0.12")
+                .HasAnnotation("ProductVersion", "9.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -65,6 +65,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<int>("ActivityTypeVersion")
                         .HasColumnType("int");
 
+                    b.Property<int>("AggregateFaultCount")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -78,6 +81,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SerializedException")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SerializedMetadata")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SerializedOutputs")
@@ -219,6 +225,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("SerializedMetadata")
                         .HasColumnType("nvarchar(max)");
 
@@ -246,6 +255,12 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 
                     b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
 
+                    b.HasIndex(new[] { "Name" }, "IX_StoredBookmark_Name");
+
+                    b.HasIndex(new[] { "Name", "Hash" }, "IX_StoredBookmark_Name_Hash");
+
+                    b.HasIndex(new[] { "Name", "Hash", "WorkflowInstanceId" }, "IX_StoredBookmark_Name_Hash_WorkflowInstanceId");
+
                     b.HasIndex(new[] { "TenantId" }, "IX_StoredBookmark_TenantId");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
@@ -266,7 +281,6 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("SerializedPayload")

@@ -17,7 +17,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "8.0.12");
+                .HasAnnotation("ProductVersion", "9.0.5");
 
             modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
                 {
@@ -61,6 +61,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<int>("ActivityTypeVersion")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("AggregateFaultCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("TEXT");
 
@@ -74,6 +77,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SerializedException")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedMetadata")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SerializedOutputs")
@@ -215,6 +221,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("SerializedMetadata")
                         .HasColumnType("TEXT");
 
@@ -242,6 +251,12 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
 
+                    b.HasIndex(new[] { "Name" }, "IX_StoredBookmark_Name");
+
+                    b.HasIndex(new[] { "Name", "Hash" }, "IX_StoredBookmark_Name_Hash");
+
+                    b.HasIndex(new[] { "Name", "Hash", "WorkflowInstanceId" }, "IX_StoredBookmark_Name_Hash_WorkflowInstanceId");
+
                     b.HasIndex(new[] { "TenantId" }, "IX_StoredBookmark_TenantId");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
@@ -262,7 +277,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SerializedPayload")

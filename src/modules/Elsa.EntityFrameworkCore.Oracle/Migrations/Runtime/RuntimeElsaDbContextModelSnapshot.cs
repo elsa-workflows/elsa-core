@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "8.0.12")
+                .HasAnnotation("ProductVersion", "9.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -65,6 +65,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                     b.Property<int>("ActivityTypeVersion")
                         .HasColumnType("NUMBER(10)");
 
+                    b.Property<int>("AggregateFaultCount")
+                        .HasColumnType("NUMBER(10)");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
@@ -79,6 +82,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 
                     b.Property<string>("SerializedException")
                         .HasColumnType("NCLOB");
+
+                    b.Property<string>("SerializedMetadata")
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedOutputs")
                         .HasColumnType("NCLOB");
@@ -219,6 +225,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
+                    b.Property<string>("Name")
+                        .HasColumnType("NVARCHAR2(450)");
+
                     b.Property<string>("SerializedMetadata")
                         .HasColumnType("NCLOB");
 
@@ -246,6 +255,12 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 
                     b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
 
+                    b.HasIndex(new[] { "Name" }, "IX_StoredBookmark_Name");
+
+                    b.HasIndex(new[] { "Name", "Hash" }, "IX_StoredBookmark_Name_Hash");
+
+                    b.HasIndex(new[] { "Name", "Hash", "WorkflowInstanceId" }, "IX_StoredBookmark_Name_Hash_WorkflowInstanceId");
+
                     b.HasIndex(new[] { "TenantId" }, "IX_StoredBookmark_TenantId");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
@@ -266,7 +281,6 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("SerializedPayload")
