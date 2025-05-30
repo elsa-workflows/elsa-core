@@ -11,7 +11,7 @@ namespace Elsa.Workflows.CommitStates.Strategies;
 /// <see cref="WorkflowLifetimeEvent.ActivityExecuting"/>. If the condition is met, the strategy indicates
 /// that a commit action should be performed. Otherwise, a default action will be returned.
 /// </remarks>
-[DisplayName("Activity Executing")]
+[DisplayName("Commit Before Activity Execution")]
 [Description("Determines whether a workflow state should be committed if the current activity is executing.")]
 public class ActivityExecutingWorkflowStrategy : IWorkflowCommitStrategy
 {

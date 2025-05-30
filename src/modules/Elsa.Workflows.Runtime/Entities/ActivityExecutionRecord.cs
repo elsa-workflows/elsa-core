@@ -57,7 +57,7 @@ public class ActivityExecutionRecord : Entity, ILogRecord
     /// <summary>
     /// Any properties provided by the activity.
     /// </summary>
-    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object>? Properties { get; set; }
 
     /// <summary>
     /// Gets or sets the exception that occurred during the activity execution.

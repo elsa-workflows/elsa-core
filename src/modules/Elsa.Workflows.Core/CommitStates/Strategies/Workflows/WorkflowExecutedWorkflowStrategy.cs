@@ -5,7 +5,7 @@ namespace Elsa.Workflows.CommitStates.Strategies;
 /// <summary>
 /// Represents a workflow commit strategy that commits changes when the workflow has been executed.
 /// </summary>
-[DisplayName("Workflow Executed")]
+[DisplayName("Commit After Workflow Execution")]
 [Description("Commit the workflow state when the workflow has been executed.")]
 public class WorkflowExecutedWorkflowStrategy : IWorkflowCommitStrategy
 {

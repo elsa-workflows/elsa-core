@@ -5,11 +5,9 @@ using Elsa.Caching.Options;
 using Elsa.Common.Codecs;
 using Elsa.Common.DistributedHosting.DistributedLocks;
 using Elsa.Common.RecurringTasks;
-using Elsa.Common.Serialization;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
 using Elsa.DropIns.Extensions;
-using Elsa.EntityFrameworkCore;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
@@ -21,7 +19,6 @@ using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Identity.Multitenancy;
 using Elsa.Kafka;
-using Elsa.Kafka.Factories;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;
@@ -38,12 +35,6 @@ using Elsa.Secrets.Persistence;
 using Elsa.Server.Web;
 using Elsa.Server.Web.Extensions;
 using Elsa.Server.Web.Filters;
-using Elsa.Server.Web.Messages;
-using Elsa.Sql.Extensions;
-using Elsa.Sql.MySql;
-using Elsa.Sql.PostgreSql;
-using Elsa.Sql.Sqlite;
-using Elsa.Sql.SqlServer;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
@@ -51,9 +42,7 @@ using Elsa.Workflows.Api;
 using Elsa.Workflows.CommitStates.Strategies;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.LogPersistence;
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Stores;
-using Elsa.Workflows.Memory;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Options;
@@ -69,11 +58,7 @@ using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
 using Medallion.Threading.Redis;
-using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
-using OpenTelemetry;
-using OpenTelemetry.Exporter;
-using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -107,7 +92,7 @@ const bool disableVariableWrappers = false;
 const bool disableVariableCopying = false;
 const bool useManualOtelInstrumentation = false;
 
-ObjectConverter.StrictMode = false;
+ObjectConverter.StrictMode = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -130,14 +115,10 @@ var distributedLockProviderName = configuration.GetSection("Runtime:DistributedL
 var appRole = Enum.Parse<ApplicationRole>(configuration["AppRole"] ?? "Default");
 var sqlDatabaseProvider = Enum.Parse<SqlDatabaseProvider>(configuration["DatabaseProvider"] ?? "Sqlite");
 
-// Optionally create type aliases for easier configuration.
-TypeAliasRegistry.RegisterAlias("OrderReceivedProducerFactory", typeof(GenericProducerFactory<string, OrderReceived>));
-TypeAliasRegistry.RegisterAlias("OrderReceivedConsumerFactory", typeof(GenericConsumerFactory<string, OrderReceived>));
-
 if (useManualOtelInstrumentation)
 {
     services.AddOpenTelemetry()
-        .ConfigureResource(resource => resource.AddService("elsa-workflows", serviceVersion: "3.4.0").AddTelemetrySdk())
+        .ConfigureResource(resource => resource.AddService("elsa-workflows", serviceVersion: "3.5.0").AddTelemetrySdk())
         .WithTracing(tracing =>
         {
             tracing
@@ -333,7 +314,6 @@ services
 
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
                 management.UseReadOnlyMode(useReadOnlyMode);
-                management.AddVariableTypeAndAlias<OrderReceived>("Application");
             })
             .UseWorkflowRuntime(runtime =>
             {
@@ -449,7 +429,6 @@ services
                 options.AllowClrAccess = true;
                 options.DisableWrappers = disableVariableWrappers;
                 options.DisableVariableCopying = disableVariableCopying;
-                options.RegisterType<OrderReceived>();
                 options.ConfigureEngine(engine =>
                 {
                     engine.Execute("function greet(name) { return `Hello ${name}!`; }");
@@ -478,16 +457,6 @@ services
 
                 if (useCaching)
                     http.UseCache();
-            })
-            .UseSql(options =>
-            {
-                options.Clients = client =>
-                {
-                    client.Register<MySqlClient>("MySql");
-                    client.Register<PostgreSqlClient>("PostgreSql");
-                    client.Register<SqliteClient>("Sqlite");
-                    client.Register<SqlServerClient>("Sql Server");
-                };
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseAlterations(alterations =>
@@ -536,7 +505,7 @@ services
                     alterations.UseMassTransitDispatcher();
                 }
             })
-            .UseOpenTelemetry()
+            .UseOpenTelemetry(otel => otel.UseNewRootActivityForRemoteParent = true)
             .UseWorkflowContexts();
 
         if (useQuartz)
@@ -560,7 +529,6 @@ services
             elsa.UseMassTransit(massTransit =>
             {
                 massTransit.DisableConsumers = appRole == ApplicationRole.Api;
-                massTransit.AddMessageType<OrderReceived>();
 
                 if (massTransitBroker == MassTransitBroker.AzureServiceBus)
                 {

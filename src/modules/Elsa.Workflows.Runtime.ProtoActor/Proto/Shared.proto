@@ -18,6 +18,10 @@ message Properties {
   map<string, Json> Data = 1;
 }
 
+message Output {
+  map<string, Json> Data = 1;
+}
+
 message ExceptionState {
   string Type = 1;
   string Message = 2;

@@ -46,7 +46,7 @@ By default, you can access http://localhost:13000 and log in with:
 - [Features](#features)
 - [Roadmap](#roadmap)
 - [Use Cases](#use-cases)
-- [Programmatic Workflows](#programmatic-workflows)
+- [Coding Workflows](#coding-workflows)
 - [Designed Workflows](#designed-workflows)
 - [Contributing](#contributing)
 - [Support](#support)

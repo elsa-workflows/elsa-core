@@ -78,7 +78,7 @@ public class ExpressionExecutionContextExtensionsTests
         var context = new ExpressionExecutionContext(null!, memoryRegister);
 
         // Act
-        context.CreateVariable("newVariable", 10);
+        context.SetVariable("newVariable", 10);
 
         // Assert
         var variable = context.GetVariable<int>("newVariable");

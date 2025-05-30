@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
+using Elsa.Api.Client.Resources.ResilienceStrategies.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
+using Elsa.Api.Client.Shared.Enums;
 using Elsa.Api.Client.Shared.Models;
 
 namespace Elsa.Api.Client.Extensions;
@@ -116,11 +118,21 @@ public static class ActivityExtensions
     /// Sets a value indicating whether the specified activity can trigger the workflow.
     /// </summary>
     public static void SetCanStartWorkflow(this JsonObject activity, bool value) => activity.SetProperty(JsonValue.Create(value), "customProperties", "canStartWorkflow");
+    
+    public static MergeMode GetMergeMode(this JsonObject activity)
+    {
+        return activity.GetProperty<MergeMode?>("customProperties", "mergeMode") ?? MergeMode.Converge;
+    }
+
+    public static void SetMergeMode(this JsonObject activity, MergeMode? value)
+    {
+        activity.SetProperty(JsonValue.Create(value), "customProperties", "mergeMode");
+    }
 
     /// <summary>
     /// Gets the activities in the specified flowchart.
     /// </summary>
-    public static IEnumerable<JsonObject> GetActivities(this JsonObject flowchart) => flowchart.GetProperty("activities")?.AsArray().AsEnumerable().Cast<JsonObject>() ?? Array.Empty<JsonObject>();
+    public static IEnumerable<JsonObject> GetActivities(this JsonObject flowchart) => flowchart.GetProperty("activities")?.AsArray().AsEnumerable().Cast<JsonObject>() ?? [];
 
     /// <summary>
     /// Sets the activities in the specified flowchart.
@@ -193,4 +205,23 @@ public static class ActivityExtensions
     /// Sets the commit state behavior for the specified activity.
     /// </summary>
     public static void SetCommitStrategy(this JsonObject activity, string? name) => activity.SetProperty(JsonValue.Create(name), "customProperties", "commitStrategyName");
+    
+    
+    /// <summary>
+    /// Gets the resilience strategy for the specified activity.
+    /// </summary>
+    public static ResilienceStrategyConfig? GetResilienceStrategy(this JsonObject activity)
+    {
+        var node = activity.GetProperty("customProperties", "resilienceStrategy");
+        return ResilienceStrategyConfig.Deserialize(node);
+    }
+
+    /// <summary>
+    /// Sets the resilience strategy for the specified activity.
+    /// </summary>
+    public static void SetResilienceStrategy(this JsonObject activity, ResilienceStrategyConfig? config)
+    {
+        var node = config?.SerializeToNode();
+        activity.SetProperty(node, "customProperties", "resilienceStrategy");
+    }
 }

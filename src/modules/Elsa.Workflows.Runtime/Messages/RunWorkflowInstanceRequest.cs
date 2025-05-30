@@ -40,6 +40,11 @@ public class RunWorkflowInstanceRequest
     public IDictionary<string, object>? Variables { get; set; }
 
     /// <summary>
+    /// When set to <c>true</c>, include workflow output in the response.
+    /// </summary>
+    public bool IncludeWorkflowOutput { get; set; }
+
+    /// <summary>
     /// Represents an empty <see cref="RunWorkflowInstanceRequest"/> object used as a default value.
     /// </summary>
     public static RunWorkflowInstanceRequest Empty => new();

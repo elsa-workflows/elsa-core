@@ -10,10 +10,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Options"/>
         <PackageReference Include="MongoDB.Driver"/>
-        <!--
-            TODO: Uncomment once https://github.com/jbogard/MongoDB.Driver.Core.Extensions.DiagnosticSources/pull/41 is merged and deployed.
-            <PackageReference Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" />
-        -->
+        <PackageReference Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" />
         <PackageReference Include="MongoDB.Driver.Extensions"/>
     </ItemGroup>
 

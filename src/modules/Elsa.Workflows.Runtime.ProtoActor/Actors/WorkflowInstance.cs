@@ -73,6 +73,7 @@ internal class WorkflowInstance(
     public override Task Run(RunWorkflowInstanceRequest request, Action<RunWorkflowInstanceResponse> respond, Action<string> onError)
     {
         var mappedRequest = mappers.RunWorkflowParamsMapper.Map(request);
+        var includeOutput = request.IncludeWorkflowOutput;
         Context.ReenterAfter(RunAsync(mappedRequest), async completedTask =>
         {
             if (completedTask.IsFaulted)
@@ -80,7 +81,7 @@ internal class WorkflowInstance(
             else
             {
                 var result = await completedTask;
-                respond(mappers.RunWorkflowInstanceResponseMapper.Map(result));
+                respond(mappers.RunWorkflowInstanceResponseMapper.Map(result, includeOutput));
             }
         });
 
@@ -144,7 +145,7 @@ internal class WorkflowInstance(
 
         var result = await RunAsync(runWorkflowOptions);
 
-        return mappers.RunWorkflowInstanceResponseMapper.Map(result);
+        return mappers.RunWorkflowInstanceResponseMapper.Map(result, request.IncludeWorkflowOutput);
     }
 
     public override Task Stop()

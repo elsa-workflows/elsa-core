@@ -8,6 +8,7 @@ using Elsa.Api.Client.Resources.Features.Contracts;
 using Elsa.Api.Client.Resources.Identity.Contracts;
 using Elsa.Api.Client.Resources.IncidentStrategies.Contracts;
 using Elsa.Api.Client.Resources.LogPersistenceStrategies;
+using Elsa.Api.Client.Resources.ResilienceStrategies.Contracts;
 using Elsa.Api.Client.Resources.Scripting.Contracts;
 using Elsa.Api.Client.Resources.StorageDrivers.Contracts;
 using Elsa.Api.Client.Resources.Tasks.Contracts;
@@ -76,6 +77,7 @@ public static class DependencyInjectionExtensions
             services.AddApi<IIncidentStrategiesApi>(builderOptions);
             services.AddApi<ILogPersistenceStrategiesApi>(builderOptions);
             services.AddApi<ICommitStrategiesApi>(builderOptions);
+            services.AddApi<IResilienceStrategiesApi>(builderOptions);
             services.AddApi<ILoginApi>(builderOptions);
             services.AddApi<IFeaturesApi>(builderOptions);
             services.AddApi<IJavaScriptApi>(builderOptions);

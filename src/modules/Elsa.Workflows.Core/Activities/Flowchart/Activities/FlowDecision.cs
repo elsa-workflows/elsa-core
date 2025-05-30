@@ -9,7 +9,7 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Activities.Flowchart.Activities;
 
 /// <summary>
-/// Performs a boolean condition and returns an outcome based on the the result.
+/// Performs a boolean condition and returns an outcome based on the result.
 /// </summary>
 [FlowNode("True", "False")]
 [Activity("Elsa", "Branching", "Evaluate a Boolean condition to determine which path to execute next.", DisplayName = "Decision")]

@@ -73,7 +73,7 @@ public class BackgroundEventPublisherHostedService : BackgroundService
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "An unhandled exception occured while processing the queue");
+                _logger.LogError(e, "An unhandled exception occurred while processing the queue");
             }
         }
     }
