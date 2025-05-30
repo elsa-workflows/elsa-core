@@ -61,6 +61,12 @@ public class ActivityExecutionRecord : Entity
     public IDictionary<string, object?> Properties { get; set; } = new Dictionary<string, object?>();
     
     /// <summary>
+    /// Any metadata provided by the activity. In contrast to the <see cref="Properties"/> property, this metadata is also persisted as part of the activity execution summary record.
+    /// It is therefore not suitable for larger payloads.
+    /// </summary>
+    public IDictionary<string, object?> Metadata { get; set; } = new Dictionary<string, object?>();
+    
+    /// <summary>
     /// Gets or sets the exception that occurred during the activity execution.
     /// </summary>
     public ExceptionState? Exception { get; set; }

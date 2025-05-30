@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.3")
+                .HasAnnotation("ProductVersion", "9.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -81,6 +81,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .HasColumnType("longtext");
 
                     b.Property<string>("SerializedException")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SerializedMetadata")
                         .HasColumnType("longtext");
 
                     b.Property<string>("SerializedOutputs")

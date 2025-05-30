@@ -15,11 +15,13 @@ public class V3_5 : Migration
     public override void Up()
     {
         Alter.Table("ActivityExecutionRecords").AddColumn("AggregateFaultCount").AsInt32().NotNullable().WithDefault(0);
+        Alter.Table("ActivityExecutionRecords").AddColumn("Metadata").AsString().Nullable();
     }
 
     /// <inheritdoc />
     public override void Down()
     {
         Delete.Column("AggregateFaultCount").FromTable("ActivityExecutionRecords");
+        Delete.Column("Metadata").FromTable("ActivityExecutionRecords");
     }
 }

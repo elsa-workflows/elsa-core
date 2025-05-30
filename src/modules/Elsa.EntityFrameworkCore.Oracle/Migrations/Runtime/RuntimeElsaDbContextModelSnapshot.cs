@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.3")
+                .HasAnnotation("ProductVersion", "9.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -82,6 +82,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 
                     b.Property<string>("SerializedException")
                         .HasColumnType("NCLOB");
+
+                    b.Property<string>("SerializedMetadata")
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedOutputs")
                         .HasColumnType("NCLOB");

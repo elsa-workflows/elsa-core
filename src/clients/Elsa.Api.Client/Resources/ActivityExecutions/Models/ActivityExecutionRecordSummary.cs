@@ -48,9 +48,9 @@ public class ActivityExecutionRecordSummary : Entity
     public bool HasBookmarks { get; set; }
 
     /// <summary>
-    /// Gets or sets a collection of properties for the activity execution.
+    /// Gets or sets metadata for the activity execution.
     /// </summary>
-    public IDictionary<string, object?>? Properties { get; set; }
+    public IDictionary<string, object?>? Metadata { get; set; }
 
     /// <summary>
     /// Gets or sets the status of the activity.
@@ -80,7 +80,7 @@ public class ActivityExecutionRecordSummary : Entity
             HasBookmarks = record.HasBookmarks,
             Status = record.Status,
             CompletedAt = record.CompletedAt,
-            Properties = record.Properties
+            Metadata = record.Metadata
         };
     }
 }

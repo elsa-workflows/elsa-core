@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_5 : Migration
@@ -22,17 +22,20 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Triggers",
-                type: "nvarchar(450)",
+                type: "varchar(255)",
                 nullable: true,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(450)");
+                oldType: "varchar(255)")
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .OldAnnotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<string>(
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Bookmarks",
-                type: "nvarchar(450)",
-                nullable: true);
+                type: "varchar(255)",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<int>(
                 name: "AggregateFaultCount",
@@ -41,6 +44,14 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 type: "int",
                 nullable: false,
                 defaultValue: 0);
+
+            migrationBuilder.AddColumn<string>(
+                name: "SerializedMetadata",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                type: "longtext",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_Name",
@@ -89,16 +100,30 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords");
 
+            migrationBuilder.DropColumn(
+                name: "SerializedMetadata",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords");
+
+            migrationBuilder.UpdateData(
+                schema: _schema.Schema,
+                table: "Triggers",
+                keyColumn: "Name",
+                keyValue: null,
+                column: "Name",
+                value: "");
+
             migrationBuilder.AlterColumn<string>(
                 name: "Name",
                 schema: _schema.Schema,
                 table: "Triggers",
-                type: "nvarchar(450)",
+                type: "varchar(255)",
                 nullable: false,
-                defaultValue: "",
                 oldClrType: typeof(string),
-                oldType: "nvarchar(450)",
-                oldNullable: true);
+                oldType: "varchar(255)",
+                oldNullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .OldAnnotation("MySql:CharSet", "utf8mb4");
         }
     }
 }

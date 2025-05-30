@@ -46,7 +46,7 @@ public class ActivityExecutionStats
     public int AggregateFaultCount { get; set; }
 
     /// <summary>
-    /// Gets or sets additional properties related to the activity execution.
+    /// Gets or sets metadata related to the activity execution.
     /// </summary>
-    public IDictionary<string, object>? Properties { get; set; }
+    public IDictionary<string, object>? Metadata { get; set; }
 }

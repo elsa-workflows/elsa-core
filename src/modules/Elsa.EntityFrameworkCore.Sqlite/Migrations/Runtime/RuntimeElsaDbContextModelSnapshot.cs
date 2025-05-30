@@ -17,7 +17,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.3");
+                .HasAnnotation("ProductVersion", "9.0.5");
 
             modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
                 {
@@ -77,6 +77,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SerializedException")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedMetadata")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SerializedOutputs")
