@@ -40,6 +40,11 @@ public class ActivityExecutionContextState
     /// A bag of properties.
     /// </summary>
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+    
+    /// <summary>
+    /// A bag of metadata.
+    /// </summary>
+    public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// The evaluated values of the activity's properties.

@@ -1,6 +1,8 @@
+using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Resilience.Entities;
 using Elsa.Resilience.Modifiers;
 using Elsa.Resilience.Options;
 using Elsa.Resilience.Recorders;
@@ -57,6 +59,11 @@ public class ResilienceFeature(IModule module) : FeatureBase(module)
     public override void Configure()
     {
         Module.AddFastEndpointsAssembly<ResilienceFeature>();
+
+        Services.Configure<ExpressionOptions>(options =>
+        {
+            options.AddTypeAlias<List<RetryAttemptRecord>>("RetryAttemptRecordList");
+        });
     }
 
     public override void Apply()
