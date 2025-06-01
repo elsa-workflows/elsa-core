@@ -77,7 +77,7 @@ internal class ConfigureLiquidEngine : INotificationHandler<RenderingLiquidTempl
     {
         // First, check if the current activity has inputs
         if (context.TryGetActivityExecutionContext(out var activityExecutionContext) &&
-            activityExecutionContext.Input.TryGetValue(key, out var activityValue))
+            activityExecutionContext.ActivityInput.TryGetValue(key, out var activityValue))
         {
             return Task.FromResult(activityValue == null ? NilValue.Instance : FluidValue.Create(activityValue, options));
         }

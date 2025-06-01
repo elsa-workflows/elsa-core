@@ -4,6 +4,10 @@
 		<CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
 	</PropertyGroup>
 	
+	<PropertyGroup Label="PackageVersions">
+		<ElsaStudioVersion>3.6.0-preview.1029</ElsaStudioVersion>
+	</PropertyGroup>
+	
   <ItemGroup Label="Elsa">
     <PackageVersion Include="Elsa.Actors.ProtoActor" Version="3.6.0-preview.29" />
     <PackageVersion Include="Elsa.Alterations" Version="3.6.0-preview.29" />
@@ -156,6 +160,7 @@
     <PackageVersion Include="Microsoft.Identity.Client" Version="4.71.1" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
+	<PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="MySql.Data" Version="9.3.0" />
     <PackageVersion Include="MongoDB.Driver" Version="3.4.0" />
     <PackageVersion Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="2.0.0" />
