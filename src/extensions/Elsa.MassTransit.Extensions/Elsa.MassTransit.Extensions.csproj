@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0</TargetFrameworks>
+        <Description>Provides extended MassTransit integration for Elsa Workflows.</Description>
+        <PackageTags>elsa, workflows, masstransit, filters, middleware</PackageTags>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MassTransit" />
+        <PackageReference Include="MassTransit.Azure.ServiceBus.Core" />
+        <PackageReference Include="MassTransit.RabbitMQ" />
+        <PackageReference Include="Elsa.ServiceBus.MassTransit" />
+        <PackageReference Include="Elsa.ServiceBus.MassTransit.AzureServiceBus" />
+        <PackageReference Include="Elsa.ServiceBus.MassTransit.RabbitMq" />
+    </ItemGroup>
+
+</Project>
