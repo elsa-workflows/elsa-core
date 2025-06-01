@@ -5,10 +5,10 @@ namespace Elsa.Workflows.UIHints.CodeEditor;
 /// <summary>
 /// Provides options for the code editor component.
 /// </summary>
-public abstract class CodeEditorOptionsProviderBase : IPropertyUIHandler
+public abstract class CodeEditorOptionsProviderBase : PropertyUIHandlerBase
 {
     /// <inheritdoc />
-    public ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
+    public override ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
     {
         var codeEditorOptions = GetCodeEditorOptions(propertyInfo, context);
 

@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using Elsa.Api.Client.Resources.Scripting.Models;
 using Elsa.Api.Client.Serialization;
 
-namespace Elsa.Api.Client.Resources.ResilienceStrategies.Models;
+namespace Elsa.Api.Client.Resources.Resilience.Models;
 
 public class ResilienceStrategyConfig
 {

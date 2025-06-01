@@ -10,7 +10,7 @@ public class Endpoint(IResilienceStrategyCatalog catalog, ResilienceStrategySeri
     public override void Configure()
     {
         Get("/resilience/strategies");
-        ConfigurePermissions("read:*", "read:resilience-strategies");
+        ConfigurePermissions("read:*", "read:resilience", "read:resilience:strategies");
     }
 
     public override async Task HandleAsync(CancellationToken ct)

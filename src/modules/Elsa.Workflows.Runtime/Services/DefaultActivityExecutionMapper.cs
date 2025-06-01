@@ -5,7 +5,7 @@ using Elsa.Workflows.State;
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class DefaultActivityExecutionMapper : IActivityExecutionMapper
+public class DefaultActivityExecutionMapper() : IActivityExecutionMapper
 {
     public ActivityExecutionRecord Map(ActivityExecutionContext source)
     {
@@ -27,7 +27,8 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             ActivityName = source.Activity.Name,
             ActivityState = persistableInputs,
             Outputs = persistableOutputs,
-            Properties = persistableProperties,
+            Properties = persistableProperties!,
+            Metadata = new Dictionary<string, object>(source.Metadata),
             Payload = persistableJournalData!,
             Exception = ExceptionState.FromException(source.Exception),
             ActivityTypeVersion = source.Activity.Version,
@@ -60,6 +61,6 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 
     private IDictionary<string, object?>? GetPersistableDictionary(IDictionary<string, object?> dictionary, LogPersistenceMode mode)
     {
-        return mode == LogPersistenceMode.Include ? dictionary : null;
+        return mode == LogPersistenceMode.Include ? new Dictionary<string, object?>(dictionary) : null;
     }
 }
