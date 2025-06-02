@@ -30,10 +30,8 @@ public class VariableMapper
     }
 
     /// <inheritdoc />
-    public VariableMapper() : this(new WellKnownTypeRegistry(), NullLogger<VariableMapper>.Instance)
-    {
-        
-    }
+    public VariableMapper()
+        : this(new WellKnownTypeRegistry(), NullLogger<VariableMapper>.Instance) { }
 
     /// <summary>
     /// Maps a <see cref="Variable"/> to a <see cref="VariableModel"/>.
@@ -41,7 +39,7 @@ public class VariableMapper
     public Variable Map(VariableModel source)
     {
         var typeName = source.TypeName;
-        
+
         if (string.IsNullOrWhiteSpace(source.TypeName))
             typeName = _wellKnownTypeRegistry.GetAliasOrDefault(typeof(object));
 
@@ -55,9 +53,7 @@ public class VariableMapper
         variable.Id = source.Id ?? Guid.NewGuid().ToString("N"); // Temporarily assign a new ID if the source doesn't have one.
         variable.Name = source.Name;
 
-        source.Value.TryConvertTo(type)
-            .OnSuccess(value => variable.Value = value)
-            .OnFailure(e => _logger.LogWarning("Failed to convert {SourceValue} to {TargetType}", source.Value, type.Name));
+        source.Value.TryConvertTo(type).OnSuccess(value => variable.Value = value).OnFailure(e => _logger.LogWarning("Failed to convert {SourceValue} to {TargetType}", source.Value, type.Name));
 
         variable.StorageDriverType = !string.IsNullOrEmpty(source.StorageDriverTypeName) ? Type.GetType(source.StorageDriverTypeName) : null;
 

@@ -40,9 +40,8 @@ namespace Elsa.Workflows.Features;
 public class WorkflowsFeature : FeatureBase
 {
     /// <inheritdoc />
-    public WorkflowsFeature(IModule module) : base(module)
-    {
-    }
+    public WorkflowsFeature(IModule module)
+        : base(module) { }
 
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IStandardInStreamProvider"/>.
@@ -77,9 +76,7 @@ public class WorkflowsFeature : FeatureBase
     /// <summary>
     /// A delegate to configure the <see cref="IWorkflowExecutionPipeline"/>.
     /// </summary>
-    public Action<IWorkflowExecutionPipelineBuilder> WorkflowExecutionPipeline { get; set; } = builder => builder
-        .UseExceptionHandling()
-        .UseDefaultActivityScheduler();
+    public Action<IWorkflowExecutionPipelineBuilder> WorkflowExecutionPipeline { get; set; } = builder => builder.UseExceptionHandling().UseDefaultActivityScheduler();
 
     /// <summary>
     /// A delegate to configure the <see cref="IActivityExecutionPipeline"/>.
@@ -158,7 +155,6 @@ public class WorkflowsFeature : FeatureBase
     private void AddElsaCore(IServiceCollection services)
     {
         services
-
             // Core.
             .AddScoped<IActivityInvoker, ActivityInvoker>()
             .AddScoped<IWorkflowRunner, WorkflowRunner>()
@@ -186,34 +182,28 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IActivityStateFilterManager, DefaultActivityStateFilterManager>()
             .AddScoped<IWorkflowInstanceVariableReader, DefaultWorkflowInstanceVariableReader>()
             .AddScoped<IWorkflowInstanceVariableWriter, DefaultWorkflowInstanceVariableWriter>()
-
             // Incident Strategies.
             .AddTransient<IIncidentStrategy, FaultStrategy>()
             .AddTransient<IIncidentStrategy, ContinueWithIncidentsStrategy>()
-
             // Pipelines.
             .AddScoped<IActivityExecutionPipeline>(sp => new ActivityExecutionPipeline(sp, ActivityExecutionPipeline))
             .AddScoped<IWorkflowExecutionPipeline>(sp => new WorkflowExecutionPipeline(sp, WorkflowExecutionPipeline))
-
             // Built-in activity services.
+
             .AddScoped<IActivityResolver, PropertyBasedActivityResolver>()
             .AddScoped<IActivityResolver, SwitchActivityResolver>()
             .AddSerializationOptionsConfigurator<AdditionalConvertersConfigurator>()
             .AddSerializationOptionsConfigurator<CustomConstructorConfigurator>()
-
             // Domain event handlers.
             .AddHandlersFrom<WorkflowsFeature>()
-
             // Stream providers.
             .AddScoped(StandardInStreamProvider)
             .AddScoped(StandardOutStreamProvider)
-
             // Storage drivers.
             .AddScoped<IStorageDriverManager, StorageDriverManager>()
             .AddStorageDriver<WorkflowStorageDriver>()
             .AddStorageDriver<WorkflowInstanceStorageDriver>()
             .AddStorageDriver<MemoryStorageDriver>()
-
             // Serialization.
             .AddSingleton<IWorkflowStateSerializer, JsonWorkflowStateSerializer>()
             .AddSingleton<IPayloadSerializer, JsonPayloadSerializer>()
@@ -223,31 +213,25 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IJsonSerializer, StandardJsonSerializer>()
             .AddSingleton<SyntheticPropertiesWriter>()
             .AddSingleton<ActivityWriter>()
-
             // Instantiation strategies.
             .AddScoped<IWorkflowActivationStrategy, AllowAlwaysStrategy>()
-
             // UI hints.
             .AddScoped<IUIHintHandler, DropDownUIHintHandler>()
             .AddScoped<IUIHintHandler, CheckListUIHintHandler>()
             .AddScoped<IUIHintHandler, JsonEditorUIHintHandler>()
-
             // UI property handlers.
             .AddScoped<IPropertyUIHandler, StaticCheckListOptionsProvider>()
             .AddScoped<IPropertyUIHandler, StaticDropDownOptionsProvider>()
             .AddScoped<IPropertyUIHandler, JsonCodeOptionsProvider>()
-
             // Logger state generators.
             .AddSingleton(WorkflowLoggerStateGenerator)
             .AddSingleton(ActivityLoggerStateGenerator)
-
             // Log Persistence Strategies.
             .AddScoped<ILogPersistenceStrategyService, DefaultLogPersistenceStrategyService>()
             .AddScoped<ILogPersistenceStrategy, Include>()
             .AddScoped<ILogPersistenceStrategy, Exclude>()
             .AddScoped<ILogPersistenceStrategy, Inherit>()
             .AddScoped<ILogPersistenceStrategy, Configuration>()
-
             // Logging
             .AddLogging();
     }
