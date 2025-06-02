@@ -2,7 +2,7 @@ namespace Elsa.Identity.Endpoints.Applications.Create;
 
 internal class Request
 {
-    public string Name { get; set; } = default!;
+    public string Name { get; set; } = null!;
     public ICollection<string>? Roles { get; set; }
 }
 

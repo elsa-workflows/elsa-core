@@ -3,6 +3,7 @@ using Elsa.Caching.Options;
 using Elsa.Common.RecurringTasks;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
+using Elsa.Features.Services;
 using Elsa.Identity.Multitenancy;
 using Elsa.Server.Web.Filters;
 using Elsa.Tenants.AspNetCore;
@@ -15,14 +16,13 @@ using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable RedundantAssignment
-const bool useZipCompression = false;
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated requests.
 const bool useMultitenancy = false;
-const bool useTenantsFromConfiguration = true;
 const bool disableVariableWrappers = false;
 
 ObjectConverter.StrictMode = true;
@@ -55,19 +55,14 @@ services
                     strategies.AddStandardStrategies();
                     strategies.Add("Every 10 seconds", new PeriodicWorkflowStrategy(TimeSpan.FromSeconds(10)));
                 });
-
-                workflows.UseCaching();
             })
             .UseWorkflowManagement(management =>
             {
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
-                management.UseCaching();
+                management.UseCache();
                 management.UseReadOnlyMode(useReadOnlyMode);
             })
-            .UseWorkflowRuntime(runtime =>
-            {
-                runtime.UseCaching();
-            })
+            .UseWorkflowRuntime(runtime => runtime.UseCache())
             .UseWorkflowsApi()
             .UseCSharp(options =>
             {
@@ -104,8 +99,7 @@ services
             {
                 http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
                 http.UseCache();
-            })
-            ;
+            });
         ConfigureForTest?.Invoke(elsa);
     });
 

@@ -10,7 +10,7 @@ public class Role : Entity
     /// <summary>
     /// Gets or sets the name.
     /// </summary>
-    public string Name { get; set; } = default!;
+    public string Name { get; set; } = null!;
     
     /// <summary>
     /// Gets or sets the permissions.

@@ -4,7 +4,7 @@ namespace Elsa.Identity.Endpoints.Secrets.Hash;
 
 internal class Request
 {
-    [Required] public string Secret { get; set; } = default!;
+    [Required] public string Secret { get; set; } = null!;
 }
 
 internal class Response

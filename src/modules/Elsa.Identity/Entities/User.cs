@@ -10,17 +10,17 @@ public class User : Entity
     /// <summary>
     /// Gets or sets the name.
     /// </summary>
-    public string Name { get; set; } = default!;
+    public string Name { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the hashed password.
     /// </summary>
-    public string HashedPassword { get; set; } = default!;
+    public string HashedPassword { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the hashed password salt.
     /// </summary>
-    public string HashedPasswordSalt { get; set; } = default!;
+    public string HashedPasswordSalt { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the roles.

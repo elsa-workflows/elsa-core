@@ -12,4 +12,12 @@
 		<PackageReference Include="System.Text.Json" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+      <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
+      <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+      <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+      <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+    </ItemGroup>
+
 </Project>

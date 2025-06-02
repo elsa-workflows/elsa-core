@@ -1,10 +1,12 @@
 using Elsa.Caching;
+using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Decorators;
 using Elsa.Workflows.ComponentTests.Materializers;
 using Elsa.Workflows.ComponentTests.WorkflowProviders;
 using Elsa.Workflows.Management;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;

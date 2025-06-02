@@ -1,5 +1,4 @@
 using Elsa.Common.Models;
-using Elsa.Extensions;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -97,7 +96,7 @@ public class WorkflowCancellationService(
             var childInstances = (await workflowInstanceStore.FindManyAsync(filter, cancellationToken)).ToList();
 
             if (childInstances.Any())
-                tasks.AddRange(CancelWorkflows(childInstances, cancellationToken));
+                tasks.Add(CancelWorkflows(childInstances, cancellationToken));
         }
 
         await Task.WhenAll(tasks);
