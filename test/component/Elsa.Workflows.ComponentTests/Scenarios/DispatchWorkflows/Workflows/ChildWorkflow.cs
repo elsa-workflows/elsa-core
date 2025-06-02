@@ -1,6 +1,6 @@
 using Elsa.Scheduling.Activities;
 using Elsa.Workflows.Activities;
-using Hangfire.Annotations;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows.Workflows;
 

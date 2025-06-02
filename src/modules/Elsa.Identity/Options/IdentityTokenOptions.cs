@@ -14,7 +14,7 @@ public class IdentityTokenOptions
     /// <summary>
     /// The key to use when signing tokens
     /// </summary>
-    public string SigningKey { get; set; } = default!;
+    public string SigningKey { get; set; } = null!;
     
     /// <summary>
     /// The issuer to use when creating and validating tokens

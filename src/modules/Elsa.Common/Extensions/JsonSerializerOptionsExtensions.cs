@@ -25,6 +25,6 @@ public static class JsonSerializerOptionsExtensions
     /// </summary>
     public static JsonSerializerOptions Clone(this JsonSerializerOptions options)
     {
-        return new JsonSerializerOptions(options);
+        return new(options);
     }
 }

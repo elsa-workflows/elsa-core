@@ -2,8 +2,8 @@ namespace Elsa.Identity.Endpoints.Roles.Create;
 
 internal class Request
 {
-    public string? Id { get; set; } = default!;
-    public string Name { get; set; } = default!;
+    public string? Id { get; set; } = null!;
+    public string Name { get; set; } = null!;
     public ICollection<string>? Permissions { get; set; }
 }
 

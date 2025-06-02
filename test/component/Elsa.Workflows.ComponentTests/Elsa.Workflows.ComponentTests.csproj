@@ -10,17 +10,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Using Include="Xunit" />
+        <PackageReference Include="JetBrains.Annotations" />
     </ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Elsa.Caching.Distributed.MassTransit" />
-	</ItemGroup>
+    <ItemGroup>
+        <Using Include="Xunit" />
+    </ItemGroup>
 	
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\apps\Elsa.Server.Web\Elsa.Server.Web.csproj" />
         <ProjectReference Include="..\..\..\src\clients\Elsa.Api.Client\Elsa.Api.Client.csproj" />
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Component\Elsa.Testing.Shared.Component.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
     </ItemGroup>
 
     <ItemGroup>

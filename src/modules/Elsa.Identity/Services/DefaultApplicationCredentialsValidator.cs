@@ -27,15 +27,15 @@ public class DefaultApplicationCredentialsValidator : IApplicationCredentialsVal
     public async ValueTask<Application?> ValidateAsync(string apiKey, CancellationToken cancellationToken = default)
     {
         if(string.IsNullOrWhiteSpace(apiKey))
-            return default;
+            return null;
         
         var clientId = _apiKeyParser.Parse(apiKey);
         var application = await _applicationProvider.FindByClientIdAsync(clientId, cancellationToken);
         
         if(application == null)
-            return default;
+            return null;
         
         var isValidApiKey = _secretHasher.VerifySecret(apiKey, application.HashedApiKey, application.HashedApiKeySalt);
-        return isValidApiKey ? application : default;
+        return isValidApiKey ? application : null;
     }
 }
