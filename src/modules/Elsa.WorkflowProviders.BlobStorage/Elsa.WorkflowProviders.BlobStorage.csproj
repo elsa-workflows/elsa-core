@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides a workflow definition provider that loads workflow definitions from files.
+        </Description>
+        <PackageTags>elsa extension module fluentstorage json blob</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+		<PackageReference Include="FluentStorage" />
+		<PackageReference Include="System.Text.Json" />
+    </ItemGroup>
+
+</Project>

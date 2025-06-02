@@ -12,10 +12,6 @@
     <ItemGroup>
         <Using Include="Xunit" />
     </ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Elsa.Caching.Distributed.MassTransit" />
-	</ItemGroup>
 	
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\apps\Elsa.Server.Web\Elsa.Server.Web.csproj" />

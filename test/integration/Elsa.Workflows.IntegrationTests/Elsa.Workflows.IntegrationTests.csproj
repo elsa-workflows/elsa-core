@@ -3,13 +3,6 @@
     <PropertyGroup>
         <ProjectGuid>{ca65b7d5-57e8-4932-b8b8-732d040c9b3a}</ProjectGuid>
     </PropertyGroup>
-    
-    <ItemGroup>
-		<PackageReference Include="Elsa.Scheduling" />
-		<PackageReference Include="Elsa.Workflows.Runtime.Distributed" />
-		<PackageReference Include="Elsa.WorkflowProviders.BlobStorage" />
-		<PackageReference Include="Proto.Persistence.Sqlite" />
-    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Integration\Elsa.Testing.Shared.Integration.csproj" />

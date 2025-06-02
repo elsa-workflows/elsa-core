@@ -39,7 +39,6 @@ builder.Services.AddLoginModule();
 builder.Services.UseElsaIdentity();
 builder.Services.AddDashboardModule();
 builder.Services.AddWorkflowsModule();
-builder.Services.AddAgentsModule(backendApiConfig);
 
 // Build the application.
 var app = builder.Build();

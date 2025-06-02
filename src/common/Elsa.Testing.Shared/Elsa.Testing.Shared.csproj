@@ -8,8 +8,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-		<PackageReference Include="Elsa.Scheduling" />
-		<PackageReference Include="Elsa.WorkflowProviders.BlobStorage" />
         <PackageReference Include="xunit.abstractions" />
         <PackageReference Include="xunit.extensibility.core" />
     </ItemGroup>

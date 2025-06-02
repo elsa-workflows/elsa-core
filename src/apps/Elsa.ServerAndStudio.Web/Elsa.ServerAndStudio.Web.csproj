@@ -1,38 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-        <IsPackable>false</IsPackable>
-    </PropertyGroup>
-
     <ItemGroup>
-		<PackageReference Include="Elsa.Caching.Distributed" />
-		<PackageReference Include="Elsa.Caching.Distributed.MassTransit" />
-		<PackageReference Include="Elsa.Connections.Api" />
-		<PackageReference Include="Elsa.Connections.Core" />
-		<PackageReference Include="Elsa.Connections.Persistence.EfCore" />
-		<PackageReference Include="Elsa.Connections.Persistence.EfCore.Sqlite" />
-		<PackageReference Include="Elsa.Email" />
-		<PackageReference Include="Elsa.Http.Webhooks" />
-		<PackageReference Include="Elsa.Persistence.EFCore" />
-		<PackageReference Include="Elsa.Persistence.EFCore.PostgreSql" />
-		<PackageReference Include="Elsa.Persistence.EFCore.SqlServer" />
-		<PackageReference Include="Elsa.Persistence.EFCore.MySql" />
-		<PackageReference Include="Elsa.Persistence.EFCore.Sqlite" />
-		<PackageReference Include="Elsa.Scheduling.Hangfire" />
-		<PackageReference Include="Elsa.Scheduling.Quartz" />
-		<PackageReference Include="Elsa.Scheduling.Quartz.EFCore.PostgreSql" />
-		<PackageReference Include="Elsa.Scheduling.Quartz.EFCore.SqlServer" />
-		<PackageReference Include="Elsa.Secrets.Persistence.EFCore.PostgreSql" />
-		<PackageReference Include="Elsa.ServiceBus.MassTransit" />
-		<PackageReference Include="Elsa.ServiceBus.MassTransit.AzureServiceBus" />
-		<PackageReference Include="Elsa.ServiceBus.MassTransit.RabbitMq" />
-		<PackageReference Include="Elsa.Workflows.Runtime.ProtoActor" />
-		<!---->
-
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
-		<PackageReference Include="Proto.Persistence.Sqlite" />
 	</ItemGroup>
 	
 	<ItemGroup>

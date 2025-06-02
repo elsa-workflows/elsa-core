@@ -1,8 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-// ReSharper disable once CheckNamespace
-namespace Elsa.Extensions;
+namespace Elsa.Api.Client.Extensions;
 
 /// <summary>
 /// Adds extension methods to <see cref="JsonSerializerOptions"/>.
