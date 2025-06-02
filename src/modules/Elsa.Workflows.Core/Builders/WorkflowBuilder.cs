@@ -6,8 +6,7 @@ using Elsa.Workflows.Models;
 namespace Elsa.Workflows.Builders;
 
 /// <inheritdoc />
-public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphService identityGraphService, IActivityRegistry activityRegistry, IIdentityGenerator identityGenerator)
-    : IWorkflowBuilder
+public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphService identityGraphService, IActivityRegistry activityRegistry, IIdentityGenerator identityGenerator) : IWorkflowBuilder
 {
     /// <inheritdoc />
     public string? Id { get; set; }
@@ -78,7 +77,7 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
         var variable = new Variable<T>(null!, default!);
         Variables.Add(variable);
         variable.WithWorkflowStorage();
-        variable.Id = null!; // This ensures that a deterministic ID is assigned by the builder.  
+        variable.Id = null!; // This ensures that a deterministic ID is assigned by the builder.
         return variable;
     }
 
@@ -215,7 +214,8 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
     }
 
     /// <inheritdoc />
-    public IWorkflowBuilder WithActivationStrategyType<T>() where T : IWorkflowActivationStrategy
+    public IWorkflowBuilder WithActivationStrategyType<T>()
+        where T : IWorkflowActivationStrategy
     {
         WorkflowOptions.ActivationStrategyType = typeof(T);
         return this;
