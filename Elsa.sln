@@ -264,6 +264,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scheduling", "scheduling", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scheduling", "src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj", "{26849C37-2ACA-4DDE-83CD-B87939465791}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Runtime.Distributed", "src\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj", "{42CE3E10-BC73-4D29-B099-88F0D5319E57}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -452,6 +454,10 @@ Global
 		{26849C37-2ACA-4DDE-83CD-B87939465791}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{26849C37-2ACA-4DDE-83CD-B87939465791}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{26849C37-2ACA-4DDE-83CD-B87939465791}.Release|Any CPU.Build.0 = Release|Any CPU
+		{42CE3E10-BC73-4D29-B099-88F0D5319E57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42CE3E10-BC73-4D29-B099-88F0D5319E57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42CE3E10-BC73-4D29-B099-88F0D5319E57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42CE3E10-BC73-4D29-B099-88F0D5319E57}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -530,6 +536,7 @@ Global
 		{0125BC8D-C837-414C-BB53-FCEA62E3060F} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
 		{7C038270-8BF7-4911-AC24-54D7BBE9BBF2} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{26849C37-2ACA-4DDE-83CD-B87939465791} = {7C038270-8BF7-4911-AC24-54D7BBE9BBF2}
+		{42CE3E10-BC73-4D29-B099-88F0D5319E57} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

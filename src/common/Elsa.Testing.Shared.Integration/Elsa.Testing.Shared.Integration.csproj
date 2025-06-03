@@ -17,6 +17,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Expressions.CSharp\Elsa.Expressions.CSharp.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Expressions.Liquid\Elsa.Expressions.Liquid.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
         <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />

@@ -35,6 +35,7 @@ public class TestApplicationBuilder
 
         _configureElsa += elsa => elsa
             .AddActivitiesFrom<WriteLine>()
+            .UseScheduling()
             .UseCSharp()
             .UseJavaScript()
             .UseLiquid()
