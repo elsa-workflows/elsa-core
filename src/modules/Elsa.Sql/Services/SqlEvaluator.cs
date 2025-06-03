@@ -85,7 +85,7 @@ public class SqlEvaluator() : ISqlEvaluator
             "LastResult" => expressionContext.GetLastResult(),
             var i when i.StartsWith("Input.") => executionContext.Input.TryGetValue(i.Substring(6), out var v) ? v : null,
             var o when o.StartsWith("Output.") => executionContext.Output.TryGetValue(o.Substring(7), out var v) ? v : null,
-            var v when v.StartsWith("Variables.") => executionContext.Variables.FirstOrDefault(x => x.Name == v.Substring(10), null)?.Value ?? null,
+            var v when v.StartsWith("Variable.") => expressionContext.GetVariableInScope(v.Substring(10)) ?? null,
             _ => throw new NullReferenceException($"No matching property found for {{{{{key}}}}}.")
         };
     }
