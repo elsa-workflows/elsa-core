@@ -20,10 +20,6 @@ public class MainWorkflow : WorkflowBase
                 new ExecuteWorkflow
                 {
                     WorkflowDefinitionId = new(SubroutineWorkflow.DefinitionId),
-                    Input = new(new Dictionary<string, object>
-                    {
-                        ["Value"] = 21
-                    }),
                     Result = new(workflowResult)
                 },
                 new WriteLine(context => $"Subroutine output: {JsonSerializer.Serialize(workflowResult.Get(context))}")
