@@ -86,6 +86,8 @@ public class SqlEvaluator() : ISqlEvaluator
             var i when i.StartsWith("Input.") => executionContext.Input.TryGetValue(i.Substring(6), out var v) ? v : null,
             var o when o.StartsWith("Output.") => executionContext.Output.TryGetValue(o.Substring(7), out var v) ? v : null,
             var v when v.StartsWith("Variable.") => expressionContext.GetVariableInScope(v.Substring(9)) ?? null,
+            // OBSOLETE: This is deprecated and will be removed in a future version. Use 'Variable.' instead.
+            var v when v.StartsWith("Variables.") => expressionContext.GetVariableInScope(v.Substring(10)) ?? null,
             _ => throw new NullReferenceException($"No matching property found for {{{{{key}}}}}.")
         };
     }
