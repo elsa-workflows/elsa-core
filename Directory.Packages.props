@@ -11,7 +11,7 @@
   <ItemGroup>
     <PackageVersion Include="Antlr4.Runtime.Standard" Version="4.13.1" />
     <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="8.0.1" />
-    <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
+    <PackageVersion Include="BenchmarkDotNet" Version="0.15.0" />
     <PackageVersion Include="Bogus" Version="35.6.3" />
     <PackageVersion Include="ConfigureAwait.Fody" Version="3.3.2" PrivateAssets="All" />
     <PackageVersion Include="Confluent.Kafka" Version="2.10.0" />
@@ -61,7 +61,7 @@
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.5" />
     <PackageVersion Include="Microsoft.Extensions.Resilience" Version="9.5.0" />
     <PackageVersion Include="Microsoft.Identity.Client" Version="4.71.1" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
@@ -79,19 +79,19 @@
     <PackageVersion Include="pythonnet" Version="3.1.0-preview2024-09-06" />
     <PackageVersion Include="Refit" Version="8.0.0" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0" />
-    <PackageVersion Include="Scrutor" Version="6.0.1" />
+    <PackageVersion Include="Scrutor" Version="6.1.0" />
     <PackageVersion Include="ShortGuid" Version="2.0.1" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageVersion Include="System.Data.SqlClient" Version="4.9.0" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
-    <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.6.4" />
+    <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.6.5" />
     <PackageVersion Include="System.Net.Http" Version="4.3.4" />
     <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
     <PackageVersion Include="System.Formats.Asn1" Version="9.0.5" />
     <PackageVersion Include="System.Text.Json" Version="9.0.5" />
     <PackageVersion Include="Testcontainers" Version="4.4.0" />
-    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.4.0" />
-    <PackageVersion Include="Testcontainers.RabbitMq" Version="4.4.0" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.5.0" />
+    <PackageVersion Include="Testcontainers.RabbitMq" Version="4.5.0" />
     <PackageVersion Include="Testcontainers.Redis" Version="4.4.0" />
     <PackageVersion Include="ThrottleDebounce" Version="2.0.1" />
     <PackageVersion Include="WebhooksCore" Version="0.0.1" />
