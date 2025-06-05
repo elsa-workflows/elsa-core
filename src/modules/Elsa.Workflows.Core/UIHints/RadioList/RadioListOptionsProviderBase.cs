@@ -34,7 +34,7 @@ public abstract class RadioListOptionsProviderBase : PropertyUIHandlerBase
     }
 
     /// <summary>
-    /// Implement this to provide items to the dropdown list.
+    /// Implement this to provide items to the radio list.
     /// </summary>
     protected abstract ValueTask<ICollection<RadioListItem>> GetItemsAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken);
 
