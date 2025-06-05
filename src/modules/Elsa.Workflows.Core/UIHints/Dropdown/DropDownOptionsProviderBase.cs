@@ -4,7 +4,8 @@ using Elsa.Extensions;
 namespace Elsa.Workflows.UIHints.Dropdown;
 
 /// <summary>
-/// 
+/// A base class for providing options to populate a dropdown UI component. This class is intended to be inherited to implement
+/// custom dropdown data logic by overriding the `GetItemsAsync` method.
 /// </summary>
 public abstract class DropDownOptionsProviderBase : IPropertyUIHandler
 {
