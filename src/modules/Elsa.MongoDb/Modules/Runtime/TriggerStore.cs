@@ -1,4 +1,6 @@
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.MongoDb.Common;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
@@ -6,6 +8,7 @@ using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
 using MongoDB.Driver.Linq;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.MongoDb.Modules.Runtime;
 
@@ -37,14 +40,16 @@ public class MongoTriggerStore(MongoDbStore<StoredTrigger> mongoDbStore) : ITrig
         return await mongoDbStore.FindManyAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken);
     }
 
-    public ValueTask<Page<StoredTrigger>> FindManyAsync(TriggerFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    public async ValueTask<Page<StoredTrigger>> FindManyAsync(TriggerFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return await FindManyAsync(filter, pageArgs, new StoredTriggerOrder<string>(x => x.Id, OrderDirection.Ascending), cancellationToken);
     }
 
     public async ValueTask<Page<StoredTrigger>> FindManyAsync<TProp>(TriggerFilter filter, PageArgs pageArgs, StoredTriggerOrder<TProp> order, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var count = await mongoDbStore.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
+        var results = await mongoDbStore.FindManyAsync(queryable => Paginate(Order(Filter(queryable, filter), order), pageArgs), cancellationToken).ToList();
+        return new(results, count);
     }
 
     /// <inheritdoc />
@@ -72,5 +77,15 @@ public class MongoTriggerStore(MongoDbStore<StoredTrigger> mongoDbStore) : ITrig
     private static IQueryable<StoredTrigger> Filter(IQueryable<StoredTrigger> queryable, TriggerFilter filter)
     {
         return filter.Apply(queryable);
+    }
+    
+    private IQueryable<StoredTrigger> Order<TOrderBy>(IQueryable<StoredTrigger> queryable, StoredTriggerOrder<TOrderBy> order)
+    {
+        return queryable.OrderBy(order);
+    }
+    
+    private IQueryable<StoredTrigger> Paginate(IQueryable<StoredTrigger> queryable, PageArgs pageArgs)
+    {
+        return queryable.Paginate(pageArgs);
     }
 }
