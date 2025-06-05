@@ -30,8 +30,7 @@ public class EFCoreActivityExecutionStore(
     ISafeSerializer safeSerializer,
     IPayloadSerializer payloadSerializer,
     ICompressionCodecResolver compressionCodecResolver,
-    IOptions<ManagementOptions> options,
-    ILogger<EFCoreActivityExecutionStore> logger) : IActivityExecutionStore
+    IOptions<ManagementOptions> options) : IActivityExecutionStore
 {
     /// <inheritdoc />
     public async Task SaveAsync(ActivityExecutionRecord record, CancellationToken cancellationToken = default) => await store.SaveAsync(record, OnSaveAsync, cancellationToken);
