@@ -1,4 +1,4 @@
-namespace Elsa.Api.Client.Shared.UIHints.RadioList;
+namespace Elsa.Workflows.UIHints.RadioList;
 
 public class RadioListProps
 {
