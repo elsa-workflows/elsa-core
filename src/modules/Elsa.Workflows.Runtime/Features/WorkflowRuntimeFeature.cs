@@ -98,6 +98,11 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     /// A factory that instantiates an <see cref="ITaskDispatcher"/>.
     /// </summary>
     public Func<IServiceProvider, ITaskDispatcher> RunTaskDispatcher { get; set; } = sp => sp.GetRequiredService<BackgroundTaskDispatcher>();
+    
+    /// <summary>
+    /// A factory that instantiates an <see cref="IDomainEventDispatcher"/>.
+    /// </summary>
+    public Func<IServiceProvider, IDomainEventDispatcher> DomainEventDispatcher { get; set; } = sp => sp.GetRequiredService<BackgroundDomainEventDispatcher>();
 
     /// <summary>
     /// A factory that instantiates an <see cref="IBackgroundActivityScheduler"/>.
@@ -245,6 +250,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped(StimulusDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)
             .AddScoped(RunTaskDispatcher)
+            .AddScoped(DomainEventDispatcher)
             .AddScoped(ActivityExecutionLogSink)
             .AddScoped(WorkflowExecutionLogSink)
             .AddSingleton(BackgroundActivityScheduler)
@@ -267,7 +273,9 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IBookmarkBoundWorkflowService, BookmarkBoundWorkflowService>()
             .AddScoped<ITaskReporter, TaskReporter>()
             .AddScoped<SynchronousTaskDispatcher>()
+            .AddScoped<SynchronousDomainEventDispatcher>()
             .AddScoped<BackgroundTaskDispatcher>()
+            .AddScoped<BackgroundDomainEventDispatcher>()
             .AddScoped<StoreActivityExecutionLogSink>()
             .AddScoped<StoreWorkflowExecutionLogSink>()
             .AddScoped<DispatchWorkflowCommandHandler>()
