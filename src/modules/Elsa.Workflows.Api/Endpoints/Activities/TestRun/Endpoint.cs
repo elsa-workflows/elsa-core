@@ -1,6 +1,10 @@
 using Elsa.Abstractions;
+using Elsa.Extensions;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Api.Endpoints.Activities.TestRun;
 
@@ -11,6 +15,7 @@ namespace Elsa.Workflows.Api.Endpoints.Activities.TestRun;
 internal class Endpoint(
     IWorkflowDefinitionService workflowDefinitionService,
     IActivityInvoker activityInvoker,
+    IActivityExecutionMapper activityExecutionMapper,
     IIdentityGenerator identityGenerator,
     IServiceProvider serviceProvider)
     : ElsaEndpoint<Request>
@@ -45,7 +50,18 @@ internal class Endpoint(
             return;
         }
 
-        await activityInvoker.InvokeAsync(workflowExecutionContext, activity);
+        var activityExecutionContext = await activityInvoker.InvokeAsync(workflowExecutionContext, activity);
+        var record = activityExecutionMapper.Map(activityExecutionContext);
+        var outcomes = record.Payload != null && record.Payload.TryGetValue("Outcomes", out var outcomesObj) ? outcomesObj as ICollection<string> : null;
+        var response = new Response
+        {
+            Outputs = record.Outputs,
+            Outcomes = outcomes,
+            Exception = record.Exception,
+            Status = record.Status
+        };
+        
+        await SendOkAsync(response, cancellationToken);
     }
 }
 
@@ -53,4 +69,12 @@ public class Request
 {
     public WorkflowDefinitionHandle WorkflowDefinitionHandle { get; set; } = null!;
     public ActivityHandle ActivityHandle { get; set; } = null!;
+}
+
+public class Response
+{
+    public IDictionary<string, object?>? Outputs { get; set; }
+    public ICollection<string>? Outcomes { get; set; }
+    public ExceptionState? Exception { get; set; }
+    public ActivityStatus Status { get; set; }
 }
