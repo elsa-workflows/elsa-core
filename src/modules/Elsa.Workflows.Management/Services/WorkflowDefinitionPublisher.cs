@@ -113,6 +113,7 @@ public class WorkflowDefinitionPublisher(
 
         // Save the newly published definition.
         definition.IsPublished = true;
+        definition.IsLatest = true;
         definition = Initialize(definition);
         await workflowDefinitionStore.SaveAsync(definition, cancellationToken);
 
