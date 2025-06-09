@@ -7,15 +7,19 @@ using Elsa.Workflows.State;
 namespace Elsa.Workflows.Api.Endpoints.Tests.Activities;
 
 /// <summary>
-/// This abstract class provides the necessary infrastructure to handle the execution of workflows, including setup of routes, permissions,
-/// and processing of HTTP requests to execute workflows.
+/// Represents an endpoint for testing activities in workflows. This endpoint is responsible for handling requests
+/// that test the execution of a specific activity in a workflow and returning the results.
 /// </summary>
+/// <remarks>
+/// This endpoint is used to perform operations such as:
+/// - Finding a workflow graph based on a provided workflow definition handle.
+/// - Locating and executing a specific activity within the workflow graph.
+/// - Capturing the execution results and returning them as a response.
+/// </remarks>
 internal class Endpoint(
     IWorkflowDefinitionService workflowDefinitionService,
     IActivityTestRunner activityTestRunner,
-    IActivityExecutionMapper activityExecutionMapper,
-    IIdentityGenerator identityGenerator,
-    IServiceProvider serviceProvider)
+    IActivityExecutionMapper activityExecutionMapper)
     : ElsaEndpoint<Request>
 {
     /// <inheritdoc />
