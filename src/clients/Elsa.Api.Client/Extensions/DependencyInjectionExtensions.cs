@@ -12,6 +12,7 @@ using Elsa.Api.Client.Resources.Resilience.Contracts;
 using Elsa.Api.Client.Resources.Scripting.Contracts;
 using Elsa.Api.Client.Resources.StorageDrivers.Contracts;
 using Elsa.Api.Client.Resources.Tasks.Contracts;
+using Elsa.Api.Client.Resources.Tests;
 using Elsa.Api.Client.Resources.VariableTypes.Contracts;
 using Elsa.Api.Client.Resources.WorkflowActivationStrategies.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
@@ -86,6 +87,7 @@ public static class DependencyInjectionExtensions
             services.AddApi<IWorkflowContextProviderDescriptorsApi>(builderOptions);
             services.AddApi<IAlterationsApi>(builderOptions);
             services.AddApi<ITasksApi>(builderOptions);
+            services.AddApi<ITestsApi>(builderOptions);
         });
     }
 
