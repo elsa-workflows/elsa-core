@@ -31,7 +31,6 @@ public class WorkflowDefinitionHandle
     /// Creates a new <see cref="WorkflowDefinitionHandle"/> instance with the specified definition version ID.
     /// </summary>
     /// <param name="definitionVersionId"></param>
-    /// <returns></returns>
     public static WorkflowDefinitionHandle ByDefinitionVersionId(string definitionVersionId) => new() { DefinitionVersionId = definitionVersionId };
 
     /// <inheritdoc />
