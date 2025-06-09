@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Api.Endpoints.Tests.Activities;
 /// </summary>
 internal class Endpoint(
     IWorkflowDefinitionService workflowDefinitionService,
-    IActivityInvoker activityInvoker,
+    IActivityTestRunner activityTestRunner,
     IActivityExecutionMapper activityExecutionMapper,
     IIdentityGenerator identityGenerator,
     IServiceProvider serviceProvider)
@@ -37,9 +37,7 @@ internal class Endpoint(
             return;
         }
         
-        var workflowInstanceId = identityGenerator.GenerateId();
-        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(serviceProvider, workflowGraph, workflowInstanceId, cancellationToken: cancellationToken);
-        var activity = workflowExecutionContext.FindActivity(request.ActivityHandle);
+        var activity = workflowGraph.FindActivity(request.ActivityHandle);
 
         if (activity == null)
         {
@@ -48,7 +46,7 @@ internal class Endpoint(
             return;
         }
 
-        var activityExecutionContext = await activityInvoker.InvokeAsync(workflowExecutionContext, activity);
+        var activityExecutionContext = await activityTestRunner.RunAsync(workflowGraph, activity, cancellationToken);
         var record = activityExecutionMapper.Map(activityExecutionContext);
         var outcomes = record.Payload != null && record.Payload.TryGetValue("Outcomes", out var outcomesObj) ? outcomesObj as ICollection<string> : null;
         var response = new Response

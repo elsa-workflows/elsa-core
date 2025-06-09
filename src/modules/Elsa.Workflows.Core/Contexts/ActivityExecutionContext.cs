@@ -232,7 +232,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// Returns the global node ID for the current activity within the graph.
     /// </summary>
-    /// <remarks>As of tool version 3.0, all activity Ids are already unique, so there's no need to construct a hierarchical ID</remarks>
+    /// <remarks>As of tool version 3.0, all activity IDs are already unique, so there's no need to construct a hierarchical ID</remarks>
     public string NodeId => ActivityNode.NodeId;
 
     public ISet<ActivityExecutionContext> Children { get; } = new HashSet<ActivityExecutionContext>();
