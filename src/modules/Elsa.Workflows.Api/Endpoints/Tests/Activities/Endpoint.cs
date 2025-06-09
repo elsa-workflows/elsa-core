@@ -1,12 +1,10 @@
 using Elsa.Abstractions;
-using Elsa.Extensions;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Api.Endpoints.Activities.TestRun;
+namespace Elsa.Workflows.Api.Endpoints.Tests.Activities;
 
 /// <summary>
 /// This abstract class provides the necessary infrastructure to handle the execution of workflows, including setup of routes, permissions,
@@ -23,8 +21,8 @@ internal class Endpoint(
     /// <inheritdoc />
     public override void Configure()
     {
-        Post("/activities/test-run");
-        ConfigurePermissions("exec:activities");
+        Post("/tests/activities");
+        ConfigurePermissions("exec:tests");
     }
 
     /// <inheritdoc />

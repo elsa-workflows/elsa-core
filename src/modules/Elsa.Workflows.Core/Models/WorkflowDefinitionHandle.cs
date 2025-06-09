@@ -25,7 +25,7 @@ public class WorkflowDefinitionHandle
     /// <summary>
     /// Creates a new <see cref="WorkflowDefinitionHandle"/> instance with the specified definition ID and version options.
     /// </summary>
-    public static WorkflowDefinitionHandle ByDefinitionId(string definitionId, VersionOptions? versionOptions = default) => new() { DefinitionId = definitionId, VersionOptions = versionOptions };
+    public static WorkflowDefinitionHandle ByDefinitionId(string definitionId, VersionOptions? versionOptions = null) => new() { DefinitionId = definitionId, VersionOptions = versionOptions };
     
     /// <summary>
     /// Creates a new <see cref="WorkflowDefinitionHandle"/> instance with the specified definition version ID.
