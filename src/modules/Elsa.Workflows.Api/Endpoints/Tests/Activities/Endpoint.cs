@@ -48,11 +48,13 @@ internal class Endpoint(
 
         var activityExecutionContext = await activityTestRunner.RunAsync(workflowGraph, activity, cancellationToken);
         var record = activityExecutionMapper.Map(activityExecutionContext);
-        var outcomes = record.Payload != null && record.Payload.TryGetValue("Outcomes", out var outcomesObj) ? outcomesObj as ICollection<string> : null;
+        var activityState = record.ActivityState ?? new Dictionary<string, object?>(); 
+
         var response = new Response
         {
+            ActivityState = activityState,
             Outputs = record.Outputs,
-            Outcomes = outcomes,
+            Payload = record.Payload,
             Exception = record.Exception,
             Status = record.Status
         };
@@ -69,8 +71,9 @@ public class Request
 
 public class Response
 {
+    public IDictionary<string, object?> ActivityState { get; set; } = null!;
     public IDictionary<string, object?>? Outputs { get; set; }
-    public ICollection<string>? Outcomes { get; set; }
+    public IDictionary<string, object>? Payload { get; set; }
     public ExceptionState? Exception { get; set; }
     public ActivityStatus Status { get; set; }
 }
