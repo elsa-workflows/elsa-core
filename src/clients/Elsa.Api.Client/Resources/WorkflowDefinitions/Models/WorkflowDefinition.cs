@@ -11,7 +11,7 @@ public class WorkflowDefinition : LinkedEntity
     /// <summary>
     /// The logical ID of the workflow. This ID is the same across versions. 
     /// </summary>
-    public string DefinitionId { get; set; } = default!;
+    public string DefinitionId { get; set; } = null!;
 
     /// <summary>
     /// The name of the workflow.
@@ -66,7 +66,7 @@ public class WorkflowDefinition : LinkedEntity
     /// <summary>
     /// The name of the workflow materializer to interpret the <c>StringData</c> or <c>BinaryData</c>.
     /// </summary>
-    public string MaterializerName { get; set; } = default!;
+    public string MaterializerName { get; set; } = null!;
 
     /// <summary>
     /// Provider-specific data.
@@ -76,7 +76,7 @@ public class WorkflowDefinition : LinkedEntity
     /// <summary>
     /// The root activity of the workflow.
     /// </summary>
-    public JsonObject Root { get; set; } = default!;
+    public JsonObject Root { get; set; } = null!;
 
     /// <summary>
     /// An option to use the workflow as a readonly workflow.
