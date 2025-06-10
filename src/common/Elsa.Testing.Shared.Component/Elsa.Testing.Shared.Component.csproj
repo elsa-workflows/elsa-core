@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -14,14 +14,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\modules\Elsa.Expressions.CSharp\Elsa.Expressions.CSharp.csproj" />
+
+        <ProjectReference Include="..\..\modules\Elsa.Expressions.Liquid\Elsa.Expressions.Liquid.csproj" />
         <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\clients\Elsa.Api.Client\Elsa.Api.Client.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.CSharp\Elsa.CSharp.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Tenants\Elsa.Tenants.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
         <ProjectReference Include="..\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
     </ItemGroup>
 
