@@ -141,11 +141,13 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
                 return null;
 
             var properties = activityExecutionContextState.Properties;
+            var metadata = activityExecutionContextState.Metadata;
             var activityExecutionContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(activity);
             activityExecutionContext.Id = activityExecutionContextState.Id;
             activityExecutionContext.Properties.Merge(properties);
-
-            if (activityExecutionContextState.ActivityState != null)
+            activityExecutionContext.Metadata.Merge(metadata);
+            
+            if(activityExecutionContextState.ActivityState != null)
                 activityExecutionContext.ActivityState.Merge(activityExecutionContextState.ActivityState);
 
             activityExecutionContext.TransitionTo(activityExecutionContextState.Status);
@@ -237,6 +239,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
                 ScheduledActivityNodeId = activityExecutionContext.NodeId,
                 OwnerActivityNodeId = activityExecutionContext.ParentActivityExecutionContext?.NodeId,
                 Properties = activityExecutionContext.Properties,
+                Metadata = activityExecutionContext.Metadata,
                 ActivityState = activityExecutionContext.ActivityState,
                 Status = activityExecutionContext.Status,
                 IsExecuting = activityExecutionContext.IsExecuting,

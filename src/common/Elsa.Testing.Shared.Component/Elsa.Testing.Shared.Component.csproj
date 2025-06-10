@@ -15,7 +15,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\modules\Elsa.Expressions.CSharp\Elsa.Expressions.CSharp.csproj" />
-
+        <ProjectReference Include="..\..\modules\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Expressions.Liquid\Elsa.Expressions.Liquid.csproj" />
         <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\clients\Elsa.Api.Client\Elsa.Api.Client.csproj" />

@@ -15,12 +15,12 @@ namespace Elsa.Workflows.Activities;
 public class NotFoundActivity : CodeActivity
 {
     /// <inheritdoc />
-    public NotFoundActivity([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public NotFoundActivity([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public NotFoundActivity(string missingTypeName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public NotFoundActivity(string missingTypeName, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         MissingTypeName = missingTypeName;
     }
@@ -28,7 +28,7 @@ public class NotFoundActivity : CodeActivity
     /// <summary>
     /// The type name of the missing activity type.
     /// </summary>
-    public string MissingTypeName { get; set; } = default!;
+    public string MissingTypeName { get; set; } = null!;
     
     /// <summary>
     /// The version of the missing activity type.
@@ -38,7 +38,7 @@ public class NotFoundActivity : CodeActivity
     /// <summary>
     /// The original activity JSON.
     /// </summary>
-    public string OriginalActivityJson { get; set; } = default!;
+    public string OriginalActivityJson { get; set; } = null!;
 
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)

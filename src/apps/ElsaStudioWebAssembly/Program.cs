@@ -7,6 +7,7 @@ using Elsa.Studio.Contracts;
 using Elsa.Studio.Core.BlazorWasm.Extensions;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Login.BlazorWasm.Extensions;
+using Elsa.Studio.Login.Extensions;
 using Elsa.Studio.Login.HttpMessageHandlers;
 using Elsa.Studio.Models;
 using Elsa.Studio.Options;
@@ -35,9 +36,9 @@ builder.Services.AddCore();
 builder.Services.AddShell();
 builder.Services.AddRemoteBackend(backendApiConfig);
 builder.Services.AddLoginModule();
+builder.Services.UseElsaIdentity();
 builder.Services.AddDashboardModule();
 builder.Services.AddWorkflowsModule();
-builder.Services.AddAgentsModule(backendApiConfig);
 
 // Build the application.
 var app = builder.Build();

@@ -22,7 +22,7 @@ public interface IScheduler
     /// <param name="schedule">The schedule to use.</param>
     /// <param name="keys">A list of keys to associate with the task.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    ValueTask ScheduleAsync(string name, ITask task, ISchedule schedule, IEnumerable<string>? keys = default, CancellationToken cancellationToken = default);
+    ValueTask ScheduleAsync(string name, ITask task, ISchedule schedule, IEnumerable<string>? keys = null, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Unschedules the task with the specified name.

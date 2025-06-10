@@ -29,7 +29,7 @@ public static class ModuleExtensions
     /// <param name="module">The module.</param>
     /// <param name="configure">The configuration delegate.</param>
     /// <returns>The module.</returns>
-    public static IModule UseFluentStorageProvider(this IModule module, Action<BlobStorageFeature>? configure = default)
+    public static IModule UseFluentStorageProvider(this IModule module, Action<BlobStorageFeature>? configure = null)
     {
         module.Use(configure);
         return module;

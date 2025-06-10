@@ -32,8 +32,8 @@ public class ObsoleteConnectionJsonConverter : JsonConverter<ObsoleteConnection>
         var sourcePort = doc.RootElement.GetProperty("sourcePort").GetString()!;
         var targetPort = doc.RootElement.GetProperty("targetPort").GetString()!;
 
-        var source = _activities.TryGetValue(sourceId, out var s) ? s : default!;
-        var target = _activities.TryGetValue(targetId, out var t) ? t : default!;
+        var source = _activities.TryGetValue(sourceId, out var s) ? s : null!;
+        var target = _activities.TryGetValue(targetId, out var t) ? t : null!;
 
         return new ObsoleteConnection(source, target, sourcePort, targetPort);
     }

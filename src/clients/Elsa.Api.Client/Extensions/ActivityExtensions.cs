@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using Elsa.Api.Client.Resources.ResilienceStrategies.Models;
+using Elsa.Api.Client.Resources.Resilience.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Shared.Enums;
 using Elsa.Api.Client.Shared.Models;

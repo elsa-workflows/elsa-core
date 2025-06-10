@@ -1,5 +1,4 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Signals;
 using JetBrains.Annotations;
 
@@ -31,7 +30,7 @@ public class ScheduledChildCallbackBehavior : Behavior
             completedContext.TargetContext.Tag = tag;
             
             var mediator = activityExecutionContext.GetRequiredService<IMediator>();
-            var invokingActivityCallbackNotification = new InvokingActivityCallback(activityExecutionContext, childActivityExecutionContext);
+            var invokingActivityCallbackNotification = new Notifications.InvokingActivityCallback(activityExecutionContext, childActivityExecutionContext);
             await mediator.SendAsync(invokingActivityCallbackNotification, context.CancellationToken);
             
             await callbackEntry.CompletionCallback(completedContext);

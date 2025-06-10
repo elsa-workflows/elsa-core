@@ -1,5 +1,8 @@
 namespace Elsa.Api.Client.Shared.UIHints.CheckList;
 
+/// <summary>
+/// Represents an item in a <see cref="CheckList"/>.
+/// </summary>
 public class CheckListItem
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.

@@ -7,7 +7,7 @@ public class ScheduleNewWorkflowInstanceRequest
     /// <summary>
     /// The ID of the workflow definition version to create an instance of.
     /// </summary>
-    public WorkflowDefinitionHandle WorkflowDefinitionHandle { get; set; } = default!;
+    public WorkflowDefinitionHandle WorkflowDefinitionHandle { get; set; } = null!;
 
     /// <summary>
     /// The correlation ID of the workflow, if any.

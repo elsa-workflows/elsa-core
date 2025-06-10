@@ -15,7 +15,7 @@ public static class ModuleExtensions
     /// <param name="module">The module.</param>
     /// <param name="configure">A delegate to configure the feature.</param>
     /// <returns>The module.</returns>
-    public static IModule UseScheduling(this IModule module, Action<SchedulingFeature>? configure = default )
+    public static IModule UseScheduling(this IModule module, Action<SchedulingFeature>? configure = null )
     {
         module.Configure(configure);
         return module;

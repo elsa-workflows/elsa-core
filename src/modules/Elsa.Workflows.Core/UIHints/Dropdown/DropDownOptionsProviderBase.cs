@@ -4,17 +4,22 @@ using Elsa.Extensions;
 namespace Elsa.Workflows.UIHints.Dropdown;
 
 /// <summary>
-/// 
+/// A base class for providing options to populate a dropdown UI component. This class is intended to be inherited to implement
+/// custom dropdown data logic by overriding the `GetItemsAsync` method.
 /// </summary>
 public abstract class DropDownOptionsProviderBase : IPropertyUIHandler
 {
+    protected virtual bool RefreshOnChange => false;
+
+    public float Priority { get; }
+
     /// <inheritdoc />
-    public async ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
+    public virtual async ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
     {
         var selectListItems = await GetItemsAsync(propertyInfo, context, cancellationToken);
         var props = new DropDownProps
         {
-            SelectList = new SelectList(selectListItems)
+            SelectList = new(selectListItems)
         };
 
         var options = new Dictionary<string, object>
@@ -38,6 +43,8 @@ public abstract class DropDownOptionsProviderBase : IPropertyUIHandler
     /// <returns></returns>
     protected virtual IDictionary<string, object> GetUIPropertyAdditionalOptions()
     {
-        return new Dictionary<String, object>();
+        var options = new Dictionary<string, object>();
+        if (RefreshOnChange) options["Refresh"] = true;
+        return options;
     }
 }

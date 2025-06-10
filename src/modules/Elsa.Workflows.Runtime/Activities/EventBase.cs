@@ -36,6 +36,7 @@ public abstract class EventBase<TResult> : Trigger<TResult>
     {
         var input = (TResult?)context.GetEventInput();
         Result.Set(context, input);
+        await OnEventReceivedAsync(context, input);
         await context.CompleteActivityAsync();
     }
 }

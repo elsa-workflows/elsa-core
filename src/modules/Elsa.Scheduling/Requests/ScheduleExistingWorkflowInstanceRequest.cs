@@ -7,7 +7,7 @@ public class ScheduleExistingWorkflowInstanceRequest
     /// <summary>
     /// The ID of the workflow instance.
     /// </summary>
-    public string WorkflowInstanceId { get; set; } = default!;
+    public string WorkflowInstanceId { get; set; } = null!;
 
     /// <summary>
     /// The ID of the bookmark that triggered the workflow instance, if any.

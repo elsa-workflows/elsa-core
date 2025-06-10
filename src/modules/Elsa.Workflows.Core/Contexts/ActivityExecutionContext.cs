@@ -42,6 +42,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     {
         _systemClock = systemClock;
         Properties = new ChangeTrackingDictionary<string, object>(Taint);
+        Metadata = new ChangeTrackingDictionary<string, object>(Taint);
         ActivityState = new ChangeTrackingDictionary<string, object>(Taint);
         ActivityInput = new ChangeTrackingDictionary<string, object>(Taint);
         WorkflowExecutionContext = workflowExecutionContext;
@@ -217,6 +218,11 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// These properties only exist while the activity executes and are not persisted. 
     /// </summary>
     public IDictionary<object, object> TransientProperties { get; set; } = new Dictionary<object, object>();
+    
+    /// <summary>
+    /// A dictionary of metadata about this execution. In contrast to <see cref="Properties"/>, this metadata is never pruned and must be kept lightweight.
+    /// </summary>
+    public IDictionary<string, object> Metadata { get; private set; }
 
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> metadata about the current activity.
@@ -593,6 +599,47 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// </summary>
     /// <param name="key">The property key.</param>
     public void RemoveProperty(string key) => Properties.Remove(key);
+    
+    /// <summary>
+    /// Returns a metadata value associated with the current activity context. 
+    /// </summary>
+    public T? GetMetadata<T>(string key) => Metadata.TryGetValue<T?>(key, out var value) ? value : default;
+
+    /// <summary>
+    /// Returns a metadata value associated with the current activity context. 
+    /// </summary>
+    public T GetMetadata<T>(string key, Func<T> defaultValue)
+    {
+        if (Metadata.TryGetValue<T?>(key, out var value))
+            return value!;
+
+        value = defaultValue();
+        Metadata[key] = value!;
+
+        return value!;
+    }
+
+    /// <summary>
+    /// Stores a metadata value associated with the current activity context. 
+    /// </summary>
+    public void SetMetadata<T>(string key, T? value) => Metadata[key] = value!;
+
+    /// <summary>
+    /// Updates a metadata value associated with the current activity context. 
+    /// </summary>
+    public T UpdateMetadata<T>(string key, Func<T?, T> updater) where T : notnull
+    {
+        var value = GetMetadata<T?>(key);
+        value = updater(value);
+        Metadata[key] = value;
+        return value;
+    }
+
+    /// <summary>
+    /// Removes a metadata value associated with the current activity context.
+    /// </summary>
+    /// <param name="key">The metadata key.</param>
+    public void RemoveMetadata(string key) => Metadata.Remove(key);
 
     /// <summary>
     /// Resolves a required service using the service provider.

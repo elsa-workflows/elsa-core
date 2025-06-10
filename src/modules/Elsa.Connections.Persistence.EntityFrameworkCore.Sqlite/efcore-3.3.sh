@@ -1,1 +1,0 @@
-ef-migration-runtime-schema --interface Elsa.EntityFrameworkCore.IElsaDbContextSchema --efOptions "migrations add V3_3 -c ConnectionDbContext -o Migrations"

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -7,12 +7,11 @@
         <PackageTags>elsa module security sas tokens</PackageTags>
     </PropertyGroup>
 
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+	
     <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+      <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
     </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
-    </ItemGroup>
-
 </Project>

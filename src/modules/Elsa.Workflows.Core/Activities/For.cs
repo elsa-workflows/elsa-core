@@ -18,13 +18,13 @@ public class For : Activity
     private const string CurrentStepProperty = "CurrentStep";
 
     /// <inheritdoc />
-    public For([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public For([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         Behaviors.Add<BreakBehavior>(this);
     }
 
     /// <inheritdoc />
-    public For(int start, int end, int step, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public For(int start, int end, int step, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
         Start = new Input<int>(start);
         End = new Input<int>(end);
@@ -52,7 +52,7 @@ public class For : Activity
     /// <summary>
     /// Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default.
     /// </summary>
-    [Input(Description = "Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default.")]
+    [Input(Description = "Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default.", DefaultValue = true)]
     public Input<bool> OuterBoundInclusive { get; set; } = new(true);
 
     /// <summary>

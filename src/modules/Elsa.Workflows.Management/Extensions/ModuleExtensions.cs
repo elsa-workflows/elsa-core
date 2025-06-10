@@ -43,15 +43,6 @@ public static class ModuleExtensions
     }
 
     /// <summary>
-    /// Adds the Elsa DSL integration feature.
-    /// </summary>
-    public static WorkflowManagementFeature UseDslIntegration(this WorkflowManagementFeature feature, Action<DslIntegrationFeature>? configure = null)
-    {
-        feature.Module.Configure(configure);
-        return feature;
-    }
-
-    /// <summary>
     /// Adds all types implementing <see cref="IActivity"/> to the system.
     /// </summary>
     public static IModule AddActivitiesFrom<TMarkerType>(this IModule module) => module.UseWorkflowManagement(management => management.AddActivitiesFrom<TMarkerType>());

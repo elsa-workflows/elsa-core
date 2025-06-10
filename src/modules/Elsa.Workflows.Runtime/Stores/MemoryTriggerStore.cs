@@ -1,6 +1,10 @@
+using Elsa.Common.Entities;
+using Elsa.Common.Models;
 using Elsa.Common.Services;
+using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Stores;
@@ -46,7 +50,19 @@ public class MemoryTriggerStore : ITriggerStore
         var entities = _store.Query(filter.Apply);
         return new(entities);
     }
-    
+
+    public ValueTask<Page<StoredTrigger>> FindManyAsync(TriggerFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        return FindManyAsync(filter, pageArgs, new StoredTriggerOrder<string>(x => x.Id, OrderDirection.Ascending), cancellationToken);
+    }
+
+    public ValueTask<Page<StoredTrigger>> FindManyAsync<TOrderBy>(TriggerFilter filter, PageArgs pageArgs, StoredTriggerOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var count = _store.Query(filter.Apply).LongCount();
+        var result = _store.Query(query => filter.Apply(query).OrderBy(order).Paginate(pageArgs)).ToList();
+        return ValueTask.FromResult(Page.Of(result, count));
+    }
+
     /// <inheritdoc />
     public ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {

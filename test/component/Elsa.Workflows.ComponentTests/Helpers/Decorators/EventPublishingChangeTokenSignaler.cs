@@ -1,7 +1,6 @@
 using Elsa.Caching;
-using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Services;
-using Hangfire.Annotations;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Workflows.ComponentTests.Decorators;
@@ -20,7 +19,7 @@ public class EventPublishingChangeTokenSignaler(IChangeTokenSignaler decoratedSe
 
     public ValueTask TriggerTokenAsync(string key, CancellationToken cancellationToken = default)
     {
-        triggerChangeTokenSignalEvents.RaiseChangeTokenSignalTriggered(new TriggerChangeTokenSignalEventArgs(key));
+        triggerChangeTokenSignalEvents.RaiseChangeTokenSignalTriggered(new(key));
         return decoratedService.TriggerTokenAsync(key, cancellationToken);
     }
 }

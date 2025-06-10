@@ -13,7 +13,7 @@ public class FlowNode : Activity
 {
     
     /// <inheritdoc />
-    public FlowNode([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public FlowNode([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
     

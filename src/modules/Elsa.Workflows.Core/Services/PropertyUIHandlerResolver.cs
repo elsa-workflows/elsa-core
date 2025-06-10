@@ -39,15 +39,15 @@ public class PropertyUIHandlerResolver(IServiceScopeFactory scopeFactory) : IPro
             }
         }
 
-        var propertyUIHandlers = scope.ServiceProvider.GetServices<IPropertyUIHandler>().ToList();
-        foreach (var handlerType in uiHandlers)
+        // Handlers are sorted by priority so that those with higher priority are processed last. 
+        // This allows them to override any existing property values set by lower-priority handlers.
+        // For example, a default UI hint handler might provide dropdown options, but a custom module can supply its own handler with a higher priority to override these defaults.
+        var availablePropertyUIHandlers = scope.ServiceProvider.GetServices<IPropertyUIHandler>().OrderBy(x => x.Priority).ToList();
+        var matchedPropertyHandlers = availablePropertyUIHandlers.Where(x => uiHandlers.Contains(x.GetType())).OrderBy(x => x.Priority).ToList();
+        
+        foreach (var handler in matchedPropertyHandlers)
         {
-            var provider = propertyUIHandlers.FirstOrDefault(x => x.GetType() == handlerType);
-
-            if (provider == null)
-                continue;
-
-            var properties = await provider.GetUIPropertiesAsync(propertyInfo, context, cancellationToken);
+            var properties = await handler.GetUIPropertiesAsync(propertyInfo, context, cancellationToken);
 
             foreach (var property in properties)
                 result[property.Key] = property.Value;
