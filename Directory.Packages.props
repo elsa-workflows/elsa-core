@@ -8,7 +8,7 @@
         <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations" Version="0.5.1"/>
         <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.MySql" Version="0.5.1"/>
         <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL" Version="0.5.1"/>
-        <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SQLServer" Version="0.5.1"/>
+        <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SqlServer" Version="0.5.1"/>
         <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite" Version="0.5.1"/>
         <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="9.0.0"/>
         <PackageVersion Include="AutoMapper" Version="14.0.0" PrivateAssets="All"/>
