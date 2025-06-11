@@ -10,8 +10,8 @@ public class MemorySecretStore(MemoryStore<Secret> memoryStore) : ISecretStore
 {
     public Task<Page<Secret>> FindManyAsync<TOrderBy>(SecretFilter filter, SecretOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = memoryStore.Query(query => Filter(query, filter).OrderBy(order)).LongCount();
-        var result = memoryStore.Query(query => Filter(query, filter).Paginate(pageArgs)).ToList();
+        var count = memoryStore.Query(query => Filter(query, filter)).LongCount();
+        var result = memoryStore.Query(query => Filter(query, filter).OrderBy(order).Paginate(pageArgs)).ToList();
         return Task.FromResult(Page.Of(result, count));
     }
 
