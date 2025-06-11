@@ -162,9 +162,9 @@
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="9.23.80"/>
         <PackageVersion Include="Refit" Version="8.0.0"/>
         <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0"/>
-        <PackageVersion Include="xunit" Version="2.9.3"/>
         <PackageVersion Include="xunit.abstractions" Version="2.0.3"/>
         <PackageVersion Include="xunit.extensibility.core" Version="2.9.3"/>
         <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.1"/>
+        <PackageVersion Include="xunit" Version="2.9.3"/>
     </ItemGroup>
 </Project>
