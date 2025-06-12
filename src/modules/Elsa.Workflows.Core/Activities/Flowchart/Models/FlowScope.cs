@@ -12,6 +12,14 @@ public class FlowScope
     {
     }
 
+    /// <summary>
+    /// Obsolete property maintained for backward compatibility with MongoDB serialization from v3.3.5.
+    /// This property is ignored in JSON serialization and should not be used in new code.
+    /// </summary>
+    [Obsolete("This property is maintained for backward compatibility only. Do not use in new code.")]
+    [JsonIgnore]
+    public string? OwnerActivityId { get; set; }
+
     [JsonInclude]
     private Dictionary<string, long> ActivitiesVisitCount { get; init; } = new();
 
