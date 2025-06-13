@@ -5,7 +5,8 @@
   </PropertyGroup>
   <PropertyGroup>
     <ElsaStudioVersion>3.6.0-preview.1087</ElsaStudioVersion>
-    <Microsoft>9.0.6</Microsoft>
+    <MicrosoftVersion>9.0.6</MicrosoftVersion>
+    <ResilienceVersion>9.6.0</ResilienceVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Elsa.Studio" Version="$(ElsaStudioVersion)" />
@@ -38,32 +39,32 @@
     <PackageVersion Include="Jint" Version="4.2.2" />
     <PackageVersion Include="LinqKit.Core" Version="1.2.8" />
     <PackageVersion Include="MassTransit.RabbitMQ" Version="8.4.1" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(Microsoft)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(MicrosoftVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.14.0" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyModel" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.6.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(Microsoft)" />
-    <PackageVersion Include="Microsoft.Extensions.Resilience" Version="9.5.0" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyModel" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(ResilienceVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Resilience" Version="$(ResilienceVersion)" />
     <PackageVersion Include="Microsoft.Identity.Client" Version="4.71.1" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
@@ -91,8 +92,8 @@
     <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.6.5" />
     <PackageVersion Include="System.Net.Http" Version="4.3.4" />
     <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
-    <PackageVersion Include="System.Formats.Asn1" Version="$(Microsoft)" />
-    <PackageVersion Include="System.Text.Json" Version="$(Microsoft)" />
+    <PackageVersion Include="System.Formats.Asn1" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="System.Text.Json" Version="$(MicrosoftVersion)" />
     <PackageVersion Include="Testcontainers" Version="4.4.0" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.5.0" />
     <PackageVersion Include="Testcontainers.RabbitMq" Version="4.5.0" />
