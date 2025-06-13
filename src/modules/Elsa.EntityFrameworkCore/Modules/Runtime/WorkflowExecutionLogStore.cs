@@ -52,8 +52,8 @@ public class EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, W
     /// <inheritdoc />
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(x => x.Timestamp), cancellationToken).LongCount();
-        var results = await store.QueryAsync(queryable => Filter(queryable, filter).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
+        var count = await store.QueryAsync(queryable => Filter(queryable, filter), cancellationToken).LongCount();
+        var results = await store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(x => x.Timestamp).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
         return new(results, count);
     }
 
