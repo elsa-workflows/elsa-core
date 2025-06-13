@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using Elsa.Mediator.Middleware.Command;
 
 namespace Elsa.Mediator.Contracts;
 
@@ -10,10 +11,10 @@ public interface ICommandsChannel
     /// <summary>
     /// Gets the writer for the commands queue.
     /// </summary>
-    ChannelWriter<ICommand> Writer { get; }
+    ChannelWriter<CommandContext> Writer { get; }
     
     /// <summary>
     /// Gets the reader for the commands queue.
     /// </summary>
-    ChannelReader<ICommand> Reader { get; }
+    ChannelReader<CommandContext> Reader { get; }
 }

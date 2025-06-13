@@ -1,5 +1,7 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
+using Elsa.Tenants.Mediator;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
@@ -9,18 +11,8 @@ namespace Elsa.Workflows.Runtime;
 /// <summary>
 /// A simple implementation that queues the specified request for workflow execution on a non-durable background worker.
 /// </summary>
-public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
+public class BackgroundWorkflowDispatcher(ICommandSender commandSender, ITenantAccessor tenantAccessor) : IWorkflowDispatcher
 {
-    private readonly ICommandSender _commandSender;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public BackgroundWorkflowDispatcher(ICommandSender commandSender)
-    {
-        _commandSender = commandSender;
-    }
-
     /// <inheritdoc />
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
@@ -32,8 +24,8 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
             InstanceId = request.InstanceId,
             TriggerActivityId = request.TriggerActivityId
         };
-
-        await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
+        
+        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
 
@@ -47,7 +39,7 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
             Properties = request.Properties,
             CorrelationId = request.CorrelationId};
 
-        await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
+        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
 
@@ -62,7 +54,7 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
             Input = request.Input,
             Properties = request.Properties
         };
-        await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
+        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
 
@@ -76,7 +68,12 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
             ActivityInstanceId = request.ActivityInstanceId,
             Input = request.Input
         };
-        await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
+        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), cancellationToken);
         return DispatchWorkflowResponse.Success();
+    }
+    
+    private IDictionary<object, object> CreateHeaders()
+    {
+        return TenantHeaders.CreateHeaders(tenantAccessor.Tenant?.Id);
     }
 }

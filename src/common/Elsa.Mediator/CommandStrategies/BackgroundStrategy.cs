@@ -13,7 +13,7 @@ public class BackgroundStrategy : ICommandStrategy
     public async Task<TResult> ExecuteAsync<TResult>(CommandStrategyContext context)
     {
         var commandsChannel = context.ServiceProvider.GetRequiredService<ICommandsChannel>();
-        await commandsChannel.Writer.WriteAsync(context.Command, context.CancellationToken);
+        await commandsChannel.Writer.WriteAsync(context.CommandContext, context.CancellationToken);
         return default!;
     }
 }

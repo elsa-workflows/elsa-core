@@ -36,9 +36,9 @@ public static class DependencyInjectionExtensions
                 .AddScoped<IRequestSender>(sp => sp.GetRequiredService<IMediator>())
                 .AddScoped<ICommandSender>(sp => sp.GetRequiredService<IMediator>())
                 .AddScoped<INotificationSender>(sp => sp.GetRequiredService<IMediator>())
-                .AddScoped<IRequestPipeline, RequestPipeline>()
-                .AddScoped<ICommandPipeline, CommandPipeline>()
-                .AddScoped<INotificationPipeline, NotificationPipeline>()
+                .AddSingleton<IRequestPipeline, RequestPipeline>()
+                .AddSingleton<ICommandPipeline, CommandPipeline>()
+                .AddSingleton<INotificationPipeline, NotificationPipeline>()
             ;
     }
 

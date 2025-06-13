@@ -5,28 +5,29 @@ namespace Elsa.Mediator.Middleware.Command;
 /// <inheritdoc />
 public class CommandPipeline : ICommandPipeline
 {
-    private readonly IServiceProvider _serviceProvider;
-    private CommandMiddlewareDelegate? _pipeline;
+    private readonly CommandPipelineBuilder _builder;
+    private CommandMiddlewareDelegate _pipeline = null!;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public CommandPipeline(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
-    
-    /// <inheritdoc />
-    public CommandMiddlewareDelegate Pipeline => _pipeline ??= CreateDefaultPipeline();
+    public CommandPipeline(IServiceProvider serviceProvider)
+    {
+        _builder = new(serviceProvider);
+        Setup(x => x.UseCommandInvoker().UseCommandLogging());
+    }
 
     /// <inheritdoc />
-    public CommandMiddlewareDelegate Setup(Action<ICommandPipelineBuilder>? setup = default)
+    public CommandMiddlewareDelegate Pipeline => _pipeline;
+
+    /// <inheritdoc />
+    public CommandMiddlewareDelegate Setup(Action<ICommandPipelineBuilder>? setup = null)
     {
-        var builder = new CommandPipelineBuilder(_serviceProvider);
-        setup?.Invoke(builder);
-        _pipeline = builder.Build();
+        setup?.Invoke(_builder);
+        _pipeline = _builder.Build();
         return _pipeline;
     }
 
     /// <inheritdoc />
     public async Task InvokeAsync(CommandContext context) => await Pipeline(context);
-
-    private CommandMiddlewareDelegate CreateDefaultPipeline() => Setup(x => x.UseCommandInvoker().UseCommandLogging());
 }

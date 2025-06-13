@@ -16,11 +16,29 @@ public interface ICommandPipelineBuilder
     IServiceProvider ApplicationServices { get; }
 
     /// <summary>
-    /// Adds a middleware component to the pipeline.
+    /// Appends a middleware component to the pipeline.
     /// </summary>
-    /// <param name="middleware">The middleware component.</param>
-    /// <returns>The pipeline builder.</returns>
     ICommandPipelineBuilder Use(Func<CommandMiddlewareDelegate, CommandMiddlewareDelegate> middleware);
+    
+    /// <summary>
+    /// Adds a middleware component at the specified index.
+    /// </summary>
+    ICommandPipelineBuilder Use(int index, Func<CommandMiddlewareDelegate, CommandMiddlewareDelegate> middleware);
+    
+    /// <summary>
+    /// Removes a middleware component from the pipeline.
+    /// </summary>
+    ICommandPipelineBuilder Remove(Func<CommandMiddlewareDelegate, CommandMiddlewareDelegate> middleware);
+    
+    /// <summary>
+    /// Removes a middleware component at the specified index from the pipeline.
+    /// </summary>
+    ICommandPipelineBuilder RemoveAt(int index);
+    
+    /// <summary>
+    /// Clears the pipeline.
+    /// </summary>
+    ICommandPipelineBuilder Clear();
 
     /// <summary>
     /// Builds the pipeline.
