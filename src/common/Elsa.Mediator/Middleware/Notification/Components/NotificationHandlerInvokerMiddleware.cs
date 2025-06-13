@@ -1,33 +1,19 @@
 using Elsa.Mediator.Contexts;
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Middleware.Notification.Contracts;
+using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Mediator.Middleware.Notification.Components;
 
 /// <inheritdoc />
-public class NotificationHandlerInvokerMiddleware : INotificationMiddleware
+[UsedImplicitly]
+public class NotificationHandlerInvokerMiddleware(
+    NotificationMiddlewareDelegate next,
+    ILogger<NotificationHandlerInvokerMiddleware> logger)
+    : INotificationMiddleware
 {
-    private readonly NotificationMiddlewareDelegate _next;
-    private readonly ILogger<NotificationHandlerInvokerMiddleware> _logger;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IEnumerable<INotificationHandler> _notificationHandlers;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="NotificationHandlerInvokerMiddleware"/> class.
-    /// </summary>
-    public NotificationHandlerInvokerMiddleware(
-        NotificationMiddlewareDelegate next,
-        ILogger<NotificationHandlerInvokerMiddleware> logger,
-        IServiceProvider serviceProvider,
-        IEnumerable<INotificationHandler> notificationHandlers)
-    {
-        _next = next;
-        _logger = logger;
-        _serviceProvider = serviceProvider;
-        _notificationHandlers = notificationHandlers;
-    }
-
     /// <inheritdoc />
     public async ValueTask InvokeAsync(NotificationContext context)
     {
@@ -35,12 +21,14 @@ public class NotificationHandlerInvokerMiddleware : INotificationMiddleware
         var notification = context.Notification;
         var notificationType = notification.GetType();
         var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
-        var handlers = _notificationHandlers.Where(x => handlerType.IsInstanceOfType(x)).DistinctBy(x => x.GetType()).ToArray();
-        var strategyContext = new NotificationStrategyContext(notification, handlers, _logger, _serviceProvider, context.CancellationToken);
+        var serviceProvider = context.ServiceProvider;
+        var notificationHandlers = serviceProvider.GetServices<INotificationHandler>();
+        var handlers = notificationHandlers.Where(x => handlerType.IsInstanceOfType(x)).DistinctBy(x => x.GetType()).ToArray();
+        var strategyContext = new NotificationStrategyContext(notification, handlers, logger, serviceProvider, context.CancellationToken);
 
         await context.NotificationStrategy.PublishAsync(strategyContext);
 
         // Invoke next middleware.
-        await _next(context);
+        await next(context);
     }
 }

@@ -34,18 +34,44 @@ public class CommandPipelineBuilder : ICommandPipelineBuilder
     }
 
     /// <inheritdoc />
+    public ICommandPipelineBuilder Use(int index, Func<CommandMiddlewareDelegate, CommandMiddlewareDelegate> middleware)
+    {
+        _components.Insert(index, middleware);
+        return this;
+    }
+
+    /// <inheritdoc />
+    public ICommandPipelineBuilder Remove(Func<CommandMiddlewareDelegate, CommandMiddlewareDelegate> middleware)
+    {
+        _components.Remove(middleware);
+        return this;
+    }
+
+    /// <inheritdoc />
+    public ICommandPipelineBuilder RemoveAt(int index)
+    {
+        _components.RemoveAt(index);
+        return this;
+    }
+    
+    /// <inheritdoc />
+    public ICommandPipelineBuilder Clear()
+    {
+        _components.Clear();
+        return this;
+    }
+
+    /// <inheritdoc />
     public CommandMiddlewareDelegate Build()
     {
-        CommandMiddlewareDelegate pipeline = _ => new ValueTask();
+        CommandMiddlewareDelegate pipeline = _ => new();
 
-        for (int i = _components.Count - 1; i >= 0; i--)
-        {
+        for (var i = _components.Count - 1; i >= 0; i--) 
             pipeline = _components[i](pipeline);
-        }
 
         return pipeline;
     }
 
-    private T? GetProperty<T>(string key) => Properties.TryGetValue(key, out var value) ? (T?)value : default(T);
+    private T? GetProperty<T>(string key) => Properties.TryGetValue(key, out var value) ? (T?)value : default;
     private void SetProperty<T>(string key, T value) => Properties[key] = value;
 }

@@ -12,7 +12,8 @@ public class DefaultStrategy : ICommandStrategy
     /// <inheritdoc />
     public async Task<TResult> ExecuteAsync<TResult>(CommandStrategyContext context)
     {
-        var command = context.Command;
+        var commandContext = context.CommandContext;
+        var command = commandContext.Command;
         var cancellationToken = context.CancellationToken;
         var commandType = command.GetType();
         var handleMethod = commandType.GetCommandHandlerMethod();

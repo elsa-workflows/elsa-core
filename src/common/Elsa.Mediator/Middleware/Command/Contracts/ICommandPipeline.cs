@@ -1,7 +1,7 @@
 namespace Elsa.Mediator.Middleware.Command.Contracts;
 
 /// <summary>
-/// 
+/// Represents a pipeline for processing commands. The pipeline is responsible for orchestrating the execution of registered middleware in sequence.
 /// </summary>
 public interface ICommandPipeline
 {
