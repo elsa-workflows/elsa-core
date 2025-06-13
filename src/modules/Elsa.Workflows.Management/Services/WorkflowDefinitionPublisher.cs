@@ -113,6 +113,7 @@ public class WorkflowDefinitionPublisher(
 
         // Save the newly published definition.
         definition.IsPublished = true;
+        definition.IsLatest = true;
         definition = Initialize(definition);
         await workflowDefinitionStore.SaveAsync(definition, cancellationToken);
 
@@ -194,7 +195,9 @@ public class WorkflowDefinitionPublisher(
         draft.IsLatest = true;
         draft = Initialize(draft);
 
+        await mediator.SendAsync(new WorkflowDefinitionDraftSaving(draft), cancellationToken);
         await workflowDefinitionStore.SaveAsync(draft, cancellationToken);
+        await mediator.SendAsync(new WorkflowDefinitionDraftSaved(draft), cancellationToken);
 
         if (lastVersion is null) 
             await mediator.SendAsync(new WorkflowDefinitionCreated(definition), cancellationToken);
