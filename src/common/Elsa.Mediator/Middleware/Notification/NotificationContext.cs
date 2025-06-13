@@ -12,11 +12,13 @@ public class NotificationContext
     /// </summary>
     /// <param name="notification">The notification to publish.</param>
     /// <param name="notificationStrategy">The publishing strategy to use.</param>
+    /// <param name="serviceProvider">The service provider to resolve services from.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public NotificationContext(INotification notification, IEventPublishingStrategy notificationStrategy, CancellationToken cancellationToken = default)
+    public NotificationContext(INotification notification, IEventPublishingStrategy notificationStrategy, IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
         Notification = notification;
         NotificationStrategy = notificationStrategy;
+        ServiceProvider = serviceProvider;
         CancellationToken = cancellationToken;
     }
 
@@ -29,7 +31,12 @@ public class NotificationContext
     /// Gets the publishing strategy to use.
     /// </summary>
     public IEventPublishingStrategy NotificationStrategy { get; init; }
-    
+
+    /// <summary>
+    /// Gets the service provider used for resolving dependencies within the notification context.
+    /// </summary>
+    public IServiceProvider ServiceProvider { get; }
+
     /// <summary>
     /// Gets the cancellation token.
     /// </summary>
