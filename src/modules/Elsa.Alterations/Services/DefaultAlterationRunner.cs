@@ -4,6 +4,7 @@ using Elsa.Alterations.Core.Results;
 using Elsa.Alterations.Middleware.Workflows;
 using Elsa.Common;
 using Elsa.Workflows;
+using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime;
@@ -17,6 +18,7 @@ public class DefaultAlterationRunner(
     IWorkflowExecutionPipeline workflowExecutionPipeline,
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowStateExtractor workflowStateExtractor,
+    ICommitStateHandler commitStateHandler,
     ISystemClock systemClock,
     IServiceProvider serviceProvider)
     : IAlterationRunner
@@ -81,8 +83,13 @@ public class DefaultAlterationRunner(
 
         // Extract workflow state.
         workflowState = workflowStateExtractor.Extract(workflowExecutionContext);
+        
+        // Commit workflow state.
+        await commitStateHandler.CommitAsync(workflowExecutionContext, workflowState, cancellationToken);
 
         // Apply updated workflow state.
+        // TODO: Importing back into the workflow runtime makes sense, but this also causes another SAVE ction of the workflow instance in the DB, which also happens in the previous step during the commit action.
+        // Can we avoid this? Perhaps we need more granular control over when we purge and when we save to DB.
         await workflowClient.ImportStateAsync(workflowState, cancellationToken);
 
         // Check if the workflow has scheduled work.
