@@ -22,6 +22,6 @@ public class CommandLoggingMiddleware(CommandMiddlewareDelegate next, ILogger<Co
         if (context.Result is null or Unit)
             logger.LogInformation("{CommandName} completed with no result", commandType.Name);
         else
-            logger.LogInformation("{CommandName} completed wit result {CommandResult}", commandType.Name, context.Result);
+            logger.LogInformation("{CommandName} completed with result {CommandResult}", commandType.Name, context.Result);
     }
 }
