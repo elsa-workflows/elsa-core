@@ -16,7 +16,7 @@ public interface ICommandSender
     /// <param name="command">The command to send.</param>
     /// <param name="headers">Any headers to pass along.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// /// <typeparam name="T">The type of the result.</typeparam>
+    /// <typeparam name="T">The type of the result.</typeparam>
     /// <returns>The result.</returns>
     Task<T> SendAsync<T>(ICommand<T> command, IDictionary<object, object> headers, CancellationToken cancellationToken = default);
     
@@ -61,7 +61,7 @@ public interface ICommandSender
     /// </summary>
     /// <param name="command">The command to send.</param>
     /// <param name="strategy">The command strategy to use.</param>
-    /// /// <param name="headers">Any headers to pass along.</param>
+    /// <param name="headers">Any headers to pass along.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     Task SendAsync(ICommand command, ICommandStrategy strategy, IDictionary<object, object> headers, CancellationToken cancellationToken = default);
 }

@@ -17,7 +17,7 @@ public static class MiddlewareExtensions
     }
 
     /// <summary>
-    /// Inserts middleware at a specific point in the pipeline.
+    /// Inserts middleware at a specific index in the pipeline.
     /// </summary>
     public static ICommandPipelineBuilder UseMiddleware<TMiddleware>(this ICommandPipelineBuilder builder, int index, params object[] args) where TMiddleware : ICommandMiddleware
     {
