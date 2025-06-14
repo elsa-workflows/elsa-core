@@ -50,8 +50,8 @@ public static class WorkflowExecutionContextExtensions
     public static ActivityWorkItem ScheduleActivityExecutionContext(this WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, IDictionary<string, object>? input = null, IEnumerable<Variable>? variables = null)
     {
         var workItem = new ActivityWorkItem(
-            activityExecutionContext.Activity, 
-            input: input, 
+            activityExecutionContext.Activity,
+            input: input,
             variables: variables,
             existingActivityExecutionContext: activityExecutionContext);
         workflowExecutionContext.Scheduler.Schedule(workItem);
@@ -112,7 +112,7 @@ public static class WorkflowExecutionContextExtensions
         // Validate that the specified activity is part of the workflow.
         if (!workflowExecutionContext.NodeActivityLookup.ContainsKey(activityNode.Activity))
             throw new InvalidOperationException("The specified activity is not part of the workflow.");
-        
+
         var scheduler = workflowExecutionContext.Scheduler;
 
         if (options?.PreventDuplicateScheduling == true)
@@ -144,5 +144,22 @@ public static class WorkflowExecutionContextExtensions
     {
         var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
         return outputRegister.FindOutputByActivityId(activityId, outputName);
+    }
+
+    public static IEnumerable<ActivityExecutionContext> FindActivityExecutionContexts(this WorkflowExecutionContext workflowExecutionContext, ActivityHandle activityHandle)
+    {
+        if (activityHandle.ActivityInstanceId != null)
+            return workflowExecutionContext.ActivityExecutionContexts.Where(x => x.Id == activityHandle.ActivityInstanceId);
+        if (activityHandle.ActivityNodeId != null)
+            return workflowExecutionContext.ActivityExecutionContexts.Where(x => x.NodeId == activityHandle.ActivityNodeId);
+        if (activityHandle.ActivityId != null)
+            return workflowExecutionContext.ActivityExecutionContexts.Where(x => x.Activity.Id == activityHandle.ActivityId);
+        if (activityHandle.ActivityHash != null)
+        {
+            var activity = workflowExecutionContext.FindActivityByHash(activityHandle.ActivityHash);
+            return activity != null ? workflowExecutionContext.ActivityExecutionContexts.Where(x => x.Activity.NodeId == activity.NodeId) : [];
+        }
+
+        return [];
     }
 }
