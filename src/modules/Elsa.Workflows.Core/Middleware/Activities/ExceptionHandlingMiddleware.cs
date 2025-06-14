@@ -1,8 +1,6 @@
 using Elsa.Common;
 using Elsa.Extensions;
-using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.ActivityExecution;
-using Elsa.Workflows.State;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Middleware.Activities;
@@ -34,34 +32,14 @@ public class ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncid
         catch (Exception e)
         {
             logger.LogWarning(e, "An exception was caught from a downstream middleware component");
-            LogExceptionAndTransition(context, e);
-            FaultAncestors(context);
+            context.Fault(e);
             await HandleIncidentAsync(context);
         }
-    }
-
-    private void LogExceptionAndTransition(ActivityExecutionContext context, Exception e)
-    {
-        context.Exception = e;
-        context.TransitionTo(ActivityStatus.Faulted);
-        var activity = context.Activity;
-        var exceptionState = ExceptionState.FromException(e);
-        var now = systemClock.UtcNow;
-        var incident = new ActivityIncident(activity.Id, activity.NodeId ,activity.Type, e.Message, exceptionState, now);
-        context.WorkflowExecutionContext.Incidents.Add(incident);
     }
 
     private async Task HandleIncidentAsync(ActivityExecutionContext context)
     {
         var strategy = await incidentStrategyResolver.ResolveStrategyAsync(context);
         strategy.HandleIncident(context);
-    }
-
-    private static void FaultAncestors(ActivityExecutionContext context)
-    {
-        var ancestors = context.GetAncestors();
-
-        foreach (var ancestor in ancestors)
-            ancestor.TransitionTo(ActivityStatus.Faulted);
     }
 }
