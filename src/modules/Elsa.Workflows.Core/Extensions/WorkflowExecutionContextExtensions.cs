@@ -149,7 +149,7 @@ public static class WorkflowExecutionContextExtensions
     public static IEnumerable<ActivityExecutionContext> FindActivityExecutionContexts(this WorkflowExecutionContext workflowExecutionContext, ActivityHandle activityHandle)
     {
         if (activityHandle.ActivityInstanceId != null)
-            return workflowExecutionContext.ActivityExecutionContexts.Where(x => x.Id == activityHandle.ActivityId);
+            return workflowExecutionContext.ActivityExecutionContexts.Where(x => x.Id == activityHandle.ActivityInstanceId);
         if (activityHandle.ActivityNodeId != null)
             return workflowExecutionContext.ActivityExecutionContexts.Where(x => x.NodeId == activityHandle.ActivityNodeId);
         if (activityHandle.ActivityId != null)
