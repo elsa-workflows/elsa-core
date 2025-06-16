@@ -1,13 +1,10 @@
 using System.ComponentModel;
 using System.IO.Compression;
-using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Compression.Models;
-using Elsa.Compression.Services;
-using Elsa.Expressions.Models;
+using Elsa.IO.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
 
@@ -21,58 +18,8 @@ public class CreateZipArchive : Activity<Stream>
 {
     /// <inheritdoc />
     [JsonConstructor]
-    private CreateZipArchive(string? source = null, int? line = null) : base(source, line)
+    public CreateZipArchive(string? source = null, int? line = null) : base(source, line)
     {
-    }
-
-    /// <inheritdoc />
-    public CreateZipArchive(string filename, IEnumerable<object> entries, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
-        : this(new Literal<string>(filename), new Literal<IEnumerable<object>>(entries), source, line)
-    {
-    }
-
-    /// <inheritdoc />
-    public CreateZipArchive(Func<string> filename, Func<IEnumerable<object>> entries, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
-        : this(Expression.DelegateExpression(filename), Expression.DelegateExpression(entries), source, line)
-    {
-    }
-
-    /// <inheritdoc />
-    public CreateZipArchive(Func<ExpressionExecutionContext, string?> filename, Func<ExpressionExecutionContext, IEnumerable<object>?> entries, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
-        : this(Expression.DelegateExpression(filename), Expression.DelegateExpression(entries), source, line)
-    {
-    }
-
-    /// <inheritdoc />
-    public CreateZipArchive(Variable<string> filename, Variable<IEnumerable<object>> entries, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
-        : this(source, line)
-    {
-        Filename = new Input<string>(filename);
-        Entries = new Input<IEnumerable<object>>(entries);
-    }
-
-    /// <inheritdoc />
-    public CreateZipArchive(Literal<string> filename, Literal<IEnumerable<object>> entries, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
-        : this(source, line)
-    {
-        Filename = new Input<string>(filename);
-        Entries = new Input<IEnumerable<object>>(entries);
-    }
-
-    /// <inheritdoc />
-    public CreateZipArchive(Expression filename, Expression entries, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
-        : this(source, line)
-    {
-        Filename = new Input<string>(filename, new MemoryBlockReference());
-        Entries = new Input<IEnumerable<object>>(entries, new MemoryBlockReference());
-    }
-
-    /// <inheritdoc />
-    public CreateZipArchive(Input<string> filename, Input<IEnumerable<object>> entries, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
-        : this(source, line)
-    {
-        Filename = filename;
-        Entries = entries;
     }
 
     /// <summary>
@@ -82,18 +29,21 @@ public class CreateZipArchive : Activity<Stream>
     public Input<string> Filename { get; set; } = null!;
 
     /// <summary>
-    /// The entries to include in the ZIP archive. Can be byte[], Stream, file path, file URL, base64 string, or ZipEntry objects.
+    /// The entries to include in the ZIP archive. Can be byte[], Stream, file path, file URL, base64 string, ZipEntry objects, or arrays of these types.
     /// </summary>
-    [Description("The entries to include in the ZIP archive. Can be byte[], Stream, file path, file URL, base64 string, or ZipEntry objects.")]
-    public Input<IEnumerable<object>> Entries { get; set; } = null!;
+    [Description("The entries to include in the ZIP archive. Can be byte[], Stream, file path, file URL, base64 string, ZipEntry objects, or arrays of these types.")]
+    public Input<object?> Entries { get; set; } = null!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var filename = context.Get(Filename) ?? "archive.zip";
-        var entries = context.Get(Entries) ?? Array.Empty<object>();
-        var resolver = context.GetRequiredService<IZipEntryContentResolver>();
+        var filename = Filename.Get(context) ?? "archive.zip";
+        var entriesInput = Entries.GetOrDefault(context);
+        var resolver = context.GetRequiredService<IContentResolver>();
         var logger = context.GetRequiredService<ILogger<CreateZipArchive>>();
+
+        // Parse entries from various input types
+        var entries = ParseEntries(entriesInput);
 
         // Create a memory stream to hold the ZIP archive
         var zipStream = new MemoryStream();
@@ -112,8 +62,9 @@ public class CreateZipArchive : Activity<Stream>
 
                     if (entryContent is ZipEntry zipEntry)
                     {
-                        contentStream = await resolver.ResolveContentAsync(zipEntry, context.CancellationToken);
-                        entryName = zipEntry.EntryName;
+                        var (stream, resolvedName) = await resolver.ResolveContentAsync(zipEntry.Content, zipEntry.EntryName, context.CancellationToken);
+                        contentStream = stream;
+                        entryName = resolvedName;
                     }
                     else
                     {
@@ -158,5 +109,18 @@ public class CreateZipArchive : Activity<Stream>
         
         // Set the result
         context.Set(Result, zipStream);
+    }
+
+    private static IEnumerable<object> ParseEntries(object? entriesInput)
+    {
+        if (entriesInput == null)
+            return Array.Empty<object>();
+
+        // Handle single entry
+        if (entriesInput is not IEnumerable<object> enumerable)
+            return new[] { entriesInput };
+
+        // Handle array of entries
+        return enumerable;
     }
 }
