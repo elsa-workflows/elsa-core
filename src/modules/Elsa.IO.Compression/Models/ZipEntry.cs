@@ -1,4 +1,4 @@
-namespace Elsa.Compression.Models;
+namespace Elsa.IO.Compression.Models;
 
 /// <summary>
 /// Represents a zip entry with content and metadata.

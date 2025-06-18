@@ -9,11 +9,10 @@ public class FilePathContentStrategy : IContentResolverStrategy
     public bool CanHandle(object content) => content is string str && File.Exists(str);
 
     /// <inheritdoc />
-    public Task<(Stream Stream, string Name)> ResolveAsync(object content, string? name = null, CancellationToken cancellationToken = default)
+    public Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default)
     {
         var filePath = (string)content;
-        var fileName = name ?? Path.GetFileName(filePath);
         var fileStream = File.OpenRead(filePath);
-        return Task.FromResult((fileStream, fileName));
+        return Task.FromResult<Stream>(fileStream);
     }
 }

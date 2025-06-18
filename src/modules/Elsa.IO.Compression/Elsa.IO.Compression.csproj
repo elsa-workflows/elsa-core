@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <RootNamespace>Elsa.Compression</RootNamespace>
+        <RootNamespace>Elsa.IO.Compression</RootNamespace>
     </PropertyGroup>
 
     <PropertyGroup>

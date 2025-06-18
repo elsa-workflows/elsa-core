@@ -5,7 +5,7 @@ using Elsa.IO.Features;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Compression.Features;
+namespace Elsa.IO.Compression.Features;
 
 /// <summary>
 /// Configures compression activities and services.
@@ -15,8 +15,17 @@ namespace Elsa.Compression.Features;
 public class CompressionFeature(IModule module) : FeatureBase(module)
 {
     /// <inheritdoc />
+    public override void Configure()
+    {
+        Module.UseWorkflowManagement(management =>
+        {
+            management.AddActivitiesFrom<CompressionFeature>();
+        });
+    }
+
+    /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddHttpClient();
+        // Compression-specific services can be added here when needed
     }
 }

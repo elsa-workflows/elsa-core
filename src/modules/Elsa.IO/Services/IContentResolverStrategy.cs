@@ -13,11 +13,10 @@ public interface IContentResolverStrategy
     bool CanHandle(object content);
 
     /// <summary>
-    /// Resolves the content to a stream with a resolved name.
+    /// Resolves the content to a stream.
     /// </summary>
     /// <param name="content">The content to resolve.</param>
-    /// <param name="name">Optional name hint for the content.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>A stream containing the content and the resolved name.</returns>
-    Task<(Stream Stream, string Name)> ResolveAsync(object content, string? name = null, CancellationToken cancellationToken = default);
+    /// <returns>A stream containing the content.</returns>
+    Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,4 @@
-using Elsa.Features.Attributes;
+using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.IO.Services;
 using Elsa.IO.Services.Strategies;
@@ -9,12 +9,14 @@ namespace Elsa.IO.Features;
 /// <summary>
 /// A feature that installs IO services for resolving various content types to streams.
 /// </summary>
-[DependsOn(typeof(MediatorFeature))]
-public class IOFeature : FeatureBase
+public class IOFeature(IModule module) : FeatureBase(module)
 {
     /// <inheritdoc />
-    public override void Configure()
+    public override void Apply()
     {
+        // Add HttpClient for URL content strategy
+        Services.AddHttpClient();
+        
         // Register strategies in order of priority
         Services.AddScoped<IContentResolverStrategy, StreamContentStrategy>();
         Services.AddScoped<IContentResolverStrategy, ByteArrayContentStrategy>();

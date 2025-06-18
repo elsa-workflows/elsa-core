@@ -1,14 +1,14 @@
 using System.ComponentModel;
 using System.IO.Compression;
 using System.Text.Json.Serialization;
-using Elsa.Compression.Models;
+using Elsa.IO.Compression.Models;
 using Elsa.IO.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Compression.Activities;
+namespace Elsa.IO.Compression.Activities;
 
 /// <summary>
 /// Creates a ZIP archive from a collection of entries.

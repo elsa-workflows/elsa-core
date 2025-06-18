@@ -23,7 +23,7 @@ public class UrlContentStrategy : IContentResolverStrategy
     public bool CanHandle(object content) => content is string str && (str.StartsWith("http://") || str.StartsWith("https://"));
 
     /// <inheritdoc />
-    public async Task<(Stream Stream, string Name)> ResolveAsync(object content, string? name = null, CancellationToken cancellationToken = default)
+    public async Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default)
     {
         var url = (string)content;
         
@@ -39,29 +39,11 @@ public class UrlContentStrategy : IContentResolverStrategy
             response.EnsureSuccessStatusCode();
 
             var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-            var fileName = name ?? GetFileNameFromUrl(url) ?? "downloaded-file.bin";
-
-            return (stream, fileName);
+            return stream;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to download file from URL: {Url}", url);
             throw;
         }
-    }
-
-    private static string? GetFileNameFromUrl(string url)
-    {
-        try
-        {
-            var uri = new Uri(url);
-            var segments = uri.Segments;
-            var lastSegment = segments.LastOrDefault();
-            return string.IsNullOrEmpty(lastSegment) || lastSegment == "/" ? null : lastSegment;
-        }
-        catch
-        {
-            return null;
-        }
-    }
 }

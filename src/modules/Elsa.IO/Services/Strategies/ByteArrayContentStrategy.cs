@@ -9,11 +9,10 @@ public class ByteArrayContentStrategy : IContentResolverStrategy
     public bool CanHandle(object content) => content is byte[];
 
     /// <inheritdoc />
-    public Task<(Stream Stream, string Name)> ResolveAsync(object content, string? name = null, CancellationToken cancellationToken = default)
+    public Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default)
     {
         var bytes = (byte[])content;
         var stream = new MemoryStream(bytes);
-        var resolvedName = name ?? "file.bin";
-        return Task.FromResult((stream, resolvedName));
+        return Task.FromResult<Stream>(stream);
     }
 }
