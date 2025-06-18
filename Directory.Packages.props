@@ -4,7 +4,7 @@
         <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     </PropertyGroup>
     <PropertyGroup>
-        <ElsaStudioVersion>3.4.0</ElsaStudioVersion>
+        <ElsaStudioVersion>3.5.0-preview.1092</ElsaStudioVersion>
     </PropertyGroup>
     <ItemGroup>
         <PackageVersion Include="Antlr4.Runtime.Standard" Version="4.13.1"/>
