@@ -57,10 +57,3 @@ internal class Get : ElsaEndpoint<Request>
         return await _workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Latest, cancellationToken);
     }
 }
-
-internal record Request(string WorkflowDefinitionId, string? ActivityTypeName, string? PropertyName)
-{
-    public Request() : this(default!, default!, default)
-    {
-    }
-}
