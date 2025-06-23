@@ -1,6 +1,6 @@
-using Elsa.Common.Models;
+using Elsa.Api.Client.Shared.Models;
 
-namespace Elsa.Workflows.Models;
+namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 
 /// <summary>
 /// Represents a handle to a workflow definition.
@@ -31,7 +31,6 @@ public class WorkflowDefinitionHandle
     /// Creates a new <see cref="WorkflowDefinitionHandle"/> instance with the specified definition version ID.
     /// </summary>
     /// <param name="definitionVersionId"></param>
-    /// <returns></returns>
     public static WorkflowDefinitionHandle ByDefinitionVersionId(string definitionVersionId) => new() { DefinitionVersionId = definitionVersionId };
 
     /// <inheritdoc />

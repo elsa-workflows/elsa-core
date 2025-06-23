@@ -12,7 +12,7 @@ public class ActivityInvoker(
 {
 
     /// <inheritdoc />
-    public async Task InvokeAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, ActivityInvocationOptions? options = null)
+    public async Task<ActivityExecutionContext> InvokeAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, ActivityInvocationOptions? options = null)
     {
         // Setup an activity execution context, potentially reusing an existing one if requested.
         var existingActivityExecutionContext = options?.ExistingActivityExecutionContext;
@@ -34,6 +34,8 @@ public class ActivityInvoker(
 
         // Execute the activity execution pipeline.
         await InvokeAsync(activityExecutionContext);
+        
+        return activityExecutionContext;
     }
 
     /// <inheritdoc />

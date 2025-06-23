@@ -163,6 +163,7 @@ public class WorkflowsFeature : FeatureBase
             // Core.
             .AddScoped<IActivityInvoker, ActivityInvoker>()
             .AddScoped<IWorkflowRunner, WorkflowRunner>()
+            .AddScoped<IActivityTestRunner, ActivityTestRunner>()
             .AddScoped<IActivityVisitor, ActivityVisitor>()
             .AddScoped<IIdentityGraphService, IdentityGraphService>()
             .AddScoped<IWorkflowGraphBuilder, WorkflowGraphBuilder>()
