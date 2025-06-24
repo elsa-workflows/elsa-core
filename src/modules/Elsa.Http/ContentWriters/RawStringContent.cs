@@ -34,9 +34,9 @@ public class RawStringContent : HttpContent
     /// <inheritdoc />
     protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context, CancellationToken cancellationToken)
     {
-        using var writer = new StreamWriter(stream, _encoding, leaveOpen: true);
+        await using var writer = new StreamWriter(stream, _encoding, leaveOpen: true);
         await writer.WriteAsync(_content.AsMemory(), cancellationToken);
-        await writer.FlushAsync();
+        await writer.FlushAsync(cancellationToken);
     }
 
     /// <inheritdoc />
