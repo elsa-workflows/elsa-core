@@ -16,7 +16,7 @@ public class EFCoreSecretStore(EntityStore<SecretsDbContext, Secret> store) : IS
     public async Task<Page<Secret>> FindManyAsync<TOrderBy>(SecretFilter filter, SecretOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = await store.QueryAsync(query => Filter(query, filter), cancellationToken).LongCount();
-        var secrets = await store.QueryAsync(query =>  Filter(query, filter).Paginate(pageArgs).OrderBy(order), cancellationToken).ToList();
+        var secrets = await store.QueryAsync(query =>  Filter(query, filter).OrderBy(order).Paginate(pageArgs), cancellationToken).ToList();
         return new(secrets, count);
     }
 

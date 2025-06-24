@@ -45,8 +45,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), cancellationToken).LongCount();
-        var results = await store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
+        var count = await store.QueryAsync(queryable => Filter(queryable, filter), cancellationToken).LongCount();
+        var results = await store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order).Paginate(pageArgs), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
         return new(results, count);
     }
 

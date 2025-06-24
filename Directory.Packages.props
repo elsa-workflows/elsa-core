@@ -3,6 +3,9 @@
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
         <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     </PropertyGroup>
+    <PropertyGroup>
+        <ElsaStudioVersion>3.5.0-preview.1092</ElsaStudioVersion>
+    </PropertyGroup>
     <ItemGroup>
         <PackageVersion Include="Antlr4.Runtime.Standard" Version="4.13.1"/>
         <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations" Version="0.5.1"/>
