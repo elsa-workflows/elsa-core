@@ -6,6 +6,7 @@ on:
       - 'blueberry'
       - 'feature/*'
       - 'enh/*'
+      - 'fix/*'
   release:
     types: [ prereleased, published ]
 env:
