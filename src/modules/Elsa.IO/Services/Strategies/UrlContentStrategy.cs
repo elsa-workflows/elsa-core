@@ -26,7 +26,7 @@ public class UrlContentStrategy : IContentResolverStrategy
     public async Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default)
     {
         var url = (string)content;
-        
+
         if (_httpClientFactory == null)
         {
             throw new InvalidOperationException("HTTP client factory is not available. Cannot download from URL.");
@@ -46,4 +46,5 @@ public class UrlContentStrategy : IContentResolverStrategy
             _logger.LogError(ex, "Failed to download file from URL: {Url}", url);
             throw;
         }
+    }
 }

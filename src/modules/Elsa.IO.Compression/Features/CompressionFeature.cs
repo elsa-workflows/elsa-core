@@ -1,9 +1,9 @@
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.IO.Features;
 using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.IO.Compression.Features;
 
@@ -17,10 +17,7 @@ public class CompressionFeature(IModule module) : FeatureBase(module)
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.UseWorkflowManagement(management =>
-        {
-            management.AddActivitiesFrom<CompressionFeature>();
-        });
+        Module.AddActivitiesFrom<CompressionFeature>();
     }
 
     /// <inheritdoc />

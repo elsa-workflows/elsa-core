@@ -1,5 +1,6 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.IO.Contracts;
 using Elsa.IO.Services;
 using Elsa.IO.Services.Strategies;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,5 +27,7 @@ public class IOFeature(IModule module) : FeatureBase(module)
         Services.AddScoped<IContentResolverStrategy, TextContentStrategy>(); // Fallback for string content
         
         Services.AddScoped<IContentResolver, ContentResolver>();
+        
+        Services.AddSingleton<IExtensionResolver, ExtensionResolver>();
     }
 }

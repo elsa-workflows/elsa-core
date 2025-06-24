@@ -1,4 +1,4 @@
-namespace Elsa.IO.Services;
+namespace Elsa.IO.Services.Strategies;
 
 /// <summary>
 /// Defines a strategy for resolving specific content types to streams.

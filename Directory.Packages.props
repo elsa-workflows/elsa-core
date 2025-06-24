@@ -4,6 +4,10 @@
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Elsa.Email" Version="3.5.0-rc1" />
+    <PackageVersion Include="Elsa.EntityFrameworkCore" Version="3.5.0-rc1" />
+    <PackageVersion Include="Elsa.EntityFrameworkCore.Sqlite" Version="3.5.0-rc1" />
+    <PackageVersion Include="Elsa.FileStorage" Version="3.5.0-rc1" />
     <PackageVersion Include="Elsa.Studio" Version="3.6.0-preview.1058" />
     <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.6.0-preview.1058" />
     <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.6.0-preview.1058" />
