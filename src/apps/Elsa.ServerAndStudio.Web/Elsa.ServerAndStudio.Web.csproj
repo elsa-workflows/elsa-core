@@ -28,6 +28,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.IO.Compression\Elsa.IO.Compression.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj"/>

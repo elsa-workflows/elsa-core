@@ -43,23 +43,23 @@ public class CreateZipArchive : CodeActivity<Stream>
     /// </summary>
     [Output(Description = "The filename that was used for this ZIP archive.")]
     public Output<string> ResultFilename { get; set; } = new();
-    
+
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var entriesInput = Entries.Get(context);
         var resolver = context.GetRequiredService<IContentResolver>();
-        var extensionResolver = context.GetRequiredService<IExtensionResolver>();
+        var extensionResolver = context.GetRequiredService<IFileExtensionResolver>();
         var logger = context.GetRequiredService<ILogger<CreateZipArchive>>();
-        
+
         var entries = ParseEntries(entriesInput);
-        
+
         var zipStream = new MemoryStream();
 
         try
         {
             using var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true);
-            
+
             var entryIndex = 0;
 
             foreach (var entryContent in entries)
@@ -81,15 +81,15 @@ public class CreateZipArchive : CodeActivity<Stream>
                         contentStream = await resolver.ResolveContentAsync(entryContent, context.CancellationToken);
                         entryName = $"entry_{entryIndex+1}";
                     }
-                    
+
                     entryName = CreateZipArchive.GetEntryNameWithExtension(entryName, entryContent, extensionResolver);
-                    
+
                     var archiveEntry = zipArchive.CreateEntry(entryName, CompressionLevel.Optimal);
-                    
+
                     await using var entryStream = archiveEntry.Open();
                     await contentStream.CopyToAsync(entryStream, context.CancellationToken);
                     await entryStream.FlushAsync(context.CancellationToken);
-                    
+
                     if (entryContent is not Stream)
                     {
                         await contentStream.DisposeAsync();
@@ -113,9 +113,9 @@ public class CreateZipArchive : CodeActivity<Stream>
 
         // Reset stream position for reading
         zipStream.Position = 0;
-        
+
         SetFileName(context);
-        
+
         Result.Set(context, zipStream);
     }
 
@@ -127,25 +127,25 @@ public class CreateZipArchive : CodeActivity<Stream>
         {
             filename += ".zip";
         }
-        
+
         ResultFilename.Set(context, filename);
     }
-    
-    private static string GetEntryNameWithExtension(string entryName, object content, IExtensionResolver extensionResolver)
+
+    private static string GetEntryNameWithExtension(string entryName, object content, IFileExtensionResolver fileExtensionResolver)
     {
         if (Path.HasExtension(entryName))
         {
             return entryName;
         }
-        
+
         if (content is not ZipEntry zipEntry)
         {
-            return extensionResolver.EnsureFileExtension(entryName, content);
+            return fileExtensionResolver.EnsureFileExtension(entryName, content);
         }
-        
-        var tempName = extensionResolver.EnsureFileExtension(zipEntry.EntryName ?? "temp", zipEntry.Content);
+
+        var tempName = fileExtensionResolver.EnsureFileExtension(zipEntry.EntryName ?? "temp", zipEntry.Content);
         var extension = Path.GetExtension(tempName);
-        
+
         entryName += extension;
         return entryName;
     }

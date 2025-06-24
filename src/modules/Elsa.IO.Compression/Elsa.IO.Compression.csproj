@@ -1,24 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <RootNamespace>Elsa.IO.Compression</RootNamespace>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Description>
+            Provides compression and archiving activities for Elsa Workflows.
+        </Description>
+        <PackageTags>elsa module compression zip archive workflows</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+        <PackageReference Include="Microsoft.Extensions.Http" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Options" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
         <ProjectReference Include="..\Elsa.IO\Elsa.IO.csproj" />
+        <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Reference Include="Elsa.IO">
-        <HintPath>..\src\apps\Elsa.ServerAndStudio.Web\bin\Debug\net9.0\Elsa.IO.dll</HintPath>
-      </Reference>
-    </ItemGroup>
 </Project>
