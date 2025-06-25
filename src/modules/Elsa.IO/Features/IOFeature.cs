@@ -1,5 +1,6 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.IO.Common;
 using Elsa.IO.Contracts;
 using Elsa.IO.Services;
 using Elsa.IO.Services.Strategies;
@@ -16,7 +17,7 @@ public class IOFeature(IModule module) : FeatureBase(module)
     public override void Apply()
     {
         // Add HttpClient for URL content strategy
-        Services.AddHttpClient("IOFeatureHttpClient");
+        Services.AddHttpClient(Constants.IOHttpClientName);
         
         Services.AddScoped<IContentResolverStrategy, StreamContentStrategy>();
         Services.AddScoped<IContentResolverStrategy, ByteArrayContentStrategy>();

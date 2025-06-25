@@ -6,20 +6,8 @@ namespace Elsa.IO.Services.Strategies;
 /// <summary>
 /// Strategy for handling URL content by downloading from HTTP/HTTPS URLs.
 /// </summary>
-public class UrlContentStrategy : IContentResolverStrategy
+public class UrlContentStrategy(ILogger<UrlContentStrategy> logger, IHttpClientFactory? httpClientFactory = null) : IContentResolverStrategy
 {
-    private readonly IHttpClientFactory? _httpClientFactory;
-    private readonly ILogger<UrlContentStrategy> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="UrlContentStrategy"/> class.
-    /// </summary>
-    public UrlContentStrategy(ILogger<UrlContentStrategy> logger, IHttpClientFactory? httpClientFactory = null)
-    {
-        _logger = logger;
-        _httpClientFactory = httpClientFactory;
-    }
-
     public float Priority { get; init; } = Constants.StrategyPriorities.Uri;
 
     /// <inheritdoc />
@@ -30,14 +18,14 @@ public class UrlContentStrategy : IContentResolverStrategy
     {
         var url = (string)content;
 
-        if (_httpClientFactory == null)
+        if (httpClientFactory == null)
         {
             throw new InvalidOperationException("HTTP client factory is not available. Cannot download from URL.");
         }
 
         try
         {
-            var httpClient = _httpClientFactory.CreateClient();
+            var httpClient = httpClientFactory.CreateClient(Constants.IOHttpClientName);
             var response = await httpClient.GetAsync(url, cancellationToken);
             response.EnsureSuccessStatusCode();
 
@@ -46,7 +34,7 @@ public class UrlContentStrategy : IContentResolverStrategy
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to download file from URL: {Url}", url);
+            logger.LogError(ex, "Failed to download file from URL: {Url}", url);
             throw;
         }
     }

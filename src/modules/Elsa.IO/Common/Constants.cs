@@ -2,6 +2,7 @@ namespace Elsa.IO.Common;
 
 public static class Constants
 {
+    public const string IOHttpClientName = "IOFeatureHttpClient";
     public static class StrategyPriorities
     {
         public const float Stream = 0.0f;
