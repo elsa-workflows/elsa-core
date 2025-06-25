@@ -1,10 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <RootNamespace>Elsa.IO.Compression</RootNamespace>
-    </PropertyGroup>
-
-    <PropertyGroup>
         <Description>
             Provides compression and archiving activities for Elsa Workflows.
         </Description>

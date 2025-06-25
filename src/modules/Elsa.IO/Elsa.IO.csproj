@@ -1,11 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <RootNamespace>Elsa.IO</RootNamespace>
-        <TargetFramework>net8.0</TargetFramework>
-    </PropertyGroup>
-
-    <PropertyGroup>
         <Description>
             Provides IO services for resolving various content types to streams.
         </Description>
@@ -16,6 +11,7 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
         <PackageReference Include="Microsoft.Extensions.Http" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+        
     </ItemGroup>
 
     <ItemGroup>
