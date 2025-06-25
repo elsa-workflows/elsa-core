@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using Elsa.Extensions;
 
 namespace Elsa.Scheduling.Services;
@@ -8,8 +10,8 @@ namespace Elsa.Scheduling.Services;
 public class LocalScheduler : IScheduler
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly IDictionary<string, IScheduledTask> _scheduledTasks = new Dictionary<string, IScheduledTask>();
-    private readonly IDictionary<IScheduledTask, ICollection<string>> _scheduledTaskKeys = new Dictionary<IScheduledTask, ICollection<string>>();
+    private readonly ConcurrentDictionary<string, IScheduledTask> _scheduledTasks = new ConcurrentDictionary<string, IScheduledTask>();
+    private readonly ConcurrentDictionary<IScheduledTask, ICollection<string>> _scheduledTaskKeys = new ConcurrentDictionary<IScheduledTask, ICollection<string>>();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LocalScheduler"/> class.
@@ -55,7 +57,7 @@ public class LocalScheduler : IScheduler
         if (_scheduledTasks.TryGetValue(name, out var existingScheduledTask))
         {
             existingScheduledTask.Cancel();
-            _scheduledTaskKeys.Remove(existingScheduledTask);
+            _scheduledTaskKeys.Remove(existingScheduledTask, out _);
         }
 
         _scheduledTasks[name] = scheduledTask;
@@ -68,8 +70,8 @@ public class LocalScheduler : IScheduler
     {
         if (_scheduledTasks.TryGetValue(name, out var existingScheduledTask))
         {
-            _scheduledTaskKeys.Remove(existingScheduledTask);
-            _scheduledTasks.Remove(name);
+            _scheduledTaskKeys.Remove(existingScheduledTask, out _);
+            _scheduledTasks.Remove(name, out _);
             existingScheduledTask.Cancel();
         }
     }
@@ -83,7 +85,7 @@ public class LocalScheduler : IScheduler
             foreach (var scheduledTask in scheduledTasks)
             {
                 _scheduledTasks.RemoveWhere(x => x.Value == scheduledTask);
-                _scheduledTaskKeys.Remove(scheduledTask);
+                _scheduledTaskKeys.Remove(scheduledTask, out _);
                 scheduledTask.Cancel();
             }
         }
