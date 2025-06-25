@@ -16,15 +16,14 @@ public class IOFeature(IModule module) : FeatureBase(module)
     public override void Apply()
     {
         // Add HttpClient for URL content strategy
-        Services.AddHttpClient();
-
-        // Register strategies in order of priority
+        Services.AddHttpClient("IOFeatureHttpClient");
+        
         Services.AddScoped<IContentResolverStrategy, StreamContentStrategy>();
         Services.AddScoped<IContentResolverStrategy, ByteArrayContentStrategy>();
         Services.AddScoped<IContentResolverStrategy, Base64ContentStrategy>();
         Services.AddScoped<IContentResolverStrategy, UrlContentStrategy>();
         Services.AddScoped<IContentResolverStrategy, FilePathContentStrategy>();
-        Services.AddScoped<IContentResolverStrategy, TextContentStrategy>(); // Fallback for string content
+        Services.AddScoped<IContentResolverStrategy, TextContentStrategy>();
 
         Services.AddScoped<IContentResolver, ContentResolver>();
 

@@ -1,4 +1,5 @@
 using System.Text;
+using Elsa.IO.Common;
 
 namespace Elsa.IO.Services.Strategies;
 
@@ -7,8 +8,10 @@ namespace Elsa.IO.Services.Strategies;
 /// </summary>
 public class TextContentStrategy : IContentResolverStrategy
 {
+    public float Priority { get; init; } = Constants.StrategyPriorities.Text;
+
     /// <inheritdoc />
-    public bool CanHandle(object content) => content is string;
+    public bool CanResolve(object content) => content is string;
 
     /// <inheritdoc />
     public Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default)

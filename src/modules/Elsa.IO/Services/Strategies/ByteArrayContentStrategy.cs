@@ -1,3 +1,5 @@
+using Elsa.IO.Common;
+
 namespace Elsa.IO.Services.Strategies;
 
 /// <summary>
@@ -5,8 +7,10 @@ namespace Elsa.IO.Services.Strategies;
 /// </summary>
 public class ByteArrayContentStrategy : IContentResolverStrategy
 {
+    public float Priority { get; init; } = Constants.StrategyPriorities.ByteArray;
+
     /// <inheritdoc />
-    public bool CanHandle(object content) => content is byte[];
+    public bool CanResolve(object content) => content is byte[];
 
     /// <inheritdoc />
     public Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default)

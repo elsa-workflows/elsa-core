@@ -6,7 +6,7 @@ namespace Elsa.IO.Contracts;
 public interface IFileExtensionResolver
 {
     /// <summary>
-    /// Ensures that a filename has an appropriate file extension based on its content type.
+    /// Ensures that a filename has an appropriate file extension based on its content type and returns it.
     /// </summary>
     /// <param name="filename">The filename to check and possibly append an extension to.</param>
     /// <param name="content">The content object to examine for determining the appropriate extension.</param>

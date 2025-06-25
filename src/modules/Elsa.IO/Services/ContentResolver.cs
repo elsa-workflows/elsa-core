@@ -1,6 +1,5 @@
 using Elsa.IO.Contracts;
 using Elsa.IO.Services.Strategies;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.IO.Services;
 
@@ -10,26 +9,23 @@ namespace Elsa.IO.Services;
 public class ContentResolver : IContentResolver
 {
     private readonly IEnumerable<IContentResolverStrategy> _strategies;
-    private readonly ILogger<ContentResolver> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ContentResolver"/> class.
     /// </summary>
-    public ContentResolver(IEnumerable<IContentResolverStrategy> strategies, ILogger<ContentResolver> logger)
+    public ContentResolver(IEnumerable<IContentResolverStrategy> strategies)
     {
-        _strategies = strategies;
-        _logger = logger;
+        _strategies = strategies.OrderBy(s => s.Priority).ToList();
     }
 
     /// <inheritdoc />
-    public async Task<Stream> ResolveContentAsync(object? content, CancellationToken cancellationToken = default)
-
+    public async Task<Stream> ResolveContentAsync(object content, CancellationToken cancellationToken = default)
     {
-        var strategy = _strategies.FirstOrDefault(s => s.CanHandle(content));
+        var strategy = _strategies.FirstOrDefault(s => s.CanResolve(content));
 
         if (strategy == null)
         {
-            throw new ArgumentException($"Unsupported content type: {content?.GetType()?.Name ?? "null"}");
+            throw new ArgumentException($"Unsupported content type: {content.GetType().Name}");
         }
 
         return await strategy.ResolveAsync(content, cancellationToken);

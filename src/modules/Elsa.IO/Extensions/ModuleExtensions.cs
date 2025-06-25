@@ -12,7 +12,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Installs the IO module.
     /// </summary>
-    public static IModule UseIO(this IModule module, Action<IOFeature>? configure = default)
+    public static IModule UseIO(this IModule module, Action<IOFeature>? configure = null)
     {
         return module.Use(configure);
     }

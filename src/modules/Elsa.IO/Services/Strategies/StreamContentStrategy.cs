@@ -1,3 +1,5 @@
+using Elsa.IO.Common;
+
 namespace Elsa.IO.Services.Strategies;
 
 /// <summary>
@@ -5,8 +7,10 @@ namespace Elsa.IO.Services.Strategies;
 /// </summary>
 public class StreamContentStrategy : IContentResolverStrategy
 {
+    public float Priority { get; init; } = Constants.StrategyPriorities.Stream;
+
     /// <inheritdoc />
-    public bool CanHandle(object content) => content is Stream;
+    public bool CanResolve(object content) => content is Stream;
 
     /// <inheritdoc />
     public Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default)

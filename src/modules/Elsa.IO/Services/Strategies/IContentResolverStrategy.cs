@@ -5,12 +5,14 @@ namespace Elsa.IO.Services.Strategies;
 /// </summary>
 public interface IContentResolverStrategy
 {
+    internal float Priority { get; init; }
+    
     /// <summary>
     /// Determines if this strategy can handle the specified content.
     /// </summary>
     /// <param name="content">The content to check.</param>
     /// <returns>True if this strategy can handle the content, false otherwise.</returns>
-    bool CanHandle(object content);
+    bool CanResolve(object content);
 
     /// <summary>
     /// Resolves the content to a stream.

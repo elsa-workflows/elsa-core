@@ -1,3 +1,4 @@
+using Elsa.IO.Common;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.IO.Services.Strategies;
@@ -19,8 +20,10 @@ public class UrlContentStrategy : IContentResolverStrategy
         _httpClientFactory = httpClientFactory;
     }
 
+    public float Priority { get; init; } = Constants.StrategyPriorities.Uri;
+
     /// <inheritdoc />
-    public bool CanHandle(object content) => content is string str && (str.StartsWith("http://") || str.StartsWith("https://"));
+    public bool CanResolve(object content) => content is string str && (str.StartsWith("http://") || str.StartsWith("https://"));
 
     /// <inheritdoc />
     public async Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default)

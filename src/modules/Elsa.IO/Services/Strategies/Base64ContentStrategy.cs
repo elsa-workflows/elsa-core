@@ -1,3 +1,5 @@
+using Elsa.IO.Common;
+
 namespace Elsa.IO.Services.Strategies;
 
 /// <summary>
@@ -5,8 +7,10 @@ namespace Elsa.IO.Services.Strategies;
 /// </summary>
 public class Base64ContentStrategy : IContentResolverStrategy
 {
+    public float Priority { get; init; } = Constants.StrategyPriorities.Base64;
+
     /// <inheritdoc />
-    public bool CanHandle(object content)
+    public bool CanResolve(object content)
     {
         return content is string str && IsBase64String(str);
     }

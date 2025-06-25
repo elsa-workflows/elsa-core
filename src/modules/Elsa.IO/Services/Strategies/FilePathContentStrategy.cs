@@ -1,3 +1,5 @@
+using Elsa.IO.Common;
+
 namespace Elsa.IO.Services.Strategies;
 
 /// <summary>
@@ -5,8 +7,10 @@ namespace Elsa.IO.Services.Strategies;
 /// </summary>
 public class FilePathContentStrategy : IContentResolverStrategy
 {
+    public float Priority { get; init; } = Constants.StrategyPriorities.FilePath;
+
     /// <inheritdoc />
-    public bool CanHandle(object content)
+    public bool CanResolve(object content)
     {
         if (content is not string str)
         {
