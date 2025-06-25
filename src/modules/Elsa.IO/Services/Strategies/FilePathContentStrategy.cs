@@ -18,7 +18,7 @@ public class FilePathContentStrategy : IContentResolverStrategy
             return false;
         }
 
-        filePath.CleanFilePath();
+        filePath = filePath.CleanFilePath();
 
         try
         {
@@ -46,7 +46,7 @@ public class FilePathContentStrategy : IContentResolverStrategy
     public Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default)
     {
         var filePath = (string)content;
-        filePath.CleanFilePath();
+        filePath = filePath.CleanFilePath();
 
         try
         {
