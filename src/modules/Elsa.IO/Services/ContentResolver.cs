@@ -22,7 +22,8 @@ public class ContentResolver : IContentResolver
     }
 
     /// <inheritdoc />
-    public async Task<Stream> ResolveContentAsync(object content, CancellationToken cancellationToken = default)
+    public async Task<Stream> ResolveContentAsync(object? content, CancellationToken cancellationToken = default)
+
     {
         var strategy = _strategies.FirstOrDefault(s => s.CanHandle(content));
 
