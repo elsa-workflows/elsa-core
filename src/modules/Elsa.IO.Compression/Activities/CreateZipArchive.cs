@@ -162,7 +162,10 @@ public class CreateZipArchive : CodeActivity<Stream>
         entryName = fileExtensionResolver.EnsureFileExtension(zipEntry.EntryName ?? "temp", zipEntry.Content);
         var extension = Path.GetExtension(entryName);
 
-        entryName += extension;
+        if (!entryName.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
+        {
+            entryName += extension;
+        }
         return entryName;
     }
 
