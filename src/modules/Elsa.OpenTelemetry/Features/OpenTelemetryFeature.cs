@@ -2,6 +2,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.OpenTelemetry.Contracts;
 using Elsa.OpenTelemetry.Handlers;
+using Elsa.OpenTelemetry.Metrics;
 using Elsa.OpenTelemetry.Options;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,10 +24,13 @@ public class OpenTelemetryFeature(IModule module) : FeatureBase(module)
     public override void Configure()
     {
         Services
-            .AddScoped<IActivityErrorSpanHandler, DefaultErrorSpanHandler>()
-            .AddScoped<IActivityErrorSpanHandler, FaultExceptionErrorSpanHandler>()
-            .AddScoped<IWorkflowErrorSpanHandler, DefaultErrorSpanHandler>()
-            .AddScoped<IWorkflowErrorSpanHandler, FaultExceptionErrorSpanHandler>();
+            .AddScoped<IActivityErrorSpanHandler, DefaultExceptionHandler>()
+            .AddScoped<IActivityErrorSpanHandler, FaultExceptionHandler>()
+            .AddScoped<IWorkflowErrorSpanHandler, DefaultExceptionHandler>()
+            .AddScoped<IWorkflowErrorSpanHandler, FaultExceptionHandler>()
+            .AddScoped<IErrorMetricHandler, DefaultExceptionHandler>()
+            .AddScoped<IErrorMetricHandler, FaultExceptionHandler>()
+            .AddScoped<ErrorMetrics>();
 
         Services.Configure<OpenTelemetryOptions>(options =>
         {
