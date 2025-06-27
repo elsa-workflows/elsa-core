@@ -38,6 +38,12 @@ public class RunTask : Activity<object>
     [Input(Description = "Any additional parameters to send to the task.")]
     public Input<IDictionary<string, object>?> Payload { get; set; } = null!;
 
+    /// <summary>
+    /// The ID of the task that was requested.
+    /// </summary>
+    [Output(Description = "The ID of the task that was requested.")]
+    public Output<string> TaskId { get; set; } = null!;
+
     /// <inheritdoc />
     [JsonConstructor]
     private RunTask(string? source = null, int? line = null) : base(source, line)
@@ -89,6 +95,7 @@ public class RunTask : Activity<object>
         var taskId = identityGenerator.GenerateId();
         var stimulus = new RunTaskStimulus(taskId, taskName);
         context.CreateBookmark(stimulus, ResumeAsync, includeActivityInstanceId: false);
+        TaskId.Set(context, taskId);
         
         // Dispatch task request.
         var taskParams = Payload.GetOrDefault(context);
