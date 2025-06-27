@@ -140,6 +140,7 @@ services
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseWebhooks(webhooks => webhooks.ConfigureSinks = options => builder.Configuration.GetSection("Webhooks:Sinks").Bind(options))
             .UseWorkflowsApi()
+            .UseCompression()
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>();
 
