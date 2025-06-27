@@ -1,10 +1,11 @@
 using Elsa.IO.Contracts;
+using Elsa.IO.Models;
 using Elsa.IO.Services.Strategies;
 
 namespace Elsa.IO.Services;
 
 /// <summary>
-/// Resolves various content types to streams using a strategy pattern.
+/// Resolves various content types to BinaryContent using a strategy pattern.
 /// </summary>
 public class ContentResolver : IContentResolver
 {
@@ -19,7 +20,7 @@ public class ContentResolver : IContentResolver
     }
 
     /// <inheritdoc />
-    public async Task<Stream> ResolveContentAsync(object content, CancellationToken cancellationToken = default)
+    public async Task<BinaryContent> ResolveAsync(object content, CancellationToken cancellationToken = default)
     {
         var strategy = _strategies.FirstOrDefault(s => s.CanResolve(content));
 

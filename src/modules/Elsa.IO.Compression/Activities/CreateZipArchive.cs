@@ -1,7 +1,6 @@
 using System.IO.Compression;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
-using Elsa.IO.Compression.Models;
 using Elsa.IO.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
@@ -28,12 +27,6 @@ public class CreateZipArchive : CodeActivity<Stream>
     }
 
     /// <summary>
-    /// The filename for the ZIP archive.
-    /// </summary>
-    [Input(Description = "The filename for the ZIP archive.")]
-    public Input<string?> Filename { get; set; } = null!;
-
-    /// <summary>
     /// The entries to include in the ZIP archive. Can be byte[], Stream, file path, file URL, base64 string, ZipEntry objects, or arrays of these types.
     /// </summary>
     [Input(
@@ -41,26 +34,27 @@ public class CreateZipArchive : CodeActivity<Stream>
         UIHint = InputUIHints.MultiLine
     )]
     public Input<object?> Entries { get; set; } = null!;
-
+    
     /// <summary>
-    /// The filename that was used for this ZIP archive.
+    /// The compression level for the Zip Entries. Default is Optimal
     /// </summary>
-    [Output(Description = "The filename that was used for this ZIP archive.")]
-    public Output<string> ResultFilename { get; set; } = new();
+    [Input(
+        Description = "The compression level for the Zip Entries. Default is Optimal",
+        UIHint = InputUIHints.DropDown
+    )]
+    public Input<CompressionLevel> CompressionLevel { get; set; } = new(System.IO.Compression.CompressionLevel.Optimal);
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var entriesInput = Entries.Get(context);
         var resolver = context.GetRequiredService<IContentResolver>();
-        var extensionResolver = context.GetRequiredService<IFileExtensionResolver>();
         var logger = context.GetRequiredService<ILogger<CreateZipArchive>>();
 
         var entries = ParseEntries(entriesInput);
         
-        var zipStream = await CreateZipStreamFromEntries(entries, resolver, extensionResolver, context, logger);
+        var zipStream = await CreateZipStreamFromEntries(entries, resolver, context, logger);
         
-        SetFileName(context);
         Result.Set(context, zipStream);
     }
     
@@ -78,7 +72,6 @@ public class CreateZipArchive : CodeActivity<Stream>
     private async Task<Stream> CreateZipStreamFromEntries(
         IEnumerable<object> entries, 
         IContentResolver resolver,
-        IFileExtensionResolver extensionResolver,
         ActivityExecutionContext context,
         ILogger logger)
     {
@@ -89,11 +82,12 @@ public class CreateZipArchive : CodeActivity<Stream>
             using var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true);
             var entryIndex = 0;
 
+            var compressionLevel = CompressionLevel.Get(context);
             foreach (var entryContent in entries)
             {
                 try
                 {
-                    await CreateZipArchive.ProcessZipEntry(entryContent, zipArchive, resolver, extensionResolver, context, entryIndex);
+                    await ProcessZipEntry(entryContent, zipArchive, resolver, context, entryIndex, compressionLevel);
                 }
                 catch (Exception ex)
                 {
@@ -122,62 +116,28 @@ public class CreateZipArchive : CodeActivity<Stream>
         object entryContent,
         ZipArchive zipArchive,
         IContentResolver resolver,
-        IFileExtensionResolver extensionResolver,
         ActivityExecutionContext context,
-        int entryIndex)
+        int entryIndex,
+        CompressionLevel compressionLevel)
     {
-        var entryName = string.Format(DefaultEntryNameFormat, entryIndex + 1);
-        Stream contentStream;
-
-        if (entryContent is ZipEntry zipEntry)
+        var binaryContent = await resolver.ResolveAsync(entryContent, context.CancellationToken);
+        
+        var entryName = binaryContent.Name ?? string.Format(DefaultEntryNameFormat, entryIndex + 1);
+        
+        if (!Path.HasExtension(entryName))
         {
-            contentStream = await resolver.ResolveContentAsync(zipEntry.Content, context.CancellationToken);
+            entryName += binaryContent.Extension;
         }
-        else
-        {
-            contentStream = await resolver.ResolveContentAsync(entryContent, context.CancellationToken);
-        }
-
-        entryName = GetEntryNameWithExtension(entryName, entryContent, extensionResolver);
-
-        var archiveEntry = zipArchive.CreateEntry(entryName, CompressionLevel.Optimal);
-
+        
+        var archiveEntry = zipArchive.CreateEntry(entryName, compressionLevel);
+        
         await using var entryStream = archiveEntry.Open();
-        await contentStream.CopyToAsync(entryStream, context.CancellationToken);
+        await binaryContent.Stream.CopyToAsync(entryStream, context.CancellationToken);
         await entryStream.FlushAsync(context.CancellationToken);
-
+        
         if (entryContent is not Stream)
         {
-            await contentStream.DisposeAsync();
+            await binaryContent.Stream.DisposeAsync();
         }
-    }
-
-    private static string GetEntryNameWithExtension(string entryName, object content, IFileExtensionResolver fileExtensionResolver)
-    {
-        if (content is not ZipEntry zipEntry)
-        {
-            return fileExtensionResolver.EnsureFileExtension(entryName, content);
-        }
-
-        entryName = fileExtensionResolver.EnsureFileExtension(zipEntry.EntryName ?? "temp", zipEntry.Content);
-        var extension = Path.GetExtension(entryName);
-
-        if (!entryName.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
-        {
-            entryName += extension;
-        }
-        return entryName;
-    }
-
-    private void SetFileName(ActivityExecutionContext context)
-    {
-        var filename = Filename.Get(context) ?? DefaultArchiveName;
-
-        if (!filename.EndsWith(ZipExtension, StringComparison.OrdinalIgnoreCase))
-        {
-            filename += ZipExtension;
-        }
-
-        ResultFilename.Set(context, filename);
     }
 }

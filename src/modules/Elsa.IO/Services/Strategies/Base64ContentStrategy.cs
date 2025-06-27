@@ -1,4 +1,6 @@
 using Elsa.IO.Common;
+using Elsa.IO.Extensions;
+using Elsa.IO.Models;
 
 namespace Elsa.IO.Services.Strategies;
 
@@ -7,7 +9,8 @@ namespace Elsa.IO.Services.Strategies;
 /// </summary>
 public class Base64ContentStrategy : IContentResolverStrategy
 {
-    public float Priority { get; init; } = Constants.StrategyPriorities.Base64;
+    /// <inheritdoc />
+    public float Priority => Constants.StrategyPriorities.Base64;
 
     /// <inheritdoc />
     public bool CanResolve(object content)
@@ -16,18 +19,35 @@ public class Base64ContentStrategy : IContentResolverStrategy
     }
 
     /// <inheritdoc />
-    public Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default)
+    public Task<BinaryContent> ResolveAsync(object content, CancellationToken cancellationToken = default)
     {
-        var str = content.ToString();
-
-        if (IsUriDataBase64String(str!))
+        var str = content.ToString()!;
+        var extension = ".bin";
+        string? name = null;
+        
+        if (IsUriDataBase64String(str))
         {
-            str = str![(str.IndexOf("base64,", StringComparison.Ordinal) + 7)..];
+            var dataUrlParts = str.Split(';');
+            if (dataUrlParts.Length > 0 && dataUrlParts[0].StartsWith("data:"))
+            {
+                var contentType = dataUrlParts[0][5..];
+                extension = contentType.GetExtensionFromContentType();
+                
+                name = "data" + extension;
+            }
+            
+            str = str[(str.IndexOf("base64,", StringComparison.Ordinal) + 7)..];
         }
-
-        var base64Bytes = Convert.FromBase64String(str!);
+        
+        var base64Bytes = Convert.FromBase64String(str);
         var stream = new MemoryStream(base64Bytes);
-        return Task.FromResult<Stream>(stream);
+        
+        return Task.FromResult(new BinaryContent
+        {
+            Name = name ?? "data.bin",
+            Stream = stream,
+            Extension = extension
+        });
     }
 
     private static bool IsBase64String(string base64)

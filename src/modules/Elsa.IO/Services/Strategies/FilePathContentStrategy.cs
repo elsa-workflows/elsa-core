@@ -1,5 +1,6 @@
 using Elsa.IO.Common;
 using Elsa.IO.Extensions;
+using Elsa.IO.Models;
 
 namespace Elsa.IO.Services.Strategies;
 
@@ -8,7 +9,8 @@ namespace Elsa.IO.Services.Strategies;
 /// </summary>
 public class FilePathContentStrategy : IContentResolverStrategy
 {
-    public float Priority { get; init; } = Constants.StrategyPriorities.FilePath;
+    /// <inheritdoc />
+    public float Priority => Constants.StrategyPriorities.FilePath;
 
     /// <inheritdoc />
     public bool CanResolve(object content)
@@ -40,42 +42,49 @@ public class FilePathContentStrategy : IContentResolverStrategy
         {
             return false;
         }
-    } 
+    }
 
     /// <inheritdoc />
-    public Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default)
+    public Task<BinaryContent> ResolveAsync(object content, CancellationToken cancellationToken = default)
     {
-        var filePath = (string)content;
-        filePath = filePath.CleanFilePath();
-
         try
         {
-            if (Path.IsPathRooted(filePath) && File.Exists(filePath))
-            {
-                var fileStream = File.OpenRead(filePath);
-                return Task.FromResult<Stream>(fileStream);
-            }
-
-            var normalized = Path.GetFullPath(filePath);
-            if (File.Exists(normalized))
-            {
-                var fileStream = File.OpenRead(normalized);
-                return Task.FromResult<Stream>(fileStream);
-            }
+            var filePath = (string)content;
+            filePath = ResolveActualPath(filePath);
             
-            var combined = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), filePath));
-
-            if (File.Exists(combined))
+            var fileName = Path.GetFileName(filePath);
+            var fileStream = File.OpenRead(filePath);
+            
+            var result = new BinaryContent
             {
-                var fileStream = File.OpenRead(combined);
-                return Task.FromResult<Stream>(fileStream);
-            }
-
-            throw new FileNotFoundException($"Could not find file at path: {filePath}", filePath);
+                Name = fileName,
+                Extension = filePath.GetFileExtension(),
+                Stream = fileStream
+            };
+            
+            return Task.FromResult(result);
         }
-        catch (Exception ex) when (!(ex is FileNotFoundException))
+        catch (Exception ex) when (ex is not FileNotFoundException)
         {
-            throw new FileNotFoundException($"Error opening file: {filePath}", filePath, ex);
+            throw new FileNotFoundException($"Error opening file: {content}", content.ToString(), ex);
         }
+    }
+    
+    private string ResolveActualPath(string filePath)
+    {
+        filePath = filePath.CleanFilePath();
+
+        if (Path.IsPathRooted(filePath) && File.Exists(filePath))
+            return filePath;
+            
+        var normalized = Path.GetFullPath(filePath);
+        if (File.Exists(normalized))
+            return normalized;
+            
+        var combined = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), filePath));
+        if (File.Exists(combined))
+            return combined;
+
+        throw new FileNotFoundException($"Could not find file at path: {filePath}", filePath);
     }
 }

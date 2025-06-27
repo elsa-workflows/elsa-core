@@ -1,4 +1,5 @@
 using Elsa.IO.Common;
+using Elsa.IO.Models;
 
 namespace Elsa.IO.Services.Strategies;
 
@@ -7,15 +8,30 @@ namespace Elsa.IO.Services.Strategies;
 /// </summary>
 public class StreamContentStrategy : IContentResolverStrategy
 {
-    public float Priority { get; init; } = Constants.StrategyPriorities.Stream;
+    /// <inheritdoc />
+    public float Priority => Constants.StrategyPriorities.Stream;
 
     /// <inheritdoc />
     public bool CanResolve(object content) => content is Stream;
 
     /// <inheritdoc />
-    public Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default)
+    public Task<BinaryContent> ResolveAsync(object content, CancellationToken cancellationToken = default)
     {
         var stream = (Stream)content;
-        return Task.FromResult(stream);
+        
+        string? name = null;
+        if (stream is FileStream fileStream)
+        {
+            name = Path.GetFileName(fileStream.Name);
+        }
+        
+        var result = new BinaryContent
+        {
+            Stream = stream,
+            Name = name ?? "stream",
+            Extension = string.Empty
+        };
+        
+        return Task.FromResult(result);
     }
 }

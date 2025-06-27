@@ -1,3 +1,4 @@
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34003.232
@@ -244,9 +245,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Resilience.IntegrationTests", "test\integration\Elsa.Resilience.IntegrationTests\Elsa.Resilience.IntegrationTests.csproj", "{832675FA-C597-4554-AE6B-18F189198A1F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "apps", "apps", "{D92BEAB2-60D6-4BB4-885A-6BA681C6CCF1}"
-								ProjectSection(SolutionItems) = preProject
-																src\apps\Directory.Build.props = src\apps\Directory.Build.props
-								EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		src\apps\Directory.Build.props = src\apps\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Server.Web", "src\apps\Elsa.Server.Web\Elsa.Server.Web.csproj", "{5ADDDFB1-E59B-4097-97B7-8C24E2D60463}"
 EndProject
@@ -410,6 +411,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.IO", "src\modules\Elsa.IO\Elsa.IO.csproj", "{EB24F9FE-D7BD-4FCC-907E-AE400288C2A5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.IO.Compression", "src\modules\Elsa.IO.Compression\Elsa.IO.Compression.csproj", "{9CA02818-F7EB-4A0B-B27B-BC74ACD499C9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.IO.Http", "src\modules\Elsa.IO.Http\Elsa.IO.Http.csproj", "{C583AF05-D517-4B7F-8955-6B61500ED3D8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1007,6 +1010,7 @@ Global
 		{7FD1FD1E-5778-4065-AAA5-1F878129EF77} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{EB24F9FE-D7BD-4FCC-907E-AE400288C2A5} = {7FD1FD1E-5778-4065-AAA5-1F878129EF77}
 		{9CA02818-F7EB-4A0B-B27B-BC74ACD499C9} = {7FD1FD1E-5778-4065-AAA5-1F878129EF77}
+		{C583AF05-D517-4B7F-8955-6B61500ED3D8} = {7FD1FD1E-5778-4065-AAA5-1F878129EF77}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

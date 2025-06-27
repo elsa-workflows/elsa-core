@@ -1,4 +1,5 @@
 using Elsa.IO.Common;
+using Elsa.IO.Models;
 
 namespace Elsa.IO.Services.Strategies;
 
@@ -7,16 +8,25 @@ namespace Elsa.IO.Services.Strategies;
 /// </summary>
 public class ByteArrayContentStrategy : IContentResolverStrategy
 {
-    public float Priority { get; init; } = Constants.StrategyPriorities.ByteArray;
+    /// <inheritdoc />
+    public float Priority => Constants.StrategyPriorities.ByteArray;
 
     /// <inheritdoc />
     public bool CanResolve(object content) => content is byte[];
 
     /// <inheritdoc />
-    public Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default)
+    public Task<BinaryContent> ResolveAsync(object content, CancellationToken cancellationToken = default)
     {
         var bytes = (byte[])content;
         var stream = new MemoryStream(bytes);
-        return Task.FromResult<Stream>(stream);
+        
+        var result = new BinaryContent
+        {
+            Stream = stream,
+            Name = "data", // Generic name since we don't have specific information
+            Extension = string.Empty
+        };
+        
+        return Task.FromResult(result);
     }
 }

@@ -1,5 +1,6 @@
 using System.Text;
 using Elsa.IO.Common;
+using Elsa.IO.Models;
 
 namespace Elsa.IO.Services.Strategies;
 
@@ -8,17 +9,24 @@ namespace Elsa.IO.Services.Strategies;
 /// </summary>
 public class TextContentStrategy : IContentResolverStrategy
 {
-    public float Priority { get; init; } = Constants.StrategyPriorities.Text;
+    /// <inheritdoc />
+    public float Priority => Constants.StrategyPriorities.Text;
 
     /// <inheritdoc />
     public bool CanResolve(object content) => content is string;
 
     /// <inheritdoc />
-    public Task<Stream> ResolveAsync(object content, CancellationToken cancellationToken = default)
+    public Task<BinaryContent> ResolveAsync(object content, CancellationToken cancellationToken = default)
     {
         var textContent = (string)content;
         var textBytes = Encoding.UTF8.GetBytes(textContent);
         var stream = new MemoryStream(textBytes);
-        return Task.FromResult<Stream>(stream);
+        
+        return Task.FromResult(new BinaryContent
+        {
+            Name = "text.txt",
+            Extension = ".txt",
+            Stream = stream
+        });
     }
 }
