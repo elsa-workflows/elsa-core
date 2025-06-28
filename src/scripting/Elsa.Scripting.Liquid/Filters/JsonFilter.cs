@@ -15,7 +15,7 @@ namespace Elsa.Scripting.Liquid.Filters
             switch (input.Type)
             {
                 case FluidValues.Array:
-                    return new ValueTask<FluidValue>(new StringValue(JsonConvert.SerializeObject(input.Enumerate().Select(o => o.ToObjectValue()))));
+                    return new ValueTask<FluidValue>(new StringValue(JsonConvert.SerializeObject(input.Enumerate(context).Select(o => o.ToObjectValue()))));
 
                 case FluidValues.Boolean:
                     return new ValueTask<FluidValue>(new StringValue(JsonConvert.SerializeObject(input.ToBooleanValue())));

@@ -17,6 +17,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using System.IO.Compression;
 using System.IO;
 using System.Net.Http;
+using Asp.Versioning;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
