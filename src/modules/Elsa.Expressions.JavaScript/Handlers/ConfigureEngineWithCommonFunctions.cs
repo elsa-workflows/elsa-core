@@ -59,6 +59,7 @@ public class ConfigureEngineWithCommonFunctions(IOptions<JintOptions> options) :
         engine.SetValue("bytesFromBase64", (Func<string, byte[]>)(value => Convert.FromBase64String(value)));
         engine.SetValue("stringToBase64", (Func<string, string>)(value =>  Convert.ToBase64String(Encoding.UTF8.GetBytes(value))));
         engine.SetValue("stringFromBase64", (Func<string, string>)(value => Encoding.UTF8.GetString(Convert.FromBase64String(value))));
+        engine.SetValue("readStreamAsText", (Func<Stream, bool?, string>)ReadStreamAsText);
         
         // Deprecated, use newGuidString instead.
         engine.SetValue("getGuidString", (Func<string>)(() => Guid.NewGuid().ToString()));
@@ -67,7 +68,13 @@ public class ConfigureEngineWithCommonFunctions(IOptions<JintOptions> options) :
         engine.SetValue("getShortGuid", (Func<string>)(() => Regex.Replace(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), "[/+=]", "")));
         return Task.CompletedTask;
     }
-    
+
+    private string ReadStreamAsText(Stream stream, bool? leaveOpen)
+    {
+        using var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: leaveOpen ?? false);
+        return reader.ReadToEnd();
+    }
+
     private string Serialize(object value)
     {
         return JsonSerializer.Serialize(value, _jsonSerializerOptions);
