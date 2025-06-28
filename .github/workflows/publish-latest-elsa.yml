@@ -14,7 +14,7 @@ on:
 
 env:
   NODE_OPTIONS: --max-old-space-size=4096
-  ELSA_VERSION: 2.15.1
+  ELSA_VERSION: 2.15.2
 
 jobs:
   build_and_pack:
