@@ -4,15 +4,17 @@ on:
   push:
     branches:
       - 2.x
+      - rc/*
   pull_request:
     branches:
       - 2.x
+      - rc/*
   release:
     types: [published]
 
 env:
   NODE_OPTIONS: --max-old-space-size=4096
-  ELSA_VERSION: 2.15.0
+  ELSA_VERSION: 2.15.1
 
 jobs:
   build_and_pack:
