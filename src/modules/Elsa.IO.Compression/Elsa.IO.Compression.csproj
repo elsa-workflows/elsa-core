@@ -17,7 +17,6 @@
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
         <ProjectReference Include="..\Elsa.IO\Elsa.IO.csproj" />
-        <ProjectReference Include="..\Elsa.IO.Http\Elsa.IO.Http.csproj" />
         <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
     </ItemGroup>
 

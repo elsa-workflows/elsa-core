@@ -1,7 +1,51 @@
 namespace Elsa.IO.Extensions;
-
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 public static class ContentTypeExtensions
 {
+    private static readonly Dictionary<string, string> MimeMapping = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, HashSet<string>> ContentTypeToExtensionsMap = new(StringComparer.OrdinalIgnoreCase);
+    
+    static ContentTypeExtensions()
+    {
+        // Define all mappings in a single place
+        AddMapping(".txt", "text/plain");
+        AddMapping(".html", "text/html");
+        AddMapping(".htm", "text/html");
+        AddMapping(".css", "text/css");
+        AddMapping(".js", "application/javascript");
+        AddMapping(".json", "application/json");
+        AddMapping(".xml", "application/xml");
+        AddMapping(".jpg", "image/jpeg");
+        AddMapping(".jpeg", "image/jpeg");
+        AddMapping(".png", "image/png");
+        AddMapping(".gif", "image/gif");
+        AddMapping(".svg", "image/svg+xml");
+        AddMapping(".pdf", "application/pdf");
+        AddMapping(".doc", "application/msword");
+        AddMapping(".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        AddMapping(".xls", "application/vnd.ms-excel");
+        AddMapping(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        AddMapping(".ppt", "application/vnd.ms-powerpoint");
+        AddMapping(".pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+        AddMapping(".zip", "application/zip");
+        AddMapping(".csv", "text/csv");
+    }
+    private static void AddMapping(string extension, string contentType)
+    {
+        // Map extension to content type
+        MimeMapping[extension] = contentType;
+        // Map content type to extension(s)
+        if (!ContentTypeToExtensionsMap.TryGetValue(contentType, out var extensions))
+        {
+            extensions = new(StringComparer.OrdinalIgnoreCase);
+            ContentTypeToExtensionsMap[contentType] = extensions;
+        }
+        
+        extensions.Add(extension);
+    }
     public static string GetExtensionFromContentType(this string? contentType)
     {
         if (string.IsNullOrEmpty(contentType))
@@ -9,58 +53,33 @@ public static class ContentTypeExtensions
             
         if (contentType.EndsWith("/pdf") || contentType == "application/pdf")
             return ".pdf";
-            
-        return contentType switch
+        
+        if (ContentTypeToExtensionsMap.TryGetValue(contentType, out var extensions) && extensions.Any())
         {
-            "image/jpeg" => ".jpg",
-            "image/png" => ".png",
-            "image/gif" => ".gif",
-            "image/svg+xml" => ".svg",
-            "text/plain" => ".txt",
-            "text/html" => ".html",
-            "text/css" => ".css",
-            "text/csv" => ".csv",
-            "application/json" => ".json",
-            "application/xml" => ".xml",
-            "application/zip" => ".zip",
-            "application/javascript" => ".js",
-            "application/vnd.ms-excel" => ".xls",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => ".xlsx",
-            "application/vnd.ms-powerpoint" => ".ppt",
-            "application/vnd.openxmlformats-officedocument.presentationml.presentation" => ".pptx",
-            "application/msword" => ".doc",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => ".docx",
-            _ => DetermineExtensionFromMimeType(contentType)
-        };
+            // Return the first extension for this content type
+            return extensions.First();
+        }
+        
+        return DetermineExtensionFromMimeType(contentType);
     }
-
     public static string GetContentTypeFromExtension(this string filePath)
     {
-        return filePath.GetFileExtension() switch
-        {
-            ".txt" => "text/plain",
-            ".html" => "text/html",
-            ".htm" => "text/html",
-            ".css" => "text/css",
-            ".js" => "application/javascript",
-            ".json" => "application/json",
-            ".xml" => "application/xml",
-            ".jpg" => "image/jpeg",
-            ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".gif" => "image/gif",
-            ".svg" => "image/svg+xml",
-            ".pdf" => "application/pdf",
-            ".doc" => "application/msword",
-            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            ".xls" => "application/vnd.ms-excel",
-            ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            ".zip" => "application/zip",
-            _ => "application/octet-stream"
-        };
+        var extension = filePath.GetFileExtension();
+        
+        return MimeMapping.GetValueOrDefault(extension, "application/octet-stream");
     }
     
+    public static string GetNameAndExtension(this string fileName, string? extension = ".bin")
+    {
+        var currentExtension = fileName.GetFileExtension();
+        if (!string.IsNullOrWhiteSpace(currentExtension))
+        {
+            return fileName;
+        }
 
+        return fileName + extension;
+    }
+    
     public static string GetFileExtension(this string filePath)
     {
         return Path.GetExtension(filePath).ToLowerInvariant();

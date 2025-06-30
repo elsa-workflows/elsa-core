@@ -1,11 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
+    
     <PropertyGroup>
-        <Nullable>enable</Nullable>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <Description>
+            Provides http capabilities to IO modules in Elsa Workflows.
+        </Description>
+        <PackageTags>elsa module io http</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Elsa.Http\Elsa.Http.csproj" />
+        <ProjectReference Include="..\Elsa.IO.Compression\Elsa.IO.Compression.csproj" />
         <ProjectReference Include="..\Elsa.IO\Elsa.IO.csproj" />
     </ItemGroup>
 

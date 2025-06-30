@@ -1,4 +1,5 @@
 using Elsa.IO.Common;
+using Elsa.IO.Extensions;
 using Elsa.IO.Models;
 
 namespace Elsa.IO.Services.Strategies;
@@ -28,8 +29,7 @@ public class StreamContentStrategy : IContentResolverStrategy
         var result = new BinaryContent
         {
             Stream = stream,
-            Name = name ?? "stream",
-            Extension = string.Empty
+            Name = name?.GetNameAndExtension() ?? "data.bin",
         };
         
         return Task.FromResult(result);

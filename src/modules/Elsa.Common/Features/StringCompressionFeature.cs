@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Common.Features;
 
 [UsedImplicitly]
-public class CompressionFeature(IModule module) : FeatureBase(module)
+public class StringCompressionFeature(IModule module) : FeatureBase(module)
 {
     public override void Apply()
     {

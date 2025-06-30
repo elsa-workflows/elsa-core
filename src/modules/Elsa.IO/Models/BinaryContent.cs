@@ -17,12 +17,9 @@ public class BinaryContent
     /// <summary>
     /// Gets the content type (MIME type) based on file extension.
     /// </summary>
-    public string ContentType => Extension.GetContentTypeFromExtension();
-    
-    /// <summary>
-    /// Gets or sets the file extension.
-    /// </summary>
-    public string Extension { get; init; } = null!;
+    public string? ContentType => !string.IsNullOrWhiteSpace(Name) 
+        ? Path.GetExtension(Name).GetContentTypeFromExtension() 
+        : null;
 
     /// <summary>
     /// Gets or sets optional metadata headers.

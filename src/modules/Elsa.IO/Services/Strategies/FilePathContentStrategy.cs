@@ -57,8 +57,7 @@ public class FilePathContentStrategy : IContentResolverStrategy
             
             var result = new BinaryContent
             {
-                Name = fileName,
-                Extension = filePath.GetFileExtension(),
+                Name = fileName.GetNameAndExtension(),
                 Stream = fileStream
             };
             

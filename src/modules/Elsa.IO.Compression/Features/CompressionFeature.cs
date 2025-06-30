@@ -23,7 +23,6 @@ public class CompressionFeature(IModule module) : FeatureBase(module)
     {
         Module.AddActivitiesFrom<CompressionFeature>();
         Module.AddVariableTypeAndAlias<ZipEntry>("ZipEntry", "Compression");
-        Module.UseIOHttp();
     }
 
     /// <inheritdoc />

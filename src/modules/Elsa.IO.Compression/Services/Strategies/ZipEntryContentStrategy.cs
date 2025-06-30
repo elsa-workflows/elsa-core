@@ -1,6 +1,7 @@
 using Elsa.IO.Compression.Common;
 using Elsa.IO.Compression.Models;
 using Elsa.IO.Contracts;
+using Elsa.IO.Extensions;
 using Elsa.IO.Models;
 using Elsa.IO.Services.Strategies;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,14 +27,18 @@ public class ZipEntryContentStrategy(IServiceProvider serviceProvider) : IConten
         var resolver = serviceProvider.GetRequiredService<IContentResolver>();
         
         var innerContent = await resolver.ResolveAsync(zipEntry.Content, cancellationToken);
-        
-        if (!string.IsNullOrEmpty(zipEntry.EntryName))
+
+        if (string.IsNullOrEmpty(zipEntry.EntryName))
         {
-            innerContent.Name = Path.HasExtension(zipEntry.EntryName) 
-                ? zipEntry.EntryName
-                : zipEntry.EntryName + innerContent.Extension;
+            return innerContent;
         }
-        
+
+        var innerContentName = innerContent.Name?.GetNameAndExtension();
+        var innerContentExtension = Path.GetExtension(innerContentName);
+        innerContent.Name = !string.IsNullOrWhiteSpace(innerContentExtension) 
+            ? zipEntry.EntryName + innerContentExtension 
+            : innerContent.Name;
+
         return innerContent;
     }
 }

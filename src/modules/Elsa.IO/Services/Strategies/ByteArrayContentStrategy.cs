@@ -23,8 +23,7 @@ public class ByteArrayContentStrategy : IContentResolverStrategy
         var result = new BinaryContent
         {
             Stream = stream,
-            Name = "data", // Generic name since we don't have specific information
-            Extension = string.Empty
+            Name = "data.bin",
         };
         
         return Task.FromResult(result);

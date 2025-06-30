@@ -25,7 +25,6 @@ public class TextContentStrategy : IContentResolverStrategy
         return Task.FromResult(new BinaryContent
         {
             Name = "text.txt",
-            Extension = ".txt",
             Stream = stream
         });
     }

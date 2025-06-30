@@ -1,6 +1,7 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.IO.Compression.Features;
 using Elsa.IO.Features;
 using Elsa.IO.Http.Common;
 using Elsa.IO.Http.Services.Strategies;
@@ -15,6 +16,7 @@ namespace Elsa.IO.Http.Features;
 /// </summary>
 [UsedImplicitly]
 [DependsOn(typeof(IOFeature))]
+[DependencyOf(typeof(CompressionFeature))]
 public class IOHttpFeature(IModule module) : FeatureBase(module)
 {
     /// <inheritdoc />

@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.IO.Contracts;
+using Elsa.IO.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
@@ -122,12 +123,8 @@ public class CreateZipArchive : CodeActivity<Stream>
     {
         var binaryContent = await resolver.ResolveAsync(entryContent, context.CancellationToken);
         
-        var entryName = binaryContent.Name ?? string.Format(DefaultEntryNameFormat, entryIndex + 1);
-        
-        if (!Path.HasExtension(entryName))
-        {
-            entryName += binaryContent.Extension;
-        }
+        var entryName = binaryContent.Name?.GetNameAndExtension() 
+                        ?? string.Format(DefaultEntryNameFormat, entryIndex + 1);
         
         var archiveEntry = zipArchive.CreateEntry(entryName, compressionLevel);
         

@@ -44,9 +44,8 @@ public class Base64ContentStrategy : IContentResolverStrategy
         
         return Task.FromResult(new BinaryContent
         {
-            Name = name ?? "data.bin",
+            Name = name?.GetNameAndExtension(extension) ?? "data.bin",
             Stream = stream,
-            Extension = extension
         });
     }
 

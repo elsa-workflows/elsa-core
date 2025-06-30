@@ -14,6 +14,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Connections.Persistence.EntityFrameworkCore\Elsa.Connections.Persistence.EntityFrameworkCore.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.IO.Http\Elsa.IO.Http.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.JavaScript.Libraries\Elsa.JavaScript.Libraries.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Quartz.EntityFrameworkCore.PostgreSql\Elsa.Quartz.EntityFrameworkCore.PostgreSql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Quartz.EntityFrameworkCore.SqlServer\Elsa.Quartz.EntityFrameworkCore.SqlServer.csproj" />

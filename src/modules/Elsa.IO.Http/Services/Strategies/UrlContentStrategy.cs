@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.IO.Extensions;
 using Elsa.IO.Http.Common;
 using Elsa.IO.Models;
@@ -34,8 +35,7 @@ public class UrlContentStrategy(ILogger<UrlContentStrategy> logger, IHttpClientF
             
             return new BinaryContent
             {
-                Name = filename,
-                Extension = contentType.GetExtensionFromContentType(),
+                Name = filename.GetNameAndExtension(contentType.GetExtensionFromContentType()),
                 Stream = stream
             };
         }
@@ -51,30 +51,17 @@ public class UrlContentStrategy(ILogger<UrlContentStrategy> logger, IHttpClientF
     /// </summary>
     private string ExtractFilenameFromResponse(HttpResponseMessage response, string url)
     {
-        // Try to get filename from Content-Disposition header
-        if (response.Content.Headers.ContentDisposition != null)
+        var filename = response.GetFilename();
+        if (!string.IsNullOrWhiteSpace(filename))
         {
-            var contentDisposition = response.Content.Headers.ContentDisposition.ToString();
-            const string filenameMarker = "filename=";
-            var index = contentDisposition.IndexOf(filenameMarker, StringComparison.OrdinalIgnoreCase);
-            
-            if (index != -1)
-            {
-                var startIndex = index + filenameMarker.Length;
-                var filename = contentDisposition[startIndex..].Trim(' ', '"', ';');
-                if (!string.IsNullOrEmpty(filename))
-                {
-                    return filename;
-                }
-            }
+            return filename;
         }
 
-        // If no Content-Disposition header, extract from URL
         try
         {
             var uri = new Uri(url);
             var path = uri.AbsolutePath;
-            var filename = Path.GetFileName(path);
+            filename = Path.GetFileName(path);
             
             if (!string.IsNullOrEmpty(filename) && Path.HasExtension(filename))
             {
