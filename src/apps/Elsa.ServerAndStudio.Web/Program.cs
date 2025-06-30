@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using WebhooksCore.Options;
 using Elsa.Connections.Middleware;
+using Elsa.IO.Http.Features;
 using Proto.Persistence.Sqlite;
 
 const bool useMassTransit = true;
@@ -140,6 +141,8 @@ services
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseWebhooks(webhooks => webhooks.ConfigureSinks = options => builder.Configuration.GetSection("Webhooks:Sinks").Bind(options))
             .UseWorkflowsApi()
+            .UseCompression()
+            .Use<IOHttpFeature>()
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>();
 
