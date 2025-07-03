@@ -78,6 +78,12 @@ public class MongoDbFeature(IModule module) : FeatureBase(module)
             map.SetIgnoreExtraElements(true); // Needed for missing ID property
             map.MapProperty(x => x.Key); // Needed for non-setter property
         });
+        
+        BsonClassMap.TryRegisterClassMap<FlowScope>(map =>
+        {
+            map.AutoMap();
+            map.SetIgnoreExtraElements(true);
+        });
     }
 
     private static void TryRegisterSerializerOrSkipWhenExist(Type type, IBsonSerializer serializer)
