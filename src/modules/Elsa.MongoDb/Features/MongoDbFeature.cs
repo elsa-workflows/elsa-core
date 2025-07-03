@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
-    
+
 namespace Elsa.MongoDb.Features;
 
 /// <summary>
@@ -47,7 +47,7 @@ public class MongoDbFeature(IModule module) : FeatureBase(module)
         var mongoUrl = new MongoUrl(ConnectionString);
         Services.AddSingleton(sp => CreateMongoClient(sp, mongoUrl));
         Services.AddScoped(sp => CreateDatabase(sp, mongoUrl));
-        
+
         Services.TryAddScoped<DefaultNamingStrategy>();
         Services.AddScoped(CollectionNamingStrategy);
 
@@ -68,7 +68,7 @@ public class MongoDbFeature(IModule module) : FeatureBase(module)
             map.MapProperty(x => x.Key); // Needed for non-setter property
         });
     }
-    
+
     private static IMongoClient CreateMongoClient(IServiceProvider sp, MongoUrl mongoUrl)
     {
         var options = sp.GetRequiredService<IOptions<MongoDbOptions>>().Value;
@@ -77,7 +77,7 @@ public class MongoDbFeature(IModule module) : FeatureBase(module)
 
         // TODO: Uncomment once https://github.com/jbogard/MongoDB.Driver.Core.Extensions.DiagnosticSources/pull/41 is merged and deployed.
         //settings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityEventSubscriber());
-        
+
         settings.ApplicationName = GetApplicationName(settings);
         settings.WriteConcern = options.WriteConcern;
         settings.ReadConcern = options.ReadConcern;
