@@ -4,9 +4,10 @@ using Elsa.MongoDb.Serializers;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Memory;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
 using MongoDB.Bson.Serialization.Serializers;
-using static Elsa.MongoDb.Helpers.BsonSerializerHelpers;
+using static MongoDB.Bson.Serialization.BsonSerializer;
 
 namespace Elsa.MongoDb.HostedServices;
 
@@ -19,6 +20,7 @@ namespace Elsa.MongoDb.HostedServices;
 /// <see cref="JsonElement"/>, <see cref="JsonNode"/>, and <see cref="FlowScope"/>.
 /// It uses helper methods to register these serializers during the application's startup process.
 /// </remarks>
+[UsedImplicitly]
 public class ConfigureMongoDbSerializers(IPayloadSerializer payloadSerializer) : IHostedService
 {
     public Task StartAsync(CancellationToken cancellationToken)

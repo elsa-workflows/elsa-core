@@ -37,7 +37,7 @@ public class FlowScopeSerializer(IPayloadSerializer payloadSerializer) : IBsonSe
         if (bsonType == BsonType.Null)
         {
             reader.ReadNull();
-            return null!;
+            return new();
         }
         
         if(bsonType == BsonType.String)
