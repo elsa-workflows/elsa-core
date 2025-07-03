@@ -7,6 +7,7 @@ using Elsa.MongoDb.Contracts;
 using Elsa.MongoDb.NamingStrategies;
 using Elsa.MongoDb.Options;
 using Elsa.MongoDb.Serializers;
+using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
