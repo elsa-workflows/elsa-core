@@ -8,7 +8,7 @@ namespace Elsa.MongoDb.Serializers;
 /// <summary>
 /// Serializes a <see cref="FlowScope"/>.
 /// </summary>
-public class FlowScopeSerializer(IPayloadSerializer payloadSerializer) : IBsonSerializer<FlowScope>
+public class FlowScopeSerializer(IPayloadSerializer payloadSerializer) : IBsonSerializer<FlowScope?>
 {
     /// <inheritdoc />
     public Type ValueType => typeof(FlowScope);
@@ -17,9 +17,9 @@ public class FlowScopeSerializer(IPayloadSerializer payloadSerializer) : IBsonSe
     object IBsonSerializer.Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args) => Deserialize(context, args);
 
     /// <inheritdoc />
-    public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, FlowScope value)
+    public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, FlowScope? value)
     {
-        if (value == null!)
+        if (value is null)
             context.Writer.WriteNull();
         else
         {
