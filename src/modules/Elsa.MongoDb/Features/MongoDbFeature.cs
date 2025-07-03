@@ -1,23 +1,17 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.KeyValues.Entities;
 using Elsa.MongoDb.Contracts;
+using Elsa.MongoDb.HostedServices;
 using Elsa.MongoDb.NamingStrategies;
 using Elsa.MongoDb.Options;
-using Elsa.MongoDb.Serializers;
-using Elsa.Workflows.Activities.Flowchart.Models;
-using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
-
+    
 namespace Elsa.MongoDb.Features;
 
 /// <summary>
@@ -28,7 +22,7 @@ public class MongoDbFeature(IModule module) : FeatureBase(module)
     /// <summary>
     /// The MongoDB connection string.
     /// </summary>
-    public string ConnectionString { get; set; } = default!;
+    public string ConnectionString { get; set; } = null!;
 
     /// <summary>
     /// A delegate that configures MongoDb.
@@ -39,6 +33,11 @@ public class MongoDbFeature(IModule module) : FeatureBase(module)
     /// A delegate that creates an instance of an implementation of <see cref="ICollectionNamingStrategy"/>.
     /// </summary>
     public Func<IServiceProvider, ICollectionNamingStrategy> CollectionNamingStrategy { get; set; } = sp => sp.GetRequiredService<DefaultNamingStrategy>();
+
+    public override void ConfigureHostedServices()
+    {
+        Module.ConfigureHostedService<ConfigureMongoDbSerializers>(-10);
+    }
 
     /// <inheritdoc />
     public override void Apply()
@@ -52,19 +51,7 @@ public class MongoDbFeature(IModule module) : FeatureBase(module)
         Services.TryAddScoped<DefaultNamingStrategy>();
         Services.AddScoped(CollectionNamingStrategy);
 
-        RegisterSerializers();
         RegisterClassMaps();
-    }
-
-    private static void RegisterSerializers()
-    {
-        TryRegisterSerializerOrSkipWhenExist(typeof(object), new PolymorphicSerializer());
-        TryRegisterSerializerOrSkipWhenExist(typeof(Type), new TypeSerializer());
-        TryRegisterSerializerOrSkipWhenExist(typeof(Variable), new VariableSerializer());
-        TryRegisterSerializerOrSkipWhenExist(typeof(Version), new VersionSerializer());
-        TryRegisterSerializerOrSkipWhenExist(typeof(JsonElement), new JsonElementSerializer());
-        TryRegisterSerializerOrSkipWhenExist(typeof(JsonNode), new JsonNodeBsonConverter());
-        TryRegisterSerializerOrSkipWhenExist(typeof(FlowScope), new FlowScopeSerializer());
     }
 
     private static void RegisterClassMaps()
@@ -80,17 +67,6 @@ public class MongoDbFeature(IModule module) : FeatureBase(module)
             map.SetIgnoreExtraElements(true); // Needed for missing ID property
             map.MapProperty(x => x.Key); // Needed for non-setter property
         });
-    }
-
-    private static void TryRegisterSerializerOrSkipWhenExist(Type type, IBsonSerializer serializer)
-    {
-       try
-       {
-           BsonSerializer.TryRegisterSerializer(type, serializer);
-       }
-       catch (BsonSerializationException ex)
-       {
-       }
     }
     
     private static IMongoClient CreateMongoClient(IServiceProvider sp, MongoUrl mongoUrl)

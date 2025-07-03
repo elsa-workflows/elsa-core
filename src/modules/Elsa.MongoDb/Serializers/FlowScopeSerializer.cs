@@ -33,15 +33,20 @@ public class FlowScopeSerializer(IPayloadSerializer payloadSerializer) : IBsonSe
     {
         var reader = context.Reader;
         var bsonType = reader.GetCurrentBsonType();
-        
+
         if (bsonType == BsonType.Null)
         {
             reader.ReadNull();
             return null!;
         }
         
-        var json = context.Reader.ReadString();
-        
-        return string.IsNullOrEmpty(json) ? new() : payloadSerializer.Deserialize<FlowScope>(json);
+        if(bsonType == BsonType.String)
+        {
+            var json = context.Reader.ReadString();
+
+            return string.IsNullOrEmpty(json) ? new() : payloadSerializer.Deserialize<FlowScope>(json);
+        }
+
+        return new();
     }
 }
