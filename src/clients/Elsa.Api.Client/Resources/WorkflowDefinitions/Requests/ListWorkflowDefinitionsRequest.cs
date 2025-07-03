@@ -2,8 +2,7 @@ using Elsa.Api.Client.Resources.WorkflowDefinitions.Enums;
 using Elsa.Api.Client.Shared.Models;
 using Refit;
 
-namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Requests
-;
+namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Requests;
 
 /// <summary>
 /// Represents a request to list workflow definitions.
