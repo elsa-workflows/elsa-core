@@ -7,6 +7,7 @@ using Elsa.MongoDb.Contracts;
 using Elsa.MongoDb.NamingStrategies;
 using Elsa.MongoDb.Options;
 using Elsa.MongoDb.Serializers;
+using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
@@ -63,6 +64,7 @@ public class MongoDbFeature(IModule module) : FeatureBase(module)
         TryRegisterSerializerOrSkipWhenExist(typeof(Version), new VersionSerializer());
         TryRegisterSerializerOrSkipWhenExist(typeof(JsonElement), new JsonElementSerializer());
         TryRegisterSerializerOrSkipWhenExist(typeof(JsonNode), new JsonNodeBsonConverter());
+        TryRegisterSerializerOrSkipWhenExist(typeof(FlowScope), new FlowScopeSerializer());
     }
 
     private static void RegisterClassMaps()

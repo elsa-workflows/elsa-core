@@ -79,7 +79,7 @@ using Proto.Remote.GrpcNet;
 using StackExchange.Redis;
 
 // ReSharper disable RedundantAssignment
-const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
+const PersistenceProvider persistenceProvider = PersistenceProvider.MongoDb;
 const bool useDbContextPooling = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
