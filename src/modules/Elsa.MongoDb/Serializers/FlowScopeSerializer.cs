@@ -19,7 +19,7 @@ public class FlowScopeSerializer(IPayloadSerializer payloadSerializer) : IBsonSe
     /// <inheritdoc />
     public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, FlowScope value)
     {
-        if (value == null!)
+        if (value is null)
             context.Writer.WriteNull();
         else
         {
