@@ -8,6 +8,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using Open.Linq.AsyncExtensions;
@@ -18,7 +19,7 @@ namespace Elsa.MongoDb.Modules.Management;
 /// A MongoDb implementation of <see cref="IWorkflowInstanceStore"/>.
 /// </summary>
 [UsedImplicitly]
-public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbStore) : IWorkflowInstanceStore
+public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbStore, ILogger<MongoWorkflowInstanceStore> logger) : IWorkflowInstanceStore
 {
     /// <inheritdoc />
     public async ValueTask<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
@@ -130,7 +131,10 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
             [nameof(WorkflowInstance.UpdatedAt)] = value
         };
 
-        await mongoDbStore.UpdatePartialAsync(workflowInstanceId, props, cancellationToken: cancellationToken);
+        var updated = await mongoDbStore.UpdatePartialAsync(workflowInstanceId, props, throwIfNotFound: false, cancellationToken: cancellationToken);
+        
+        if (!updated) 
+            logger.LogDebug("Failed to update the 'UpdatedAt' timestamp for workflow instance with ID '{WorkflowInstanceId}'. This means this workflow does not yet exist in the DB.", workflowInstanceId);
     }
 
     /// <inheritdoc />

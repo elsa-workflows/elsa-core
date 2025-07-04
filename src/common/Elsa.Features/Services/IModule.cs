@@ -31,12 +31,12 @@ public interface IModule
     /// <summary>
     /// Creates and configures a feature of the specified type.
     /// </summary>
-    T Configure<T>(Action<T>? configure = default) where T : class, IFeature;
+    T Configure<T>(Action<T>? configure = null) where T : class, IFeature;
 
     /// <summary>
     /// Creates and configures a feature of the specified type.
     /// </summary>
-    T Configure<T>(Func<IModule, T> factory, Action<T>? configure = default) where T : class, IFeature;
+    T Configure<T>(Func<IModule, T> factory, Action<T>? configure = null) where T : class, IFeature;
 
     /// <summary>
     /// Configures a <see cref="IHostedService"/> using an optional priority to control in which order it will be registered with the service container.

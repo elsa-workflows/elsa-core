@@ -134,10 +134,11 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
         await collection.BulkWriteAsync(writes, cancellationToken: cancellationToken);
     }
     
-    public async Task UpdatePartialAsync(
+    public async Task<bool> UpdatePartialAsync(
         string id,
         IDictionary<string, object> updatedFields,
         string primaryKey = nameof(Entity.Id),
+        bool throwIfNotFound = true,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(id))
@@ -154,7 +155,14 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
         var updateResult = await collection.UpdateOneAsync(filter, updateDefinition, cancellationToken: cancellationToken);
 
         if (updateResult.MatchedCount == 0)
+        {
+            if (!throwIfNotFound)
+                return false;
+            
             throw new InvalidOperationException($"No document found with ID '{id}'.");
+        }
+        
+        return updateResult.ModifiedCount > 0;
     }
 
     /// <summary>
