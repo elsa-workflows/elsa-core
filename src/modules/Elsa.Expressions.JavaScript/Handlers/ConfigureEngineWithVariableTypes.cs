@@ -1,11 +1,11 @@
+using Elsa.Expressions.JavaScript.Notifications;
 using Elsa.Extensions;
-using Elsa.JavaScript.Notifications;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.JavaScript.Handlers;
+namespace Elsa.Expressions.JavaScript.Handlers;
 
 [UsedImplicitly]
 public class ConfigureEngineWithWorkflowVariableTypes(IOptions<ManagementOptions> options) 
