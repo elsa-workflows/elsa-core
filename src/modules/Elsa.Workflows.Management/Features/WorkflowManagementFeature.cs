@@ -34,7 +34,7 @@ namespace Elsa.Workflows.Management.Features;
 /// <summary>
 /// Installs and configures the workflow management feature.
 /// </summary>
-[DependsOn(typeof(CompressionFeature))]
+[DependsOn(typeof(StringCompressionFeature))]
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(MemoryCacheFeature))]
 [DependsOn(typeof(SystemClockFeature))]

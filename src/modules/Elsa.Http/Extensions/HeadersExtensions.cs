@@ -1,4 +1,6 @@
 // ReSharper disable once CheckNamespace
+using Elsa.Http;
+
 namespace Elsa.Extensions;
 
 /// <summary>

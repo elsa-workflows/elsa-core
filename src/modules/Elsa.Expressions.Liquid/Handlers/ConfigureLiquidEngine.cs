@@ -91,29 +91,11 @@ internal class ConfigureLiquidEngine : INotificationHandler<RenderingLiquidTempl
 
     private static object? GetVariableInScope(ExpressionExecutionContext context, string variableName)
     {
-        var q = from variable in EnumerateVariablesInScope(context)
+        var q = from variable in context.EnumerateVariablesInScope()
             where variable.Name == variableName
             where variable.TryGet(context, out _)
             select variable.Get(context);
 
         return q.FirstOrDefault();
-    }
-
-    private static IEnumerable<Variable> EnumerateVariablesInScope(ExpressionExecutionContext context)
-    {
-        var currentScope = context;
-
-        while (currentScope != null)
-        {
-            if (!currentScope.TryGetActivityExecutionContext(out var activityExecutionContext))
-                break;
-
-            var variables = activityExecutionContext.Variables;
-
-            foreach (var variable in variables)
-                yield return variable;
-
-            currentScope = currentScope.ParentContext;
-        }
     }
 }

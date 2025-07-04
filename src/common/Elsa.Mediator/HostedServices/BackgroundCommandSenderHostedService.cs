@@ -1,5 +1,6 @@
 using System.Threading.Channels;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Middleware.Command;
 using Elsa.Mediator.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,7 +17,7 @@ public class BackgroundCommandSenderHostedService : BackgroundService
     private readonly int _workerCount;
     private readonly ICommandsChannel _commandsChannel;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly List<Channel<ICommand>> _outputs;
+    private readonly List<Channel<CommandContext>> _outputs;
     private readonly ILogger _logger;
 
     /// <inheritdoc />
@@ -26,7 +27,7 @@ public class BackgroundCommandSenderHostedService : BackgroundService
         _commandsChannel = commandsChannel;
         _scopeFactory = scopeFactory;
         _logger = logger;
-        _outputs = new List<Channel<ICommand>>(_workerCount);
+        _outputs = new(_workerCount);
     }
 
     /// <inheritdoc />
@@ -36,34 +37,32 @@ public class BackgroundCommandSenderHostedService : BackgroundService
 
         for (var i = 0; i < _workerCount; i++)
         {
-            var output = Channel.CreateUnbounded<ICommand>();
+            var output = Channel.CreateUnbounded<CommandContext>();
             _outputs.Add(output);
             _ = ReadOutputAsync(output, cancellationToken);
         }
 
-        await foreach (var command in _commandsChannel.Reader.ReadAllAsync(cancellationToken))
+        await foreach (var commandContext in _commandsChannel.Reader.ReadAllAsync(cancellationToken))
         {
             var output = _outputs[index];
-            await output.Writer.WriteAsync(command, cancellationToken);
+            await output.Writer.WriteAsync(commandContext, cancellationToken);
             index = (index + 1) % _workerCount;
         }
 
-        foreach (var output in _outputs)
-        {
+        foreach (var output in _outputs) 
             output.Writer.Complete();
-        }
     }
 
-    private async Task ReadOutputAsync(Channel<ICommand> output, CancellationToken cancellationToken)
+    private async Task ReadOutputAsync(Channel<CommandContext> output, CancellationToken cancellationToken)
     {
-        await foreach (var command in output.Reader.ReadAllAsync(cancellationToken))
+        await foreach (var commandContext in output.Reader.ReadAllAsync(cancellationToken))
         {
             try
             {
                 using var scope = _scopeFactory.CreateScope();
                 var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
 
-                await commandSender.SendAsync(command, CommandStrategy.Default, cancellationToken);
+                await commandSender.SendAsync(commandContext.Command, CommandStrategy.Default, commandContext.Headers, cancellationToken);
             }
             catch (Exception e)
             {
