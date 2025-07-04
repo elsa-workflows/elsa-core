@@ -12,6 +12,7 @@ public class WorkflowStateMapper
     /// <summary>
     /// [Obsolete] The property key name used to store the workflow instance name.
     /// </summary>
+    [Obsolete("This constant is obsolete and retained only for backward compatibility. Avoid using it in new code.")]
     private const string WorkflowInstanceNameKey = "WorkflowInstanceName";
     
     /// <summary>
