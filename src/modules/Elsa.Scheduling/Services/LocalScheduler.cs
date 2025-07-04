@@ -54,7 +54,7 @@ public class LocalScheduler : IScheduler
 
     private void RegisterScheduledTask(string name, IScheduledTask scheduledTask, IEnumerable<string>? keys = null)
     {
-        if (_scheduledTasks.TryGetValue(name, out var existingScheduledTask))
+        if (_scheduledTasks.TryRemove(name, out var existingScheduledTask))
         {
             existingScheduledTask.Cancel();
             _scheduledTaskKeys.Remove(existingScheduledTask, out _);
