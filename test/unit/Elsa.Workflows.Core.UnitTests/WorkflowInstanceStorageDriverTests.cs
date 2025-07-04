@@ -8,15 +8,13 @@ namespace Elsa.Workflows.Core.UnitTests;
 
 public class WorkflowInstanceStorageDriverTests
 {
-    private readonly Mock<IPayloadSerializer> _payloadSerializerMock;
     private readonly Mock<ILogger<WorkflowInstanceStorageDriver>> _loggerMock;
     private readonly WorkflowInstanceStorageDriver _driver;
 
     public WorkflowInstanceStorageDriverTests()
     {
-        _payloadSerializerMock = new Mock<IPayloadSerializer>();
         _loggerMock = new Mock<ILogger<WorkflowInstanceStorageDriver>>();
-        _driver = new WorkflowInstanceStorageDriver(_payloadSerializerMock.Object, _loggerMock.Object);
+        _driver = new WorkflowInstanceStorageDriver(null, _loggerMock.Object);
     }
 
     [Fact]
