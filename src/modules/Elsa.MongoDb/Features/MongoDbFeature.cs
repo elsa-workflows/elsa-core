@@ -5,6 +5,7 @@ using Elsa.MongoDb.Contracts;
 using Elsa.MongoDb.HostedServices;
 using Elsa.MongoDb.NamingStrategies;
 using Elsa.MongoDb.Options;
+using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -66,6 +67,12 @@ public class MongoDbFeature(IModule module) : FeatureBase(module)
             map.AutoMap();
             map.SetIgnoreExtraElements(true); // Needed for missing ID property
             map.MapProperty(x => x.Key); // Needed for non-setter property
+        });
+        
+        BsonClassMap.TryRegisterClassMap<FlowScope>(map =>
+        {
+            map.AutoMap();
+            map.SetIgnoreExtraElements(true);
         });
     }
 
