@@ -47,11 +47,13 @@ public class Module : IModule
     }
 
     /// <inheritdoc />
-    public T Configure<T>(Action<T>? configure = default) where T : class, IFeature
-        => Configure(module => (T)Activator.CreateInstance(typeof(T), module)!, configure);
+    public T Configure<T>(Action<T>? configure = null) where T : class, IFeature
+    {
+        return Configure(module => (T)Activator.CreateInstance(typeof(T), module)!, configure);
+    }
 
     /// <inheritdoc />
-    public T Configure<T>(Func<IModule, T> factory, Action<T>? configure = default) where T : class, IFeature
+    public T Configure<T>(Func<IModule, T> factory, Action<T>? configure = null) where T : class, IFeature
     {
         if (!_features.TryGetValue(typeof(T), out var feature))
         {
@@ -81,7 +83,7 @@ public class Module : IModule
     /// <inheritdoc />
     public IModule ConfigureHostedService(Type hostedServiceType, int priority = 0)
     {
-        _hostedServiceDescriptors.Add(new HostedServiceDescriptor(priority, hostedServiceType));
+        _hostedServiceDescriptors.Add(new(priority, hostedServiceType));
         return this;
     }
 
@@ -121,7 +123,7 @@ public class Module : IModule
             var ns = "Elsa";
             var displayName = type.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? name;
             var description = type.GetCustomAttribute<DescriptionAttribute>()?.Description;
-            registry.Add(new FeatureDescriptor(name, ns, displayName, description));
+            registry.Add(new(name, ns, displayName, description));
         }
 
         Services.AddSingleton<IInstalledFeatureRegistry>(registry);

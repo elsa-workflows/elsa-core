@@ -65,6 +65,8 @@ services
                 };
             })
             .UseWorkflowsApi()
+            .UseCompression()
+            .Use<IOHttpFeature>()
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>();
     });
