@@ -10,15 +10,16 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<ProjectReference Include="..\..\modules\Elsa\Elsa.csproj"/>
+		<ProjectReference Include="..\..\modules\Elsa.IO.Http\Elsa.IO.Http.csproj" />
+		<ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Expressions.CSharp\Elsa.Expressions.CSharp.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Expressions.JavaScript.Libraries\Elsa.Expressions.JavaScript.Libraries.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Expressions.Liquid\Elsa.Expressions.Liquid.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Expressions.Python\Elsa.Expressions.Python.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj"/>
-		<ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj"/>
-		<ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj"/>
-		<ProjectReference Include="..\ElsaStudioWebAssembly\ElsaStudioWebAssembly.csproj"/>
+		<ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />
+		<ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
+		<ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+		<ProjectReference Include="..\ElsaStudioWebAssembly\ElsaStudioWebAssembly.csproj" />
 	</ItemGroup>
 
 </Project>
