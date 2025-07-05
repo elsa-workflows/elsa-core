@@ -4,20 +4,12 @@ using Elsa.ServerAndStudio.Web.Extensions;
 using Medallion.Threading.FileSystem;
 using Microsoft.AspNetCore.Mvc;
 
-const bool useMassTransit = true;
-const bool useProtoActor = true;
-const bool useCaching = true;
-const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
-
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseStaticWebAssets();
 var services = builder.Services;
 var configuration = builder.Configuration;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
-var heartbeatSection = configuration.GetSection("Heartbeat");
-var sqlDatabaseProvider = Enum.Parse<SqlDatabaseProvider>(configuration["DatabaseProvider"] ?? "Sqlite");
 
 // Add Elsa services.
 services
@@ -55,9 +47,7 @@ services
             })
             .UseHttp(http =>
             {
-                if (useCaching)
-                    http.UseCache();
-
+                http.UseCache();
                 http.ConfigureHttpOptions = options =>
                 {
                     options.BaseUrl = new Uri(configuration["Hosting:BaseUrl"] ?? configuration["Http:BaseUrl"]!); // HttpBaseUrl is for backward compatibility.
@@ -65,8 +55,6 @@ services
                 };
             })
             .UseWorkflowsApi()
-            .UseCompression()
-            .Use<IOHttpFeature>()
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>();
     });
