@@ -52,7 +52,7 @@ public class Base64ContentStrategy : IContentResolverStrategy
     private static bool IsBase64String(string base64)
     {
         return IsUriDataBase64String(base64)
-               && base64.IsBase64String();
+               || base64.IsBase64String();
     }
 
     private static bool IsUriDataBase64String(string base64)
