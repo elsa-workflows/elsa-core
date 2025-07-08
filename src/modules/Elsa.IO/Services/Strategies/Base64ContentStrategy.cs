@@ -51,13 +51,8 @@ public class Base64ContentStrategy : IContentResolverStrategy
 
     private static bool IsBase64String(string base64)
     {
-        if (IsUriDataBase64String(base64))
-        {
-            return true;
-        }
-
-        var buffer = new Span<byte>(new byte[base64.Length]);
-        return Convert.TryFromBase64String(base64, buffer , out _);
+        return IsUriDataBase64String(base64)
+               && base64.IsBase64String();
     }
 
     private static bool IsUriDataBase64String(string base64)
