@@ -85,6 +85,45 @@ public static class ContentTypeExtensions
         return Path.GetExtension(filePath).ToLowerInvariant();
     }
     
+    public static bool IsBase64String(this string s)
+    {
+        if (string.IsNullOrWhiteSpace(s))
+            return false;
+
+        s = s.Trim();
+
+        // Length must be divisible by 4
+        if (s.Length % 4 != 0)
+            return false;
+
+        // Check valid Base64 characters
+        for (var i = 0; i < s.Length; i++)
+        {
+            var c = s[i];
+
+            var isValid =
+                c is >= 'A' and <= 'Z' ||
+                c is >= 'a' and <= 'z' ||
+                c is >= '0' and <= '9' ||
+                c == '+' || c == '/' || c == '=';
+
+            if (!isValid)
+                return false;
+        }
+
+        // Try actual decoding and roundtrip
+        try
+        {
+            var data = Convert.FromBase64String(s);
+            var reEncoded = Convert.ToBase64String(data);
+            return s == reEncoded;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+    
     private static string DetermineExtensionFromMimeType(string mimeType)
     {
         if (mimeType.Contains("/pdf"))
