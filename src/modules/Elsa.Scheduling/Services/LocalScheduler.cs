@@ -90,7 +90,15 @@ public class LocalScheduler : IScheduler
 
             foreach (var scheduledTask in scheduledTasks)
             {
-                _scheduledTasks.RemoveWhere(x => x.Value == scheduledTask);
+                // Collect all keys in _scheduledTasks that map to this scheduledTask
+                var matchingTaskKeys = _scheduledTasks.Where(x => x.Value == scheduledTask).Select(x => x.Key).ToList();
+                foreach (var taskKey in matchingTaskKeys)
+                {
+                    var removed = _scheduledTasks.TryRemove(taskKey, out _);
+                    if (!removed)
+                        System.Diagnostics.Debug.WriteLine($"[LocalScheduler] Warning: Failed to remove scheduled task with key '{taskKey}' for '{key}' from _scheduledTasks.");
+                }
+
                 _scheduledTaskKeys.Remove(scheduledTask, out _);
                 scheduledTask.Cancel();
             }
