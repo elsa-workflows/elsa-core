@@ -98,19 +98,20 @@ public static class ContentTypeExtensions
 
         // Check padding position and count
         var paddingIndex = s.IndexOf('=');
-        if (paddingIndex > 0)
+        
+        switch (paddingIndex)
         {
+            // Padding cannot be at index 0
+            case <= 0:
             // Padding must be at the end
-            if (paddingIndex < s.Length - 2)
-                return false;
-            
+            case > 0 when paddingIndex < s.Length - 2:
             // All characters after first '=' must also be '='
-            if (s.Substring(paddingIndex).Any(c => c != '='))
+            case > 0 when s[paddingIndex..].Any(c => c != '='):
                 return false;
         }
 
         // Check for valid Base64 characters
-        for (int i = 0; i < (paddingIndex > 0 ? paddingIndex : s.Length); i++)
+        for (var i = 0; i < paddingIndex; i++)
         {
             var c = s[i];
             var isValid = 
@@ -124,7 +125,7 @@ public static class ContentTypeExtensions
         }
 
         // Additional check for short strings that are just lowercase+numbers
-        // This catches "content2" and similar false positives
+        // This catches "whatever" and similar false positives
         if (s.Length <= 10 && s.All(c => char.IsLower(c) || char.IsDigit(c)))
             return false;
 

@@ -125,8 +125,7 @@ public class CreateZipArchive : CodeActivity<Stream>
     
         var entryName = binaryContent.Name?.GetNameAndExtension()
                         ?? string.Format(DefaultEntryNameFormat, entryIndex + 1);
-    
-        // Get a unique name following Windows convention
+        
         entryName = GetUniqueEntryName(zipArchive, entryName);
     
         var archiveEntry = zipArchive.CreateEntry(entryName, compressionLevel);
