@@ -61,7 +61,9 @@ public class LocalScheduler : IScheduler
             updateValueFactory: (_, existingScheduledTask) =>
             {
                 existingScheduledTask.Cancel();
-                _scheduledTaskKeys.TryRemove(existingScheduledTask, out ICollection<string>? _);
+                var removed = _scheduledTaskKeys.TryRemove(existingScheduledTask, out ICollection<string>? _);
+                if (!removed)
+                    System.Diagnostics.Debug.WriteLine($"[LocalScheduler] Warning: Tried to remove scheduled task keys for an existing scheduled task, but it was not present in _scheduledTaskKeys.");
                 return scheduledTask;
             });
 
