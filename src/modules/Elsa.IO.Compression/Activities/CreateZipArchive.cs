@@ -126,6 +126,7 @@ public class CreateZipArchive : CodeActivity<Stream>
         var entryName = binaryContent.Name?.GetNameAndExtension()
                         ?? string.Format(DefaultEntryNameFormat, entryIndex + 1);
         
+        // Get a unique name following Windows convention
         entryName = GetUniqueEntryName(zipArchive, entryName);
     
         var archiveEntry = zipArchive.CreateEntry(entryName, compressionLevel);
@@ -150,10 +151,12 @@ public class CreateZipArchive : CodeActivity<Stream>
         
         foreach (var entry in zipArchive.Entries)
         {
-            if (entry.Name.Equals(originalName, StringComparison.OrdinalIgnoreCase))
+            if (!entry.Name.Equals(originalName, StringComparison.OrdinalIgnoreCase))
             {
-                originalExists = true;
+                continue;
             }
+            
+            originalExists = true;
             
             var entryNameWithoutExtension = Path.GetFileNameWithoutExtension(entry.Name);
             var entryExtension = Path.GetExtension(entry.Name);
@@ -163,24 +166,7 @@ public class CreateZipArchive : CodeActivity<Stream>
                 continue;
                 
             // Check if this entry follows our naming pattern
-            if (entryNameWithoutExtension.StartsWith(filenameWithoutExtension, StringComparison.OrdinalIgnoreCase) &&
-                entryNameWithoutExtension.Length > filenameWithoutExtension.Length &&
-                entryNameWithoutExtension[filenameWithoutExtension.Length] == '(')
-            {
-                // Extract the number between parentheses
-                var closingParenIndex = entryNameWithoutExtension.LastIndexOf(')');
-                if (closingParenIndex > filenameWithoutExtension.Length + 1)
-                {
-                    var indexStr = entryNameWithoutExtension.Substring(
-                        filenameWithoutExtension.Length + 1,
-                        closingParenIndex - filenameWithoutExtension.Length - 1);
-    
-                    if (int.TryParse(indexStr, out int index))
-                    {
-                        highestIndex = Math.Max(highestIndex, index);
-                    }
-                }
-            }
+            highestIndex = HighestEntryNameIndex(entryNameWithoutExtension, filenameWithoutExtension, highestIndex);
         }
         
         if (!originalExists)
@@ -189,5 +175,34 @@ public class CreateZipArchive : CodeActivity<Stream>
         }
         
         return $"{filenameWithoutExtension}({highestIndex + 1}){extension}";
+    }
+
+    private static int HighestEntryNameIndex(string entryNameWithoutExtension, string filenameWithoutExtension,
+        int highestIndex)
+    {
+        if (!entryNameWithoutExtension.StartsWith(filenameWithoutExtension, StringComparison.OrdinalIgnoreCase) ||
+            entryNameWithoutExtension.Length <= filenameWithoutExtension.Length ||
+            entryNameWithoutExtension[filenameWithoutExtension.Length] != '(')
+        {
+            return highestIndex;
+        }
+
+        // Extract the number between parentheses
+        var closingParenIndex = entryNameWithoutExtension.LastIndexOf(')');
+        if (closingParenIndex <= filenameWithoutExtension.Length + 1)
+        {
+            return highestIndex;
+        }
+
+        var indexStr = entryNameWithoutExtension.Substring(
+            filenameWithoutExtension.Length + 1,
+            closingParenIndex - filenameWithoutExtension.Length - 1);
+    
+        if (int.TryParse(indexStr, out var index))
+        {
+            highestIndex = Math.Max(highestIndex, index);
+        }
+
+        return highestIndex;
     }
 }
