@@ -13,6 +13,8 @@ public class JsonContentFactory : IHttpContentFactory
     /// <inheritdoc />
     public IEnumerable<string> SupportedContentTypes => new[] { MediaTypeNames.Application.Json, "text/json" };
 
+    private static readonly UTF8Encoding _utf8Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+
     /// <inheritdoc />
     [RequiresUnreferencedCode("The JsonSerializer type is not trim-compatible.")]
     public HttpContent CreateHttpContent(object content, string contentType)
@@ -22,6 +24,6 @@ public class JsonContentFactory : IHttpContentFactory
         if (string.IsNullOrWhiteSpace(contentType))
             contentType = MediaTypeNames.Application.Json;
 
-        return new RawStringContent(text, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), contentType);
+        return new RawStringContent(text, _utf8Encoding, contentType);
     }
 }
