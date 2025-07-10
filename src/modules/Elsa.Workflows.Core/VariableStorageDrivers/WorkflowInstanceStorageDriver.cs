@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows;
 
@@ -12,7 +13,7 @@ namespace Elsa.Workflows;
 /// </summary>
 [Display(Name = "Workflow Instance")]
 [UsedImplicitly]
-public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer) : IStorageDriver
+public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer, ILogger<WorkflowInstanceStorageDriver> logger) : IStorageDriver
 {
     /// <summary>
     /// The key used to store the variables in the workflow state.
@@ -29,8 +30,18 @@ public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer)
     {
         UpdateVariablesDictionary(context, dictionary =>
         {
-            var node = JsonSerializer.SerializeToNode(value);
-            dictionary[id] = node;
+            try
+            {
+                var node = JsonSerializer.SerializeToNode(value);
+                dictionary[id] = node;
+            }
+            catch (Exception ex) when (ex is JsonException or NotSupportedException or ObjectDisposedException)
+            {
+                logger.LogWarning(ex, "Failed to serialize variable '{VariableId}' of type '{VariableType}' for workflow instance storage. The variable will be skipped.", 
+                    id, value?.GetType().FullName ?? "null");
+                
+                dictionary.Remove(id);
+            }
         });
         return ValueTask.CompletedTask;
     }
