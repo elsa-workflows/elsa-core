@@ -143,43 +143,39 @@ public class CreateZipArchive : CodeActivity<Stream>
     
     private static string GetUniqueEntryName(ZipArchive zipArchive, string originalName)
     {
-        // If no duplicate exists, use the original name
-        if (!zipArchive.Entries.Any(entry => entry.Name.Equals(originalName, StringComparison.OrdinalIgnoreCase)))
-        {
-            return originalName;
-        }
-    
-        // Split the name into filename and extension
-        string filenameWithoutExtension = Path.GetFileNameWithoutExtension(originalName);
-        string extension = Path.GetExtension(originalName);
-    
-        // Find the highest index used for this filename pattern
-        int highestIndex = 0;
+        var filenameWithoutExtension = Path.GetFileNameWithoutExtension(originalName);
+        var extension = Path.GetExtension(originalName);
         
-        // Check for the original name and any name with pattern "name(n).ext"
+        var originalExists = false;
+        var highestIndex = 0;
+        
         foreach (var entry in zipArchive.Entries)
         {
             if (entry.Name.Equals(originalName, StringComparison.OrdinalIgnoreCase))
-                continue; // Skip the exact match as we already know it exists
-                
-            string entryNameWithoutExt = Path.GetFileNameWithoutExtension(entry.Name);
-            string entryExt = Path.GetExtension(entry.Name);
+            {
+                originalExists = true;
+            }
             
-            if (!entryExt.Equals(extension, StringComparison.OrdinalIgnoreCase))
-                continue; // Different extension
+            var entryNameWithoutExtension = Path.GetFileNameWithoutExtension(entry.Name);
+            var entryExtension = Path.GetExtension(entry.Name);
+            
+            // Only process entries with the same extension
+            if (!entryExtension.Equals(extension, StringComparison.OrdinalIgnoreCase))
+                continue;
                 
-            if (entryNameWithoutExt.StartsWith(filenameWithoutExtension, StringComparison.OrdinalIgnoreCase) &&
-                entryNameWithoutExt.Length > filenameWithoutExtension.Length &&
-                entryNameWithoutExt[filenameWithoutExtension.Length] == '(')
+            // Check if this entry follows our naming pattern
+            if (entryNameWithoutExtension.StartsWith(filenameWithoutExtension, StringComparison.OrdinalIgnoreCase) &&
+                entryNameWithoutExtension.Length > filenameWithoutExtension.Length &&
+                entryNameWithoutExtension[filenameWithoutExtension.Length] == '(')
             {
                 // Extract the number between parentheses
-                var closingParenIndex = entryNameWithoutExt.LastIndexOf(')');
+                var closingParenIndex = entryNameWithoutExtension.LastIndexOf(')');
                 if (closingParenIndex > filenameWithoutExtension.Length + 1)
                 {
-                    var indexStr = entryNameWithoutExt.Substring(
-                        filenameWithoutExtension.Length + 1, 
+                    var indexStr = entryNameWithoutExtension.Substring(
+                        filenameWithoutExtension.Length + 1,
                         closingParenIndex - filenameWithoutExtension.Length - 1);
-                    
+    
                     if (int.TryParse(indexStr, out int index))
                     {
                         highestIndex = Math.Max(highestIndex, index);
@@ -187,8 +183,12 @@ public class CreateZipArchive : CodeActivity<Stream>
                 }
             }
         }
-    
-        // Create a new name with the next available index
+        
+        if (!originalExists)
+        {
+            return originalName;
+        }
+        
         return $"{filenameWithoutExtension}({highestIndex + 1}){extension}";
     }
 }
