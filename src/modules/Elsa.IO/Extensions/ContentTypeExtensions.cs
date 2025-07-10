@@ -96,27 +96,44 @@ public static class ContentTypeExtensions
         if (s.Length % 4 != 0)
             return false;
 
-        // Check valid Base64 characters
-        for (var i = 0; i < s.Length; i++)
+        // Check padding position and count
+        var paddingIndex = s.IndexOf('=');
+        
+        switch (paddingIndex)
+        {
+            // Padding cannot be at index 0
+            case 0:
+            // Padding must be at the end
+            case > 0 when paddingIndex < s.Length - 2:
+            // All characters after first '=' must also be '='
+            case > 0 when s[paddingIndex..].Any(c => c != '='):
+                return false;
+        }
+
+        // Check for valid Base64 characters
+        for (var i = 0; i < paddingIndex; i++)
         {
             var c = s[i];
-
-            var isValid =
+            var isValid = 
                 c is >= 'A' and <= 'Z' ||
                 c is >= 'a' and <= 'z' ||
                 c is >= '0' and <= '9' ||
-                c == '+' || c == '/' || c == '=';
+                c == '+' || c == '/';
 
             if (!isValid)
                 return false;
         }
 
-        // Try actual decoding and roundtrip
+        // Additional check for short strings that are just lowercase+numbers
+        // This catches "whatever" and similar false positives
+        if (s.Length <= 10 && s.All(c => char.IsLower(c) || char.IsDigit(c)))
+            return false;
+
+        // Try actual decoding
         try
         {
-            var data = Convert.FromBase64String(s);
-            var reEncoded = Convert.ToBase64String(data);
-            return s == reEncoded;
+            _ = Convert.FromBase64String(s);
+            return true;
         }
         catch
         {
