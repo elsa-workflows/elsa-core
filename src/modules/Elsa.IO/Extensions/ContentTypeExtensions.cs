@@ -102,7 +102,7 @@ public static class ContentTypeExtensions
         switch (paddingIndex)
         {
             // Padding cannot be at index 0
-            case <= 0:
+            case 0:
             // Padding must be at the end
             case > 0 when paddingIndex < s.Length - 2:
             // All characters after first '=' must also be '='
