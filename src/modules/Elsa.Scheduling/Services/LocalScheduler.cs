@@ -52,19 +52,23 @@ public class LocalScheduler : IScheduler
         return ValueTask.CompletedTask;
     }
 
+
     private void RegisterScheduledTask(string name, IScheduledTask scheduledTask, IEnumerable<string>? keys = null)
     {
-        if (_scheduledTasks.TryGetValue(name, out var existingScheduledTask))
-        {
-            existingScheduledTask.Cancel();
-            _scheduledTaskKeys.Remove(existingScheduledTask, out _);
-        }
-
-        _scheduledTasks[name] = scheduledTask;
+        _scheduledTasks.AddOrUpdate(
+            name,
+            addValueFactory: _ => scheduledTask,
+            updateValueFactory: (_, existingScheduledTask) =>
+            {
+                existingScheduledTask.Cancel();
+                _scheduledTaskKeys.TryRemove(existingScheduledTask, out ICollection<string>? _);
+                return scheduledTask;
+            });
 
         if (keys != null)
             _scheduledTaskKeys[scheduledTask] = keys.ToList();
     }
+ 
 
     private void RemoveScheduledTask(string name)
     {
