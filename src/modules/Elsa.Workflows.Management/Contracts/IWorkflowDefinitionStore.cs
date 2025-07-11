@@ -111,6 +111,8 @@ public interface IWorkflowDefinitionStore
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The workflow definition.</returns>
     Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken);
+    
+    //Task<IEnumerable<string>> JsonQuery(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Adds or updates the specified <see cref="WorkflowDefinition"/> in the persistence store.
