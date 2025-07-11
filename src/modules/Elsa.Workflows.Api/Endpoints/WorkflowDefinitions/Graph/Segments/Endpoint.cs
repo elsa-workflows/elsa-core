@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Graph.Segments;
 
 [PublicAPI]
-internal class Nodes(IWorkflowDefinitionService workflowDefinitionService, IApiSerializer apiSerializer, ActivityWriter activityWriter) : ElsaEndpoint<Request>
+internal class Nodes(IWorkflowDefinitionService workflowDefinitionService, IApiSerializer apiSerializer, ActivityWriter activityWriter) : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
     {
