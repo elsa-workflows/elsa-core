@@ -3,128 +3,88 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Management.Services;
 
-/// <inheritdoc />
 public class WorkflowReferenceUpdater(
     IWorkflowDefinitionPublisher publisher,
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowDefinitionStore workflowDefinitionStore,
     IWorkflowReferenceQuery workflowReferenceQuery,
-    IApiSerializer serializer) : IWorkflowReferenceUpdater
+    IApiSerializer serializer)
+    : IWorkflowReferenceUpdater
 {
     private bool _isUpdating;
 
-    /// <inheritdoc />
-    public async Task<UpdateWorkflowReferencesResult> UpdateWorkflowReferencesAsync(WorkflowDefinition referencedDefinition, CancellationToken cancellationToken = default)
+    public async Task<UpdateWorkflowReferencesResult> UpdateWorkflowReferencesAsync(
+        WorkflowDefinition referencedDefinition,
+        CancellationToken cancellationToken = default)
     {
-        // Prevent concurrent updates.
-        if (_isUpdating)
+        if (_isUpdating ||
+            referencedDefinition.Options is not { UsableAsActivity: true, AutoUpdateConsumingWorkflows: true })
             return new([]);
 
-        // Skip if the published workflow definition is not usable as an activity or does not auto-update consuming workflows.
-        if (referencedDefinition.Options is not { UsableAsActivity: true, AutoUpdateConsumingWorkflows: true })
-            return new([]);
+        var allWorkflowReferences = await GetReferencingWorkflowDefinitionIdsAsync(referencedDefinition.DefinitionId, cancellationToken).ToListAsync(cancellationToken);
+        var filteredWorkflowReferences = allWorkflowReferences
+            .Where(r => r.ReferencingDefinitionIds.Any())
+            .DistinctBy(r => r.ReferencedDefinitionId)
+            .ToList();
 
-        // Find all workflow definitions that reference the updated workflow definition, directly or indirectly.
-        var workflowReferences = (await GetReferencingWorkflowDefinitionIdsAsync(referencedDefinition.DefinitionId, cancellationToken).ToListAsync(cancellationToken: cancellationToken)).Where(x => x.ReferencingDefinitionIds.Count > 0).DistinctBy(x => x.ReferencedDefinitionId).ToList();
-        var referencingWorkflowDefinitionIds = workflowReferences.SelectMany(x => x.ReferencingDefinitionIds).Distinct().ToList();
-        var referencedWorkflowDefinitionIds = workflowReferences.Select(x => x.ReferencedDefinitionId).Distinct().ToList();
-        var referencingWorkflowDefinitionsFilter = new WorkflowDefinitionFilter
-        {
-            DefinitionIds = referencingWorkflowDefinitionIds,
+        var referencingIds = filteredWorkflowReferences.SelectMany(r => r.ReferencingDefinitionIds).Distinct().ToList();
+        var referencedIds = filteredWorkflowReferences.Select(r => r.ReferencedDefinitionId).Distinct().ToList();
+
+        var referencingWorkflowGraphs = (await workflowDefinitionService.FindWorkflowGraphsAsync(new()
+            {
+            DefinitionIds = referencingIds,
             VersionOptions = VersionOptions.Latest,
             IsReadonly = false
-        };
-        var referencedWorkflowDefinitionsFilter = new WorkflowDefinitionFilter
-        {
-            DefinitionIds = referencedWorkflowDefinitionIds,
+        }, cancellationToken))
+        .ToDictionary(g => g.Workflow.Identity.DefinitionId);
+
+        var referencedWorkflowDefinitions = (await workflowDefinitionStore.FindManyAsync(new()
+            {
+            DefinitionIds = referencedIds,
             VersionOptions = VersionOptions.LatestOrPublished,
             IsReadonly = false
-        };
-        var referencingWorkflowGraphs = (await workflowDefinitionService.FindWorkflowGraphsAsync(referencingWorkflowDefinitionsFilter, cancellationToken)).ToDictionary(x => x.Workflow.Identity.DefinitionId);
-        var referencedWorkflowDefinitions = (await workflowDefinitionStore.FindManyAsync(referencedWorkflowDefinitionsFilter, cancellationToken)).ToDictionary(x => x.DefinitionId);
-        var updatedWorkflows = new HashSet<UpdatedWorkflowDefinition>();
-        
-        // Track updated workflow definitions to update references to them
-        var updatedDefinitions = new Dictionary<string, WorkflowDefinition> {
-            // Add the initial updated definition
-            [referencedDefinition.DefinitionId] = referencedDefinition
-        };
+        }, cancellationToken))
+        .ToDictionary(d => d.DefinitionId);
 
-        // Build a dictionary of workflow references where key is the referencing workflow and value is a list of workflows it references
-        var workflowDependencyMap = new Dictionary<string, List<string>>();
+        // Add the initially referenced definition to the dictionary
+        referencedWorkflowDefinitions[referencedDefinition.DefinitionId] = referencedDefinition;
+
+        var dependencyMap = filteredWorkflowReferences
+            .SelectMany(r => r.ReferencingDefinitionIds.Select(id => (id, r.ReferencedDefinitionId)))
+            .ToLookup(x => x.id, x => x.ReferencedDefinitionId);
+
+        var updatedWorkflows = new List<UpdatedWorkflowDefinition>();
         
-        foreach (var workflowReference in workflowReferences)
+        // Create a cache for drafts that we've already created during this operation
+        var draftCache = new Dictionary<string, (WorkflowDefinition Draft, bool WasPublished)>();
+
+        foreach (var id in referencingIds)
         {
-            foreach (var referencingDefinitionId in workflowReference.ReferencingDefinitionIds)
-            {
-                if (!workflowDependencyMap.TryGetValue(referencingDefinitionId, out var dependencies))
-                {
-                    dependencies = new();
-                    workflowDependencyMap[referencingDefinitionId] = dependencies;
-                }
-                
-                dependencies.Add(workflowReference.ReferencedDefinitionId);
-            }
-        }
-        
-        // Process all workflows without topological sorting
-        foreach (var referencingDefinitionId in referencingWorkflowDefinitionIds)
-        {
-            if (!referencingWorkflowGraphs.TryGetValue(referencingDefinitionId, out var referencingWorkflowGraph))
+            if (!referencingWorkflowGraphs.TryGetValue(id, out var graph) || !dependencyMap[id].Any())
                 continue;
-            
-            // Find all referenced workflow definitions for this workflow
-            if (!workflowDependencyMap.TryGetValue(referencingDefinitionId, out var referencedDefinitionIds))
-                continue;
-            
-            foreach (var referencedDefinitionId in referencedDefinitionIds)
+
+            foreach (var refId in dependencyMap[id])
             {
-                // Get the most up-to-date version of the referenced workflow definition
-                WorkflowDefinition referencedWorkflowDefinition;
-                
-                // If this workflow was already updated in this process, use the updated version
-                if (updatedDefinitions.TryGetValue(referencedDefinitionId, out var updatedDefinition))
-                {
-                    referencedWorkflowDefinition = updatedDefinition;
-                }
-                else if (referencedWorkflowDefinitions.TryGetValue(referencedDefinitionId, out var originalDefinition))
-                {
-                    referencedWorkflowDefinition = originalDefinition;
-                }
-                else
-                {
-                    continue; // Skip if we can't find this referenced workflow
-                }
+                var target = referencedWorkflowDefinitions.GetValueOrDefault(refId);
+                if (target == null) continue;
 
-                var updatedWorkflow = await UpdateReferencingWorkflowAsync(referencingWorkflowGraph, referencedWorkflowDefinition, cancellationToken);
+                var updated = await UpdateWorkflowAsync(graph, target, draftCache, cancellationToken);
+                if (updated == null) continue;
 
-                if (updatedWorkflow != null)
-                {
-                    updatedWorkflows.Add(updatedWorkflow);
-                    
-                    // Store the updated definition so that any workflows referencing it will use this updated version
-                    updatedDefinitions[referencingDefinitionId] = updatedWorkflow.Definition;
-                    
-                    // Also update the workflow graph in our dictionary so that future updates to this workflow
-                    // will start from the latest version
-                    if (updatedWorkflow.Definition.Id != referencingWorkflowGraph.Workflow.Id)
-                    {
-                        // Materialize the updated workflow
-                        var updatedWorkflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(updatedWorkflow.Definition, cancellationToken);
-                        referencingWorkflowGraphs[referencingDefinitionId] = updatedWorkflowGraph;
-                    }
-                }
+                updatedWorkflows.Add(updated);
+                referencedWorkflowDefinitions[id] = updated.Definition;
+
+                if (updated.Definition.Id != graph.Workflow.Id) 
+                    referencingWorkflowGraphs[id] = await workflowDefinitionService.MaterializeWorkflowAsync(updated.Definition, cancellationToken);
             }
         }
 
         _isUpdating = true;
-
         foreach (var updatedWorkflow in updatedWorkflows)
         {
             if (updatedWorkflow.RequiresPublication)
@@ -132,77 +92,85 @@ public class WorkflowReferenceUpdater(
             else
                 await publisher.SaveDraftAsync(updatedWorkflow.Definition, cancellationToken);
         }
-
         _isUpdating = false;
 
-        return new(updatedWorkflows.Select(x => x.Definition));
+        return new(updatedWorkflows.Select(u => u.Definition));
     }
 
-    private async IAsyncEnumerable<WorkflowReferences> GetReferencingWorkflowDefinitionIdsAsync(string workflowDefinitionId, [EnumeratorCancellation] CancellationToken cancellationToken)
+    private async IAsyncEnumerable<WorkflowReferences> GetReferencingWorkflowDefinitionIdsAsync(
+        string definitionId,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var referencedDefinitionIds = (await workflowReferenceQuery.ExecuteAsync(workflowDefinitionId, cancellationToken)).ToList();
-
-        yield return new(workflowDefinitionId, referencedDefinitionIds);
-
-        foreach (var definitionId in referencedDefinitionIds)
-        {
-            // Recursively get referencing workflow definitions.
-            await foreach (var workflowReferences in GetReferencingWorkflowDefinitionIdsAsync(definitionId, cancellationToken))
-                yield return workflowReferences;
-        }
+        var refs = (await workflowReferenceQuery.ExecuteAsync(definitionId, cancellationToken)).ToList();
+        yield return new(definitionId, refs);
+        foreach (var id in refs)
+            await foreach (var child in GetReferencingWorkflowDefinitionIdsAsync(id, cancellationToken))
+                yield return child;
     }
 
-    private async Task<UpdatedWorkflowDefinition?> UpdateReferencingWorkflowAsync(WorkflowGraph referencingWorkflowGraph, WorkflowDefinition referencedWorkflowDefinition, CancellationToken cancellationToken)
+    private async Task<UpdatedWorkflowDefinition?> UpdateWorkflowAsync(
+        WorkflowGraph graph,
+        WorkflowDefinition target,
+        Dictionary<string, (WorkflowDefinition Draft, bool WasPublished)> draftCache,
+        CancellationToken cancellationToken)
     {
-        // Create a new version of the published workflow definition or get the existing draft.
-        var referencingWorkflowDefinitionId = referencingWorkflowGraph.Workflow.Identity.DefinitionId;
-        var originalVersionIsPublished = referencingWorkflowGraph.Workflow.Publication.IsPublished;
-        var newVersion = await publisher.GetDraftAsync(referencingWorkflowDefinitionId, VersionOptions.LatestOrPublished, cancellationToken);
+        var id = graph.Workflow.Identity.DefinitionId;
+        var wasPublished = graph.Workflow.Publication.IsPublished;
+        
+        // Get the draft from cache or create a new one
+        var draft = await GetOrCreateDraftAsync(id, wasPublished, draftCache, cancellationToken);
+        if (draft == null) return null;
+        
+        var newGraph = await workflowDefinitionService.MaterializeWorkflowAsync(draft, cancellationToken);
+        var outdated = FindActivities(newGraph.Root, target.DefinitionId)
+            .Where(a => a.WorkflowDefinitionVersionId != target.Id)
+            .ToList();
+        
+        if (!outdated.Any()) return null;
 
-        // This is null in case the definition no longer exists in the store.
-        if (newVersion == null)
-            return null;
-
-        // Materialize the draft to find all workflow definition activities that use the updated workflow definition.
-        var newWorkflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(newVersion, cancellationToken);
-        var outdatedWorkflowDefinitionActivities = FindOutdatedWorkflowDefinitionActivities(newWorkflowGraph, referencedWorkflowDefinition).ToList();
-
-        // Skip if the new version of the published workflow definition is not used in the workflow or if the activity is already up to date.
-        if (outdatedWorkflowDefinitionActivities.Count == 0)
-            return null;
-
-        // Update the consuming workflow graph to use the new version of the published workflow definition.
-        foreach (var workflowDefinitionActivity in outdatedWorkflowDefinitionActivities)
+        foreach (var act in outdated)
         {
-            workflowDefinitionActivity.WorkflowDefinitionVersionId = referencedWorkflowDefinition.Id;
-            workflowDefinitionActivity.LatestAvailablePublishedVersionId = referencedWorkflowDefinition.Id;
-            workflowDefinitionActivity.Version = referencedWorkflowDefinition.Version;
+            act.WorkflowDefinitionVersionId = target.Id;
+            act.LatestAvailablePublishedVersionId = target.Id;
+            act.Version = target.Version;
         }
 
-        // Update the new version of the published workflow definition.
-        if (newWorkflowGraph.Root.Activity is Workflow newWorkflow)
-            newVersion.StringData = serializer.Serialize(newWorkflow.Root);
+        if (newGraph.Root.Activity is Workflow wf)
+            draft.StringData = serializer.Serialize(wf.Root);
 
-        return new(newVersion, originalVersionIsPublished);
+        return new(draft, wasPublished);
     }
-
-    private IEnumerable<WorkflowDefinitionActivity> FindOutdatedWorkflowDefinitionActivities(WorkflowGraph workflowGraph, WorkflowDefinition updatedDefinition)
+    
+    private async Task<WorkflowDefinition?> GetOrCreateDraftAsync(
+        string definitionId,
+        bool wasPublished,
+        Dictionary<string, (WorkflowDefinition Draft, bool WasPublished)> draftCache,
+        CancellationToken cancellationToken)
     {
-        return FindWorkflowActivityDefinitionActivityNodes(workflowGraph.Root)
-            .Where(x => x.WorkflowDefinitionId == updatedDefinition.DefinitionId && x.WorkflowDefinitionVersionId != updatedDefinition.Id);
-    }
-
-    private IEnumerable<WorkflowDefinitionActivity> FindWorkflowActivityDefinitionActivityNodes(ActivityNode parent)
-    {
-        foreach (var child in parent.Children)
+        // Check if we already have a draft for this workflow
+        if (draftCache.TryGetValue(definitionId, out var cachedDraft))
         {
-            if (child.Activity is WorkflowDefinitionActivity workflowDefinitionActivity)
-                yield return workflowDefinitionActivity;
-            else
-            {
-                foreach (var grandChild in FindWorkflowActivityDefinitionActivityNodes(child))
-                    yield return grandChild;
-            }
+            return cachedDraft.Draft;
+        }
+        
+        // Create or get a draft for this workflow
+        var draft = await publisher.GetDraftAsync(definitionId, VersionOptions.Latest, cancellationToken);
+        if (draft == null) return null;
+        
+        // Store the draft in the cache for potential future use
+        draftCache[definitionId] = (draft, wasPublished);
+        
+        return draft;
+    }
+
+    private static IEnumerable<WorkflowDefinitionActivity> FindActivities(ActivityNode node, string definitionId)
+    {
+        foreach (var child in node.Children)
+        {
+            if (child.Activity is WorkflowDefinitionActivity activity && activity.WorkflowDefinitionId == definitionId)
+                yield return activity;
+            foreach (var grandChildActivity in FindActivities(child, definitionId))
+                yield return grandChildActivity;
         }
     }
 }
