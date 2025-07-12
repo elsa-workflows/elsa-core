@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using Elsa.Common.Models;
-using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Entities;
@@ -54,7 +53,8 @@ public class WorkflowReferenceUpdater(
         // Track updated workflow definitions to update references to them
         var updatedDefinitions = new Dictionary<string, WorkflowDefinition> {
             // Add the initial updated definition
-            [referencedDefinition.DefinitionId] = referencedDefinition };
+            [referencedDefinition.DefinitionId] = referencedDefinition
+        };
 
         // Build a dictionary of workflow references where key is the referencing workflow and value is a list of workflows it references
         var workflowDependencyMap = new Dictionary<string, List<string>>();
@@ -73,17 +73,11 @@ public class WorkflowReferenceUpdater(
             }
         }
         
-        // Perform topological sort to process workflows in correct dependency order
-        // This ensures that referenced workflows are updated before the workflows that reference them
-        var sortedWorkflowIds = referencingWorkflowDefinitionIds
-            .TSort(id => workflowDependencyMap.TryGetValue(id, out var dependencies) ? dependencies : Enumerable.Empty<string>(), true)
-            // Filter out any workflows that aren't in our referencing workflows dictionary (they might be dependencies only)
-            .Where(id => referencingWorkflowGraphs.ContainsKey(id))
-            .ToList();
-        
-        foreach (var referencingDefinitionId in sortedWorkflowIds)
+        // Process all workflows without topological sorting
+        foreach (var referencingDefinitionId in referencingWorkflowDefinitionIds)
         {
-            var referencingWorkflowGraph = referencingWorkflowGraphs[referencingDefinitionId];
+            if (!referencingWorkflowGraphs.TryGetValue(referencingDefinitionId, out var referencingWorkflowGraph))
+                continue;
             
             // Find all referenced workflow definitions for this workflow
             if (!workflowDependencyMap.TryGetValue(referencingDefinitionId, out var referencedDefinitionIds))
