@@ -118,7 +118,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
         // Serialize materializer context.
         var materializerContext = materializedWorkflow.MaterializerContext;
-        var materializerContextJson = materializerContext != null ? _payloadSerializer.Serialize(materializerContext) : default;
+        var materializerContextJson = materializerContext != null ? _payloadSerializer.Serialize(materializerContext) : null;
 
         // Serialize the workflow root.
         var workflowJson = _activitySerializer.Serialize(workflow.Root);

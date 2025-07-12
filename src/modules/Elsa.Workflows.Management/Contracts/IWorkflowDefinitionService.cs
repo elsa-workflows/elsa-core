@@ -55,4 +55,9 @@ public interface IWorkflowDefinitionService
     /// Looks for a <see cref="WorkflowGraph"/> by the specified <see cref="WorkflowDefinitionFilter"/>.
     /// </summary>
     Task<WorkflowGraph?> FindWorkflowGraphAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Looks for all <see cref="WorkflowGraph"/>s that match the specified <see cref="WorkflowDefinitionFilter"/>.
+    /// </summary>
+    Task<IEnumerable<WorkflowGraph>> FindWorkflowGraphsAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
 }
