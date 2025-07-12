@@ -51,14 +51,11 @@ public class WorkflowReferenceUpdater(
         }, cancellationToken))
         .ToDictionary(d => d.DefinitionId);
 
-        // Add the initially referenced definition to the dictionary
-        referencedWorkflowDefinitions[referencedDefinition.DefinitionId] = referencedDefinition;
-
         var dependencyMap = filteredWorkflowReferences
             .SelectMany(r => r.ReferencingDefinitionIds.Select(id => (id, r.ReferencedDefinitionId)))
             .ToLookup(x => x.id, x => x.ReferencedDefinitionId);
 
-        var updatedWorkflows = new List<UpdatedWorkflowDefinition>();
+        var updatedWorkflows = new HashSet<UpdatedWorkflowDefinition>();
         
         // Create a cache for drafts that we've already created during this operation
         var draftCache = new Dictionary<string, (WorkflowDefinition Draft, bool WasPublished)>();
