@@ -5,6 +5,15 @@ using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Management.Services;
 
+/// <summary>
+/// Represents the default implementation of <see cref="IWorkflowReferenceQuery"/> that queries workflows
+/// referencing a specific workflow definition.
+/// </summary>
+/// <remarks>
+/// This class is designed to identify workflows that are dependent on a given workflow definition.
+/// It leverages services such as <see cref="IWorkflowDefinitionService"/> and <see cref="IWorkflowDefinitionStore"/>
+/// to locate, graph, and analyze workflows that include the specified workflow definition.
+/// </remarks>
 public class DefaultWorkflowReferenceQuery(IWorkflowDefinitionService workflowDefinitionService, IWorkflowDefinitionStore workflowDefinitionStore) : IWorkflowReferenceQuery
 {
     public async Task<IEnumerable<string>> ExecuteAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
