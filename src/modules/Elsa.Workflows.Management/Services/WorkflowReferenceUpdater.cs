@@ -53,7 +53,7 @@ public class WorkflowReferenceUpdater(
         var referencedWorkflowDefinitions = (await workflowDefinitionStore.FindManyAsync(new()
             {
                 DefinitionIds = referencedIds,
-                VersionOptions = VersionOptions.LatestOrPublished,
+                VersionOptions = VersionOptions.Latest,
                 IsReadonly = false
             }, cancellationToken))
             .ToDictionary(d => d.DefinitionId);
