@@ -53,18 +53,18 @@ public class WorkflowReferenceUpdater(
         var referencedWorkflowDefinitionList = (await workflowDefinitionStore.FindManyAsync(new()
         {
             DefinitionIds = referencedIds,
-            VersionOptions = VersionOptions.LatestOrPublished,
+            VersionOptions = VersionOptions.Published,
             IsReadonly = false
         }, cancellationToken)).ToList(); 
         
-        var referencedWorkflowDefinitionsLatest = referencedWorkflowDefinitionList
-            .GroupBy(x => x.DefinitionId)
-            .Select(group =>
-            {
-                var publishedVersion = group.FirstOrDefault(x => !x.IsPublished);
-                return publishedVersion ?? group.First();
-            })
-            .ToDictionary(d => d.DefinitionId);
+        // var referencedWorkflowDefinitionsLatest = referencedWorkflowDefinitionList
+        //     .GroupBy(x => x.DefinitionId)
+        //     .Select(group =>
+        //     {
+        //         var publishedVersion = group.FirstOrDefault(x => !x.IsPublished);
+        //         return publishedVersion ?? group.First();
+        //     })
+        //     .ToDictionary(d => d.DefinitionId);
         
         var referencedWorkflowDefinitionsPublished = referencedWorkflowDefinitionList
             .GroupBy(x => x.DefinitionId)
@@ -79,9 +79,6 @@ public class WorkflowReferenceUpdater(
         
         foreach (var workflowGraph in referencingWorkflowGraphs) 
             initialPublicationState[workflowGraph.Key] = workflowGraph.Value.Workflow.Publication.IsPublished;
-        
-        foreach (var referenced in referencedWorkflowDefinitionsLatest) 
-            initialPublicationState[referenced.Key] = referenced.Value.IsPublished;
         
         // Add the initially referenced definition
         referencedWorkflowDefinitionsPublished[referencedDefinition.DefinitionId] = referencedDefinition;
@@ -157,6 +154,10 @@ public class WorkflowReferenceUpdater(
         Dictionary<string, bool> initialPublicationState,
         CancellationToken cancellationToken)
     {
+        var willTargetBePublished = initialPublicationState.GetValueOrDefault(target.DefinitionId, target.IsPublished);
+        if(!willTargetBePublished)
+            return null;
+        
         var id = graph.Workflow.Identity.DefinitionId;
         var draft = await GetOrCreateDraftAsync(id, draftCache, cancellationToken);
         if (draft == null) return null;
@@ -180,10 +181,10 @@ public class WorkflowReferenceUpdater(
             draft.StringData = serializer.Serialize(wf.Root);
 
         // If the referenced workflow is a draft version, we must not automatically publish the referencing workflow, because this would lead to a published workflow executing a non-published workflow.
-        if(!target.IsPublished)
-        {
-            initialPublicationState[target.DefinitionId] = false;
-        }
+        // if(!target.IsPublished)
+        // {
+        //     initialPublicationState[target.DefinitionId] = false;
+        // }
         
         // Only require publication if the workflow was published
         // If it was already in draft mode, we'll just save the updated draft
