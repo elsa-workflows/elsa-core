@@ -57,15 +57,6 @@ public class WorkflowReferenceUpdater(
             IsReadonly = false
         }, cancellationToken)).ToList(); 
         
-        // var referencedWorkflowDefinitionsLatest = referencedWorkflowDefinitionList
-        //     .GroupBy(x => x.DefinitionId)
-        //     .Select(group =>
-        //     {
-        //         var publishedVersion = group.FirstOrDefault(x => !x.IsPublished);
-        //         return publishedVersion ?? group.First();
-        //     })
-        //     .ToDictionary(d => d.DefinitionId);
-        
         var referencedWorkflowDefinitionsPublished = referencedWorkflowDefinitionList
             .GroupBy(x => x.DefinitionId)
             .Select(group =>
@@ -180,14 +171,6 @@ public class WorkflowReferenceUpdater(
         if (newGraph.Root.Activity is Workflow wf)
             draft.StringData = serializer.Serialize(wf.Root);
 
-        // If the referenced workflow is a draft version, we must not automatically publish the referencing workflow, because this would lead to a published workflow executing a non-published workflow.
-        // if(!target.IsPublished)
-        // {
-        //     initialPublicationState[target.DefinitionId] = false;
-        // }
-        
-        // Only require publication if the workflow was published
-        // If it was already in draft mode, we'll just save the updated draft
         return new(draft, newGraph);
     }
 
@@ -223,9 +206,7 @@ public class WorkflowReferenceUpdater(
     {
         // Do not drill into activities that are WorkflowDefinitionActivity
         if (node.Activity is WorkflowDefinitionActivity)
-        {
             yield break;
-        }
         
         foreach (var child in node.Children)
         {
