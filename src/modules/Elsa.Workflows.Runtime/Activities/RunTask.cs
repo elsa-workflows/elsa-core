@@ -38,6 +38,12 @@ public class RunTask : Activity<object>
     [Input(Description = "Any additional parameters to send to the task.")]
     public Input<IDictionary<string, object>?> Payload { get; set; } = null!;
 
+    /// <summary>
+    /// The ID of the task that was requested to run.
+    /// </summary>
+    [Output(Description = "The ID of the task that was requested to run.")]
+    public Output<string> TaskId { get; set; } = null!;
+
     /// <inheritdoc />
     [JsonConstructor]
     private RunTask(string? source = null, int? line = null) : base(source, line)
@@ -95,6 +101,10 @@ public class RunTask : Activity<object>
         var runTaskRequest = new RunTaskRequest(context, taskId, taskName, taskParams);
         var dispatcher = context.GetRequiredService<ITaskDispatcher>();
 
+        // Set the task ID output.
+        TaskId.Set(context, taskId);
+        
+        // Dispatch the task request.
         await dispatcher.DispatchAsync(runTaskRequest, context.CancellationToken);
     }
 

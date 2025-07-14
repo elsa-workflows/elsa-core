@@ -18,6 +18,8 @@ public class WorkflowReferenceUpdater(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowDefinitionStore workflowDefinitionStore,
     IWorkflowReferenceQuery workflowReferenceQuery,
+    WorkflowDefinitionActivityDescriptorFactory workflowDefinitionActivityDescriptorFactory,
+    IActivityRegistry activityRegistry,
     IApiSerializer serializer)
     : IWorkflowReferenceUpdater
 {
@@ -91,9 +93,7 @@ public class WorkflowReferenceUpdater(
 
                 updatedWorkflows.Add(updated);
                 referencedWorkflowDefinitions[id] = updated.Definition;
-
-                if (updated.Definition.Id != graph.Workflow.Id)
-                    referencingWorkflowGraphs[id] = await workflowDefinitionService.MaterializeWorkflowAsync(updated.Definition, cancellationToken);
+                referencingWorkflowGraphs[id] = await workflowDefinitionService.MaterializeWorkflowAsync(updated.Definition, cancellationToken);
             }
         }
 
@@ -143,8 +143,9 @@ public class WorkflowReferenceUpdater(
         foreach (var act in outdated)
         {
             act.WorkflowDefinitionVersionId = target.Id;
-            act.LatestAvailablePublishedVersionId = target.Id;
             act.Version = target.Version;
+            act.LatestAvailablePublishedVersionId = target.Id;
+            act.LatestAvailablePublishedVersion = target.Version;
         }
 
         if (newGraph.Root.Activity is Workflow wf)
@@ -171,12 +172,27 @@ public class WorkflowReferenceUpdater(
 
         // Store the draft in the cache for potential future use
         draftCache[definitionId] = (draft, wasPublished);
+        
+        // Get the current published version of the workflow definition.
+        var publishedVersion = await workflowDefinitionStore.FindAsync(
+            WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Published).ToFilter(),
+            cancellationToken);
+        
+        // Update the activity registry to be able to materialize the workflow.
+        var activityDescriptor = workflowDefinitionActivityDescriptorFactory.CreateDescriptor(draft, publishedVersion);
+        activityRegistry.Add(typeof(WorkflowDefinitionActivityProvider), activityDescriptor);
 
         return draft;
     }
 
     private static IEnumerable<WorkflowDefinitionActivity> FindActivities(ActivityNode node, string definitionId)
     {
+        // Do not drill into activities that are WorkflowDefinitionActivity
+        if (node.Activity is WorkflowDefinitionActivity)
+        {
+            yield break;
+        }
+        
         foreach (var child in node.Children)
         {
             if (child.Activity is WorkflowDefinitionActivity activity && activity.WorkflowDefinitionId == definitionId)
