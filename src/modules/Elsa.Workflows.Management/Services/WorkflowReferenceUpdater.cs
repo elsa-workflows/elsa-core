@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Management.Services;
 
 internal record WorkflowReferences(string ReferencedDefinitionId, ICollection<string> ReferencingDefinitionIds);
 
-internal record UpdatedWorkflowDefinition(WorkflowDefinition Definition, bool RequiresPublication);
+internal record UpdatedWorkflowDefinition(WorkflowDefinition Definition, WorkflowGraph NewGraph);
 
 public class WorkflowReferenceUpdater(
     IWorkflowDefinitionPublisher publisher,
@@ -50,16 +50,41 @@ public class WorkflowReferenceUpdater(
             }, cancellationToken))
             .ToDictionary(g => g.Workflow.Identity.DefinitionId);
 
-        var referencedWorkflowDefinitions = (await workflowDefinitionStore.FindManyAsync(new()
+        var referencedWorkflowDefinitionList = (await workflowDefinitionStore.FindManyAsync(new()
+        {
+            DefinitionIds = referencedIds,
+            VersionOptions = VersionOptions.LatestOrPublished,
+            IsReadonly = false
+        }, cancellationToken)).ToList(); 
+        
+        var referencedWorkflowDefinitionsLatest = referencedWorkflowDefinitionList
+            .GroupBy(x => x.DefinitionId)
+            .Select(group =>
             {
-                DefinitionIds = referencedIds,
-                VersionOptions = VersionOptions.Latest,
-                IsReadonly = false
-            }, cancellationToken))
+                var publishedVersion = group.FirstOrDefault(x => !x.IsPublished);
+                return publishedVersion ?? group.First();
+            })
+            .ToDictionary(d => d.DefinitionId);
+        
+        var referencedWorkflowDefinitionsPublished = referencedWorkflowDefinitionList
+            .GroupBy(x => x.DefinitionId)
+            .Select(group =>
+            {
+                var publishedVersion = group.FirstOrDefault(x => x.IsPublished);
+                return publishedVersion ?? group.First();
+            })
             .ToDictionary(d => d.DefinitionId);
 
+        var initialPublicationState = new Dictionary<string, bool>();
+        
+        foreach (var workflowGraph in referencingWorkflowGraphs) 
+            initialPublicationState[workflowGraph.Key] = workflowGraph.Value.Workflow.Publication.IsPublished;
+        
+        foreach (var referenced in referencedWorkflowDefinitionsLatest) 
+            initialPublicationState[referenced.Key] = referenced.Value.IsPublished;
+        
         // Add the initially referenced definition
-        referencedWorkflowDefinitions[referencedDefinition.DefinitionId] = referencedDefinition;
+        referencedWorkflowDefinitionsPublished[referencedDefinition.DefinitionId] = referencedDefinition;
 
         // Build dependency map for topological sorting
         var dependencyMap = filteredWorkflowReferences
@@ -73,10 +98,10 @@ public class WorkflowReferenceUpdater(
             .Where(id => referencingWorkflowGraphs.ContainsKey(id))
             .ToList();
 
-        var updatedWorkflows = new HashSet<UpdatedWorkflowDefinition>();
+        var updatedWorkflows = new Dictionary<string, UpdatedWorkflowDefinition>();
 
         // Create a cache for drafts that we've already created during this operation
-        var draftCache = new Dictionary<string, (WorkflowDefinition Draft, bool WasPublished)>();
+        var draftCache = new Dictionary<string, WorkflowDefinition>();
 
         foreach (var id in sortedWorkflowIds)
         {
@@ -85,22 +110,25 @@ public class WorkflowReferenceUpdater(
 
             foreach (var refId in dependencyMap[id])
             {
-                var target = referencedWorkflowDefinitions.GetValueOrDefault(refId);
+                var target = referencedWorkflowDefinitionsPublished.GetValueOrDefault(refId);
                 if (target == null) continue;
 
-                var updated = await UpdateWorkflowAsync(graph, target, draftCache, cancellationToken);
+                var updated = await UpdateWorkflowAsync(graph, target, draftCache, initialPublicationState, cancellationToken);
                 if (updated == null) continue;
 
-                updatedWorkflows.Add(updated);
-                referencedWorkflowDefinitions[id] = updated.Definition;
+                graph = updated.NewGraph;
+                updatedWorkflows[updated.Definition.DefinitionId] = updated;
+                referencedWorkflowDefinitionsPublished[id] = updated.Definition;
+                draftCache[id] = updated.Definition;
                 referencingWorkflowGraphs[id] = await workflowDefinitionService.MaterializeWorkflowAsync(updated.Definition, cancellationToken);
             }
         }
 
         _isUpdating = true;
-        foreach (var updatedWorkflow in updatedWorkflows)
+        foreach (var updatedWorkflow in updatedWorkflows.Values)
         {
-            if (updatedWorkflow.RequiresPublication)
+            var requiresPublication = initialPublicationState.GetValueOrDefault(updatedWorkflow.Definition.DefinitionId);
+            if (requiresPublication)
                 await publisher.PublishAsync(updatedWorkflow.Definition, cancellationToken);
             else
                 await publisher.SaveDraftAsync(updatedWorkflow.Definition, cancellationToken);
@@ -108,7 +136,7 @@ public class WorkflowReferenceUpdater(
 
         _isUpdating = false;
 
-        return new(updatedWorkflows.Select(u => u.Definition));
+        return new(updatedWorkflows.Select(u => u.Value.Definition));
     }
 
     private async IAsyncEnumerable<WorkflowReferences> GetReferencingWorkflowDefinitionIdsAsync(
@@ -125,12 +153,12 @@ public class WorkflowReferenceUpdater(
     private async Task<UpdatedWorkflowDefinition?> UpdateWorkflowAsync(
         WorkflowGraph graph,
         WorkflowDefinition target,
-        Dictionary<string, (WorkflowDefinition Draft, bool WasPublished)> draftCache,
+        Dictionary<string, WorkflowDefinition> draftCache,
+        Dictionary<string, bool> initialPublicationState,
         CancellationToken cancellationToken)
     {
         var id = graph.Workflow.Identity.DefinitionId;
-        var wasPublished = graph.Workflow.Publication.IsPublished;
-        var draft = await GetOrCreateDraftAsync(id, wasPublished, draftCache, cancellationToken);
+        var draft = await GetOrCreateDraftAsync(id, draftCache, cancellationToken);
         if (draft == null) return null;
 
         var newGraph = await workflowDefinitionService.MaterializeWorkflowAsync(draft, cancellationToken);
@@ -151,27 +179,32 @@ public class WorkflowReferenceUpdater(
         if (newGraph.Root.Activity is Workflow wf)
             draft.StringData = serializer.Serialize(wf.Root);
 
-        return new(draft, wasPublished);
+        // If the referenced workflow is a draft version, we must not automatically publish the referencing workflow, because this would lead to a published workflow executing a non-published workflow.
+        if(!target.IsPublished)
+        {
+            initialPublicationState[target.DefinitionId] = false;
+        }
+        
+        // Only require publication if the workflow was published
+        // If it was already in draft mode, we'll just save the updated draft
+        return new(draft, newGraph);
     }
 
     private async Task<WorkflowDefinition?> GetOrCreateDraftAsync(
         string definitionId,
-        bool wasPublished,
-        Dictionary<string, (WorkflowDefinition Draft, bool WasPublished)> draftCache,
+        Dictionary<string, WorkflowDefinition> draftCache,
         CancellationToken cancellationToken)
     {
         // Check if we already have a draft for this workflow
         if (draftCache.TryGetValue(definitionId, out var cachedDraft))
-        {
-            return cachedDraft.Draft;
-        }
+            return cachedDraft;
 
         // Create or get a draft for this workflow
         var draft = await publisher.GetDraftAsync(definitionId, VersionOptions.Latest, cancellationToken);
         if (draft == null) return null;
 
         // Store the draft in the cache for potential future use
-        draftCache[definitionId] = (draft, wasPublished);
+        draftCache[definitionId] = draft;
         
         // Get the current published version of the workflow definition.
         var publishedVersion = await workflowDefinitionStore.FindAsync(
