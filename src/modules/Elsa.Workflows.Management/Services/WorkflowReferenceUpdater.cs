@@ -108,7 +108,7 @@ public class WorkflowReferenceUpdater(
                 updatedWorkflows[updated.Definition.DefinitionId] = updated;
                 referencedWorkflowDefinitionsPublished[id] = updated.Definition;
                 draftCache[id] = updated.Definition;
-                referencingWorkflowGraphs[id] = await workflowDefinitionService.MaterializeWorkflowAsync(updated.Definition, cancellationToken);
+                referencingWorkflowGraphs[id] = updated.NewGraph;
             }
         }
 
