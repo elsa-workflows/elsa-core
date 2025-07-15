@@ -35,5 +35,5 @@
         <NoWarn>$(NoWarn);CS0162;CS1591</NoWarn>
         <!-- IL trimming warnings -->
         <NoWarn>$(NoWarn);IL2026;IL2046;IL2057;IL2067;IL2070;IL2072;IL2075;IL2087;IL2091</NoWarn>
-    </PropertyGroup> 
+    </PropertyGroup>
 </Project>
