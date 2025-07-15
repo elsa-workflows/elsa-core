@@ -55,8 +55,8 @@ public class WorkflowReferenceUpdater(
             DefinitionIds = referencedIds,
             VersionOptions = VersionOptions.Published,
             IsReadonly = false
-        }, cancellationToken)).ToList(); 
-        
+        }, cancellationToken)).ToList();
+
         var referencedWorkflowDefinitionsPublished = referencedWorkflowDefinitionList
             .GroupBy(x => x.DefinitionId)
             .Select(group =>
@@ -67,10 +67,10 @@ public class WorkflowReferenceUpdater(
             .ToDictionary(d => d.DefinitionId);
 
         var initialPublicationState = new Dictionary<string, bool>();
-        
-        foreach (var workflowGraph in referencingWorkflowGraphs) 
+
+        foreach (var workflowGraph in referencingWorkflowGraphs)
             initialPublicationState[workflowGraph.Key] = workflowGraph.Value.Workflow.Publication.IsPublished;
-        
+
         // Add the initially referenced definition
         referencedWorkflowDefinitionsPublished[referencedDefinition.DefinitionId] = referencedDefinition;
 
@@ -129,13 +129,23 @@ public class WorkflowReferenceUpdater(
 
     private async IAsyncEnumerable<WorkflowReferences> GetReferencingWorkflowDefinitionIdsAsync(
         string definitionId,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+        [EnumeratorCancellation] CancellationToken cancellationToken,
+        HashSet<string>? visitedIds = null)
     {
+        visitedIds ??= new();
+
+        // If we've already processed this definition ID, skip it to prevent infinite recursion.
+        if (!visitedIds.Add(definitionId))
+            yield break;
+
         var refs = (await workflowReferenceQuery.ExecuteAsync(definitionId, cancellationToken)).ToList();
         yield return new(definitionId, refs);
+
         foreach (var id in refs)
-        await foreach (var child in GetReferencingWorkflowDefinitionIdsAsync(id, cancellationToken))
-            yield return child;
+        {
+            await foreach (var child in GetReferencingWorkflowDefinitionIdsAsync(id, cancellationToken, visitedIds))
+                yield return child;
+        }
     }
 
     private async Task<UpdatedWorkflowDefinition?> UpdateWorkflowAsync(
@@ -146,9 +156,9 @@ public class WorkflowReferenceUpdater(
         CancellationToken cancellationToken)
     {
         var willTargetBePublished = initialPublicationState.GetValueOrDefault(target.DefinitionId, target.IsPublished);
-        if(!willTargetBePublished)
+        if (!willTargetBePublished)
             return null;
-        
+
         var id = graph.Workflow.Identity.DefinitionId;
         var draft = await GetOrCreateDraftAsync(id, draftCache, cancellationToken);
         if (draft == null) return null;
@@ -189,12 +199,12 @@ public class WorkflowReferenceUpdater(
 
         // Store the draft in the cache for potential future use
         draftCache[definitionId] = draft;
-        
+
         // Get the current published version of the workflow definition.
         var publishedVersion = await workflowDefinitionStore.FindAsync(
             WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Published).ToFilter(),
             cancellationToken);
-        
+
         // Update the activity registry to be able to materialize the workflow.
         var activityDescriptor = workflowDefinitionActivityDescriptorFactory.CreateDescriptor(draft, publishedVersion);
         activityRegistry.Add(typeof(WorkflowDefinitionActivityProvider), activityDescriptor);
@@ -207,7 +217,7 @@ public class WorkflowReferenceUpdater(
         // Do not drill into activities that are WorkflowDefinitionActivity
         if (node.Activity is WorkflowDefinitionActivity)
             yield break;
-        
+
         foreach (var child in node.Children)
         {
             if (child.Activity is WorkflowDefinitionActivity activity && activity.WorkflowDefinitionId == definitionId)
