@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Models;
@@ -12,7 +13,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
 /// Imports JSON and/or ZIP files containing a workflow definitions.
 /// </summary>
 [PublicAPI]
-internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
+internal class Import : ElsaEndpoint<WorkflowDefinitionModel, LinkedWorkflowDefinitionModel>
 {
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
     private readonly IWorkflowDefinitionLinker _linker;
@@ -38,7 +39,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
     }
 
     /// <inheritdoc />
-    public override async Task HandleAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
+    public override async Task<LinkedWorkflowDefinitionModel> ExecuteAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
         var definitionId = model.DefinitionId;
         var isNew = string.IsNullOrWhiteSpace(definitionId);
@@ -50,7 +51,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
         if (!authorizationResult.Succeeded)
         {
             await SendForbiddenAsync(cancellationToken);
-            return;
+            return null!;
         }
 
         var updatedModel = await _linker.MapAsync(definition, cancellationToken);
@@ -59,12 +60,12 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
         {
             if (isNew)
                 await SendCreatedAtAsync<GetByDefinitionId.GetByDefinitionId>(new { DefinitionId = definitionId }, updatedModel, cancellation: cancellationToken);
-            else
-                await SendOkAsync(updatedModel, cancellationToken);
+            return updatedModel;
         }
 
         if (ValidationFailed)
             await SendErrorsAsync(400, cancellationToken);
+        return null!;
     }
 
     private async Task<ImportWorkflowResult> ImportSingleWorkflowDefinitionAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
