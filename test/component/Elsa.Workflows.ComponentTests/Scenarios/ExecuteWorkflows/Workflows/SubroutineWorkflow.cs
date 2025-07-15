@@ -19,7 +19,8 @@ public class SubroutineWorkflow : WorkflowBase
         {
             Activities =
             {
-                new WriteLine(context => $"Running subroutine on value {context.GetInput<double>(valueInput)}..."),
+                new WriteLine(context => $"Running subroutine on value {context.GetInput<double>(valueInput)} ..., " +
+                    $"correlation id is '" + context.GetWorkflowExecutionContext().CorrelationId + "'."),
                 new SetOutput
                 {
                     OutputName = new(output.Name),
