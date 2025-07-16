@@ -59,6 +59,8 @@ public class ConfigureEngineWithCommonFunctions(IOptions<JintOptions> options) :
         engine.SetValue("bytesFromBase64", (Func<string, byte[]>)(value => Convert.FromBase64String(value)));
         engine.SetValue("stringToBase64", (Func<string, string>)(value =>  Convert.ToBase64String(Encoding.UTF8.GetBytes(value))));
         engine.SetValue("stringFromBase64", (Func<string, string>)(value => Encoding.UTF8.GetString(Convert.FromBase64String(value))));
+        engine.SetValue("streamToBytes", (Func<Stream, byte[]>)(value => StreamToBytes(value)));
+        engine.SetValue("streamToBase64", (Func<Stream, string>)(value => Convert.ToBase64String(StreamToBytes(value))));
         
         // Deprecated, use newGuidString instead.
         engine.SetValue("getGuidString", (Func<string>)(() => Guid.NewGuid().ToString()));
@@ -67,7 +69,7 @@ public class ConfigureEngineWithCommonFunctions(IOptions<JintOptions> options) :
         engine.SetValue("getShortGuid", (Func<string>)(() => Regex.Replace(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), "[/+=]", "")));
         return Task.CompletedTask;
     }
-    
+
     private string Serialize(object value)
     {
         return JsonSerializer.Serialize(value, _jsonSerializerOptions);
@@ -81,5 +83,12 @@ public class ConfigureEngineWithCommonFunctions(IOptions<JintOptions> options) :
         };
         options.Converters.Add(new JsonStringEnumConverter());
         return options;
+    }
+
+    private byte[] StreamToBytes(Stream stream)
+    {
+        using var memoryStream = new MemoryStream();
+        stream.CopyTo(memoryStream);
+        return memoryStream.ToArray();
     }
 }
