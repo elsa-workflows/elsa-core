@@ -3,7 +3,7 @@ using Elsa.Workflows.Pipelines.ActivityExecution;
 
 namespace Elsa.Workflows.Runtime.Middleware.Activities;
 
-public class CaptureActivityExecutionRecordMiddleware(ActivityMiddlewareDelegate next, IActivityExecutionMapper mapper) : IActivityExecutionMiddleware
+public class CaptureActivityExecutionRecordMiddleware(ActivityMiddlewareDelegate next) : IActivityExecutionMiddleware
 {
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
