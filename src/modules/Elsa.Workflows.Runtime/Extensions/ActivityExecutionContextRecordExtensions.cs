@@ -20,4 +20,13 @@ public static class ActivityExecutionContextRecordExtensions
     {
         return context.TransientProperties.TryGetValue(ActivityExecutionRecordKey, out var record) ? (ActivityExecutionRecord?)record : null;
     }
+    
+    public static async Task<ActivityExecutionRecord> GetOrMapCapturedActivityExecutionRecordAsync(this ActivityExecutionContext context)
+    {
+        if(context.TransientProperties.TryGetValue(ActivityExecutionRecordKey, out var record))
+            return (ActivityExecutionRecord)record;
+                
+        var mapper = context.GetRequiredService<IActivityExecutionMapper>();
+        return await mapper.MapAsync(context);
+    }
 }

@@ -23,7 +23,7 @@ public class StoreActivityExecutionLogSink(
         if (activityExecutionContexts.Count == 0)
             return;
 
-        var records = await Task.WhenAll(activityExecutionContexts.Select(async x => x.GetCapturedActivityExecutionRecord() ?? await mapper.MapAsync(x)));
+        var records = await Task.WhenAll(activityExecutionContexts.Select(x => x.GetOrMapCapturedActivityExecutionRecordAsync()));
         await activityExecutionStore.SaveManyAsync(records, cancellationToken);
 
         // Untaint activity execution contexts.
