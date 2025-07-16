@@ -94,7 +94,7 @@ public class EFCoreActivityExecutionStore(
         dbContext.Entry(entity).Property("SerializedOutputs").CurrentValue = entity.SerializedOutputs;
         dbContext.Entry(entity).Property("SerializedProperties").CurrentValue = entity.SerializedProperties;
         dbContext.Entry(entity).Property("SerializedMetadata").CurrentValue = entity.SerializedMetadata;
-        dbContext.Entry(entity).Property("SerializedException").CurrentValue = entity.Exception != null ? payloadSerializer.Serialize(entity.Exception) : null;
+        dbContext.Entry(entity).Property("SerializedException").CurrentValue = entity.SerializedException;
         dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload?.Any() == true ? payloadSerializer.Serialize(entity.Payload) : null;
     }
 
