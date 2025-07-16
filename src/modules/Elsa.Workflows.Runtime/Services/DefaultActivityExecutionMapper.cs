@@ -1,13 +1,24 @@
+using Elsa.Common;
+using Elsa.Common.Codecs;
 using Elsa.Workflows.LogPersistence;
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.State;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class DefaultActivityExecutionMapper() : IActivityExecutionMapper
+public class DefaultActivityExecutionMapper(
+    ISafeSerializer safeSerializer, 
+    IPayloadSerializer payloadSerializer,
+    ICompressionCodecResolver compressionCodecResolver,
+    IOptions<ManagementOptions> options) : IActivityExecutionMapper
 {
-    public ActivityExecutionRecord Map(ActivityExecutionContext source)
+
+    /// <inheritdoc />
+    public async Task<ActivityExecutionRecord> MapAsync(ActivityExecutionContext source)
     {
         var outputs = source.GetOutputs();
         var inputs = source.GetInputs();
@@ -16,8 +27,9 @@ public class DefaultActivityExecutionMapper() : IActivityExecutionMapper
         var persistableOutputs = GetPersistableInputOutput(outputs, persistenceMap.Outputs);
         var persistableProperties = GetPersistableDictionary(source.Properties!, persistenceMap.InternalState);
         var persistableJournalData = GetPersistableDictionary(source.JournalData!, persistenceMap.InternalState);
+        var cancellationToken = source.CancellationToken;
 
-        return new()
+        var record = new ActivityExecutionRecord
         {
             Id = source.Id,
             ActivityId = source.Activity.Id,
@@ -38,15 +50,26 @@ public class DefaultActivityExecutionMapper() : IActivityExecutionMapper
             AggregateFaultCount = source.AggregateFaultCount,
             CompletedAt = source.CompletedAt
         };
+        
+            record = record.SanitizeLogMessage();
+            var compressionAlgorithm = options.Value.CompressionAlgorithm ?? nameof(None);
+            var serializedActivityState = record.ActivityState?.Count > 0 ? safeSerializer.Serialize(record.ActivityState) : null;
+            var compressedSerializedActivityState = serializedActivityState != null ? await compressionCodecResolver.Resolve(compressionAlgorithm).CompressAsync(serializedActivityState, cancellationToken) : null;
+            var serializedProperties = record.Properties != null ? payloadSerializer.Serialize(record.Properties) : null;
+            var serializedMetadata = record.Metadata != null ? payloadSerializer.Serialize(record.Metadata) : null;
+        
+            record.SerializedActivityState = compressedSerializedActivityState;
+            record.SerializedActivityStateCompressionAlgorithm = compressionAlgorithm;
+            record.SerializedOutputs = record.Outputs?.Any() == true ? safeSerializer.Serialize(record.Outputs) : null;
+            record.SerializedProperties = serializedProperties;
+            record.SerializedMetadata = serializedMetadata;
+            record.SerializedException = record.Exception != null ? payloadSerializer.Serialize(record.Exception) : null;
+            record.SerializedPayload = record.Payload?.Any() == true ? payloadSerializer.Serialize(record.Payload) : null;
+
+        return record;
     }
 
-    /// <inheritdoc />
-    public Task<ActivityExecutionRecord> MapAsync(ActivityExecutionContext source)
-    {
-        return Task.FromResult(Map(source));
-    }
-
-    private IDictionary<string, object?> GetPersistableInputOutput(IDictionary<string, object> state, IDictionary<string, LogPersistenceMode> map)
+    private IDictionary<string, object?> GetPersistableInputOutput(IDictionary<string, object> state, IDictionary<string, LogPersistenceMode> map, bool deepCopy = false)
     {
         var result = new Dictionary<string, object?>();
         foreach (var stateEntry in state)

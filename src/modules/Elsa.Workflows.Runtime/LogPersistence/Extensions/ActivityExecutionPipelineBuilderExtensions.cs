@@ -20,4 +20,12 @@ public static class ActivityExecutionPipelineBuilderExtensions
     /// Installs the <see cref="EvaluateLogPersistenceModesMiddleware"/> which evaluates log persistence modes during activity execution.
     /// </summary>
     public static IActivityExecutionPipelineBuilder UseLogPersistenceModeEvaluation(this IActivityExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<EvaluateLogPersistenceModesMiddleware>();
+
+    /// <summary>
+    /// Installs the <see cref="CaptureActivityExecutionRecordMiddleware"/> into the activity execution pipeline to capture and map activity execution details.
+    /// </summary>
+    public static IActivityExecutionPipelineBuilder UseActivityExecutionLogCapturing(this IActivityExecutionPipelineBuilder pipelineBuilder)
+    {
+        return pipelineBuilder.UseMiddleware<CaptureActivityExecutionRecordMiddleware>();
+    }
 }

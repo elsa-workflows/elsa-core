@@ -34,6 +34,7 @@ public static class PipelineWorkflowsFeatureExtensions
                 .UseExecutionLogging()
                 .UseNotifications()
                 .UseLogPersistenceModeEvaluation()
+                .UseActivityExecutionLogCapturing()
                 .UseBackgroundActivityInvoker();
 
             configurePipeline?.Invoke(pipeline);
