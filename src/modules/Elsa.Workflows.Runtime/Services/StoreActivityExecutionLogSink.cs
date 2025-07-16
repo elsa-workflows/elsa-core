@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Notifications;
@@ -22,7 +23,7 @@ public class StoreActivityExecutionLogSink(
         if (activityExecutionContexts.Count == 0)
             return;
 
-        var records = activityExecutionContexts.Select(mapper.Map).ToList();
+        var records = await Task.WhenAll(activityExecutionContexts.Select(async x => x.GetCapturedActivityExecutionRecord() ?? await mapper.MapAsync(x)));
         await activityExecutionStore.SaveManyAsync(records, cancellationToken);
 
         // Untaint activity execution contexts.
