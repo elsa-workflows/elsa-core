@@ -41,11 +41,14 @@ public class ActivityFactory : IActivityFactory
             composite.Setup();
 
         // 9) Your existing synthetic inputs/outputs routines, using the cleanedElement
-        ReadSyntheticInputs(context.ActivityDescriptor, activity, cleanedElement, context.SerializerOptions);
-        ReadSyntheticOutputs(context.ActivityDescriptor, activity, cleanedElement);
+        if (context.ActivityDescriptor != null)
+        {
+            ReadSyntheticInputs(context.ActivityDescriptor, activity, cleanedElement, context.SerializerOptions);
+            ReadSyntheticOutputs(context.ActivityDescriptor, activity, cleanedElement);
+        }
 
         // 10) Finally re‑apply those flags
-        activity.SetCanStartWorkflow(canStartWorkflow);
+            activity.SetCanStartWorkflow(canStartWorkflow);
         activity.SetRunAsynchronously(runAsynchronously);
 
         return activity;
