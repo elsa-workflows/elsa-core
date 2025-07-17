@@ -127,6 +127,9 @@ public class ActivityFactory : IActivityFactory
 
     private void ReadSyntheticInputs(ActivityDescriptor activityDescriptor, IActivity activity, JsonElement activityRoot, JsonSerializerOptions options)
     {
+        if ( activityDescriptor.Inputs == null )
+            return;
+
         foreach (var inputDescriptor in activityDescriptor.Inputs.Where(x => x.IsSynthetic))
         {
             var inputName = inputDescriptor.Name;
@@ -155,6 +158,9 @@ public class ActivityFactory : IActivityFactory
 
     private void ReadSyntheticOutputs(ActivityDescriptor activityDescriptor, IActivity activity, JsonElement activityRoot)
     {
+        if ( activityDescriptor.Outputs == null )
+            return;
+            
         foreach (var outputDescriptor in activityDescriptor.Outputs.Where(x => x.IsSynthetic))
         {
             var outputName = outputDescriptor.Name;
