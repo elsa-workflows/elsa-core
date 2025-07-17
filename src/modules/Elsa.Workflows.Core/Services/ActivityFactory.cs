@@ -48,7 +48,7 @@ public class ActivityFactory : IActivityFactory
         }
 
         // 10) Finally re‑apply those flags
-            activity.SetCanStartWorkflow(canStartWorkflow);
+        activity.SetCanStartWorkflow(canStartWorkflow);
         activity.SetRunAsynchronously(runAsynchronously);
 
         return activity;
