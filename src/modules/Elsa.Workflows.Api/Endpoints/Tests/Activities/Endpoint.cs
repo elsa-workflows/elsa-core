@@ -51,7 +51,7 @@ internal class Endpoint(
         }
 
         var activityExecutionContext = await activityTestRunner.RunAsync(workflowGraph, activity, cancellationToken);
-        var record = activityExecutionMapper.Map(activityExecutionContext);
+        var record = await activityExecutionMapper.MapAsync(activityExecutionContext);
         var activityState = record.ActivityState ?? new Dictionary<string, object?>(); 
 
         var response = new Response
