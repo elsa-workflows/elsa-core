@@ -36,7 +36,7 @@ public class ZipEntryContentStrategy(IServiceProvider serviceProvider) : IConten
         var innerContentName = innerContent.Name?.GetNameAndExtension();
         var innerContentExtension = Path.GetExtension(innerContentName);
         innerContent.Name = !string.IsNullOrWhiteSpace(innerContentExtension) 
-            ? zipEntry.EntryName + innerContentExtension 
+            ? Path.HasExtension(zipEntry.EntryName) ? zipEntry.EntryName : zipEntry.EntryName  + innerContentExtension 
             : innerContent.Name;
 
         return innerContent;
