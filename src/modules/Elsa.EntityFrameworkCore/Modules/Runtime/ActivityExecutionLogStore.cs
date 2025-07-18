@@ -6,17 +6,13 @@ using Elsa.Common.Codecs;
 using Elsa.Common.Entities;
 using Elsa.Extensions;
 using Elsa.Workflows;
-using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -29,8 +25,7 @@ public class EFCoreActivityExecutionStore(
     EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> store,
     ISafeSerializer safeSerializer,
     IPayloadSerializer payloadSerializer,
-    ICompressionCodecResolver compressionCodecResolver,
-    IOptions<ManagementOptions> options) : IActivityExecutionStore
+    ICompressionCodecResolver compressionCodecResolver) : IActivityExecutionStore
 {
     /// <inheritdoc />
     public async Task SaveAsync(ActivityExecutionRecord record, CancellationToken cancellationToken = default) => await store.SaveAsync(record, OnSaveAsync, cancellationToken);
@@ -87,15 +82,21 @@ public class EFCoreActivityExecutionStore(
         return await store.DeleteWhereAsync(queryable => Filter(queryable, filter), cancellationToken);
     }
 
-    private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
+    private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.SerializedActivityState;
-        dbContext.Entry(entity).Property("SerializedActivityStateCompressionAlgorithm").CurrentValue = entity.SerializedActivityStateCompressionAlgorithm ?? nameof(None);
-        dbContext.Entry(entity).Property("SerializedOutputs").CurrentValue = entity.SerializedOutputs;
-        dbContext.Entry(entity).Property("SerializedProperties").CurrentValue = entity.SerializedProperties;
-        dbContext.Entry(entity).Property("SerializedMetadata").CurrentValue = entity.SerializedMetadata;
-        dbContext.Entry(entity).Property("SerializedException").CurrentValue = entity.SerializedException;
-        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.SerializedPayload;
+        var snapshot = entity.SerializedSnapshot;
+
+        if (snapshot is null)
+            return ValueTask.CompletedTask;
+
+        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = snapshot.SerializedActivityState;
+        dbContext.Entry(entity).Property("SerializedActivityStateCompressionAlgorithm").CurrentValue = snapshot.SerializedActivityStateCompressionAlgorithm;
+        dbContext.Entry(entity).Property("SerializedOutputs").CurrentValue = snapshot.SerializedOutputs;
+        dbContext.Entry(entity).Property("SerializedProperties").CurrentValue = snapshot.SerializedProperties;
+        dbContext.Entry(entity).Property("SerializedMetadata").CurrentValue = snapshot.SerializedMetadata;
+        dbContext.Entry(entity).Property("SerializedException").CurrentValue = snapshot.SerializedException;
+        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = snapshot.SerializedPayload;
+        return ValueTask.CompletedTask;
     }
 
     [RequiresUnreferencedCode("Calls Elsa.EntityFrameworkCore.Modules.Runtime.EFCoreActivityExecutionStore.DeserializeActivityState(RuntimeElsaDbContext, ActivityExecutionRecord, CancellationToken)")]
