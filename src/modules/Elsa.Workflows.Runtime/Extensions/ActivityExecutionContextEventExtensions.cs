@@ -7,7 +7,7 @@ using Elsa.Workflows.Runtime.Stimuli;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
-public static class ActivityExecutionContextExtensions
+public static class ActivityExecutionContextEventExtensions
 {
     /// <summary>
     /// Suspends the current activity's execution and waits for a specified event to occur before continuing.

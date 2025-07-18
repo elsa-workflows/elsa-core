@@ -80,7 +80,7 @@ public class CreateZipArchive : CodeActivity<Stream>
 
         try
         {
-            using var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true);
+            using var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Update, leaveOpen: true);
             var entryIndex = 0;
 
             var compressionLevel = CompressionLevel.Get(context);
@@ -122,19 +122,87 @@ public class CreateZipArchive : CodeActivity<Stream>
         CompressionLevel compressionLevel)
     {
         var binaryContent = await resolver.ResolveAsync(entryContent, context.CancellationToken);
-        
-        var entryName = binaryContent.Name?.GetNameAndExtension() 
+    
+        var entryName = binaryContent.Name?.GetNameAndExtension()
                         ?? string.Format(DefaultEntryNameFormat, entryIndex + 1);
         
+        // Get a unique name following Windows convention
+        entryName = GetUniqueEntryName(zipArchive, entryName);
+    
         var archiveEntry = zipArchive.CreateEntry(entryName, compressionLevel);
         
         await using var entryStream = archiveEntry.Open();
         await binaryContent.Stream.CopyToAsync(entryStream, context.CancellationToken);
         await entryStream.FlushAsync(context.CancellationToken);
-        
+    
         if (entryContent is not Stream)
         {
             await binaryContent.Stream.DisposeAsync();
         }
+    }
+    
+    private static string GetUniqueEntryName(ZipArchive zipArchive, string originalName)
+    {
+        var filenameWithoutExtension = Path.GetFileNameWithoutExtension(originalName);
+        var extension = Path.GetExtension(originalName);
+        
+        var originalExists = false;
+        var highestIndex = 0;
+        
+        foreach (var entry in zipArchive.Entries)
+        {
+            if (!entry.Name.Equals(originalName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+            
+            originalExists = true;
+            
+            var entryNameWithoutExtension = Path.GetFileNameWithoutExtension(entry.Name);
+            var entryExtension = Path.GetExtension(entry.Name);
+            
+            // Only process entries with the same extension
+            if (!entryExtension.Equals(extension, StringComparison.OrdinalIgnoreCase))
+                continue;
+                
+            // Check if this entry follows our naming pattern
+            highestIndex = HighestEntryNameIndex(entryNameWithoutExtension, filenameWithoutExtension, highestIndex);
+        }
+        
+        if (!originalExists)
+        {
+            return originalName;
+        }
+        
+        return $"{filenameWithoutExtension}({highestIndex + 1}){extension}";
+    }
+
+    private static int HighestEntryNameIndex(string entryNameWithoutExtension, string filenameWithoutExtension,
+        int highestIndex)
+    {
+        if (!entryNameWithoutExtension.StartsWith(filenameWithoutExtension, StringComparison.OrdinalIgnoreCase) ||
+            entryNameWithoutExtension.Length <= filenameWithoutExtension.Length ||
+            entryNameWithoutExtension[filenameWithoutExtension.Length] != '(')
+        {
+            return highestIndex;
+        }
+
+        // Extract the number between parentheses
+        var closingParenIndex = entryNameWithoutExtension.LastIndexOf(')');
+        if (closingParenIndex <= filenameWithoutExtension.Length + 1)
+        {
+            return highestIndex;
+        }
+
+        var indexStr = entryNameWithoutExtension.Substring(
+            filenameWithoutExtension.Length + 1,
+            closingParenIndex - filenameWithoutExtension.Length - 1);
+    
+        if (int.TryParse(indexStr, out var index))
+        {
+            highestIndex = Math.Max(highestIndex, index);
+        }
+
+        return highestIndex;
     }
 }

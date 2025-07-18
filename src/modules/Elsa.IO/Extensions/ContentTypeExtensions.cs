@@ -85,6 +85,62 @@ public static class ContentTypeExtensions
         return Path.GetExtension(filePath).ToLowerInvariant();
     }
     
+    public static bool IsBase64String(this string s)
+    {
+        if (string.IsNullOrWhiteSpace(s))
+            return false;
+
+        s = s.Trim();
+
+        // Length must be divisible by 4
+        if (s.Length % 4 != 0)
+            return false;
+
+        // Check padding position and count
+        var paddingIndex = s.IndexOf('=');
+        
+        switch (paddingIndex)
+        {
+            // Padding cannot be at index 0
+            case 0:
+            // Padding must be at the end
+            case > 0 when paddingIndex < s.Length - 2:
+            // All characters after first '=' must also be '='
+            case > 0 when s[paddingIndex..].Any(c => c != '='):
+                return false;
+        }
+
+        // Check for valid Base64 characters
+        for (var i = 0; i < paddingIndex; i++)
+        {
+            var c = s[i];
+            var isValid = 
+                c is >= 'A' and <= 'Z' ||
+                c is >= 'a' and <= 'z' ||
+                c is >= '0' and <= '9' ||
+                c == '+' || c == '/';
+
+            if (!isValid)
+                return false;
+        }
+
+        // Additional check for short strings that are just lowercase+numbers
+        // This catches "whatever" and similar false positives
+        if (s.Length <= 10 && s.All(c => char.IsLower(c) || char.IsDigit(c)))
+            return false;
+
+        // Try actual decoding
+        try
+        {
+            _ = Convert.FromBase64String(s);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+    
     private static string DetermineExtensionFromMimeType(string mimeType)
     {
         if (mimeType.Contains("/pdf"))

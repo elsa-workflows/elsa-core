@@ -136,6 +136,16 @@ internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasReg
             .Name("stringToBase64")
             .Parameter("value", "string")
             .ReturnType("string"));
+        
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("streamToBytes")
+            .Parameter("value", "Stream")
+            .ReturnType("Byte[]"));
+        
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("streamToBase64")
+            .Parameter("value", "Stream")
+            .ReturnType("string"));
 
         if (!options.Value.DisableWrappers)
         {
@@ -151,7 +161,7 @@ internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasReg
 
                 // set{Variable}.
                 yield return CreateFunctionDefinition(builder => builder.Name($"set{pascalName}").Parameter("value", typeAlias));
-            }
+            } 
         }
     }
 }
