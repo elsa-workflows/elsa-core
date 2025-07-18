@@ -8,7 +8,7 @@ public abstract class Entity
     /// <summary>
     /// Gets or sets the ID of this entity.
     /// </summary>
-    public string Id { get; set; } = default!;
+    public string Id { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the ID of the tenant that own this entity.

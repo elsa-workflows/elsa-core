@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Elsa.Common;
 using Elsa.Common.Entities;
 using Elsa.Workflows.State;
@@ -99,11 +100,5 @@ public partial class ActivityExecutionRecord : Entity, ILogRecord
 
 public partial class ActivityExecutionRecord
 {
-    [NotMapped] public string? SerializedActivityState { get; set; }
-    [NotMapped] public string? SerializedOutputs { get; set; }
-    [NotMapped] public string? SerializedProperties { get; set; }
-    [NotMapped] public string? SerializedPayload { get; set; }
-    [NotMapped] public string? SerializedMetadata { get; set; }
-    [NotMapped] public string? SerializedException { get; set; }
-    [NotMapped] public string? SerializedActivityStateCompressionAlgorithm { get; set; }
+    [NotMapped] [JsonIgnore] public ActivityExecutionRecordSnapshot? SerializedSnapshot { get; set; }
 }

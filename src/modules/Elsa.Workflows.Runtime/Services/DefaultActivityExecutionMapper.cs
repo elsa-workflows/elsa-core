@@ -11,12 +11,11 @@ namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class DefaultActivityExecutionMapper(
-    ISafeSerializer safeSerializer, 
+    ISafeSerializer safeSerializer,
     IPayloadSerializer payloadSerializer,
     ICompressionCodecResolver compressionCodecResolver,
     IOptions<ManagementOptions> options) : IActivityExecutionMapper
 {
-
     /// <inheritdoc />
     public async Task<ActivityExecutionRecord> MapAsync(ActivityExecutionContext source)
     {
@@ -50,22 +49,37 @@ public class DefaultActivityExecutionMapper(
             AggregateFaultCount = source.AggregateFaultCount,
             CompletedAt = source.CompletedAt
         };
-        
-            record = record.SanitizeLogMessage();
-            var compressionAlgorithm = options.Value.CompressionAlgorithm ?? nameof(None);
-            var serializedActivityState = record.ActivityState?.Count > 0 ? safeSerializer.Serialize(record.ActivityState) : null;
-            var compressedSerializedActivityState = serializedActivityState != null ? await compressionCodecResolver.Resolve(compressionAlgorithm).CompressAsync(serializedActivityState, cancellationToken) : null;
-            var serializedProperties = record.Properties != null ? payloadSerializer.Serialize(record.Properties) : null;
-            var serializedMetadata = record.Metadata != null ? payloadSerializer.Serialize(record.Metadata) : null;
-        
-            record.SerializedActivityState = compressedSerializedActivityState;
-            record.SerializedActivityStateCompressionAlgorithm = compressionAlgorithm;
-            record.SerializedOutputs = record.Outputs?.Any() == true ? safeSerializer.Serialize(record.Outputs) : null;
-            record.SerializedProperties = serializedProperties;
-            record.SerializedMetadata = serializedMetadata;
-            record.SerializedException = record.Exception != null ? payloadSerializer.Serialize(record.Exception) : null;
-            record.SerializedPayload = record.Payload?.Any() == true ? payloadSerializer.Serialize(record.Payload) : null;
 
+        record = record.SanitizeLogMessage();
+        var compressionAlgorithm = options.Value.CompressionAlgorithm ?? nameof(None);
+        var serializedActivityState = record.ActivityState?.Count > 0 ? safeSerializer.Serialize(record.ActivityState) : null;
+        var compressedSerializedActivityState = serializedActivityState != null ? await compressionCodecResolver.Resolve(compressionAlgorithm).CompressAsync(serializedActivityState, cancellationToken) : null;
+        var serializedProperties = record.Properties != null ? payloadSerializer.Serialize(record.Properties) : null;
+        var serializedMetadata = record.Metadata != null ? payloadSerializer.Serialize(record.Metadata) : null;
+        record.SerializedSnapshot = new()
+        {
+            Id = record.Id,
+            TenantId = record.TenantId,
+            WorkflowInstanceId = record.WorkflowInstanceId,
+            ActivityId = record.ActivityId,
+            ActivityNodeId = record.ActivityNodeId,
+            ActivityType = record.ActivityType,
+            ActivityTypeVersion = record.ActivityTypeVersion,
+            ActivityName = record.ActivityName,
+            StartedAt = record.StartedAt,
+            HasBookmarks = record.HasBookmarks,
+            Status = record.Status,
+            AggregateFaultCount = record.AggregateFaultCount,
+            CompletedAt = record.CompletedAt,
+            SerializedActivityState = compressedSerializedActivityState,
+            SerializedActivityStateCompressionAlgorithm = compressionAlgorithm,
+            SerializedOutputs = record.Outputs?.Any() == true ? safeSerializer.Serialize(record.Outputs) : null,
+            SerializedProperties = serializedProperties,
+            SerializedMetadata = serializedMetadata,
+            SerializedException = record.Exception != null ? payloadSerializer.Serialize(record.Exception) : null,
+            SerializedPayload = record.Payload?.Any() == true ? payloadSerializer.Serialize(record.Payload) : null
+        };
+        
         return record;
     }
 
