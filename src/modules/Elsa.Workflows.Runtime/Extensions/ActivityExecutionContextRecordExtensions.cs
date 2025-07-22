@@ -16,11 +16,6 @@ public static class ActivityExecutionContextRecordExtensions
         context.TransientProperties[ActivityExecutionRecordKey] = record;
     }
     
-    public static ActivityExecutionRecord? GetCapturedActivityExecutionRecord(this ActivityExecutionContext context)
-    {
-        return context.TransientProperties.TryGetValue(ActivityExecutionRecordKey, out var record) ? (ActivityExecutionRecord?)record : null;
-    }
-    
     public static async Task<ActivityExecutionRecord> GetOrMapCapturedActivityExecutionRecordAsync(this ActivityExecutionContext context)
     {
         if(context.TransientProperties.TryGetValue(ActivityExecutionRecordKey, out var record))
