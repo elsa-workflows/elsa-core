@@ -142,5 +142,6 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
     {
         _timer?.Dispose();
         _cancellationTokenSource.Dispose();
+        _executionSemaphore.Dispose();
     }
 }

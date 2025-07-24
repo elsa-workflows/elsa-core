@@ -105,5 +105,6 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
     {
         _cancellationTokenSource.Dispose();
         _timer?.Dispose();
+        _executionSemaphore.Dispose();
     }
 }
