@@ -64,7 +64,7 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
             var now = _systemClock.UtcNow;
             var delay = startAt - now;
 
-            if (!adjusted && delay.Milliseconds <= 0)
+            if (!adjusted && delay <= TimeSpan.Zero)
             {
                 adjusted = true;
                 continue;

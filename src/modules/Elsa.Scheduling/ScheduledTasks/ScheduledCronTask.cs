@@ -64,7 +64,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
             var nextOccurence = _cronParser.GetNextOccurrence(_cronExpression);
             var delay = nextOccurence - now;
 
-            if (!adjusted && delay.Milliseconds <= 0)
+            if (!adjusted && delay <= TimeSpan.Zero)
             {
                 adjusted = true;
                 continue;
@@ -77,7 +77,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
 
     private void TrySetupTimer(TimeSpan delay)
     {
-        if (delay.Milliseconds <= 0)
+        if (delay <= TimeSpan.Zero)
             return;
 
         try

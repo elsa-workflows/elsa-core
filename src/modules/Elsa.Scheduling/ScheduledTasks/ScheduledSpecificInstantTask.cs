@@ -57,7 +57,7 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
         var now = _systemClock.UtcNow;
         var delay = _startAt - now;
 
-        if (delay.Milliseconds <= 0)
+        if (delay <= TimeSpan.Zero)
             delay = TimeSpan.FromMilliseconds(1);
 
         _timer = new(delay.TotalMilliseconds)
