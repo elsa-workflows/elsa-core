@@ -92,23 +92,16 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
 
             using var scope = _scopeFactory.CreateScope();
             var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
-
             var cancellationToken = _cancellationTokenSource.Token;
             if (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    try
-                    {
-                        await _executionSemaphore.WaitAsync(cancellationToken);
-                        _executing = true;
-                        await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Handle cancellation gracefully.
-                        return;
-                    }
+                    var acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
+                    if (!acquired) return;
+                    _executing = true;
+                    await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+
                     if (_cancellationRequested)
                     {
                         _cancellationRequested = false;

@@ -78,9 +78,7 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
                 try
                 {
                     var acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
-
-                    if (!acquired)
-                        return;
+                    if (!acquired) return;
                     _executing = true;
                     await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
 
