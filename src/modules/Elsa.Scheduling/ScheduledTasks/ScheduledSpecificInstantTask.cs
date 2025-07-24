@@ -90,7 +90,7 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "Error scheduled task");
+                    _logger.LogError(e, "Error executing scheduled task");
                 }
                 finally
                 {
