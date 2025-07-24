@@ -44,12 +44,13 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
     public void Cancel()
     {
         _timer?.Dispose();
-        
-        if( _executing)
+
+        if (_executing)
         {
             _cancellationRequested = true;
             return;
         }
+
         _cancellationTokenSource.Cancel();
     }
 
@@ -76,7 +77,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
 
     private void TrySetupTimer(TimeSpan delay)
     {
-        if (delay.Milliseconds <= 0) 
+        if (delay.Milliseconds <= 0)
             return;
 
         try
@@ -91,7 +92,10 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
 
     private void SetupTimer(TimeSpan delay)
     {
-        _timer = new(delay.TotalMilliseconds) { Enabled = true };
+        _timer = new(delay.TotalMilliseconds)
+        {
+            Enabled = true
+        };
 
         _timer.Elapsed += async (_, _) =>
         {
@@ -102,17 +106,17 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
             var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
 
             var cancellationToken = _cancellationTokenSource.Token;
-            
+
             if (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
                     await _executionSemaphore.WaitAsync(cancellationToken);
-                    
+
                     _executing = true;
                     await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
                     _executing = false;
-                    
+
                     if (_cancellationRequested)
                     {
                         _cancellationRequested = false;
@@ -128,8 +132,8 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
                     _executionSemaphore.Release();
                 }
             }
-            
-            if (!cancellationToken.IsCancellationRequested) 
+
+            if (!cancellationToken.IsCancellationRequested)
                 Schedule();
         };
     }

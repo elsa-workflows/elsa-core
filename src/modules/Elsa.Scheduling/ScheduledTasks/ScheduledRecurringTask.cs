@@ -2,6 +2,7 @@ using Elsa.Common;
 using Elsa.Mediator.Contracts;
 using Elsa.Scheduling.Commands;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Timer = System.Timers.Timer;
 
 namespace Elsa.Scheduling.ScheduledTasks;
@@ -14,6 +15,7 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
     private readonly ITask _task;
     private readonly ISystemClock _systemClock;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<ScheduledRecurringTask> _logger;
     private readonly TimeSpan _interval;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly SemaphoreSlim _executionSemaphore = new(1, 1);
@@ -25,16 +27,12 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledRecurringTask"/>.
     /// </summary>
-    /// <param name="task">The task to execute.</param>
-    /// <param name="startAt">The instant at which to start executing the task.</param>
-    /// <param name="interval">The interval at which to execute the task.</param>
-    /// <param name="systemClock">The system clock.</param>
-    /// <param name="scopeFactory">Scope factory to create the scope and get dependancies.</param>
-    public ScheduledRecurringTask(ITask task, DateTimeOffset startAt, TimeSpan interval, ISystemClock systemClock, IServiceScopeFactory scopeFactory)
+    public ScheduledRecurringTask(ITask task, DateTimeOffset startAt, TimeSpan interval, ISystemClock systemClock, IServiceScopeFactory scopeFactory, ILogger<ScheduledRecurringTask> logger)
     {
         _task = task;
         _systemClock = systemClock;
         _scopeFactory = scopeFactory;
+        _logger = logger;
         _startAt = startAt;
         _interval = interval;
         _cancellationTokenSource = new();
@@ -114,7 +112,7 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
                 }
                 catch (Exception e)
                 {
-                    // Log error if there's a logger available
+                    _logger.LogError(e, "Error executing scheduled task");
                 }
                 finally
                 {
