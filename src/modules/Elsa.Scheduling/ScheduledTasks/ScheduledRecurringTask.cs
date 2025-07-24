@@ -116,6 +116,7 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
                 }
                 finally
                 {
+                    _executing = false;
                     _executionSemaphore.Release();
                 }
             }
