@@ -81,7 +81,6 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
 
                     _executing = true;
                     await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
-                    _executing = false;
 
                     if (_cancellationRequested)
                     {
