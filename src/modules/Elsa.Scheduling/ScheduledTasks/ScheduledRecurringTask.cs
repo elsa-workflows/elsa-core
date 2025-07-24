@@ -45,12 +45,13 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
     public void Cancel()
     {
         _timer?.Dispose();
-        
-        if( _executing)
+
+        if (_executing)
         {
             _cancellationRequested = true;
             return;
         }
+
         _cancellationTokenSource.Cancel();
     }
 
@@ -79,7 +80,10 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
     {
         if (delay < TimeSpan.Zero) delay = TimeSpan.FromSeconds(1);
 
-        _timer = new(delay.TotalMilliseconds) { Enabled = true };
+        _timer = new(delay.TotalMilliseconds)
+        {
+            Enabled = true
+        };
 
         _timer.Elapsed += async (_, _) =>
         {
@@ -96,14 +100,15 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
                 _executing = true;
                 await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
                 _executing = false;
-                
+
                 if (_cancellationRequested)
                 {
                     _cancellationRequested = false;
                     _cancellationTokenSource.Cancel();
                 }
             }
-            if (!cancellationToken.IsCancellationRequested) 
+
+            if (!cancellationToken.IsCancellationRequested)
                 Schedule();
         };
     }
