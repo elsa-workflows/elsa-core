@@ -19,6 +19,8 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
     private readonly DateTimeOffset _startAt;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private Timer? _timer;
+    private bool _executing;
+    private bool _cancellationRequested;
 
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledSpecificInstantTask"/>.
@@ -30,13 +32,24 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
         _scopeFactory = scopeFactory;
         _logger = logger;
         _startAt = startAt;
-        _cancellationTokenSource = new CancellationTokenSource();
+        _cancellationTokenSource = new();
 
         Schedule();
     }
 
     /// <inheritdoc />
-    public void Cancel() => _timer?.Dispose();
+    public void Cancel()
+    {
+        _timer?.Dispose();
+
+        if (_executing)
+        {
+            _cancellationRequested = true;
+            return;
+        }
+
+        _cancellationTokenSource.Cancel();
+    }
 
     private void Schedule()
     {
@@ -46,7 +59,10 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
         if (delay.Milliseconds <= 0)
             delay = TimeSpan.FromMilliseconds(1);
 
-        _timer = new Timer(delay.TotalMilliseconds) { Enabled = true };
+        _timer = new(delay.TotalMilliseconds)
+        {
+            Enabled = true
+        };
 
         _timer.Elapsed += async (_, _) =>
         {
@@ -55,19 +71,25 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
 
             using var scope = _scopeFactory.CreateScope();
             var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
-
             var cancellationToken = _cancellationTokenSource.Token;
             if (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
+                    _executing = true;
                     await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+                    _executing = false;
+
+                    if (_cancellationRequested)
+                    {
+                        _cancellationRequested = false;
+                        _cancellationTokenSource.Cancel();
+                    }
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "Error scheduled task");
                 }
-                
             }
         };
     }

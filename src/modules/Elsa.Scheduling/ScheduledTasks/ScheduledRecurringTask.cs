@@ -18,6 +18,8 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
     private readonly CancellationTokenSource _cancellationTokenSource;
     private DateTimeOffset _startAt;
     private Timer? _timer;
+    private bool _executing;
+    private bool _cancellationRequested;
 
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledRecurringTask"/>.
@@ -43,6 +45,12 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
     public void Cancel()
     {
         _timer?.Dispose();
+        
+        if( _executing)
+        {
+            _cancellationRequested = true;
+            return;
+        }
         _cancellationTokenSource.Cancel();
     }
 
@@ -83,14 +91,26 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
             var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
 
             var cancellationToken = _cancellationTokenSource.Token;
-            if (!cancellationToken.IsCancellationRequested) await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
-            if (!cancellationToken.IsCancellationRequested) Schedule();
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                _executing = true;
+                await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+                _executing = false;
+                
+                if (_cancellationRequested)
+                {
+                    _cancellationRequested = false;
+                    _cancellationTokenSource.Cancel();
+                }
+            }
+            if (!cancellationToken.IsCancellationRequested) 
+                Schedule();
         };
     }
 
     void IDisposable.Dispose()
     {
-        _cancellationTokenSource.Dispose();
         _timer?.Dispose();
+        _cancellationTokenSource.Dispose();
     }
 }
