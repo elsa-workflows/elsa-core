@@ -127,8 +127,8 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
 
     void IDisposable.Dispose()
     {
-        _timer?.Dispose();
         _cancellationTokenSource.Dispose();
+        _timer?.Dispose();
         _executionSemaphore.Dispose();
     }
 }
