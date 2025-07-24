@@ -18,6 +18,7 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
     private readonly ILogger<ScheduledSpecificInstantTask> _logger;
     private readonly DateTimeOffset _startAt;
     private readonly CancellationTokenSource _cancellationTokenSource;
+    private readonly SemaphoreSlim _executionSemaphore = new(1, 1);
     private Timer? _timer;
     private bool _executing;
     private bool _cancellationRequested;
@@ -76,6 +77,8 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
             {
                 try
                 {
+                    await _executionSemaphore.WaitAsync(cancellationToken);
+
                     _executing = true;
                     await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
                     _executing = false;
@@ -89,6 +92,10 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
                 catch (Exception e)
                 {
                     _logger.LogError(e, "Error scheduled task");
+                }
+                finally
+                {
+                    _executionSemaphore.Release();
                 }
             }
         };

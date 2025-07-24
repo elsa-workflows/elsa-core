@@ -16,6 +16,7 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeSpan _interval;
     private readonly CancellationTokenSource _cancellationTokenSource;
+    private readonly SemaphoreSlim _executionSemaphore = new(1, 1);
     private DateTimeOffset _startAt;
     private Timer? _timer;
     private bool _executing;
@@ -97,14 +98,27 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
             var cancellationToken = _cancellationTokenSource.Token;
             if (!cancellationToken.IsCancellationRequested)
             {
-                _executing = true;
-                await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
-                _executing = false;
-
-                if (_cancellationRequested)
+                try
                 {
-                    _cancellationRequested = false;
-                    _cancellationTokenSource.Cancel();
+                    await _executionSemaphore.WaitAsync(cancellationToken);
+
+                    _executing = true;
+                    await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+                    _executing = false;
+
+                    if (_cancellationRequested)
+                    {
+                        _cancellationRequested = false;
+                        _cancellationTokenSource.Cancel();
+                    }
+                }
+                catch (Exception e)
+                {
+                    // Log error if there's a logger available
+                }
+                finally
+                {
+                    _executionSemaphore.Release();
                 }
             }
 

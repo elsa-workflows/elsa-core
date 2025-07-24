@@ -20,6 +20,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
     private readonly ICronParser _cronParser;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly CancellationTokenSource _cancellationTokenSource;
+    private readonly SemaphoreSlim _executionSemaphore = new(1, 1);
     private bool _executing;
     private bool _cancellationRequested;
 
@@ -104,14 +105,27 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
             
             if (!cancellationToken.IsCancellationRequested)
             {
-                _executing = true;
-                await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
-                _executing = false;
-                
-                if (_cancellationRequested)
+                try
                 {
-                    _cancellationRequested = false;
-                    _cancellationTokenSource.Cancel();
+                    await _executionSemaphore.WaitAsync(cancellationToken);
+                    
+                    _executing = true;
+                    await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+                    _executing = false;
+                    
+                    if (_cancellationRequested)
+                    {
+                        _cancellationRequested = false;
+                        _cancellationTokenSource.Cancel();
+                    }
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error executing scheduled task");
+                }
+                finally
+                {
+                    _executionSemaphore.Release();
                 }
             }
             
