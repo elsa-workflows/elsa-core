@@ -111,7 +111,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
             {
                 try
                 {
-                    await _executionSemaphore.WaitAsync(cancellationToken);
+                    await _executionSemaphore.WaitAsync();
 
                     _executing = true;
                     await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
