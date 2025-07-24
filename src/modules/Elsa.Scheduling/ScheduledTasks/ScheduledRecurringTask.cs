@@ -98,11 +98,17 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
             {
                 try
                 {
-                    await _executionSemaphore.WaitAsync(cancellationToken);
-
-                    _executing = true;
-                    await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
-
+                    try
+                    {
+                        await _executionSemaphore.WaitAsync(cancellationToken);
+                        _executing = true;
+                        await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Handle cancellation gracefully.
+                        return;
+                    }
                     if (_cancellationRequested)
                     {
                         _cancellationRequested = false;
