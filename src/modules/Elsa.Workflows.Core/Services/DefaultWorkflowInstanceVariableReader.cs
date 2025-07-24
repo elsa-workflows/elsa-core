@@ -2,11 +2,11 @@ namespace Elsa.Workflows;
 
 public class DefaultWorkflowInstanceVariableReader(IVariablePersistenceManager variablePersistenceManager) : IWorkflowInstanceVariableReader
 {
-    public async Task<IEnumerable<ResolvedVariable>> GetVariables(WorkflowExecutionContext workflowExecutionContext, IEnumerable<string>? excludeTags = default, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ResolvedVariable>> GetVariables(WorkflowExecutionContext workflowExecutionContext, IEnumerable<string>? excludeTags = null, CancellationToken cancellationToken = default)
     {
         var workflow = workflowExecutionContext.Workflow;
         var workflowVariables = workflow.Variables;
-        var rootWorkflowActivityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.ParentActivityExecutionContext == null);
+        var rootWorkflowActivityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Activity == workflow);
         
         if (rootWorkflowActivityExecutionContext == null) 
             return [];
@@ -17,7 +17,7 @@ public class DefaultWorkflowInstanceVariableReader(IVariablePersistenceManager v
         foreach (var workflowVariable in workflowVariables)
         {
             var value = workflowVariable.Get(rootWorkflowActivityExecutionContext.ExpressionExecutionContext);
-            resolvedVariables.Add(new ResolvedVariable(workflowVariable, value));
+            resolvedVariables.Add(new(workflowVariable, value));
         }
         
         return resolvedVariables;
