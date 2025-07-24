@@ -58,19 +58,6 @@ public class DefaultActivityExecutionMapper(
         var serializedMetadata = record.Metadata != null ? payloadSerializer.Serialize(record.Metadata) : null;
         record.SerializedSnapshot = new()
         {
-            Id = record.Id,
-            TenantId = record.TenantId,
-            WorkflowInstanceId = record.WorkflowInstanceId,
-            ActivityId = record.ActivityId,
-            ActivityNodeId = record.ActivityNodeId,
-            ActivityType = record.ActivityType,
-            ActivityTypeVersion = record.ActivityTypeVersion,
-            ActivityName = record.ActivityName,
-            StartedAt = record.StartedAt,
-            HasBookmarks = record.HasBookmarks,
-            Status = record.Status,
-            AggregateFaultCount = record.AggregateFaultCount,
-            CompletedAt = record.CompletedAt,
             SerializedActivityState = compressedSerializedActivityState,
             SerializedActivityStateCompressionAlgorithm = compressionAlgorithm,
             SerializedOutputs = record.Outputs?.Any() == true ? safeSerializer.Serialize(record.Outputs) : null,

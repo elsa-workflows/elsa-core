@@ -18,10 +18,12 @@ public static class ActivityExecutionContextRecordExtensions
     
     public static async Task<ActivityExecutionRecord> GetOrMapCapturedActivityExecutionRecordAsync(this ActivityExecutionContext context)
     {
-        if(context.TransientProperties.TryGetValue(ActivityExecutionRecordKey, out var record))
-            return (ActivityExecutionRecord)record;
-                
         var mapper = context.GetRequiredService<IActivityExecutionMapper>();
-        return await mapper.MapAsync(context);
+        var record = await mapper.MapAsync(context);
+
+        if (context.TransientProperties.TryGetValue(ActivityExecutionRecordKey, out var capturedRecord)) 
+            record.SerializedSnapshot = ((ActivityExecutionRecord)capturedRecord).SerializedSnapshot;
+
+        return record;
     }
 }
