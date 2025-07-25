@@ -14,6 +14,6 @@ public class BackgroundProcessingStrategy : IEventPublishingStrategy
     {
         var notificationsChannel = context.ServiceProvider.GetRequiredService<INotificationsChannel>();
 
-        await notificationsChannel.Writer.WriteAsync(context.Notification, context.CancellationToken);
+        await notificationsChannel.Writer.WriteAsync(context.NotificationContext, context.CancellationToken);
     }
 }
