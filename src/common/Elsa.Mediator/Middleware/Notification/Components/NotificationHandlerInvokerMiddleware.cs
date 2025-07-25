@@ -24,7 +24,7 @@ public class NotificationHandlerInvokerMiddleware(
         var serviceProvider = context.ServiceProvider;
         var notificationHandlers = serviceProvider.GetServices<INotificationHandler>();
         var handlers = notificationHandlers.Where(x => handlerType.IsInstanceOfType(x)).DistinctBy(x => x.GetType()).ToArray();
-        var strategyContext = new NotificationStrategyContext(notification, handlers, logger, serviceProvider, context.CancellationToken);
+        var strategyContext = new NotificationStrategyContext(context, handlers, logger, serviceProvider, context.CancellationToken);
 
         await context.NotificationStrategy.PublishAsync(strategyContext);
 

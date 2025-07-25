@@ -1,5 +1,6 @@
 using System.Threading.Channels;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Middleware.Notification;
 using Elsa.Mediator.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,7 +17,7 @@ public class BackgroundEventPublisherHostedService : BackgroundService
     private readonly int _workerCount;
     private readonly INotificationsChannel _notificationsChannel;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly List<Channel<INotification>> _outputs;
+    private readonly List<Channel<NotificationContext>> _outputs;
     private readonly ILogger _logger;
 
     /// <inheritdoc />
@@ -26,7 +27,7 @@ public class BackgroundEventPublisherHostedService : BackgroundService
         _notificationsChannel = notificationsChannel;
         _scopeFactory = scopeFactory;
         _logger = logger;
-        _outputs = new List<Channel<INotification>>(_workerCount);
+        _outputs = new(_workerCount);
     }
 
     /// <inheritdoc />
@@ -39,7 +40,7 @@ public class BackgroundEventPublisherHostedService : BackgroundService
 
         for (var i = 0; i < _workerCount; i++)
         {
-            var output = Channel.CreateUnbounded<INotification>();
+            var output = Channel.CreateUnbounded<NotificationContext>();
             _outputs.Add(output);
             _ = ReadOutputAsync(output, notificationSender, cancellationToken);
         }
@@ -59,13 +60,14 @@ public class BackgroundEventPublisherHostedService : BackgroundService
         }
     }
 
-    private async Task ReadOutputAsync(Channel<INotification> output, INotificationSender notificationSender, CancellationToken cancellationToken)
+    private async Task ReadOutputAsync(Channel<NotificationContext> output, INotificationSender notificationSender, CancellationToken cancellationToken)
     {
-        await foreach (var notification in output.Reader.ReadAllAsync(cancellationToken))
+        await foreach (var notificationContext in output.Reader.ReadAllAsync(cancellationToken))
         {
             try
             {
-                await notificationSender.SendAsync(notification, NotificationStrategy.Sequential, cancellationToken);
+                var notification = notificationContext.Notification;
+                await notificationSender.SendAsync(notification, NotificationStrategy.Sequential, notificationContext.CancellationToken);
             }
             catch (OperationCanceledException e)
             {

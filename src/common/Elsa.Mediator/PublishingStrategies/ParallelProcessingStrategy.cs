@@ -16,7 +16,7 @@ public class ParallelProcessingStrategy : IEventPublishingStrategy
         var cancellationToken = context.CancellationToken;
         var notificationType = notification.GetType();
         var handleMethod = notificationType.GetNotificationHandlerMethod();
-        var tasks = context.Handlers.Select(handler => handler.InvokeAsync(handleMethod, notification, cancellationToken)).ToList();
+        var tasks = context.Handlers.Select(handler => handler.InvokeAsync(handleMethod, context.Notification, cancellationToken)).ToList();
 
         await Task.WhenAll(tasks);
     }

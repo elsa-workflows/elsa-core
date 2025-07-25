@@ -1,4 +1,5 @@
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Middleware.Notification;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Mediator.Contexts;
@@ -11,4 +12,4 @@ namespace Elsa.Mediator.Contexts;
 /// <param name="Logger">The logger.</param>
 /// <param name="ServiceProvider">The service provider to resolve services from.</param>
 /// <param name="CancellationToken">The cancellation token.</param>
-public record NotificationStrategyContext(INotification Notification, INotificationHandler[] Handlers, ILogger Logger, IServiceProvider ServiceProvider, CancellationToken CancellationToken = default);
+public record NotificationStrategyContext(NotificationContext Notification, INotificationHandler[] Handlers, ILogger Logger, IServiceProvider ServiceProvider, CancellationToken CancellationToken = default);
