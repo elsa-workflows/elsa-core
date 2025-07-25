@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Middleware.Command;
 using Elsa.Mediator.Middleware.Notification;
 using Elsa.Mediator.Models;
 
@@ -43,9 +44,10 @@ public static class HandlerExtensions
     /// <param name="handleMethod">The handle method.</param>
     /// <param name="notificationContext">The notification to handle.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public static Task InvokeAsync(this INotificationHandler handler, MethodBase handleMethod, NotificationContext notificationContext, CancellationToken cancellationToken)
+    public static Task InvokeAsync(this INotificationHandler handler, MethodBase handleMethod, NotificationContext notificationContext)
     {
         var notification = notificationContext.Notification;
+        var cancellationToken = notificationContext.CancellationToken;
         return (Task)handleMethod.Invoke(handler, [notification, cancellationToken])!;
     }
 
@@ -54,10 +56,11 @@ public static class HandlerExtensions
     /// </summary>
     /// <param name="handler">The handler to invoke.</param>
     /// <param name="handleMethod">The handle method.</param>
-    /// <param name="command">The command to handle.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    public static Task<TResult> InvokeAsync<TResult>(this ICommandHandler handler, MethodBase handleMethod, ICommand command, CancellationToken cancellationToken)
+    /// <param name="commandContext">The command to handle.</param>
+    public static Task<TResult> InvokeAsync<TResult>(this ICommandHandler handler, MethodBase handleMethod, CommandContext commandContext)
     {
+        var command = commandContext.Command;
+        var cancellationToken = commandContext.CancellationToken;
         var task = (Task<TResult>)handleMethod.Invoke(handler, [command, cancellationToken])!;
         return task;
     }

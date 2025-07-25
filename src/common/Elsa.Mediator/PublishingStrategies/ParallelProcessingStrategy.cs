@@ -12,11 +12,10 @@ public class ParallelProcessingStrategy : IEventPublishingStrategy
     /// <inheritdoc />
     public async Task PublishAsync(NotificationStrategyContext context)
     {
-        var notification = context.Notification;
-        var cancellationToken = context.CancellationToken;
+        var notification = context.NotificationContext;
         var notificationType = notification.GetType();
         var handleMethod = notificationType.GetNotificationHandlerMethod();
-        var tasks = context.Handlers.Select(handler => handler.InvokeAsync(handleMethod, context.Notification, cancellationToken)).ToList();
+        var tasks = context.Handlers.Select(handler => handler.InvokeAsync(handleMethod, context.NotificationContext)).ToList();
 
         await Task.WhenAll(tasks);
     }
