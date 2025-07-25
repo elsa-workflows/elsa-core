@@ -62,7 +62,7 @@ public class BackgroundCommandSenderHostedService : BackgroundService
                 using var scope = _scopeFactory.CreateScope();
                 var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
 
-                await commandSender.SendAsync(commandContext.Command, CommandStrategy.Default, commandContext.Headers, commandContext.CancellationToken);
+                await commandSender.SendAsync(commandContext.Command, CommandStrategy.Default, commandContext.Headers, CancellationToken.None);
             }
             catch (Exception e)
             {
