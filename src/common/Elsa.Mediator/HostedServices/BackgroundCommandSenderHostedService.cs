@@ -84,7 +84,7 @@ public class BackgroundCommandSenderHostedService : BackgroundService
             catch (Exception e)
             {
                 // Log errors but continue processing other commands
-                _logger.LogError(e, "An unhandled exception occured while processing the queue");
+                _logger.LogError(e, "An unhandled exception occurred while processing the queue");
             }
         }
     }
