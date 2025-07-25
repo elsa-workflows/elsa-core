@@ -12,7 +12,8 @@ public class SequentialProcessingStrategy : IEventPublishingStrategy
     /// <inheritdoc />
     public async Task PublishAsync(NotificationStrategyContext context)
     {
-        var notification = context.NotificationContext;
+        var notificationContext = context.NotificationContext;
+        var notification = notificationContext.Notification;
         var notificationType = notification.GetType();
         var handleMethod = notificationType.GetNotificationHandlerMethod();
         
