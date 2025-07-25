@@ -45,7 +45,8 @@ public static class HandlerExtensions
     /// <param name="cancellationToken">The cancellation token.</param>
     public static Task InvokeAsync(this INotificationHandler handler, MethodBase handleMethod, NotificationContext notificationContext, CancellationToken cancellationToken)
     {
-        return (Task)handleMethod.Invoke(handler, [notificationContext, cancellationToken])!;
+        var notification = notificationContext.Notification; // Extract the actual notification
+        return (Task)handleMethod.Invoke(handler, new object[] { notification, cancellationToken })!;
     }
 
     /// <summary>
