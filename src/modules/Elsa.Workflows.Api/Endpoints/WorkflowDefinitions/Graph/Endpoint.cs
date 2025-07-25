@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Extensions;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.Helpers;
 using JetBrains.Annotations;
@@ -9,7 +10,7 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Graph;
 
 [PublicAPI]
-internal class Graph(IWorkflowDefinitionService workflowDefinitionService, IApiSerializer apiSerializer, ActivityWriter activityWriter) : ElsaEndpoint<Request>
+internal class Graph(IWorkflowDefinitionService workflowDefinitionService, IApiSerializer apiSerializer, ActivityWriter activityWriter) : ElsaEndpoint<Request, ActivityNode>
 {
     public override void Configure()
     {

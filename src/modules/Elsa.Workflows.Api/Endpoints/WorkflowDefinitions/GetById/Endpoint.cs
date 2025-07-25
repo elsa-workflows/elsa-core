@@ -1,4 +1,5 @@
 using Elsa.Abstractions;
+using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Builder;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.GetById;
 
 [PublicAPI]
-internal class GetById(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker linker) : ElsaEndpoint<Request>
+internal class GetById(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker linker) : ElsaEndpoint<Request, LinkedWorkflowDefinitionModel>
 {
     public override void Configure()
     {
@@ -16,7 +17,7 @@ internal class GetById(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker
         Options(x => x.WithName("GetWorkflowDefinitionById"));
     }
 
-    public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
+    public override async Task<LinkedWorkflowDefinitionModel> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
         var filter = new WorkflowDefinitionFilter
         {
@@ -28,10 +29,10 @@ internal class GetById(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker
         if (definition == null)
         {
             await SendNotFoundAsync(cancellationToken);
-            return;
+            return null!;
         }
 
         var model = await linker.MapAsync(definition, cancellationToken);
-        await SendOkAsync(model, cancellationToken);
+        return model;
     }
 }
