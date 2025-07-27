@@ -19,6 +19,7 @@
         <ProjectReference Include="..\Elsa.Resilience.Core\Elsa.Resilience.Core.csproj" />
         <ProjectReference Include="..\Elsa.Resilience\Elsa.Resilience.csproj" />
         <ProjectReference Include="..\Elsa.SasTokens\Elsa.SasTokens.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
