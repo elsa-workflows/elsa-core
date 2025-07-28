@@ -78,14 +78,14 @@
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(MicrosoftVersion)"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.14.0"/>
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="6.0.2"/>
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="9.0.6"/>
-    <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="9.0.6"/>
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.6"/>
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.6"/>
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.6"/>
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.6"/>
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="$(MicrosoftVersion)"/>
+    <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="$(MicrosoftVersion)"/>
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(MicrosoftVersion)"/>
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="$(MicrosoftVersion)"/>
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="$(MicrosoftVersion)"/>
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(MicrosoftVersion)"/>
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite.Design" Version="1.1.6"/>
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.6"/>
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(MicrosoftVersion)"/>
     <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="$(MicrosoftVersion)"/>
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="$(MicrosoftVersion)"/>
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(MicrosoftVersion)"/>
@@ -333,8 +333,8 @@
         <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="$(MicrosoftVersion)"/>
         <PackageVersion Include="Microsoft.Extensions.Options" Version="$(MicrosoftVersion)"/>
         <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(MicrosoftVersion)"/>
-        <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.6.0"/>
-        <PackageVersion Include="Microsoft.Extensions.Resilience" Version="9.6.0"/>
+        <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(ResilienceVersion)"/>
+        <PackageVersion Include="Microsoft.Extensions.Resilience" Version="$(ResilienceVersion)"/>
         <PackageVersion Include="MySql.Data" Version="9.3.0"/>
         <PackageVersion Include="Npgsql" Version="9.0.3"/>
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
