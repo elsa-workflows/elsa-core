@@ -28,12 +28,12 @@ public static class BookmarkExpressionExecutionContextExtensions
     }
 
     /// <summary>
-    /// Generates a URL that can be used to trigger an event.
+    /// Generates a URL that can be used to resume a bookmarked workflow.
     /// </summary>
     /// <param name="context">The expression execution context.</param>
     /// <param name="bookmarkId">The ID of the bookmark to resume.</param>
-    /// <param name="expiresAt">The expiration date of the event trigger token.</param>
-    /// <returns>A URL that can be used to trigger an event.</returns>
+    /// <param name="expiresAt">The expiration date of the bookmark trigger token.</param>
+    /// <returns>A URL that can be used to resume a bookmarked workflow.</returns>
     public static string GenerateBookmarkTriggerUrl(this ExpressionExecutionContext context, string bookmarkId, DateTimeOffset expiresAt)
     {
         var token = context.GenerateBookmarkTriggerTokenInternal(bookmarkId, expiresAt: expiresAt);
