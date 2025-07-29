@@ -41,7 +41,7 @@ public static class BookmarkExpressionExecutionContextExtensions
     }
 
     /// <summary>
-    /// Generates a URL that can be used to trigger an event.
+    /// Generates a URL that can be used to resume a bookmarked workflow.
     /// </summary>
     /// <param name="context">The expression execution context.</param>
     /// <param name="bookmarkId">The ID of the bookmark to resume.</param>
