@@ -6,6 +6,6 @@ namespace Elsa.Workflows.Activities.Flowchart.Models;
 /// <param name="Names">A list of outcome names.</param>
 public record Outcomes(params string[] Names)
 {
-    public static readonly Outcomes Default = new([null!, "Done"]);
+    public static readonly Outcomes Default = new(null!, "Done");
     public static readonly Outcomes Empty = new();
 }
