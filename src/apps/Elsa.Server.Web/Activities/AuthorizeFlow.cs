@@ -25,7 +25,7 @@ public class AuthorizeFlow : Activity<string>
 
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)
     {
-        if(!context.TryGetWorkflowInput<string>("Answer", out var response))
+        if (!context.TryGetWorkflowInput<string>("Answer", out var response))
         {
             await context.CompleteActivityWithOutcomesAsync("Unauthorized");
             return;
