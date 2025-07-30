@@ -1,7 +1,7 @@
 using Elsa.Expressions.Models;
 using Elsa.Http;
-using Elsa.Http.Options;
 using Elsa.SasTokens.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Api;
 using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.Options;
@@ -12,8 +12,12 @@ namespace Elsa.Extensions;
 /// <summary>
 /// Provides extension methods for working with <see cref="ExpressionExecutionContext"/> and generating bookmark trigger URLs.
 /// </summary>
-public static class BookmarkExpressionExecutionContextExtensions
+public static class BookmarkExecutionContextExtensions
 {
+    public static string GenerateBookmarkTriggerUrl(this ActivityExecutionContext context, string bookmarkId, TimeSpan lifetime) => context.ExpressionExecutionContext.GenerateBookmarkTriggerUrl(bookmarkId, lifetime);
+    public static string GenerateBookmarkTriggerUrl(this ActivityExecutionContext context, string bookmarkId, DateTimeOffset expiresAt) => context.ExpressionExecutionContext.GenerateBookmarkTriggerUrl(bookmarkId, expiresAt);
+    public static string GenerateBookmarkTriggerUrl(this ActivityExecutionContext context, string bookmarkId) => context.ExpressionExecutionContext.GenerateBookmarkTriggerUrl(bookmarkId);
+
     /// <summary>
     /// Generates a URL that can be used to resume a bookmarked workflow.
     /// </summary>
