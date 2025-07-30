@@ -140,7 +140,8 @@ public class LocalWorkflowClient(
             WorkflowInstanceId = WorkflowInstanceId,
             Status = workflowState.Status,
             SubStatus = workflowState.SubStatus,
-            Incidents = workflowState.Incidents
+            Incidents = workflowState.Incidents,
+            Bookmarks = workflowState.Bookmarks
         };
     }
     
