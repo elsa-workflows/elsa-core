@@ -1,4 +1,4 @@
-# ELSA 3.0
+# ELSA 3.2-blueberry
 
 ![Elsa Workflows](./design/artwork/elsa-v3-avatar.png)
 
