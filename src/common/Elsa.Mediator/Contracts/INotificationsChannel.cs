@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using Elsa.Mediator.Middleware.Notification;
 
 namespace Elsa.Mediator.Contracts;
 
@@ -8,12 +9,12 @@ namespace Elsa.Mediator.Contracts;
 public interface INotificationsChannel
 {
     /// <summary>
-    /// Gets the writer for the notifications queue.
+    /// Gets the writer for the notification queue.
     /// </summary>
-    ChannelWriter<INotification> Writer { get; }
+    ChannelWriter<NotificationContext> Writer { get; }
     
     /// <summary>
-    /// Gets the reader for the notifications queue.
+    /// Gets the reader for the notification queue.
     /// </summary>
-    ChannelReader<INotification> Reader { get; }
+    ChannelReader<NotificationContext> Reader { get; }
 }
