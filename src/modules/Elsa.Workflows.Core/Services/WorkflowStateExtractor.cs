@@ -120,11 +120,10 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
             
             var contextId = contextState.Id;
 
-                if (lookup.TryGetValue(contextId, out var context))
-                {
-                    context.ExpressionExecutionContext.ParentContext = parentContext.ExpressionExecutionContext;
-                    context.ParentActivityExecutionContext = parentContext;
-                }
+            if (lookup.TryGetValue(contextId, out var context))
+            {
+                context.ExpressionExecutionContext.ParentContext = parentContext.ExpressionExecutionContext;
+                context.ParentActivityExecutionContext = parentContext;
             }
         }
 
