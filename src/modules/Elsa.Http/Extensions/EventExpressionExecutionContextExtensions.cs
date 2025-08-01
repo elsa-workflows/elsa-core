@@ -1,16 +1,17 @@
 using Elsa.Expressions.Models;
 using Elsa.Http;
-using Elsa.Http.Options;
 using Elsa.SasTokens.Contracts;
+using Elsa.Workflows.Api;
+using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
 /// <summary>
-/// 
+/// Provides extension methods for working with <see cref="ExpressionExecutionContext"/>.
 /// </summary>
-public static class ExpressionExecutionContextExtensions
+public static class EventExpressionExecutionContextExtensions
 {
     /// <summary>
     /// Generates a URL that can be used to trigger an event.
@@ -52,13 +53,13 @@ public static class ExpressionExecutionContextExtensions
 
     private static string GenerateEventTriggerUrlInternal(this ExpressionExecutionContext context, string token)
     {
-        var options = context.GetRequiredService<IOptions<HttpActivityOptions>>().Value;
-        var url = $"{options.ApiRoutePrefix}/events/trigger?t={token}";
+        var options = context.GetRequiredService<IOptions<ApiEndpointOptions>>().Value;
+        var url = $"{options.RoutePrefix}/events/trigger?t={token}";
         var absoluteUrlProvider = context.GetRequiredService<IAbsoluteUrlProvider>();
         return absoluteUrlProvider.ToAbsoluteUrl(url).ToString();
     }
 
-    private static string GenerateEventTriggerTokenInternal(this ExpressionExecutionContext context, string eventName, TimeSpan? lifetime = default, DateTimeOffset? expiresAt = default)
+    private static string GenerateEventTriggerTokenInternal(this ExpressionExecutionContext context, string eventName, TimeSpan? lifetime = null, DateTimeOffset? expiresAt = null)
     {
         var workflowInstanceId = context.GetWorkflowExecutionContext().Id;
         var payload = new EventTokenPayload(eventName, workflowInstanceId);

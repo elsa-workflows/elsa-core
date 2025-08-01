@@ -20,6 +20,9 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
     private readonly ICronParser _cronParser;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly CancellationTokenSource _cancellationTokenSource;
+    private readonly SemaphoreSlim _executionSemaphore = new(1, 1);
+    private bool _executing;
+    private bool _cancellationRequested;
 
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledCronTask"/>.
@@ -32,7 +35,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
         _scopeFactory = scopeFactory;
         _systemClock = systemClock;
         _logger = logger;
-        _cancellationTokenSource = new CancellationTokenSource();
+        _cancellationTokenSource = new();
 
         Schedule();
     }
@@ -41,6 +44,13 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
     public void Cancel()
     {
         _timer?.Dispose();
+
+        if (_executing)
+        {
+            _cancellationRequested = true;
+            return;
+        }
+
         _cancellationTokenSource.Cancel();
     }
 
@@ -54,7 +64,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
             var nextOccurence = _cronParser.GetNextOccurrence(_cronExpression);
             var delay = nextOccurence - now;
 
-            if (!adjusted && delay.Milliseconds <= 0)
+            if (!adjusted && delay <= TimeSpan.Zero)
             {
                 adjusted = true;
                 continue;
@@ -67,7 +77,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
 
     private void TrySetupTimer(TimeSpan delay)
     {
-        if (delay.Milliseconds <= 0) 
+        if (delay <= TimeSpan.Zero)
             return;
 
         try
@@ -82,7 +92,10 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
 
     private void SetupTimer(TimeSpan delay)
     {
-        _timer = new Timer(delay.TotalMilliseconds) { Enabled = true };
+        _timer = new(delay.TotalMilliseconds)
+        {
+            Enabled = true
+        };
 
         _timer.Elapsed += async (_, _) =>
         {
@@ -93,8 +106,36 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
             var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
 
             var cancellationToken = _cancellationTokenSource.Token;
-            if (!cancellationToken.IsCancellationRequested) await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
-            if (!cancellationToken.IsCancellationRequested) Schedule();
+
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    var acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
+                    if (!acquired) return;
+
+                    _executing = true;
+                    await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+
+                    if (_cancellationRequested)
+                    {
+                        _cancellationRequested = false;
+                        _cancellationTokenSource.Cancel();
+                    }
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error executing scheduled task");
+                }
+                finally
+                {
+                    _executing = false;
+                    _executionSemaphore.Release();
+                }
+            }
+
+            if (!cancellationToken.IsCancellationRequested)
+                Schedule();
         };
     }
 
@@ -102,5 +143,6 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
     {
         _timer?.Dispose();
         _cancellationTokenSource.Dispose();
+        _executionSemaphore.Dispose();
     }
 }

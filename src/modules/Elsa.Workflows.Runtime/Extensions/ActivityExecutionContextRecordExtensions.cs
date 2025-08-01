@@ -16,17 +16,26 @@ public static class ActivityExecutionContextRecordExtensions
         context.TransientProperties[ActivityExecutionRecordKey] = record;
     }
     
-    public static ActivityExecutionRecord? GetCapturedActivityExecutionRecord(this ActivityExecutionContext context)
-    {
-        return context.TransientProperties.TryGetValue(ActivityExecutionRecordKey, out var record) ? (ActivityExecutionRecord?)record : null;
-    }
-    
     public static async Task<ActivityExecutionRecord> GetOrMapCapturedActivityExecutionRecordAsync(this ActivityExecutionContext context)
     {
-        if(context.TransientProperties.TryGetValue(ActivityExecutionRecordKey, out var record))
-            return (ActivityExecutionRecord)record;
-                
         var mapper = context.GetRequiredService<IActivityExecutionMapper>();
-        return await mapper.MapAsync(context);
+        var record = await mapper.MapAsync(context);
+
+        if (context.TransientProperties.TryGetValue(ActivityExecutionRecordKey, out var capturedRecord))
+        {
+            var serializedSnapshot = ((ActivityExecutionRecord)capturedRecord).SerializedSnapshot!;
+            
+            // Take the existing serialized snapshot.
+            record.SerializedSnapshot = serializedSnapshot;
+            
+            // Update the serialized snapshot with the current record's properties.
+            // This will reflect the latest state of the activity execution context without losing the existing serialized snapshot representing e.g., variable values at the time of the record capture.
+            serializedSnapshot.HasBookmarks = record.HasBookmarks;
+            serializedSnapshot.Status = record.Status;
+            serializedSnapshot.AggregateFaultCount = record.AggregateFaultCount;
+            serializedSnapshot.CompletedAt = record.CompletedAt;
+        }
+
+        return record;
     }
 }

@@ -2,11 +2,12 @@ using Elsa.Extensions;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Services;
 using Elsa.Workflows.State;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows;
 
 /// <inheritdoc />
-public class WorkflowStateExtractor : IWorkflowStateExtractor
+public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IWorkflowStateExtractor
 {
     /// <inheritdoc />
     public WorkflowState Extract(WorkflowExecutionContext workflowExecutionContext)
@@ -101,7 +102,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             workflowExecutionContext.Properties[property.Key] = property.Value;
     }
 
-    private static async Task ApplyActivityExecutionContextsAsync(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private async Task ApplyActivityExecutionContextsAsync(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         var activityExecutionContexts = (await Task.WhenAll(state.ActivityExecutionContexts.Select(async item => await CreateActivityExecutionContextAsync(item)))).Where(x => x != null).Select(x => x!).ToList();
 
@@ -110,10 +111,14 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         // Reconstruct hierarchy.
         foreach (var contextState in state.ActivityExecutionContexts.Where(x => !string.IsNullOrWhiteSpace(x.ParentContextId)))
         {
-            if (lookup.ContainsKey(contextState.ParentContextId))
+            var parentContextId = contextState.ParentContextId;
+            if (parentContextId == null || !lookup.TryGetValue(parentContextId, out var parentContext))
             {
-                var parentContext = lookup[contextState.ParentContextId!];
-                var contextId = contextState.Id;
+                logger.LogWarning("Parent context with ID '{ParentContextId}' not found for context with ID '{ContextId}'.", parentContextId, contextState.Id);
+                continue; // Skip if parent context is not found.
+            }
+            
+            var contextId = contextState.Id;
 
                 if (lookup.TryGetValue(contextId, out var context))
                 {
