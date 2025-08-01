@@ -345,6 +345,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddNotificationHandler<RefreshActivityRegistry>()
             .AddNotificationHandler<SignalBookmarkQueueWorker>()
             .AddNotificationHandler<EvaluateParentLogPersistenceModes>()
+            .AddNotificationHandler<CaptureActivityExecutionState>()
             .AddNotificationHandler<ValidateWorkflowRequestHandler>()
 
             // Workflow activation strategies.

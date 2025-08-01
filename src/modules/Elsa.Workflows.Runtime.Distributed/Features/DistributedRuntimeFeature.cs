@@ -33,7 +33,6 @@ public class DistributedRuntimeFeature : FeatureBase
     {
         Services
             .AddScoped<DistributedWorkflowRuntime>()
-            .AddScoped<DistributedBookmarkQueueWorker>()
-            .AddCommandHandler<CancelWorkflowsCommandHandler>();
+            .AddScoped<DistributedBookmarkQueueWorker>();
     }
 }

@@ -1,6 +1,7 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Signals;
+using Elsa.Workflows.Notifications;
 using JetBrains.Annotations;
+using ActivityCompleted = Elsa.Workflows.Signals.ActivityCompleted;
 
 namespace Elsa.Workflows.Behaviors;
 
