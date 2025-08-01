@@ -1,4 +1,5 @@
 using Elsa.Extensions;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Signals;
 
@@ -62,6 +63,9 @@ public partial class ActivityExecutionContext
 
         // Update the completed at timestamp.
         CompletedAt = WorkflowExecutionContext.SystemClock.UtcNow;
+
+        var mediator = GetRequiredService<INotificationSender>();
+        await mediator.SendAsync(new Notifications.ActivityCompleted(this), CancellationToken);
     }
 
     /// <summary>
