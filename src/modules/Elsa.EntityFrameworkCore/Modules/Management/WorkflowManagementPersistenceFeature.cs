@@ -2,6 +2,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Management.Features;
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 
@@ -13,21 +14,36 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 [PublicAPI]
 public class WorkflowManagementPersistenceFeature(IModule module) : PersistenceFeatureBase<WorkflowManagementPersistenceFeature, ManagementElsaDbContext>(module)
 {
-    public override void ConfigureHostedServices()
+    public override Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder
     {
-        Module.Configure<EFCoreWorkflowDefinitionPersistenceFeature>(x =>
+        get => base.DbContextOptionsBuilder;
+        set
         {
-            x.DbContextOptionsBuilder = DbContextOptionsBuilder;
-            x.UseContextPooling = UseContextPooling;
-            x.RunMigrations = RunMigrations;
-        });
-        Module.Configure<EFCoreWorkflowInstancePersistenceFeature>(x =>
+            base.DbContextOptionsBuilder = value;
+            Module.Configure<EFCoreWorkflowDefinitionPersistenceFeature>(x => x.DbContextOptionsBuilder = value);
+            Module.Configure<EFCoreWorkflowInstancePersistenceFeature>(x => x.DbContextOptionsBuilder = value);
+        }
+    }
+
+    public override bool UseContextPooling
+    {
+        get => base.UseContextPooling;
+        set
         {
-            x.DbContextOptionsBuilder = DbContextOptionsBuilder;
-            x.UseContextPooling = UseContextPooling;
-            x.RunMigrations = RunMigrations;
-        });
-        
-        base.ConfigureHostedServices();
+            base.UseContextPooling = value;
+            Module.Configure<EFCoreWorkflowDefinitionPersistenceFeature>(x => x.UseContextPooling = value);
+            Module.Configure<EFCoreWorkflowInstancePersistenceFeature>(x => x.UseContextPooling = value);
+        }
+    }
+
+    public override bool RunMigrations
+    {
+        get => base.RunMigrations;
+        set
+        {
+            base.RunMigrations = value;
+            Module.Configure<EFCoreWorkflowDefinitionPersistenceFeature>(x => x.RunMigrations = value);
+            Module.Configure<EFCoreWorkflowInstancePersistenceFeature>(x => x.RunMigrations = value);
+        }
     }
 }
