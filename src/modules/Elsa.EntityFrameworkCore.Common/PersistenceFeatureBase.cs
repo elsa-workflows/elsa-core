@@ -40,8 +40,7 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext>(IModule modul
 
     public override void ConfigureHostedServices()
     {
-        if (RunMigrations)
-            ConfigureMigrations();
+        ConfigureMigrations();
     }
 
     /// <inheritdoc />
@@ -62,6 +61,11 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext>(IModule modul
             Services.AddDbContextFactory<TDbContext>(setup, DbContextFactoryLifetime);
 
         Services.Decorate<IDbContextFactory<TDbContext>, TenantAwareDbContextFactory<TDbContext>>();
+
+        Services.Configure<MigrationOptions>(options =>
+        {
+            options.RunMigrations[typeof(TDbContext)] = RunMigrations;
+        });
     }
 
     protected virtual void ConfigureMigrations()

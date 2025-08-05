@@ -27,7 +27,7 @@ public class WorkflowManagementPersistenceFeature(IModule module) : PersistenceF
 
     public override bool UseContextPooling
     {
-        get => base.UseContextPooling; 
+        get => base.UseContextPooling;
         set
         {
             base.UseContextPooling = value;
@@ -38,7 +38,7 @@ public class WorkflowManagementPersistenceFeature(IModule module) : PersistenceF
 
     public override bool RunMigrations
     {
-        get => base.RunMigrations; 
+        get => base.RunMigrations;
         set
         {
             base.RunMigrations = value;
