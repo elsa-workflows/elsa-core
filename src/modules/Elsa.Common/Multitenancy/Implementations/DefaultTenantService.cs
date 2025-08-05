@@ -146,7 +146,7 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
             using (tenantAccessor.PushContext(tenant))
             {
                 await tenantEvents.TenantDeactivatedAsync(new(tenant, scope, cancellationToken));
-                
+
                 if (isDeleted)
                     await tenantEvents.TenantDeletedAsync(new(tenant, scope, cancellationToken));
             }
