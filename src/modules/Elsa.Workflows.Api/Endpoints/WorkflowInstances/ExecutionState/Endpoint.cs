@@ -25,7 +25,7 @@ internal class ExecutionState(IWorkflowInstanceStore store) : ElsaEndpoint<Reque
 
         if (workflowInstance == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
@@ -34,6 +34,6 @@ internal class ExecutionState(IWorkflowInstanceStore store) : ElsaEndpoint<Reque
             workflowInstance.SubStatus,
             workflowInstance.UpdatedAt);
 
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }

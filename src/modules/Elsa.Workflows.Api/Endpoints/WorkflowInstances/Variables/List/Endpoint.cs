@@ -23,14 +23,14 @@ internal class List(IWorkflowInstanceVariableManager workflowInstanceVariableMan
         if (string.IsNullOrWhiteSpace(workflowInstanceId))
         {
             AddError("The workflow instance ID is required.");
-            await SendErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
+            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
             return;
         }
         
         var variables = await workflowInstanceVariableManager.GetVariablesAsync(workflowInstanceId, ["LargeData"],cancellationToken).ToList();
         var variableModels = variables.Select(x => new ResolvedVariableModel(x.Variable.Id, x.Variable.Name, x.Value)).ToList();
         var response = new ListResponse<ResolvedVariableModel>(variableModels);
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }
 

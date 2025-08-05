@@ -35,7 +35,7 @@ internal abstract class EndpointBase<T>(
 
         if (workflowGraph == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
         
@@ -57,7 +57,7 @@ internal abstract class EndpointBase<T>(
         
         if (startResponse.CannotStart)
         {
-            await SendOkAsync(cancellationToken);
+            await Send.OkAsync(cancellationToken);
             return;
         }
 
@@ -89,7 +89,7 @@ internal abstract class EndpointBase<T>(
                 if (HttpContext.Response.StatusCode == StatusCodes.Status200OK)
                 {
                     var workflowState = await workflowClient.ExportStateAsync(cancellationToken);
-                    await SendOkAsync(new(workflowState), cancellationToken);
+                    await Send.OkAsync(new(workflowState), cancellationToken);
                 }
             }
         }

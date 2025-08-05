@@ -24,7 +24,7 @@ internal class Endpoint(IWorkflowDefinitionService workflowDefinitionService, IW
 
         if(workflowGraph == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
         
@@ -33,7 +33,7 @@ internal class Endpoint(IWorkflowDefinitionService workflowDefinitionService, IW
         if(input != null && input is not IDictionary<string, object>)
         {
             AddError("Input must be a dictionary.");
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
 
@@ -57,10 +57,10 @@ internal class Endpoint(IWorkflowDefinitionService workflowDefinitionService, IW
         {
             var fault = result.Fault!;
             AddError(fault.Message, fault.Code);
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
         
-        await SendOkAsync(new Response(instanceId), cancellationToken);
+        await Send.OkAsync(new Response(instanceId), cancellationToken);
     }
 }

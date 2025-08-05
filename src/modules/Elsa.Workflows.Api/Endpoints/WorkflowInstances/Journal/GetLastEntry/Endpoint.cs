@@ -40,10 +40,10 @@ public class Get(IWorkflowExecutionLogStore store) : ElsaEndpoint<Request, Workf
 
         if (entry == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
-        await SendOkAsync(entry, cancellationToken);
+        await Send.OkAsync(entry, cancellationToken);
     }
 }

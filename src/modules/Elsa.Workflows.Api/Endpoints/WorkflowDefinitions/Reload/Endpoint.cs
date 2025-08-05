@@ -18,7 +18,7 @@ internal class Reload(IWorkflowDefinitionsReloader workflowDefinitionsReloader) 
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
         await ReloadWorkflowDefinitionsAsync(cancellationToken);
-        await SendOkAsync(cancellationToken);
+        await Send.OkAsync(cancellationToken);
     }
 
     private async Task ReloadWorkflowDefinitionsAsync(CancellationToken cancellationToken)

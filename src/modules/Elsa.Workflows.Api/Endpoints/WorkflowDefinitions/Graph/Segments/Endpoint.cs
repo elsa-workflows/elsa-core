@@ -26,7 +26,7 @@ internal class Nodes(IWorkflowDefinitionService workflowDefinitionService, IApiS
 
         if (workflowGraph?.Root == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
@@ -35,7 +35,7 @@ internal class Nodes(IWorkflowDefinitionService workflowDefinitionService, IApiS
         if (!workflowGraph.NodeIdLookup.TryGetValue(nodeId, out var childNode))
         {
             AddError("Unknown node ID");
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
         

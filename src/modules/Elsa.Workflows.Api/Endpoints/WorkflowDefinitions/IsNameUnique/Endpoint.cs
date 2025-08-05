@@ -21,6 +21,6 @@ internal class IsNameUnique(IWorkflowDefinitionStore store) : ElsaEndpoint<Reque
         var isUnique = await store.GetIsNameUnique(request.Name.Trim(), request.DefinitionId, cancellationToken);
         var response = new Response(isUnique);
         
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }

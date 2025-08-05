@@ -37,7 +37,7 @@ internal class Endpoint(
         if (workflowGraph == null)
         {
             AddError("Workflow definition not found.");
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
         
@@ -46,7 +46,7 @@ internal class Endpoint(
         if (activity == null)
         {
             AddError("Activity not found.");
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
 
@@ -63,7 +63,7 @@ internal class Endpoint(
             Status = record.Status
         };
         
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }
 

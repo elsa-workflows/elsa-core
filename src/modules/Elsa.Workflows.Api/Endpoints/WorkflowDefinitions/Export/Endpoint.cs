@@ -61,7 +61,7 @@ internal class Export : ElsaEndpoint<Request>
 
         if (!definitions.Any())
         {
-            await SendNoContentAsync(cancellationToken);
+            await Send.NoContentAsync(cancellationToken);
             return;
         }
 
@@ -82,7 +82,7 @@ internal class Export : ElsaEndpoint<Request>
 
         // Send the zip file to the client:
         zipStream.Position = 0;
-        await SendBytesAsync(zipStream.ToArray(), "workflow-definitions.zip", cancellation: cancellationToken);
+        await Send.BytesAsync(zipStream.ToArray(), "workflow-definitions.zip", cancellation: cancellationToken);
     }
 
     private async Task DownloadSingleWorkflowAsync(string definitionId, string? versionOptions, CancellationToken cancellationToken)
@@ -96,7 +96,7 @@ internal class Export : ElsaEndpoint<Request>
 
         if (definition == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
@@ -104,7 +104,7 @@ internal class Export : ElsaEndpoint<Request>
         var binaryJson = await SerializeWorkflowDefinitionAsync(model, cancellationToken);
         var fileName = GetFileName(model);
 
-        await SendBytesAsync(binaryJson, fileName, cancellation: cancellationToken);
+        await Send.BytesAsync(binaryJson, fileName, cancellation: cancellationToken);
     }
 
     private string GetFileName(WorkflowDefinitionModel definition)

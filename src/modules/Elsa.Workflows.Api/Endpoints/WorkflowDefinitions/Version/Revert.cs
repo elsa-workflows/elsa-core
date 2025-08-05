@@ -35,7 +35,7 @@ internal class RevertVersion(IWorkflowDefinitionManager workflowDefinitionManage
 
         if (definition == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
@@ -43,14 +43,14 @@ internal class RevertVersion(IWorkflowDefinitionManager workflowDefinitionManage
 
         if (!authorizationResult.Succeeded)
         {
-            await SendForbiddenAsync(cancellationToken);
+            await Send.ForbiddenAsync(cancellationToken);
             return;
         }
 
         var newDefinition = await workflowDefinitionManager.RevertVersionAsync(definitionId, version, cancellationToken);
         var newDefinitionSummary = WorkflowDefinitionSummary.FromDefinition(newDefinition);
 
-        await SendCreatedAtAsync("GetWorkflowDefinitionById", new
+        await Send.CreatedAtAsync("GetWorkflowDefinitionById", new
         {
             id = newDefinition.Id
         }, newDefinitionSummary, cancellation: cancellationToken);

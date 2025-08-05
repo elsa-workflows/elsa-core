@@ -40,7 +40,7 @@ internal class Get : ElsaEndpoint<Request>
         if (workflowGraph == null)
         {
             AddError($"Workflow definition {request.WorkflowDefinitionId} not found");
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
         
@@ -49,7 +49,7 @@ internal class Get : ElsaEndpoint<Request>
         var fileName = $"elsa.{request.WorkflowDefinitionId}.d.ts";
         var data = Encoding.UTF8.GetBytes(typeDefinitions);
 
-        await SendBytesAsync(data, fileName, "application/x-typescript", cancellation: cancellationToken);
+        await Send.BytesAsync(data, fileName, "application/x-typescript", cancellation: cancellationToken);
     }
 
     private async Task<WorkflowGraph?> GetWorkflowGraphAsync(string workflowDefinitionId, CancellationToken cancellationToken)

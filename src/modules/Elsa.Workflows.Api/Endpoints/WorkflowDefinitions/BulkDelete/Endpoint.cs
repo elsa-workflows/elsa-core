@@ -23,7 +23,7 @@ internal class BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager, 
 
         if (!authorizationResult.Succeeded)
         {
-            await SendForbiddenAsync(cancellationToken);
+            await Send.ForbiddenAsync(cancellationToken);
             return null!;
         }
 
