@@ -88,7 +88,7 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
         await next(context);
         
         // If the activity completed, send a notification.
-        if(activityDidComplete)
+        if (activityDidComplete)
         {
             var mediator = context.GetRequiredService<INotificationSender>();
             await mediator.SendAsync(new Notifications.ActivityCompleted(context), context.CancellationToken);
