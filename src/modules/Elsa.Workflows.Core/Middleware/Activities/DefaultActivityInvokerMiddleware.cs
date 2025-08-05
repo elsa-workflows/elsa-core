@@ -67,7 +67,7 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
         await ExecuteActivityAsync(context);
         
         var currentActivityStatus = context.Status;
-        var activityDidComplete = currentActivityStatus != previousActivityStatus && currentActivityStatus == ActivityStatus.Completed;
+        var activityDidComplete = previousActivityStatus != ActivityStatus.Completed && currentActivityStatus == ActivityStatus.Completed;
 
         // Reset execute delegate.
         workflowExecutionContext.ExecuteDelegate = null;
