@@ -17,7 +17,8 @@ public class RunMigrationsStartupTask<TDbContext>(IDbContextFactory<TDbContext> 
     /// <inheritdoc />
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var shouldRunMigrations = options.Value.RunMigrations[typeof(TDbContext)];
+        bool shouldRunMigrations = false;
+        options.Value.RunMigrations.TryGetValue(typeof(TDbContext), out shouldRunMigrations);
         if (!shouldRunMigrations)
             return;
 
