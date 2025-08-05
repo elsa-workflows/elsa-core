@@ -63,9 +63,6 @@ public partial class ActivityExecutionContext
 
         // Update the completed at timestamp.
         CompletedAt = WorkflowExecutionContext.SystemClock.UtcNow;
-
-        var mediator = GetRequiredService<INotificationSender>();
-        await mediator.SendAsync(new Notifications.ActivityCompleted(this), CancellationToken);
     }
 
     /// <summary>
