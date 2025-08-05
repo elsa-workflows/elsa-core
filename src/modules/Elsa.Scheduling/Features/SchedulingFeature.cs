@@ -39,7 +39,7 @@ public class SchedulingFeature : FeatureBase
         Services
             .AddSingleton<UpdateTenantSchedules>()
             .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<UpdateTenantSchedules>())
-            .AddSingleton<ITenantDeactivatedEvent>(sp => sp.GetRequiredService<UpdateTenantSchedules>())
+            .AddSingleton<ITenantDeletedEvent>(sp => sp.GetRequiredService<UpdateTenantSchedules>())
             .AddSingleton<IScheduler, LocalScheduler>()
             .AddSingleton<CronosCronParser>()
             .AddSingleton(CronParser)
