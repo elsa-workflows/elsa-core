@@ -17,7 +17,7 @@ public static class ActivityPropertyExtensions
     /// Gets a flag indicating whether this activity can be used for starting a workflow.
     /// Usually used for triggers, but also used to disambiguate between two or more starting activities and no starting activity was specified.
     /// </summary>
-    public static bool GetCanStartWorkflow(this IActivity activity) => activity.CustomProperties.GetValueOrDefault(CanStartWorkflowPropertyName, () => false);
+    public static bool GetCanStartWorkflow(this IActivity activity) => activity.CustomProperties.GetValueOrDefault<bool>(CanStartWorkflowPropertyName, () => false);
 
     /// <summary>
     /// Sets a flag indicating whether this activity can be used for starting a workflow.
@@ -29,14 +29,17 @@ public static class ActivityPropertyExtensions
     /// By default, activities with an <see cref="ActivityKind"/> of <see cref="Action"/>, <see cref="Task"/> or <see cref="Trigger"/>
     /// will execute synchronously, while activities of the <see cref="ActivityKind.Job"/> kind will execute asynchronously.
     /// </summary>
-    public static bool GetRunAsynchronously(this IActivity activity) => activity.CustomProperties.GetValueOrDefault(RunAsynchronouslyPropertyName, () => false);
+    public static bool? GetRunAsynchronously(this IActivity activity)
+    {
+        return activity.CustomProperties.GetValueOrDefault<bool?>(RunAsynchronouslyPropertyName, defaultValueFactory: () => null);
+    }
 
     /// <summary>
     /// Sets a flag indicating if this activity should execute synchronously or asynchronously.
     /// By default, activities with an <see cref="ActivityKind"/> of <see cref="Action"/>, <see cref="Task"/> or <see cref="Trigger"/>
     /// will execute synchronously, while activities of the <see cref="ActivityKind.Job"/> kind will execute asynchronously.
     /// </summary>
-    public static void SetRunAsynchronously(this IActivity activity, bool value) => activity.CustomProperties[RunAsynchronouslyPropertyName[0]] = value;
+    public static void SetRunAsynchronously(this IActivity activity, bool? value) => activity.CustomProperties[RunAsynchronouslyPropertyName[0]] = value;
 
     /// <summary>
     /// Gets the source file and line number where this activity was instantiated, if any.

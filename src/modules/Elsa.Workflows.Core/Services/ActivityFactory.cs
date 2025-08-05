@@ -2,6 +2,7 @@
 using System.Text.Json.Nodes;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
+using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Humanizer;
@@ -34,7 +35,18 @@ public class ActivityFactory : IActivityFactory
 
         // 7) Pull out your boolean flags from the cleaned element
         var canStartWorkflow = GetBoolean(cleanedElement, "canStartWorkflow");
-        var runAsynchronously = GetBoolean(cleanedElement, "runAsynchronously");
+        var runAsynchronously = GetNullableBoolean(cleanedElement, "runAsynchronously");
+        if (runAsynchronously is null)
+        {
+            if (context.ActivityDescriptor.Attributes.OfType<TaskActivityAttribute>().FirstOrDefault() is { } taskActivityAttribute)
+            {
+                runAsynchronously = taskActivityAttribute.RunAsynchronously;
+            }
+            else
+            {
+                runAsynchronously = false;
+            }
+        }
 
         // 8) If composite, setup
         if (activity is IComposite composite)
@@ -196,5 +208,25 @@ public class ActivityFactory : IActivityFactory
         }
 
         return false;
+    }
+    
+    private static bool? GetNullableBoolean(JsonElement element, string propertyName)
+    {
+        var propertyNames = new[] { propertyName.Camelize(), propertyName.Pascalize() };
+
+        foreach (var name in propertyNames)
+        {
+            if (element.TryGetProperty("customProperties", out var customPropertyElement))
+            {
+                if (customPropertyElement.TryGetProperty(name, out var canStartWorkflowElement))
+                    return (bool?)canStartWorkflowElement.GetValue();
+            }
+
+            if (element.TryGetProperty(propertyName.Camelize(), out var property) 
+                && (bool?)property.GetValue() is { } propValue)
+                return propValue;
+        }
+
+        return null;
     }
 }
