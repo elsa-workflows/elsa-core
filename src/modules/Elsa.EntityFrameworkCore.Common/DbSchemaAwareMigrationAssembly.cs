@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Internal;
 
@@ -30,9 +31,27 @@ public class DbSchemaAwareMigrationAssembly(
         {
             var instance = (Migration)Activator.CreateInstance(migrationClass.AsType(), schema)!;
             instance.ActiveProvider = activeProvider;
+
+            if (schema.Schema != ElsaDbContextBase.DefaultElsaSchema)
+            {
+                PatchDesignerSchema(instance, schema.Schema);
+            }
+
             return instance;
         }
 
         return base.CreateMigration(migrationClass, activeProvider);
+    }
+
+    private void PatchDesignerSchema(Migration migration, string schema)
+    {
+        var model = migration.TargetModel;
+        foreach (var entity in model.GetEntityTypes())
+        {
+            if (entity is IMutableEntityType mutableEntity && mutableEntity.GetSchema() == ElsaDbContextBase.DefaultElsaSchema)
+            {
+                mutableEntity.SetSchema(schema);
+            }
+        }
     }
 }
