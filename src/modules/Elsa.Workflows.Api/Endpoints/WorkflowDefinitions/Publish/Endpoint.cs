@@ -31,7 +31,7 @@ internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
 
         if (definition == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
@@ -39,7 +39,7 @@ internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
 
         if (!authorizationResult.Succeeded)
         {
-            await SendForbiddenAsync(cancellationToken);
+            await Send.ForbiddenAsync(cancellationToken);
             return;
         }
 
@@ -47,6 +47,6 @@ internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
         var result = !isPublished ? await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken) : null;
         var mappedDefinition = await linker.MapAsync(definition, cancellationToken);
         var response = new Response(mappedDefinition, isPublished, result?.AffectedWorkflows.WorkflowDefinitions.Count ?? 0);
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }

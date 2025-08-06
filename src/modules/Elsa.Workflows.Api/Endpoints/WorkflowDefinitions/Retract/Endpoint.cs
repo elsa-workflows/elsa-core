@@ -32,7 +32,7 @@ internal class Retract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
 
         if (definition == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
@@ -40,19 +40,19 @@ internal class Retract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
 
         if (!authorizationResult.Succeeded)
         {
-            await SendForbiddenAsync(cancellationToken);
+            await Send.ForbiddenAsync(cancellationToken);
             return;
         }
 
         if (!definition.IsPublished)
         {
             AddError($"Workflow with id {request.DefinitionId} is not published");
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
 
         await workflowDefinitionPublisher.RetractAsync(definition, cancellationToken);
         var response = await linker.MapAsync(definition, cancellationToken);
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }

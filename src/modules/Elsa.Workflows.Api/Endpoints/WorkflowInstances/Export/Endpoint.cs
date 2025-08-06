@@ -73,7 +73,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
 
         if (!instances.Any())
         {
-            await SendNoContentAsync(cancellationToken);
+            await Send.NoContentAsync(cancellationToken);
             return;
         }
 
@@ -94,7 +94,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
 
         // Send the zip file to the client:
         zipStream.Position = 0;
-        await SendBytesAsync(zipStream.ToArray(), "workflow-instances.zip", cancellation: cancellationToken);
+        await Send.BytesAsync(zipStream.ToArray(), "workflow-instances.zip", cancellation: cancellationToken);
     }
 
     private async Task DownloadSingleInstanceAsync(Request request, string id, CancellationToken cancellationToken)
@@ -103,7 +103,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
 
         if (instance == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
@@ -111,7 +111,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
         var binaryJson = SerializeWorkflowInstance(model);
         var fileName = GetFileName(instance.WorkflowState);
 
-        await SendBytesAsync(binaryJson, fileName, cancellation: cancellationToken);
+        await Send.BytesAsync(binaryJson, fileName, cancellation: cancellationToken);
     }
 
     private async Task<ExportedWorkflowState> CreateExportModelAsync(Request request, WorkflowInstance instance, CancellationToken cancellationToken)

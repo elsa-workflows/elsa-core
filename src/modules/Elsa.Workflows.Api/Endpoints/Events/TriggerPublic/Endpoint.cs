@@ -36,7 +36,7 @@ internal class Trigger : ElsaEndpointWithoutRequest
         if (!_tokenService.TryDecryptToken<EventTokenPayload>(token, out var payload))
         {
             AddError("Invalid token.");
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
 
@@ -45,6 +45,6 @@ internal class Trigger : ElsaEndpointWithoutRequest
         await _eventPublisher.PublishAsync(eventName, workflowInstanceId: workflowInstanceId, cancellationToken: cancellationToken);
         
         if (!HttpContext.Response.HasStarted)
-            await SendOkAsync(cancellationToken);
+            await Send.OkAsync(cancellationToken);
     }
 }

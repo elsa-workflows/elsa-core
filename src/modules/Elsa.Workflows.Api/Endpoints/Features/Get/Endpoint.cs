@@ -34,10 +34,10 @@ internal class Get : ElsaEndpointWithoutRequest<FeatureDescriptor>
 
         if (descriptor == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
         
-        await SendOkAsync(descriptor, cancellationToken);
+        await Send.OkAsync(descriptor, cancellationToken);
     }
 }

@@ -60,7 +60,7 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
         var count = await ImportFilesAsync(Files, cancellationToken);
         var response = new Response { Imported = count };
 
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 
     private async Task<int> ImportFilesAsync(IFormFileCollection files, CancellationToken cancellationToken)

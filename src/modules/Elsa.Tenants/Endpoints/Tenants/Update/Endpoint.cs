@@ -21,7 +21,7 @@ public class Endpoint(ITenantService tenantService, ITenantStore tenantStore) : 
         
         if (tenant == null)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
         
@@ -30,7 +30,7 @@ public class Endpoint(ITenantService tenantService, ITenantStore tenantStore) : 
         tenant.Configuration = Serializers.DeserializeConfiguration(req.Configuration);
         await tenantStore.UpdateAsync(tenant, ct);
         await tenantService.RefreshAsync(ct);
-        await SendOkAsync(tenant, ct);
+        await Send.OkAsync(tenant, ct);
     }
 }
 

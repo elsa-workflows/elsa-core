@@ -33,14 +33,14 @@ internal class Resume(ITokenService tokenService, IBookmarkQueue bookmarkQueue, 
 
         if (ValidationFailed)
         {
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
         
         await ResumeBookmarkedWorkflowAsync(payload, input, cancellationToken);
         
         if (!HttpContext.Response.HasStarted)
-            await SendOkAsync(cancellationToken);
+            await Send.OkAsync(cancellationToken);
     }
     
     private IDictionary<string, object>? GetInputFromQueryString()

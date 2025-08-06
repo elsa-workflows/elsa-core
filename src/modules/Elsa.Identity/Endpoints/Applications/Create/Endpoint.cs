@@ -82,6 +82,6 @@ internal class Create : ElsaEndpoint<Request, Response>
             hashedClientSecret.EncodeSecret(),
             hashedClientSecret.EncodeSalt());
         
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }

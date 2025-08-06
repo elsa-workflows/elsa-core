@@ -32,7 +32,7 @@ internal class UpdateReferences(IWorkflowReferenceUpdater workflowReferenceUpdat
 
         if (definition == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
@@ -40,13 +40,13 @@ internal class UpdateReferences(IWorkflowReferenceUpdater workflowReferenceUpdat
 
         if (!authorizationResult.Succeeded)
         {
-            await SendForbiddenAsync(cancellationToken);
+            await Send.ForbiddenAsync(cancellationToken);
             return;
         }
 
         var result = await workflowReferenceUpdater.UpdateWorkflowReferencesAsync(definition, cancellationToken);
         var affectedWorkflows = result.UpdatedWorkflows;
         var response = new Response(affectedWorkflows.Select(w => w.Name ?? w.DefinitionId));
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }
