@@ -14,7 +14,7 @@ public class Tests
     [Theory(DisplayName = "Activity outputs captured in activity execution record")]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task ActivityOutputCaptureTest(bool runAsynchronously)
+    public async Task ActivityOutputCaptureTest(bool? runAsynchronously)
     {
         // Arrange
         var workflow = new TestWorkflow(workflowBuilder =>
@@ -76,7 +76,7 @@ public class Tests
     [Theory(DisplayName = "Activity outputs captured in activity execution record")]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task ActivityOutputCaptureParallelTest(bool runAsynchronously)
+    public async Task ActivityOutputCaptureParallelTest(bool? runAsynchronously)
     {
         // Arrange
         var workflow = new TestWorkflow(workflowBuilder =>

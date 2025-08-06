@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Attributes;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Models;
@@ -103,7 +104,28 @@ public class BackgroundActivityInvokerMiddleware(
 
         return !GetIsBackgroundExecution(context)
                && context.WorkflowExecutionContext.ExecuteDelegate == null
-               && (kind is ActivityKind.Job || (kind == ActivityKind.Task && activity.GetRunAsynchronously()));
+               && (kind is ActivityKind.Job || GetTaskRunAsynchronously(context));
+    }
+
+    private static bool GetTaskRunAsynchronously(ActivityExecutionContext context)
+    {
+        var activity = context.Activity;
+        var activityDescriptor = context.ActivityDescriptor;
+        var kind = activityDescriptor.Kind;
+
+        if (kind is not ActivityKind.Task)
+            return false;
+        
+        var runAsynchronously = activity.GetRunAsynchronously();
+
+        if (runAsynchronously is null)
+        {
+            var taskActivityAttribute = activityDescriptor.Attributes.OfType<TaskActivityAttribute>().FirstOrDefault();
+            
+            return taskActivityAttribute is { RunAsynchronously: true };
+        }
+
+        return (bool)runAsynchronously;
     }
 
     private static bool GetIsBackgroundExecution(ActivityExecutionContext context) => context.TransientProperties.ContainsKey(BackgroundActivityExecutionContextExtensions.IsBackgroundExecution);
