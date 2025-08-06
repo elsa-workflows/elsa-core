@@ -32,20 +32,23 @@ public class Tests
         {
             Id = "start",
             Name = "Start",
-            RunAsynchronously = false
+            RunAsynchronously = false // Manually set to false because the manual construction defaults to null,
+                                      // But deserialization uses the factory creation method that overwrites null values.
         };
         var writeLine = new WriteLine(new Input<string>(new Expression("JavaScript", "getVariable('TextVar')")))
         {
             Id = "writeLine",
             Name = "WriteLine",
             Version = 3,
-            RunAsynchronously = false
+            RunAsynchronously = false // Manually set to false because the manual construction defaults to null,
+                                      // But deserialization uses the factory creation method that overwrites null values.
         };
         var end = new End
         {
             Id = "end",
             Name = "end",
-            RunAsynchronously = false
+            RunAsynchronously = false // Manually set to false because the manual construction defaults to null,
+                                      // But deserialization uses the factory creation method that overwrites null values.
         };
         var container = new Flowchart
         {
@@ -111,7 +114,8 @@ public class Tests
                     Id = "writeLine",
                     Name = "WriteLine",
                     CanStartWorkflow = true,
-                    RunAsynchronously = false
+                    RunAsynchronously = false // Manually set to false because the manual construction defaults to null,
+                                              // But deserialization uses the factory creation method that overwrites null values.
                 },
             },
             CustomProperties = new Dictionary<string, object>
@@ -159,7 +163,9 @@ public class Tests
                     Id = "writeLine",
                     Name = "WriteLine",
                     CanStartWorkflow = true,
-                    RunAsynchronously = false
+                    RunAsynchronously = false // Manually set to false because the manual construction defaults to null,
+                                              // But deserialization uses the factory creation method that overwrites null values.
+                    
                 },
             },
             CustomProperties = new Dictionary<string, object>
