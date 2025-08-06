@@ -193,21 +193,7 @@ public class ActivityFactory : IActivityFactory
 
     private static bool GetBoolean(JsonElement element, string propertyName)
     {
-        var propertyNames = new[] { propertyName.Camelize(), propertyName.Pascalize() };
-
-        foreach (var name in propertyNames)
-        {
-            if (element.TryGetProperty("customProperties", out var customPropertyElement))
-            {
-                if (customPropertyElement.TryGetProperty(name, out var canStartWorkflowElement))
-                    return canStartWorkflowElement.GetBoolean();
-            }
-
-            if (element.TryGetProperty(propertyName.Camelize(), out var property) && property.GetBoolean())
-                return true;
-        }
-
-        return false;
+        return GetNullableBoolean(element, propertyName) ?? false; 
     }
     
     private static bool? GetNullableBoolean(JsonElement element, string propertyName)

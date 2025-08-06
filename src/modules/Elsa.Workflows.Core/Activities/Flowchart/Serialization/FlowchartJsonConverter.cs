@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
@@ -28,6 +28,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
         var name = doc.RootElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
         var type = doc.RootElement.TryGetProperty("type", out var typeElement) ? typeElement.GetString() : null;
         var version = doc.RootElement.TryGetProperty("version", out var versionElement) ? versionElement.GetInt32() : 1;
+        var runAsynchronously = doc.RootElement.TryGetProperty("runAsynchronously", out var runAsyncElement) && runAsyncElement.GetBoolean();
 
         var connectionsElement = doc.RootElement.TryGetProperty("connections", out var connectionsEl) ? connectionsEl : default;
         var activitiesElement = doc.RootElement.TryGetProperty("activities", out var activitiesEl) ? activitiesEl : default;
@@ -60,6 +61,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
             NodeId = nodeId!,
             Name = name,
             Type = type!,
+            RunAsynchronously = runAsynchronously,
             Version = version,
             CustomProperties = customProperties,
             Metadata = metadata,

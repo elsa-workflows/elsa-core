@@ -32,17 +32,20 @@ public class Tests
         {
             Id = "start",
             Name = "Start",
+            RunAsynchronously = false
         };
         var writeLine = new WriteLine(new Input<string>(new Expression("JavaScript", "getVariable('TextVar')")))
         {
             Id = "writeLine",
             Name = "WriteLine",
             Version = 3,
+            RunAsynchronously = false
         };
         var end = new End
         {
             Id = "end",
             Name = "end",
+            RunAsynchronously = false
         };
         var container = new Flowchart
         {
@@ -74,6 +77,7 @@ public class Tests
                 new(writeLine, end),
             },
         };
+        container.RunAsynchronously = false;
 
         // Act
 
@@ -107,6 +111,7 @@ public class Tests
                     Id = "writeLine",
                     Name = "WriteLine",
                     CanStartWorkflow = true,
+                    RunAsynchronously = false
                 },
             },
             CustomProperties = new Dictionary<string, object>
@@ -120,6 +125,7 @@ public class Tests
                 { "string", "str"},
             }
         };
+        container.RunAsynchronously = false;
 
         // Act
 
@@ -153,6 +159,7 @@ public class Tests
                     Id = "writeLine",
                     Name = "WriteLine",
                     CanStartWorkflow = true,
+                    RunAsynchronously = false
                 },
             },
             CustomProperties = new Dictionary<string, object>
@@ -166,6 +173,7 @@ public class Tests
                 { "string", "str"},
             }
         };
+        container.RunAsynchronously = false;
 
         // Act
 
