@@ -1,5 +1,6 @@
 using System.Reflection;
 using Elsa.Extensions;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Pipelines.ActivityExecution;
@@ -59,10 +60,14 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
         if (ShouldCommit(context, ActivityLifetimeEvent.ActivityExecuting))
             await context.WorkflowExecutionContext.CommitAsync();
 
+        var previousActivityStatus = context.Status;
         context.TransitionTo(ActivityStatus.Running);
 
         // Execute activity.
         await ExecuteActivityAsync(context);
+        
+        var currentActivityStatus = context.Status;
+        var activityDidComplete = previousActivityStatus != ActivityStatus.Completed && currentActivityStatus == ActivityStatus.Completed;
 
         // Reset execute delegate.
         workflowExecutionContext.ExecuteDelegate = null;
@@ -81,6 +86,13 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
 
         // Invoke next middleware.
         await next(context);
+        
+        // If the activity completed, send a notification.
+        if (activityDidComplete)
+        {
+            var mediator = context.GetRequiredService<INotificationSender>();
+            await mediator.SendAsync(new Notifications.ActivityCompleted(context), context.CancellationToken);
+        }
 
         // Conditionally commit the workflow state.
         if (ShouldCommit(context, ActivityLifetimeEvent.ActivityExecuted))

@@ -26,21 +26,31 @@ public class JobRunnerHostedService : BackgroundService
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Create an array of worker tasks to process jobs in parallel
         var workers = new Task[_workerCount];
 
+        // Start multiple workers (tasks) to process jobs concurrently
         for (var i = 0; i < _workerCount; i++)
             workers[i] = ProcessJobsAsync(stoppingToken);
 
+        // Wait for all worker tasks to complete (typically when the application is shutting down)
         await Task.WhenAll(workers);
     }
 
+    /// <summary>
+    /// Continuously processes jobs from the job channel until cancellation is requested.
+    /// </summary>
+    /// <param name="stoppingToken">Cancellation token from the hosted service</param>
     private async Task ProcessJobsAsync(CancellationToken stoppingToken)
     {
+        // Process all jobs from the channel until it's completed or cancellation is requested
         await foreach (var jobItem in _jobsChannel.Reader.ReadAllAsync(stoppingToken))
         {
             try
             {
-                await jobItem.Action(jobItem.CancellationTokenSource.Token);
+                // Link the cancellation tokens so that cancellation can happen from either source
+                using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, jobItem.CancellationTokenSource.Token);
+                await jobItem.Action(linkedTokenSource.Token);
                 _logger.LogInformation("Worker {CurrentTaskId} processed job {JobId}", Task.CurrentId, jobItem.JobId);
             }
             catch (OperationCanceledException)
@@ -53,6 +63,7 @@ public class JobRunnerHostedService : BackgroundService
             }
             finally
             {
+                // Notify that the job has completed (whether successfully or not)
                 jobItem.OnJobCompleted(jobItem.JobId);
             }
         }
