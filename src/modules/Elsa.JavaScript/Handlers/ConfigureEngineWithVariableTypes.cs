@@ -14,10 +14,16 @@ public class ConfigureEngineWithWorkflowVariableTypes(IOptions<ManagementOptions
     /// <inheritdoc />
     public Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
-        var engine = notification.Engine;                
-        foreach (var variableDescriptor in 
-                 options.Value.VariableDescriptors.Where(x => x.Type is { ContainsGenericParameters: false })) 
-            engine.RegisterType(variableDescriptor.Type);                
+        var engine = notification.Engine;
+        var variableTypes = options.Value.VariableDescriptors
+            .Where(x => x.Type is { ContainsGenericParameters: false} && x.Type != typeof(object))
+            .Select(x => x.Type)
+            .ToArray();
+        
+        foreach (var variableType in variableTypes)
+        {
+            engine.RegisterType(variableType);
+        }                
         
         return Task.CompletedTask;
     }
