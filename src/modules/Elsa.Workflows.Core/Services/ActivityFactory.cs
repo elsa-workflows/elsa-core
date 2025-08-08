@@ -41,8 +41,11 @@ public class ActivityFactory : IActivityFactory
             composite.Setup();
 
         // 9) Your existing synthetic inputs/outputs routines, using the cleanedElement
-        ReadSyntheticInputs(context.ActivityDescriptor, activity, cleanedElement, context.SerializerOptions);
-        ReadSyntheticOutputs(context.ActivityDescriptor, activity, cleanedElement);
+        if (context.ActivityDescriptor != null)
+        {
+            ReadSyntheticInputs(context.ActivityDescriptor, activity, cleanedElement, context.SerializerOptions);
+            ReadSyntheticOutputs(context.ActivityDescriptor, activity, cleanedElement);
+        }
 
         // 10) Finally re‑apply those flags
         activity.SetCanStartWorkflow(canStartWorkflow);
@@ -127,6 +130,9 @@ public class ActivityFactory : IActivityFactory
 
     private void ReadSyntheticInputs(ActivityDescriptor activityDescriptor, IActivity activity, JsonElement activityRoot, JsonSerializerOptions options)
     {
+        if ( activityDescriptor.Inputs == null )
+            return;
+
         foreach (var inputDescriptor in activityDescriptor.Inputs.Where(x => x.IsSynthetic))
         {
             var inputName = inputDescriptor.Name;
@@ -155,6 +161,9 @@ public class ActivityFactory : IActivityFactory
 
     private void ReadSyntheticOutputs(ActivityDescriptor activityDescriptor, IActivity activity, JsonElement activityRoot)
     {
+        if ( activityDescriptor.Outputs == null )
+            return;
+            
         foreach (var outputDescriptor in activityDescriptor.Outputs.Where(x => x.IsSynthetic))
         {
             var outputName = outputDescriptor.Name;
