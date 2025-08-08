@@ -241,7 +241,7 @@ public static class ObjectConverter
             if (underlyingTargetType == typeof(Type))
                 return converterOptions?.WellKnownTypeRegistry != null ? converterOptions.WellKnownTypeRegistry.GetTypeOrDefault(s) : Type.GetType(s);
 
-            // Perhaps it's a bit of a leap, but if the input is a string and the target type is IEnumerable<string>, then let's assume the string is a comma-separated list of strings.
+            // At this point, if the input is a string and the target type is IEnumerable<string>, assume the string is a comma-separated list of strings.
             if (typeof(IEnumerable<string>).IsAssignableFrom(underlyingTargetType))
                 return new[]
                 {
@@ -301,10 +301,10 @@ public static class ObjectConverter
             return ReturnOrThrow(e);
         }
 
-        object ReturnOrThrow(Exception e)
+        object? ReturnOrThrow(Exception e)
         {
             if (!StrictMode)
-                return value;
+                return underlyingTargetType.GetDefaultValue(); // Backward compatibility: return default value if strict mode is off.
 
             throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
         }
