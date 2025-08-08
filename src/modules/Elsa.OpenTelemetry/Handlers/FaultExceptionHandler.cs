@@ -4,12 +4,13 @@ using Elsa.Workflows.Exceptions;
 
 namespace Elsa.OpenTelemetry.Handlers;
 
-public class FaultExceptionErrorSpanHandler : IActivityErrorSpanHandler, IWorkflowErrorSpanHandler
+public class FaultExceptionHandler : IActivityErrorSpanHandler, IWorkflowErrorSpanHandler, IErrorMetricHandler
 {
     public float Order => 0;
-
+    
     public bool CanHandle(ActivityErrorSpanContext context) => context.Exception is FaultException;
     public bool CanHandle(WorkflowErrorSpanContext context) => context.Exception is FaultException;
+    public bool CanHandle(ErrorMetricContext context) => context.Exception is FaultException;
 
     public void Handle(ActivityErrorSpanContext context)
     {
@@ -35,5 +36,13 @@ public class FaultExceptionErrorSpanHandler : IActivityErrorSpanHandler, IWorkfl
         
         // Datadog will ignore unknown attributes, so we'll set them on a different object.
         span.SetTag("error_details.type", faultException.Type);
+    }
+
+    public void Handle(ErrorMetricContext context)
+    {
+        var faultException = (FaultException)context.Exception!;
+        context.Tags["error.code"] = faultException.Code;
+        context.Tags["error.category"] = faultException.Category;
+        context.Tags["error.type"] = faultException.Type;
     }
 }
