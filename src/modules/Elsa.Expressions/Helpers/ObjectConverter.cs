@@ -20,7 +20,11 @@ namespace Elsa.Expressions.Helpers;
 /// <summary>
 /// Provides options to the conversion method.
 /// </summary>
-public record ObjectConverterOptions(JsonSerializerOptions? SerializerOptions = null, IWellKnownTypeRegistry? WellKnownTypeRegistry = null, bool DeserializeJsonObjectToObject = false);
+public record ObjectConverterOptions(
+    JsonSerializerOptions? SerializerOptions = null, 
+    IWellKnownTypeRegistry? WellKnownTypeRegistry = null, 
+    bool DeserializeJsonObjectToObject = false,
+    bool? StrictMode = null);
 
 /// <summary>
 /// A helper that attempts many strategies to try and convert the source value into the destination type. 
@@ -82,6 +86,8 @@ public static class ObjectConverter
     [RequiresUnreferencedCode("The JsonSerializer type is not trim-compatible.")]
     public static object? ConvertTo(this object? value, Type targetType, ObjectConverterOptions? converterOptions = null)
     {
+        var strictMode = converterOptions?.StrictMode ?? StrictMode;
+        
         if (value == null)
             return null;
 
@@ -303,7 +309,7 @@ public static class ObjectConverter
 
         object? ReturnOrThrow(Exception e)
         {
-            if (!StrictMode)
+            if (!strictMode)
                 return underlyingTargetType.GetDefaultValue(); // Backward compatibility: return default value if strict mode is off.
 
             throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
