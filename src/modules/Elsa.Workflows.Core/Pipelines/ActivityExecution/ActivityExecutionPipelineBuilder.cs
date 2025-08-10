@@ -1,7 +1,7 @@
 namespace Elsa.Workflows.Pipelines.ActivityExecution;
 
 /// <inheritdoc />
-public class ActivityExecutionPipelinePipelineBuilder(IServiceProvider serviceProvider) : IActivityExecutionPipelineBuilder
+public class ActivityExecutionPipelineBuilder(IServiceProvider serviceProvider) : IActivityExecutionPipelineBuilder
 {
     private readonly IList<Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate>> _components = new List<Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate>>();
 
@@ -25,7 +25,7 @@ public class ActivityExecutionPipelinePipelineBuilder(IServiceProvider servicePr
     /// <inheritdoc />
     public ActivityMiddlewareDelegate Build()
     {
-        ActivityMiddlewareDelegate pipeline = _ => new ValueTask();
+        ActivityMiddlewareDelegate pipeline = _ => new();
 
         foreach (var component in _components.Reverse()) 
             pipeline = component(pipeline);

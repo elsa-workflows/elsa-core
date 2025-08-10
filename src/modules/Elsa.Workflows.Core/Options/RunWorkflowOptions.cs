@@ -1,4 +1,5 @@
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Pipelines.WorkflowExecution;
 
 namespace Elsa.Workflows.Options;
 
@@ -16,4 +17,10 @@ public class RunWorkflowOptions
     public IDictionary<string, object>? Properties { get; set; }
     public string? TriggerActivityId { get; set; }
     public string? ParentWorkflowInstanceId { get; set; }
+    
+    /// <summary>
+    /// Optionally specifies a custom workflow execution pipeline to use when running the workflow.
+    /// If not specified, the default pipeline will be used.
+    /// </summary>
+    public WorkflowMiddlewareDelegate? Pipeline { get; set; }
 }

@@ -20,7 +20,7 @@ public class ActivityExecutionPipeline : IActivityExecutionPipeline
     /// <inheritdoc />
     public ActivityMiddlewareDelegate Setup(Action<IActivityExecutionPipelineBuilder> setup)
     {
-        var builder = new ActivityExecutionPipelinePipelineBuilder(_serviceProvider);
+        var builder = new ActivityExecutionPipelineBuilder(_serviceProvider);
         setup(builder);
         _pipeline = builder.Build();
         return _pipeline;

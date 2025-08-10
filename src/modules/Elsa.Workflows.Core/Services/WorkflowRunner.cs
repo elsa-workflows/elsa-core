@@ -192,7 +192,13 @@ public class WorkflowRunner(
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
+    public Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
+    {
+        return RunAsync(workflowExecutionContext, pipeline);
+    }
+
+    /// <inheritdoc />
+    public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext, IWorkflowExecutionPipeline customPipeline)
     {
         var loggerState = loggerStateGenerator.GenerateLoggerState(workflowExecutionContext);
         using var loggingScope = logger.BeginScope(loggerState);
@@ -208,7 +214,7 @@ public class WorkflowRunner(
             await notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), cancellationToken);
         }
 
-        await pipeline.ExecuteAsync(workflowExecutionContext);
+        await customPipeline.ExecuteAsync(workflowExecutionContext);
         var workflowState = workflowStateExtractor.Extract(workflowExecutionContext);
 
         if (workflowState.Status == WorkflowStatus.Finished)
