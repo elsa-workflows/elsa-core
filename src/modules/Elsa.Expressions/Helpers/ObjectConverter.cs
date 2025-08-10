@@ -310,7 +310,7 @@ public static class ObjectConverter
         object? ReturnOrThrow(Exception e)
         {
             if (!strictMode)
-                return underlyingTargetType.GetDefaultValue(); // Backward compatibility: return default value if strict mode is off.
+                return targetType.GetDefaultValue(); // Backward compatibility: return default value if strict mode is off.
 
             throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
         }

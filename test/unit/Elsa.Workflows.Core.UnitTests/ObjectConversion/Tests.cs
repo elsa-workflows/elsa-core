@@ -308,57 +308,48 @@ public class Tests
     }
 
     [Theory]
-    [InlineData("foo", false)]
-    [InlineData("true", true)]
-    [InlineData("false", false)]
-    public void ConvertTo_StringToBool_StrictModeDisabled_ReturnsDefaultOrConverted(string input, bool expected)
+    [InlineData("foo", false, typeof(bool))]
+    [InlineData("true", true, typeof(bool))]
+    [InlineData("false", false, typeof(bool))]
+    [InlineData("bar", 0, typeof(int))]
+    [InlineData("123", 123, typeof(int))]
+    [InlineData("notadate", null!, typeof(DateTime?))]
+    [InlineData("2023-01-01T00:00:00", "2023-01-01T00:00:00", typeof(DateTime))]
+    public void ConvertTo_StrictModeDisabled_ReturnsDefaultOrConverted(string input, object? expected, Type targetType)
     {
         var options = new ObjectConverterOptions(StrictMode: false);
-        var result = input.ConvertTo<bool>(options);
+        var result = input.ConvertTo(targetType, options);
+        
+        if (expected is null)
+        {
+            Assert.Null(result);
+            return;
+        }
+        
+        // Special handling for DateTime
+        if (targetType == typeof(DateTime) && expected is string expectedString)
+        {
+            var expectedDateTime = DateTime.Parse(expectedString, null, System.Globalization.DateTimeStyles.RoundtripKind);
+            Assert.Equal(expectedDateTime, result);
+            return;
+        }
+        
         Assert.Equal(expected, result);
     }
-
-    [Fact]
-    public void ConvertTo_StringToBool_StrictModeEnabled_ThrowsException()
-    {
-        var options = new ObjectConverterOptions(StrictMode: true);
-        Assert.Throws<TypeConversionException>(() => "foo".ConvertTo<bool>(options));
-    }
-
+    
     [Theory]
-    [InlineData("bar", 0)]
-    [InlineData("123", 123)]
-    public void ConvertTo_StringToInt_StrictModeDisabled_ReturnsDefaultOrConverted(string input, int expected)
-    {
-        var options = new ObjectConverterOptions(StrictMode: false);
-        var result = input.ConvertTo<int>(options);
-        Assert.Equal(expected, result);
-    }
-
-    [Fact]
-    public void ConvertTo_StringToInt_StrictModeEnabled_ThrowsException()
+    [InlineData("foo", true, typeof(bool))]
+    [InlineData("true", false, typeof(bool))]
+    [InlineData("false", false, typeof(bool))]
+    [InlineData("bar", true, typeof(int))]
+    [InlineData("123", false, typeof(int))]
+    [InlineData("notadate", true, typeof(DateTime?))]
+    [InlineData("2023-01-01T00:00:00", false, typeof(DateTime))]
+    public void ConvertTo_StrictModeEnabled_Throws(string input, bool shouldThrow, Type targetType)
     {
         var options = new ObjectConverterOptions(StrictMode: true);
-        Assert.Throws<TypeConversionException>(() => "bar".ConvertTo<int>(options));
-    }
-
-    [Theory]
-    [InlineData("notadate", null!)]
-    [InlineData("2023-01-01T00:00:00", "2023-01-01T00:00:00")]
-    public void ConvertTo_StringToDateTime_StrictModeDisabled_ReturnsDefaultOrConverted(string input, string? expectedString)
-    {
-        var options = new ObjectConverterOptions(StrictMode: false);
-        var result = input.ConvertTo<DateTime>(options);
-        if (expectedString == null!)
-            Assert.Equal(default, result);
-        else
-            Assert.Equal(DateTime.Parse(expectedString), result);
-    }
-
-    [Fact]
-    public void ConvertTo_StringToDateTime_StrictModeEnabled_ThrowsException()
-    {
-        var options = new ObjectConverterOptions(StrictMode: true);
-        Assert.Throws<TypeConversionException>(() => "notadate".ConvertTo<DateTime>(options));
+        
+        if(shouldThrow)
+            Assert.Throws<TypeConversionException>(() => input.ConvertTo(targetType, options));    
     }
 }
