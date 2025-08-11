@@ -2,6 +2,7 @@
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.ComponentTests.WorkflowProviders;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
@@ -43,8 +44,8 @@ public class Tests(ITestOutputHelper testOutputHelper)
 
         var host = CreateTestServicesScope();
         using var scope= host.CreateScope();
-        
-        // await host.PopulateRegistriesAsync();
+
+        await host.PopulateRegistriesAsync();
 
         var testWorkflowProvider = (TestWorkflowProvider)scope.ServiceProvider.GetServices<IWorkflowsProvider>().First( it=> it.Name == "Test");
 
