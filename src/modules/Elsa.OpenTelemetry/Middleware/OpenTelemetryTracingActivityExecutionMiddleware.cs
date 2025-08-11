@@ -3,6 +3,7 @@ using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.OpenTelemetry.Contracts;
 using Elsa.OpenTelemetry.Helpers;
+using Elsa.OpenTelemetry.Metrics;
 using Elsa.OpenTelemetry.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Pipelines.ActivityExecution;
@@ -14,7 +15,7 @@ namespace Elsa.OpenTelemetry.Middleware;
 
 /// <inheritdoc />
 [UsedImplicitly]
-public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareDelegate next, ISystemClock systemClock) : IActivityExecutionMiddleware
+public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareDelegate next, ISystemClock systemClock, ErrorMetrics errorMetrics) : IActivityExecutionMiddleware
 {
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
@@ -29,7 +30,7 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
         }
 
         span.SetTag("operation.name", "elsa.activity.execution");
-        span.SetTag("activity.id", activity.NodeId);
+        span.SetTag("activity.id", activity.Id);
         span.SetTag("activity.node.id", activity.NodeId);
         span.SetTag("activity.type", activity.Type);
         span.SetTag("activity.name", activity.Name);
@@ -56,6 +57,7 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
                 .FirstOrDefault(x => x.CanHandle(errorSpanHandlerContext));
             
             errorSpanHandler?.Handle(errorSpanHandlerContext);
+            errorMetrics.TrackError(context);
         }
         else if (context.Status == ActivityStatus.Canceled)
         {

@@ -28,6 +28,7 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.MongoDb.Modules.Tenants;
+using Elsa.OpenTelemetry.Metrics;
 using Elsa.OpenTelemetry.Middleware;
 using Elsa.Retention.Extensions;
 using Elsa.Retention.Models;
@@ -140,15 +141,16 @@ if (useManualOtelInstrumentation)
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
                 .AddSqlClientInstrumentation()
-                .AddConsoleExporter()
+                //.AddConsoleExporter()
                 .AddOtlpExporter()
                 ;
         })
         .WithMetrics(metrics =>
         {
             metrics
-                .AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation()
+                .AddMeter(ErrorMetrics.MeterName)
+                //.AddAspNetCoreInstrumentation()
+                //.AddHttpClientInstrumentation()
                 .AddConsoleExporter()
                 .AddOtlpExporter()
                 ;
