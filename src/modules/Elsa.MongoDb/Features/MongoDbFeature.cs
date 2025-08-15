@@ -7,8 +7,11 @@ using Elsa.MongoDb.Contracts;
 using Elsa.MongoDb.NamingStrategies;
 using Elsa.MongoDb.Options;
 using Elsa.MongoDb.Serializers;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -63,21 +66,53 @@ public class MongoDbFeature(IModule module) : FeatureBase(module)
         TryRegisterSerializerOrSkipWhenExist(typeof(Version), new VersionSerializer());
         TryRegisterSerializerOrSkipWhenExist(typeof(JsonElement), new JsonElementSerializer());
         TryRegisterSerializerOrSkipWhenExist(typeof(JsonNode), new JsonNodeBsonConverter());
+        TryRegisterSerializerOrSkipWhenExist(typeof(System.Dynamic.ExpandoObject), new ExpandoObjectSerializer());
     }
 
     private static void RegisterClassMaps()
     {
         BsonClassMap.TryRegisterClassMap<StoredBookmark>(cm =>
         {
-            cm.AutoMap(); // Automatically map other properties;
+            cm.AutoMap();
         });
 
         BsonClassMap.TryRegisterClassMap<SerializedKeyValuePair>(map =>
         {
             map.AutoMap();
-            map.SetIgnoreExtraElements(true); // Needed for missing ID property
+            map.SetIgnoreExtraElements(true);
             map.MapProperty(x => x.Key); // Needed for non-setter property
         });
+        
+        BsonClassMap.TryRegisterClassMap<WorkflowDefinition>(map =>
+        {
+            map.AutoMap();
+            map.SetIgnoreExtraElements(true);
+        });
+        
+        BsonClassMap.TryRegisterClassMap<WorkflowInstance>(map =>
+        {
+            map.AutoMap();
+            map.SetIgnoreExtraElements(true);
+        });
+        
+        BsonClassMap.TryRegisterClassMap<WorkflowState>(map =>
+        {
+            map.AutoMap();
+            map.SetIgnoreExtraElements(true);
+        });
+        
+        BsonClassMap.RegisterClassMap<WorkflowOptions>(cm =>
+        {
+            cm.AutoMap();
+            cm.SetIgnoreExtraElements(true);
+        });
+        
+        BsonClassMap.RegisterClassMap<ActivityExecutionContextState>(cm =>
+        {
+            cm.AutoMap();
+            cm.SetIgnoreExtraElements(true);
+        });
+
     }
 
     private static void TryRegisterSerializerOrSkipWhenExist(Type type, IBsonSerializer serializer)
