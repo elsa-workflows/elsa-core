@@ -25,6 +25,7 @@ using Elsa.Workflows.UIHints.CheckList;
 using Elsa.Workflows.UIHints.Dropdown;
 using Elsa.Workflows.UIHints.JsonEditor;
 using Elsa.Workflows.UIHints.RadioList;
+using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Features;
@@ -251,6 +252,10 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<ILogPersistenceStrategy, Exclude>()
             .AddScoped<ILogPersistenceStrategy, Inherit>()
             .AddScoped<ILogPersistenceStrategy, Configuration>()
+
+            // ProcessLog Services.
+            .AddScoped<ILogSinkResolver, DefaultLogSinkResolver>()
+            .AddScoped<ILogSink, ConsoleLogSink>()
 
             // Logging
             .AddLogging();
