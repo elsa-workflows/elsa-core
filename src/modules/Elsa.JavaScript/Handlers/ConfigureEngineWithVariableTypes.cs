@@ -11,12 +11,22 @@ namespace Elsa.JavaScript.Handlers;
 public class ConfigureEngineWithWorkflowVariableTypes(IOptions<ManagementOptions> options) 
     : INotificationHandler<EvaluatingJavaScript>
 {
+    // Blacklist of types to exclude from registration.
+    private static readonly Type[] BlacklistedTypes =
+    [
+        typeof(string),
+        typeof(object),
+        typeof(Array),
+        typeof(DateTime)
+        // Add more types if needed.
+    ];
+
     /// <inheritdoc />
     public Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
         var engine = notification.Engine;
         var variableTypes = options.Value.VariableDescriptors
-            .Where(x => x.Type is { ContainsGenericParameters: false} && x.Type != typeof(object))
+            .Where(x => x.Type is { ContainsGenericParameters: false } && !BlacklistedTypes.Contains(x.Type) && !x.Type.IsPrimitive)
             .Select(x => x.Type)
             .ToArray();
         
