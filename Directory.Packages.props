@@ -1,10 +1,10 @@
 <Project>
     <PropertyGroup>
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-        <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+        <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
     </PropertyGroup>
     <PropertyGroup>
-        <ElsaStudioVersion>3.5.0-preview.1092</ElsaStudioVersion>
+        <ElsaStudioVersion>3.5.0</ElsaStudioVersion>
         <MicrosoftVersion>9.0.7</MicrosoftVersion>
     </PropertyGroup>
     <ItemGroup>
