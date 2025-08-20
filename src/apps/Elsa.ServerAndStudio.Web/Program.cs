@@ -14,6 +14,7 @@ using Microsoft.Data.Sqlite;
 using WebhooksCore.Options;
 using Elsa.Connections.Middleware;
 using Elsa.IO.Http.Features;
+using Elsa.Logging.Extensions;
 using Proto.Persistence.Sqlite;
 
 const bool useMassTransit = true;
@@ -142,6 +143,7 @@ services
             .UseWebhooks(webhooks => webhooks.ConfigureSinks = options => builder.Configuration.GetSection("Webhooks:Sinks").Bind(options))
             .UseWorkflowsApi()
             .UseCompression()
+            .UseProcessLogging()
             .Use<IOHttpFeature>()
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>();
