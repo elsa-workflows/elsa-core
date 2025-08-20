@@ -11,13 +11,10 @@ namespace Elsa.JavaScript.Handlers;
 public class ConfigureEngineWithWorkflowVariableTypes(IOptions<ManagementOptions> options) 
     : INotificationHandler<EvaluatingJavaScript>
 {
-    // Blacklist of types to exclude from registration.
     private static readonly Type[] BlacklistedTypes =
     [
         typeof(string),
         typeof(object),
-        typeof(Array),
-        typeof(DateTime)
         // Add more types if needed.
     ];
 
