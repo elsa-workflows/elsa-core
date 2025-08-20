@@ -21,6 +21,8 @@ using Elsa.Features.Services;
 using Elsa.Identity.Multitenancy;
 using Elsa.Kafka;
 using Elsa.Kafka.Factories;
+using Elsa.Logging.Activities;
+using Elsa.Logging.Extensions;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;
@@ -224,6 +226,7 @@ services
 
         elsa
             .AddActivitiesFrom<Program>()
+            .AddActivitiesFrom<ProcessLogActivity>()
             .AddWorkflowsFrom<Program>()
             .UseFluentStorageProvider()
             .UseFileStorage()
@@ -532,6 +535,7 @@ services
                 }
             })
             .UseOpenTelemetry(otel => otel.UseNewRootActivityForRemoteParent = true)
+            .UseProcessLogging()
             .UseWorkflowContexts();
 
         if (useQuartz)

@@ -36,6 +36,7 @@
         <ProjectReference Include="..\..\modules\Elsa.MassTransit.RabbitMq\Elsa.MassTransit.RabbitMq.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.MassTransit\Elsa.MassTransit.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime.ProtoActor\Elsa.Workflows.Runtime.ProtoActor.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.ProcessLogging\Elsa.ProcessLogging.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Python\Elsa.Python.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Webhooks\Elsa.Webhooks.csproj"/>
