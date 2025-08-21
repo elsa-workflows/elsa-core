@@ -21,8 +21,8 @@ using Elsa.Features.Services;
 using Elsa.Identity.Multitenancy;
 using Elsa.Kafka;
 using Elsa.Kafka.Factories;
-using Elsa.Logging.Activities;
 using Elsa.Logging.Extensions;
+using Elsa.Logging.Sinks;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;
@@ -69,6 +69,8 @@ using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
 using Medallion.Threading.Redis;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -78,7 +80,10 @@ using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Serilog;
+using Serilog.Formatting.Compact;
 using StackExchange.Redis;
+using Log = Elsa.Logging.Activities.Log;
 
 // ReSharper disable RedundantAssignment
 const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
@@ -226,7 +231,7 @@ services
 
         elsa
             .AddActivitiesFrom<Program>()
-            .AddActivitiesFrom<ProcessLogActivity>()
+            .AddActivitiesFrom<Log>()
             .AddWorkflowsFrom<Program>()
             .UseFluentStorageProvider()
             .UseFileStorage()
@@ -240,7 +245,7 @@ services
                     identity.UseEntityFrameworkCore(ef =>
                     {
                         ef.UseContextPooling = useDbContextPooling;
-                        
+
                         if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
@@ -535,7 +540,7 @@ services
                 }
             })
             .UseOpenTelemetry(otel => otel.UseNewRootActivityForRemoteParent = true)
-            .UseProcessLogging()
+            .UseLoggingFramework()
             .UseWorkflowContexts();
 
         if (useQuartz)
@@ -741,6 +746,64 @@ services
             });
         }
 
+        // 1) Console target via built-in provider
+        var informationConsoleLogger = LoggerFactory.Create(lb =>
+        {
+            lb.ClearProviders();
+            lb.AddConsole();
+            lb.SetMinimumLevel(LogLevel.Information);
+        });
+        
+        var warningConsoleLogger = LoggerFactory.Create(lb =>
+        {
+            lb.ClearProviders();
+            //lb.AddConsole(options => options.);
+            
+            // Configure console with purple color.
+            lb.AddConsole(options =>
+            {
+                options.LogToStandardErrorThreshold = LogLevel.Warning;
+                options.FormatterName = "custom";
+            });
+            lb.AddConsoleFormatter<CustomPurpleConsoleFormatter, ConsoleFormatterOptions>();
+            lb.SetMinimumLevel(LogLevel.Warning);
+        });
+
+        // 2) FilePretty target via Serilog (text template)
+        var serilogPretty = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .WriteTo.File("logs/activity-pretty-.log",
+                rollingInterval: RollingInterval.Day,
+                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+            .CreateLogger();
+
+        var filePrettyFactory = LoggerFactory.Create(lb =>
+        {
+            lb.ClearProviders();
+            lb.AddSerilog(serilogPretty, dispose: true);
+        });
+
+        // 3) FileJson target via Serilog (compact JSON)
+        var serilogJson = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.File(new CompactJsonFormatter(), "logs/activity-json-.log",
+                rollingInterval: RollingInterval.Day)
+            .CreateLogger();
+
+        var fileJsonFactory = LoggerFactory.Create(lb =>
+        {
+            lb.ClearProviders();
+            lb.AddSerilog(serilogJson, dispose: true);
+        });
+        
+        elsa.UseLoggingFramework(logging =>
+        {
+            logging.AddLogSink(new MelLogSink("Console::Information", informationConsoleLogger, "Process"));
+            logging.AddLogSink(new MelLogSink("Console::Warning", informationConsoleLogger, "Process"));
+            logging.AddLogSink(new MelLogSink("File::Pretty", filePrettyFactory, "Process"));
+            logging.AddLogSink(new MelLogSink("File::Json", fileJsonFactory, "Process"));
+        });
+        
         elsa.UseWebhooks(webhooks => webhooks.ConfigureSinks += options => builder.Configuration.GetSection("Webhooks").Bind(options));
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();
@@ -829,4 +892,17 @@ public partial class Program
     /// Set by the test runner to configure the module for testing.
     /// </summary>
     public static Action<IModule>? ConfigureForTest { get; set; }
+}
+
+public class CustomPurpleConsoleFormatter : ConsoleFormatter
+{
+    public CustomPurpleConsoleFormatter() : base("custom") { }
+            
+    public override void Write<TState>(in LogEntry<TState> logEntry, IExternalScopeProvider? scopeProvider, TextWriter textWriter)
+    {
+        var originalColor = Console.ForegroundColor;
+        Console.ForegroundColor = ConsoleColor.Magenta; // Purple
+        textWriter.WriteLine($"{logEntry.Formatter?.Invoke(logEntry.State, logEntry.Exception)}");
+        Console.ForegroundColor = originalColor;
+    }
 }

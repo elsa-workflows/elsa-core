@@ -143,7 +143,7 @@ services
             .UseWebhooks(webhooks => webhooks.ConfigureSinks = options => builder.Configuration.GetSection("Webhooks:Sinks").Bind(options))
             .UseWorkflowsApi()
             .UseCompression()
-            .UseProcessLogging()
+            .UseLoggingFramework()
             .Use<IOHttpFeature>()
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>();
