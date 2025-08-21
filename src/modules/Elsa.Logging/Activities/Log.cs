@@ -63,10 +63,10 @@ public class Log : CodeActivity
     public Input<EventId?> EventId { get; set; } = null!;
 
     /// <summary>
-    /// Log category. Defaults to "Process".
+    /// Target sinks to write to.
     /// </summary>
     [Input(
-        Description = "Target sinks. Defaults to 'Process' if not specified.",
+        Description = "Target sinks to write to.",
         UIHint = InputUIHints.CheckList,
         UIHandler = typeof(LogSinkCheckListUIHintHandler)
     )]
