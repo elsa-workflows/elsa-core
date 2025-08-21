@@ -70,7 +70,7 @@ public class Log : CodeActivity
         UIHint = InputUIHints.CheckList,
         UIHandler = typeof(LogSinkCheckListUIHintHandler)
     )]
-    public Input<ICollection<string>> SinkNames { get; set; } = new(["Process"]);
+    public Input<ICollection<string>> SinkNames { get; set; } = null!;
 
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
