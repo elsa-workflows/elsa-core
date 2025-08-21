@@ -66,6 +66,7 @@ public class Log : CodeActivity
     /// Target sinks to write to.
     /// </summary>
     [Input(
+        DisplayName = "Sinks",
         Description = "Target sinks to write to.",
         UIHint = InputUIHints.CheckList,
         UIHandler = typeof(LogSinkCheckListUIHintHandler)
