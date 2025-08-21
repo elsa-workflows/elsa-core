@@ -7,7 +7,7 @@ namespace Elsa.Logging.Extensions;
 public static class ModuleExtensions
 {
     /// <summary>
-    /// Installs the IO module.
+    /// Installs the ProcessLogging module.
     /// </summary>
     public static IModule UseProcessLogging(this IModule module, Action<ProcessLoggingFeature>? configure = null)
     {
