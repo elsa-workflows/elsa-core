@@ -6,7 +6,7 @@ namespace Elsa.Logging.Sinks;
 /// <summary>
 /// A Microsoft.Extensions.Logging (MEL) sink, built from a private LoggerFactory configured with any providers.
 /// </summary>
-public sealed class MelLogSink(string name, ILoggerFactory factory) : ILogSink
+public sealed class LoggerSink(string name, ILoggerFactory factory) : ILogSink
 {
     public string Name { get; } = name;
 

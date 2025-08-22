@@ -55,7 +55,7 @@ public class ConfigurationLogSinkProvider : ILogSinkProvider
             }
             
             var sinkOptionsType = f.GetType().GetInterfaces().First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ILogSinkFactory<>)).GetGenericArguments()[0];
-            var sinkOptions = spec.Options.Deserialize(sinkOptionsType, _jsonSerializerOptions) ?? new ConsoleSinkOptions();
+            var sinkOptions = spec.Options.Deserialize(sinkOptionsType, _jsonSerializerOptions);
             var createMethod = f.GetType().GetMethod("Create", [typeof(string), sinkOptionsType])!;
             var sink = (ILogSink)createMethod.Invoke(f, [spec.Name, sinkOptions])!;
             builtSinks.Add(sink);

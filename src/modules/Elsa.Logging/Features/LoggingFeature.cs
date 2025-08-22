@@ -3,13 +3,11 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Logging.Activities;
 using Elsa.Logging.Contracts;
-using Elsa.Logging.Factories;
 using Elsa.Logging.Options;
 using Elsa.Logging.Providers;
 using Elsa.Logging.Services;
 using Elsa.Logging.UI;
 using Elsa.Workflows;
-using Elsa.Workflows.UIHints.CheckList;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Logging.Features;
@@ -46,8 +44,8 @@ public class LoggingFeature(IModule module) : FeatureBase(module)
         Services
             .AddScoped<ILogSinkProvider, ConfigurationLogSinkProvider>()
             .AddScoped<ILogSinkProvider, StaticLogSinkProvider>()
-            .AddScoped<ILogSinkFactory, ConsoleSinkFactory>()
-            .AddScoped<ILogSinkFactory, SerilogFileSinkFactory>()
+            //.AddScoped<ILogSinkFactory, ConsoleSinkFactory>()
+            //.AddScoped<ILogSinkFactory, SerilogFileSinkFactory>()
             .AddScoped<ILogSinkRouter, LogSinkRouter>()
             .AddScoped<ILogSinkCatalog, LogSinkCatalog>()
             .AddScoped<IPropertyUIHandler, LogSinkCheckListUIHintHandler>();

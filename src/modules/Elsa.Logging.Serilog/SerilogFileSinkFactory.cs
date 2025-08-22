@@ -1,11 +1,10 @@
 using Elsa.Logging.Contracts;
-using Elsa.Logging.SinkOptions;
 using Elsa.Logging.Sinks;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Formatting.Compact;
 
-namespace Elsa.Logging.Factories;
+namespace Elsa.Logging.Serilog;
 
 public sealed class SerilogFileSinkFactory : ILogSinkFactory<SerilogFileSinkOptions>
 {
@@ -36,15 +35,15 @@ public sealed class SerilogFileSinkFactory : ILogSinkFactory<SerilogFileSinkOpti
         {
             lb.ClearProviders();
             lb.AddSerilog(serilog, dispose: true);
-            
+
             if (options.CategoryFilters is not null)
                 foreach (var filter in options.CategoryFilters)
                     lb.AddFilter(filter.Key, filter.Value);
-            
+
             lb.SetMinimumLevel(options.MinLevel ?? LogLevel.Information);
         });
 
-        return new MelLogSink(name, factory);
+        return new LoggerSink(name, factory);
     }
 
     static RollingInterval MapRolling(string? v) => Enum.TryParse<RollingInterval>(v, true, out var ri) ? ri : RollingInterval.Day;

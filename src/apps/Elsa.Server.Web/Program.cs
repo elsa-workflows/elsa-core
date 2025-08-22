@@ -83,7 +83,6 @@ using Proto.Remote.GrpcNet;
 using Serilog;
 using Serilog.Formatting.Compact;
 using StackExchange.Redis;
-using Log = Elsa.Logging.Activities.Log;
 
 // ReSharper disable RedundantAssignment
 const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
@@ -231,7 +230,6 @@ services
 
         elsa
             .AddActivitiesFrom<Program>()
-            .AddActivitiesFrom<Log>()
             .AddWorkflowsFrom<Program>()
             .UseFluentStorageProvider()
             .UseFileStorage()
@@ -799,10 +797,12 @@ services
         
         elsa.UseLoggingFramework(logging =>
         {
-            logging.AddLogSink(new MelLogSink("Console::Information", informationConsoleLogger));
-            logging.AddLogSink(new MelLogSink("Console::Warning", informationConsoleLogger));
-            logging.AddLogSink(new MelLogSink("File::Pretty", filePrettyFactory));
-            logging.AddLogSink(new MelLogSink("File::Json", fileJsonFactory));
+            logging.UseConsole();
+            logging.UseSerilog();
+            logging.AddLogSink(new LoggerSink("Console::Information", informationConsoleLogger));
+            logging.AddLogSink(new LoggerSink("Console::Warning", informationConsoleLogger));
+            logging.AddLogSink(new LoggerSink("File::Pretty", filePrettyFactory));
+            logging.AddLogSink(new LoggerSink("File::Json", fileJsonFactory));
         });
         
         elsa.UseWebhooks(webhooks => webhooks.ConfigureSinks += options => builder.Configuration.GetSection("Webhooks").Bind(options));

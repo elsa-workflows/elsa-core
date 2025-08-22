@@ -1,6 +1,6 @@
-namespace Elsa.Logging.SinkOptions;
+namespace Elsa.Logging.Serilog;
 
-public sealed record SerilogFileSinkOptions : SinkOptions
+public sealed record SerilogFileSinkOptions : SinkOptions.SinkOptions
 {
     public string Path { get; init; } = "";
     public string RollingInterval { get; init; } = "Day";

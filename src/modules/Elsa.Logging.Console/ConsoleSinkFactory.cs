@@ -1,9 +1,8 @@
 using Elsa.Logging.Contracts;
-using Elsa.Logging.SinkOptions;
 using Elsa.Logging.Sinks;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Logging.Factories;
+namespace Elsa.Logging.Console;
 
 public sealed class ConsoleSinkFactory : ILogSinkFactory<ConsoleSinkOptions>
 {
@@ -52,6 +51,6 @@ public sealed class ConsoleSinkFactory : ILogSinkFactory<ConsoleSinkOptions>
 
             lb.SetMinimumLevel(min);
         });
-        return new MelLogSink(name, factory);
+        return new LoggerSink(name, factory);
     }
 }
