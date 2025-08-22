@@ -5,11 +5,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Logging.Console;
 
-public sealed class ConsoleSinkFactory : ILogSinkFactory<ConsoleSinkOptions>
+public sealed class ConsoleLogSinkFactory : ILogSinkFactory<ConsoleLogSinkOptions>
 {
     public string Type => "Console";
 
-    public ILogSink Create(string name, ConsoleSinkOptions options)
+    public ILogSink Create(string name, ConsoleLogSinkOptions options)
     {
         var factory = LoggerFactory.Create(builder =>
         {

@@ -7,11 +7,11 @@ using Serilog.Formatting.Compact;
 
 namespace Elsa.Logging.Serilog;
 
-public sealed class SerilogFileSinkFactory : ILogSinkFactory<SerilogFileSinkOptions>
+public sealed class SerilogLogSinkFactory : ILogSinkFactory<SerilogLogSinkOptions>
 {
     public string Type => "SerilogFile";
 
-    public ILogSink Create(string name, SerilogFileSinkOptions options)
+    public ILogSink Create(string name, SerilogLogSinkOptions options)
     {
         var cfg = new LoggerConfiguration().MinimumLevel.Verbose();
 

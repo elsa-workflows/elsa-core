@@ -1,5 +1,7 @@
 using Elsa.Logging.Contracts;
+using Elsa.Logging.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Logging.Services;
 
@@ -9,11 +11,11 @@ public sealed class LogSinkRouter : ILogSinkRouter
     private readonly Lazy<Task<IDictionary<string, ILogSink>>> _lazyTargets;
     private readonly string[] _defaults;
 
-    public LogSinkRouter(ILogSinkCatalog catalog, IEnumerable<string>? defaults = null)
+    public LogSinkRouter(ILogSinkCatalog catalog, IOptions<LoggingOptions> options)
     {
         _catalog = catalog;
         _lazyTargets = new(GetLogSinksAsync, LazyThreadSafetyMode.ExecutionAndPublication);
-        _defaults = (defaults ?? []).ToArray();
+        _defaults = options.Value.Defaults.ToArray();
     }
 
     public async ValueTask WriteAsync(IEnumerable<string> sinkNames, string name, LogLevel level, string message, object? arguments, IDictionary<string, object?>? attributes = null, CancellationToken cancellationToken = default)

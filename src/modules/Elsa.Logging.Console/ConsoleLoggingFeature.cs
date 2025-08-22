@@ -17,6 +17,6 @@ public class ConsoleLoggingFeature(IModule module) : FeatureBase(module)
 {
     public override void Apply()
     {
-        Services.AddScoped<ILogSinkFactory, ConsoleSinkFactory>();
+        Services.AddScoped<ILogSinkFactory, ConsoleLogSinkFactory>();
     }
 }

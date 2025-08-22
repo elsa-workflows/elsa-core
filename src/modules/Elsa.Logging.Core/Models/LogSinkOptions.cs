@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Logging.SinkOptions;
+namespace Elsa.Logging.Models;
 
-public abstract record SinkOptions
+public abstract record LogSinkOptions
 {
     public LogLevel? MinLevel { get; init; }
     public Dictionary<string, LogLevel>? CategoryFilters { get; init; }

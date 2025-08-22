@@ -16,6 +16,6 @@ public class SerilogLoggingFeature(IModule module) : FeatureBase(module)
     public override void Apply()
     {
         Services
-            .AddScoped<ILogSinkFactory, SerilogFileSinkFactory>();
+            .AddScoped<ILogSinkFactory, SerilogLogSinkFactory>();
     }
 }

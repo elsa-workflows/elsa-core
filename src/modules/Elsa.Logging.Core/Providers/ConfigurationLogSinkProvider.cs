@@ -4,7 +4,6 @@ using Elsa.Extensions;
 using Elsa.Logging.Contracts;
 using Elsa.Logging.Models;
 using Elsa.Logging.Serialization;
-using Elsa.Logging.SinkOptions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 

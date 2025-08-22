@@ -1,6 +1,8 @@
+using Elsa.Logging.Models;
+
 namespace Elsa.Logging.Serilog;
 
-public sealed record SerilogFileSinkOptions : SinkOptions.SinkOptions
+public sealed record SerilogLogSinkOptions : LogSinkOptions
 {
     public string Path { get; init; } = "";
     public string RollingInterval { get; init; } = "Day";

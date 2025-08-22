@@ -1,3 +1,4 @@
+using Elsa.Logging.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Logging.Contracts;
@@ -13,7 +14,7 @@ public interface ILogSinkFactory
 /// <summary>
 /// Defines a factory for creating instances of log sinks designed for specific logging options types.
 /// </summary>
-public interface ILogSinkFactory<in TOptions> : ILogSinkFactory where TOptions : SinkOptions.SinkOptions
+public interface ILogSinkFactory<in TOptions> : ILogSinkFactory where TOptions : LogSinkOptions
 {
     [UsedImplicitly]
     ILogSink Create(string name, TOptions options);

@@ -1,8 +1,9 @@
+using Elsa.Logging.Models;
 using Microsoft.Extensions.Logging.Console;
 
 namespace Elsa.Logging.Console;
 
-public sealed record ConsoleSinkOptions : SinkOptions.SinkOptions
+public sealed record ConsoleLogSinkOptions : LogSinkOptions
 {
     // "Default" | "Simple" | "Systemd"
     public string Formatter { get; init; } = "Default";
