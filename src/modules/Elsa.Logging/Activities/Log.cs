@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Logging.Contracts;
+using Elsa.Logging.Models;
 using Elsa.Logging.UI;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
@@ -83,21 +84,29 @@ public class Log : CodeActivity
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var cancellationToken = context.CancellationToken;
         var message = Message.Get(context);
         var level = Level.Get(context);
         var arguments = Arguments.GetOrDefault(context);
-        var properties = Attributes.GetOrDefault(context) ?? new Dictionary<string, object?>();
+        var attributes = Attributes.GetOrDefault(context) ?? new Dictionary<string, object?>();
         var sinkNames = SinkNames.GetOrDefault(context) ?? new List<string>();
-        var router = context.GetRequiredService<ILogSinkRouter>();
         var category = Category.GetOrDefault(context);
         if (string.IsNullOrWhiteSpace(category)) category = "Workflow";
 
-        properties["WorkflowDefinitionId"] = context.WorkflowExecutionContext.Workflow.Identity.DefinitionId;
-        properties["WorkflowDefinitionVersionId"] = context.WorkflowExecutionContext.Workflow.Identity.Id;
-        properties["WorkflowDefinitionVersion"] = context.WorkflowExecutionContext.Workflow.Identity.Version;
-        properties["WorkflowInstanceId"] = context.WorkflowExecutionContext.Id;
+        attributes["WorkflowDefinitionId"] = context.WorkflowExecutionContext.Workflow.Identity.DefinitionId;
+        attributes["WorkflowDefinitionVersionId"] = context.WorkflowExecutionContext.Workflow.Identity.Id;
+        attributes["WorkflowDefinitionVersion"] = context.WorkflowExecutionContext.Workflow.Identity.Version;
+        attributes["WorkflowInstanceId"] = context.WorkflowExecutionContext.Id;
 
-        await router.WriteAsync(sinkNames, category, level, message, arguments, properties, cancellationToken);
+        var queue = context.GetRequiredService<ILogEntryQueue>();
+        var instruction = new LogEntryInstruction
+        {
+            SinkNames = sinkNames,
+            Category = category,
+            Level = level,
+            Message = message,
+            Arguments = arguments,
+            Attributes = attributes
+        };
+        await queue.EnqueueAsync(instruction);
     }
 }

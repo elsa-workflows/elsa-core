@@ -7,7 +7,7 @@ public class LoggingOptions
     /// <summary>
     /// Default sinks.
     /// </summary>
-    public ICollection<string> Defaults { get; set; } = new List<string>();
+    public HashSet<string> Defaults { get; set; } = new();
     
     /// <summary>
     /// Sinks registered by the host. To register sinks from configuration, use the <see cref="ILogSinkFactory"/> infrastucture.

@@ -3,6 +3,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Logging.Activities;
 using Elsa.Logging.Contracts;
+using Elsa.Logging.HostedServices;
 using Elsa.Logging.Options;
 using Elsa.Logging.Providers;
 using Elsa.Logging.Services;
@@ -40,6 +41,11 @@ public class LoggingFeature(IModule module) : FeatureBase(module)
         return this;   
     }
 
+    public override void ConfigureHostedServices()
+    {
+        Module.ConfigureHostedService<LogEntryBackgroundWorker>();
+    }
+
     public override void Apply()
     {
         Services
@@ -47,6 +53,7 @@ public class LoggingFeature(IModule module) : FeatureBase(module)
             .AddScoped<ILogSinkProvider, StaticLogSinkProvider>()
             .AddScoped<ILogSinkRouter, LogSinkRouter>()
             .AddScoped<IPropertyUIHandler, LogSinkCheckListUIHintHandler>()
+            .AddSingleton<ILogEntryQueue, LogEntryQueue>()
             .AddSingleton<ILogSinkCatalog, LogSinkCatalog>();
     }
 }
