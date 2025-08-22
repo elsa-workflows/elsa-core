@@ -8,7 +8,7 @@ public interface ILogSinkRouter
         IEnumerable<string> sinkNames,
         LogLevel level,
         string message,
-        IEnumerable<object?> arguments,
+        object? arguments,
         IDictionary<string, object?>? attributes = null,
         CancellationToken ct = default);
 }

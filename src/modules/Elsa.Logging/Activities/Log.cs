@@ -42,27 +42,32 @@ public class Log : CodeActivity
     /// <summary>
     /// The log message.
     /// </summary>
-    [Input(Description = "The log message to emit.")] public Input<string> Message { get; set; } = new(string.Empty);
+    [Input(Description = "The log message to emit.")]
+    public Input<string> Message { get; set; } = new(string.Empty);
+    
+    /// <summary>
+    /// Additional attributes to include in the log entry.
+    /// </summary>
+    [Input(Description = "Values of named or indexed placeholders in the log message.")] 
+    public Input<object?> Arguments { get; set; } = null!;
 
     /// <summary>
     /// The log level.
     /// </summary>
-    [Input(Description = "The log level (Trace, Debug, Information, Warning, Error, Critical).")] public Input<LogLevel> Level { get; set; } = new(LogLevel.Information);
+    [Input(Description = "The log level (Trace, Debug, Information, Warning, Error, Critical).")]
+    public Input<LogLevel> Level { get; set; } = new(LogLevel.Information);
 
     /// <summary>
     /// The log message.
     /// </summary>
-    [Input(Description = "The category. Defaults to 'Workflow'.", DefaultValue = "Workflow")] public Input<string> Category { get; set; } = new("Workflow");
+    [Input(Description = "The category. Defaults to 'Workflow'.", DefaultValue = "Workflow")]
+    public Input<string> Category { get; set; } = new("Workflow");
 
     /// <summary>
     /// Additional attributes to include in the log entry.
     /// </summary>
-    [Input(Description = "Values of placeholders in the log message.")] public Input<ICollection<object?>> Arguments { get; set; } = null!;
-
-    /// <summary>
-    /// Additional attributes to include in the log entry.
-    /// </summary>
-    [Input(Description = "Flat dictionary of key/value pairs to include as attributes.")] public Input<IDictionary<string, object?>> Attributes { get; set; } = null!;
+    [Input(Description = "Flat dictionary of key/value pairs to include as attributes.")] 
+    public Input<IDictionary<string, object?>> Attributes { get; set; } = null!;
 
     /// <summary>
     /// Target sinks to write to.
@@ -81,10 +86,9 @@ public class Log : CodeActivity
         var cancellationToken = context.CancellationToken;
         var message = Message.Get(context);
         var level = Level.Get(context);
-        var arguments = (Arguments.GetOrDefault(context) ?? new List<object?>()).ToArray();
+        var arguments = Arguments.GetOrDefault(context);
         var properties = Attributes.GetOrDefault(context) ?? new Dictionary<string, object?>();
         var sinkNames = SinkNames.GetOrDefault(context) ?? new List<string>();
-        //var catalog = context.GetRequiredService<ILogSinkCatalog>();
         var router = context.GetRequiredService<ILogSinkRouter>();
         var category = Category.GetOrDefault(context);
         if (string.IsNullOrWhiteSpace(category)) category = "Workflow";
