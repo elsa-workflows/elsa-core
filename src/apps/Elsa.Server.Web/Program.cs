@@ -745,68 +745,53 @@ services
         }
 
         // 1) Console target via built-in provider
-        var informationConsoleLogger = LoggerFactory.Create(lb =>
+        var consoleLogger = LoggerFactory.Create(lb =>
         {
             lb.ClearProviders();
             lb.AddConsole();
-            lb.AddFilter("Process", LogLevel.Information);
+            lb.AddFilter("Demo", LogLevel.Debug);
             lb.SetMinimumLevel(LogLevel.Information);
         });
         
-        var warningConsoleLogger = LoggerFactory.Create(lb =>
-        {
-            lb.ClearProviders();
-            //lb.AddConsole(options => options.);
-            
-            // Configure console with purple color.
-            lb.AddConsole(options =>
-            {
-                options.LogToStandardErrorThreshold = LogLevel.Warning;
-                options.FormatterName = "custom";
-            });
-            lb.AddConsoleFormatter<CustomPurpleConsoleFormatter, ConsoleFormatterOptions>();
-            lb.SetMinimumLevel(LogLevel.Warning);
-        });
-
-        // 2) FilePretty target via Serilog (text template)
-        var serilogPretty = new LoggerConfiguration()
-            .MinimumLevel.Information()
-            .WriteTo.File("logs/activity-pretty-.log",
-                rollingInterval: RollingInterval.Day,
-                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-            .CreateLogger();
-
+        // 2) Pretty File target via Serilog (text template)
         var filePrettyFactory = LoggerFactory.Create(lb =>
         {
+            var serilogConfig = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.File("App_Data/logs/activity-pretty-.log",
+                    rollingInterval: RollingInterval.Day,
+                    outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+                .CreateLogger();
+            
             lb.ClearProviders();
-            lb.AddSerilog(serilogPretty, dispose: true);
+            lb.AddFilter("Demo", LogLevel.Debug);
+            lb.AddSerilog(serilogConfig, dispose: true);
         });
 
-        // 3) FileJson target via Serilog (compact JSON)
-        var serilogJson = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .WriteTo.File(new CompactJsonFormatter(), "logs/activity-json-.log",
-                rollingInterval: RollingInterval.Day)
-            .CreateLogger();
-
+        // 3) JSON File target via Serilog (compact JSON)
         var fileJsonFactory = LoggerFactory.Create(lb =>
         {
+            var serilogJson = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.File(new CompactJsonFormatter(), "App_Data/logs/activity-json-.log",
+                    rollingInterval: RollingInterval.Day)
+                .CreateLogger();
+            
             lb.ClearProviders();
             lb.AddSerilog(serilogJson, dispose: true);
         });
         
         elsa.UseLoggingFramework(logging =>
         {
+            // Get sinks from configuration.
             logging.UseConsole();
             logging.UseSerilog();
-            logging.ConfigureDefaults(options =>
-            {
-                configuration.GetSection("LoggingFramework").Bind(options);
-            });
-            logging.AddLogSink(new LoggerSink("Console::Information", informationConsoleLogger));
-            logging.AddLogSink(new LoggerSink("Console::Warning", informationConsoleLogger));
-            logging.AddLogSink(new LoggerSink("File::Pretty", filePrettyFactory));
-            logging.AddLogSink(new LoggerSink("File::Json", fileJsonFactory));
+            logging.ConfigureDefaults(options => configuration.GetSection("LoggingFramework").Bind(options));
+            
+            // Add sinks manually.
+            logging.AddLogSink(new LoggerSink("Console (via code)", consoleLogger));
+            logging.AddLogSink(new LoggerSink("File (pretty)", filePrettyFactory));
+            logging.AddLogSink(new LoggerSink("File (JSON)", fileJsonFactory));
         });
         
         elsa.UseWebhooks(webhooks => webhooks.ConfigureSinks += options => builder.Configuration.GetSection("Webhooks").Bind(options));

@@ -9,7 +9,7 @@ namespace Elsa.Logging.Serilog;
 
 public sealed class SerilogLogSinkFactory : ILogSinkFactory<SerilogLogSinkOptions>
 {
-    public string Type => "SerilogFile";
+    public string Type => "Serilog";
 
     public ILogSink Create(string name, SerilogLogSinkOptions options)
     {

@@ -24,7 +24,7 @@ public sealed class LogSinkRouter : ILogSinkRouter
         var names = targetNamesArray.Any() ? targetNamesArray : _defaults;
         var uniqueNames = new HashSet<string>(names, StringComparer.OrdinalIgnoreCase);
         var targets = await _lazyTargets.Value;
-        
+
         foreach (var n in uniqueNames)
             if (targets.TryGetValue(n, out var t))
                 await t.WriteAsync(name, level, message, arguments, attributes, cancellationToken);

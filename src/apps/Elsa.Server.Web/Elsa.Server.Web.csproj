@@ -85,6 +85,7 @@
 
     <ItemGroup>
       <Folder Include="App_Data\" />
+      <Folder Include="logs\" />
     </ItemGroup>
 
 </Project>
