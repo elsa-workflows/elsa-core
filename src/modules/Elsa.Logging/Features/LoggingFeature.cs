@@ -7,7 +7,6 @@ using Elsa.Logging.Factories;
 using Elsa.Logging.Options;
 using Elsa.Logging.Providers;
 using Elsa.Logging.Services;
-using Elsa.Logging.SinkOptions;
 using Elsa.Logging.UI;
 using Elsa.Workflows;
 using Elsa.Workflows.UIHints.CheckList;
@@ -47,8 +46,8 @@ public class LoggingFeature(IModule module) : FeatureBase(module)
         Services
             .AddScoped<ILogSinkProvider, ConfigurationLogSinkProvider>()
             .AddScoped<ILogSinkProvider, StaticLogSinkProvider>()
-            .AddScoped<ILogSinkFactory<ConsoleSinkOptions>, ConsoleSinkFactory>()
-            .AddScoped<ILogSinkFactory<SerilogFileSinkOptions>, SerilogFileSinkFactory>()
+            .AddScoped<ILogSinkFactory, ConsoleSinkFactory>()
+            .AddScoped<ILogSinkFactory, SerilogFileSinkFactory>()
             .AddScoped<ILogSinkRouter, LogSinkRouter>()
             .AddScoped<ILogSinkCatalog, LogSinkCatalog>()
             .AddScoped<IPropertyUIHandler, LogSinkCheckListUIHintHandler>();

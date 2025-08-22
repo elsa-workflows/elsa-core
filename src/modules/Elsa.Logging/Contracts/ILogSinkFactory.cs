@@ -1,10 +1,14 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 
 namespace Elsa.Logging.Contracts;
 
-public interface ILogSinkFactory<in TOptions> where TOptions : SinkOptions.SinkOptions
+public interface ILogSinkFactory
 {
     string Type { get; }
-    ILogSink Create(string name, TOptions options, IServiceProvider sp);
+}
+
+public interface ILogSinkFactory<in TOptions> : ILogSinkFactory where TOptions : SinkOptions.SinkOptions
+{
+    [UsedImplicitly]
+    ILogSink Create(string name, TOptions options);
 }

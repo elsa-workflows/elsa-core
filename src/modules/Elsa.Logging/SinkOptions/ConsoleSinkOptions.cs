@@ -17,5 +17,4 @@ public sealed record ConsoleSinkOptions : SinkOptions
     public LoggerColorBehavior? ColorBehavior { get; init; }
     public bool? SingleLine { get; init; }
     public bool? UseUtcTimestamp { get; init; }
-    public Dictionary<string, LogLevel>? CategoryFilters { get; init; }
 }

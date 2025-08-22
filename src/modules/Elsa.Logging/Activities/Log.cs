@@ -98,6 +98,6 @@ public class Log : CodeActivity
         properties["WorkflowDefinitionVersion"] = context.WorkflowExecutionContext.Workflow.Identity.Version;
         properties["WorkflowInstanceId"] = context.WorkflowExecutionContext.Id;
 
-        await router.WriteAsync(sinkNames, level, message, arguments, properties, cancellationToken);
+        await router.WriteAsync(sinkNames, category, level, message, arguments, properties, cancellationToken);
     }
 }

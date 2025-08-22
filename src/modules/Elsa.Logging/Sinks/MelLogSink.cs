@@ -6,18 +6,19 @@ namespace Elsa.Logging.Sinks;
 /// <summary>
 /// A Microsoft.Extensions.Logging (MEL) sink, built from a private LoggerFactory configured with any providers.
 /// </summary>
-public sealed class MelLogSink(string name, ILoggerFactory factory, string category) : ILogSink
+public sealed class MelLogSink(string name, ILoggerFactory factory) : ILogSink
 {
     public string Name { get; } = name;
-    private readonly ILogger _logger = factory.CreateLogger(category);
 
-    public ValueTask WriteAsync(LogLevel level, string message, object? arguments, IDictionary<string, object?>? properties = null, CancellationToken cancellationToken = default)
+    public ValueTask WriteAsync(string name, LogLevel level, string message, object? arguments, IDictionary<string, object?>? properties = null, CancellationToken cancellationToken = default)
     {
-        if (!_logger.IsEnabled(level))
+        var logger = factory.CreateLogger(name);
+        
+        if (!logger.IsEnabled(level))
             return ValueTask.CompletedTask;
 
-        using var scope = properties is null ? null : _logger.BeginScope(properties);
-        _logger.Log(level, 0, arguments, null, (state, ex) => FormatMessage(message, state));
+        using var scope = properties is null ? null : logger.BeginScope(properties);
+        logger.Log(level, 0, arguments, null, (state, ex) => FormatMessage(message, state));
         return ValueTask.CompletedTask;
     }
 

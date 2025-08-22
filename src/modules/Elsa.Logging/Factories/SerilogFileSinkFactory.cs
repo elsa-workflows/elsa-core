@@ -11,35 +11,40 @@ public sealed class SerilogFileSinkFactory : ILogSinkFactory<SerilogFileSinkOpti
 {
     public string Type => "SerilogFile";
 
-    public ILogSink Create(string name, SerilogFileSinkOptions opt, IServiceProvider sp)
+    public ILogSink Create(string name, SerilogFileSinkOptions options)
     {
         var cfg = new LoggerConfiguration().MinimumLevel.Verbose();
 
-        if (string.Equals(opt.Formatter, "CompactJson", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(options.Formatter, "CompactJson", StringComparison.OrdinalIgnoreCase))
         {
-            cfg = cfg.WriteTo.File(new CompactJsonFormatter(), opt.Path,
-                rollingInterval: MapRolling(opt.RollingInterval),
-                retainedFileCountLimit: opt.RetentionCount);
+            cfg = cfg.WriteTo.File(new CompactJsonFormatter(), options.Path,
+                rollingInterval: MapRolling(options.RollingInterval),
+                retainedFileCountLimit: options.RetentionCount);
         }
         else
         {
-            cfg = cfg.WriteTo.File(opt.Path,
-                rollingInterval: MapRolling(opt.RollingInterval),
-                retainedFileCountLimit: opt.RetentionCount,
-                outputTemplate: string.IsNullOrWhiteSpace(opt.Template)
+            cfg = cfg.WriteTo.File(options.Path,
+                rollingInterval: MapRolling(options.RollingInterval),
+                retainedFileCountLimit: options.RetentionCount,
+                outputTemplate: string.IsNullOrWhiteSpace(options.Template)
                     ? "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
-                    : opt.Template);
+                    : options.Template);
         }
 
         var serilog = cfg.CreateLogger();
-        var privateFactory = LoggerFactory.Create(lb =>
+        var factory = LoggerFactory.Create(lb =>
         {
             lb.ClearProviders();
             lb.AddSerilog(serilog, dispose: true);
-            lb.SetMinimumLevel(opt.MinLevel ?? LogLevel.Information);
+            
+            if (options.CategoryFilters is not null)
+                foreach (var filter in options.CategoryFilters)
+                    lb.AddFilter(filter.Key, filter.Value);
+            
+            lb.SetMinimumLevel(options.MinLevel ?? LogLevel.Information);
         });
 
-        return new MelLogSink(name, privateFactory, opt.DefaultCategory ?? "Elsa.Activity");
+        return new MelLogSink(name, factory);
     }
 
     static RollingInterval MapRolling(string? v) => Enum.TryParse<RollingInterval>(v, true, out var ri) ? ri : RollingInterval.Day;

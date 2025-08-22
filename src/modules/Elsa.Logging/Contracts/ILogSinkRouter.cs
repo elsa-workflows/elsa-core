@@ -6,6 +6,7 @@ public interface ILogSinkRouter
 {
     ValueTask WriteAsync(
         IEnumerable<string> sinkNames,
+        string name,
         LogLevel level,
         string message,
         object? arguments,

@@ -9,11 +9,16 @@ public sealed class ConsoleSinkFactory : ILogSinkFactory<ConsoleSinkOptions>
 {
     public string Type => "Console";
 
-    public ILogSink Create(string name, ConsoleSinkOptions options, IServiceProvider sp)
+    public ILogSink Create(string name, ConsoleSinkOptions options)
     {
         var factory = LoggerFactory.Create(lb =>
         {
             lb.ClearProviders();
+
+            if (options.CategoryFilters is not null)
+                foreach (var filter in options.CategoryFilters)
+                    lb.AddFilter(filter.Key, filter.Value);
+
             var min = options.MinLevel ?? LogLevel.Information;
 
             switch (options.Formatter.ToLowerInvariant())
@@ -47,7 +52,6 @@ public sealed class ConsoleSinkFactory : ILogSinkFactory<ConsoleSinkOptions>
 
             lb.SetMinimumLevel(min);
         });
-
-        return new MelLogSink(name, factory, options.DefaultCategory ?? "Process");
+        return new MelLogSink(name, factory);
     }
 }

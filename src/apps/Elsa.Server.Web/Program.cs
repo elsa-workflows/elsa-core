@@ -751,6 +751,7 @@ services
         {
             lb.ClearProviders();
             lb.AddConsole();
+            lb.AddFilter("Process", LogLevel.Information);
             lb.SetMinimumLevel(LogLevel.Information);
         });
         
@@ -798,10 +799,10 @@ services
         
         elsa.UseLoggingFramework(logging =>
         {
-            logging.AddLogSink(new MelLogSink("Console::Information", informationConsoleLogger, "Process"));
-            logging.AddLogSink(new MelLogSink("Console::Warning", informationConsoleLogger, "Process"));
-            logging.AddLogSink(new MelLogSink("File::Pretty", filePrettyFactory, "Process"));
-            logging.AddLogSink(new MelLogSink("File::Json", fileJsonFactory, "Process"));
+            logging.AddLogSink(new MelLogSink("Console::Information", informationConsoleLogger));
+            logging.AddLogSink(new MelLogSink("Console::Warning", informationConsoleLogger));
+            logging.AddLogSink(new MelLogSink("File::Pretty", filePrettyFactory));
+            logging.AddLogSink(new MelLogSink("File::Json", fileJsonFactory));
         });
         
         elsa.UseWebhooks(webhooks => webhooks.ConfigureSinks += options => builder.Configuration.GetSection("Webhooks").Bind(options));
