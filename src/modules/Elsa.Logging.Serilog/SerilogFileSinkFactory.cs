@@ -1,4 +1,5 @@
 using Elsa.Logging.Contracts;
+using Elsa.Logging.Extensions;
 using Elsa.Logging.Sinks;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -35,11 +36,7 @@ public sealed class SerilogFileSinkFactory : ILogSinkFactory<SerilogFileSinkOpti
         {
             lb.ClearProviders();
             lb.AddSerilog(serilog, dispose: true);
-
-            if (options.CategoryFilters is not null)
-                foreach (var filter in options.CategoryFilters)
-                    lb.AddFilter(filter.Key, filter.Value);
-
+            lb.AddCategoryFilters(options);
             lb.SetMinimumLevel(options.MinLevel ?? LogLevel.Information);
         });
 

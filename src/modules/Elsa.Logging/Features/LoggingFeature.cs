@@ -21,17 +21,6 @@ public class LoggingFeature(IModule module) : FeatureBase(module)
     {
         Module.AddActivity<Log>();
     }
-
-    public LoggingFeature AddLogSinkType<T>() where T : ILogSink
-    {
-        return AddLogSinkType(typeof(T));
-    }
-
-    public LoggingFeature AddLogSinkType(Type sinkType)
-    {
-        Services.Configure<LoggingOptions>(options => options.SinkTypes.Add(sinkType));
-        return this;
-    }
     
     public LoggingFeature AddLogSink(ILogSink sink)
     {
@@ -44,8 +33,6 @@ public class LoggingFeature(IModule module) : FeatureBase(module)
         Services
             .AddScoped<ILogSinkProvider, ConfigurationLogSinkProvider>()
             .AddScoped<ILogSinkProvider, StaticLogSinkProvider>()
-            //.AddScoped<ILogSinkFactory, ConsoleSinkFactory>()
-            //.AddScoped<ILogSinkFactory, SerilogFileSinkFactory>()
             .AddScoped<ILogSinkRouter, LogSinkRouter>()
             .AddScoped<ILogSinkCatalog, LogSinkCatalog>()
             .AddScoped<IPropertyUIHandler, LogSinkCheckListUIHintHandler>();

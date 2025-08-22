@@ -1,4 +1,5 @@
 using Elsa.Logging.Contracts;
+using Elsa.Logging.Extensions;
 using Elsa.Logging.Sinks;
 using Microsoft.Extensions.Logging;
 
@@ -10,20 +11,17 @@ public sealed class ConsoleSinkFactory : ILogSinkFactory<ConsoleSinkOptions>
 
     public ILogSink Create(string name, ConsoleSinkOptions options)
     {
-        var factory = LoggerFactory.Create(lb =>
+        var factory = LoggerFactory.Create(builder =>
         {
-            lb.ClearProviders();
-
-            if (options.CategoryFilters is not null)
-                foreach (var filter in options.CategoryFilters)
-                    lb.AddFilter(filter.Key, filter.Value);
+            builder.ClearProviders();
+            builder.AddCategoryFilters(options);
 
             var min = options.MinLevel ?? LogLevel.Information;
 
             switch (options.Formatter.ToLowerInvariant())
             {
                 case "simple":
-                    lb.AddSimpleConsole(o =>
+                    builder.AddSimpleConsole(o =>
                     {
                         if (options.TimestampFormat is not null) o.TimestampFormat = options.TimestampFormat;
                         if (options.ColorBehavior is not null) o.ColorBehavior = options.ColorBehavior.Value;
@@ -33,14 +31,14 @@ public sealed class ConsoleSinkFactory : ILogSinkFactory<ConsoleSinkOptions>
                     });
                     break;
                 case "systemd":
-                    lb.AddSystemdConsole(o =>
+                    builder.AddSystemdConsole(o =>
                     {
                         if (options.TimestampFormat is not null) o.TimestampFormat = options.TimestampFormat;
                         if (options.IncludeScopes is not null) o.IncludeScopes = options.IncludeScopes.Value;
                     });
                     break;
                 default:
-                    lb.AddConsole(o =>
+                    builder.AddConsole(o =>
                     {
                         if (options.TimestampFormat is not null) o.TimestampFormat = options.TimestampFormat;
                         if (options.DisableColors is not null) o.DisableColors = options.DisableColors.Value;
@@ -49,7 +47,7 @@ public sealed class ConsoleSinkFactory : ILogSinkFactory<ConsoleSinkOptions>
                     break;
             }
 
-            lb.SetMinimumLevel(min);
+            builder.SetMinimumLevel(min);
         });
         return new LoggerSink(name, factory);
     }
