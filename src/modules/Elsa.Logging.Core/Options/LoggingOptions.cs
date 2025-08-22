@@ -13,7 +13,7 @@ public class LoggingOptions
     public HashSet<string> Defaults { get; set; } = new();
     
     /// <summary>
-    /// Sinks registered by the host. To register sinks from configuration, use the <see cref="ILogSinkFactory"/> infrastucture.
+    /// Sinks registered by the host. To register sinks from configuration, use the <see cref="ILogSinkFactory"/> infrastructure.
     /// </summary>
     public ICollection<ILogSink> Sinks { get; set; } = new List<ILogSink>();
 }
