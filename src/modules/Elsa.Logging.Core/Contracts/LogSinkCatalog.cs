@@ -1,11 +1,15 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Elsa.Logging.Contracts;
 
-public class LogSinkCatalog(IEnumerable<ILogSinkProvider> providers) : ILogSinkCatalog
+public class LogSinkCatalog(IServiceScopeFactory scopeFactory) : ILogSinkCatalog
 {
-    private readonly Lazy<Task<List<ILogSink>>> _sinksLazy = new(() => LoadSinksAsync(providers), LazyThreadSafetyMode.ExecutionAndPublication);
+    private readonly Lazy<Task<List<ILogSink>>> _sinksLazy = new(() => LoadSinksAsync(scopeFactory), LazyThreadSafetyMode.ExecutionAndPublication);
 
-    private static async Task<List<ILogSink>> LoadSinksAsync(IEnumerable<ILogSinkProvider> providers, CancellationToken cancellationToken = default)
+    private static async Task<List<ILogSink>> LoadSinksAsync(IServiceScopeFactory scopeFactory, CancellationToken cancellationToken = default)
     {
+        using var scope = scopeFactory.CreateScope();
+        var providers = scope.ServiceProvider.GetServices<ILogSinkProvider>();
         var allSinks = new List<ILogSink>();
         foreach (var provider in providers)
         {

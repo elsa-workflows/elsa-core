@@ -28,13 +28,25 @@ public class LoggingFeature(IModule module) : FeatureBase(module)
         return this;
     }
 
+    public LoggingFeature ConfigureDefaults(params string[] defaults)
+    {
+        ConfigureDefaults(options => options.Defaults = [..defaults]);
+        return this;   
+    }
+    
+    public LoggingFeature ConfigureDefaults(Action<LoggingOptions> configure)
+    {
+        Services.Configure(configure);
+        return this;   
+    }
+
     public override void Apply()
     {
         Services
             .AddScoped<ILogSinkProvider, ConfigurationLogSinkProvider>()
             .AddScoped<ILogSinkProvider, StaticLogSinkProvider>()
             .AddScoped<ILogSinkRouter, LogSinkRouter>()
-            .AddScoped<ILogSinkCatalog, LogSinkCatalog>()
-            .AddScoped<IPropertyUIHandler, LogSinkCheckListUIHintHandler>();
+            .AddScoped<IPropertyUIHandler, LogSinkCheckListUIHintHandler>()
+            .AddSingleton<ILogSinkCatalog, LogSinkCatalog>();
     }
 }

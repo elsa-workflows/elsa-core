@@ -799,6 +799,10 @@ services
         {
             logging.UseConsole();
             logging.UseSerilog();
+            logging.ConfigureDefaults(options =>
+            {
+                configuration.GetSection("LoggingFramework").Bind(options);
+            });
             logging.AddLogSink(new LoggerSink("Console::Information", informationConsoleLogger));
             logging.AddLogSink(new LoggerSink("Console::Warning", informationConsoleLogger));
             logging.AddLogSink(new LoggerSink("File::Pretty", filePrettyFactory));
