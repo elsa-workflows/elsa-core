@@ -3,6 +3,13 @@ using Microsoft.Extensions.Logging.Console;
 
 namespace Elsa.Logging.Console;
 
+/// <summary>
+/// Represents configuration options for a console-based log sink.
+/// </summary>
+/// <remarks>
+/// Provides properties to configure the appearance and behavior of log output when using a console sink.
+/// Includes support for various log formatter types, timestamp customization, and scope inclusion settings.
+/// </remarks>
 public sealed record ConsoleLogSinkOptions : LogSinkOptions
 {
     // "Default" | "Simple" | "Systemd"

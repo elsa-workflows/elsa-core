@@ -2,6 +2,9 @@ using Elsa.Logging.Models;
 
 namespace Elsa.Logging.Serilog;
 
+/// <summary>
+/// Provides configuration options for a Serilog-based log sink.
+/// </summary>
 public sealed record SerilogLogSinkOptions : LogSinkOptions
 {
     public string Path { get; init; } = "";

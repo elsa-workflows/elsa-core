@@ -15,6 +15,7 @@ namespace Elsa.Logging;
 [DependsOn(typeof(LoggingFeature))]
 public class ConsoleLoggingFeature(IModule module) : FeatureBase(module)
 {
+    /// <inheritdoc/>
     public override void Apply()
     {
         Services.AddScoped<ILogSinkFactory, ConsoleLogSinkFactory>();

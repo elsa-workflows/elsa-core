@@ -4,7 +4,8 @@ using Elsa.Logging.Models;
 
 namespace Elsa.Logging.Services;
 
-public class LogEntryQueue : ILogEntryQueue
+/// <inheritdoc />
+internal class LogEntryQueue : ILogEntryQueue
 {
     private readonly Channel<LogEntryInstruction> _channel = Channel.CreateUnbounded<LogEntryInstruction>();
 

@@ -6,6 +6,10 @@ using Elsa.Logging.Serilog;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Logging.Extensions;
 
+/// <summary>
+/// Provides extension methods for configuring logging features within the Elsa framework,
+/// including support for Serilog logging.
+/// </summary>
 public static class LoggingFeatureExtensions
 {
     /// <summary>

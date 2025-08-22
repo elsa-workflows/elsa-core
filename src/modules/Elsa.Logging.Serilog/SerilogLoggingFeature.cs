@@ -13,6 +13,7 @@ namespace Elsa.Logging.Serilog;
 [DependsOn(typeof(LoggingFeature))]
 public class SerilogLoggingFeature(IModule module) : FeatureBase(module)
 {
+    /// <inheritdoc/>
     public override void Apply()
     {
         Services

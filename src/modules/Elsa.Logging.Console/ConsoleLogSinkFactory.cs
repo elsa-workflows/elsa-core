@@ -5,10 +5,22 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Logging.Console;
 
+/// <summary>
+/// A log sink factory implementation for creating console-based log sinks.
+/// </summary>
+/// <remarks>
+/// This factory is responsible for setting up and configuring console-based log sinks using
+/// the <see cref="ConsoleLogSinkOptions"/> provided. It supports multiple formatter configurations
+/// like "simple", "systemd", or default console logging. It also allows customization of aspects
+/// such as timestamp format, color behavior, and log level.
+/// </remarks>
+/// <seealso cref="ILogSinkFactory{ConsoleLogSinkOptions}" />
 public sealed class ConsoleLogSinkFactory : ILogSinkFactory<ConsoleLogSinkOptions>
 {
+    /// <inheritdoc/>
     public string Type => "Console";
 
+    /// <inheritdoc/>
     public ILogSink Create(string name, ConsoleLogSinkOptions options)
     {
         var factory = LoggerFactory.Create(builder =>

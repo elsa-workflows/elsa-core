@@ -7,10 +7,17 @@ using Serilog.Formatting.Compact;
 
 namespace Elsa.Logging.Serilog;
 
+/// <summary>
+/// A factory for creating instances of log sinks configured for use with Serilog. This class implements
+/// the <see cref="ILogSinkFactory{TOptions}"/> interface and provides the capability to create Serilog-based
+/// logging instances based on the provided options.
+/// </summary>
 public sealed class SerilogLogSinkFactory : ILogSinkFactory<SerilogLogSinkOptions>
 {
+    /// <inheritdoc/>
     public string Type => "Serilog";
 
+    /// <inheritdoc/>
     public ILogSink Create(string name, SerilogLogSinkOptions options)
     {
         var cfg = new LoggerConfiguration().MinimumLevel.Verbose();

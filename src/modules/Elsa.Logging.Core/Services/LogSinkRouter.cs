@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Logging.Services;
 
+/// <inheritdoc />
 public sealed class LogSinkRouter : ILogSinkRouter
 {
     private readonly ILogSinkCatalog _catalog;

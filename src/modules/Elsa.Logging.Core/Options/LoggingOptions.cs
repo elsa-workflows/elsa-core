@@ -2,6 +2,9 @@ using Elsa.Logging.Contracts;
 
 namespace Elsa.Logging.Options;
 
+/// <summary>
+/// Represents configuration options for logging within the system.
+/// </summary>
 public class LoggingOptions
 {
     /// <summary>

@@ -883,16 +883,3 @@ public partial class Program
     /// </summary>
     public static Action<IModule>? ConfigureForTest { get; set; }
 }
-
-public class CustomPurpleConsoleFormatter : ConsoleFormatter
-{
-    public CustomPurpleConsoleFormatter() : base("custom") { }
-            
-    public override void Write<TState>(in LogEntry<TState> logEntry, IExternalScopeProvider? scopeProvider, TextWriter textWriter)
-    {
-        var originalColor = Console.ForegroundColor;
-        Console.ForegroundColor = ConsoleColor.Magenta; // Purple
-        textWriter.WriteLine($"{logEntry.Formatter?.Invoke(logEntry.State, logEntry.Exception)}");
-        Console.ForegroundColor = originalColor;
-    }
-}

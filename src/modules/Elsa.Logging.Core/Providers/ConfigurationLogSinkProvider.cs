@@ -9,6 +9,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Logging.Providers;
 
+/// <summary>
+/// Provides a log sink provider that retrieves log sinks based on configuration settings.
+/// This implementation uses the application's configuration and a collection of log sink factories
+/// to instantiate the required log sinks.
+/// </summary>
 public class ConfigurationLogSinkProvider : ILogSinkProvider
 {
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()

@@ -5,6 +5,9 @@ using Elsa.Logging.Features;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Logging.Extensions;
 
+/// <summary>
+/// Provides extension methods for enhancing the functionality of the <see cref="LoggingFeature"/>.
+/// </summary>
 public static class LoggingFeatureExtensions
 {
     /// <summary>
