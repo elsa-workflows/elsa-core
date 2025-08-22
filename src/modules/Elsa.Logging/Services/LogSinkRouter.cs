@@ -16,15 +16,17 @@ public sealed class LogSinkRouter : ILogSinkRouter
         _defaults = (defaults ?? []).ToArray();
     }
 
-    public async ValueTask WriteAsync(IEnumerable<string> targetNames, LogLevel level, string message, IReadOnlyDictionary<string, object?>? properties = null, CancellationToken cancellationToken = default)
+    public async ValueTask WriteAsync(IEnumerable<string> sinkNames, LogLevel level, string message, IEnumerable<object?> arguments, IDictionary<string, object?>? attributes = null, CancellationToken cancellationToken = default)
     {
-        var targetNamesArray = targetNames as string[] ?? targetNames.ToArray();
+        var targetNamesArray = sinkNames as string[] ?? sinkNames.ToArray();
         var names = targetNamesArray.Any() ? targetNamesArray : _defaults;
         var uniqueNames = new HashSet<string>(names, StringComparer.OrdinalIgnoreCase);
         var targets = await _lazyTargets.Value;
+        var argumentsArray = arguments as object?[] ?? arguments.ToArray();
+        
         foreach (var n in uniqueNames)
             if (targets.TryGetValue(n, out var t))
-                await t.WriteAsync(level, message, properties, cancellationToken);
+                await t.WriteAsync(level, message, argumentsArray, attributes, cancellationToken);
     }
 
     private async Task<IDictionary<string, ILogSink>> GetLogSinksAsync()

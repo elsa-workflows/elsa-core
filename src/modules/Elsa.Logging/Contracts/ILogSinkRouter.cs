@@ -5,9 +5,10 @@ namespace Elsa.Logging.Contracts;
 public interface ILogSinkRouter
 {
     ValueTask WriteAsync(
-        IEnumerable<string> targetNames,
+        IEnumerable<string> sinkNames,
         LogLevel level,
         string message,
-        IReadOnlyDictionary<string, object?>? properties = null,
+        IEnumerable<object?> arguments,
+        IDictionary<string, object?>? attributes = null,
         CancellationToken ct = default);
 }

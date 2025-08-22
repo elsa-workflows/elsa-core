@@ -11,10 +11,13 @@ public sealed class MelLogSink(string name, ILoggerFactory factory, string categ
     public string Name { get; } = name;
     private readonly ILogger _logger = factory.CreateLogger(category);
 
-    public ValueTask WriteAsync(LogLevel level, string message, IReadOnlyDictionary<string, object?>? properties = null, CancellationToken cancellationToken = default)
+    public ValueTask WriteAsync(LogLevel level, string message, IEnumerable<object?> arguments, IDictionary<string, object?>? properties = null, CancellationToken cancellationToken = default)
     {
+        if (!_logger.IsEnabled(level))
+            return ValueTask.CompletedTask;
+
         using var scope = properties is null ? null : _logger.BeginScope(properties);
-        _logger.Log(level, new(0, Name), message, null, (s, e) => s!);
+        _logger.Log(level, message, null, arguments.ToArray());
         return ValueTask.CompletedTask;
     }
 }
