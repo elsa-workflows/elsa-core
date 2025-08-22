@@ -11,8 +11,7 @@ public class LogSinkCatalog(IServiceScopeFactory scopeFactory) : ILogSinkCatalog
     /// <inheritdoc />
     public async Task<IEnumerable<ILogSink>> ListAsync(CancellationToken cancellationToken = default)
     {
-        var sinks = await _sinksLazy.Value;
-        return sinks;
+        return await _sinksLazy.Value;
     }
 
     /// <inheritdoc />
