@@ -28,7 +28,7 @@ public class HelloWorldTests(App app) : AppComponentTest(app)
     {
         var scenario = new Scenario
         {
-            Id = "1590068018aa4f0a",
+            Id = "1",
             Name = "HelloWorldWorkflow_ShouldFinish",
             Assertions =
             [
