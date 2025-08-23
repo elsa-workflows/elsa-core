@@ -24,7 +24,7 @@ public class HelloWorldTests(App app) : AppComponentTest(app)
     }
     
     [Fact]
-    public async Task HelloWorldWorkflow_ShouldReturnOk2()
+    public async Task HelloWorldWorkflow_ShouldFinish()
     {
         var scenario = new Scenario
         {
