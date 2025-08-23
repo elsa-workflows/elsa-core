@@ -250,7 +250,7 @@ public static partial class ActivityExecutionContextExtensions
     public static async ValueTask ScheduleOutcomesAsync(this ActivityExecutionContext context, params string[] outcomes)
     {
         // Record the outcomes, if any.
-        context.JournalData["Outcomes"] = outcomes;
+        context.SetOutcomes(outcomes);
 
         // Record the output, if any.
         var activity = context.Activity;
@@ -274,6 +274,16 @@ public static partial class ActivityExecutionContextExtensions
 
         // Send a signal.
         await context.SendSignalAsync(new ScheduleActivityOutcomes(outcomes));
+    }
+
+    public static void SetOutcomes(this ActivityExecutionContext context, ICollection<string> outcomes)
+    {
+        context.JournalData["Outcomes"] = outcomes;
+    }
+
+    public static ICollection<string> GetOutcomes(this ActivityExecutionContext context)
+    {
+        return context.JournalData.TryGetValue("Outcomes", out var outcomes) ? (ICollection<string>)outcomes : new List<string>();
     }
 
     /// <summary>

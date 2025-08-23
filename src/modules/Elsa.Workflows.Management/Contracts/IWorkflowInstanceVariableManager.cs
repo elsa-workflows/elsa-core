@@ -9,7 +9,7 @@ public interface IWorkflowInstanceVariableManager
     /// <param name="excludeTags"></param>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains a collection of <see cref="ResolvedVariable"/> instances.</returns>
-    Task<IEnumerable<ResolvedVariable>> GetVariablesAsync(string workflowInstanceId, IEnumerable<string>? excludeTags = default, CancellationToken cancellationToken = default);
+    Task<IEnumerable<ResolvedVariable>> GetVariablesAsync(string workflowInstanceId, IEnumerable<string>? excludeTags = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retrieves all variables from the specified <see cref="WorkflowExecutionContext"/>.
@@ -18,7 +18,7 @@ public interface IWorkflowInstanceVariableManager
     /// <param name="excludeTags"></param>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains a collection of <see cref="ResolvedVariable"/> instances.</returns>
-    Task<IEnumerable<ResolvedVariable>> GetVariablesAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<string>? excludeTags = default, CancellationToken cancellationToken = default);
+    Task<IEnumerable<ResolvedVariable>> GetVariablesAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<string>? excludeTags = null, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Sets the specified variables in the specified workflow instance.

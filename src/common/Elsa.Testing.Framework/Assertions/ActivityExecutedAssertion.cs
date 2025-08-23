@@ -1,9 +1,11 @@
 using Elsa.Testing.Framework.Abstractions;
 using Elsa.Testing.Framework.Models;
 using Elsa.Testing.Framework.Services;
+using JetBrains.Annotations;
 
 namespace Elsa.Testing.Framework.Assertions;
 
+[UsedImplicitly]
 public class ActivityExecutedAssertion : Assertion
 {
     public string ActivityId { get; set; } = null!;
@@ -16,8 +18,7 @@ public class ActivityExecutedAssertion : Assertion
         var executed = tracer.ContainsActivityExecution(ActivityId);
         var result = new AssertionResult
         {
-            AssertionId = Id,
-            IsSuccessful = executed == ExpectedExecuted,
+            Passed = executed == ExpectedExecuted,
             ErrorMessage = executed == ExpectedExecuted ? null : $"Activity with ID '{ActivityId}' was {(executed ? "" : "not ")}executed as expected."
         };
         return Task.FromResult(result);

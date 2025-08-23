@@ -39,7 +39,7 @@ public partial class ActivityExecutionContext
 
         // Record the outcomes, if any.
         if (outcomes != null)
-            JournalData["Outcomes"] = outcomes.Names;
+            this.SetOutcomes(outcomes.Names);
 
         // Add an execution log entry.
         AddExecutionLogEntry("Completed");

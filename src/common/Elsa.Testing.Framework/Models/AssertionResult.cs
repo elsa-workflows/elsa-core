@@ -2,7 +2,17 @@ namespace Elsa.Testing.Framework.Models;
 
 public class AssertionResult
 {
-    public string AssertionId { get; set; } = null!;
-    public bool IsSuccessful { get; set; }
+    public bool Passed { get; set; }
     public string? ErrorMessage { get; set; }
+
+    public static AssertionResult Pass() => new()
+    {
+        Passed = true
+    };
+
+    public static AssertionResult Fail(string errorMessage) => new()
+    {
+        Passed = false,
+        ErrorMessage = errorMessage
+    };
 }
