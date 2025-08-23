@@ -56,6 +56,6 @@ public class WorkflowTestScenarioRunner(IWorkflowDefinitionService workflowDefin
         }
 
         var resultStatus = assertionResults.All(x => x.Passed) ? TestResultStatus.Passed : TestResultStatus.Failed;
-        return new(scenario.Id, resultStatus, assertionResults);
+        return new(resultStatus, assertionResults);
     }
 }
