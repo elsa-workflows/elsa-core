@@ -1,6 +1,6 @@
 # Logging Framework
 
-The logging framework provides a flexible and extensible way to capture, structure, and route log entries to various sinks.
+The **Elsa.Logging** module provides a flexible and extensible way to capture, structure, and route log entries to various sinks.
 You can configure logging programmatically or via configuration files, and extend the framework with custom sinks for complete control.
 
 ## Programmatic Configuration
@@ -8,13 +8,48 @@ You can configure logging programmatically or via configuration files, and exten
 You can configure logging sinks directly in your application code. For example, in your `Program.cs`:
 
 ```csharp
+// 1) Console target via built-in provider
+var consoleLogger = LoggerFactory.Create(lb =>
+{
+    lb.ClearProviders();
+    lb.AddConsole();
+    lb.AddFilter("Demo", LogLevel.Debug);
+    lb.SetMinimumLevel(LogLevel.Information);
+});
+
+// 2) Pretty File target via Serilog (text template)
+var filePrettyFactory = LoggerFactory.Create(lb =>
+{
+    var serilogConfig = new LoggerConfiguration()
+        .MinimumLevel.Information()
+        .WriteTo.File("App_Data/logs/activity-pretty-.log",
+            rollingInterval: RollingInterval.Day,
+            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+        .CreateLogger();
+
+    lb.ClearProviders();
+    lb.AddFilter("Demo", LogLevel.Debug);
+    lb.AddSerilog(serilogConfig, dispose: true);
+});
+
+// 3) JSON File target via Serilog (compact JSON)
+var fileJsonFactory = LoggerFactory.Create(lb =>
+{
+    var serilogJson = new LoggerConfiguration()
+        .MinimumLevel.Debug()
+        .WriteTo.File(new CompactJsonFormatter(), "App_Data/logs/activity-json-.log",
+            rollingInterval: RollingInterval.Day)
+        .CreateLogger();
+
+    lb.ClearProviders();
+    lb.AddSerilog(serilogJson, dispose: true);
+});
+
 elsa.UseLoggingFramework(logging =>
 {
-    // Use built-in sinks.
+    // Get sinks from configuration.
     logging.UseConsole();
     logging.UseSerilog();
-
-    // Configure sinks from appsettings.json.
     logging.ConfigureDefaults(options => configuration.GetSection("LoggingFramework").Bind(options));
 
     // Add sinks manually.
@@ -24,7 +59,7 @@ elsa.UseLoggingFramework(logging =>
 });
 ```
 
-This example demonstrates how to use built-in sinks, bind configuration from `appsettings.json`, and manually add custom sinks.
+This example demonstrates how to create custom sinks, register built-in sink factories, bind configuration from `appsettings.json`, and manually add sinks.
 
 ## Configuration via appsettings.json
 
@@ -81,16 +116,40 @@ You can also configure logging sinks declaratively in your `appsettings.json` fi
 
 Each sink specifies its type, name, and options. Elsa will automatically discover and configure these sinks at startup.
 
+## Log Levels and Categories
+
+Log sinks follow the same filtering semantics as the built-in ASP.NET Core logging system. Each sink defines a minimum log level and may specify category-specific overrides. When a workflow emits a log entry, the value provided to the **Category** input of the `Log` activity is used to evaluate these filters.
+
+For example, the following `.NET` logging configuration allows `Warning` and higher by default, but only `Information` and higher for `Microsoft.Hosting.Lifetime`:
+
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  }
+}
+```
+
+You can achieve the same behavior with the `LoggingFramework` section when configuring sinks. A sink with the configuration shown earlier emits entries only if the log level for the specified category is enabled. This means that choosing `Category = "Process.Nested"` on the `Log` activity will use the `Debug` level override from the example configuration, while `Category = "Process.Nested.Inner"` will drop entries below `Information`.
+
 ## Log Activity
 
-Elsa provides a built-in `Log` activity for emitting structured log entries from workflows. The activity supports the following properties:
+Workflow designers can drop a **Log** activity onto the canvas to emit structured log entries from a workflow.  
+The `Message` input supports [message templates](https://learn.microsoft.com/en-us/dotnet/core/extensions/logging#log-message-template), allowing placeholders such as `Hello {Name}` to be replaced with runtime values provided through the **Arguments** input.
 
-- **Message**: The log message to emit.
+The activity exposes the following properties:
+
+- **Message**: The log message template to emit.
 - **Level**: The log level (Trace, Debug, Information, Warning, Error, Critical).
 - **Category**: The log category (defaults to "Process").
-- **Arguments**: Values for placeholders in the log message.
+- **Arguments**: Values for named or indexed placeholders in the message template.
 - **Attributes**: Additional key/value pairs to include as attributes.
-- **SinkNames**: Target sinks to write to (can be selected from available sinks).
+- **SinkNames**: Target sinks to write to (appears as a check list of available sinks).
+
+When the application exposes multiple sinks, they appear in the **Sinks** picker so the workflow author can choose one or more destinations for the log entry.
 
 Example usage in a workflow:
 
@@ -111,7 +170,7 @@ new Log
 
 ## Extending with Custom Sinks
 
-For complete control over logging, it is recommended to implement your own `ILogSinkFactory`. This allows you to create custom logging sinks tailored to your requirements. Elsa provides examples such as `ConsoleLogSinkFactory` and `SerilogLogSinkFactory` that you can use as references.
+For complete control over logging, implement your own `ILogSinkFactory`. A factory can construct sinks in code and from configuration (for example via `appsettings.json`), enabling reusable and configurable logging targets. Elsa provides examples such as `ConsoleLogSinkFactory` and `SerilogLogSinkFactory` that you can use as references.
 
 To implement a custom sink:
 
@@ -133,6 +192,24 @@ public class MyCustomLogSinkFactory : ILogSinkFactory<MyCustomOptions>
 
 // Register in DI:
 services.AddScoped<ILogSinkFactory, MyCustomLogSinkFactory>();
+```
+
+Once registered, the factory can be used from configuration:
+
+```json
+{
+  "LoggingFramework": {
+    "Sinks": [
+      {
+        "Type": "MyCustom",
+        "Name": "MySink",
+        "Options": {
+          // Custom option values
+        }
+      }
+    ]
+  }
+}
 ```
 
 ## References
