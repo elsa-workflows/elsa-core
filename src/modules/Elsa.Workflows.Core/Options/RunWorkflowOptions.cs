@@ -1,5 +1,4 @@
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Pipelines.WorkflowExecution;
 
 namespace Elsa.Workflows.Options;
 
@@ -22,5 +21,7 @@ public class RunWorkflowOptions
     /// Optionally specifies a custom workflow execution pipeline to use when running the workflow.
     /// If not specified, the default pipeline will be used.
     /// </summary>
-    public WorkflowMiddlewareDelegate? Pipeline { get; set; }
+    public IWorkflowExecutionPipeline? WorkflowExecutionPipeline { get; set; }
+    
+    public IActivityExecutionPipeline? ActivityExecutionPipeline { get; set; }
 }

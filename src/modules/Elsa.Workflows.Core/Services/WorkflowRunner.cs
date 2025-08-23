@@ -14,7 +14,8 @@ namespace Elsa.Workflows;
 /// <inheritdoc />
 public class WorkflowRunner(
     IServiceProvider serviceProvider,
-    IWorkflowExecutionPipeline pipeline,
+    IWorkflowExecutionPipeline defaultWorkflowExecutionPipeline ,
+    IActivityExecutionPipeline defaultActivityExecutionPipeline,
     IWorkflowStateExtractor workflowStateExtractor,
     IWorkflowBuilderFactory workflowBuilderFactory,
     IWorkflowGraphBuilder workflowGraphBuilder,
@@ -90,7 +91,7 @@ public class WorkflowRunner(
         // Schedule the first activity.
         workflowExecutionContext.ScheduleWorkflow();
 
-        return await RunAsync(workflowExecutionContext);
+        return await RunAsync(workflowExecutionContext, options?.WorkflowExecutionPipeline, options?.ActivityExecutionPipeline);
     }
 
     /// <inheritdoc />
@@ -194,11 +195,11 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
-        return RunAsync(workflowExecutionContext, pipeline);
+        return RunAsync(workflowExecutionContext, defaultWorkflowExecutionPipeline, defaultActivityExecutionPipeline);
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext, IWorkflowExecutionPipeline customPipeline)
+    public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext, IWorkflowExecutionPipeline? workflowExecutionPipeline, IActivityExecutionPipeline? activityExecutionPipeline)
     {
         var loggerState = loggerStateGenerator.GenerateLoggerState(workflowExecutionContext);
         using var loggingScope = logger.BeginScope(loggerState);
@@ -213,8 +214,9 @@ public class WorkflowRunner(
             workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
             await notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), cancellationToken);
         }
-
-        await customPipeline.ExecuteAsync(workflowExecutionContext);
+        
+        workflowExecutionContext.TransientProperties[typeof(IActivityExecutionPipeline)] = activityExecutionPipeline ?? defaultActivityExecutionPipeline;;
+        await (workflowExecutionPipeline ?? defaultWorkflowExecutionPipeline).ExecuteAsync(workflowExecutionContext);
         var workflowState = workflowStateExtractor.Extract(workflowExecutionContext);
 
         if (workflowState.Status == WorkflowStatus.Finished)

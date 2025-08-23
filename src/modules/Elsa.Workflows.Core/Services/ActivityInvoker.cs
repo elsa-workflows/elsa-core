@@ -5,7 +5,7 @@ namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class ActivityInvoker(
-    IActivityExecutionPipeline pipeline,
+    IActivityExecutionPipeline defaultPipeline,
     ILoggerStateGenerator<ActivityExecutionContext> loggerStateGenerator,
     ILogger<ActivityInvoker> logger)
     : IActivityInvoker
@@ -44,6 +44,11 @@ public class ActivityInvoker(
         var loggerState = loggerStateGenerator.GenerateLoggerState(activityExecutionContext);
         using var loggingScope = logger.BeginScope(loggerState);
 
+        // Get the activity execution pipeline.
+        var pipeline = activityExecutionContext.WorkflowExecutionContext.TransientProperties.TryGetValue(typeof(IActivityExecutionPipeline), out var pipelineObject) 
+            ? (IActivityExecutionPipeline)pipelineObject 
+            : defaultPipeline;
+        
         // Execute the activity execution pipeline.
         await pipeline.ExecuteAsync(activityExecutionContext);
     }

@@ -19,19 +19,25 @@ public class WorkflowTestScenarioRunner(IWorkflowDefinitionService workflowDefin
         if (workflowGraph is null)
             throw new InvalidOperationException($"Workflow graph with handle {scenario.WorkflowDefinitionHandle} not found.");
 
-        var workflowExecutionPipelineBuilder = new WorkflowExecutionPipelineBuilder(serviceProvider);
-        workflowExecutionPipelineBuilder.UseExceptionHandling();
-        workflowExecutionPipelineBuilder.UseDefaultActivityScheduler();
+        var workflowExecutionPipeline = new WorkflowExecutionPipeline(serviceProvider, builder =>
+        {
+            builder.UseExceptionHandling();
+            builder.UseDefaultActivityScheduler();
+        });
 
-        var activityExecutionPipelineBuilder = new ActivityExecutionPipelineBuilder(serviceProvider);
-        activityExecutionPipelineBuilder.UseExceptionHandling();
-        activityExecutionPipelineBuilder.UseMiddleware<ActivityExecutionTracerMiddleware>();
-        activityExecutionPipelineBuilder.UseDefaultActivityInvoker();
+        var activityExecutionPipelineBuilder = new ActivityExecutionPipeline(serviceProvider, builder =>
+        {
+            builder.UseExceptionHandling();
+            builder.UseMiddleware<ActivityExecutionTracerMiddleware>();
+            builder.UseDefaultActivityInvoker();
+        });
 
         var runOptions = new RunWorkflowOptions
         {
             Input = scenario.Input,
-            Variables = scenario.Variables
+            Variables = scenario.Variables,
+            WorkflowExecutionPipeline = workflowExecutionPipeline,
+            ActivityExecutionPipeline = activityExecutionPipelineBuilder
         };
 
         var runResult = await workflowRunner.RunAsync(workflowGraph, runOptions, cancellationToken);
@@ -40,7 +46,7 @@ public class WorkflowTestScenarioRunner(IWorkflowDefinitionService workflowDefin
         {
             RunWorkflowResult = runResult,
             CancellationToken = cancellationToken,
-            ServiceProvider = serviceProvider
+            ServiceProvider = serviceProvider,
         };
 
         foreach (var assertion in scenario.Assertions)

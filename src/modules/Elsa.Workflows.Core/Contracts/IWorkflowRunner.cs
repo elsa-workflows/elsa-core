@@ -20,5 +20,5 @@ public interface IWorkflowRunner
     Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default);
     Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default);
     Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext);
-    Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext, IWorkflowExecutionPipeline customPipeline);
+    Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext, IWorkflowExecutionPipeline workflowExecutionPipeline, IActivityExecutionPipeline activityExecutionPipeline);
 }

@@ -86,6 +86,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 .AddNotificationHandlersFrom<WorkflowServer>()
                 .AddWorkflowDefinitionProvider<TestWorkflowProvider>()
                 .Decorate<IChangeTokenSignaler, EventPublishingChangeTokenSignaler>()
+                .AddTestingFramework()
                 ;
         });
     }
