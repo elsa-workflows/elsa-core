@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.Logging.Models;
 
 /// <summary>
-/// Represents the instruction for a log entry, including the details of the log message, its level, category, associated sinks, arguments, and additional attributes.
+/// Represents the instruction for a log entry to be added to a queue, including the details of the log message, its level, category, associated sinks, arguments, and additional attributes.
 /// </summary>
 public class LogEntryInstruction
 {

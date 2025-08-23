@@ -14,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Logging.Features;
 
 /// <summary>
-/// A feature that installs Logging services for Elsa.
+/// A feature that installs Logging services for dynamic log sink configuration.
 /// </summary>
 public class LoggingFeature(IModule module) : FeatureBase(module)
 {
