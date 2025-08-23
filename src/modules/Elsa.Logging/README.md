@@ -87,7 +87,7 @@ Elsa provides a built-in `Log` activity for emitting structured log entries from
 
 - **Message**: The log message to emit.
 - **Level**: The log level (Trace, Debug, Information, Warning, Error, Critical).
-- **Category**: The log category (defaults to "Workflow").
+- **Category**: The log category (defaults to "Process").
 - **Arguments**: Values for placeholders in the log message.
 - **Attributes**: Additional key/value pairs to include as attributes.
 - **SinkNames**: Target sinks to write to (can be selected from available sinks).

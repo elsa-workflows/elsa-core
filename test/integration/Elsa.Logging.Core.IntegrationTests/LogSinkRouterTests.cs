@@ -9,7 +9,7 @@ using Moq;
 
 namespace Elsa.Logging.Core.IntegrationTests;
 
-public class LoggingIntegrationTests
+public class LogSinkRouterTests
 {
     [Fact]
     public async Task LogEntryInstruction_ShouldFlowThroughQueueAndRouterToSink()

@@ -45,7 +45,11 @@ public class ConfigurationLogSinkProvider : ILogSinkProvider
     private IEnumerable<ILogSink> GetLogSinks()
     {
         var json = _configuration.GetSectionAsJson("LoggingFramework:Sinks");
-        var specs = JsonSerializer.Deserialize<List<LogSinkEnvelope>>(json, _jsonSerializerOptions)!;
+        var specs = JsonSerializer.Deserialize<List<LogSinkEnvelope>>(json, _jsonSerializerOptions);
+        
+        if (specs == null)
+            return [];
+        
         var builtSinks = new List<ILogSink>();
 
         foreach (var spec in specs)

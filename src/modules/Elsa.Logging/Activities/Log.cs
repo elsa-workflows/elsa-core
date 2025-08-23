@@ -61,8 +61,8 @@ public class Log : CodeActivity
     /// <summary>
     /// The log message.
     /// </summary>
-    [Input(Description = "The category. Defaults to 'Workflow'.", DefaultValue = "Workflow")]
-    public Input<string> Category { get; set; } = new("Workflow");
+    [Input(Description = "The category. Defaults to 'Process'.", DefaultValue = "Process")]
+    public Input<string> Category { get; set; } = new("Process");
 
     /// <summary>
     /// Additional attributes to include in the log entry.
@@ -93,7 +93,7 @@ public class Log : CodeActivity
         var attributes = Attributes.GetOrDefault(context) ?? new Dictionary<string, object?>();
         var sinkNames = SinkNames.GetOrDefault(context) ?? new List<string>();
         var category = Category.GetOrDefault(context);
-        if (string.IsNullOrWhiteSpace(category)) category = "Workflow";
+        if (string.IsNullOrWhiteSpace(category)) category = "Process";
 
         attributes["WorkflowDefinitionId"] = context.WorkflowExecutionContext.Workflow.Identity.DefinitionId;
         attributes["WorkflowDefinitionVersionId"] = context.WorkflowExecutionContext.Workflow.Identity.Id;
