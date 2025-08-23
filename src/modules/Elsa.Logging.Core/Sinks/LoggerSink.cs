@@ -12,14 +12,14 @@ public sealed class LoggerSink(string name, ILoggerFactory factory) : ILogSink
     public string Name { get; } = name;
 
     /// <inheritdoc/>
-    public ValueTask WriteAsync(string name, LogLevel level, string message, object? arguments, IDictionary<string, object?>? properties = null, CancellationToken cancellationToken = default)
+    public ValueTask WriteAsync(string name, LogLevel level, string message, object? arguments, IDictionary<string, object?>? attributes = null, CancellationToken cancellationToken = default)
     {
         var logger = factory.CreateLogger(name);
 
         if (!logger.IsEnabled(level))
             return ValueTask.CompletedTask;
 
-        using var scope = properties is null ? null : logger.BeginScope(properties);
+        using var scope = attributes is null ? null : logger.BeginScope(attributes);
         logger.Log(level, 0, arguments, null, (state, ex) => FormatMessage(message, state));
         return ValueTask.CompletedTask;
     }

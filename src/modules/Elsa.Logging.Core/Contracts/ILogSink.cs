@@ -21,7 +21,7 @@ public interface ILogSink
     /// <param name="level">The severity level of the log entry.</param>
     /// <param name="message">The message to be logged.</param>
     /// <param name="arguments">Optional arguments related to the message.</param>
-    /// <param name="properties">Optional additional log properties.</param>
+    /// <param name="attributes">Optional additional log attributes.</param>
     /// <param name="cancellationToken">Cancellation token to observe while waiting for the task to complete.</param>
-    ValueTask WriteAsync(string name, LogLevel level, string message, object? arguments, IDictionary<string, object?>? properties = null, CancellationToken cancellationToken = default);
+    ValueTask WriteAsync(string name, LogLevel level, string message, object? arguments, IDictionary<string, object?>? attributes = null, CancellationToken cancellationToken = default);
 }
