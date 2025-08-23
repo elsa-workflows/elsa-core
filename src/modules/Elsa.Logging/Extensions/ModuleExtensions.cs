@@ -7,7 +7,7 @@ namespace Elsa.Logging.Extensions;
 public static class ModuleExtensions
 {
     /// <summary>
-    /// Installs the IO module.
+    /// Installs the logging module.
     /// </summary>
     public static IModule UseLoggingFramework(this IModule module, Action<LoggingFeature>? configure = null)
     {
