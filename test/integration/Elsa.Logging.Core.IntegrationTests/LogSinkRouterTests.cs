@@ -51,6 +51,7 @@ public class LogSinkRouterTests
             0,
             null,
             null,
-            It.IsAny<Func<object, Exception, string>>()!), Times.Once);
+            "Test message",
+            It.IsAny<object?>()), Times.Once);
     }
 }

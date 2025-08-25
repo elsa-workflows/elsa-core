@@ -14,12 +14,13 @@ public class LoggerSinkTests
         loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(loggerMock.Object);
         loggerMock.Setup(l => l.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         var sink = new LoggerSink("TestLogger", loggerFactoryMock.Object);
-        await sink.WriteAsync("TestLogger", LogLevel.Information, "Test message", null, null);
+        await sink.WriteAsync("TestLogger", LogLevel.Information, "Test message", null);
         loggerMock.Verify(l => l.Log(
             LogLevel.Information,
             0,
             null,
             null,
-            It.IsAny<Func<object, Exception, string>>()), Times.Once);
+            "Test message",
+            It.IsAny<object?>()), Times.Once);
     }
 }
