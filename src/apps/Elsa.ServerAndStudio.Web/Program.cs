@@ -14,6 +14,7 @@ using Microsoft.Data.Sqlite;
 using WebhooksCore.Options;
 using Elsa.Connections.Middleware;
 using Elsa.IO.Http.Features;
+using Elsa.Logging.Extensions;
 using Proto.Persistence.Sqlite;
 
 const bool useMassTransit = true;

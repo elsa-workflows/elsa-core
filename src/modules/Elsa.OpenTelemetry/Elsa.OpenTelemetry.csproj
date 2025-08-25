@@ -4,7 +4,7 @@
         <Description>
             Provides OpenTelemetry sources for tracing workflow and activity execution.
         </Description>
-        <PackageTags>elsa module open-telemetry</PackageTags>
+        <PackageTags>elsa module diagnostics open-telemetry</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
