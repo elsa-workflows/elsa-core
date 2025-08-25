@@ -22,6 +22,7 @@ using Elsa.Identity.Multitenancy;
 using Elsa.Kafka;
 using Elsa.Kafka.Factories;
 using Elsa.Logging.Extensions;
+using Elsa.Logging.Features;
 using Elsa.Logging.Sinks;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
@@ -230,6 +231,7 @@ services
 
         elsa
             .AddActivitiesFrom<Program>()
+            .AddActivitiesFrom<LoggingFeature>()
             .AddWorkflowsFrom<Program>()
             .UseFluentStorageProvider()
             .UseFileStorage()
