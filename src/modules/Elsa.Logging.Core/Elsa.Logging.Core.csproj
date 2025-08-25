@@ -1,14 +1,18 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
-            Provides functionality to log workflow and activity execution details to log sinks.
+            Provides a logging framework to create log entries from workflows.
         </Description>
         <PackageTags>elsa module logging diagnostics</PackageTags>
+        <RootNamespace>Elsa.Logging</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Logging.Core\Elsa.Logging.Core.csproj" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
     </ItemGroup>

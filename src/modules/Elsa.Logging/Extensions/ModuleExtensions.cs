@@ -7,9 +7,9 @@ namespace Elsa.Logging.Extensions;
 public static class ModuleExtensions
 {
     /// <summary>
-    /// Installs the ProcessLogging module.
+    /// Installs the logging module.
     /// </summary>
-    public static IModule UseProcessLogging(this IModule module, Action<ProcessLoggingFeature>? configure = null)
+    public static IModule UseLoggingFramework(this IModule module, Action<LoggingFeature>? configure = null)
     {
         return module.Use(configure);
     }

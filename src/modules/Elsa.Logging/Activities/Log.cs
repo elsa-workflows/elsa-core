@@ -1,6 +1,8 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
+using Elsa.Logging.Contracts;
+using Elsa.Logging.Models;
 using Elsa.Logging.UI;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
@@ -23,7 +25,7 @@ public class Log : CodeActivity
     }
 
     /// <inheritdoc />
-    public Log(string message, LogLevel level = LogLevel.Information, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
+    public Log(string message, LogLevel level = LogLevel.Information, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : base(source, line)
     {
         Message = new(message);
@@ -31,7 +33,7 @@ public class Log : CodeActivity
     }
 
     /// <inheritdoc />
-    public Log(Input<string> message, Input<LogLevel> level, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) 
+    public Log(Input<string> message, Input<LogLevel> level, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
         : base(source, line)
     {
         Message = message;
@@ -43,12 +45,6 @@ public class Log : CodeActivity
     /// </summary>
     [Input(Description = "The log message to emit.")]
     public Input<string> Message { get; set; } = new(string.Empty);
-
-    /// <summary>
-    /// The log level.
-    /// </summary>
-    [Input(Description = "The log level (Trace, Debug, Information, Warning, Error, Critical).")]
-    public Input<LogLevel> Level { get; set; } = new(LogLevel.Information);
 
     /// <summary>
     /// Additional attributes to include in the log entry.
@@ -63,39 +59,60 @@ public class Log : CodeActivity
     public Input<IDictionary<string, object>?> Attributes { get; set; } = null!;
 
     /// <summary>
-    /// The event ID to associate with the log entry. Can be used to correlate logs with specific events.
+    /// The log level.
     /// </summary>
-    [Input(Description = "The event ID to associate with the log entry. Can be used to correlate logs with specific events.")]
-    public Input<EventId?> EventId { get; set; } = null!;
+    [Input(Description = "The log level (Trace, Debug, Information, Warning, Error, Critical).")]
+    public Input<LogLevel> Level { get; set; } = new(LogLevel.Information);
 
     /// <summary>
-    /// Log category. Defaults to "Process".
+    /// The log message.
+    /// </summary>
+    [Input(Description = "The category. Defaults to 'Process'.", DefaultValue = "Process")]
+    public Input<string> Category { get; set; } = new("Process");
+    
+    /// <summary>
+    /// Additional attributes to include in the log entry.
+    /// </summary>
+    [Input(Description = "Values of named or indexed placeholders in the log message.")] 
+    public Input<object?> Arguments { get; set; } = null!;
+
+    /// <summary>
+    /// Target sinks to write to.
     /// </summary>
     [Input(
-        Description = "Target sinks. Defaults to 'Process' if not specified.",
+        DisplayName = "Sinks",
+        Description = "Target sinks to write to.",
         UIHint = InputUIHints.CheckList,
         UIHandler = typeof(LogSinkCheckListUIHintHandler)
     )]
-    public Input<ICollection<string>> SinkNames { get; set; } = new(["Process"]);   
+    public Input<ICollection<string>> SinkNames { get; set; } = null!;
 
     /// <inheritdoc />
-    protected override void Execute(ActivityExecutionContext context)
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var message = Message.Get(context);
         var level = Level.Get(context);
-        var arguments = Attributes.GetOrDefault(context)?.ToArray(); 
-        var eventId = EventId.GetOrDefault(context) ?? default(EventId);
-        var targets = SinkNames.GetOrDefault(context) ?? new List<string> { "Process" };
-        var loggerFactory = context.GetRequiredService<ILoggerFactory>();
+        var arguments = Arguments.GetOrDefault(context);
+        var attributes = Attributes.GetOrDefault(context) ?? new Dictionary<string, object?>();
+        var sinkNames = SinkNames.GetOrDefault(context) ?? new List<string>();
+        var category = Category.GetOrDefault(context);
+        if (string.IsNullOrWhiteSpace(category)) category = "Process";
 
-        foreach (var target in targets)
+        attributes["WorkflowDefinitionId"] = context.WorkflowExecutionContext.Workflow.Identity.DefinitionId;
+        attributes["WorkflowDefinitionVersionId"] = context.WorkflowExecutionContext.Workflow.Identity.Id;
+        attributes["WorkflowDefinitionVersion"] = context.WorkflowExecutionContext.Workflow.Identity.Version;
+        attributes["WorkflowInstanceId"] = context.WorkflowExecutionContext.Id;
+
+        var queue = context.GetRequiredService<ILogEntryQueue>();
+        var instruction = new LogEntryInstruction
         {
-            var categoryName = "Elsa.Log." + target;
-            var logger = loggerFactory.CreateLogger(categoryName);
-            if(logger.IsEnabled(level))
-            {
-                logger.Log(level, eventId, null, message, arguments);
-            }
-        }
+            SinkNames = sinkNames,
+            Category = category,
+            Level = level,
+            Message = message,
+            Arguments = arguments,
+            Attributes = attributes
+        };
+        await queue.EnqueueAsync(instruction);
     }
 }

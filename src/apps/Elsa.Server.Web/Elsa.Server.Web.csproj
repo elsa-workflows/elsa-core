@@ -8,6 +8,8 @@
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Oracle\Elsa.EntityFrameworkCore.Oracle.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Kafka\Elsa.Kafka.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Logging.Console\Elsa.Logging.Console.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Logging.Serilog\Elsa.Logging.Serilog.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.OpenTelemetry\Elsa.OpenTelemetry.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Logging\Elsa.Logging.csproj" />
@@ -75,6 +77,10 @@
         <PackageReference Include="Grpc.Net.Client" />
         <PackageReference Include="Proto.Persistence.Sqlite" />
         <PackageReference Include="Proto.Persistence.SqlServer" />
+        <PackageReference Include="Serilog" />
+        <PackageReference Include="Serilog.Extensions.Logging" />
+        <PackageReference Include="Serilog.Sinks.File" />
+        <PackageReference Include="Serilog.Formatting.Compact" />
     </ItemGroup>
 
     <ItemGroup>

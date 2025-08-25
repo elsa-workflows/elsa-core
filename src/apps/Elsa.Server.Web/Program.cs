@@ -21,8 +21,8 @@ using Elsa.Features.Services;
 using Elsa.Identity.Multitenancy;
 using Elsa.Kafka;
 using Elsa.Kafka.Factories;
-using Elsa.Logging.Activities;
 using Elsa.Logging.Extensions;
+using Elsa.Logging.Sinks;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;
@@ -69,6 +69,8 @@ using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
 using Medallion.Threading.Redis;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -78,6 +80,8 @@ using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
+using Serilog;
+using Serilog.Formatting.Compact;
 using StackExchange.Redis;
 
 // ReSharper disable RedundantAssignment
@@ -240,7 +244,7 @@ services
                     identity.UseEntityFrameworkCore(ef =>
                     {
                         ef.UseContextPooling = useDbContextPooling;
-                        
+
                         if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString);
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
@@ -535,7 +539,7 @@ services
                 }
             })
             .UseOpenTelemetry(otel => otel.UseNewRootActivityForRemoteParent = true)
-            .UseProcessLogging()
+            .UseLoggingFramework()
             .UseWorkflowContexts();
 
         if (useQuartz)
@@ -741,6 +745,56 @@ services
             });
         }
 
+        // 1) Console target via built-in provider
+        var consoleLogger = LoggerFactory.Create(lb =>
+        {
+            lb.ClearProviders();
+            lb.AddConsole();
+            lb.AddFilter("Demo", LogLevel.Debug);
+            lb.SetMinimumLevel(LogLevel.Information);
+        });
+        
+        // 2) Pretty File target via Serilog (text template)
+        var filePrettyFactory = LoggerFactory.Create(lb =>
+        {
+            var serilogConfig = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.File("App_Data/logs/activity-pretty-.log",
+                    rollingInterval: RollingInterval.Day,
+                    outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+                .CreateLogger();
+            
+            lb.ClearProviders();
+            lb.AddFilter("Demo", LogLevel.Debug);
+            lb.AddSerilog(serilogConfig, dispose: true);
+        });
+
+        // 3) JSON File target via Serilog (compact JSON)
+        var fileJsonFactory = LoggerFactory.Create(lb =>
+        {
+            var serilogJson = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.File(new CompactJsonFormatter(), "App_Data/logs/activity-json-.log",
+                    rollingInterval: RollingInterval.Day)
+                .CreateLogger();
+            
+            lb.ClearProviders();
+            lb.AddSerilog(serilogJson, dispose: true);
+        });
+        
+        elsa.UseLoggingFramework(logging =>
+        {
+            // Get sinks from configuration.
+            logging.UseConsole();
+            logging.UseSerilog();
+            logging.ConfigureDefaults(options => configuration.GetSection("LoggingFramework").Bind(options));
+            
+            // Add sinks manually.
+            logging.AddLogSink(new LoggerSink("Console (via code)", consoleLogger));
+            logging.AddLogSink(new LoggerSink("File (pretty)", filePrettyFactory));
+            logging.AddLogSink(new LoggerSink("File (JSON)", fileJsonFactory));
+        });
+        
         elsa.UseWebhooks(webhooks => webhooks.ConfigureSinks += options => builder.Configuration.GetSection("Webhooks").Bind(options));
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();
