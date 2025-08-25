@@ -19,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\src\modules\Elsa.ProcessLogging\Elsa.ProcessLogging.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.Logging\Elsa.Logging.csproj" />
     </ItemGroup>
 
 </Project>

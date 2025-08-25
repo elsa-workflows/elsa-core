@@ -8,13 +8,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Elsa.Logging.UnitTests.Activities;
 
-public class ProcessLogActivityTests
+public class LogTests
 {
     [Fact]
     public void ProcessLogActivity_CanBeCreated()
     {
         // Act
-        var activity = new ProcessLogActivity("Test message");
+        var activity = new Log("Test message");
 
         // Assert
         Assert.NotNull(activity);
@@ -29,7 +29,7 @@ public class ProcessLogActivityTests
         // In a real scenario, the activity would be executed within a full workflow context
 
         // Arrange
-        var activity = new ProcessLogActivity("Test message");
+        var activity = new Log("Test message");
 
         // Act & Assert - verify properties are set correctly
         Assert.NotNull(activity.Message);
@@ -44,7 +44,7 @@ public class ProcessLogActivityTests
     public void ProcessLogActivity_DefaultsToProcessSink()
     {
         // Arrange & Act
-        var activity = new ProcessLogActivity("Test message");
+        var activity = new Log("Test message");
 
         // Assert
         Assert.NotNull(activity.TargetSinks);

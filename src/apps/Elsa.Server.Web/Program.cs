@@ -226,7 +226,7 @@ services
 
         elsa
             .AddActivitiesFrom<Program>()
-            .AddActivitiesFrom<ProcessLogActivity>()
+            .AddActivitiesFrom<Log>()
             .AddWorkflowsFrom<Program>()
             .UseFluentStorageProvider()
             .UseFileStorage()

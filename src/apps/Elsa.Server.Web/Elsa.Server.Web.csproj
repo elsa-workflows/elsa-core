@@ -10,7 +10,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Kafka\Elsa.Kafka.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.OpenTelemetry\Elsa.OpenTelemetry.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.ProcessLogging\Elsa.ProcessLogging.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Logging\Elsa.Logging.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Quartz.EntityFrameworkCore.MySql\Elsa.Quartz.EntityFrameworkCore.MySql.csproj" Condition=" '$(TargetFramework)' != 'net9.0' " />
         <ProjectReference Include="..\..\modules\Elsa.Quartz.EntityFrameworkCore.PostgreSql\Elsa.Quartz.EntityFrameworkCore.PostgreSql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Retention\Elsa.Retention.csproj" />

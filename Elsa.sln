@@ -416,9 +416,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.IO.Compression", "src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.IO.Http", "src\modules\Elsa.IO.Http\Elsa.IO.Http.csproj", "{C583AF05-D517-4B7F-8955-6B61500ED3D8}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "logging", "logging", "{1FB2FE77-5D7F-48D5-8FFE-530D21AFBA7D}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "diagnostics", "diagnostics", "{1FB2FE77-5D7F-48D5-8FFE-530D21AFBA7D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ProcessLogging", "src\modules\Elsa.ProcessLogging\Elsa.ProcessLogging.csproj", "{68A0BC44-8A3E-4C45-8AFF-0662B81D2739}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Logging", "src\modules\Elsa.Logging\Elsa.Logging.csproj", "{68A0BC44-8A3E-4C45-8AFF-0662B81D2739}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Logging.UnitTests", "test\unit\Elsa.Logging.UnitTests\Elsa.Logging.UnitTests.csproj", "{D5293D16-CE59-40D2-81E7-2A5E74515355}"
 EndProject
