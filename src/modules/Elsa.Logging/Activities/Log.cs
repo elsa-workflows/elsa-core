@@ -47,10 +47,20 @@ public class Log : CodeActivity
     public Input<string> Message { get; set; } = new(string.Empty);
     
     /// <summary>
-    /// Additional attributes to include in the log entry.
+    /// Arguments for the templated string message.
     /// </summary>
     [Input(Description = "Values of named or indexed placeholders in the log message.")] 
     public Input<object?> Arguments { get; set; } = null!;
+    
+    /// <summary>
+    /// Additional attributes to include in the log entry.
+    /// </summary>
+    [Input(
+        Description = "Flat dictionary of key/value pairs to include as attributes.",
+        DisplayName = "Attributes",
+        UIHint = InputUIHints.Dictionary
+        )] 
+    public Input<IDictionary<string, object>?> Attributes { get; set; } = null!;
 
     /// <summary>
     /// The log level.
@@ -63,15 +73,6 @@ public class Log : CodeActivity
     /// </summary>
     [Input(Description = "The category. Defaults to 'Process'.", DefaultValue = "Process")]
     public Input<string> Category { get; set; } = new("Process");
-
-    /// <summary>
-    /// Additional attributes to include in the log entry.
-    /// </summary>
-    [Input(
-        Description = "Flat dictionary of key/value pairs to include as attributes.",
-        UIHint = InputUIHints.Dictionary
-    )] 
-    public Input<IDictionary<string, object?>> Attributes { get; set; } = null!;
 
     /// <summary>
     /// Target sinks to write to.

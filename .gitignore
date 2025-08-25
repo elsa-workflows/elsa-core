@@ -61,6 +61,7 @@ App_Data/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+FodyWeavers.xml
 
 # Elsa Stencil Components
 src/designer/elsa-workflows-designer/dist
