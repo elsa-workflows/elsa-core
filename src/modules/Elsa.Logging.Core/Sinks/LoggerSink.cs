@@ -14,42 +14,13 @@ public sealed class LoggerSink(string name, ILoggerFactory factory) : ILogSink
     /// <inheritdoc/>
     public ValueTask WriteAsync(string name, LogLevel level, string message, object? arguments, IDictionary<string, object?>? attributes = null, CancellationToken cancellationToken = default)
     {
-        var logger = factory.CreateLogger(name);
+        var l = factory.CreateLogger(name);
 
-        if (!logger.IsEnabled(level))
+        if (!l.IsEnabled(level))
             return ValueTask.CompletedTask;
 
-        using var scope = attributes is null ? null : logger.BeginScope(attributes);
-        logger.Log(level, 0, arguments, null, (state, ex) => FormatMessage(message, state));
+        using var scope = attributes is null ? null : l.BeginScope(attributes);
+        l.Log(level, 0, null, message, arguments);
         return ValueTask.CompletedTask;
-    }
-
-    private static string FormatMessage(string message, object? state)
-    {
-        // If the state is an array, use string.Format.
-        if (state is object[] { Length: > 0 } args)
-            return string.Format(message, args);
-
-        // Otherwise, use string interpolation. No need to use StringBuilder here, since the message is not expected to be long.
-        var formattedMessage = message;
-
-        // If the state is a dictionary, use string interpolation.
-        if (state is IDictionary<string, object?> dict)
-        {
-            foreach (var kvp in dict)
-                formattedMessage = formattedMessage.Replace($"{{{kvp.Key}}}", kvp.Value?.ToString());
-        }
-        // Otherwise, use reflection to find properties on the state object.
-        else if (state is not null)
-        {
-            var props = state.GetType().GetProperties();
-            foreach (var prop in props)
-            {
-                var value = prop.GetValue(state);
-                formattedMessage = formattedMessage.Replace($"{{{prop.Name}}}", value?.ToString());
-            }
-        }
-
-        return formattedMessage;
     }
 }
