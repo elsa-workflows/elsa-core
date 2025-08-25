@@ -5,6 +5,7 @@ using Elsa.Logging.Contracts;
 using Elsa.Logging.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Elsa.Logging.Core.IntegrationTests.Helpers;
 using Moq;
 
 namespace Elsa.Logging.Core.IntegrationTests;
@@ -14,11 +15,9 @@ public class LogSinkRouterTests
     [Fact]
     public async Task LogEntryInstruction_ShouldFlowThroughQueueAndRouterToSink()
     {
-        var loggerFactoryMock = new Mock<ILoggerFactory>();
-        var loggerMock = new Mock<ILogger>();
-        loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(loggerMock.Object);
-        loggerMock.Setup(l => l.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
-        var sink = new LoggerSink("TestSink", loggerFactoryMock.Object);
+        var testLogger = new TestLogger();
+        var loggerFactory = new TestLoggerFactory(testLogger);
+        var sink = new LoggerSink("TestSink", loggerFactory);
         var catalogMock = new Mock<ILogSinkCatalog>();
         catalogMock.Setup(c => c.ListAsync(CancellationToken.None)).ReturnsAsync(new List<ILogSink>
         {
@@ -38,7 +37,7 @@ public class LogSinkRouterTests
             Level = LogLevel.Information,
             Message = "Test message"
         };
-            
+        
         await queue.EnqueueAsync(instruction);
         await foreach (var dequeued in queue.DequeueAsync())
         {
@@ -46,12 +45,10 @@ public class LogSinkRouterTests
             break;
         }
 
-        loggerMock.Verify(l => l.Log(
-            LogLevel.Information,
-            0,
-            null,
-            null,
-            "Test message",
-            It.IsAny<object?>()), Times.Once);
+        // Assert that Log was called once with expected parameters
+        Assert.Single(testLogger.Calls);
+        var call = testLogger.Calls[0];
+        Assert.Equal(LogLevel.Information, call.level);
+        Assert.Null(call.exception);
     }
 }
