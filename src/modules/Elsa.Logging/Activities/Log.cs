@@ -1,4 +1,6 @@
+using System.Dynamic;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Logging.Contracts;
@@ -91,6 +93,13 @@ public class Log : CodeActivity
         var message = Message.Get(context);
         var level = Level.Get(context);
         var arguments = Arguments.GetOrDefault(context);
+
+        if (arguments is string argumentString)
+        {
+            // Could be JSON created from e.g., Liquid template. If so, parse it into an ExpandoObject.
+            arguments = TryParseJson(argumentString);
+        }
+        
         var attributes = Attributes.GetOrDefault(context) ?? new Dictionary<string, object?>();
         var sinkNames = SinkNames.GetOrDefault(context) ?? new List<string>();
         var category = Category.GetOrDefault(context);
@@ -112,5 +121,17 @@ public class Log : CodeActivity
             Attributes = attributes
         };
         await queue.EnqueueAsync(instruction);
+    }
+
+    private object TryParseJson(string json)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<ExpandoObject>(json) ?? new ExpandoObject();
+        }
+        catch
+        {
+            return json;
+        }
     }
 }
