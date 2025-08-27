@@ -1,7 +1,9 @@
 using Elsa.Logging.Contracts;
 using Elsa.Logging.Extensions;
 using Elsa.Logging.Sinks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace Elsa.Logging.Console;
 
@@ -20,13 +22,19 @@ public sealed class ConsoleLogSinkFactory : ILogSinkFactory<ConsoleLogSinkOption
     /// <inheritdoc/>
     public string Type => "Console";
 
-    /// <inheritdoc/>
     public ILogSink Create(string name, ConsoleLogSinkOptions options)
     {
         var factory = LoggerFactory.Create(builder =>
         {
             builder.ClearProviders();
             builder.AddCategoryFilters(options);
+            
+            builder.Services.Configure<ConsoleFormatterOptions>(cfo =>
+            {
+                if (options.TimestampFormat is not null) cfo.TimestampFormat = options.TimestampFormat;
+                if (options.IncludeScopes is not null) cfo.IncludeScopes = options.IncludeScopes.Value;
+                if (options.UseUtcTimestamp is not null) cfo.UseUtcTimestamp = options.UseUtcTimestamp.Value;
+            });
 
             var min = options.MinLevel ?? LogLevel.Information;
 
@@ -49,13 +57,15 @@ public sealed class ConsoleLogSinkFactory : ILogSinkFactory<ConsoleLogSinkOption
                         if (options.IncludeScopes is not null) o.IncludeScopes = options.IncludeScopes.Value;
                     });
                     break;
-                default:
+                case "json":
+                    builder.AddConsoleFormatter<JsonDestructuringConsoleFormatter, ConsoleFormatterOptions>();
                     builder.AddConsole(o =>
                     {
-                        if (options.TimestampFormat is not null) o.TimestampFormat = options.TimestampFormat;
-                        if (options.DisableColors is not null) o.DisableColors = options.DisableColors.Value;
-                        if (options.IncludeScopes is not null) o.IncludeScopes = options.IncludeScopes.Value;
+                        o.FormatterName = JsonDestructuringConsoleFormatter.FormatterName;
                     });
+                    break;
+                default:
+                    builder.AddConsole();
                     break;
             }
 

@@ -15,7 +15,7 @@ public sealed record ConsoleLogSinkOptions : LogSinkOptions
     // "Default" | "Simple" | "Systemd"
     public string Formatter { get; init; } = "Default";
     public string? TimestampFormat { get; init; }
-    public bool? IncludeScopes { get; init; }
+    public bool? IncludeScopes { get; init; } = true;
 
     // Default console
     public bool? DisableColors { get; init; }
@@ -24,4 +24,5 @@ public sealed record ConsoleLogSinkOptions : LogSinkOptions
     public LoggerColorBehavior? ColorBehavior { get; init; }
     public bool? SingleLine { get; init; }
     public bool? UseUtcTimestamp { get; init; }
+    public bool JsonIndented { get; set; } = true;
 }
