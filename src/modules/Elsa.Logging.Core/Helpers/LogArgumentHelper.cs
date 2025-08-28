@@ -92,7 +92,7 @@ public static class LogArgumentHelper
         var list = new List<object>();
         foreach (var item in (IEnumerable)input)
         {
-            // item is a KeyValuePair<,> boxed as object; get Key/Value via reflection
+            // Item is a KeyValuePair<,> boxed as object; get Key/Value via reflection
             var it = item.GetType();
             var key = it.GetProperty("Key")!.GetValue(item);
             var value = it.GetProperty("Value")!.GetValue(item);
@@ -110,14 +110,11 @@ public static class LogArgumentHelper
 
     private static object[] EnumerableToArray(IEnumerable enumerable)
     {
-        return enumerable.Cast<object?>().ToArray()!;
+        return enumerable.Cast<object>().ToArray();
     }
 
     private static object[] MapObjectToPropertyPairs(object input)
     {
-        // Prevent treating string as object with properties
-        if (input is string)
-            return [input];
         // Handles regular objects and anonymous types (public get-only props)
         var props = input.GetType()
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
