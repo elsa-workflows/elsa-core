@@ -30,17 +30,11 @@ public class HelloWorldTests(App app) : AppComponentTest(app)
         {
             Id = "1",
             Name = "HelloWorldWorkflow_ShouldFinish",
+            Description = "The workflow should finish.",
             Assertions =
             [
-                new WorkflowStatusAssertion
-                {
-                    ExpectedStatus = WorkflowStatus.Finished
-                },
-                new ActivityExecutedAssertion
-                {
-                    ActivityId = "b039045bb7443e57",
-                    ExpectedExecuted = true
-                }
+                new WorkflowStatusAssertion(WorkflowStatus.Finished),
+                new ActivityExecutedAssertion("b039045bb7443e57")
             ]
         };
 

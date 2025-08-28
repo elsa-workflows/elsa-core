@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Elsa.Testing.Framework.Abstractions;
 using Elsa.Testing.Framework.Models;
 using Elsa.Testing.Framework.Services;
@@ -8,8 +9,19 @@ namespace Elsa.Testing.Framework.Assertions;
 [UsedImplicitly]
 public class ActivityExecutedAssertion : Assertion
 {
+    [JsonConstructor]
+    public ActivityExecutedAssertion()
+    {
+    }
+    
+    public ActivityExecutedAssertion(string activityId, bool expectedExecuted = true)
+    {
+        ActivityId = activityId;
+        ExpectedExecuted = expectedExecuted;
+    }
+    
     public string ActivityId { get; set; } = null!;
-    public bool ExpectedExecuted { get; set; }
+    public bool ExpectedExecuted { get; set; } = true;
 
     public override Task<AssertionResult> RunAsync(AssertionContext context)
     {

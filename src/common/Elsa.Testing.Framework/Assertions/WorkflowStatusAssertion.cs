@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Elsa.Testing.Framework.Abstractions;
 using Elsa.Testing.Framework.Models;
 using Elsa.Workflows;
@@ -8,6 +9,16 @@ namespace Elsa.Testing.Framework.Assertions;
 [UsedImplicitly]
 public class WorkflowStatusAssertion : Assertion
 {
+    [JsonConstructor]
+    public WorkflowStatusAssertion()
+    {
+    }
+    
+    public WorkflowStatusAssertion(WorkflowStatus expectedStatus)
+    {
+        ExpectedStatus = expectedStatus;
+    }
+    
     public WorkflowStatus ExpectedStatus { get; set; }
     public override Task<AssertionResult> RunAsync(AssertionContext context)
     {
