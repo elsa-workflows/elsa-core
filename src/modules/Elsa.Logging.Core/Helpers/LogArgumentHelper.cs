@@ -126,6 +126,6 @@ public static class LogArgumentHelper
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.CanRead);
 
-        return props.Select(prop => new KeyValuePair<string, object?>(prop.Name, prop.GetValue(input))).Cast<object>().ToArray();
+        return props.Select(prop => new KeyValuePair<string, object?>(prop.Name, prop.GetValue(input))).ToArray();
     }
 }
