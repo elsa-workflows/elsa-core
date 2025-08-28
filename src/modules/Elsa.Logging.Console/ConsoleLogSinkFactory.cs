@@ -1,3 +1,5 @@
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using Elsa.Logging.Contracts;
 using Elsa.Logging.Extensions;
 using Elsa.Logging.Sinks;
@@ -28,7 +30,7 @@ public sealed class ConsoleLogSinkFactory : ILogSinkFactory<ConsoleLogSinkOption
         {
             builder.ClearProviders();
             builder.AddCategoryFilters(options);
-            
+
             builder.Services.Configure<ConsoleFormatterOptions>(cfo =>
             {
                 if (options.TimestampFormat is not null) cfo.TimestampFormat = options.TimestampFormat;
@@ -58,10 +60,18 @@ public sealed class ConsoleLogSinkFactory : ILogSinkFactory<ConsoleLogSinkOption
                     });
                     break;
                 case "json":
-                    builder.AddConsoleFormatter<JsonDestructuringConsoleFormatter, ConsoleFormatterOptions>();
-                    builder.AddConsole(o =>
+                    builder.AddJsonConsole(o =>
                     {
-                        o.FormatterName = JsonDestructuringConsoleFormatter.FormatterName;
+                        if (options.TimestampFormat is not null) o.TimestampFormat = options.TimestampFormat;
+                        if (options.IncludeScopes is not null) o.IncludeScopes = options.IncludeScopes.Value;
+                        if (options.UseUtcTimestamp is not null) o.UseUtcTimestamp = options.UseUtcTimestamp.Value;
+                        if (options.JsonOptions is not null)
+                        {
+                            o.JsonWriterOptions = new()
+                            {
+                                Indented = options.JsonOptions.Indented,
+                            };
+                        }
                     });
                     break;
                 default:
