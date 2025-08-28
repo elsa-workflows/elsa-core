@@ -66,7 +66,13 @@ public static class LogArgumentHelper
         var idxProp = dictionaryInterface.GetProperty("Item")!; // this[TKey key]
         var keys = (IEnumerable)keyProp.GetValue(input)!;
 
-        pairs = (from object? key in keys let value = idxProp.GetValue(input, [key]) select new KeyValuePair<object?, object?>(key, value)).Cast<object>().ToArray();
+        var list = new List<object>();
+        foreach (object? key in keys)
+        {
+            var value = idxProp.GetValue(input, new[] { key });
+            list.Add(new KeyValuePair<object?, object?>(key, value));
+        }
+        pairs = list.ToArray();
         return true;
     }
 
