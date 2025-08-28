@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Common.Converters;
 using Elsa.Extensions;
 using Elsa.Logging.Contracts;
 using Elsa.Logging.Models;
-using Elsa.Logging.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -21,7 +21,8 @@ public class ConfigurationLogSinkProvider : ILogSinkProvider
         PropertyNameCaseInsensitive = true,
         Converters =
         {
-            new NullableBoolConverter(),
+            new NullableBooleanConverter(),
+            new BooleanConverter(),
             new JsonStringEnumConverter()
         }
     };
