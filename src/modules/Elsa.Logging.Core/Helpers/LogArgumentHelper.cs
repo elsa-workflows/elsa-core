@@ -39,8 +39,8 @@ public static class LogArgumentHelper
 
     private static object[] ConvertDictionaryToPairs(IDictionary dict)
     {
-        var pairs = new List<object>(dict.Count);
-        pairs.AddRange((from DictionaryEntry entry in dict select new KeyValuePair<object?, object?>(entry.Key, entry.Value)).Cast<object>());
+        foreach (DictionaryEntry entry in dict)
+            pairs.Add(new KeyValuePair<object?, object?>(entry.Key, entry.Value));
         return pairs.ToArray();
     }
 
