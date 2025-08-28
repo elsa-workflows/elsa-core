@@ -2,6 +2,7 @@ using Elsa.Logging.Contracts;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Logging.HostedServices;
 
@@ -10,21 +11,28 @@ namespace Elsa.Logging.HostedServices;
 /// and routing them to appropriate log sinks.
 /// </summary>
 [UsedImplicitly]
-public class LogEntryBackgroundWorker(ILogEntryQueue queue, IServiceScopeFactory scopeFactory) : BackgroundService
+public class LogEntryBackgroundWorker(ILogEntryQueue queue, IServiceScopeFactory scopeFactory, ILogger<LogEntryBackgroundWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await foreach (var instruction in queue.DequeueAsync().WithCancellation(stoppingToken))
         {
-            using var scope = scopeFactory.CreateScope();
-            var router = scope.ServiceProvider.GetRequiredService<ILogSinkRouter>();
-            await router.WriteAsync(
-                instruction.SinkNames,
-                instruction.Category,
-                instruction.Level,
-                instruction.Message,
-                instruction.Arguments,
-                instruction.Attributes, stoppingToken);
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                var router = scope.ServiceProvider.GetRequiredService<ILogSinkRouter>();
+                await router.WriteAsync(
+                    instruction.SinkNames,
+                    instruction.Category,
+                    instruction.Level,
+                    instruction.Message,
+                    instruction.Arguments,
+                    instruction.Attributes, stoppingToken);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "An error occurred while processing a log entry {@LogEntry}", instruction);
+            }
         }
     }
 }

@@ -551,7 +551,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         var now = SystemClock.UtcNow;
         var id = IdentityGenerator.GenerateId();
         var activityExecutionContext = new ActivityExecutionContext(id, this, parentContext, activity, activityDescriptor, now, tag, SystemClock, CancellationToken);
-        var variablesToDeclare = options?.Variables ?? Array.Empty<Variable>();
+        var variablesToDeclare = options?.Variables ?? [];
         var variableContainer = new[]
         {
             activityExecutionContext.ActivityNode
@@ -614,7 +614,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     {
         // Filter out completed activity execution contexts, except for the root Workflow activity context, which stores workflow-level variables.
         // This will currently break scripts accessing activity output directly, but there's a workaround for that via variable capturing.
-        // We may ultimately restore direct output access, but in a different way.
+        // We may ultimately restore direct output access, but differently.
         return ActivityExecutionContexts.Where(x => !x.IsCompleted || x.ParentActivityExecutionContext == null);
     }
 
