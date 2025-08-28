@@ -1,4 +1,5 @@
 using Elsa.Logging.Contracts;
+using Elsa.Logging.Helpers;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Logging.Sinks;
@@ -14,13 +15,14 @@ public sealed class LoggerSink(string name, ILoggerFactory factory) : ILogSink
     /// <inheritdoc/>
     public ValueTask WriteAsync(string name, LogLevel level, string message, object? arguments, IDictionary<string, object?>? attributes = null, CancellationToken cancellationToken = default)
     {
-        var l = factory.CreateLogger(name);
+        var logger = factory.CreateLogger(name);
 
-        if (!l.IsEnabled(level))
+        if (!logger.IsEnabled(level))
             return ValueTask.CompletedTask;
 
-        using var scope = attributes is null ? null : l.BeginScope(attributes);
-        l.Log(level, 0, null, message, arguments);
+        var mappedArguments = LogArgumentHelper.ToArgumentsArray(arguments);
+        using var scope = attributes is null ? null : logger.BeginScope(attributes);
+        logger.Log(level, 0, null, message, mappedArguments);
         return ValueTask.CompletedTask;
     }
 }

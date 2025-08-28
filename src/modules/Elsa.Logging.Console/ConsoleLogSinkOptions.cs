@@ -24,5 +24,5 @@ public sealed record ConsoleLogSinkOptions : LogSinkOptions
     public LoggerColorBehavior? ColorBehavior { get; init; }
     public bool? SingleLine { get; init; }
     public bool? UseUtcTimestamp { get; init; }
-    public bool JsonIndented { get; set; } = true;
+    public JsonFormatterOptions? JsonOptions { get; set; }
 }
