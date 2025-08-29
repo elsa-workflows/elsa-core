@@ -2,6 +2,8 @@ using System.Dynamic;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Logging.Contracts;
 using Elsa.Logging.Models;
@@ -10,6 +12,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;
+using Elsa.Workflows.UIHints.Dictionary;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Logging.Activities;
@@ -60,7 +63,8 @@ public class Log : CodeActivity
     [Input(
         Description = "Flat dictionary of key/value pairs to include as attributes.",
         DisplayName = "Attributes",
-        UIHint = InputUIHints.Dictionary
+        UIHint = InputUIHints.Dictionary,
+        UIHandler = typeof(DictionaryUIHintHandler)
         )] 
     public Input<IDictionary<string, object>?> Attributes { get; set; } = null!;
 
@@ -100,7 +104,8 @@ public class Log : CodeActivity
             arguments = TryParseJson(argumentString);
         }
         
-        var attributes = Attributes.GetOrDefault(context) ?? new Dictionary<string, object?>();
+        var attributes = Attributes.GetOrDefault(context) ?? new Dictionary<string, object?>()!;
+        
         var sinkNames = SinkNames.GetOrDefault(context) ?? new List<string>();
         var category = Category.GetOrDefault(context);
         if (string.IsNullOrWhiteSpace(category)) category = "Process";
