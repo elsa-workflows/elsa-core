@@ -39,6 +39,6 @@ public class GetTests(App app) : AppComponentTest(app)
         var client = WorkflowServer.CreateHttpClient();
         var url = "/workflow-definitions//execute";
         using var response = await client.GetAsync(url);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 }
