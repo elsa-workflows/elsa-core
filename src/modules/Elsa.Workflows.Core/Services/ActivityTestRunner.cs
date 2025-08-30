@@ -1,4 +1,6 @@
+using System.Dynamic;
 using System.Text.Json;
+using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Models;
 
@@ -37,10 +39,28 @@ public class ActivityTestRunner(
     private IDictionary<string, object?> GetVariableTestValues(WorkflowGraph workflowGraph)
     {
         var variableTestValues = workflowGraph.Workflow.CustomProperties.TryGetValue("VariableTestValues", out var variableTestValuesObj) ? variableTestValuesObj : null;
+        
+        if(variableTestValues is null)
+            return new Dictionary<string, object?>();
 
         if (variableTestValues is JsonElement jsonElement)
-            variableTestValues = JsonSerializer.Deserialize<Dictionary<string, object?>>(jsonElement.GetRawText());
+            variableTestValues = JsonSerializer.Deserialize<ExpandoObject>(jsonElement.GetRawText())!;
 
-        return variableTestValues as IDictionary<string, object?> ?? new Dictionary<string, object?>();
+        var expandoObject = (ExpandoObject)variableTestValues;
+        var parsedValues = new Dictionary<string, object?>();
+
+        foreach (var (key, value) in expandoObject)
+        {
+            var variableDefinition = workflowGraph.Workflow.Variables.FirstOrDefault(x => x.Id == key);
+            
+            if (variableDefinition == null)
+                continue;
+
+            var variableType = variableDefinition.GetVariableType();
+            var variableValue = value.ConvertTo(variableType);
+            parsedValues[key] = variableValue;
+        }
+        
+        return parsedValues;
     }
 }
