@@ -1,0 +1,42 @@
+{
+  "id": "2790068018ac4f01",
+  "definitionId": "3790068018ac4f02",
+  "name": "Hello World",
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "969b0703a9379c3b",
+    "nodeId": "Workflow1:969b0703a9379c3b",
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Hello World!"
+          }
+        },
+        "id": "b039045bb7443e57",
+        "nodeId": "Workflow1:969b0703a9379c3b:b039045bb7443e57",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -231.796875,
+              "y": 269
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}
