@@ -53,11 +53,11 @@ public class PostTests(App app) : AppComponentTest(app)
     }
 
     [Fact]
-    public async Task Post_MissingDefinitionId_ShouldReturnValidationError()
+    public async Task Post_MissingDefinitionId_ShouldReturnNotFoundError()
     {
         var client = WorkflowServer.CreateHttpClient();
         var request = new HttpRequestMessage(HttpMethod.Post, "/workflow-definitions//execute");
         using var response = await client.SendAsync(request);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 }
