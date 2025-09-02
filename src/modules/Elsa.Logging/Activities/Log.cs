@@ -69,7 +69,7 @@ public class Log : CodeActivity
     /// <summary>
     /// Additional attributes to include in the log entry.
     /// </summary>
-    [Input(Description = "Flat dictionary of key/value pairs to include as attributes.",)] 
+    [Input(Description = "Flat dictionary of key/value pairs to include as attributes.")] 
     public Input<IDictionary<string, object?>> Attributes { get; set; } = null!;
 
     /// <summary>
