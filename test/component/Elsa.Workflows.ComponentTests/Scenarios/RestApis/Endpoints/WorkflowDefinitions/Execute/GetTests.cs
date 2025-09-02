@@ -34,7 +34,7 @@ public class GetTests(App app) : AppComponentTest(app)
     }
 
     [Fact]
-    public async Task Get_MissingDefinitionId_ShouldReturnValidationError()
+    public async Task Get_MissingDefinitionId_ShouldReturnNotFoundError()
     {
         var client = WorkflowServer.CreateHttpClient();
         var url = "/workflow-definitions//execute";
