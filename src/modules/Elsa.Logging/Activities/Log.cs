@@ -74,7 +74,7 @@ public class Log : CodeActivity
     /// The log message.
     /// </summary>
     [Input(Description = "The category. Defaults to 'Process'.", DefaultValue = "Process")]
-public Input<string> Category { get; set; } = new("Process");
+    public Input<string> Category { get; set; } = new("Process");
 
     /// <summary>
     /// Target sinks to write to.
