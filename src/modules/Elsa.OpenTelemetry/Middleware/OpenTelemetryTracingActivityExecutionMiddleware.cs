@@ -6,6 +6,7 @@ using Elsa.OpenTelemetry.Helpers;
 using Elsa.OpenTelemetry.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Pipelines.ActivityExecution;
+using Humanizer;
 using JetBrains.Annotations;
 using Activity = System.Diagnostics.Activity;
 using ActivityKind = System.Diagnostics.ActivityKind;
@@ -36,9 +37,9 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
         span.SetTag("activity.version", activity.Version);
         span.SetTag("activity.instance.id", context.Id);
         span.SetTag("activity.tenant.id", context.WorkflowExecutionContext.Workflow.Identity.TenantId);
-        
+
         var activityKind = context.ActivityDescriptor.Kind;
-        if (activityKind == Elsa.Workflows.ActivityKind.Job || (activityKind == Workflows.ActivityKind.Task && activity.GetRunAsynchronously())) 
+        if (activityKind == Elsa.Workflows.ActivityKind.Job || (activityKind == Workflows.ActivityKind.Task && activity.GetRunAsynchronously()))
             span.SetTag("span.type", "job");
 
         span.AddEvent(new("executing"));
@@ -54,7 +55,7 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
             var errorSpanHandler = context.GetServices<IActivityErrorSpanHandler>()
                 .OrderBy(x => x.Order)
                 .FirstOrDefault(x => x.CanHandle(errorSpanHandlerContext));
-            
+
             errorSpanHandler?.Handle(errorSpanHandlerContext);
         }
         else if (context.Status == ActivityStatus.Canceled)
@@ -72,6 +73,31 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
 
         if (!string.IsNullOrWhiteSpace(context.WorkflowExecutionContext.CorrelationId))
             span.SetTag("workflow.correlation_id", context.WorkflowExecutionContext.CorrelationId);
+
+        span.SetTag("workflow.instance.id", context.WorkflowExecutionContext.Id);
+        span.SetTag("workflow.definition.id", context.WorkflowExecutionContext.Workflow.Identity.DefinitionId);
+        span.SetTag("workflow.definition.version", context.WorkflowExecutionContext.Workflow.Identity.Version);
+
+        SetExtensions(context, span);
+    }
+
+    private void SetExtensions(ActivityExecutionContext context, Activity span)
+    {
+        var extensions = context.GetExtensionsMetadata();
+        if (extensions is not null)
+        {
+            foreach (var key in extensions.Keys)
+            {
+                span.SetTag($"activity.extensions.{ToOtelFormat(key)}", extensions[key]);
+            }
+        }
+    }
+
+    public string ToOtelFormat(string input)
+    {
+        var humanized = input.Humanize();
+        var correlationId = humanized.Replace(" ", "_").ToLowerInvariant();
+        return correlationId;
     }
 }
 
