@@ -230,19 +230,17 @@ public class WorkflowsFeature : FeatureBase
             // Instantiation strategies.
             .AddScoped<IWorkflowActivationStrategy, AllowAlwaysStrategy>()
 
-            // UI hints.
+            // UI.
             .AddScoped<IUIHintHandler, DropDownUIHintHandler>()
             .AddScoped<IUIHintHandler, CheckListUIHintHandler>()
-            .AddScoped<IUIHintHandler, DictionaryUIHintHandler>()
             .AddScoped<IUIHintHandler, RadioListUIHintHandler>()
             .AddScoped<IUIHintHandler, JsonEditorUIHintHandler>()
-
-            // UI property handlers.
             .AddScoped<IPropertyUIHandler, StaticCheckListOptionsProvider>()
-            .AddScoped<IPropertyUIHandler, StaticDictionaryOptionsProvider>()
             .AddScoped<IPropertyUIHandler, StaticRadioListOptionsProvider>()
             .AddScoped<IPropertyUIHandler, StaticDropDownOptionsProvider>()
             .AddScoped<IPropertyUIHandler, JsonCodeOptionsProvider>()
+            .AddScoped<DictionaryValueEvaluator>()
+            .AddSingleton<IActivityDescriptorModifier, DictionaryUIHintInputModifier>()
 
             // Logger state generators.
             .AddSingleton(WorkflowLoggerStateGenerator)

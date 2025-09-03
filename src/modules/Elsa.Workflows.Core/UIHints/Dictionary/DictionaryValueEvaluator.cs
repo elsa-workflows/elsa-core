@@ -1,10 +1,8 @@
 using System.Text.Json;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows;
-using Elsa.Workflows.UIHints;
 
-namespace Elsa.Logging.Services;
+namespace Elsa.Workflows.UIHints.Dictionary;
 
 public class DictionaryValueEvaluator : IActivityInputEvaluator
 {
@@ -22,18 +20,28 @@ public class DictionaryValueEvaluator : IActivityInputEvaluator
             foreach (var dict in dictionary)
             {
                 if (dict.Value is not JsonElement json)
+                {
+                    // Not a JSON object, so just use the value as-is.
+                    tempDictionary[dict.Key] = dict.Value;
                     continue;
-                        
-                json.TryGetProperty("type" , out var typeProperty);
-                json.TryGetProperty("value" , out var valueProperty);
-                        
+                }
+
+                // JSON object, so extract the type and value properties.
+                json.TryGetProperty("type", out var typeProperty);
+                json.TryGetProperty("value", out var valueProperty);
+
+                // Evaluate the expression.
                 var expression = new Expression(typeProperty.ToString(), valueProperty.ToString());
                 var val = await evaluator.EvaluateAsync<string>(expression, expressionExecutionContext);
+
+                // Add the evaluated value to the dictionary.
                 tempDictionary[dict.Key] = val;
             }
+
+            // Replace the original dictionary with the evaluated one.
             value = tempDictionary;
         }
-        
+
         return value;
     }
 }
