@@ -188,6 +188,7 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IActivityStateFilterManager, DefaultActivityStateFilterManager>()
             .AddScoped<IWorkflowInstanceVariableReader, DefaultWorkflowInstanceVariableReader>()
             .AddScoped<IWorkflowInstanceVariableWriter, DefaultWorkflowInstanceVariableWriter>()
+            .AddScoped<DefaultActivityInputEvaluator>()
 
             // Incident Strategies.
             .AddTransient<IIncidentStrategy, FaultStrategy>()

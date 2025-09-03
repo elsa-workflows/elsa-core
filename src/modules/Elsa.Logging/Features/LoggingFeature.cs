@@ -53,6 +53,7 @@ public class LoggingFeature(IModule module) : FeatureBase(module)
             .AddScoped<ILogSinkProvider, StaticLogSinkProvider>()
             .AddScoped<ILogSinkRouter, LogSinkRouter>()
             .AddScoped<IPropertyUIHandler, LogSinkCheckListUIHintHandler>()
+            .AddScoped<DictionaryValueEvaluator>()
             .AddSingleton<ILogEntryQueue, LogEntryQueue>()
             .AddSingleton<ILogSinkCatalog, LogSinkCatalog>();
     }

@@ -2,11 +2,10 @@ using System.Dynamic;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Logging.Contracts;
 using Elsa.Logging.Models;
+using Elsa.Logging.Services;
 using Elsa.Logging.UI;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
@@ -64,7 +63,8 @@ public class Log : CodeActivity
         Description = "Flat dictionary of key/value pairs to include as attributes.",
         DisplayName = "Attributes",
         UIHint = InputUIHints.Dictionary,
-        UIHandler = typeof(DictionaryUIHintHandler)
+        UIHandler = typeof(DictionaryUIHintHandler),
+        EvaluatorType = typeof(DictionaryValueEvaluator)
         )] 
     public Input<IDictionary<string, object>?> Attributes { get; set; } = null!;
 
