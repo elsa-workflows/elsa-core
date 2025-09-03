@@ -69,6 +69,9 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
         {
             span.AddEvent(new("pending"));
         }
+
+        if (!string.IsNullOrWhiteSpace(context.WorkflowExecutionContext.CorrelationId))
+            span.SetTag("workflow.correlation_id", context.WorkflowExecutionContext.CorrelationId);
     }
 }
 
