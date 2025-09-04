@@ -443,22 +443,19 @@ public static partial class ActivityExecutionContextExtensions
     /// </summary>
     public static void SetExtensionsMetadata(this ActivityExecutionContext context, string key, object? value)
     {
-        var extensionsDictionary = context.GetExtensionsMetadata();
-        
-        if(extensionsDictionary == null) extensionsDictionary = new();
-        
+        var extensionsDictionary = context.GetExtensionsMetadata() ?? new Dictionary<string, object?>();
+
         extensionsDictionary[key] = value;
         
         context.Metadata[ExtensionsMetadataKey] = extensionsDictionary;
-        
     }
 
     /// <summary>
-    /// Retrives the extensin data from the metdata. Represents specific data that is exposed generically for an activity.
+    /// Retrieves the extension data from the metadata. Represents specific data that is exposed generically for an activity.
     /// </summary>
     public static Dictionary<string, object?>? GetExtensionsMetadata(this ActivityExecutionContext context)
     {
-        return context.Metadata[ExtensionsMetadataKey] as Dictionary<string, object?>;
+        return context.Metadata.TryGetValue(ExtensionsMetadataKey, out var value) ? value as Dictionary<string, object?> : null;
     }
 
     internal static bool GetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties.TryGetValue<bool>("HasEvaluatedProperties", out var value) && value;
