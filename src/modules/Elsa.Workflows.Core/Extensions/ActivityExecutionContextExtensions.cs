@@ -441,9 +441,16 @@ public static partial class ActivityExecutionContextExtensions
     /// <summary>
     /// Sets extension data in the metadata. Represents specific data that is exposed generically for an activity.
     /// </summary>
-    public static void SetExtensionsMetadata(this ActivityExecutionContext context, Dictionary<string, object?> data)
+    public static void SetExtensionsMetadata(this ActivityExecutionContext context, string key, object? value)
     {
-        context.Metadata[ExtensionsMetadataKey] = data;
+        var extensionsDictionary = context.GetExtensionsMetadata();
+        
+        if(extensionsDictionary == null) extensionsDictionary = new();
+        
+        extensionsDictionary[key] = value;
+        
+        context.Metadata[ExtensionsMetadataKey] = extensionsDictionary;
+        
     }
 
     /// <summary>
