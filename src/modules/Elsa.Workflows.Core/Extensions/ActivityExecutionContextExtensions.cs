@@ -451,7 +451,7 @@ public static partial class ActivityExecutionContextExtensions
     }
 
     /// <summary>
-    /// Retrives the extensin data from the metdata. Represents specific data that is exposed generically for an activity.
+    /// Retrieves the extension data from the metadata. Represents specific data that is exposed generically for an activity.
     /// </summary>
     public static Dictionary<string, object?>? GetExtensionsMetadata(this ActivityExecutionContext context)
     {
