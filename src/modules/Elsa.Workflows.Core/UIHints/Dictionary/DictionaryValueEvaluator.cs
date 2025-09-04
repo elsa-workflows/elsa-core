@@ -27,9 +27,14 @@ public class DictionaryValueEvaluator : IActivityInputEvaluator
                 }
 
                 // JSON object, so extract the type and value properties.
-                json.TryGetProperty("type", out var typeProperty);
-                json.TryGetProperty("value", out var valueProperty);
+                var hasType = json.TryGetProperty("type", out var typeProperty);
+                var hasValue = json.TryGetProperty("value", out var valueProperty);
 
+                if (!hasType || !hasValue)
+                {
+                    // Skip this entry or handle as needed (e.g., log, throw, etc.)
+                    continue;
+                }
                 // Evaluate the expression.
                 var expression = new Expression(typeProperty.ToString(), valueProperty.ToString());
                 var val = await evaluator.EvaluateAsync<object>(expression, expressionExecutionContext);
