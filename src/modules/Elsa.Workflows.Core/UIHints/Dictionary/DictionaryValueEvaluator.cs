@@ -1,10 +1,11 @@
 using System.Text.Json;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.UIHints.Dictionary;
 
-public class DictionaryValueEvaluator : IActivityInputEvaluator
+public class DictionaryValueEvaluator(ILogger<DictionaryValueEvaluator> logger) : IActivityInputEvaluator
 {
     public async Task<object?> EvaluateAsync(ActivityInputEvaluatorContext context)
     {
@@ -33,8 +34,10 @@ public class DictionaryValueEvaluator : IActivityInputEvaluator
                 if (!hasType || !hasValue)
                 {
                     // Skip this entry or handle as needed (e.g., log, throw, etc.)
+                    logger.LogWarning("Dictionary entry is missing type or value property: {Json}", JsonSerializer.Serialize(json));
                     continue;
                 }
+                
                 // Evaluate the expression.
                 var expression = new Expression(typeProperty.ToString(), valueProperty.ToString());
                 var val = await evaluator.EvaluateAsync<object>(expression, expressionExecutionContext);
