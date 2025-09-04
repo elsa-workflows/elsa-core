@@ -2,8 +2,6 @@ using System.Dynamic;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Logging.Contracts;
 using Elsa.Logging.Models;
@@ -12,7 +10,6 @@ using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;
-using Elsa.Workflows.UIHints.Dictionary;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Logging.Activities;
@@ -50,23 +47,22 @@ public class Log : CodeActivity
     /// </summary>
     [Input(Description = "The log message to emit.")]
     public Input<string> Message { get; set; } = new(string.Empty);
-    
+
     /// <summary>
     /// Arguments for the templated string message.
     /// </summary>
-    [Input(Description = "Values of named or indexed placeholders in the log message.")] 
+    [Input(Description = "Values of named or indexed placeholders in the log message.")]
     public Input<object?> Arguments { get; set; } = null!;
-    
+
     /// <summary>
     /// Additional attributes to include in the log entry.
     /// </summary>
     [Input(
         Description = "Flat dictionary of key/value pairs to include as attributes.",
         DisplayName = "Attributes",
-        UIHint = InputUIHints.Dictionary,
-        UIHandler = typeof(DictionaryUIHintHandler)
-        )] 
-    public Input<IDictionary<string, object>?> Attributes { get; set; } = null!;
+        UIHint = InputUIHints.Dictionary
+    )]
+    public Input<IDictionary<string, object?>> Attributes { get; set; } = null!;
 
     /// <summary>
     /// The log level.
@@ -103,9 +99,8 @@ public class Log : CodeActivity
             // Could be JSON created from e.g., Liquid template. If so, parse it into an ExpandoObject.
             arguments = TryParseJson(argumentString);
         }
-        
+
         var attributes = Attributes.GetOrDefault(context) ?? new Dictionary<string, object?>()!;
-        
         var sinkNames = SinkNames.GetOrDefault(context) ?? new List<string>();
         var category = Category.GetOrDefault(context);
         if (string.IsNullOrWhiteSpace(category)) category = "Process";

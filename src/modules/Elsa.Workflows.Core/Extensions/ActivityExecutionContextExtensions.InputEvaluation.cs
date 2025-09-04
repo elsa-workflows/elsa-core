@@ -1,12 +1,9 @@
 using System.Linq.Expressions;
-using System.Text.Json;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.UIHints;
-using Expression = Elsa.Expressions.Models.Expression;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -94,25 +91,15 @@ public static partial class ActivityExecutionContextExtensions
             }
             else
             {
-                var evaluator = context.GetRequiredService<IExpressionEvaluator>();
+                var expressionEvaluator = context.GetRequiredService<IExpressionEvaluator>();
                 var expressionExecutionContext = context.ExpressionExecutionContext;
-                value = wrappedInput?.Expression != null ? await evaluator.EvaluateAsync(wrappedInput, expressionExecutionContext) : defaultValue;
-                if (value is IDictionary<string, object> dictionary && inputDescriptor.UIHint == InputUIHints.Dictionary)
+                var inputEvaluatorType = inputDescriptor.EvaluatorType ?? typeof(DefaultActivityInputEvaluator);
+
+                if (wrappedInput?.Expression != null)
                 {
-                    var tempDictionary = new Dictionary<string, object?>(dictionary.Count);
-                    foreach (var dict in dictionary)
-                    {
-                        if (dict.Value is not JsonElement json)
-                            continue;
-                        
-                        json.TryGetProperty("type" , out var typeProperty);
-                        json.TryGetProperty("value" , out var valueProperty);
-                        
-                        var expression = new Expression(typeProperty.ToString(), valueProperty.ToString());
-                        var val = await evaluator.EvaluateAsync<string>(expression, expressionExecutionContext);
-                        tempDictionary[dict.Key] = val;
-                    }
-                    value = tempDictionary;
+                    var inputEvaluator = (IActivityInputEvaluator)context.GetRequiredService(inputEvaluatorType);
+                    var inputEvaluatorContext = new ActivityInputEvaluatorContext(context, expressionExecutionContext, inputDescriptor, wrappedInput, expressionEvaluator);
+                    value = await inputEvaluator.EvaluateAsync(inputEvaluatorContext);
                 }
             }
 
