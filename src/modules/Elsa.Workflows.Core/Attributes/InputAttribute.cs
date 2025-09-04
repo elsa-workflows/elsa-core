@@ -79,6 +79,12 @@ public class InputAttribute : Attribute
     public bool AutoEvaluate { get; set; } = true;
 
     /// <summary>
+    /// Specifies the type of a custom evaluator to use for evaluating the input property value.
+    /// The evaluator type determines how the value for the property is resolved at runtime.
+    /// </summary>
+    public Type? EvaluatorType { get; set; }
+
+    /// <summary>
     /// A value indicating whether this input can be serialized as part of the workflow instance,
     /// </summary>
     public bool IsSerializable { get; set; } = true;

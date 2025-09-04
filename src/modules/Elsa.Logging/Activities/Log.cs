@@ -47,12 +47,22 @@ public class Log : CodeActivity
     /// </summary>
     [Input(Description = "The log message to emit.")]
     public Input<string> Message { get; set; } = new(string.Empty);
-    
+
+    /// <summary>
+    /// Arguments for the templated string message.
+    /// </summary>
+    [Input(Description = "Values of named or indexed placeholders in the log message.")]
+    public Input<object?> Arguments { get; set; } = null!;
+
     /// <summary>
     /// Additional attributes to include in the log entry.
     /// </summary>
-    [Input(Description = "Values of named or indexed placeholders in the log message.")] 
-    public Input<object?> Arguments { get; set; } = null!;
+    [Input(
+        Description = "Flat dictionary of key/value pairs to include as attributes.",
+        DisplayName = "Attributes",
+        UIHint = InputUIHints.Dictionary
+    )]
+    public Input<IDictionary<string, object?>> Attributes { get; set; } = null!;
 
     /// <summary>
     /// The log level.
@@ -65,15 +75,6 @@ public class Log : CodeActivity
     /// </summary>
     [Input(Description = "The category. Defaults to 'Process'.", DefaultValue = "Process")]
     public Input<string> Category { get; set; } = new("Process");
-
-    /// <summary>
-    /// Additional attributes to include in the log entry.
-    /// </summary>
-    [Input(
-        Description = "Flat dictionary of key/value pairs to include as attributes.",
-        UIHint = InputUIHints.Dictionary
-    )] 
-    public Input<IDictionary<string, object?>> Attributes { get; set; } = null!;
 
     /// <summary>
     /// Target sinks to write to.
@@ -98,8 +99,8 @@ public class Log : CodeActivity
             // Could be JSON created from e.g., Liquid template. If so, parse it into an ExpandoObject.
             arguments = TryParseJson(argumentString);
         }
-        
-        var attributes = Attributes.GetOrDefault(context) ?? new Dictionary<string, object?>();
+
+        var attributes = Attributes.GetOrDefault(context) ?? new Dictionary<string, object?>()!;
         var sinkNames = SinkNames.GetOrDefault(context) ?? new List<string>();
         var category = Category.GetOrDefault(context);
         if (string.IsNullOrWhiteSpace(category)) category = "Process";

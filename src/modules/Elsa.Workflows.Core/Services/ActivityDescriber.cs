@@ -150,8 +150,7 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
 
         var uiSpecification = await propertyUIHandlerResolver.GetUIPropertiesAsync(propertyInfo, null, cancellationToken);
 
-        return new InputDescriptor
-        (
+        return new(
             inputAttribute?.Name ?? propertyInfo.Name,
             wrappedPropertyType,
             propertyInfo.GetValue,
@@ -169,7 +168,8 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
             inputAttribute?.IsSerializable ?? true,
             false,
             autoEvaluate,
-            default,
+            inputAttribute?.EvaluatorType,
+            null,
             propertyInfo,
             uiSpecification
         );

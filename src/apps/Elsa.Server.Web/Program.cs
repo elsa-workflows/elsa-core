@@ -69,8 +69,6 @@ using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
 using Medallion.Threading.Redis;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
