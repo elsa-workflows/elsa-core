@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.OpenTelemetry.Contracts;
@@ -93,23 +94,25 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
         }
     }
 
-public string ToOtelFormat(string input)
-{
-    if (string.IsNullOrWhiteSpace(input))
-        return string.Empty;
-
-    var sb = new StringBuilder(input.Length);
-
-    foreach (var c in input)
+    public string ToOtelFormat(string input)
     {
-        if (char.IsWhiteSpace(c))
-            sb.Append('_');
-        else
-            sb.Append(char.ToLowerInvariant(c));
-    }
+        if (string.IsNullOrWhiteSpace(input))
+            return string.Empty;
 
-    return sb.ToString();
-}
+        var humanized = input.Humanize();
+
+        var sb = new StringBuilder(humanized.Length);
+
+        foreach (var c in humanized)
+        {
+            if (char.IsWhiteSpace(c))
+                sb.Append('_');
+            else
+                sb.Append(char.ToLowerInvariant(c));
+        }
+
+        return sb.ToString();
+    }
 }
 
 /// <summary>

@@ -76,7 +76,7 @@ public class ResilientActivityInvoker(
             // Propagate a flag that retries have occurred. This information can then be used to show the retry attempts in the workflow designer.
             context.SetRetriesAttemptedFlag();
 
-            context.SetExtensionsMetadata(new Dictionary<string, object?>(){{ RetryAttemptsCountKey, attempts.Count }});
+            context.SetExtensionsMetadata(RetryAttemptsCountKey, attempts.Count);
         }
     }
 
