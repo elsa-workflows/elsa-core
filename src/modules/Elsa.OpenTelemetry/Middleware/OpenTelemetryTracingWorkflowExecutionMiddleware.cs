@@ -96,10 +96,16 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
 
         if (context.Incidents.Any())
         {
-            span.SetTag("workflow.incidents.count", context.Incidents.Count);
-
+            var incidentTagsList = new List<ActivityTagsCollection>();
             foreach (var incident in context.Incidents)
-                span.AddEvent(new("incident", incident.Timestamp, CreateIncidentTags(incident)));
+            {
+                var incidentTags = CreateIncidentTags(incident);
+                incidentTagsList.Add(incidentTags);
+                span.AddEvent(new("incident", incident.Timestamp, incidentTags));
+            }
+
+            span.SetTag("workflow.incidents.items", incidentTagsList);
+            span.SetTag("workflow.incidents.count", context.Incidents.Count);
         }
 
         if (!string.IsNullOrWhiteSpace(context.CorrelationId))
