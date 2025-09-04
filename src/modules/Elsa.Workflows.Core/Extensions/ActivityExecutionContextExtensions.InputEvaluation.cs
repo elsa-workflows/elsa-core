@@ -1,13 +1,9 @@
 using System.Linq.Expressions;
-using System.Text.Json;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.UIHints;
-using Microsoft.Extensions.DependencyInjection;
-using Expression = Elsa.Expressions.Models.Expression;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -101,7 +97,7 @@ public static partial class ActivityExecutionContextExtensions
 
                 if (wrappedInput?.Expression != null)
                 {
-                    var inputEvaluator = (IActivityInputEvaluator)ActivatorUtilities.GetServiceOrCreateInstance(context.WorkflowExecutionContext.ServiceProvider, inputEvaluatorType);
+                    var inputEvaluator = (IActivityInputEvaluator)context.GetRequiredService(inputEvaluatorType);
                     var inputEvaluatorContext = new ActivityInputEvaluatorContext(context, expressionExecutionContext, inputDescriptor, wrappedInput, expressionEvaluator);
                     value = await inputEvaluator.EvaluateAsync(inputEvaluatorContext);
                 }

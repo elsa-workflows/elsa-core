@@ -32,7 +32,7 @@ public class DictionaryValueEvaluator : IActivityInputEvaluator
 
                 // Evaluate the expression.
                 var expression = new Expression(typeProperty.ToString(), valueProperty.ToString());
-                var val = await evaluator.EvaluateAsync<string>(expression, expressionExecutionContext);
+                var val = await evaluator.EvaluateAsync<object>(expression, expressionExecutionContext);
 
                 // Add the evaluated value to the dictionary.
                 tempDictionary[dict.Key] = val;
