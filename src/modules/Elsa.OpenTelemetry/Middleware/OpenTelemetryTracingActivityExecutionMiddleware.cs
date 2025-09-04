@@ -93,12 +93,23 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
         }
     }
 
-    public string ToOtelFormat(string input)
+public string ToOtelFormat(string input)
+{
+    if (string.IsNullOrWhiteSpace(input))
+        return string.Empty;
+
+    var sb = new StringBuilder(input.Length);
+
+    foreach (var c in input)
     {
-        var humanized = input.Humanize();
-        var correlationId = humanized.Replace(" ", "_").ToLowerInvariant();
-        return correlationId;
+        if (char.IsWhiteSpace(c))
+            sb.Append('_');
+        else
+            sb.Append(char.ToLowerInvariant(c));
     }
+
+    return sb.ToString();
+}
 }
 
 /// <summary>
