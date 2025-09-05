@@ -94,7 +94,7 @@ public class BookmarkFilter
     {
         // Return a hashable string representation of the filter, excluding null values.
         var sb = new System.Text.StringBuilder();
-        var first = true;
+        var first = true; 
         foreach (var prop in CachedProperties)
         {
             var value = prop.GetValue(this);
