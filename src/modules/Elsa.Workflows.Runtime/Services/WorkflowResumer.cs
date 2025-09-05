@@ -128,7 +128,7 @@ public class WorkflowResumer(
         }
         catch (TimeoutException e)
         {
-            throw new($"Could not acquire distributed lock with key '{lockKey}' within the configured timeout of {distributedLockingOptions.Value.LockAcquisitionTimeout}.", e);
+            throw new TimeoutException($"Could not acquire distributed lock with key '{lockKey}' within the configured timeout of {distributedLockingOptions.Value.LockAcquisitionTimeout}.", e);
         }
     }
 }
