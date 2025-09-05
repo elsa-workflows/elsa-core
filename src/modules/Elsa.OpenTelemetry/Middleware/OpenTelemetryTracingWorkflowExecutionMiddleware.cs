@@ -96,20 +96,28 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
 
         if (context.Incidents.Any())
         {
-            var incidentTagsList = new List<ActivityTagsCollection>();
-            foreach (var incident in context.Incidents)
+            var incidentsList = context.Incidents.ToList();
+            for (int i = 0; i < incidentsList.Count; i++)
             {
-                var incidentTags = CreateIncidentTags(incident);
-                incidentTagsList.Add(incidentTags);
-                span.AddEvent(new("incident", incident.Timestamp, incidentTags));
+                AddIncidentToSpan(span, incidentsList[i], i);
             }
 
-            span.SetTag("workflow.incidents.items", incidentTagsList);
-            span.SetTag("workflow.incidents.count", context.Incidents.Count);
+            span.SetTag("workflow.incidents.count", incidentsList.Count);
         }
 
         if (!string.IsNullOrWhiteSpace(context.CorrelationId))
             span.SetTag("workflow.correlation_id", context.CorrelationId);
+    }
+    
+    private void AddIncidentToSpan(Activity span, ActivityIncident incident, int index)
+    {
+        var tags = CreateIncidentTags(incident);
+        span.AddEvent(new ActivityEvent("incident", incident.Timestamp, tags));
+
+        foreach (var tag in tags)
+        {
+            span.SetTag($"workflow.incidents.{index}.{tag.Key}", tag.Value);
+        }
     }
 
     private Activity? CreateTraceActivity(WorkflowExecutionContext context, string? workflowName)
