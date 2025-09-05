@@ -124,7 +124,6 @@ public class WorkflowResumer(
                 }
             }
 
-
             return responses;
         }
         catch (TimeoutException e)
