@@ -93,6 +93,9 @@ public class BookmarkFilter
     public string GetHashableString()
     {
         // Return a hashable string representation of the filter, excluding null values.
-        return string.Join(",", CachedProperties.Select(x => x.GetValue(this)).Where(x => x != null));   
+        return string.Join(",", CachedProperties
+            .OrderBy(x => x.Name)
+            .Select(x => x.GetValue(this))
+            .Where(x => x != null));
     }
 }
