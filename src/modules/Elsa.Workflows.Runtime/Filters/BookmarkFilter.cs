@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Text;
 using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime.Filters;
@@ -93,7 +95,7 @@ public class BookmarkFilter
     public string GetHashableString()
     {
         // Return a hashable string representation of the filter, excluding null values.
-        var sb = new System.Text.StringBuilder();
+        var sb = new StringBuilder();
         foreach (var prop in CachedProperties)
         {
             var value = prop.GetValue(this);
@@ -102,7 +104,7 @@ public class BookmarkFilter
 
             string valueString;
             // Handle collections (excluding string)
-            if (value is System.Collections.IEnumerable enumerable and not string)
+            if (value is IEnumerable enumerable and not string)
             {
                 var items = new List<string>();
                 foreach (var item in enumerable)
