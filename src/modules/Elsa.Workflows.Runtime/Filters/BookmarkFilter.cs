@@ -100,7 +100,24 @@ public class BookmarkFilter
             if (value == null)
                 continue;
 
-            sb.Append(value);
+            // Handle collections (excluding string)
+            if (value is System.Collections.IEnumerable enumerable and not string)
+            {
+                // Convert to list of strings, sort for determinism.
+                var items = new List<string>();
+                foreach (var item in enumerable)
+                {
+                    if (item != null)
+                        items.Add(item.ToString()!);
+                }
+
+                items.Sort(StringComparer.Ordinal);
+                sb.Append(string.Join(",", items));
+            }
+            else
+            {
+                sb.Append(value);
+            }
         }
 
         return sb.ToString();
