@@ -87,7 +87,7 @@ public class WorkflowResumer(
     public async Task<IEnumerable<RunWorkflowInstanceResponse>> ResumeAsync(BookmarkFilter filter, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default)
     {
         var hashableFilterString = filter.GetHashableString();
-        var lockKey = $"bookmark-resumer:{hashableFilterString}";
+        var lockKey = $"workflow-resumer:{hashableFilterString}";
         await using var filterLock = await distributedLockProvider.AcquireLockAsync(lockKey, distributedLockingOptions.Value.LockAcquisitionTimeout, cancellationToken);
         var bookmarks = (await bookmarkStore.FindManyAsync(filter, cancellationToken)).ToList();
 
