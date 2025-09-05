@@ -5,6 +5,7 @@ namespace Elsa.Workflows.Runtime;
 /// <summary>
 /// Represents a service that looks up bookmark-bound workflows.
 /// </summary>
+[Obsolete("Will be removed in a future version.")]
 public interface IBookmarkBoundWorkflowService
 {
     /// <summary>

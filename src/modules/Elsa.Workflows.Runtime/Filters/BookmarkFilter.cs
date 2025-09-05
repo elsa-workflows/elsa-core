@@ -7,6 +7,9 @@ namespace Elsa.Workflows.Runtime.Filters;
 /// </summary>
 public class BookmarkFilter
 {
+    // Cache the properties of BookmarkFilter for performance.
+    private static readonly System.Reflection.PropertyInfo[] CachedProperties = typeof(BookmarkFilter).GetProperties();
+    
     /// <summary>
     /// Gets or sets the ID of the bookmark.
     /// </summary>
@@ -86,4 +89,10 @@ public class BookmarkFilter
     {
         Names = activityTypeNames.ToList()
     };
+    
+    public string GetHashableString()
+    {
+        // Return a hashable string representation of the filter, excluding null values.
+        return string.Join(",", CachedProperties.Select(x => x.GetValue(this)).Where(x => x != null));   
+    }
 }

@@ -1,13 +1,11 @@
 using Elsa.Common;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Filters;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime;
 
 public class StoreBookmarkQueue(
     IBookmarkQueueStore store, 
-    IBookmarkResumer resumer, 
     IBookmarkQueueSignaler bookmarkQueueSignaler, 
     ISystemClock systemClock, 
     IIdentityGenerator identityGenerator,
@@ -15,26 +13,6 @@ public class StoreBookmarkQueue(
 {
     public async Task EnqueueAsync(NewBookmarkQueueItem item, CancellationToken cancellationToken = default)
     {
-        var filter = new BookmarkFilter
-        {
-            BookmarkId = item.BookmarkId,
-            CorrelationId = item.CorrelationId,
-            Hash = item.StimulusHash,
-            WorkflowInstanceId = item.WorkflowInstanceId,
-            Name = item.ActivityTypeName
-        };
-
-        var result = await resumer.ResumeAsync(filter, item.Options, cancellationToken);
-
-        if (result.Matched)
-        {
-            logger.LogDebug("Successfully resumed workflow instance {WorkflowInstance} using bookmark {BookmarkId} for activity type {ActivityType}", item.WorkflowInstanceId, item.BookmarkId, item.ActivityTypeName);
-            return;
-        }
-
-        // There was no matching bookmark yet, or the associated workflow instance hasn't been stored in the DB yet. Store the queue item for the system to pick up whenever the bookmark or workflow instance becomes present.
-        logger.LogDebug("No bookmark with ID {BookmarkId} found for workflow {WorkflowInstance} for activity type {ActivityType}. Adding the request to the bookmark queue", item.BookmarkId, item.WorkflowInstanceId, item.ActivityTypeName);
-        
         var entity = new BookmarkQueueItem
         {
             Id = identityGenerator.GenerateId(),
@@ -48,6 +26,8 @@ public class StoreBookmarkQueue(
             CreatedAt = systemClock.UtcNow,
         };
 
+        logger.LogDebug("Enqueuing bookmark queue item {BookmarkQueueItemId} with bookmark {BookmarkId} and stimulus {StimulusHash}", entity.Id, entity.BookmarkId, entity.StimulusHash);
+        
         await store.AddAsync(entity, cancellationToken);
 
         // Trigger the bookmark queue processor.
