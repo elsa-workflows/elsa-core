@@ -88,39 +88,48 @@ public class WorkflowResumer(
     {
         var hashableFilterString = filter.GetHashableString();
         var lockKey = $"workflow-resumer:{hashableFilterString}";
-        await using var filterLock = await distributedLockProvider.AcquireLockAsync(lockKey, distributedLockingOptions.Value.LockAcquisitionTimeout, cancellationToken);
-        var bookmarks = (await bookmarkStore.FindManyAsync(filter, cancellationToken)).ToList();
 
-        if (bookmarks.Count == 0)
+        try
         {
-            logger.LogDebug("No bookmarks found in store for filter {@Filter}", filter);
-            return [];
-        }
+            await using var filterLock = await distributedLockProvider.AcquireLockAsync(lockKey, distributedLockingOptions.Value.LockAcquisitionTimeout, cancellationToken);
+            var bookmarks = (await bookmarkStore.FindManyAsync(filter, cancellationToken)).ToList();
 
-        var responses = new List<RunWorkflowInstanceResponse>();
-        foreach (var bookmark in bookmarks)
+            if (bookmarks.Count == 0)
+            {
+                logger.LogDebug("No bookmarks found in store for filter {@Filter}", filter);
+                return [];
+            }
+
+            var responses = new List<RunWorkflowInstanceResponse>();
+            foreach (var bookmark in bookmarks)
+            {
+                var workflowClient = await workflowRuntime.CreateClientAsync(bookmark.WorkflowInstanceId, cancellationToken);
+                var runRequest = new RunWorkflowInstanceRequest
+                {
+                    Input = options?.Input,
+                    Properties = options?.Properties,
+                    BookmarkId = bookmark.Id
+                };
+
+                try
+                {
+                    var response = await workflowClient.RunInstanceAsync(runRequest, cancellationToken);
+                    logger.LogDebug("Resumed workflow instance {WorkflowInstanceId} with bookmark {BookmarkId}", bookmark.WorkflowInstanceId, bookmark.Id);
+                    responses.Add(response);
+                }
+                catch (WorkflowInstanceNotFoundException)
+                {
+                    // The workflow instance does not (yet) exist in the DB.
+                    logger.LogDebug("No workflow instance with ID {WorkflowInstanceId} found for bookmark {BookmarkId} at this time.", bookmark.WorkflowInstanceId, bookmark.Id);
+                }
+            }
+
+
+            return responses;
+        }
+        catch (TimeoutException e)
         {
-            var workflowClient = await workflowRuntime.CreateClientAsync(bookmark.WorkflowInstanceId, cancellationToken);
-            var runRequest = new RunWorkflowInstanceRequest
-            {
-                Input = options?.Input,
-                Properties = options?.Properties,
-                BookmarkId = bookmark.Id
-            };
-
-            try
-            {
-                var response = await workflowClient.RunInstanceAsync(runRequest, cancellationToken);
-                logger.LogDebug("Resumed workflow instance {WorkflowInstanceId} with bookmark {BookmarkId}", bookmark.WorkflowInstanceId, bookmark.Id);
-                responses.Add(response);
-            }
-            catch (WorkflowInstanceNotFoundException)
-            {
-                // The workflow instance does not (yet) exist in the DB.
-                logger.LogDebug("No workflow instance with ID {WorkflowInstanceId} found for bookmark {BookmarkId} at this time.", bookmark.WorkflowInstanceId, bookmark.Id);
-            }
+            throw new($"Could not acquire distributed lock with key '{lockKey}' within the configured timeout of {distributedLockingOptions.Value.LockAcquisitionTimeout}.", e);
         }
-
-        return responses;
     }
 }
