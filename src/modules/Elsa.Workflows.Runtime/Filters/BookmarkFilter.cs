@@ -115,7 +115,10 @@ public class BookmarkFilter
             }
             else
             {
-                valueString = value.ToString()!;
+                var toStringResult = value.ToString();
+                if (toStringResult == null)
+                    continue;
+                valueString = toStringResult;
             }
             sb.Append($"{prop.Name}:{valueString};");
         }
