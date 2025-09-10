@@ -34,7 +34,11 @@ internal class PostEndpoint(
         {
             try
             {
-                request = await JsonSerializer.DeserializeAsync<PostRequest>(HttpContext.Request.Body, cancellationToken: cancellationToken);
+                request = await JsonSerializer.DeserializeAsync<PostRequest>(HttpContext.Request.Body,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }, cancellationToken: cancellationToken);
             }
             catch
             {
