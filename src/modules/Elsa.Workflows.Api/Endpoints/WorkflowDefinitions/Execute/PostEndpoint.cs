@@ -30,7 +30,7 @@ internal class PostEndpoint(
     {
         PostRequest? request = null;
 
-        if (HttpContext.Request is { ContentLength: > 0, ContentType: "application/json" or null })
+        if (HttpContext.Request.ContentLength > 0 && (HttpContext.Request.ContentType?.Contains("application/json") ?? true))
         {
             try
             {
