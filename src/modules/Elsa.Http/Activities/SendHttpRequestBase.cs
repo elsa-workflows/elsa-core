@@ -216,6 +216,21 @@ public abstract class SendHttpRequestBase(string? source = null, int? line = nul
         async Task<HttpResponseMessage> SendRequestAsyncCore(CancellationToken ct = default)
         {
             var request = PrepareRequest(context);
+
+            if (request.Content != null && request.Content.Headers.ContentLength is null)
+            {
+                var bytes = await request.Content.ReadAsByteArrayAsync(ct);
+
+                var buffered = new ByteArrayContent(bytes);
+
+                foreach (var h in request.Content.Headers)
+                    buffered.Headers.TryAddWithoutValidation(h.Key, h.Value);
+
+                buffered.Headers.ContentLength = bytes.Length;
+
+                request.Content = buffered;
+            }
+
             return await httpClient.SendAsync(request, ct);
         }
     }
