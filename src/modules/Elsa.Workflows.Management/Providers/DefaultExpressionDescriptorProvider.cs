@@ -79,7 +79,7 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
     {
         return CreateDescriptor<InputExpressionHandler>(
             "Input",
-            "Input", // Texte affiché dans l'interface (dropdown de sélection du type d'input)
+            "Input", // Displayed text in UI (input selection dropdown)
             isBrowsable: true,
             deserialize: context =>
             {
