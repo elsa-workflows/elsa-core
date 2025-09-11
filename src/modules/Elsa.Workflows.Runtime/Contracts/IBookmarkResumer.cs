@@ -6,6 +6,7 @@ namespace Elsa.Workflows.Runtime;
 /// <summary>
 /// Resumes workflows using a given stimulus or bookmark filter.
 /// </summary>
+[Obsolete("Use IWorkflowResumer instead.")]
 public interface IBookmarkResumer
 {
     /// <summary>
