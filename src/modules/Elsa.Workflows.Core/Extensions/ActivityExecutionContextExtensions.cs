@@ -24,6 +24,8 @@ namespace Elsa.Extensions;
 [PublicAPI]
 public static partial class ActivityExecutionContextExtensions
 {
+    private const string ExtensionsMetadataKey = "Extensions";
+
     /// <summary>
     /// Attempts to get a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
     /// </summary>
@@ -434,6 +436,26 @@ public static partial class ActivityExecutionContextExtensions
             foreach (var descendant in child.GetDescendants())
                 yield return descendant;
         }
+    }
+
+    /// <summary>
+    /// Sets extension data in the metadata. Represents specific data that is exposed generically for an activity.
+    /// </summary>
+    public static void SetExtensionsMetadata(this ActivityExecutionContext context, string key, object? value)
+    {
+        var extensionsDictionary = context.GetExtensionsMetadata() ?? new Dictionary<string, object?>();
+
+        extensionsDictionary[key] = value;
+        
+        context.Metadata[ExtensionsMetadataKey] = extensionsDictionary;
+    }
+
+    /// <summary>
+    /// Retrieves the extension data from the metadata. Represents specific data that is exposed generically for an activity.
+    /// </summary>
+    public static Dictionary<string, object?>? GetExtensionsMetadata(this ActivityExecutionContext context)
+    {
+        return context.Metadata.TryGetValue(ExtensionsMetadataKey, out var value) ? value as Dictionary<string, object?> : null;
     }
 
     internal static bool GetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties.TryGetValue<bool>("HasEvaluatedProperties", out var value) && value;

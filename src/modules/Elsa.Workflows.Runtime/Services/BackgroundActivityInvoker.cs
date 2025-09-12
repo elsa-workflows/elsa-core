@@ -74,7 +74,7 @@ public class BackgroundActivityInvoker(
             [inputKey] = outputValues,
             [journalDataKey] = activityExecutionContext.JournalData,
             [bookmarksKey] = activityExecutionContext.Bookmarks.ToList(),
-            [propsKey] = activityExecutionContext.Properties
+            [propsKey] = activityExecutionContext.Properties.ToDictionary() // ChangeTrackingDictionary is not persistable, so we need to create a copy of the dictionary.
         };
 
         if (outcomes != null) bookmarkProps[outcomesKey] = outcomes;

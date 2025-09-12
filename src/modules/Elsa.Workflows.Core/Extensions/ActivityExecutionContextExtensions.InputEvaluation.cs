@@ -91,9 +91,16 @@ public static partial class ActivityExecutionContextExtensions
             }
             else
             {
-                var evaluator = context.GetRequiredService<IExpressionEvaluator>();
+                var expressionEvaluator = context.GetRequiredService<IExpressionEvaluator>();
                 var expressionExecutionContext = context.ExpressionExecutionContext;
-                value = wrappedInput?.Expression != null ? await evaluator.EvaluateAsync(wrappedInput, expressionExecutionContext) : defaultValue;
+                var inputEvaluatorType = inputDescriptor.EvaluatorType ?? typeof(DefaultActivityInputEvaluator);
+
+                if (wrappedInput?.Expression != null)
+                {
+                    var inputEvaluator = (IActivityInputEvaluator)context.GetRequiredService(inputEvaluatorType);
+                    var inputEvaluatorContext = new ActivityInputEvaluatorContext(context, expressionExecutionContext, inputDescriptor, wrappedInput, expressionEvaluator);
+                    value = await inputEvaluator.EvaluateAsync(inputEvaluatorContext);
+                }
             }
 
             var memoryReference = wrappedInput?.MemoryBlockReference();

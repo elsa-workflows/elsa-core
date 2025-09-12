@@ -93,6 +93,9 @@
         <None Update="Scenarios\InputOutput\Workflows\provider.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="Scenarios\RestApis\Workflows\hello-world.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

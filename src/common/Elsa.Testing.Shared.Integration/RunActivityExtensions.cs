@@ -1,14 +1,6 @@
-using Elsa.Common.Models;
 using Elsa.Workflows;
-using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
-using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Filters;
-using Elsa.Workflows.Runtime.Messages;
-using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -45,6 +37,7 @@ public static class RunActivityExtensions
     /// <returns>The result of running the activity.</returns>
     public static async Task<RunWorkflowResult> RunActivityAsync(this IServiceProvider services, IActivity activity, RunWorkflowOptions options, CancellationToken cancellationToken = default)
     {
+        await services.PopulateRegistriesAsync();
         var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
         var result = await workflowRunner.RunAsync(activity, options, cancellationToken);
         return result;

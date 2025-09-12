@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime;
 
-public class BookmarkQueueProcessor(IBookmarkQueueStore store, IBookmarkResumer bookmarkResumer, ILogger<BookmarkQueueProcessor> logger) : IBookmarkQueueProcessor
+public class BookmarkQueueProcessor(IBookmarkQueueStore store, IWorkflowResumer workflowResumer, ILogger<BookmarkQueueProcessor> logger) : IBookmarkQueueProcessor
 {
     public async Task ProcessAsync(CancellationToken cancellationToken = default)
     {
@@ -41,16 +41,16 @@ public class BookmarkQueueProcessor(IBookmarkQueueStore store, IBookmarkResumer 
         
         logger.LogDebug("Processing bookmark queue item {BookmarkQueueItemId} for workflow instance {WorkflowInstanceId} for activity type {ActivityType}", item.Id, item.WorkflowInstanceId, item.ActivityTypeName);
         
-        var result = await bookmarkResumer.ResumeAsync(filter, options, cancellationToken);
+        var responses = (await workflowResumer.ResumeAsync(filter, options, cancellationToken)).ToList();
 
-        if (result.Matched)
+        if (responses.Count > 0)
         {
-            logger.LogDebug("Successfully resumed workflow instance {WorkflowInstance} using bookmark {BookmarkId} for activity type {ActivityType}", item.WorkflowInstanceId, item.BookmarkId, item.ActivityTypeName);
+            logger.LogDebug("Successfully resumed {WorkflowCount} workflow instances using stimulus {StimulusHash} for activity type {ActivityType}", responses.Count, item.StimulusHash, item.ActivityTypeName);
             await store.DeleteAsync(item.Id, cancellationToken);
         }
         else
         {
-            logger.LogDebug("No matching bookmark found for bookmark queue item {BookmarkQueueItemId} for workflow instance {WorkflowInstanceId} for activity type {ActivityType}", item.Id, item.WorkflowInstanceId, item.ActivityTypeName);
+            logger.LogDebug("No matching bookmarks found for bookmark queue item {BookmarkQueueItemId} for workflow instance {WorkflowInstanceId} for activity type {ActivityType} with stimulus {StimulusHash}", item.Id, item.WorkflowInstanceId, item.ActivityTypeName, item.StimulusHash);
         }
     }
 }

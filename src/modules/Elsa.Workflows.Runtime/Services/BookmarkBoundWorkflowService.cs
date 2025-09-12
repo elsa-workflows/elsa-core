@@ -4,6 +4,7 @@ using Elsa.Workflows.Runtime.Options;
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
+[Obsolete("Will be removed in a future version.")]
 public class BookmarkBoundWorkflowService(IWorkflowMatcher workflowMatcher) : IBookmarkBoundWorkflowService
 {
     /// <inheritdoc />
