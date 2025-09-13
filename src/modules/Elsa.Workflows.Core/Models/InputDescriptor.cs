@@ -35,7 +35,7 @@ public class InputDescriptor : PropertyDescriptor
         Type? storageDriverType = null,
         PropertyInfo? propertyInfo = null,
         IDictionary<string, object>? uiSpecifications = null
-        )
+    )
     {
         Name = name;
         Type = type;
@@ -106,7 +106,7 @@ public class InputDescriptor : PropertyDescriptor
     /// True if the expression should be evaluated automatically, false otherwise. Defaults to true.
     /// </summary>
     public bool AutoEvaluate { get; set; } = true;
-    
+
     /// <summary>
     /// Specifies the type of a custom evaluator to use for evaluating the input property value.
     /// The evaluator type determines how the value for the property is resolved at runtime.
