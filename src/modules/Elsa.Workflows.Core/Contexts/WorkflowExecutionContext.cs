@@ -636,7 +636,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     {
         // Filter out completed activity execution contexts, except for the root Workflow activity context, which stores workflow-level variables.
         // This will currently break scripts accessing activity output directly, but there's a workaround for that via variable capturing.
-        // We may ultimately restore direct output access, but in a different way.
+        // We may ultimately restore direct output access, but differently.
         return ActivityExecutionContexts.Where(x => !x.IsCompleted || x.ParentActivityExecutionContext == null);
     }
 

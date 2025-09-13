@@ -216,6 +216,7 @@ public abstract class SendHttpRequestBase(string? source = null, int? line = nul
         async Task<HttpResponseMessage> SendRequestAsyncCore(CancellationToken ct = default)
         {
             var request = PrepareRequest(context);
+
             return await httpClient.SendAsync(request, ct);
         }
     }

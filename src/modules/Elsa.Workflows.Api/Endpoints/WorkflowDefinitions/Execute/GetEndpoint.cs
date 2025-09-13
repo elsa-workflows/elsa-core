@@ -1,3 +1,4 @@
+using Elsa.Abstractions;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
@@ -12,13 +13,27 @@ internal class GetEndpoint(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowRuntime workflowRuntime,
     IWorkflowStarter workflowStarter,
-    IApiSerializer apiSerializer) 
-    : EndpointBase<GetRequest>(workflowDefinitionService, workflowRuntime, workflowStarter, apiSerializer)
+    IApiSerializer apiSerializer)
+    : ElsaEndpoint<GetRequest>
 {
     /// <inheritdoc />
     public override void Configure()
     {
-        base.Configure();
+        Routes("/workflow-definitions/{definitionId}/execute");
+        ConfigurePermissions("exec:workflow-definitions");
         Verbs(FastEndpoints.Http.GET);
+    }
+
+    /// <inheritdoc />
+    public override async Task HandleAsync(GetRequest request, CancellationToken cancellationToken)
+    {
+        await WorkflowExecutionHelper.ExecuteWorkflowAsync(
+            request,
+            workflowDefinitionService,
+            workflowRuntime,
+            workflowStarter,
+            apiSerializer,
+            HttpContext,
+            cancellationToken);
     }
 }

@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Text;
 using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime.Filters;
@@ -7,6 +9,9 @@ namespace Elsa.Workflows.Runtime.Filters;
 /// </summary>
 public class BookmarkFilter
 {
+    // Cache the properties of BookmarkFilter for performance.
+    private static readonly System.Reflection.PropertyInfo[] CachedProperties = typeof(BookmarkFilter).GetProperties();
+
     /// <summary>
     /// Gets or sets the ID of the bookmark.
     /// </summary>
@@ -86,4 +91,40 @@ public class BookmarkFilter
     {
         Names = activityTypeNames.ToList()
     };
+
+    public string GetHashableString()
+    {
+        // Return a hashable string representation of the filter, excluding null values.
+        var sb = new StringBuilder();
+        foreach (var prop in CachedProperties)
+        {
+            var value = prop.GetValue(this);
+            if (value == null)
+                continue;
+
+            string valueString;
+            // Handle collections (excluding string)
+            if (value is IEnumerable enumerable and not string)
+            {
+                var items = new List<string>();
+                foreach (var item in enumerable)
+                {
+                    if (item != null)
+                        items.Add(item.ToString()!);
+                }
+                items.Sort(StringComparer.Ordinal);
+                valueString = string.Join(",", items);
+            }
+            else
+            {
+                var toStringResult = value.ToString();
+                if (toStringResult == null)
+                    continue;
+                valueString = toStringResult;
+            }
+            sb.Append($"{prop.Name}:{valueString};");
+        }
+
+        return sb.ToString();
+    }
 }
