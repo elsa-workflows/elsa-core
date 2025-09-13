@@ -36,8 +36,12 @@ public static class ItemSourceActivityExecutionContextExtensions
                         yield return item;
             }
         }
-
-        if (items is IEnumerable<T> enumerable)
+        else if (items is IAsyncEnumerable<T> asyncEnumerable)
+        {
+            await foreach (T item in asyncEnumerable)
+                yield return item;
+        }
+        else if (items is IEnumerable<T> enumerable)
         {
             foreach (T item in enumerable)
                 yield return item;
