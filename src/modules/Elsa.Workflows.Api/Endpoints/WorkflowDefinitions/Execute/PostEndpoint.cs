@@ -57,7 +57,7 @@ internal class PostEndpoint(
         
         if (ValidationFailed)
         {
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
         
