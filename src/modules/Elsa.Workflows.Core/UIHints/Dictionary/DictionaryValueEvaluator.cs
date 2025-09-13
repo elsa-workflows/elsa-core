@@ -5,6 +5,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.UIHints.Dictionary;
 
+/// <summary>
+/// A class that evaluates activity inputs configured to be dictionaries. It resolves expressions and modifies the input dictionary accordingly.
+/// </summary>
 public class DictionaryValueEvaluator(ILogger<DictionaryValueEvaluator> logger) : IActivityInputEvaluator
 {
     public async Task<object?> EvaluateAsync(ActivityInputEvaluatorContext context)
