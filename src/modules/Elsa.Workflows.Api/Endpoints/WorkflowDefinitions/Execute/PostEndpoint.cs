@@ -24,7 +24,6 @@ internal class PostEndpoint(
         ConfigurePermissions("exec:workflow-definitions");
         Verbs(FastEndpoints.Http.POST);
     }
-
     /// <inheritdoc />
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {

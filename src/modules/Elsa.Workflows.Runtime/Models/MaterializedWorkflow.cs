@@ -9,4 +9,4 @@ namespace Elsa.Workflows.Runtime;
 /// <param name="ProviderName">The name of the provider that provided the workflow definition.</param>
 /// <param name="MaterializerName">The name of the materializer that materialized the workflow.</param>
 /// <param name="MaterializerContext">The context of the materializer that materialized the workflow.</param>
-public record MaterializedWorkflow(Workflow Workflow, string ProviderName, string MaterializerName, object? MaterializerContext = default);
+public record MaterializedWorkflow(Workflow Workflow, string ProviderName, string MaterializerName, object? MaterializerContext = null);
