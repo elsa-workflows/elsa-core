@@ -199,6 +199,9 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
         if (wrappedPropertyType == typeof(Variable))
             return InputUIHints.VariablePicker;
 
+        if (wrappedPropertyType == typeof(WorkflowInput))
+            return InputUIHints.InputPicker;
+
         if (wrappedPropertyType == typeof(Type))
             return InputUIHints.TypePicker;
 
