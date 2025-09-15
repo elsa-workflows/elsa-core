@@ -11,7 +11,10 @@ using Xunit.Abstractions;
 namespace Elsa.Workflows.IntegrationTests.Scenarios.WorkflowDefinitionStorePopulation;
 
 /// <summary>
-/// Contains tests for the "DependencyWorkflowsPublishing" scenario.
+/// Represents a test class for integration testing various scenarios related to the
+/// `WorkflowDefinitionStorePopulation`. This class primarily focuses
+/// on ensuring correct behavior when workflow definitions are published or updated, and their effects
+/// on consuming workflows and triggers.
 /// </summary>
 public class Tests
 {
