@@ -56,7 +56,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     {
         var providers = _workflowDefinitionProviders();
         var workflowDefinitions = new List<WorkflowDefinition>();
-        
+
         foreach (var provider in providers)
         {
             var results = await provider.GetWorkflowsAsync(cancellationToken).AsTask().ToList();
@@ -158,7 +158,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             Version = workflow.Identity.Version,
             TenantId = workflow.Identity.TenantId,
         };
-        
+
         workflowDefinition.Description = workflow.WorkflowMetadata.Description;
         workflowDefinition.Name = workflow.WorkflowMetadata.Name;
         workflowDefinition.ToolVersion = workflow.WorkflowMetadata.ToolVersion;
