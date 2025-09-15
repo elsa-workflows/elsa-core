@@ -114,12 +114,6 @@ public class InputDescriptor : PropertyDescriptor
     public Type? EvaluatorType { get; set; }
 
     /// <summary>
-    /// Specifies the type of a custom evaluator to use for evaluating the input property value.
-    /// The evaluator type determines how the value for the property is resolved at runtime.
-    /// </summary>
-    public Type? EvaluatorType { get; set; }
-
-    /// <summary>
     /// A dictionary of UI specifications to be used by the UI.
     /// </summary>
     public IDictionary<string, object>? UISpecifications { get; set; }
