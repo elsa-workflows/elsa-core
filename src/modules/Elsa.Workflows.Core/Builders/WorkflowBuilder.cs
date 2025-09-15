@@ -63,6 +63,12 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
         DefinitionId = definitionId;
         return this;
     }
+    
+    public IWorkflowBuilder WithId(string id)
+    {
+        Id = id;
+        return this;
+    }
 
     /// <inheritdoc />
     public IWorkflowBuilder WithTenantId(string tenantId)

@@ -97,6 +97,13 @@ public interface IWorkflowBuilder
     IWorkflowBuilder WithDefinitionId(string definitionId);
 
     /// <summary>
+    /// A fluent method for setting the <see cref="Id"/> property.
+    /// </summary>
+    /// <param name="id">The unique identifier to use for the workflow being built.</param>
+    /// <returns>The current <see cref="IWorkflowBuilder"/> instance for method chaining.</returns>
+    IWorkflowBuilder WithId(string id);
+
+    /// <summary>
     /// A fluent method for setting the <see cref="TenantId"/> property.
     /// </summary>
     /// <param name="tenantId">The tenant ID to use for the workflow being built.</param>
