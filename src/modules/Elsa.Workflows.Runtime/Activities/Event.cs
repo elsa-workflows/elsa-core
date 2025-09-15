@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 [UsedImplicitly]
 public class Event : Trigger<object?>
 {
-    internal const string EventInputWorkflowInputKey = "__EventPayloadWorkflowInput";
+    public const string EventInputWorkflowInputKey = "__EventPayloadWorkflowInput";
 
     /// <inheritdoc />
     internal Event([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)

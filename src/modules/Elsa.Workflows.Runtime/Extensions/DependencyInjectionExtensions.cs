@@ -10,10 +10,15 @@ namespace Microsoft.Extensions.DependencyInjection;
 public static class DependencyInjectionExtensions
 {
     /// <summary>
-    /// Adds the <see cref="ClrWorkflowsProvider"/> to the service collection.
+    /// Adds the specified workflow provider type to the service collection.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <typeparam name="T">The type of the workflow definition provider.</typeparam>
-    /// <returns>The service collection.</returns>
+    /// <typeparam name="T">The type of the workflow provider to add. Must implement <see cref="IWorkflowsProvider"/>.</typeparam>
+    [Obsolete("Use AddWorkflowsProvider instead.", false)]
     public static IServiceCollection AddWorkflowDefinitionProvider<T>(this IServiceCollection services) where T : class, IWorkflowsProvider => services.AddScoped<IWorkflowsProvider, T>();
+    
+    /// <summary>
+    /// Adds the specified workflows provider type to the service collection.
+    /// </summary>
+    /// <typeparam name="T">The type of the workflow provider to add. Must implement <see cref="IWorkflowsProvider"/>.</typeparam>
+    public static IServiceCollection AddWorkflowsProvider<T>(this IServiceCollection services) where T : class, IWorkflowsProvider => services.AddScoped<IWorkflowsProvider, T>();
 }
