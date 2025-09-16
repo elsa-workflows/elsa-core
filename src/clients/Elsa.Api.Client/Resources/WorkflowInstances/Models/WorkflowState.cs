@@ -87,4 +87,9 @@ public class WorkflowState : Entity
     /// The finished time of the workflow.
     /// </summary>
     public DateTimeOffset? FinishedAt { get; set; }
+
+    /// <summary>
+    /// The name of the user who executed the workflow.
+    /// </summary>
+    public string? Initiator { get; set; }
 }

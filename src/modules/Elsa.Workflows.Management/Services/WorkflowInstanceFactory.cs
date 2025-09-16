@@ -29,7 +29,8 @@ public class WorkflowInstanceFactory(IIdentityGenerator identityGenerator, ISyst
             CreatedAt = now,
             UpdatedAt = now,
             ParentWorkflowInstanceId = options?.ParentWorkflowInstanceId,
-            IsSystem = workflow.IsSystem
+            IsSystem = workflow.IsSystem,
+            Initiator = options?.Initiator
         };
     }
 
@@ -54,6 +55,7 @@ public class WorkflowInstanceFactory(IIdentityGenerator identityGenerator, ISyst
             CreatedAt = workflowState.CreatedAt,
             UpdatedAt = workflowState.UpdatedAt,
             FinishedAt = workflowState.FinishedAt,
+            Initiator = workflowState.Initiator,
         };
     }
 }

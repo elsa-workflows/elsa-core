@@ -32,6 +32,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             CreatedAt = workflowExecutionContext.CreatedAt,
             UpdatedAt = workflowExecutionContext.UpdatedAt,
             FinishedAt = workflowExecutionContext.FinishedAt,
+            Initiator = workflowExecutionContext.Initiator,
         };
 
         ExtractProperties(state, workflowExecutionContext);

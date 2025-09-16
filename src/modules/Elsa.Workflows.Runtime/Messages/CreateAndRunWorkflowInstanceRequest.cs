@@ -58,4 +58,9 @@ public class CreateAndRunWorkflowInstanceRequest
     /// When set to <c>true</c>, include workflow output in the response.
     /// </summary>
     public bool IncludeWorkflowOutput { get; set; }
+
+    /// <summary>
+    /// The name of the user making the request.
+    /// </summary>
+    public string? Initiator { get; set; }
 }

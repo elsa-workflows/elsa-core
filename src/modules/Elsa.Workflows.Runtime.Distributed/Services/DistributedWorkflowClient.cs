@@ -38,7 +38,8 @@ public class DistributedWorkflowClient(
             Name = request.Name,
             Input = request.Input,
             WorkflowDefinitionHandle = request.WorkflowDefinitionHandle,
-            ParentId = request.ParentId
+            ParentId = request.ParentId,
+            Initiator = request.Initiator
         };
         var workflowInstance = await _localWorkflowClient.CreateInstanceInternalAsync(createRequest, cancellationToken);
         
