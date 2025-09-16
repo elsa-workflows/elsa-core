@@ -56,6 +56,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IEnumerable<ActivityIncident> incidents,
         IEnumerable<Bookmark> originalBookmarks,
         DateTimeOffset createdAt,
+        string? initiator,
         CancellationToken cancellationToken)
     {
         ServiceProvider = serviceProvider;
@@ -81,11 +82,12 @@ public partial class WorkflowExecutionContext : IExecutionContext
         Incidents = incidents.ToList();
         OriginalBookmarks = originalBookmarks.ToList();
         WorkflowGraph = workflowGraph;
+        Initiator = initiator;
         var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _cancellationTokenSources.Add(linkedCancellationTokenSource);
         _cancellationRegistrations.Add(linkedCancellationTokenSource.Token.Register(CancelWorkflow));
     }
-    
+
     /// <summary>
     /// Creates a new <see cref="WorkflowExecutionContext"/> for the specified workflow.
     /// </summary>
@@ -138,6 +140,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             properties,
             executeDelegate,
             triggerActivityId,
+            null,
             cancellationToken
         );
     }
@@ -170,6 +173,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             properties,
             executeDelegate,
             triggerActivityId,
+            workflowState.Initiator,
             cancellationToken);
 
         var workflowStateExtractor = serviceProvider.GetRequiredService<IWorkflowStateExtractor>();
@@ -194,6 +198,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IDictionary<string, object>? properties = null,
         ExecuteActivityDelegate? executeDelegate = null,
         string? triggerActivityId = null,
+        string? initiator = null,
         CancellationToken cancellationToken = default)
     {
         // Set up a workflow execution context.
@@ -210,6 +215,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             incidents,
             originalBookmarks,
             createdAt,
+            initiator,
             cancellationToken)
         {
             MemoryRegister = workflowGraph.Workflow.CreateRegister()
@@ -303,6 +309,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
     /// Gets the clock used to determine the current time.
     public ISystemClock SystemClock { get; }
+
+    /// The initiator of the workflow execution.
+    public string? Initiator { get; set; }
 
     /// A flattened list of <see cref="ActivityNode"/>s from the <see cref="Graph"/>. 
     public IReadOnlyCollection<ActivityNode> Nodes => WorkflowGraph.Nodes.ToList();

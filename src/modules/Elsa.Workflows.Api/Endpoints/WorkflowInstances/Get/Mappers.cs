@@ -27,6 +27,7 @@ internal class WorkflowInstanceMapper : ResponseMapper<WorkflowInstanceModel, Wo
         IsSystem = e.IsSystem,
         CreatedAt = e.CreatedAt,
         FinishedAt = e.FinishedAt,
-        UpdatedAt = e.UpdatedAt
+        UpdatedAt = e.UpdatedAt,
+        Initiator = e.Initiator
     };
 }
