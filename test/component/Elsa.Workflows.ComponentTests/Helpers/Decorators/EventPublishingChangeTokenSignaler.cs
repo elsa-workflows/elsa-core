@@ -20,7 +20,7 @@ public class EventPublishingChangeTokenSignaler(IChangeTokenSignaler decoratedSe
 
     public ValueTask TriggerTokenAsync(string key, CancellationToken cancellationToken = default)
     {
-        triggerChangeTokenSignalEvents.RaiseChangeTokenSignalTriggered(new TriggerChangeTokenSignalEventArgs(key));
+        triggerChangeTokenSignalEvents.RaiseChangeTokenSignalTriggered(new(key));
         return decoratedService.TriggerTokenAsync(key, cancellationToken);
     }
 }

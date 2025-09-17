@@ -1,0 +1,72 @@
+name: Docker certificate smoke tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'docker/**'
+      - 'scripts/test-ca-trust.sh'
+      - 'test/TlsSmoke/**'
+      - '.github/workflows/docker-ca.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docker/**'
+      - 'scripts/test-ca-trust.sh'
+      - 'test/TlsSmoke/**'
+      - '.github/workflows/docker-ca.yml'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: elsa-server
+            dockerfile: docker/ElsaServer.Dockerfile
+            image: elsa-server-smoke
+            skip_otel: '0'
+          - name: elsa-server-and-studio
+            dockerfile: docker/ElsaServerAndStudio.Dockerfile
+            image: elsa-server-and-studio-smoke
+            skip_otel: '0'
+          - name: elsa-studio
+            dockerfile: docker/ElsaStudio.Dockerfile
+            image: elsa-studio-smoke
+            skip_otel: '0'
+          - name: elsa-server-datadog
+            dockerfile: docker/ElsaServer-Datadog.Dockerfile
+            image: elsa-server-datadog-smoke
+            skip_otel: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Publish TLS smoke test app
+        run: dotnet publish test/TlsSmoke/TlsSmoke.csproj -c Release -o artifacts/tls-smoke
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.name }} image
+        run: docker build -f ${{ matrix.dockerfile }} -t ${{ matrix.image }} .
+
+      - name: Run TLS smoke tests
+        env:
+          SKIP_OTEL: ${{ matrix.skip_otel }}
+        run: |
+          set -euo pipefail
+          TLS_APP_DIR="${{ github.workspace }}/artifacts/tls-smoke"
+          if [ "$SKIP_OTEL" = "1" ]; then
+            scripts/test-ca-trust.sh "${{ matrix.image }}" "$TLS_APP_DIR" -e ELSA_SKIP_OTEL_AUTO=1
+          else
+            scripts/test-ca-trust.sh "${{ matrix.image }}" "$TLS_APP_DIR"
+          fi
