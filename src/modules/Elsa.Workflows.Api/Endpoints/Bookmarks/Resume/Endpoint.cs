@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Api.Endpoints.Bookmarks.Resume;
 /// Resumes a bookmarked workflow instance with the bookmark ID specified in the provided SAS token.
 /// </summary>
 [PublicAPI]
-internal class Resume(ITokenService tokenService, IBookmarkQueue bookmarkQueue, IPayloadSerializer serializer) : ElsaEndpoint<Request>
+internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResumer, IBookmarkQueue bookmarkQueue, IPayloadSerializer serializer) : ElsaEndpoint<Request>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -25,6 +25,7 @@ internal class Resume(ITokenService tokenService, IBookmarkQueue bookmarkQueue, 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var token = Query<string>("t")!;
+        var asynchronous = Query<bool>("async", false);
 
         if (!tokenService.TryDecryptToken<BookmarkTokenPayload>(token, out var payload)) 
             AddError("Invalid token.");
@@ -37,7 +38,7 @@ internal class Resume(ITokenService tokenService, IBookmarkQueue bookmarkQueue, 
             return;
         }
         
-        await ResumeBookmarkedWorkflowAsync(payload, input, cancellationToken);
+        await ResumeBookmarkedWorkflowAsync(payload, input, asynchronous, cancellationToken);
         
         if (!HttpContext.Response.HasStarted)
             await SendOkAsync(cancellationToken);
@@ -60,20 +61,35 @@ internal class Resume(ITokenService tokenService, IBookmarkQueue bookmarkQueue, 
         }
     }
     
-    private async Task ResumeBookmarkedWorkflowAsync(BookmarkTokenPayload tokenPayload, IDictionary<string, object>? input, CancellationToken cancellationToken)
+    private async Task ResumeBookmarkedWorkflowAsync(BookmarkTokenPayload tokenPayload, IDictionary<string, object>? input, bool asynchronous, CancellationToken cancellationToken)
     {
         var bookmarkId = tokenPayload.BookmarkId;
         var workflowInstanceId = tokenPayload.WorkflowInstanceId;
-        var item = new NewBookmarkQueueItem
+
+        if (asynchronous)
+        {
+            var item = new NewBookmarkQueueItem
+            {
+                BookmarkId = bookmarkId,
+                WorkflowInstanceId = workflowInstanceId,
+                Options = new()
+                {
+                    Input = input
+                }
+            };
+
+            await bookmarkQueue.EnqueueAsync(item, cancellationToken);
+            return;
+        }
+
+        var resumeRequest = new ResumeBookmarkRequest
         {
             BookmarkId = bookmarkId,
             WorkflowInstanceId = workflowInstanceId,
-            Options = new()
-            {
-                Input = input
-            }
+            Input = input
         };
-        await bookmarkQueue.EnqueueAsync(item, cancellationToken);
+        
+        await workflowResumer.ResumeAsync(resumeRequest, cancellationToken);
     }
 }
 
