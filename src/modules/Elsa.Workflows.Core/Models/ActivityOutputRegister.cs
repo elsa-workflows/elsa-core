@@ -5,6 +5,7 @@ namespace Elsa.Workflows.Models;
 /// </summary>
 public class ActivityOutputRegister
 {
+    private readonly object _syncLock = new();
     private readonly Dictionary<string, List<ActivityOutputRecord>> _recordsByActivityIdAndOutputName = new();
     private readonly Dictionary<string, ActivityOutputRecord> _recordsByActivityInstanceIdAndOutputName = new();
 
@@ -46,17 +47,20 @@ public class ActivityOutputRegister
 
         var record = new ActivityOutputRecord(containerId, activityId, activityInstanceId, outputName, outputValue);
 
-        _recordsByActivityInstanceIdAndOutputName[CreateActivityInstanceIdLookupKey(activityInstanceId, outputName)] = record;
-
-        var scopedRecordsKey = CreateActivityIdLookupKey(activityId, outputName);
-
-        if (!_recordsByActivityIdAndOutputName.TryGetValue(scopedRecordsKey, out var scopedRecords))
+        lock (_syncLock)
         {
-            scopedRecords = new();
-            _recordsByActivityIdAndOutputName[scopedRecordsKey] = scopedRecords;
-        }
+            _recordsByActivityInstanceIdAndOutputName[CreateActivityInstanceIdLookupKey(activityInstanceId, outputName)] = record;
 
-        scopedRecords.Add(record);
+            var scopedRecordsKey = CreateActivityIdLookupKey(activityId, outputName);
+
+            if (!_recordsByActivityIdAndOutputName.TryGetValue(scopedRecordsKey, out var scopedRecords))
+            {
+                scopedRecords = new();
+                _recordsByActivityIdAndOutputName[scopedRecordsKey] = scopedRecords;
+            }
+
+            scopedRecords.Add(record);
+        }
     }
 
     /// <summary>
@@ -65,7 +69,13 @@ public class ActivityOutputRegister
     public IEnumerable<ActivityOutputRecord> FindMany(string activityId, string? outputName = null)
     {
         var key = CreateActivityIdLookupKey(activityId, outputName);
-        return _recordsByActivityIdAndOutputName.TryGetValue(key, out var records) ? records : Enumerable.Empty<ActivityOutputRecord>();
+
+        lock (_syncLock)
+        {
+            return _recordsByActivityIdAndOutputName.TryGetValue(key, out var records)
+                ? records.ToList()
+                : Enumerable.Empty<ActivityOutputRecord>();
+        }
     }
 
     /// <summary>
@@ -77,9 +87,13 @@ public class ActivityOutputRegister
     public object? FindOutputByActivityId(string activityId, string? outputName = null)
     {
         var key = CreateActivityIdLookupKey(activityId, outputName);
-        return !_recordsByActivityIdAndOutputName.TryGetValue(key, out var records)
-            ? null
-            : records.LastOrDefault()?.Value; // Always return the last value.
+
+        lock (_syncLock)
+        {
+            return !_recordsByActivityIdAndOutputName.TryGetValue(key, out var records)
+                ? null
+                : records.LastOrDefault()?.Value; // Always return the last value.
+        }
     }
 
     /// <summary>
@@ -91,9 +105,13 @@ public class ActivityOutputRegister
     public object? FindOutputByActivityInstanceId(string activityInstanceId, string? outputName = null)
     {
         var key = CreateActivityInstanceIdLookupKey(activityInstanceId, outputName);
-        return !_recordsByActivityInstanceIdAndOutputName.TryGetValue(key, out var record)
-            ? null
-            : record.Value;
+
+        lock (_syncLock)
+        {
+            return !_recordsByActivityInstanceIdAndOutputName.TryGetValue(key, out var record)
+                ? null
+                : record.Value;
+        }
     }
 
     private string CreateActivityIdLookupKey(string activityId, string? outputName) => $"{activityId}:{outputName ?? DefaultOutputName}";
