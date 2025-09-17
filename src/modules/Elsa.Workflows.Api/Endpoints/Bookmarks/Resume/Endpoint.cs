@@ -38,7 +38,11 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
             return;
         }
         
-        await ResumeBookmarkedWorkflowAsync(payload, input, asynchronous, cancellationToken);
+        // Some clients, like Blazor, may prematurely cancel their request upon navigation away from the page.
+        // In this case, we don't want to cancel the workflow execution.
+        // We need to better understand the conditions that cause this.
+        var workflowCancellationToken = CancellationToken.None;
+        await ResumeBookmarkedWorkflowAsync(payload, input, asynchronous, workflowCancellationToken);
         
         if (!HttpContext.Response.HasStarted)
             await SendOkAsync(cancellationToken);
