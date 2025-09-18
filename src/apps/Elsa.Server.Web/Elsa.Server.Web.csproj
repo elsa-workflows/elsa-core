@@ -73,7 +73,6 @@
         <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
         <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
         <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" />
-        <PackageReference Include="Proto.Cluster.Kubernetes" />
         <PackageReference Include="Grpc.Net.Client" />
         <PackageReference Include="Proto.Persistence.Sqlite" />
         <PackageReference Include="Proto.Persistence.SqlServer" />

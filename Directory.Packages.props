@@ -100,8 +100,6 @@
     <PackageVersion Include="Proto.Actor" Version="1.7.0" />
     <PackageVersion Include="Proto.Cluster" Version="1.7.0" />
     <PackageVersion Include="Proto.Cluster.CodeGen" Version="1.7.0" />
-    <PackageVersion Include="Proto.Cluster.AzureContainerApps" Version="1.7.0" />
-    <PackageVersion Include="Proto.Cluster.Kubernetes" Version="1.7.0" />
     <PackageVersion Include="Proto.Cluster.TestProvider" Version="1.7.0" />
     <PackageVersion Include="Proto.OpenTelemetry" Version="1.7.0" />
     <PackageVersion Include="Proto.Persistence" Version="1.7.0" />
