@@ -5,7 +5,7 @@ namespace Elsa.Workflows.Attributes;
 [AttributeUsage(AttributeTargets.Property)]
 public class PortAttribute : Attribute
 {
-    public PortAttribute([CallerMemberName] string? name = null)
+    public PortAttribute([CallerMemberName] string? name = default)
     {
         Name = name;
         DisplayName = name;

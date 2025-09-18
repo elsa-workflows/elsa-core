@@ -612,20 +612,19 @@ services
                     return new SqliteProvider(new(sqliteConnectionString));
                 };
 
-                // We temporarily removed the Kubernetes provider (Proto.Cluster.Kubernetes) because it depends on a package that has a vulnerable dependency: https://avd.aquasec.com/nvd/2025/cve-2025-9708/
-                // if (configuration["KUBERNETES_SERVICE_HOST"] != null)
-                // {
-                //     var kubernetesConfig = new KubernetesProviderConfig();
-                //     var clusterProvider = new KubernetesProvider(kubernetesConfig);
-                //
-                //     var remoteConfig = GrpcNetRemoteConfig
-                //         .BindToAllInterfaces(advertisedHost: configuration["ProtoActor:AdvertisedHost"]) // Environment variable to be provided by Kubernetes using pod.status.podIP.
-                //         .WithLogLevelForDeserializationErrors(LogLevel.Critical)
-                //         .WithRemoteDiagnostics(true);
-                //
-                //     proto.CreateClusterProvider = _ => clusterProvider;
-                //     proto.ConfigureRemoteConfig = _ => remoteConfig;
-                // }
+                if (configuration["KUBERNETES_SERVICE_HOST"] != null)
+                {
+                    var kubernetesConfig = new KubernetesProviderConfig();
+                    var clusterProvider = new KubernetesProvider(kubernetesConfig);
+
+                    var remoteConfig = GrpcNetRemoteConfig
+                        .BindToAllInterfaces(advertisedHost: configuration["ProtoActor:AdvertisedHost"]) // Environment variable to be provided by Kubernetes using pod.status.podIP.
+                        .WithLogLevelForDeserializationErrors(LogLevel.Critical)
+                        .WithRemoteDiagnostics(true);
+
+                    proto.CreateClusterProvider = _ => clusterProvider;
+                    proto.ConfigureRemoteConfig = _ => remoteConfig;
+                }
             });
         }
 
