@@ -5,7 +5,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <ElsaStudioVersion>3.5.1-preview.1211</ElsaStudioVersion>
-    <MicrosoftVersion>9.0.8</MicrosoftVersion>
+    <MicrosoftVersion>9.0.9</MicrosoftVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Antlr4.Runtime.Standard" Version="4.13.1" />
@@ -61,6 +61,7 @@
     <PackageVersion Include="IronCompress" Version="1.6.3" />
     <PackageVersion Include="JetBrains.Annotations" Version="2024.3.0" />
     <PackageVersion Include="Jint" Version="4.3.0" />
+    <PackageVersion Include="KubernetesClient" Version="17.0.14"/>
     <PackageVersion Include="LinqKit.Core" Version="1.2.8" />
     <PackageVersion Include="MailKit" Version="4.12.1" />
     <PackageVersion Include="MassTransit" Version="8.4.1" />

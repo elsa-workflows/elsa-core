@@ -66,6 +66,7 @@
         <PackageReference Include="DistributedLock.Redis" />
         <PackageReference Include="FluentStorage.Azure.Blobs" />
         <PackageReference Include="Hangfire.PostgreSql" />
+        <PackageReference Include="KubernetesClient" />
         <PackageReference Include="OpenTelemetry" />
         <PackageReference Include="OpenTelemetry.Exporter.Console" />
         <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
