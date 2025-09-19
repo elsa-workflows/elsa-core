@@ -93,8 +93,8 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.12.0-beta.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.12.0-beta.1" />
-    <PackageVersion Include="Polly" Version="8.6.0" />
-    <PackageVersion Include="Polly.Extensions" Version="8.6.0" />
+    <PackageVersion Include="Polly" Version="8.6.3" />
+    <PackageVersion Include="Polly.Extensions" Version="8.6.3" />
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
     <PackageVersion Include="PolySharp" Version="1.15.0" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0-preview.3.efcore.9.0.0" />
@@ -130,7 +130,7 @@
     <PackageVersion Include="ThrottleDebounce" Version="2.0.1" />
     <PackageVersion Include="WebhooksCore" Version="0.0.1" />
     <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="$(MicrosoftVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="" />
     <PackageVersion Include="Microsoft.AspNetCore.Components" Version="$(MicrosoftVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="$(MicrosoftVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="$(MicrosoftVersion)" />
