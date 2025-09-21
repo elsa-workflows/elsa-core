@@ -15,6 +15,7 @@ using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
+using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
@@ -98,11 +99,6 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     /// A factory that instantiates an <see cref="ITaskDispatcher"/>.
     /// </summary>
     public Func<IServiceProvider, ITaskDispatcher> RunTaskDispatcher { get; set; } = sp => sp.GetRequiredService<BackgroundTaskDispatcher>();
-    
-    /// <summary>
-    /// A factory that instantiates an <see cref="IDomainEventDispatcher"/>.
-    /// </summary>
-    public Func<IServiceProvider, IDomainEventDispatcher> DomainEventDispatcher { get; set; } = sp => sp.GetRequiredService<BackgroundDomainEventDispatcher>();
 
     /// <summary>
     /// A factory that instantiates an <see cref="IBackgroundActivityScheduler"/>.
@@ -250,7 +246,6 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped(StimulusDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)
             .AddScoped(RunTaskDispatcher)
-            .AddScoped(DomainEventDispatcher)
             .AddScoped(ActivityExecutionLogSink)
             .AddScoped(WorkflowExecutionLogSink)
             .AddSingleton(BackgroundActivityScheduler)
@@ -273,9 +268,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IBookmarkBoundWorkflowService, BookmarkBoundWorkflowService>()
             .AddScoped<ITaskReporter, TaskReporter>()
             .AddScoped<SynchronousTaskDispatcher>()
-            .AddScoped<SynchronousDomainEventDispatcher>()
             .AddScoped<BackgroundTaskDispatcher>()
-            .AddScoped<BackgroundDomainEventDispatcher>()
             .AddScoped<StoreActivityExecutionLogSink>()
             .AddScoped<StoreWorkflowExecutionLogSink>()
             .AddScoped<DispatchWorkflowCommandHandler>()
@@ -354,6 +347,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddNotificationHandler<SignalBookmarkQueueWorker>()
             .AddNotificationHandler<EvaluateParentLogPersistenceModes>()
             .AddNotificationHandler<ValidateWorkflowRequestHandler>()
+            .AddNotificationHandler<EventNotificationHandler>()
 
             // Workflow activation strategies.
             .AddScoped<IWorkflowActivationStrategy, SingletonStrategy>()
