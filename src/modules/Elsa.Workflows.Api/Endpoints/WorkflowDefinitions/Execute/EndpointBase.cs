@@ -48,7 +48,7 @@ internal abstract class EndpointBase<T>(
             Variables = request.GetVariablesAsDictionary(),
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle,
-            Initiator = HttpContext?.User?.Identity?.Name ?? string.Empty
+            Initiator = HttpContext?.User?.Identity?.Name
         };
         
         var startResponse = await workflowStarter.StartWorkflowAsync(startRequest, cancellationToken);
