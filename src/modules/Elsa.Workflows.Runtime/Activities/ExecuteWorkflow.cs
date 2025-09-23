@@ -88,7 +88,15 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
 
         var parentInstanceId = context.WorkflowExecutionContext.Id;
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
-        var correlationId = CorrelationId.GetOrDefault(context);
+        // propagate inout from parent workflow to child workflow
+        if (input.Count == 0 && context.WorkflowExecutionContext.Input != null)
+        {
+            input = context.WorkflowExecutionContext.Input;
+        }
+
+        // propagate correlation id from parent workflow to child workflow
+        var correlationId = context.WorkflowExecutionContext.CorrelationId;
+
         var workflowInvoker = context.GetRequiredService<IWorkflowInvoker>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
         var properties = new Dictionary<string, object>
@@ -117,7 +125,8 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
             WorkflowInstanceId = options.WorkflowInstanceId,
             Status = workflowResult.WorkflowState.Status,
             SubStatus = workflowResult.WorkflowState.SubStatus,
-            Output = workflowResult.WorkflowState.Output
+            Output = workflowResult.WorkflowState.Output,
+            CorrelationId = correlationId
         };
 
         return info;
