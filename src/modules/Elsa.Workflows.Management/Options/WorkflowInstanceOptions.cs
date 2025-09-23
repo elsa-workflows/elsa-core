@@ -39,7 +39,7 @@ public class WorkflowInstanceOptions
     public string? ParentWorkflowInstanceId { get; set; }
 
     /// <summary>
-    /// The name of the user executing the workflow
+    /// The name of the user executing the workflow.
     /// </summary>
     public string? Initiator { get; set; }
 }
