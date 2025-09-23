@@ -310,7 +310,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// Gets the clock used to determine the current time.
     public ISystemClock SystemClock { get; }
 
-    /// The initiator of the workflow execution.
+    /// Gets or sets the name of the user who initiated the workflow execution.
     public string? Initiator { get; set; }
 
     /// A flattened list of <see cref="ActivityNode"/>s from the <see cref="Graph"/>. 
