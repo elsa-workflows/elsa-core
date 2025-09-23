@@ -1,11 +1,10 @@
-using Elsa.Workflows.Helpers;
-using Elsa.Workflows.Runtime.Activities;
-using Elsa.Workflows.Runtime.Stimuli;
+using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class EventPublisher(IStimulusSender stimulusSender, IStimulusDispatcher stimulusDispatcher) : IEventPublisher
+public class EventPublisher(INotificationSender notificationSender) : IEventPublisher
 {
     /// <inheritdoc />
     public async Task PublishAsync(
@@ -17,28 +16,7 @@ public class EventPublisher(IStimulusSender stimulusSender, IStimulusDispatcher 
         bool asynchronous = false,
         CancellationToken cancellationToken = default)
     {
-        var stimulus = new EventStimulus(eventName);
-        var workflowInput = new Dictionary<string, object>
-        {
-            [Event.EventInputWorkflowInputKey] = payload ?? new Dictionary<string, object>()
-        };
-        var metadata = new StimulusMetadata
-        {
-            CorrelationId = correlationId,
-            ActivityInstanceId = activityInstanceId,
-            WorkflowInstanceId = workflowInstanceId,
-            Input = workflowInput
-        };
-        if (asynchronous)
-        {
-            await stimulusDispatcher.SendAsync(new()
-            {
-                ActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<Event>(),
-                Stimulus = stimulus,
-                Metadata = metadata
-            }, cancellationToken);
-        }
-        else
-            await stimulusSender.SendAsync<Event>(stimulus, metadata, cancellationToken);
+        var eventNotification = new EventNotification(eventName, correlationId, workflowInstanceId, activityInstanceId, payload, asynchronous);
+        await notificationSender.SendAsync(eventNotification, cancellationToken);
     }
 }

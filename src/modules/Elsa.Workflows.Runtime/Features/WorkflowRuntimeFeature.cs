@@ -15,6 +15,7 @@ using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
+using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
@@ -346,6 +347,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddNotificationHandler<SignalBookmarkQueueWorker>()
             .AddNotificationHandler<EvaluateParentLogPersistenceModes>()
             .AddNotificationHandler<ValidateWorkflowRequestHandler>()
+            .AddNotificationHandler<EventNotificationHandler>()
 
             // Workflow activation strategies.
             .AddScoped<IWorkflowActivationStrategy, SingletonStrategy>()
