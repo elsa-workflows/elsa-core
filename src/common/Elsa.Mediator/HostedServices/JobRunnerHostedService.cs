@@ -11,14 +11,12 @@ namespace Elsa.Mediator.HostedServices;
 /// </summary>
 public class JobRunnerHostedService : BackgroundService
 {
-    private readonly int _workerCount;
     private readonly IJobsChannel _jobsChannel;
     private readonly ILogger<JobRunnerHostedService> _logger;
 
     /// <inheritdoc />
     public JobRunnerHostedService(IOptions<MediatorOptions> options, IJobsChannel jobsChannel, ILogger<JobRunnerHostedService> logger)
     {
-        _workerCount = options.Value.JobWorkerCount;
         _jobsChannel = jobsChannel;
         _logger = logger;
     }
@@ -26,12 +24,8 @@ public class JobRunnerHostedService : BackgroundService
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var workers = new Task[_workerCount];
-
-        for (var i = 0; i < _workerCount; i++)
-            workers[i] = ProcessJobsAsync(stoppingToken);
-
-        await Task.WhenAll(workers);
+        await ProcessJobsAsync(stoppingToken);
+        await ProcessJobsAsync(stoppingToken);
     }
 
     private async Task ProcessJobsAsync(CancellationToken stoppingToken)
@@ -40,21 +34,39 @@ public class JobRunnerHostedService : BackgroundService
         {
             try
             {
-                await jobItem.Action(jobItem.CancellationTokenSource.Token);
-                _logger.LogInformation("Worker {CurrentTaskId} processed job {JobId}", Task.CurrentId, jobItem.JobId);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogInformation("Job {JobId} was canceled", jobItem.JobId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Job {JobId} failed", jobItem.JobId);
-            }
-            finally
-            {
-                jobItem.OnJobCompleted(jobItem.JobId);
-            }
+               _logger.LogInformation(
+                   "Worker {CurrentTaskId} about to process job {JobId}",
+                   Task.CurrentId,
+                   jobItem.JobId
+               );
+                 var task = jobItem
+                  .Action(jobItem.CancellationTokenSource.Token)
+                  .ContinueWith(
+                   async (theTask) =>
+                    {
+                        try
+                        {
+                            await theTask.ConfigureAwait(false);
+                            _logger.LogInformation(
+                                "Worker {CurrentTaskId} processed job {JobId}",
+                                Task.CurrentId,
+                                jobItem.JobId
+                            );
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            _logger.LogInformation("Job {JobId} was canceled", jobItem.JobId);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Job {JobId} failed", jobItem.JobId);
+                        }
+                        finally
+                        {
+                            jobItem.OnJobCompleted(jobItem.JobId);
+                        }
+                    }
+                );
         }
     }
 }
