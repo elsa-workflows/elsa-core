@@ -7,7 +7,7 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Refresh;
 
 [PublicAPI]
-internal class Refresh(IWorkflowDefinitionsRefresher workflowDefinitionsRefresher) : ElsaEndpoint<Request>
+internal class Refresh(IWorkflowDefinitionsRefresher workflowDefinitionsRefresher) : ElsaEndpoint<Request, Response>
 {
     private const int BatchSize = 10;
 
@@ -17,10 +17,10 @@ internal class Refresh(IWorkflowDefinitionsRefresher workflowDefinitionsRefreshe
         ConfigurePermissions("actions:workflow-definitions:refresh");
     }
 
-    public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
+    public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
         var result = await RefreshWorkflowDefinitionsAsync(request.DefinitionIds, cancellationToken);
-        await SendOkAsync(new Response(result.Refreshed, result.NotFound), cancellationToken);
+        return new Response(result.Refreshed, result.NotFound);
     }
 
     private async Task<RefreshWorkflowDefinitionsResponse> RefreshWorkflowDefinitionsAsync(ICollection<string>? definitionIds, CancellationToken cancellationToken)

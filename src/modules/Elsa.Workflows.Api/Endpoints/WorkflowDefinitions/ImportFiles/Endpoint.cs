@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.ImportFiles;
 /// Imports JSON and/or ZIP files containing a workflow definitions.
 /// </summary>
 [PublicAPI]
-internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
+internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel, Response>
 {
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
@@ -47,14 +47,14 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
     }
 
     /// <inheritdoc />
-    public override async Task HandleAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
+    public override async Task<Response> ExecuteAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
         var authorizationResult = await _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Succeeded)
         {
             await SendForbiddenAsync(cancellationToken);
-            return;
+            return null!;
         }
 
         if (Files.Any())
@@ -62,11 +62,12 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
             var count = await ImportFilesAsync(Files, cancellationToken);
 
             if (!ValidationFailed)
-                await SendOkAsync(new { Count = count }, cancellationToken);
+                return new Response(count);
         }
 
         if (ValidationFailed)
             await SendErrorsAsync(400, cancellationToken);
+        return null!;
     }
 
     private async Task<int> ImportFilesAsync(IFormFileCollection files, CancellationToken cancellationToken)

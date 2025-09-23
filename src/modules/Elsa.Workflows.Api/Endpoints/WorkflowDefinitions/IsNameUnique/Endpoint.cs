@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.IsNameUnique;
 /// Checks if a workflow definition name is unique.
 /// </summary>
 [PublicAPI]
-internal class IsNameUnique(IWorkflowDefinitionStore store) : ElsaEndpoint<Request>
+internal class IsNameUnique(IWorkflowDefinitionStore store) : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
     {
@@ -16,11 +16,11 @@ internal class IsNameUnique(IWorkflowDefinitionStore store) : ElsaEndpoint<Reque
         ConfigurePermissions("read:workflow-definitions");
     }
 
-    public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
+    public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
         var isUnique = await store.GetIsNameUnique(request.Name.Trim(), request.DefinitionId, cancellationToken);
         var response = new Response(isUnique);
         
-        await SendOkAsync(response, cancellationToken);
+        return response;
     }
 }
