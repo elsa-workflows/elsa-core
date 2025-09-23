@@ -1,17 +1,18 @@
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Providers;
 
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class DefaultRegistriesPopulator(IWorkflowDefinitionStorePopulator workflowDefinitionStorePopulator, IActivityRegistryPopulator activityRegistryPopulator) : IRegistriesPopulator
+public class DefaultRegistriesPopulator(IWorkflowDefinitionStorePopulator workflowDefinitionStorePopulator, IActivityRegistryPopulator activityRegistryPopulator, IActivityRegistry registry, TypedActivityProvider typedActivityProvider) : IRegistriesPopulator
 {
     /// <inheritdoc />
     public async Task PopulateAsync(CancellationToken cancellationToken = default)
     {
-        // Stage 1: Populate the activity registry.
-        // Because workflow definitions can be used as activities, we need to make sure that the activity registry is populated before we populate the workflow definition store.
-        await activityRegistryPopulator.PopulateRegistryAsync(cancellationToken);
-        
+        // Stage 1: Populate the typed activity registry.
+        // This is necessary to ensure that the activity descriptors are up-to-date before we populate the workflow definition store.
+        await registry.RefreshDescriptorsAsync(typedActivityProvider, cancellationToken);
+
         // Stage 2: Populate the workflow definition store.
         await workflowDefinitionStorePopulator.PopulateStoreAsync(false, cancellationToken);
 
