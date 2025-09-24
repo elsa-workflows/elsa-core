@@ -31,6 +31,6 @@ public class DispatchWorkflowsTests : AppComponentTest
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(DispatchAndWaitWorkflow.DefinitionId, VersionOptions.Published)
         });
         await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
-        await _signalManager.WaitAsync<object>("Completed");
+        await _signalManager.WaitAsync("Completed");
     }
 }
