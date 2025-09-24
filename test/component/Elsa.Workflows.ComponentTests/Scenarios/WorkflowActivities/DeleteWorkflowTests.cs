@@ -1,5 +1,4 @@
 using Elsa.Testing.Shared;
-using Elsa.Testing.Shared.EventArgs;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;

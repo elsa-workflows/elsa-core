@@ -6,7 +6,6 @@ using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Messages;
 using System.Collections.Concurrent;
-using Elsa.Testing.Shared.EventArgs;
 
 namespace Elsa.Workflows.ComponentTests.Services;
 
