@@ -14,6 +14,8 @@ using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Consumers;
 using Elsa.Workflows.ComponentTests.Decorators;
 using Elsa.Workflows.ComponentTests.Materializers;
+using Elsa.Workflows.ComponentTests.Scenarios.Activities.ForEach;
+using Elsa.Workflows.ComponentTests.Services;
 using Elsa.Workflows.ComponentTests.WorkflowProviders;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
@@ -127,12 +129,13 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
         {
             services
                 .AddSingleton<SignalManager>()
-                .AddScoped<WorkflowEvents>()
+                .AddScoped<AsyncWorkflowRunner>()
+                .AddSingleton<WorkflowEvents>()
                 .AddScoped<WorkflowDefinitionEvents>()
                 .AddSingleton<TriggerChangeTokenSignalEvents>()
                 .AddScoped<IWorkflowMaterializer, TestWorkflowMaterializer>()
                 .AddNotificationHandlersFrom<WorkflowServer>()
-                .AddWorkflowDefinitionProvider<TestWorkflowProvider>()
+                .AddWorkflowsProvider<TestWorkflowProvider>()
                 .AddNotificationHandlersFrom<WorkflowEventHandlers>()
                 .Decorate<IChangeTokenSignaler, EventPublishingChangeTokenSignaler>()
                 ;

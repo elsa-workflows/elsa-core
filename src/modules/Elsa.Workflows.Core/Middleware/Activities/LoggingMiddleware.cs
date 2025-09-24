@@ -20,7 +20,7 @@ public class LoggingMiddleware : IActivityExecutionMiddleware
     {
         _next = next;
         _logger = logger;
-        _stopwatch = new Stopwatch();
+        _stopwatch = new();
     }
 
     /// <inheritdoc />
