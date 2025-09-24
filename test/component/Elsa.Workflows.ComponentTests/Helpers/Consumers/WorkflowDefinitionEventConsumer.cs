@@ -11,7 +11,7 @@ public class WorkflowDefinitionEventConsumer(WorkflowDefinitionEvents workflowDe
 {
     public Task Consume(ConsumeContext<WorkflowDefinitionDeleted> context)
     {
-        workflowDefinitionEvents.OnWorkflowDefinitionDeleted(new WorkflowDefinitionDeletedEventArgs(context.Message.Id));
+        workflowDefinitionEvents.OnWorkflowDefinitionDeleted(new(context.Message.Id));
         return Task.CompletedTask;
     }
 }

@@ -1,3 +1,5 @@
+using Elsa.Testing.Shared.EventArgs;
+
 namespace Elsa.Testing.Shared.Services;
 
 public class WorkflowDefinitionEvents

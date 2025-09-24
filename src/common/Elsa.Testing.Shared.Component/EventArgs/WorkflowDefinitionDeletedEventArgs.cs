@@ -1,6 +1,6 @@
-namespace Elsa.Testing.Shared;
+namespace Elsa.Testing.Shared.EventArgs;
 
-public class WorkflowDefinitionDeletedEventArgs(string definitionId) : EventArgs 
+public class WorkflowDefinitionDeletedEventArgs(string definitionId) : System.EventArgs 
 {
     public string DefinitionId { get; } = definitionId;
 }
