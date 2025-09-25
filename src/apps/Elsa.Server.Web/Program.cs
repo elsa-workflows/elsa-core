@@ -64,6 +64,7 @@ services
             })
             .UseWorkflowRuntime(runtime => runtime.UseCache())
             .UseWorkflowsApi()
+            .UseScheduling()
             .UseCSharp(options =>
             {
                 options.DisableWrappers = disableVariableWrappers;
