@@ -39,6 +39,32 @@ By default, you can access http://localhost:13000 and log in with:
   Password: password
 ```
 
+### TLS and custom certificate authorities
+
+All Elsa Docker images now ship with the operating system's certificate authority bundle baked in at build time. This means you can call public HTTPS endpoints such as `https://example.com` without any additional configuration.
+
+If you need to trust a private or corporate CA, mount the certificate bundle into the container and reference it via `EXTRA_CA_CERT`:
+
+```bash
+docker run \
+  -v /path/to/company-ca.crt:/certs/company-ca.crt:ro \
+  -e EXTRA_CA_CERT=/certs/company-ca.crt \
+  elsaworkflows/elsa-server-and-studio-v3:latest
+```
+
+On startup, the container copies the certificate into `/usr/local/share/ca-certificates` and runs `update-ca-certificates`, making the trust available to .NET, OpenSSL, curl, and other system components. Multiple certificates can be provided by pointing `EXTRA_CA_CERT` at a directory containing `.crt` or `.pem` files.
+
+In highly restricted environments where you cannot modify the system trust store, you can instead rely on the standard `SSL_CERT_FILE` or `SSL_CERT_DIR` environment variables:
+
+```bash
+docker run \
+  -v /path/to/company-ca-bundle.pem:/certs/custom.pem:ro \
+  -e SSL_CERT_FILE=/certs/custom.pem \
+  elsaworkflows/elsa-server-and-studio-v3:latest
+```
+
+> ℹ️ Installing the CA bundle adds roughly 300KB to the Debian-based images. No package managers run at container startup; all trust updates happen immutably at build time or via the mounted certificates shown above.
+
 ## Table of Contents
 
 - [Documentation](#documentation)

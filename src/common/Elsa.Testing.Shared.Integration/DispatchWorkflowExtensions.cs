@@ -5,6 +5,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Requests;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -13,7 +14,7 @@ namespace Elsa.Testing.Shared;
 
 public static class DispatchWorkflowExtensions
 {
-    public static async Task<WorkflowFinished?> DispatchWorkflowAndRunToCompletion(
+    public static async Task<WorkflowStateCommitted?> DispatchWorkflowAndRunToCompletion(
         this IWorkflow workflowDefinition,
         Action<IServiceCollection>? configureServices = null,
         Action<IModule>? configureElsa = null,
@@ -21,7 +22,7 @@ public static class DispatchWorkflowExtensions
         TimeSpan? timeout = null)
     {
         var semaphore = new SemaphoreSlim(0, 1);
-        WorkflowFinished? workflowFinishedRecord = null;
+        WorkflowStateCommitted? workflowFinishedRecord = null;
 
         var host = Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
@@ -29,8 +30,11 @@ public static class DispatchWorkflowExtensions
                 configureServices?.Invoke(services);
 
                 // This notification handler will capture the WorkflowFinished record (to be returned) and release the semaphore.
-                services.AddNotificationHandler<WorkflowFinishedAction, WorkflowFinished>(sp => new(notification =>
+                services.AddNotificationHandler<WorkflowFinishedAction, WorkflowStateCommitted>(sp => new(notification =>
                 {
+                    if (notification.WorkflowExecutionContext.Status != WorkflowStatus.Finished)
+                        return;
+
                     workflowFinishedRecord = notification;
                     semaphore.Release();
                 }));
@@ -75,9 +79,9 @@ public static class DispatchWorkflowExtensions
         }
     }
 
-    class WorkflowFinishedAction(Action<WorkflowFinished> action) : INotificationHandler<WorkflowFinished>
+    class WorkflowFinishedAction(Action<WorkflowStateCommitted> action) : INotificationHandler<WorkflowStateCommitted>
     {
-        public Task HandleAsync(WorkflowFinished notification, CancellationToken cancellationToken)
+        public Task HandleAsync(WorkflowStateCommitted notification, CancellationToken cancellationToken)
         {
             action(notification);
             return Task.CompletedTask;

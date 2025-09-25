@@ -26,11 +26,11 @@ public class DispatchWorkflowsTests : AppComponentTest
     public async Task DispatchAndWaitWorkflow_ShouldWaitForChildWorkflowToComplete()
     {
         var workflowClient = await _workflowRuntime.CreateClientAsync();
-        await workflowClient.CreateInstanceAsync(new CreateWorkflowInstanceRequest
+        await workflowClient.CreateInstanceAsync(new()
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(DispatchAndWaitWorkflow.DefinitionId, VersionOptions.Published)
         });
         await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
-        await _signalManager.WaitAsync<string>("Completed");
+        await _signalManager.WaitAsync("Completed");
     }
 }

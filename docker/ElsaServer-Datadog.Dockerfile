@@ -1,5 +1,5 @@
 # Version: 1
-# Description: Dockerfile for building and running Elsa Server
+# Description: Dockerfile for building and running Elsa Server with Datadog and OpenTelemetry auto-instrumentation
 
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim AS build
 WORKDIR /source
@@ -22,36 +22,40 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim AS base
 WORKDIR /app
 COPY --from=build /app/publish ./
 
-# Install Python 3.11
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.11 \
-    python3.11-dev \
-    libpython3.11 \
-    python3-pip && \
-    rm -rf /var/lib/apt/lists/*
+# Install runtime dependencies, including CA certificates.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        libpython3.11 \
+        python3.11 \
+        python3.11-dev \
+        python3-pip \
+        unzip \
+        wget \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Set PYTHONNET_PYDLL environment variable
 ENV PYTHONNET_PYDLL=/usr/lib/aarch64-linux-gnu/libpython3.11.so
 
-# Install dependencies
-RUN apt-get update && apt-get install -y wget unzip curl
-
 # Set environment variables for OpenTelemetry Auto-Instrumentation
-ENV OTEL_DOTNET_AUTO_HOME=/otel
-ENV OTEL_LOG_LEVEL="debug"
+ENV OTEL_DOTNET_AUTO_HOME=/otel \
+    OTEL_LOG_LEVEL="debug"
 
 # Download and extract OpenTelemetry Auto-Instrumentation
 ARG OTEL_VERSION=1.7.0
-RUN mkdir /otel
-RUN curl -L -o /otel/otel-dotnet-install.sh https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v${OTEL_VERSION}/otel-dotnet-auto-install.sh
-RUN chmod +x /otel/otel-dotnet-install.sh
-RUN /bin/bash /otel/otel-dotnet-install.sh
-
-# Provide necessary permissions for the script to execute
-RUN chmod +x /otel/instrument.sh
+RUN mkdir -p /otel \
+    && curl -L -o /otel/otel-dotnet-install.sh "https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v${OTEL_VERSION}/otel-dotnet-auto-install.sh" \
+    && chmod +x /otel/otel-dotnet-install.sh \
+    && /bin/bash /otel/otel-dotnet-install.sh \
+    && chmod +x /otel/instrument.sh
 
 EXPOSE 8080/tcp
 EXPOSE 443/tcp
 
-# Instrument the application and start it
-ENTRYPOINT ["/bin/bash", "-c", "source /otel/instrument.sh && dotnet Elsa.Server.Web.dll"]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["dotnet", "Elsa.Server.Web.dll"]

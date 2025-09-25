@@ -59,14 +59,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 		docker\ElsaStudio.Dockerfile = docker\ElsaStudio.Dockerfile
 		docker\init-db-postgres.sh = docker\init-db-postgres.sh
 		docker\otel-collector-config.yaml = docker\otel-collector-config.yaml
+		docker\docker-compose-datadog+otel-collector.yml = docker\docker-compose-datadog+otel-collector.yml
+		docker\entrypoint.sh = docker\entrypoint.sh
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unit", "unit", "{18453B51-25EB-4317-A4B3-B10518252E92}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integration", "integration", "{1B8D5897-902E-4632-8698-E89CAF3DDF54}"
-	ProjectSection(SolutionItems) = preProject
-		test\integration\Elsa.Logging.Core.LoggerSinkTests.cs = test\integration\Elsa.Logging.Core.LoggerSinkTests.cs
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "component", "component", "{08B41FFA-CEE3-46A7-B5C0-3EB65D37A16C}"
 	ProjectSection(SolutionItems) = preProject
