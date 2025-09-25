@@ -201,7 +201,7 @@ internal class WorkflowInstance(
         if (_isRunning)
         {
             _queuedRunWorkflowOptions.Enqueue(runWorkflowOptions);
-            return new(null!, null!, null!, null);
+            return new(null!, null!, null!, null, Journal.Empty);
         }
 
         _isRunning = true;

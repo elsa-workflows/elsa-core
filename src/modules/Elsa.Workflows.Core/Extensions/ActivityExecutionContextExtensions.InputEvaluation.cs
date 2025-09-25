@@ -118,9 +118,12 @@ public static partial class ActivityExecutionContextExtensions
 
             var memoryReference = wrappedInput?.MemoryBlockReference();
 
-            // When input is created from an activity provider, there may be no memory block reference.
-            if (memoryReference?.Id != null!)
+            if (memoryReference != null)
             {
+                // When input is created from an activity provider, there may be no memory block reference ID.
+                if(memoryReference.Id == null!) 
+                    memoryReference.Id = $"{activity.NodeId}.{inputDescriptor.Name}";
+                
                 // Declare the input memory block in the current context. 
                 context.ExpressionExecutionContext.Set(memoryReference, value!);
             }

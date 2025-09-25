@@ -51,6 +51,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         var engineOptions = new Jint.Options
         {
             ExperimentalFeatures = ExperimentalFeature.TaskInterop,
+            
         };
 
         ConfigureClrAccess(engineOptions);
@@ -132,6 +133,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         {
             ParsingOptions = new()
             {
+                Tolerant = true,
                 AllowReturnOutsideFunction = true
             }
         };
