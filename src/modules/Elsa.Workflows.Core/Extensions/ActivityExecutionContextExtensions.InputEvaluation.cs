@@ -122,7 +122,7 @@ public static partial class ActivityExecutionContextExtensions
             {
                 // When input is created from an activity provider, there may be no memory block reference ID.
                 if(memoryReference.Id == null!) 
-                    memoryReference.Id = $"{activity.NodeId}.{inputDescriptor.Name}";
+                    memoryReference.Id = $"{activity.NodeId}.{inputDescriptor.Name}"; // Construct a deterministic ID.
                 
                 // Declare the input memory block in the current context. 
                 context.ExpressionExecutionContext.Set(memoryReference, value!);
