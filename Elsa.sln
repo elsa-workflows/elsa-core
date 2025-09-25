@@ -51,7 +51,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E5482-0482-448C-B9E4-EC67A9474B85}"
 	ProjectSection(SolutionItems) = preProject
 		docker\.dockerignore = docker\.dockerignore
-		docker\docker-compose-datadog+otel-collector.yml = docker\docker-compose-datadog+otel-collector.yml
 		docker\docker-compose.yml = docker\docker-compose.yml
 		docker\ElsaServer-Datadog.Dockerfile = docker\ElsaServer-Datadog.Dockerfile
 		docker\ElsaServer.Dockerfile = docker\ElsaServer.Dockerfile
@@ -59,7 +58,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 		docker\ElsaStudio.Dockerfile = docker\ElsaStudio.Dockerfile
 		docker\init-db-postgres.sh = docker\init-db-postgres.sh
 		docker\otel-collector-config.yaml = docker\otel-collector-config.yaml
-		docker\docker-compose-datadog+otel-collector.yml = docker\docker-compose-datadog+otel-collector.yml
 		docker\entrypoint.sh = docker\entrypoint.sh
 	EndProjectSection
 EndProject
