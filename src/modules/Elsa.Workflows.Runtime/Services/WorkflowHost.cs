@@ -66,12 +66,12 @@ public class WorkflowHost : IWorkflowHost
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunWorkflowAsync(RunWorkflowOptions? @params = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunWorkflowAsync(RunWorkflowOptions? @params = null, CancellationToken cancellationToken = default)
     {
         if (WorkflowState.Status != WorkflowStatus.Running)
         {
             _logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that is not in the Running state. The actual state is {ActualWorkflowStatus}", WorkflowState.Id, WorkflowState.Status);
-            return new RunWorkflowResult(null!, WorkflowState, Workflow, null);
+            return new(null!, WorkflowState, Workflow, null, Journal.Empty);
         }
         
         var runOptions = new RunWorkflowOptions
@@ -85,7 +85,7 @@ public class WorkflowHost : IWorkflowHost
             TriggerActivityId = @params?.TriggerActivityId,
             ParentWorkflowInstanceId = @params?.ParentWorkflowInstanceId
         };
-        _linkedTokenSource = new CancellationTokenSource();
+        _linkedTokenSource = new();
         var linkedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _linkedTokenSource.Token).Token;
 
         await using var scope = _serviceScopeFactory.CreateAsyncScope();

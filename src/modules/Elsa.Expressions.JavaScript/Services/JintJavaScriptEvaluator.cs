@@ -50,7 +50,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
         var engineOptions = new Jint.Options
         {
-            ExperimentalFeatures = ExperimentalFeature.TaskInterop,
+            ExperimentalFeatures = ExperimentalFeature.TaskInterop
         };
 
         ConfigureClrAccess(engineOptions);

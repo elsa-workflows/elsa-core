@@ -11,7 +11,7 @@ public class Literal : MemoryBlockReference
     }
 
     /// <inheritdoc />
-    public Literal(object? value, string? id = default) : base(id!)
+    public Literal(object? value, string? id = null) : base(id!)
     {
         Value = value;
     }
@@ -42,7 +42,7 @@ public class Literal<T> : Literal
     }
 
     /// <inheritdoc />
-    public Literal(T value, string? id = default) : base(value!, id)
+    public Literal(T value, string? id = null) : base(value!, id)
     {
     }
 }

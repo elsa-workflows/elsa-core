@@ -754,12 +754,6 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
             return true;
         }
 
-        if (blockReference is Literal literal)
-        {
-            value = literal.Value;
-            return true;
-        }
-
         value = null;
         return false;
     }
