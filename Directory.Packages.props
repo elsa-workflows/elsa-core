@@ -5,7 +5,7 @@
     </PropertyGroup>
     <PropertyGroup>
         <ElsaStudioVersion>3.5.1-preview.1231</ElsaStudioVersion>
-        <ElsaExtensionsVersion>3.5.1-preview.147</ElsaExtensionsVersion>
+        <ElsaExtensionsVersion>3.5.1-preview.148</ElsaExtensionsVersion>
         <MicrosoftVersion>9.0.9</MicrosoftVersion>
     </PropertyGroup>
     <ItemGroup>
