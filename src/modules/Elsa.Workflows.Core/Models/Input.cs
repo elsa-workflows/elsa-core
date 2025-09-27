@@ -45,37 +45,37 @@ public class Input<T> : Input
     }
 
     /// <inheritdoc />
-    public Input(T literal, string? id = default) : this(new Literal<T>(literal, id))
+    public Input(T literal, string? id = null) : this(new Literal<T>(literal, id))
     {
     }
 
     /// <inheritdoc />
-    public Input(Func<T> @delegate, string? id = default) : this(Expression.DelegateExpression(@delegate), new MemoryBlockReference(id!))
+    public Input(Func<T> @delegate, string? id = null) : this(Expression.DelegateExpression(@delegate), new(id!))
     {
     }
 
     /// <inheritdoc />
-    public Input(Func<ExpressionExecutionContext, ValueTask<T?>> @delegate, string? id = default) : this(Expression.DelegateExpression(@delegate), new MemoryBlockReference(id!))
+    public Input(Func<ExpressionExecutionContext, ValueTask<T?>> @delegate, string? id = null) : this(Expression.DelegateExpression(@delegate), new(id!))
     {
     }
 
     /// <inheritdoc />
-    public Input(Func<ValueTask<T?>> @delegate, string? id = default) : this(Expression.DelegateExpression(@delegate), new MemoryBlockReference(id!))
+    public Input(Func<ValueTask<T?>> @delegate, string? id = null) : this(Expression.DelegateExpression(@delegate), new(id!))
     {
     }
 
     /// <inheritdoc />
-    public Input(Func<ExpressionExecutionContext, T> @delegate, string? id = default) : this(Expression.DelegateExpression(@delegate), new MemoryBlockReference(id!))
+    public Input(Func<ExpressionExecutionContext, T> @delegate, string? id = null) : this(Expression.DelegateExpression(@delegate), new(id!))
     {
     }
 
     /// <inheritdoc />
-    public Input(Variable variable) : base(new Expression("Variable", variable), variable, typeof(T))
+    public Input(Variable variable) : base(new("Variable", variable), variable, typeof(T))
     {
     }
 
     /// <inheritdoc />
-    public Input(Output output) : base(new Expression("Output", output), output.MemoryBlockReference(), typeof(T))
+    public Input(Output output) : base(new("Output", output), output.MemoryBlockReference(), typeof(T))
     {
     }
 
@@ -105,7 +105,7 @@ public class Input<T> : Input
     }
 
     /// <inheritdoc />
-    public Input(Expression expression) : this(expression, new MemoryBlockReference())
+    public Input(Expression expression) : this(expression, new())
     {
     }
 }

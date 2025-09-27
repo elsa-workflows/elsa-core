@@ -33,5 +33,5 @@ public abstract class Argument
     /// Gets or sets the memory block reference.
     /// </summary>
     [JsonIgnore]
-    public Func<MemoryBlockReference> MemoryBlockReference { get; set; } = default!;
+    public Func<MemoryBlockReference> MemoryBlockReference { get; set; } = null!;
 }
