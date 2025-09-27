@@ -1,7 +1,13 @@
 using System.Reflection;
+using Elsa.Alterations.Extensions;
 using Elsa.Caching;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
+using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Persistence.EFCore.Modules.Alterations;
+using Elsa.Persistence.EFCore.Modules.Identity;
+using Elsa.Persistence.EFCore.Modules.Management;
+using Elsa.Persistence.EFCore.Modules.Runtime;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Decorators;
@@ -50,6 +56,9 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        var dbConnectionString = infrastructure.DbContainer.GetConnectionString();
+        var rabbitMqConnectionString = infrastructure.RabbitMqContainer.GetConnectionString();
+
         builder.UseUrls(url);
 
         if (Program.ConfigureForTest == null)
@@ -70,9 +79,18 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     var workflowsDirectory = Path.Join(workflowsDirectorySegments);
                     return StorageFactory.Blobs.DirectoryFiles(workflowsDirectory);
                 });
-                elsa.UseIdentity();
-                elsa.UseWorkflowManagement();
-                elsa.UseWorkflowRuntime(runtime => runtime.UseDistributedRuntime());
+                elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));
+                elsa.UseWorkflowManagement(management =>
+                {
+                    management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                    management.UseCache();
+                });
+                elsa.UseWorkflowRuntime(runtime =>
+                {
+                    runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                    runtime.UseCache();
+                    runtime.UseDistributedRuntime();
+                });
                 elsa.UseJavaScript(options =>
                 {
                     options.AllowClrAccess = true;
@@ -81,7 +99,14 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                         engine.SetValue("getStaticValue", () => StaticValueHolder.Value);
                     });
                 });
-                elsa.UseHttp();
+                elsa.UseAlterations(alterations =>
+                {
+                    alterations.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                });
+                elsa.UseHttp(http =>
+                {
+                    http.UseCache();
+                });
             };
         }
 
