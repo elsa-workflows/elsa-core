@@ -246,7 +246,15 @@ public static class BulkUpsertExtensions
                 if (converter != null)
                     value = converter.ConvertToProvider(value);
 
-                placeholders.Add(paramName);
+                // Detect json/jsonb column types and cast the parameter so PostgreSQL accepts it.
+                var columnType = property.GetColumnType();
+                if (columnType.StartsWith("jsonb", StringComparison.OrdinalIgnoreCase))
+                    placeholders.Add($"CAST({paramName} AS jsonb)");
+                else if (columnType.StartsWith("json", StringComparison.OrdinalIgnoreCase))
+                    placeholders.Add($"CAST({paramName} AS json)");
+                else
+                    placeholders.Add(paramName);
+                
                 parameters.Add(value);
             }
 
