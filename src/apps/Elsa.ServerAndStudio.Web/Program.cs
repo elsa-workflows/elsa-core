@@ -1,4 +1,7 @@
 using Elsa.Extensions;
+using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Persistence.EFCore.Modules.Management;
+using Elsa.Persistence.EFCore.Modules.Runtime;
 using Elsa.ServerAndStudio.Web.Enums;
 using Elsa.ServerAndStudio.Web.Extensions;
 using Medallion.Threading.FileSystem;
@@ -25,12 +28,16 @@ services
                 identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
             })
             .UseDefaultAuthentication()
-            .UseWorkflowManagement(management => management.UseCache())
+            .UseWorkflowManagement(management =>
+            {
+                management.UseEntityFrameworkCore(ef => ef.UseSqlite());
+                management.UseCache();
+            })
             .UseWorkflowRuntime(runtime =>
             {
+                runtime.UseEntityFrameworkCore(ef => ef.UseSqlite());
                 runtime.UseCache();
-                runtime.DistributedLockProvider = _ => new FileDistributedSynchronizationProvider(new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "locks")));
-                runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
+                runtime.DistributedLockProvider = _ => new FileDistributedSynchronizationProvider(new(Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "locks")));
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
             })
             .UseJavaScript(javaScriptFeature => javaScriptFeature.ConfigureJintOptions(jintOptions => jintOptions.AllowClrAccess = true))
@@ -50,7 +57,7 @@ services
                 http.UseCache();
                 http.ConfigureHttpOptions = options =>
                 {
-                    options.BaseUrl = new Uri(configuration["Hosting:BaseUrl"] ?? configuration["Http:BaseUrl"]!); // HttpBaseUrl is for backward compatibility.
+                    options.BaseUrl = new(configuration["Hosting:BaseUrl"] ?? configuration["Http:BaseUrl"]!); // HttpBaseUrl is for backward compatibility.
                     options.BasePath = configuration["Http:BasePath"];
                 };
             })

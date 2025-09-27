@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides common Entity Framework Core types for implementing EF Core persistence of varipus ELsa modules.
+        </Description>
+        <PackageTags>elsa extension module persistence efcore</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Open.Linq.AsyncExtensions"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions"/>
+        <PackageReference Include="Scrutor"/>
+        <PackageReference Include="System.CommandLine"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
+      <ProjectReference Include="..\Elsa.Tenants\Elsa.Tenants.csproj" />
+    </ItemGroup>
+
+</Project>

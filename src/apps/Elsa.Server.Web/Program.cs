@@ -5,6 +5,9 @@ using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Identity.Multitenancy;
+using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Persistence.EFCore.Modules.Management;
+using Elsa.Persistence.EFCore.Modules.Runtime;
 using Elsa.Server.Web.Filters;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
@@ -58,11 +61,16 @@ services
             })
             .UseWorkflowManagement(management =>
             {
+                management.UseEntityFrameworkCore(ef => ef.UseSqlite());
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
                 management.UseCache();
                 management.UseReadOnlyMode(useReadOnlyMode);
             })
-            .UseWorkflowRuntime(runtime => runtime.UseCache())
+            .UseWorkflowRuntime(runtime =>
+            {
+                runtime.UseEntityFrameworkCore(ef => ef.UseSqlite());
+                runtime.UseCache();
+            })
             .UseWorkflowsApi()
             .UseScheduling()
             .UseCSharp(options =>
