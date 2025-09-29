@@ -3,6 +3,7 @@ using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Models;
 
 // ReSharper disable once CheckNamespace
@@ -68,6 +69,18 @@ public static partial class ActivityExecutionContextExtensions
     }
     
     private static async Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, ActivityDescriptor activityDescriptor, InputDescriptor inputDescriptor)
+    {
+        try
+        {
+            return await EvaluateInputPropertyCoreAsync(context, activityDescriptor, inputDescriptor);
+        }
+        catch (Exception e)
+        {
+            throw new InputEvaluationException(inputDescriptor.Name, $"Failed to evaluate activity input '{inputDescriptor.Name}'", e);
+        }
+    }
+    
+    private static async Task<object?> EvaluateInputPropertyCoreAsync(this ActivityExecutionContext context, ActivityDescriptor activityDescriptor, InputDescriptor inputDescriptor)
     {
         var activity = context.Activity;
         var defaultValue = inputDescriptor.DefaultValue;
