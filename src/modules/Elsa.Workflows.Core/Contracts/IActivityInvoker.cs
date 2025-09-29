@@ -13,7 +13,7 @@ public interface IActivityInvoker
     /// <param name="workflowExecutionContext">The workflow execution context.</param>
     /// <param name="activity">The activity to invoke.</param>
     /// <param name="options"></param>
-    Task InvokeAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, ActivityInvocationOptions? options = default);
+    Task<ActivityExecutionContext> InvokeAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, ActivityInvocationOptions? options = null);
 
     /// <summary>
     /// Invokes the specified activity execution context.

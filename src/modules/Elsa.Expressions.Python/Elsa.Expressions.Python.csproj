@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides a Python expression provider.
+        </Description>
+        <PackageTags>elsa module expressions scripting python</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+		<PackageReference Include="pythonnet" />
+    </ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Elsa.Expressions\Elsa.Expressions.csproj" />
+		<ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+	</ItemGroup>
+	
+</Project>

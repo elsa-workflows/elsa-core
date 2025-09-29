@@ -1,9 +1,0 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-	<PropertyGroup>
-		<Description>Provides models that can be shared between the API and API clients</Description>
-		<PackageTags>elsa module connections api</PackageTags>
-		<RootNamespace>Elsa.Connections</RootNamespace>
-	</PropertyGroup>
-
-</Project>

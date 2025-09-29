@@ -23,6 +23,6 @@ public class DryRun(IWorkflowInstanceFinder workflowInstanceFinder) : ElsaEndpoi
     {
         var workflowInstanceIds = await workflowInstanceFinder.FindAsync(filter, cancellationToken);
         var response = new Response(workflowInstanceIds.ToList());
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }

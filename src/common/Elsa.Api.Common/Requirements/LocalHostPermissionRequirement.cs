@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Requirements;
 
 /// <summary>
-/// Adda the "create:application" permission to the current user if the request is local.
+/// Add the "create:application" permission to the current user if the request is local.
 /// </summary>
 public class LocalHostPermissionRequirement : IAuthorizationRequirement
 {

@@ -60,7 +60,7 @@ internal class Post(
 
         if (!authorizationResult.Succeeded)
         {
-            await SendForbiddenAsync(cancellationToken);
+            await Send.ForbiddenAsync(cancellationToken);
             return;
         }
 
@@ -96,7 +96,7 @@ internal class Post(
                 foreach (var validationError in result.ValidationErrors)
                     AddError(validationError.Message);
 
-                await SendErrorsAsync(400, cancellationToken);
+                await Send.ErrorsAsync(400, cancellationToken);
                 return;
             }
         }

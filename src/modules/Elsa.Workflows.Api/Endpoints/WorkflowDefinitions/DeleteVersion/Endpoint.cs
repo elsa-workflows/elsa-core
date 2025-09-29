@@ -23,15 +23,15 @@ internal class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManage
 
         if (!authorizationResult.Succeeded)
         {
-            await SendForbiddenAsync(cancellationToken);
+            await Send.ForbiddenAsync(cancellationToken);
             return;
         }
 
         var deleted = await workflowDefinitionManager.DeleteByIdAsync(request.Id, cancellationToken);
 
         if (!deleted)
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
         else
-            await SendNoContentAsync(cancellationToken);
+            await Send.NoContentAsync(cancellationToken);
     }
 }

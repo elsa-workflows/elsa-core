@@ -33,7 +33,7 @@ internal class List : Endpoint<Request, Response>
 
         if (workflowDefinition == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
@@ -44,6 +44,6 @@ internal class List : Endpoint<Request, Response>
             Items = currentLabels.ToList()
         };
 
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }

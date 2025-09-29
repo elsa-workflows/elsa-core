@@ -12,7 +12,7 @@ public class DistributedBookmarkQueueWorker(
 {
     protected override async Task ProcessAsync(CancellationToken cancellationToken)
     {
-        await using var handle = await distributedLockProvider.TryAcquireLockAsync(nameof(DistributedBookmarkQueueWorker), default, cancellationToken);
+        await using var handle = await distributedLockProvider.TryAcquireLockAsync(nameof(DistributedBookmarkQueueWorker), TimeSpan.Zero, cancellationToken);
 
         if (handle == null)
         {

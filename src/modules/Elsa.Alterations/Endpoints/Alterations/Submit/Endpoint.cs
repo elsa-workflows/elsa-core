@@ -40,6 +40,6 @@ public class Submit : ElsaEndpoint<AlterationPlanParams, Response>
 
         // Write response.
         var response = new Response(planId);
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }

@@ -21,12 +21,12 @@ public class AlterationPlanCompleted : Trigger
     {
         PlanId = new Input<string>(planId);
     }
-    
+
     /// <inheritdoc />
     public AlterationPlanCompleted([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// The ID of the alteration plan.
     /// </summary>

@@ -28,8 +28,8 @@ internal class Get : ElsaEndpoint<Request, ActivityDescriptor>
         var descriptor = request.Version == null ? await _registryLookup.FindAsync(request.TypeName) : await _registryLookup.FindAsync(request.TypeName, request.Version.Value);
 
         if (descriptor == null)
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
         else
-            await SendOkAsync(descriptor, cancellationToken);
+            await Send.OkAsync(descriptor, cancellationToken);
     }
 }

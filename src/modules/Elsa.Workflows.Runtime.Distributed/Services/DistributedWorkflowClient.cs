@@ -50,7 +50,8 @@ public class DistributedWorkflowClient(
             Variables = request.Variables,
             Properties = request.Properties,
             TriggerActivityId = request.TriggerActivityId,
-            ActivityHandle = request.ActivityHandle
+            ActivityHandle = request.ActivityHandle,
+            IncludeWorkflowOutput = request.IncludeWorkflowOutput
         }, cancellationToken));
     }
 

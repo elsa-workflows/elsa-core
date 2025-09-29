@@ -22,7 +22,7 @@ public partial class DistributedWorkflowRuntime
     public Task<WorkflowExecutionResult?> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeParams? options = null) => ObsoleteApi.ResumeWorkflowAsync(workflowInstanceId, options);
     public Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions? options = null) => ObsoleteApi.ResumeWorkflowsAsync(activityTypeName, bookmarkPayload, options);
     public Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions? options = null) => ObsoleteApi.TriggerWorkflowsAsync(activityTypeName, bookmarkPayload, options);
-    public Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowParams? options = default) => ObsoleteApi.ExecuteWorkflowAsync(match, options);
+    public Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowParams? options = null) => ObsoleteApi.ExecuteWorkflowAsync(match, options);
     public Task<CancellationResult> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default) => ObsoleteApi.CancelWorkflowAsync(workflowInstanceId, cancellationToken);
     public Task<IEnumerable<WorkflowMatch>> FindWorkflowsAsync(WorkflowsFilter filter, CancellationToken cancellationToken = default) => ObsoleteApi.FindWorkflowsAsync(filter, cancellationToken);
     public Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default) => ObsoleteApi.ExportWorkflowStateAsync(workflowInstanceId, cancellationToken);

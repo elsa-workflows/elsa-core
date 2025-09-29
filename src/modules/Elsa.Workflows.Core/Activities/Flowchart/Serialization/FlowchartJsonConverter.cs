@@ -16,7 +16,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
     private const string AllActivitiesKey = "allActivities";
     private const string AllConnectionsKey = "allConnections";
     private const string NotFoundConnectionsKey = "notFoundConnections";
-    
+
     /// <inheritdoc />
     public override Activities.Flowchart Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -28,6 +28,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
         var name = doc.RootElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
         var type = doc.RootElement.TryGetProperty("type", out var typeElement) ? typeElement.GetString() : null;
         var version = doc.RootElement.TryGetProperty("version", out var versionElement) ? versionElement.GetInt32() : 1;
+        var runAsynchronously = doc.RootElement.TryGetProperty("runAsynchronously", out var runAsyncElement) && runAsyncElement.GetBoolean();
 
         var connectionsElement = doc.RootElement.TryGetProperty("connections", out var connectionsEl) ? connectionsEl : default;
         var activitiesElement = doc.RootElement.TryGetProperty("activities", out var activitiesEl) ? activitiesEl : default;
@@ -60,6 +61,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
             NodeId = nodeId!,
             Name = name,
             Type = type!,
+            RunAsynchronously = runAsynchronously,
             Version = version,
             CustomProperties = customProperties,
             Metadata = metadata,
@@ -109,7 +111,12 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
     {
         var customPropertiesElement = rootElement.TryGetProperty("customProperties", out var customPropertiesEl) ? customPropertiesEl : default;
 
-        var notFoundConnectionsElement = customPropertiesElement.ValueKind != JsonValueKind.Undefined ? customPropertiesElement.TryGetProperty(NotFoundConnectionsKey, out var notFoundConnectionsEl) ? notFoundConnectionsEl : default : default;
+        var notFoundConnectionsElement =
+            customPropertiesElement.ValueKind != JsonValueKind.Undefined
+                ? customPropertiesElement.TryGetProperty(NotFoundConnectionsKey, out var notFoundConnectionsEl)
+                    ? notFoundConnectionsEl
+                    : default
+                : default;
         var notFoundConnections = notFoundConnectionsElement.ValueKind != JsonValueKind.Undefined ? DeserializeConnections(notFoundConnectionsElement, activities, connectionSerializerOptions) : new List<Connection>();
 
         // Add connections of NotFoundActivity to the list if they aren't already in it.
@@ -141,7 +148,8 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
             var target = foundActivities.FirstOrDefault(x => x.Id == missingTarget.Activity?.Id);
             // ReSharper restore ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
 
-            if (source == null || target == null) continue;
+            if (source == null || target == null)
+                continue;
 
             var connection = new Connection(new Endpoint(source, missingSource.Port), new Endpoint(target, missingTarget.Port));
             connectionsThatCanBeRestored.Add(connection);
@@ -152,29 +160,59 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
 
     private static ICollection<Connection> DeserializeConnections(JsonElement connectionsElement, IDictionary<string, IActivity> activityDictionary, JsonSerializerOptions options)
     {
-        if (connectionsElement.ValueKind == JsonValueKind.Undefined)
+        // 1) Nothing → empty
+        if (connectionsElement.ValueKind == JsonValueKind.Undefined || connectionsElement.ValueKind == JsonValueKind.Null)
             return new List<Connection>();
 
-        // To not break existing workflow definitions, we need to support the old connection format.
-        var useOldConnectionConverter = connectionsElement.EnumerateArray().Any(x => x.TryGetProperty("sourcePort", out var sourcePort) && sourcePort.ValueKind == JsonValueKind.String);
-
-        var connectionSerializerOptions = new JsonSerializerOptions(options);
-
-        if (useOldConnectionConverter)
+        // 2) OData‐style wrapper: { "$values": [ … ] }
+        if (connectionsElement.ValueKind == JsonValueKind.Object && connectionsElement.TryGetProperty("$values", out var valuesEl) && valuesEl.ValueKind == JsonValueKind.Array)
         {
-            connectionSerializerOptions.Converters.Add(new ObsoleteConnectionJsonConverter(activityDictionary));
-
-            var obsoleteConnections = connectionsElement.ValueKind != JsonValueKind.Undefined
-                ? connectionsElement.Deserialize<ICollection<ObsoleteConnection>>(connectionSerializerOptions)?.Where(x => x.Source != null! && x.Target != null!).ToList() ?? []
-                : [];
-
-            return obsoleteConnections.Select(x => new Connection(new Endpoint(x.Source, x.SourcePort), new Endpoint(x.Target, x.TargetPort))).ToList();
+            connectionsElement = valuesEl;
+        }
+        // 3) Single‐object (old style): wrap into a 1‑element array if it has a "source" property
+        else if (connectionsElement.ValueKind == JsonValueKind.Object && connectionsElement.TryGetProperty("source", out _))
+        {
+            using var tmp = JsonDocument.Parse($"[{connectionsElement.GetRawText()}]");
+            connectionsElement = tmp.RootElement;
         }
 
-        connectionSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary));
+        // 4) If it’s still not an array, bail
+        if (connectionsElement.ValueKind != JsonValueKind.Array)
+            return new List<Connection>();
 
-        return connectionsElement.ValueKind != JsonValueKind.Undefined
-            ? connectionsElement.Deserialize<ICollection<Connection>>(connectionSerializerOptions)?.Where(x => x.Source != null! && x.Target != null!).ToList() ?? []
-            : [];
+        // Shortcut: detect the classic flat‐connection JSON and parse manually
+        var arr = connectionsElement.EnumerateArray().ToArray();
+        if (arr.Length > 0 && arr[0].TryGetProperty("source", out var srcProp) && srcProp.ValueKind == JsonValueKind.String && arr[0].TryGetProperty("target", out var tgtProp) && tgtProp.ValueKind == JsonValueKind.String)
+        {
+            var list = new List<Connection>();
+
+            foreach (var el in arr)
+            {
+                var srcId = el.GetProperty("source").GetString()!;
+                var tgtId = el.GetProperty("target").GetString()!;
+                var srcPort = el.TryGetProperty("sourcePort", out var sp) && sp.ValueKind == JsonValueKind.String ? sp.GetString() : null;
+                var tgtPort = el.TryGetProperty("targetPort", out var tp) && tp.ValueKind == JsonValueKind.String ? tp.GetString() : null;
+
+                var srcAct = activityDictionary[srcId];
+                var tgtAct = activityDictionary[tgtId];
+                list.Add(new Connection(new Endpoint(srcAct, srcPort), new Endpoint(tgtAct, tgtPort)));
+            }
+
+            return list;
+        }
+
+        // Otherwise, it's an array of nested‐object connections → delegate to your converters
+        var serializer = new JsonSerializerOptions(options);
+
+        // Legacy check: look for "sourcePort" on the first item to choose the old converter
+        if (arr.Length > 0 && arr[0].TryGetProperty("sourcePort", out _))
+            serializer.Converters.Add(new ObsoleteConnectionJsonConverter(activityDictionary));
+        else
+            serializer.Converters.Add(new ConnectionJsonConverter(activityDictionary));
+
+        var raw = connectionsElement.Deserialize<ICollection<Connection>>(serializer) ?? new List<Connection>();
+
+        // drop any half‑baked entries
+        return raw.Where(c => c.Source?.Activity != null && c.Target?.Activity != null).ToList();
     }
 }

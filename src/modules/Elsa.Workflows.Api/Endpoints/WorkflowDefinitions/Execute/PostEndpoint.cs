@@ -24,7 +24,6 @@ internal class PostEndpoint(
         ConfigurePermissions("exec:workflow-definitions");
         Verbs(FastEndpoints.Http.POST);
     }
-
     /// <inheritdoc />
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
@@ -57,7 +56,7 @@ internal class PostEndpoint(
         
         if (ValidationFailed)
         {
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
         

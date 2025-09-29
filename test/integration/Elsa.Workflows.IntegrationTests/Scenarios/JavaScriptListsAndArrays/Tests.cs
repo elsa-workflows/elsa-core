@@ -1,7 +1,7 @@
 using System.Dynamic;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.JavaScript.Contracts;
+using Elsa.Expressions.JavaScript.Contracts;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;

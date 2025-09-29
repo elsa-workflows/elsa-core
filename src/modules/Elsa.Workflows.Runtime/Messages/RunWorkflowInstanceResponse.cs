@@ -28,4 +28,9 @@ public record RunWorkflowInstanceResponse
     /// Any incidents that occurred during the execution of the workflow instance.
     /// </summary>
     public ICollection<ActivityIncident> Incidents { get; set; } = new List<ActivityIncident>();
+
+    /// <summary>
+    /// The output produced by the workflow instance.
+    /// </summary>
+    public IDictionary<string, object>? Output { get; set; }
 }

@@ -35,7 +35,7 @@ public class InputDescriptor : PropertyDescriptor
         Type? storageDriverType = null,
         PropertyInfo? propertyInfo = null,
         IDictionary<string, object>? uiSpecifications = null
-        )
+    )
     {
         Name = name;
         Type = type;

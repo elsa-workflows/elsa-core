@@ -27,10 +27,10 @@ public class DefaultUserCredentialsValidator : IUserCredentialsValidator
         var user = await _userProvider.FindByNameAsync(username, cancellationToken);
 
         if (user == null)
-            return default;
+            return null;
 
         var isValidPassword = _secretHasher.VerifySecret(password, user.HashedPassword, user.HashedPasswordSalt);
 
-        return isValidPassword ? user : default;
+        return isValidPassword ? user : null;
     }
 }

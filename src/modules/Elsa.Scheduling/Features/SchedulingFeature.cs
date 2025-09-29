@@ -4,9 +4,11 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Scheduling.Bookmarks;
 using Elsa.Scheduling.Handlers;
 using Elsa.Scheduling.HostedServices;
 using Elsa.Scheduling.Services;
+using Elsa.Scheduling.TriggerPayloadValidators;
 using Elsa.Workflows.Management.Features;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -49,7 +51,10 @@ public class SchedulingFeature : FeatureBase
             .AddSingleton(CronParser)
             .AddScoped(WorkflowScheduler)
             .AddBackgroundTask<CreateSchedulesBackgroundTask>()
-            .AddHandlersFrom<ScheduleWorkflows>();
+            .AddHandlersFrom<ScheduleWorkflows>()
+
+            //Trigger payload validators.
+            .AddTriggerPaylodValidator<CronTriggerPayloadValidator, CronTriggerPayload>();
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());
     }

@@ -8,17 +8,17 @@ public class Variable
     /// <summary>
     /// The ID of the variable.
     /// </summary>
-    public string Id { get; set; } = default!;
+    public string Id { get; set; } = null!;
 
     /// <summary>
     /// The name of the variable.
     /// </summary>
-    public string Name { get; set; } = default!;
+    public string Name { get; set; } = null!;
 
     /// <summary>
     /// The type name of the variable.
     /// </summary>
-    public string TypeName { get; set; } = default!;
+    public string TypeName { get; set; } = null!;
     
     /// <summary>
     /// Indicates whether the variable is an array.

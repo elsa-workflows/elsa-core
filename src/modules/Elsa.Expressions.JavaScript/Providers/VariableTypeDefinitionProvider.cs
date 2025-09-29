@@ -1,0 +1,38 @@
+using System.Dynamic;
+using Elsa.Extensions;
+using Elsa.Expressions.JavaScript.TypeDefinitions.Abstractions;
+using Elsa.Expressions.JavaScript.TypeDefinitions.Contracts;
+using Elsa.Expressions.JavaScript.TypeDefinitions.Models;
+
+namespace Elsa.Expressions.JavaScript.Providers;
+
+/// <summary>
+/// Produces <see cref="TypeDefinition"/>s for variable types.
+/// </summary>
+[UsedImplicitly]
+internal class VariableTypeDefinitionProvider(ITypeDescriber typeDescriber, IOptions<ManagementOptions> options) : TypeDefinitionProvider
+{
+    protected override IEnumerable<TypeDefinition> GetTypeDefinitions(TypeDefinitionContext context)
+    {
+        var excludedTypes = new Func<Type, bool>[]
+        {
+            type => type == typeof(ExpandoObject),
+            type => type.IsPrimitive,
+            type => type.ContainsGenericParameters,
+            type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IDictionary<,>),
+            type => type == typeof(object),
+            type => type == typeof(string)
+        };
+
+        var variableTypes =
+            from variableDescriptor in options.Value.VariableDescriptors
+            let variableType = variableDescriptor.Type
+            where (variableType.IsClass || variableType.IsInterface || variableType.IsEnum) && !excludedTypes.Any(x => x(variableType))
+            select variableType;
+
+        foreach (var variableType in variableTypes.Distinct())
+        {
+            yield return typeDescriber.DescribeType(variableType);
+        }
+    }
+}

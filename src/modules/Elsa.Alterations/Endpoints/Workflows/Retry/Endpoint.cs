@@ -62,7 +62,7 @@ public class Retry : ElsaEndpoint<Request, Response>
         
         // Write response.
         var response = new Response(allResults);
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 
     private IEnumerable<string> GetActivityIds(Request request, WorkflowInstance workflowInstance)

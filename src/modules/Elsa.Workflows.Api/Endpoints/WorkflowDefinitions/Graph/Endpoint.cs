@@ -23,7 +23,7 @@ internal class Graph(IWorkflowDefinitionService workflowDefinitionService, IApiS
 
         if (workflowGraph == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 

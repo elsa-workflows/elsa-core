@@ -49,7 +49,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
 
         if (!authorizationResult.Succeeded)
         {
-            await SendForbiddenAsync(cancellationToken);
+            await Send.ForbiddenAsync(cancellationToken);
             return;
         }
 
@@ -58,13 +58,13 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
         if (result.Succeeded)
         {
             if (isNew)
-                await SendCreatedAtAsync<GetByDefinitionId.GetByDefinitionId>(new { DefinitionId = definitionId }, updatedModel, cancellation: cancellationToken);
+                await Send.CreatedAtAsync<GetByDefinitionId.GetByDefinitionId>(new { DefinitionId = definitionId }, updatedModel, cancellation: cancellationToken);
             else
-                await SendOkAsync(updatedModel, cancellationToken);
+                await Send.OkAsync(updatedModel, cancellationToken);
         }
 
         if (ValidationFailed)
-            await SendErrorsAsync(400, cancellationToken);
+            await Send.ErrorsAsync(400, cancellationToken);
     }
 
     private async Task<ImportWorkflowResult> ImportSingleWorkflowDefinitionAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)

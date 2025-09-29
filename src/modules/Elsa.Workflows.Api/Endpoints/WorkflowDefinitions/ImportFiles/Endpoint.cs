@@ -53,7 +53,7 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
 
         if (!authorizationResult.Succeeded)
         {
-            await SendForbiddenAsync(cancellationToken);
+            await Send.ForbiddenAsync(cancellationToken);
             return;
         }
 
@@ -62,11 +62,11 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
             var count = await ImportFilesAsync(Files, cancellationToken);
 
             if (!ValidationFailed)
-                await SendOkAsync(new { Count = count }, cancellationToken);
+                await Send.OkAsync(new { Count = count }, cancellationToken);
         }
 
         if (ValidationFailed)
-            await SendErrorsAsync(400, cancellationToken);
+            await Send.ErrorsAsync(400, cancellationToken);
     }
 
     private async Task<int> ImportFilesAsync(IFormFileCollection files, CancellationToken cancellationToken)

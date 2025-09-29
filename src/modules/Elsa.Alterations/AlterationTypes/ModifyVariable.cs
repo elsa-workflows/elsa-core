@@ -12,7 +12,7 @@ public class ModifyVariable : AlterationBase
     /// <summary>
     /// The ID of the variable to modify.
     /// </summary>
-    public string VariableId { get; set; } = default!;
+    public string VariableId { get; set; } = null!;
 
     /// <summary>
     ///  The new value of the variable.

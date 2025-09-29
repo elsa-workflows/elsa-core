@@ -15,7 +15,6 @@ namespace Elsa.WorkflowProviders.BlobStorage.Features;
 /// A feature that enables the FluentStorage workflow definition provider.
 /// </summary>
 [DependsOn(typeof(WorkflowManagementFeature))]
-[DependsOn(typeof(DslIntegrationFeature))]
 public class BlobStorageFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -32,7 +31,7 @@ public class BlobStorageFeature : FeatureBase
     public override void Apply()
     {
         Services.AddScoped<IBlobStorageProvider>(sp => new BlobStorageProvider(BlobStorage(sp)));
-        Services.AddWorkflowDefinitionProvider<BlobStorageWorkflowsProvider>();
+        Services.AddWorkflowsProvider<BlobStorageWorkflowsProvider>();
     }
 
     /// <summary>

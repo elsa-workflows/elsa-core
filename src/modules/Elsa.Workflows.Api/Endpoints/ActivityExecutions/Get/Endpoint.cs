@@ -32,10 +32,10 @@ internal class Endpoint(IActivityExecutionStore store) : ElsaEndpointWithoutRequ
 
         if (record == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
-        await SendOkAsync(record, cancellationToken);
+        await Send.OkAsync(record, cancellationToken);
     }
 }

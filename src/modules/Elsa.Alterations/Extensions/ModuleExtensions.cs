@@ -12,7 +12,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Adds the <see cref="AlterationsFeature"/>.
     /// </summary>
-    public static IModule UseAlterations(this IModule module, Action<AlterationsFeature>? configure = default)
+    public static IModule UseAlterations(this IModule module, Action<AlterationsFeature>? configure = null)
     {
         return module.Use(configure);
     }

@@ -18,11 +18,11 @@ public class Endpoint(ITenantService tenantService, ITenantStore store) : ElsaEn
         
         if (!found)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
         
         await tenantService.RefreshAsync(ct);
-        await SendOkAsync(ct);
+        await Send.OkAsync(ct);
     }
 }

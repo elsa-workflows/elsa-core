@@ -8,22 +8,22 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentStorage"/>
-        <PackageReference Include="Microsoft.Extensions.Http.Resilience"/>
-        <PackageReference Include="Microsoft.Extensions.Resilience"/>
+		<PackageReference Include="FluentStorage" />
+        <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+        <PackageReference Include="Microsoft.Extensions.Resilience" />
         <PackageReference Include="Polly" />
+		
+		<!-- Used to resolve the FluentStoage package warning. -->
+		<PackageReference Include="System.Text.Json" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Liquid\Elsa.Liquid.csproj"/>
-        <ProjectReference Include="..\Elsa.Resilience.Core\Elsa.Resilience.Core.csproj" />
-        <ProjectReference Include="..\Elsa.Resilience\Elsa.Resilience.csproj" />
-        <ProjectReference Include="..\Elsa.SasTokens\Elsa.SasTokens.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
-        <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj"/>
+		<ProjectReference Include="..\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj" />
+		<ProjectReference Include="..\Elsa.Expressions.Liquid\Elsa.Expressions.Liquid.csproj" />
+		<ProjectReference Include="..\Elsa.Resilience\Elsa.Resilience.csproj" />
+		<ProjectReference Include="..\Elsa.SasTokens\Elsa.SasTokens.csproj" />
+		<ProjectReference Include="..\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+		<ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
 </Project>

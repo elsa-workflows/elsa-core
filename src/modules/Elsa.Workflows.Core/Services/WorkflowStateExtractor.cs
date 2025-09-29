@@ -32,7 +32,7 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
             IsSystem = workflowExecutionContext.Workflow.IsSystem,
             CreatedAt = workflowExecutionContext.CreatedAt,
             UpdatedAt = workflowExecutionContext.UpdatedAt,
-            FinishedAt = workflowExecutionContext.FinishedAt
+            FinishedAt = workflowExecutionContext.FinishedAt,
         };
 
         ExtractProperties(state, workflowExecutionContext);
@@ -65,12 +65,13 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
         ApplyScheduledActivities(state, workflowExecutionContext);
         return workflowExecutionContext;
     }
-    
+
     private void ApplyInput(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         // Only add input from state if the input doesn't already exist on the workflow execution context.
         foreach (var inputItem in state.Input)
-            if (!workflowExecutionContext.Input.ContainsKey(inputItem.Key)) workflowExecutionContext.Input.Add(inputItem.Key, inputItem.Value);
+            if (!workflowExecutionContext.Input.ContainsKey(inputItem.Key))
+                workflowExecutionContext.Input.Add(inputItem.Key, inputItem.Value);
     }
 
     private IDictionary<string, object> GetPersistableInput(WorkflowExecutionContext workflowExecutionContext)
@@ -103,11 +104,7 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
 
     private async Task ApplyActivityExecutionContextsAsync(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        var activityExecutionContexts = (await Task.WhenAll(
-                state.ActivityExecutionContexts.Select(async item => await CreateActivityExecutionContextAsync(item))))
-            .Where(x => x != null)
-            .Select(x => x!)
-            .ToList();
+        var activityExecutionContexts = (await Task.WhenAll(state.ActivityExecutionContexts.Select(async item => await CreateActivityExecutionContextAsync(item)))).Where(x => x != null).Select(x => x!).ToList();
 
         var lookup = activityExecutionContexts.ToDictionary(x => x.Id);
 
@@ -156,7 +153,7 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
             
             if(activityExecutionContextState.ActivityState != null)
                 activityExecutionContext.ActivityState.Merge(activityExecutionContextState.ActivityState);
-            
+
             activityExecutionContext.TransitionTo(activityExecutionContextState.Status);
             activityExecutionContext.IsExecuting = activityExecutionContextState.IsExecuting;
             activityExecutionContext.AggregateFaultCount = activityExecutionContextState.FaultCount;
@@ -173,16 +170,19 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
     {
         foreach (var completionCallbackEntry in state.CompletionCallbacks)
         {
-            var ownerActivityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == completionCallbackEntry.OwnerInstanceId);
-            var childNode = workflowExecutionContext.FindNodeById(completionCallbackEntry.ChildNodeId);
+            var ownerActivityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == completionCallbackEntry.OwnerInstanceId);
+            if (ownerActivityExecutionContext != null)
+            {
+                var childNode = workflowExecutionContext.FindNodeById(completionCallbackEntry.ChildNodeId);
 
-            if (childNode == null)
-                continue;
+                if (childNode == null)
+                    continue;
 
-            var callbackName = completionCallbackEntry.MethodName;
-            var callbackDelegate = !string.IsNullOrEmpty(callbackName) ? ownerActivityExecutionContext.Activity.GetActivityCompletionCallback(callbackName) : default;
-            var tag = completionCallbackEntry.Tag;
-            workflowExecutionContext.AddCompletionCallback(ownerActivityExecutionContext, childNode, callbackDelegate, tag);
+                var callbackName = completionCallbackEntry.MethodName;
+                var callbackDelegate = !string.IsNullOrEmpty(callbackName) ? ownerActivityExecutionContext.Activity.GetActivityCompletionCallback(callbackName) : default;
+                var tag = completionCallbackEntry.Tag;
+                workflowExecutionContext.AddCompletionCallback(ownerActivityExecutionContext, childNode, callbackDelegate, tag);
+            }
         }
     }
 
@@ -217,9 +217,7 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
                 throw new("Lost an owner context");
         }
 
-        var completionCallbacks = workflowExecutionContext
-            .CompletionCallbacks
-            .Select(x => new CompletionCallbackState(x.Owner.Id, x.Child.NodeId, x.CompletionCallback?.Method.Name, x.Tag));
+        var completionCallbacks = workflowExecutionContext.CompletionCallbacks.Select(x => new CompletionCallbackState(x.Owner.Id, x.Child.NodeId, x.CompletionCallback?.Method.Name, x.Tag));
 
         state.CompletionCallbacks = completionCallbacks.ToList();
     }
@@ -253,7 +251,7 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
                 StartedAt = activityExecutionContext.StartedAt,
                 CompletedAt = activityExecutionContext.CompletedAt,
                 Tag = activityExecutionContext.Tag,
-                DynamicVariables = activityExecutionContext.DynamicVariables
+                DynamicVariables = activityExecutionContext.DynamicVariables,
             };
             return activityExecutionContextState;
         }
@@ -273,7 +271,7 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
                 Tag = x.Tag,
                 Variables = x.Variables?.ToList(),
                 ExistingActivityExecutionContextId = x.ExistingActivityExecutionContext?.Id,
-                Input = x.Input
+                Input = x.Input,
             });
 
         state.ScheduledActivities = scheduledActivities.ToList();

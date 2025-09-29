@@ -1,5 +1,4 @@
 ﻿using Elsa.Common;
-using Elsa.Dsl.Contracts;
 using Elsa.WorkflowProviders.BlobStorage.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Management.Mappers;
@@ -19,7 +18,6 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
 {
     private readonly IBlobStorageProvider _blobStorageProvider;
     private readonly IActivitySerializer _activitySerializer;
-    private readonly IDslEngine _dslEngine;
     private readonly ISystemClock _systemClock;
     private readonly IHasher _hasher;
     private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
@@ -31,7 +29,6 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
     public BlobStorageWorkflowsProvider(
         IBlobStorageProvider blobStorageProvider,
         IActivitySerializer activitySerializer,
-        IDslEngine dslEngine,
         ISystemClock systemClock,
         IHasher hasher,
         WorkflowDefinitionMapper workflowDefinitionMapper,
@@ -39,7 +36,6 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
     {
         _blobStorageProvider = blobStorageProvider;
         _activitySerializer = activitySerializer;
-        _dslEngine = dslEngine;
         _systemClock = systemClock;
         _hasher = hasher;
         _workflowDefinitionMapper = workflowDefinitionMapper;
@@ -80,24 +76,7 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
         if (string.Equals("json", fileExtension, StringComparison.OrdinalIgnoreCase))
             return ReadJsonWorkflowDefinition(data);
 
-        if (string.Equals("elsa", fileExtension, StringComparison.OrdinalIgnoreCase))
-            return await ReadElsaDslWorkflowDefinitionAsync(blob, data, cancellationToken);
-
         throw new NotSupportedException($"The file extension '{fileExtension}' is not supported.");
-    }
-
-    private async Task<MaterializedWorkflow> ReadElsaDslWorkflowDefinitionAsync(Blob blob, string dsl, CancellationToken cancellationToken)
-    {
-        var workflow = await _dslEngine.ParseAsync(dsl, cancellationToken);
-
-        // TODO: Extend the DSL with support for setting the ID from there.
-        workflow.Identity = workflow.Identity with
-        {
-            Id = blob.Name,
-            DefinitionId = blob.Name
-        };
-
-        return new MaterializedWorkflow(workflow, Name, JsonWorkflowMaterializer.MaterializerName);
     }
 
     private MaterializedWorkflow ReadJsonWorkflowDefinition(string json)
@@ -105,6 +84,6 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
         var workflowDefinitionModel = _activitySerializer.Deserialize<WorkflowDefinitionModel>(json);
         var workflow = _workflowDefinitionMapper.Map(workflowDefinitionModel);
 
-        return new MaterializedWorkflow(workflow, Name, JsonWorkflowMaterializer.MaterializerName);
+        return new (workflow, Name, JsonWorkflowMaterializer.MaterializerName);
     }
 }

@@ -1,5 +1,5 @@
-using Elsa.JavaScript.Activities;
-using Elsa.JavaScript.Models;
+using Elsa.Expressions.JavaScript.Activities;
+using Elsa.Expressions.JavaScript.Models;
 using Elsa.Workflows.Activities;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.JavaScriptNativeVariables;

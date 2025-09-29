@@ -30,6 +30,7 @@ public class DefaultAuthenticationFeature : FeatureBase
     /// Gets or sets the <see cref="ApiKeyProviderType"/>.
     /// </summary>
     public Type ApiKeyProviderType { get; set; } = typeof(DefaultApiKeyProvider);
+    public Action<AuthorizationOptions> ConfigureAuthorizationOptions { get; set; } = options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostPermissionRequirement()));
 
     /// <summary>
     /// Configures the API key provider type.
@@ -47,6 +48,16 @@ public class DefaultAuthenticationFeature : FeatureBase
     /// </summary>
     /// <returns>The current <see cref="DefaultAuthenticationFeature"/>.</returns>
     public DefaultAuthenticationFeature UseAdminApiKey() => UseApiKeyAuthorization<AdminApiKeyProvider>();
+    
+    /// <summary>
+    /// Disables the local host requirement for the security root policy.
+    /// We are considering removing this requirement by default in the future, in favor of a new "setup mode" paradigm.
+    /// </summary>
+    public DefaultAuthenticationFeature DisableLocalHostRequirement()
+    {
+        ConfigureAuthorizationOptions = options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.RequireAuthenticatedUser());
+        return this;
+    }
 
     /// <inheritdoc />
     public override void Apply()
@@ -73,6 +84,6 @@ public class DefaultAuthenticationFeature : FeatureBase
         Services.AddScoped<IAuthorizationHandler, LocalHostPermissionRequirementHandler>();
         Services.AddScoped(ApiKeyProviderType);
         Services.AddScoped<IApiKeyProvider>(sp => (IApiKeyProvider)sp.GetRequiredService(ApiKeyProviderType));
-        Services.AddAuthorization(options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostPermissionRequirement())));
+        Services.AddAuthorization(ConfigureAuthorizationOptions);
     }
 }

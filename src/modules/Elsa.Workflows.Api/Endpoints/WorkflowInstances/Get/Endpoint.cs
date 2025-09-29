@@ -21,8 +21,8 @@ internal class Get(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Workflo
         var workflowInstance = await store.FindAsync(filter, cancellationToken);
 
         if (workflowInstance == null)
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
         else
-            await SendOkAsync(Map.FromEntity(workflowInstance), cancellationToken);
+            await Send.OkAsync(Map.FromEntity(workflowInstance), cancellationToken);
     }
 }

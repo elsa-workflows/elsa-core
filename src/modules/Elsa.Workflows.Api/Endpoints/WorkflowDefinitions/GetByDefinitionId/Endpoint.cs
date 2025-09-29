@@ -23,11 +23,11 @@ internal class GetByDefinitionId(IWorkflowDefinitionStore store, IWorkflowDefini
         
         if (definition == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
         var model = await linker.MapAsync(definition, cancellationToken);
-        await SendOkAsync(model, cancellationToken);
+        await Send.OkAsync(model, cancellationToken);
     }
 }

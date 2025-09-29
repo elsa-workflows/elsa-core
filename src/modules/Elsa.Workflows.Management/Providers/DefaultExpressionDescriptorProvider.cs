@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Elsa.Expressions;
 using Elsa.Expressions.Contracts;
@@ -5,6 +6,7 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Expressions;
 using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Management.Providers;
@@ -20,6 +22,7 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
         yield return CreateJsonDescriptor();
         yield return CreateDelegateDescriptor();
         yield return CreateVariableDescriptor();
+        yield return CreateInputDescriptor();
     }
 
     private ExpressionDescriptor CreateLiteralDescriptor()
@@ -67,6 +70,33 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
                 catch (Exception)
                 {
                     return new Expression("Variable", null);
+                }
+            }
+        );
+    }
+
+    private ExpressionDescriptor CreateInputDescriptor()
+    {
+        return CreateDescriptor<InputExpressionHandler>(
+            "Input",
+            "Input", // Displayed text in UI (input selection dropdown)
+            isBrowsable: true,
+            deserialize: context =>
+            {
+                var valueElement = context.JsonElement.TryGetProperty("value", out var v) ? v : default;
+                var valueString = valueElement.GetValue()?.ToString();
+
+                if (string.IsNullOrWhiteSpace(valueString)) return new Expression("Input", null);
+
+                try
+                {
+                    var value = JsonSerializer.Deserialize(valueString, typeof(InputDefinition), context.Options);
+
+                    return new Expression("Input", value);
+                }
+                catch (Exception)
+                {
+                    return new Expression("Input", null);
                 }
             }
         );

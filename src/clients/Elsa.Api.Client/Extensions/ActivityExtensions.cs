@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Elsa.Api.Client.Resources.Resilience.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
+using Elsa.Api.Client.Shared.Enums;
 using Elsa.Api.Client.Shared.Models;
 
 namespace Elsa.Api.Client.Extensions;
@@ -117,11 +118,21 @@ public static class ActivityExtensions
     /// Sets a value indicating whether the specified activity can trigger the workflow.
     /// </summary>
     public static void SetCanStartWorkflow(this JsonObject activity, bool value) => activity.SetProperty(JsonValue.Create(value), "customProperties", "canStartWorkflow");
+    
+    public static MergeMode GetMergeMode(this JsonObject activity)
+    {
+        return activity.GetProperty<MergeMode?>("customProperties", "mergeMode") ?? MergeMode.Converge;
+    }
+
+    public static void SetMergeMode(this JsonObject activity, MergeMode? value)
+    {
+        activity.SetProperty(JsonValue.Create(value), "customProperties", "mergeMode");
+    }
 
     /// <summary>
     /// Gets the activities in the specified flowchart.
     /// </summary>
-    public static IEnumerable<JsonObject> GetActivities(this JsonObject flowchart) => flowchart.GetProperty("activities")?.AsArray().AsEnumerable().Cast<JsonObject>() ?? Array.Empty<JsonObject>();
+    public static IEnumerable<JsonObject> GetActivities(this JsonObject flowchart) => flowchart.GetProperty("activities")?.AsArray().AsEnumerable().Cast<JsonObject>() ?? [];
 
     /// <summary>
     /// Sets the activities in the specified flowchart.

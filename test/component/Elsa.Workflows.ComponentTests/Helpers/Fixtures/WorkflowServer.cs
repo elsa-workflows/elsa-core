@@ -1,26 +1,23 @@
 using System.Reflection;
 using Elsa.Alterations.Extensions;
 using Elsa.Caching;
-using Elsa.EntityFrameworkCore.Extensions;
-using Elsa.EntityFrameworkCore.Modules.Alterations;
-using Elsa.EntityFrameworkCore.Modules.Identity;
-using Elsa.EntityFrameworkCore.Modules.Management;
-using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
-using Elsa.MassTransit.Extensions;
+using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Persistence.EFCore.Modules.Alterations;
+using Elsa.Persistence.EFCore.Modules.Identity;
+using Elsa.Persistence.EFCore.Modules.Management;
+using Elsa.Persistence.EFCore.Modules.Runtime;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
-using Elsa.Workflows.ComponentTests.Consumers;
 using Elsa.Workflows.ComponentTests.Decorators;
 using Elsa.Workflows.ComponentTests.Materializers;
-using Elsa.Workflows.ComponentTests.Scenarios.Activities.ForEach;
 using Elsa.Workflows.ComponentTests.Services;
 using Elsa.Workflows.ComponentTests.WorkflowProviders;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
-using Hangfire.Annotations;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -82,29 +79,17 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     var workflowsDirectory = Path.Join(workflowsDirectorySegments);
                     return StorageFactory.Blobs.DirectoryFiles(workflowsDirectory);
                 });
-                elsa.UseMassTransit(massTransit =>
-                {
-                    //massTransit.UseRabbitMq(rabbitMqConnectionString);
-                    massTransit.Services.AddSingleton<WorkflowDefinitionEvents>();
-                    massTransit.AddConsumer<WorkflowDefinitionEventConsumer>("elsa-test-workflow-definition-updates", true);
-                });
                 elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));
                 elsa.UseWorkflowManagement(management =>
                 {
                     management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
-                    management.UseMassTransitDispatcher();
                     management.UseCache();
                 });
                 elsa.UseWorkflowRuntime(runtime =>
                 {
                     runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
                     runtime.UseCache();
-                    runtime.UseMassTransitDispatcher();
                     runtime.UseDistributedRuntime();
-                });
-                elsa.UseDistributedCache(distributedCaching =>
-                {
-                    distributedCaching.UseMassTransit();
                 });
                 elsa.UseJavaScript(options =>
                 {

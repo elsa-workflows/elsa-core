@@ -12,12 +12,12 @@ public class AlterationJob : Entity
     /// <summary>
     /// The ID of the plan that this job belongs to.
     /// </summary>
-    public string PlanId { get; set; } = default!;
+    public string PlanId { get; set; } = null!;
     
     /// <summary>
     /// The ID of the workflow instance that this job applies to.
     /// </summary>
-    public string WorkflowInstanceId { get; set; } = default!;
+    public string WorkflowInstanceId { get; set; } = null!;
     
     /// <summary>
     /// The status of the job.

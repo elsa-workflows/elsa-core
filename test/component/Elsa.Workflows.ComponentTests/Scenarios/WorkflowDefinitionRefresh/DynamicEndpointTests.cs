@@ -22,13 +22,13 @@ public class DynamicEndpointTests : AppComponentTest
     {
         var client = WorkflowServer.CreateHttpWorkflowClient();
 
-        var firstResponse = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "first-value"));
+        var firstResponse = await client.SendAsync(new(HttpMethod.Get, "first-value"));
 
         StaticValueHolder.Value = "second-value";
-        var _ = await _workflowDefinitionsRefresher.RefreshWorkflowDefinitionsAsync(
-            new Runtime.Requests.RefreshWorkflowDefinitionsRequest() { DefinitionIds = ["f69f061159adc3ae"] }, CancellationToken.None);
+        _ = await _workflowDefinitionsRefresher.RefreshWorkflowDefinitionsAsync(
+            new() { DefinitionIds = ["f69f061159adc3ae"] }, CancellationToken.None);
 
-        var secondResponse = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "second-value"));
+        var secondResponse = await client.SendAsync(new(HttpMethod.Get, "second-value"));
 
         Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
         Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);

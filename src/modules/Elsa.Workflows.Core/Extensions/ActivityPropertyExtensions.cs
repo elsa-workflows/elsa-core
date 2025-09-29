@@ -29,14 +29,17 @@ public static class ActivityPropertyExtensions
     /// By default, activities with an <see cref="ActivityKind"/> of <see cref="Action"/>, <see cref="Task"/> or <see cref="Trigger"/>
     /// will execute synchronously, while activities of the <see cref="ActivityKind.Job"/> kind will execute asynchronously.
     /// </summary>
-    public static bool GetRunAsynchronously(this IActivity activity) => activity.CustomProperties.GetValueOrDefault(RunAsynchronouslyPropertyName, () => false);
+    public static bool? GetRunAsynchronously(this IActivity activity)
+    {
+        return activity.CustomProperties.GetValueOrDefault<bool?>(RunAsynchronouslyPropertyName, defaultValueFactory: () => null);
+    }
 
     /// <summary>
     /// Sets a flag indicating if this activity should execute synchronously or asynchronously.
     /// By default, activities with an <see cref="ActivityKind"/> of <see cref="Action"/>, <see cref="Task"/> or <see cref="Trigger"/>
     /// will execute synchronously, while activities of the <see cref="ActivityKind.Job"/> kind will execute asynchronously.
     /// </summary>
-    public static void SetRunAsynchronously(this IActivity activity, bool value) => activity.CustomProperties[RunAsynchronouslyPropertyName[0]] = value;
+    public static void SetRunAsynchronously(this IActivity activity, bool? value) => activity.CustomProperties[RunAsynchronouslyPropertyName[0]] = value ?? false;
 
     /// <summary>
     /// Gets the source file and line number where this activity was instantiated, if any.

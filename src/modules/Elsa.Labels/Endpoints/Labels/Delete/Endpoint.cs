@@ -20,8 +20,8 @@ public class Delete : Endpoint<Request>
         var deleted = await _store.DeleteAsync(request.Id, cancellationToken);
 
         if (deleted)
-            await SendNoContentAsync(cancellationToken);
+            await Send.NoContentAsync(cancellationToken);
         else
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
     }
 }

@@ -1,4 +1,4 @@
-# ELSA 3.0
+# ELSA 3
 
 ![Elsa Workflows](./design/artwork/elsa-v3-avatar.png)
 
@@ -72,7 +72,7 @@ docker run \
 - [Features](#features)
 - [Roadmap](#roadmap)
 - [Use Cases](#use-cases)
-- [Programmatic Workflows](#programmatic-workflows)
+- [Coding Workflows](#coding-workflows)
 - [Designed Workflows](#designed-workflows)
 - [Contributing](#contributing)
 - [Support](#support)

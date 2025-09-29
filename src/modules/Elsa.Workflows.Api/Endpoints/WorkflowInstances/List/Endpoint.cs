@@ -30,7 +30,7 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
 
         if (ValidationFailed)
         {
-            await SendErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
+            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
             return;
         }
 
@@ -53,7 +53,7 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
 
         var summaries = await FindAsync(request, filter, pageArgs, cancellationToken);
         var response = new Response(summaries.Items, summaries.TotalCount);
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 
     private IEnumerable<TEnum> ParseEnumStrings<TEnum>(IEnumerable<string> strings) where TEnum : struct

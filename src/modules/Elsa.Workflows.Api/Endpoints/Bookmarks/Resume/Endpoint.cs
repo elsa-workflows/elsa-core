@@ -34,7 +34,7 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
 
         if (ValidationFailed)
         {
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
         
@@ -45,7 +45,7 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
         await ResumeBookmarkedWorkflowAsync(payload, input, asynchronous, workflowCancellationToken);
         
         if (!HttpContext.Response.HasStarted)
-            await SendOkAsync(cancellationToken);
+            await Send.OkAsync(cancellationToken);
     }
     
     private IDictionary<string, object>? GetInputFromQueryString()

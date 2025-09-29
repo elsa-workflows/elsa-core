@@ -12,7 +12,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Installs & configures the <see cref="IdentityFeature"/> feature.
     /// </summary>
-    public static IModule UseIdentity(this IModule module, Action<IdentityFeature> configure)
+    public static IModule UseIdentity(this IModule module, Action<IdentityFeature>? configure = null)
     {
         module.Configure(configure);
         return module;
@@ -21,7 +21,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Installs & configures the <see cref="IdentityFeature"/> feature.
     /// </summary>
-    public static IModule UseIdentity(this IModule module, string signingKey, string issuer = "http://elsa.api", string audience = "http://elsa.api", TimeSpan? tokenLifetime = default)
+    public static IModule UseIdentity(this IModule module, string signingKey, string issuer = "http://elsa.api", string audience = "http://elsa.api", TimeSpan? tokenLifetime = null)
     {
         module.UseIdentity(identity => identity.TokenOptions += options =>
         {
@@ -36,7 +36,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Installs & configures the <see cref="IdentityFeature"/> feature.
     /// </summary>
-    public static IModule UseDefaultAuthentication(this IModule module, Action<DefaultAuthenticationFeature>? configure = default)
+    public static IModule UseDefaultAuthentication(this IModule module, Action<DefaultAuthenticationFeature>? configure = null)
     {
         module.Configure(configure);
         return module;

@@ -22,11 +22,11 @@ public class LocalScheduler : IScheduler
     /// <inheritdoc />
     public ValueTask ScheduleAsync(string name, ITask task, ISchedule schedule, CancellationToken cancellationToken = default)
     {
-        return ScheduleAsync(name, task, schedule, default, cancellationToken);
+        return ScheduleAsync(name, task, schedule, null, cancellationToken);
     }
 
     /// <inheritdoc />
-    public ValueTask ScheduleAsync(string name, ITask task, ISchedule schedule, IEnumerable<string>? keys = default, CancellationToken cancellationToken = default)
+    public ValueTask ScheduleAsync(string name, ITask task, ISchedule schedule, IEnumerable<string>? keys = null, CancellationToken cancellationToken = default)
     {
         var scheduleContext = new ScheduleContext(_serviceProvider, task);
         var scheduledTask = schedule.Schedule(scheduleContext);
@@ -50,7 +50,7 @@ public class LocalScheduler : IScheduler
         return ValueTask.CompletedTask;
     }
 
-    private void RegisterScheduledTask(string name, IScheduledTask scheduledTask, IEnumerable<string>? keys = default)
+    private void RegisterScheduledTask(string name, IScheduledTask scheduledTask, IEnumerable<string>? keys = null)
     {
         if (_scheduledTasks.TryGetValue(name, out var existingScheduledTask))
         {
@@ -60,7 +60,7 @@ public class LocalScheduler : IScheduler
 
         _scheduledTasks[name] = scheduledTask;
 
-        if (keys != default)
+        if (keys != null)
             _scheduledTaskKeys[scheduledTask] = keys.ToList();
     }
 

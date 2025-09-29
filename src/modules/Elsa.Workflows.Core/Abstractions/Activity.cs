@@ -68,7 +68,7 @@ public abstract class Activity : IActivity, ISignalHandler
     /// will execute synchronously, while activities of the <see cref="ActivityKind.Job"/> kind will execute asynchronously.
     /// </summary>
     [JsonIgnore]
-    public bool RunAsynchronously
+    public bool? RunAsynchronously
     {
         get => this.GetRunAsynchronously();
         set => this.SetRunAsynchronously(value);

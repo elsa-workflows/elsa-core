@@ -26,6 +26,6 @@ internal class Create : Endpoint<Request, Response, LabelMapper>
         var label = Map.ToEntity(request);
         await _store.SaveAsync(label, cancellationToken);
         var response = Map.FromEntity(label);
-        await SendCreatedAtAsync<Get.Get>(new { Id = label.Id }, response, cancellation: cancellationToken);
+        await Send.CreatedAtAsync<Get.Get>(new { Id = label.Id }, response, cancellation: cancellationToken);
     }
 }

@@ -38,6 +38,6 @@ public class Run : ElsaEndpoint<Request, Response>
 
         // Write response.
         var response = new Response(results);
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }

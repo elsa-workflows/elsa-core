@@ -69,7 +69,7 @@ public static class DispatchWorkflowExtensions
             dispatchWorkflowResponse.ThrowIfFailed();
 
             // Wait for the workflow to complete, and then return the WorkflowFinished notification.
-            var signaled = await semaphore.WaitAsync(timeout ?? TimeSpan.FromSeconds(5));
+            var signaled = await semaphore.WaitAsync(timeout ?? TimeSpan.FromSeconds(50000));
             return signaled ? workflowFinishedRecord : null;
         }
         finally

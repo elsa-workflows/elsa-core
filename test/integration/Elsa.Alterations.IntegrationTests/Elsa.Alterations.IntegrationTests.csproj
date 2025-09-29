@@ -7,10 +7,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Workflows\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <None Update="Workflows\version-1.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>

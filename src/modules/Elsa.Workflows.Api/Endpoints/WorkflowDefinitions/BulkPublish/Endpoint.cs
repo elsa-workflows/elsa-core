@@ -25,7 +25,7 @@ internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
 
         if (!authorizationResult.Succeeded)
         {
-            await SendForbiddenAsync(cancellationToken);
+            await Send.ForbiddenAsync(cancellationToken);
             return null!;
         }
 
