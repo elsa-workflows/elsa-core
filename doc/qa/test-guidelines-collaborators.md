@@ -20,7 +20,7 @@ This document describes recommended testing strategies for the Elsa engine. It i
 
 ## High‑level testing pyramid for Elsa
 
-- **Unit tests**: Activity logic, expression evaluators, small helpers. In‑process, mocking storage and scheduler. Fast and numerous.
+- **Unit tests**: Activity logic, expression evaluators, services, providers, small helpers. In‑process, mocking storage and scheduler. Fast and numerous.
   - Use [xUnit / NUnit / MSTest] with [Moq / NSubstitute] for mocking. Test activities and small components in isolation. Use in‑memory stores.
 - **Component/integration tests**: Core engine components (WorkflowInvoker, Bookmark handling, persistence adapters) with in‑memory or ephemeral DB. Use fake clock and fake scheduler. Run in CI and locally.
   - Use `TestHostFactory` to create test hosts with DI overrides. Use code-first or serialized workflow definitions depending on the amount and scope. Also, possible to use external tooling like JTest.
