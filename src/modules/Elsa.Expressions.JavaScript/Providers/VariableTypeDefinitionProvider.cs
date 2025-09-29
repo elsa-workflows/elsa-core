@@ -9,28 +9,28 @@ namespace Elsa.Expressions.JavaScript.Providers;
 /// <summary>
 /// Produces <see cref="TypeDefinition"/>s for variable types.
 /// </summary>
-[UsedImplicitly]
-internal class VariableTypeDefinitionProvider(ITypeDescriber typeDescriber, IOptions<ManagementOptions> options) : TypeDefinitionProvider
+internal class VariableTypeDefinitionProvider(ITypeDescriber typeDescriber) : TypeDefinitionProvider
 {
     protected override IEnumerable<TypeDefinition> GetTypeDefinitions(TypeDefinitionContext context)
     {
         var excludedTypes = new Func<Type, bool>[]
         {
             type => type == typeof(ExpandoObject),
-            type => type.IsPrimitive,
-            type => type.ContainsGenericParameters,
-            type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IDictionary<,>),
-            type => type == typeof(object),
-            type => type == typeof(string)
+            type => typeof(IDictionary<string, object>).IsAssignableFrom(type),
+            type => type == typeof(object)
         };
 
-        var variableTypes =
-            from variableDescriptor in options.Value.VariableDescriptors
-            let variableType = variableDescriptor.Type
-            where (variableType.IsClass || variableType.IsInterface || variableType.IsEnum) && !excludedTypes.Any(x => x(variableType))
+        var variables = context.WorkflowGraph.Workflow.Variables;
+
+        var variableTypeQuery =
+            from variable in variables
+            let variableType = variable.GetVariableType()
+            where (variableType.IsClass || variableType.IsInterface || variableType.IsEnum) && !variableType.IsPrimitive && !excludedTypes.Any(x => x(variableType))
             select variableType;
 
-        foreach (var variableType in variableTypes.Distinct())
+        var variableTypes = variableTypeQuery.Distinct();
+
+        foreach (var variableType in variableTypes)
         {
             yield return typeDescriber.DescribeType(variableType);
         }

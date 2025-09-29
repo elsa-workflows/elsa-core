@@ -75,7 +75,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
     };
 
     /// <summary>
-    /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="FlowSendHttpRequest"/> and <see cref="SendHttpRequest"/> activities.
+    /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="FlowSendHttpRequest"/> activity.
     /// </summary>
     public Action<IServiceProvider, HttpClient> HttpClient { get; set; } = (_, _) => { };
 

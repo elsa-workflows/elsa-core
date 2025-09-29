@@ -58,7 +58,7 @@ public class TypeDefinitionDocumentRenderer : ITypeDefinitionDocumentRenderer
     }
 
     private void Render(PropertyDefinition property, StringBuilder output) => output.AppendLine($"{property.Name}{(property.IsOptional ? "?" : "")}: {property.Type};");
-    private void RenderEnumMember(PropertyDefinition property, StringBuilder output) => output.AppendLine($"{property.Name} = \"{property.Name}\",");
+    private void RenderEnumMember(PropertyDefinition property, StringBuilder output) => output.AppendLine($"{property.Name} = \"{property.Name}\";");
     private void Render(VariableDefinition variable, StringBuilder output) => output.AppendLine($"declare var {variable.Name}: {variable.Type};");
     string RenderParameter(ParameterDefinition parameter) => $"{parameter.Name}{(parameter.IsOptional ? "?" : "")}: {parameter.Type}";
     string RenderParameters(IEnumerable<ParameterDefinition> parameters) => string.Join(", ", parameters.Select(RenderParameter));

@@ -3,7 +3,6 @@ using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
-using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Models;
 
 // ReSharper disable once CheckNamespace
@@ -67,20 +66,8 @@ public static partial class ActivityExecutionContextExtensions
         memoryBlockReference.Set(context, value);
         return value;
     }
-    
+
     private static async Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, ActivityDescriptor activityDescriptor, InputDescriptor inputDescriptor)
-    {
-        try
-        {
-            return await EvaluateInputPropertyCoreAsync(context, activityDescriptor, inputDescriptor);
-        }
-        catch (Exception e)
-        {
-            throw new InputEvaluationException(inputDescriptor.Name, $"Failed to evaluate activity input '{inputDescriptor.Name}'", e);
-        }
-    }
-    
-    private static async Task<object?> EvaluateInputPropertyCoreAsync(this ActivityExecutionContext context, ActivityDescriptor activityDescriptor, InputDescriptor inputDescriptor)
     {
         var activity = context.Activity;
         var defaultValue = inputDescriptor.DefaultValue;
@@ -121,9 +108,9 @@ public static partial class ActivityExecutionContextExtensions
             if (memoryReference != null)
             {
                 // When input is created from an activity provider, there may be no memory block reference ID.
-                if (memoryReference.Id == null!) 
+                if (memoryReference.Id == null!)
                     memoryReference.Id = $"{activity.NodeId}.{inputDescriptor.Name}"; // Construct a deterministic ID.
-                
+
                 // Declare the input memory block in the current context. 
                 context.ExpressionExecutionContext.Set(memoryReference, value!);
             }
@@ -137,7 +124,7 @@ public static partial class ActivityExecutionContextExtensions
 
         return value;
     }
-    
+
     private static Task StoreInputValueAsync(ActivityExecutionContext context, InputDescriptor inputDescriptor, object value)
     {
         // Store the serialized input value in the activity state.

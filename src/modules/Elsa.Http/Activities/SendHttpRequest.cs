@@ -33,13 +33,11 @@ public class SendHttpRequest : SendHttpRequestBase
     /// <summary>
     /// The activity to execute when the HTTP request fails to connect.
     /// </summary>
-    [Port]
     public IActivity? FailedToConnect { get; set; }
     
     /// <summary>
     /// The activity to execute when the HTTP request times out.
     /// </summary>
-    [Port]
     public IActivity? Timeout { get; set; }
 
     /// <inheritdoc />
