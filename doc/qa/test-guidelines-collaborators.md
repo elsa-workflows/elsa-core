@@ -23,7 +23,7 @@ This document describes recommended testing strategies for the Elsa engine. It i
 - **Unit tests**: Activity logic, expression evaluators, services, providers, small helpers. In‑process, mocking storage and scheduler. Fast and numerous.
   - Use [xUnit / NUnit / MSTest] with [Moq / NSubstitute] for mocking. Test activities and small components in isolation. Use in‑memory stores.
 - **Component/integration tests**: Core engine components (WorkflowInvoker, Bookmark handling, persistence adapters) with in‑memory or ephemeral DB. Use fake clock and fake scheduler. Run in CI and locally.
-  - Use `TestHostFactory` to create test hosts with DI overrides. Use code-first or serialized workflow definitions depending on the amount and scope. Also, possible to use external tooling like JTest.
+  - Use `TestHostFactory` to create test hosts with DI overrides. Use code-first or serialized workflow definitions depending on the amount and scope. Also, possible to use external tooling like [JTest](https://github.com/nexxbiz/jtest).
 - **Contract tests**: Verify activity contracts and public APIs of activity packages (e.g. HTTP, Email, Messaging). Ensure a versioned contract for activities.
   - Use a shared test suite that activity package authors can run against their implementations.
 - **End‑to‑end tests**: Deploy Elsa Server (or host app) in Docker/K8s with a real DB, then run workflows via REST and assert via durable traces (journal/DB/events). Keep E2E suite small and targeted.
