@@ -8,7 +8,7 @@ This document describes recommended testing strategies for the Elsa engine. It i
 ## Goals / Non‑functional requirements
 
 1. **Deterministic tests** — tests should not be flaky and should produce the same results independent of circumstance.
-2. **Fast feedback** — unit and integration tests should run quickly to support local workflows and CI.
+2. **Fast feedback** — unit and integration tests should run quickly to support local development workflows and CI.
 3. **Minimal reliance on real delays** — avoid `Task.Delay`, `Thread.Sleep` or real clocks except where unavoidable; prefer event-driven assertions.
 4. **Environment portability** — tests should run in local dev, Docker or any other container CI environment with minimal changes.
 5. **Version alignment** — workflow definition versions and test artifacts must be explicitly linked so tests refer to a specific workflow blueprint version.
