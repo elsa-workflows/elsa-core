@@ -1,4 +1,4 @@
-# Elsa Core — Test Strategy Guidelines
+# Elsa Core — Test Strategy Guidelines for Collaborators
 
 **Purpose:**
 This document describes recommended testing strategies for the Elsa engine. It is written for contributors and aims to provide concrete, repeatable patterns you can adopt in unit, integration and end‑to‑end tests to make test execution deterministic, fast, and resilient across local, Docker and Kubernetes CI environments.
