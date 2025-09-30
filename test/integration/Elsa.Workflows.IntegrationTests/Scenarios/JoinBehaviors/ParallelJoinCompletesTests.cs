@@ -1,11 +1,10 @@
 using Elsa.Common.Models;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
-namespace Elsa.Workflows.IntegrationTests.Scenarios.ImplicitJoins;
+namespace Elsa.Workflows.IntegrationTests.Scenarios.JoinBehaviors;
 
 public class ParallelJoinCompletesTests
 {

@@ -2,7 +2,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
 
-namespace Elsa.Workflows.IntegrationTests.Scenarios.ImplicitJoins.Workflows;
+namespace Elsa.Workflows.IntegrationTests.Scenarios.JoinBehaviors.Workflows;
 
 public class BraidedWorkflow : WorkflowBase
 {

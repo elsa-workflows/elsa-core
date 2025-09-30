@@ -29,5 +29,8 @@
         <None Update="Scenarios\ImplicitJoins\Workflows\fork-decision-join-none.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="Scenarios\JoinBehaviors\Workflows\fork-decision-join-waitall.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>

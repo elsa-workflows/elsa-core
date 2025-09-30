@@ -1,7 +1,7 @@
 using Elsa.Testing.Shared;
 using Xunit.Abstractions;
 
-namespace Elsa.Workflows.IntegrationTests.Scenarios.ImplicitJoins;
+namespace Elsa.Workflows.IntegrationTests.Scenarios.JoinBehaviors;
 
 public class ForkDecisionJoinTests
 {
@@ -16,34 +16,34 @@ public class ForkDecisionJoinTests
     [Fact(DisplayName = "The implicit join configured with None merge mode should execute.")]
     public async Task ImplicitJoinNoneShouldExecute()
     {
-        // Populate registries.
-        await _services.PopulateRegistriesAsync();
-
-        // Import workflow.
-        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync("Scenarios/ImplicitJoins/Workflows/fork-decision-join-none.json");
-
-        // Execute.
-        await _services.RunWorkflowUntilEndAsync(workflowDefinition.DefinitionId);
-        
-        // Assert.
-        var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[] { "A", "C" }, lines);
+        await RunAndAssert("fork-decision-join-none.json", ["A", "C"]);
     }
     
     [Fact(DisplayName = "The implicit join configured with Converge merge mode should not execute.")]
     public async Task ImplicitJoinConvergeShouldNotExecute()
     {
+        await RunAndAssert("fork-decision-join-converge.json", ["A"]);
+    }
+    
+    [Fact(DisplayName = "The explicit join configured with WaitAll join mode should block.")]
+    public async Task ExplicitJoinWaitAllShouldBlock()
+    {
+        await RunAndAssert("fork-decision-join-waitall.json", ["A", "C", "B", "D"]);
+    }
+    
+    private async Task RunAndAssert(string workflowFileName, string[] expectedLines)
+    {
         // Populate registries.
         await _services.PopulateRegistriesAsync();
 
         // Import workflow.
-        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync("Scenarios/ImplicitJoins/Workflows/fork-decision-join-converge.json");
+        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync($"Scenarios/JoinBehaviors/Workflows/{workflowFileName}");
 
         // Execute.
         await _services.RunWorkflowUntilEndAsync(workflowDefinition.DefinitionId);
         
         // Assert.
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[] { "A" }, lines);
+        Assert.Equal(expectedLines, lines);
     }
 }
