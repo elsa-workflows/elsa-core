@@ -1,7 +1,9 @@
 # Elsa Core — Test Strategy Guidelines for Collaborators
 
 **Purpose:**
-This document describes recommended testing strategies for the Elsa engine. It is written for contributors and aims to provide concrete, repeatable patterns you can adopt in unit, integration and end‑to‑end tests to make test execution deterministic, fast, and resilient across local, Docker and Kubernetes CI environments.
+This document describes recommended testing strategies for the Elsa engine. 
+It is written for collaborators and aims to provide concrete, repeatable patterns you can adopt in unit, integration and component tests to make test execution deterministic, fast, and resilient across local, Docker and Kubernetes CI environments.
+Additionally, it provides a consistent and resilient set of places to assert behavior (journal, activity execution endpoints, DB queries, events) and guidelines for choosing between them.
 
 ---
 
@@ -12,21 +14,18 @@ This document describes recommended testing strategies for the Elsa engine. It i
 3. **Minimal reliance on real delays** — avoid `Task.Delay`, `Thread.Sleep` or real clocks except where unavoidable; prefer event-driven assertions.
 4. **Environment portability** — tests should run in local dev, Docker or any other container CI environment with minimal changes.
 5. **Version alignment** — workflow definition versions and test artifacts must be explicitly linked so tests refer to a specific workflow definition version.
-6. **Bulk provisioning & isolation** — tests should support bulk import of workflow definitions for large-suite runs and ensure clean, isolated state per test.
-7. **Clear assertion points** — provide a consistent and resilient set of places to assert behavior (journal, activity execution endpoints, DB queries, events) and guidelines for choosing between them.
-8. **Failure simulation** — deterministic ways to simulate activity or host failures and assert correct recovery/compensation.
+6. **Failure simulation** — deterministic ways to simulate activity or host failures and assert correct recovery/compensation.
 
 ---
 
 ## High‑level testing pyramid for Elsa
 
 - **Unit tests**: Activity logic, expression evaluators, small helpers. In‑process, mocking storage and scheduler. Fast and numerous.
-  - Use [xUnit / NUnit / MSTest] with [Moq / NSubstitute] for mocking. Test activities and small components in isolation. Use in‑memory stores.
-- **Component/integration tests**: Core engine components (WorkflowInvoker, Bookmark handling, persistence adapters) with in‑memory or ephemeral DB. Use fake clock and fake scheduler. Run in CI and locally.
+  - Use **xUnit** with [Moq / NSubstitute] for mocking. Test activities and small components in isolation. Use in‑memory stores.
+- **Integration tests**: Core engine components (WorkflowInvoker, Bookmark handling, persistence adapters) with in‑memory or ephemeral DB. Use fake clock and fake scheduler. Run in CI and locally.
   - Use `TestHostFactory` to create test hosts with DI overrides. Use code-first or serialized workflow definitions depending on the amount and scope. Also, possible to use external tooling like JTest.
-- **Contract tests**: Verify activity contracts and public APIs of activity packages (e.g. HTTP, Email, Messaging). Ensure a versioned contract for activities.
-  - Use a shared test suite that activity package authors can run against their implementations.
-- **End‑to‑end tests**: Deploy Elsa Server (or host app) in Docker/K8s with a real DB, then run workflows via REST and assert via durable traces (journal/DB/events). Keep E2E suite small and targeted.
+- **Component tests**: Larger workflows with multiple activities, versioning, and persistence. Use real DB (Testcontainers or local ephemeral DB). Run in CI and locally.
+  - Use `TestHostFactory` with real DB provider. Import/publish workflow definitions from a `Workflows/` folder located in the root of the test (see `tests/component/*.ComponentTests/Scenarios/*` for more examples). Assert via DB queries or journal parsing.
 
 ---
 
