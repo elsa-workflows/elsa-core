@@ -121,7 +121,7 @@ public static class ActivityExtensions
     
     public static MergeMode GetMergeMode(this JsonObject activity)
     {
-        return activity.GetProperty<MergeMode?>("customProperties", "mergeMode") ?? MergeMode.Converge;
+        return activity.GetProperty<MergeMode?>("customProperties", "mergeMode") ?? MergeMode.None;
     }
 
     public static void SetMergeMode(this JsonObject activity, MergeMode? value)
