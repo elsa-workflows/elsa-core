@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - patch/3.5.1
+      - patch/3.5.2
 
 jobs:
   push_to_registry:
