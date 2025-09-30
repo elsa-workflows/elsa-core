@@ -23,7 +23,7 @@ Additionally, it provides a consistent and resilient set of places to assert beh
 - **Unit tests**: Activity logic, expression evaluators, small helpers. In‑process, mocking storage and scheduler. Fast and numerous.
   - Use **xUnit** with [Moq / NSubstitute] for mocking. Test activities and small components in isolation. Use in‑memory stores.
 - **Integration tests**: Core engine components (WorkflowInvoker, Bookmark handling, persistence adapters) with in‑memory or ephemeral DB. Use fake clock and fake scheduler. Run in CI and locally.
-  - Use `TestHostFactory` to create test hosts with DI overrides. Use code-first or serialized workflow definitions depending on the amount and scope. Also, possible to use external tooling like JTest.
+  - Use `TestHostFactory` to create test hosts with DI overrides. Use code-first or serialized workflow definitions depending on the amount and scope. Also, possible to use external tooling like [JTest](https://github.com/nexxbiz/jtest).
 - **Component tests**: Larger workflows with multiple activities, versioning, and persistence. Use real DB (Testcontainers or local ephemeral DB). Run in CI and locally.
   - Use `TestHostFactory` with real DB provider. Import/publish workflow definitions from a `Workflows/` folder located in the root of the test (see `tests/component/*.ComponentTests/Scenarios/*` for more examples). Assert via DB queries or journal parsing.
 
