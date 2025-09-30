@@ -24,13 +24,13 @@ public class JoinRunsOnceTests
         await _services.PopulateRegistriesAsync();
 
         // Import workflow.
-        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync($"Scenarios/ImplicitJoins/Workflows/join.json");
+        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync($"Scenarios/JoinBehaviors/Workflows/join.json");
 
         // Execute.
         var state = await _services.RunWorkflowUntilEndAsync(workflowDefinition.DefinitionId);
         
         // Assert.
-        var journal = await _services.GetRequiredService<IWorkflowExecutionLogStore>().FindManyAsync(new WorkflowExecutionLogRecordFilter
+        var journal = await _services.GetRequiredService<IWorkflowExecutionLogStore>().FindManyAsync(new()
         {
             WorkflowInstanceId = state.Id,
             ActivityId = "802725996be1b582",

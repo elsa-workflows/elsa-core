@@ -23,7 +23,7 @@ public class ParallelJoinCompletesTests
         await _services.PopulateRegistriesAsync();
 
         // Import workflow.
-        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync("Scenarios/ImplicitJoins/Workflows/parallel-join.json");
+        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync("Scenarios/JoinBehaviors/Workflows/parallel-join.json");
 
         // Execute.
         var state = await _services.RunWorkflowUntilEndAsync(workflowDefinition.DefinitionId);
