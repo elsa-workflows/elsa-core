@@ -18,14 +18,14 @@ public partial class Flowchart
         // Emit tokens for active outcomes.
         var outcomes = (ctx.Result as Outcomes ?? Outcomes.Default).Names;
         var outboundConnections = flowGraph.GetOutboundConnections(completedActivity);
-        var activeOutboundConnections = outboundConnections.Where(x => outcomes.Contains(x.Source.Port ?? "Done")).Distinct().ToList(); // Assume default port is "Done" if null.
+        var activeOutboundConnections = outboundConnections.Where(x => outcomes.Contains(x.Source.Port)).Distinct().ToList();
         var tokens = GetTokenList(flowContext);
 
         foreach (var connection in activeOutboundConnections)
             tokens.Add(Token.Create(connection.Source.Activity, connection.Target.Activity, connection.Source.Port));
 
         // Consume inbound tokens to the completed activity.
-        var inboundTokens = tokens.Where(t => t.ToActivityId == completedActivity.Id && !t.Consumed && !t.Blocked).ToList();
+        var inboundTokens = tokens.Where(t => t.ToActivityId == completedActivity.Id && t is { Consumed: false, Blocked: false }).ToList();
         foreach (var t in inboundTokens)
             t.Consume();
 
@@ -70,6 +70,7 @@ public partial class Flowchart
                         // Consume the block without scheduling.
                         existingBlockedToken.Consume();
                     }
+
                     break;
 
                 case MergeMode.Converge:
@@ -80,8 +81,7 @@ public partial class Flowchart
                     {
                         var hasAllTokens = inboundConnectionsConverge.All(inbound =>
                             tokens.Any(t =>
-                                !t.Consumed &&
-                                !t.Blocked &&
+                                t is { Consumed: false, Blocked: false } &&
                                 t.FromActivityId == inbound.Source.Activity.Id &&
                                 t.ToActivityId == targetActivity.Id &&
                                 t.Outcome == inbound.Source.Port
@@ -95,6 +95,7 @@ public partial class Flowchart
                     {
                         await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
                     }
+
                     break;
 
                 case MergeMode.None:
