@@ -219,7 +219,7 @@ public class Flowchart : Container
             flowScope.RegisterConnectionVisit(outboundConnection, connectionFollowed);
             
             if(!connectionFollowed)
-                continue;
+                continue; // Skip if connection was not followed.
             
             var outboundActivity = outboundConnection.Target.Activity;
 
