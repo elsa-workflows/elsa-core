@@ -51,14 +51,12 @@ public class FlowchartNextActivityTests
             {
                 Cases =
                 {
-                    new FlowSwitchCase("LessThanThree", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
-                    new FlowSwitchCase("LessThanOne", new Expression("JavaScript", "getVariable('LoopCount') < 1")),
+                    new FlowSwitchCase("LessThanThree", new Expression("JavaScript", "getVariable('LoopCount') < 3"))
                 },
                 Mode = new(SwitchMode.MatchAny)
             };
             var a = new WriteLine("A");
             var b = new WriteLine("B");
-            var c = new WriteLine("C");
             var incrementLoop = new SetVariable()
             {
                 Variable = loopVariable,
@@ -70,8 +68,9 @@ public class FlowchartNextActivityTests
                 {
                     new FlowSwitchCase("EqualOne", new Expression("JavaScript", "getVariable('LoopCount') == 1")),
                     new FlowSwitchCase("LessThanFour", new Expression("JavaScript", "getVariable('LoopCount') < 4")),
+                    new FlowSwitchCase("EqualThree", new Expression("JavaScript", "getVariable('LoopCount') == 3")),
                 },
-                Mode = new(SwitchMode.MatchFirst)
+                Mode = new(SwitchMode.MatchAny)
             };
             var d = new WriteLine("D");
             var e = new WriteLine("E");
@@ -91,7 +90,6 @@ public class FlowchartNextActivityTests
                     writeLineDecision,
                     a,
                     b,
-                    c,
                     incrementLoop,
                     loopbackDecision,
                     d,
@@ -105,17 +103,15 @@ public class FlowchartNextActivityTests
                     new(dangling, writeLineDecision),
                     new(new Endpoint(writeLineDecision, "LessThanThree"), new Endpoint(a)),
                     new(new Endpoint(writeLineDecision, "LessThanThree"), new Endpoint(b)),
-                    new(new Endpoint(writeLineDecision, "LessThanOne"), new Endpoint(c)),
                     new(new Endpoint(writeLineDecision, "Default"), new Endpoint(incrementLoop)),
                     new(a, incrementLoop),
                     new(b, incrementLoop),
-                    new(c, incrementLoop),
                     new(incrementLoop, loopbackDecision),
                     new(new Endpoint(loopbackDecision, "EqualOne"), new Endpoint(d)),
                     new(d, incrementLoop),
                     new(new Endpoint(loopbackDecision, "LessThanFour"), new Endpoint(e)),
                     new(e, writeLineDecision),
-                    new(new Endpoint(loopbackDecision, "Default"), new Endpoint(f)),
+                    new(new Endpoint(loopbackDecision, "EqualThree"), new Endpoint(f)),
                     new(f, end),
                 }
             };
@@ -127,7 +123,7 @@ public class FlowchartNextActivityTests
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
         Assert.Equal(new[]
         {
-            "A", "B", "C", "D", "E", "A", "B", "E", "F"
+            "A", "B", "D", "E", "A", "B", "E", "E", "F"
         }, lines);
     }
 
