@@ -151,7 +151,7 @@ public class Flowchart : Container
 
         if (flowchartContext.Activity != this)
         {
-            throw new Exception("Target context activity must be this flowchart");
+            throw new("Target context activity must be this flowchart");
         }
 
         // If the completed activity's status is anything but "Completed", do not schedule its outbound activities.
@@ -167,16 +167,16 @@ public class Flowchart : Container
             return;
         }
 
-        // Determine the outcomes from the completed activity
+        // Determine the outcomes from the completed activity.
         var outcomes = result is Outcomes o ? o : Outcomes.Default;
 
         // Schedule the outbound activities
         var flowGraph = GetFlowGraph(flowchartContext);
         var flowScope = GetFlowScope(flowchartContext);
         var completedActivityExcecutedByBackwardConnection = completedActivityContext.ActivityInput.GetValueOrDefault<bool>(BackwardConnectionActivityInput);
-        bool hasScheduledActivity = await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, completedActivity, outcomes, completedActivityExcecutedByBackwardConnection);
+        var hasScheduledActivity = await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, completedActivity, outcomes, completedActivityExcecutedByBackwardConnection);
 
-        // If there are not any outbound connections, complete the flowchart activity if there is no other pending work
+        // If there are not any outbound connections, complete the flowchart activity if there is no other pending work.
         if (!hasScheduledActivity)
         {
             await CompleteIfNoPendingWorkAsync(flowchartContext);
@@ -198,12 +198,12 @@ public class Flowchart : Container
     /// <returns>True if at least one activity was scheduled; otherwise, false.</returns>
     private async ValueTask<bool> ScheduleOutboundActivitiesAsync(FlowGraph flowGraph, FlowScope flowScope, ActivityExecutionContext flowchartContext, IActivity activity, Outcomes outcomes, bool completedActivityExecutedByBackwardConnection = false)
     {
-        bool hasScheduledActivity = false;
+        var hasScheduledActivity = false;
 
         // Check if the activity is dangling (i.e., it is not reachable from the flowchart graph)
         if (flowGraph.IsDanglingActivity(activity))
         {
-            throw new Exception($"Activity {activity.Id} is not reachable from the flowchart graph. Unable to schedule it's outbound activities.");
+            throw new($"Activity {activity.Id} is not reachable from the flowchart graph. Unable to schedule it's outbound activities.");
         }
 
         // Register the activity as visited unless it was executed due to a backward connection
@@ -215,12 +215,16 @@ public class Flowchart : Container
         // Process each outbound connection from the current activity
         foreach (var outboundConnection in flowGraph.GetOutboundConnections(activity))
         {
-            bool connectionFollowed = outcomes.Names.Contains(outboundConnection.Source.Port);
+            var connectionFollowed = outcomes.Names.Contains(outboundConnection.Source.Port);
             flowScope.RegisterConnectionVisit(outboundConnection, connectionFollowed);
+            
+            if(!connectionFollowed)
+                continue; // Skip if connection was not followed.
+            
             var outboundActivity = outboundConnection.Target.Activity;
 
-            // Determine scheduling strategy based on connection type
-            if (flowGraph.IsBackwardConnection(outboundConnection, out bool backwardConnectionIsValid))
+            // Determine the scheduling strategy based on connection-type.
+            if (flowGraph.IsBackwardConnection(outboundConnection, out var backwardConnectionIsValid))
             {
                 hasScheduledActivity |= await ScheduleBackwardConnectionActivityAsync(flowGraph, flowchartContext, outboundConnection, outboundActivity, connectionFollowed, backwardConnectionIsValid);
             }
@@ -248,7 +252,7 @@ public class Flowchart : Container
 
         if (!backwardConnectionIsValid)
         {
-            throw new Exception($"Invalid backward connection: Every path from the source ('{outboundConnection.Source.Activity.Id}') must go through the target ('{outboundConnection.Target.Activity.Id}') when tracing back to the start.");
+            throw new($"Invalid backward connection: Every path from the source ('{outboundConnection.Source.Activity.Id}') must go through the target ('{outboundConnection.Target.Activity.Id}') when tracing back to the start.");
         }
 
         var scheduleWorkOptions = new ScheduleWorkOptions
@@ -395,7 +399,7 @@ public class Flowchart : Container
 
         if (activityExecutionContext != null)
         {
-            await flowchartContext.ScheduleActivityAsync(activityExecutionContext.Activity, new ScheduleWorkOptions
+            await flowchartContext.ScheduleActivityAsync(activityExecutionContext.Activity, new()
             {
                 ExistingActivityExecutionContext = activityExecutionContext,
                 CompletionCallback = OnChildCompletedAsync,
@@ -404,7 +408,7 @@ public class Flowchart : Container
         }
         else
         {
-            await flowchartContext.ScheduleActivityAsync(activity, new ScheduleWorkOptions
+            await flowchartContext.ScheduleActivityAsync(activity, new()
             {
                 CompletionCallback = OnChildCompletedAsync,
                 Input = signal.Input
