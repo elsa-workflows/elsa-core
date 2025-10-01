@@ -2,7 +2,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
 
-namespace Elsa.Workflows.IntegrationTests.Scenarios.ImplicitJoins.Workflows;
+namespace Elsa.Workflows.IntegrationTests.Scenarios.JoinBehaviors.Workflows;
 
 public class ImplicitLoopWorkflow : WorkflowBase
 {
@@ -30,11 +30,11 @@ public class ImplicitLoopWorkflow : WorkflowBase
             
             Connections =
             {
-                new Connection(start, incrementCounter),
-                new Connection(incrementCounter, counterGreaterThanOne),
-                new Connection(new Endpoint(counterGreaterThanOne, "False"), new Endpoint(retry)),
-                new Connection(new Endpoint(counterGreaterThanOne, "True"), new Endpoint(end)),
-                new Connection(retry, incrementCounter),
+                new(start, incrementCounter),
+                new(incrementCounter, counterGreaterThanOne),
+                new(new(counterGreaterThanOne, "False"), new Endpoint(retry)),
+                new(new(counterGreaterThanOne, "True"), new Endpoint(end)),
+                new(retry, incrementCounter),
             }
         };
     }

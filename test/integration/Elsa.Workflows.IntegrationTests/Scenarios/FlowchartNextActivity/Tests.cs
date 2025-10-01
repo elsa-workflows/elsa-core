@@ -47,8 +47,8 @@ public class FlowchartNextActivityTests
             var writeLineDecision = new FlowSwitch()
             {
                 Cases = {
-                    new FlowSwitchCase("LessThanThree", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
-                    new FlowSwitchCase("LessThanOne", new Expression("JavaScript", "getVariable('LoopCount') < 1")),
+                    new("LessThanThree", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
+                    new("LessThanOne", new Expression("JavaScript", "getVariable('LoopCount') < 1")),
                 }, 
                 Mode = new(SwitchMode.MatchAny)
             };
@@ -58,13 +58,13 @@ public class FlowchartNextActivityTests
             var incrementLoop = new SetVariable()
             {
                 Variable = loopVariable,
-                Value = new Models.Input<object?>(new Expression("JavaScript", "getVariable('LoopCount') + 1"))
+                Value = new(new Expression("JavaScript", "getVariable('LoopCount') + 1"))
             };
             var loopbackDecision = new FlowSwitch()
             {
                 Cases = {
-                    new FlowSwitchCase("EqualOne", new Expression("JavaScript", "getVariable('LoopCount') == 1")),
-                    new FlowSwitchCase("LessThanFour", new Expression("JavaScript", "getVariable('LoopCount') < 4")),
+                    new("EqualOne", new Expression("JavaScript", "getVariable('LoopCount') == 1")),
+                    new("LessThanFour", new Expression("JavaScript", "getVariable('LoopCount') < 4")),
                 }, 
                 Mode = new(SwitchMode.MatchFirst)
             };
@@ -99,19 +99,19 @@ public class FlowchartNextActivityTests
                 {
                     new(start, writeLineDecision),
                     new(dangling, writeLineDecision),
-                    new(new Endpoint(writeLineDecision, "LessThanThree"), new Endpoint(a)),
-                    new(new Endpoint(writeLineDecision, "LessThanThree"), new Endpoint(b)),
-                    new(new Endpoint(writeLineDecision, "LessThanOne"), new Endpoint(c)),
-                    new(new Endpoint(writeLineDecision, "Default"), new Endpoint(incrementLoop)),
+                    new(new(writeLineDecision, "LessThanThree"), new Endpoint(a)),
+                    new(new(writeLineDecision, "LessThanThree"), new Endpoint(b)),
+                    new(new(writeLineDecision, "LessThanOne"), new Endpoint(c)),
+                    new(new(writeLineDecision, "Default"), new Endpoint(incrementLoop)),
                     new(a, incrementLoop),
                     new(b, incrementLoop),
                     new(c, incrementLoop),
                     new(incrementLoop, loopbackDecision),
-                    new(new Endpoint(loopbackDecision, "EqualOne"), new Endpoint(d)),
+                    new(new(loopbackDecision, "EqualOne"), new Endpoint(d)),
                     new(d, incrementLoop),
-                    new(new Endpoint(loopbackDecision, "LessThanFour"), new Endpoint(e)),
+                    new(new(loopbackDecision, "LessThanFour"), new Endpoint(e)),
                     new(e, writeLineDecision),
-                    new(new Endpoint(loopbackDecision, "Default"), new Endpoint(f)),
+                    new(new(loopbackDecision, "Default"), new Endpoint(f)),
                     new(f, end),
                 }
             };
@@ -193,18 +193,17 @@ public class FlowchartNextActivityTests
             var incrementLoop = new SetVariable()
             {
                 Variable = loopVariable,
-                Value = new Models.Input<object?>(new Expression("JavaScript", "getVariable('LoopCount') + 1"))
+                Value = new(new Expression("JavaScript", "getVariable('LoopCount') + 1"))
             };
             var loopbackDecision = new FlowSwitch()
             {
                 Cases = {
-                    new FlowSwitchCase("LessThanThree", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
+                    new("LessThanThree", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
                 },
                 Mode = new(SwitchMode.MatchFirst)
             };
             var end = new End();
-
-
+            
             workflowBuilder.Root = new Flowchart
             {
                 Variables =
@@ -234,8 +233,8 @@ public class FlowchartNextActivityTests
                     new(d, join),
                     new(join, incrementLoop),
                     new(incrementLoop,loopbackDecision),
-                    new(new Endpoint(loopbackDecision, "LessThanThree"), new Endpoint(a)),
-                    new(new Endpoint(loopbackDecision, "Default"), new Endpoint(end)),
+                    new(new(loopbackDecision, "LessThanThree"), new Endpoint(a)),
+                    new(new(loopbackDecision, "Default"), new Endpoint(end)),
                 }
             };
         });
@@ -245,7 +244,6 @@ public class FlowchartNextActivityTests
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
         Assert.Equal(new[] { "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D"}, lines);
-    
     }
 
     [Theory(DisplayName = "Flowchart with a Join activity executed multiple times, bug 6479")]
@@ -261,7 +259,7 @@ public class FlowchartNextActivityTests
             var loopbackSwitch = new FlowSwitch()
             {
                 Cases = {
-                    new FlowSwitchCase("DoLoopback", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
+                    new("DoLoopback", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
                 },
                 Mode = new(SwitchMode.MatchFirst)
             };
@@ -269,7 +267,7 @@ public class FlowchartNextActivityTests
             var incrementLoop = new SetVariable()
             {
                 Variable = loopVariable,
-                Value = new Models.Input<object?>(new Expression("JavaScript", "getVariable('LoopCount') + 1"))
+                Value = new(new Expression("JavaScript", "getVariable('LoopCount') + 1"))
             };
             var join = new FlowJoin()
             {
@@ -277,8 +275,7 @@ public class FlowchartNextActivityTests
             };
             var b = new WriteLine("B");
             var end = new End();
-
-
+            
             workflowBuilder.Root = new Flowchart
             {
                 Variables =
@@ -298,9 +295,9 @@ public class FlowchartNextActivityTests
                 Connections =
                 {
                     new(start, loopbackSwitch),
-                    new(new Endpoint(loopbackSwitch, "DoLoopback"), new Endpoint(a)),
-                    new(new Endpoint(loopbackSwitch, "DoLoopback"), new Endpoint(incrementLoop)),
-                    new(new Endpoint(loopbackSwitch, "Default"), new Endpoint(b)),
+                    new(new(loopbackSwitch, "DoLoopback"), new Endpoint(a)),
+                    new(new(loopbackSwitch, "DoLoopback"), new Endpoint(incrementLoop)),
+                    new(new(loopbackSwitch, "Default"), new Endpoint(b)),
                     new(a, join),
                     new(incrementLoop, join),
                     new(join, loopbackSwitch),
