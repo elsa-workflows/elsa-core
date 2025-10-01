@@ -7,6 +7,16 @@ Additionally, it provides a consistent and resilient set of places to assert beh
 
 ---
 
+## Summary
+The philosophy of elsa test strategy can be summarized as:
+
+***Whenever a test fails, it should provide a clear direction towards the cause of the problem.***
+--
+
+This means that if it does not point directly to the source of the issue, it should take the fewest possible amount of steps to get there.
+
+---
+
 ## Goals / Non‑functional requirements
 
 1. **Deterministic tests** — tests should not be flaky and should produce the same results independent of circumstance.
@@ -22,18 +32,56 @@ Additionally, it provides a consistent and resilient set of places to assert beh
 
 - **Unit tests**: Activity logic, expression evaluators, small helpers. In‑process, mocking storage and scheduler. Fast and numerous.
   - Use **xUnit** with [Moq / NSubstitute] for mocking. Test activities and small components in isolation. Use in‑memory stores.
-- **Integration tests**: Core engine components (WorkflowInvoker, Bookmark handling, persistence adapters) with in‑memory or ephemeral DB. Use fake clock and fake scheduler. Run in CI and locally.
-  - Use `TestHostFactory` to create test hosts with DI overrides. Use code-first or serialized workflow definitions depending on the amount and scope. Also, possible to use external tooling like [JTest](https://github.com/nexxbiz/jtest).
+- **Integration tests**: Core engine components (WorkflowInvoker, Bookmark handling, persistence adapters) with in‑memory or ephemeral DB. Use fake scheduler. Run in CI and locally.
+  - Use [`TestApplicationBuilder`](../../src/common/Elsa.Testing.Shared.Integration/TestApplicationBuilder.cs) to create test hosts with DI overrides. Use code-first or serialized workflow definitions depending on the amount and scope. 
+  - Also, possible to use external tooling like [JTest](https://github.com/nexxbiz/jtest).
 - **Component tests**: Larger workflows with multiple activities, versioning, and persistence. Use real DB (Testcontainers or local ephemeral DB). Run in CI and locally.
-  - Use `TestHostFactory` with real DB provider. Import/publish workflow definitions from a `Workflows/` folder located in the root of the test (see `tests/component/*.ComponentTests/Scenarios/*` for more examples). Assert via DB queries or journal parsing.
+  - Use [`AppComponentTest`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Abstractions/AppComponentTest.cs) with real DB provider. Place workflow definitions in a `Workflows/` folder located in the root of the test (see `[ExecuteWorkflowsTests]` (../../tests/component/Elsa.Workflows.ComponentTests/Scenarios/) for more examples). Assert via DB queries or journal parsing.
 
 ---
+
+## Elsa aspects to be tested:
+- **Activities**:
+  - Unit test each activity class in isolation.
+    - all configurations and edge cases.
+  - Integration test activities using [`TestApplicationBuilder`](../../src/common/Elsa.Testing.Shared.Integration/TestApplicationBuilder.cs) for less common, tricky scenarios (see [`ForEachTests`](../../test/integration/Elsa.Activities.IntegrationTests/ForEachTests.cs) as an example).
+- **Workflow execution**: 
+  - Test workflow lifecycle, input/output, bookmarks, persistence, and resumption.
+  - Use `RunWorkflowUntilEndAsync` extension method in [`RunWorkflowExtensions`](../../src/common/Elsa.Testing.Shared.Integration/RunWorkflowExtensions.cs) for deterministic execution.
+- **Persistence**: 
+  - Test each [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs) implementation.
+  - Test different storages of variables (Workflow Instance, Memory).
+- **Serialization**: 
+  - Unit test JSON serialization and deserialization of workflow definitions and instances.
+  - Integration test roundtrip of definitions through the publish/import API.
+- **Triggers:** 
+  - Test triggers for correct scheduling, invocation and resuming of workflows.
+- **API**: 
+  - Test HTTP endpoints for workflow execution, definition management, and instance querying.
+
+
+## Unit tests
+
+Do when:
+- Testing individual activity logic or small components in isolation.
+- No need for persistence or real workflow execution.
+
+## Integration tests
+
+Do when:
+- Testing workflow execution with multiple activities.
+- Need to validate persistence, bookmarks, and resumption.
+- Testing core engine components (WorkflowInvoker, Bookmark handling).
+
+## Component tests
+
+Do when:
 
 ## Key constraints & recommended patterns
 
 ### 1. Should not be affected by execution times / Not depend on delays unless there is no other way
 
-- **Synchronous execution mode**: Provide a test helper that runs workflows synchronously to completion when possible (e.g. `TestWorkflowRunner.RunToCompletion(workflowDefinition, inputs)`) — this executes activities inline and returns once the workflow is idle or complete. Use this for most assertions instead of waiting for background workers.
+- **Synchronous execution mode**: Use this for most assertions instead of waiting for background workers.
 
 - **Avoid arbitrary sleeps**: If polling is necessary (e.g. for external system integration), use exponential backoff with short upper bounds and strong invariants (correlation ids) to detect test success quickly.
 
@@ -102,14 +150,13 @@ Two main patterns:
 - Good for tests that validate runtime behavior without involving persistence or designer serialization.
 
 **B. Serialized definitions (recommended for integration & E2E tests)**
-- Store JSON/YAML workflow definition artifacts in the `tests/definitions/` folder in the repo, commit them with semantic versions, and let tests import them into the engine via the same publish/import APIs used in production.
+- Store JSON workflow definition artifacts in the `tests/definitions/` folder in the repo, commit them with semantic versions, and let tests import them into the engine via the same publish/import APIs used in production.
 - Tests are responsible for *publishing* the definitions into the test host if the scenario requires persistence (e.g. testing versioned definitions or import behavior).
 - For bulk tests, provide an import script (`ImportTestDefinitions.sh`) that uploads all artifacts in a single batch before running assertions.
 
 **Which to use?**
 - Component tests: code-first programmatic definitions.
 - Integration/E2E tests: use serialized artifacts to validate persistence, designer output and versioning behavior.
-
 
 ### 3. Bulk import
 
@@ -118,7 +165,6 @@ Two main patterns:
     - Report conflicts or duplicate IDs.
     - Run in parallel but enforce deterministic ordering when versions matter.
 - For very large import workloads, support an optimized DB seed path used only in tests (direct DB insert) to avoid the overhead of the full publish pipeline. Mark this as *test-only*.
-
 
 ### 4. Working with Docker, env, K8s cluster deployments
 
@@ -131,13 +177,11 @@ Two main patterns:
 
 - **Configuration**: Keep environment variables and k8s manifests in `tests/ci/` and parametrize connection strings so tests can switch between in‑process and containerized runs.
 
-
 ### 5. Managing test and workflow definition versions
 
 - **Source control the workflow artifacts** and apply semantic versioning to their filenames or metadata (e.g. `payment-process.v1.2.0.json`).
 - **Immutable artifacts**: Do not overwrite a published artifact used by tests. If a workflow changes, publish a new version and update tests to point to the new artifact.
 - **Automate snapshots**: On CI, capture the actual deployed workflow definition version (ID + version) and record it with test results for traceability.
-
 
 ### 6. Avoiding repetition
 
@@ -160,7 +204,6 @@ Two main patterns:
 
 Include these helpers in a shared test utilities NuGet/package so all test projects can reuse them and reduce duplication.
 
-
 ### 7. Assertion targets and alternatives
 
 #### Journal / Activity Execution Endpoints
@@ -182,7 +225,6 @@ Include these helpers in a shared test utilities NuGet/package so all test proje
 - For unit and component tests, assert on in‑process events and test probes. For integration/E2E tests assert on durable state in the DB and validated events (or journal), and use correlation ids to make queries deterministic. Avoid relying solely on formatted journal lines.
 - Always propagate and assert on correlation IDs attached to workflow instances and events to locate the exact instance you need.
 
-
 ### 8. Execute endpoint vs HTTP activity for tests
 
 - **Testing activities in isolation**: Unit test each activity class by constructing an `ActivityContext` and invoking `ExecuteAsync()` or using an `ActivityTestProbe`. This is the fastest and most isolated option.
@@ -194,7 +236,6 @@ Include these helpers in a shared test utilities NuGet/package so all test proje
   - `/execute` endpoint that runs the workflow directly, in this case, the HTTP endpoint activity is not necessary.
 
 **Recommendation:** Unit test activities directly. Integration test the activity inside workflows with the in‑process invoker. Reserve HTTP‑based tests for integrations and full server behavior validation.
-
 
 ### 9. How to test failures (fail activity, missing instance, etc.)
 
@@ -208,13 +249,11 @@ Include these helpers in a shared test utilities NuGet/package so all test proje
 
 - **Simulating host failures**: In integration tests, simulate crashes by killing the host process/container mid‑execution and restarting it to validate persistence and resume semantics. Use persistent DB so state survives host restart.
 
-
 ### 10. Avoid instance ambiguity
 
 - **Tag instances on creation**: Allow tests to send an explicit `TestCorrelationId` or `TestTag` as part of workflow input/metadata. Persist this tag to the instance record. Use it to query the DB deterministically.
 
 - **Return the instance id on start**: Ensure test harness captures the created instance id from the start API or in‑process invoker and uses that id for all subsequent queries.
-
 
 ### 11. Consistent execution environment
 
