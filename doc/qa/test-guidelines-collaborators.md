@@ -33,10 +33,14 @@ This means that if it does not point directly to the source of the issue, it sho
 - **Unit tests**: Activity logic, expression evaluators, small helpers. In‑process, mocking storage and scheduler. Fast and numerous.
   - Use **xUnit** with [Moq / NSubstitute] for mocking. Test activities and small components in isolation. Use in‑memory stores.
 - **Integration tests**: Core engine components (WorkflowInvoker, Bookmark handling, persistence adapters) with in‑memory or ephemeral DB. Use fake scheduler. Run in CI and locally.
-  - Use [`TestApplicationBuilder`](../../src/common/Elsa.Testing.Shared.Integration/TestApplicationBuilder.cs) to create test hosts with DI overrides. Use code-first or serialized workflow definitions depending on the amount and scope. 
+  - Use [`TestApplicationBuilder`](../../src/common/Elsa.Testing.Shared.Integration/TestApplicationBuilder.cs) to create test hosts with DI overrides.
+  - Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`MigrationTests`](../../test/integration/Elsa.Alterations.IntegrationTests/MigrationTests.cs) for an example).
+  - Use serialized workflow or code-first definitions depending on the amount and scope.
   - Also, possible to use external tooling like [JTest](https://github.com/nexxbiz/jtest).
 - **Component tests**: Larger workflows with multiple activities, versioning, and persistence. Use real DB (Testcontainers or local ephemeral DB). Run in CI and locally.
-  - Use [`AppComponentTest`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Abstractions/AppComponentTest.cs) with real DB provider. Place workflow definitions in a `Workflows/` folder located in the root of the test (see `[ExecuteWorkflowsTests]` (../../tests/component/Elsa.Workflows.ComponentTests/Scenarios/) for more examples). Assert via DB queries or journal parsing.
+  - Use [`AppComponentTest`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Abstractions/AppComponentTest.cs) with real DB provider. 
+  - Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`ExecuteWorkflowsTests`](../../test/component/Elsa.Workflows.ComponentTests/Scenarios/ExecuteWorkflows/ExecuteWorkflowsTests.cs) for an example). 
+  - Assert via DB queries or journal parsing.
 
 ---
 
@@ -53,7 +57,7 @@ This means that if it does not point directly to the source of the issue, it sho
   - Test different storages of variables (Workflow Instance, Memory).
 - **Serialization**: 
   - Unit test JSON serialization and deserialization of workflow definitions and instances.
-  - Integration test roundtrip of definitions through the publish/import API.
+  - Integration test roundtrip of definitions through API.
 - **Triggers:** 
   - Test triggers for correct scheduling, invocation and resuming of workflows.
 - **API**: 
@@ -72,6 +76,13 @@ Do when:
 - Testing workflow execution with multiple activities.
 - Need to validate persistence, bookmarks, and resumption.
 - Testing core engine components (WorkflowInvoker, Bookmark handling).
+
+For component tests, we don't have to register code-first workflows, but we do need to do so explicitly for integration tests when creating the TestApplicationBuilder. For example:
+```csharp
+_services = new TestApplicationBuilder(testOutputHelper)
+   .WithWorkflowsFromDirectory("Scenarios", "DependencyWorkflows", "Workflows")
+   .Build();
+```
 
 ## Component tests
 
@@ -95,87 +106,60 @@ Do when:
 
 ### Example: Event-driven completion helper
 
-Tests can subscribe to Elsa's event bus and await a specific event.
+Tests can run workflows using the `RunWorkflowUntilEndAsync` extension method in [`RunWorkflowExtensions`](../../src/common/Elsa.Testing.Shared.Integration/RunWorkflowExtensions.cs) to reliably await for the execution without using `Thread.Sleep` or `Task.Delay`.
 
-```csharp
-public static class WorkflowEventWaiter
-{
-    public static Task<WorkflowCompleted> WaitForWorkflowCompletedAsync(
-        IEventPublisher publisher,
-        string instanceId,
-        TimeSpan? timeout = null,
-        CancellationToken cancellationToken = default)
-    {
-        var tcs = new TaskCompletionSource<WorkflowCompleted>();
-        timeout ??= TimeSpan.FromSeconds(30);
-
-        void Handler(WorkflowCompleted evt)
-        {
-            if (evt.WorkflowInstanceId == instanceId)
-                tcs.TrySetResult(evt);
-        }
-
-        publisher.Subscribe<WorkflowCompleted>(Handler);
-
-        _ = Task.Delay(timeout.Value, cancellationToken)
-            .ContinueWith(_ => tcs.TrySetException(new TimeoutException($\"Workflow {instanceId} did not complete within {timeout}.\")));
-
-        return tcs.Task;
-    }
-}
-```
 
 Usage in a test:
 
 ```csharp
-// Start workflow via /execute
-var instanceId = response.InstanceId;
+private readonly IServiceProvider _services;
 
-// Wait for the event
-var completedEvent = await WorkflowEventWaiter.WaitForWorkflowCompletedAsync(publisher, instanceId);
-Assert.Equal(instanceId, completedEvent.WorkflowInstanceId);
+public Tests(ITestOutputHelper testOutputHelper)
+{
+    _services = new TestApplicationBuilder(testOutputHelper)
+        .Build();
+}
+
+[Fact]
+public async Task Test1()
+{
+    // Populate registries
+    await _services.PopulateRegistriesAsync();
+
+    // Import workflows
+    await _services.ImportWorkflowDefinitionAsync("Workflows/workflow-1.json");
+    await _services.ImportWorkflowDefinitionAsync("Workflows/workflow-2.json");
+
+    // Run
+    var workflowState = await _services.RunWorkflowUntilEndAsync("my-workflow");
+    
+    // Assert
+    // .......
+}
 ```
 
-This event-driven strategy ensures assertions only happen once Elsa signals the workflow is complete, making tests both fast and deterministic.
+This extension method ensures assertions only happen once the workflow is complete, making tests both fast and deterministic.
 
 ---
 
-### 2. Importing and publishing workflow definitions for testing workflows
+###  Importing workflow definitions for testing workflows
 
 Two main patterns:
 
-**A. Programmatic/Code‑first registration (recommended for component tests)**
-- Register workflows as code (C# fluent `IWorkflowBuilder`) inside test setup. This is fast and avoids serialization roundtrips.
-- Use a lightweight in‑memory `IWorkflowRegistry` implementation for tests.
+**A. Code‑first registration (recommended for component tests)**
+- Register workflows as code inside test setup. This is fast and avoids serialization roundtrips.
 - Good for tests that validate runtime behavior without involving persistence or designer serialization.
+- Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`ExecuteWorkflowsTests`](../../test/component/Elsa.Workflows.ComponentTests/Scenarios/ExecuteWorkflows/ExecuteWorkflowsTests.cs) for an example).
 
-**B. Serialized definitions (recommended for integration & E2E tests)**
-- Store JSON workflow definition artifacts in the `tests/definitions/` folder in the repo, commit them with semantic versions, and let tests import them into the engine via the same publish/import APIs used in production.
-- Tests are responsible for *publishing* the definitions into the test host if the scenario requires persistence (e.g. testing versioned definitions or import behavior).
-- For bulk tests, provide an import script (`ImportTestDefinitions.sh`) that uploads all artifacts in a single batch before running assertions.
+**B. Serialized definitions (recommended for integration tests)**
+- Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`MigrationTests`](../../test/integration/Elsa.Alterations.IntegrationTests/MigrationTests.cs) for an example).
 
 **Which to use?**
-- Component tests: code-first programmatic definitions.
-- Integration/E2E tests: use serialized artifacts to validate persistence, designer output and versioning behavior.
+- Integration tests: use serialized JSON workflows.
+- Component tests: code-first definitions or workflows created via designer and exported to JSON to validate persistence, designer output and versioning behavior.
+---
 
-### 3. Bulk import
 
-- Implement a **test importer utility** that accepts a directory of workflow definition artifacts (JSON/YAML) and publishes them via the engine's public API or directly seeds the persistence store. The utility should:
-    - Validate schema and version.
-    - Report conflicts or duplicate IDs.
-    - Run in parallel but enforce deterministic ordering when versions matter.
-- For very large import workloads, support an optimized DB seed path used only in tests (direct DB insert) to avoid the overhead of the full publish pipeline. Mark this as *test-only*.
-
-### 4. Working with Docker, env, K8s cluster deployments
-
-- **Test strategy split**:
-    - Local developer tests: use in‑process hosts and in‑memory/ephemeral DBs (SQLite in-memory or Testcontainers-based DB). Fast and deterministic.
-    - CI Docker Compose: spin up a lightweight containerized environment with the host app, a real DB (Postgres, SQL Server or Mongo) and optional message broker; use Testcontainers (or Docker Compose) to orchestrate in CI.
-    - K8s E2E: run a small suite that deploys a test namespace with Helm or apply manifests. Use ephemeral resources and ensure cleanup. Keep these tests in a separate CI stage.
-
-- **Use Testcontainers** (or equivalent) to provision ephemeral DBs/brokers in CI; this keeps environments close to production while still being isolated and reproducible.
-
-- **Configuration**: Keep environment variables and k8s manifests in `tests/ci/` and parametrize connection strings so tests can switch between in‑process and containerized runs.
 
 ### 5. Managing test and workflow definition versions
 
@@ -185,7 +169,7 @@ Two main patterns:
 
 ### 6. Avoiding repetition
 
-**Test lifecycle template (common for integration/E2E tests)**
+**Test lifecycle template (common for integration tests)**
 1. **Provision** the environment (in‑process host or containerized test environment).
 2. **Reset** persistence (drop / recreate DB schema or use a clean DB instance).
 3. **Import/Publish** required workflow definitions.
@@ -263,77 +247,7 @@ Include these helpers in a shared test utilities NuGet/package so all test proje
 
 ---
 
-## Concrete examples & small templates
 
-> The repository should provide a `tests/test-utilities` project with the following helpers that are *reusable by all test projects*.
-
-### `TestHostFactory` (conceptual)
-
-```csharp
-public static IHost CreateTestHost(Action<IServiceCollection> configure)
-{
-    var host = Host.CreateDefaultBuilder()
-        .ConfigureServices((ctx, services) =>
-        {
-            services.AddElsa(elsa =>
-            {
-                // Use in-memory persistence and deterministic scheduler for tests
-                elsa.UseInMemoryPersistence();
-                elsa.UseDeterministicScheduler();
-            });
-
-            // Additional test overrides
-            configure?.Invoke(services);
-        })
-        .Build();
-
-    host.Start();
-    return host;
-}
-```
-
-### `DeterministicScheduler` interface
-
-```csharp
-public interface IDeterministicScheduler
-{
-    Task<IEnumerable<Bookmark>> GetDueBookmarksAsync();
-    Task TriggerBookmarkAsync(string bookmarkId, string correlationId = null);
-}
-```
-
-### Example test flow (integration, in‑process)
-
-1. Create host with `TestHostFactory`.
-2. Load workflow definitions (code‑first or JSON loader).
-3. Start workflow via `IWorkflowInvoker.StartAsync(definitionId, inputs, correlationId)` -> returns `instanceId`.
-4. If workflow waits on bookmark, call `scheduler.TriggerBookmarkAsync(bookmarkId, correlationId)`.
-5. Assert final instance status via `IWorkflowInstanceStore.FindById(instanceId)` or via `IEventCollector`.
-
-
-### Example manifest (tests/manifests/decision.json)
-
-```json
-{
-  "suiteName": "decision",
-  "definitions": [
-    { "id": "decision-true", "version": "1.2.0", "path": "definitions/decision-true.v1.2.0.json" },
-    { "id": "decision-true",  "version": "1.0.0", "path": "definitions/decision-false.v1.0.0.json" }
-  ]
-}
-```
-
----
-
-## CI recommendations
-
-- **Local unit tests**: run in `dotnet test` step (fast). Use in‑memory stores and determinism.
-- **Integration tests**: run with Testcontainers (or similar) to provide real DB/broker. Run these in a separate CI job because they are slower.
-- **K8s smoke tests**: optional separate stage. Deploy to ephemeral namespace via Helm and run a small suite of smoke E2E tests; tear down after.
-- **Parallelization**: run multiple test matrices (DB providers) but avoid running heavy E2E jobs in parallel unless you have isolated resources.
-- **Flaky test detection**: enable a flaky test retry policy for known non‑deterministic tests, but treat retries as signals to fix the underlying determinism problems.
-
----
 
 ## Failure injection and resilience testing
 
@@ -360,10 +274,10 @@ public interface IDeterministicScheduler
 
 1. **Increase** unit test coverage of existing code using these patterns.
 2. **Add `IDeterministicScheduler` abstractions** and implement test doubles.
-2. **Create `tests/test-utilities` project** and convert a couple of existing tests to use it as examples.
-3. **Define manifest schema** and commit a couple of versioned workflow definitions to `tests/definitions/`.
-4. **Add one CI integration job** that uses Testcontainers (or similar) to run the integration suite against popular db providers (MySql, Postgres and Mongo, for example).
-5. **Add telemetry and event collectors** to support in‑process assertions (easier than parsing journal text).
+3. **Create `tests/test-utilities` project** and convert a couple of existing tests to use it as examples.
+4. **Define manifest schema** and commit a couple of versioned workflow definitions to `tests/definitions/`.
+5. **Add one CI integration job** that uses Testcontainers (or similar) to run the integration suite against popular db providers (MySql, Postgres and Mongo, for example).
+6. **Add telemetry and event collectors** to support in‑process assertions (easier than parsing journal text).
 ---
 
 ## Appendix: Quick checklist for writing a new test
