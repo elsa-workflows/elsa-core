@@ -1,8 +1,11 @@
 # Elsa Core — Test Strategy Guidelines for Collaborators
 
 **Purpose:**
+
 This document describes recommended testing strategies for the Elsa engine. 
-It is written for collaborators and aims to provide concrete, repeatable patterns you can adopt in unit, integration and component tests to make test execution deterministic, fast, and resilient across local, Docker and Kubernetes CI environments.
+
+It is written for collaborators and aims to provide concrete, repeatable patterns you can adopt in unit, integration and component tests to make test execution deterministic, fast, and resilient.
+
 Additionally, it provides a consistent and resilient set of places to assert behavior (journal, activity execution endpoints, DB queries, events) and guidelines for choosing between them.
 
 ---
@@ -22,24 +25,27 @@ This means that if it does not point directly to the source of the issue, it sho
 1. **Deterministic tests** — tests should not be flaky and should produce the same results independent of circumstance.
 2. **Fast feedback** — unit and integration tests should run quickly to support local development workflows and CI.
 3. **Minimal reliance on real delays** — avoid `Task.Delay`, `Thread.Sleep` or real clocks except where unavoidable; prefer event-driven assertions.
-4. **Environment portability** — tests should run in local dev, Docker or any other container CI environment with minimal changes.
-5. **Version alignment** — workflow definition versions and test artifacts must be explicitly linked so tests refer to a specific workflow definition version.
-6. **Failure simulation** — deterministic ways to simulate activity or host failures and assert correct recovery/compensation.
+4. **Version alignment** — workflow definition versions and test artifacts must be explicitly linked so tests refer to a specific workflow definition version.
+5. **Failure simulation** — deterministic ways to simulate activity or host failures and assert correct recovery/compensation.
 
 ---
 
 ## High‑level testing pyramid for Elsa
 
-- **Unit tests**: Activity logic, expression evaluators, small helpers. In‑process, mocking storage and scheduler. Fast and numerous.
-  - Use **xUnit** with [Moq / NSubstitute] for mocking. Test activities and small components in isolation. Use in‑memory stores.
+- **Unit tests**: Activity logic, expression evaluators, small helpers, services and providers. In‑process, mocking storage and scheduler. Fast and numerous.
+  - Use **xUnit** with [Moq / NSubstitute] for mocking.
+  - Test activities and small components in isolation.
+  - Use in‑memory stores.
 - **Integration tests**: Core engine components (WorkflowInvoker, Bookmark handling, persistence adapters) with in‑memory or ephemeral DB. Use fake scheduler. Run in CI and locally.
   - Use [`TestApplicationBuilder`](../../src/common/Elsa.Testing.Shared.Integration/TestApplicationBuilder.cs) to create test hosts with DI overrides.
-  - Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`MigrationTests`](../../test/integration/Elsa.Alterations.IntegrationTests/MigrationTests.cs) for an example).
+  - Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`MigrationTests`](../../test/integration/Elsa.Alterations.IntegrationTests/MigrationTests.cs)).
   - Use serialized workflow or code-first definitions depending on the amount and scope.
   - Also, possible to use external tooling like [JTest](https://github.com/nexxbiz/jtest).
-- **Component tests**: Larger workflows with multiple activities, versioning, and persistence. Use real DB (Testcontainers or local ephemeral DB). Run in CI and locally.
+- **Component tests**: Larger workflows with multiple activities, versioning, and persistence. 
+  - Use real DB (local ephemeral DB). Run in CI and locally.
+  - Use real components (e.g. [`IWorkflowRuntime`](../../src/modules/Elsa.Workflows.Runtime/Contracts/IWorkflowRuntime.cs), see [`ExecuteWorkflowsTests`](../../test/component/Elsa.Workflows.ComponentTests/Scenarios/ExecuteWorkflows/ExecuteWorkflowsTests.cs)).
   - Use [`AppComponentTest`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Abstractions/AppComponentTest.cs) with real DB provider. 
-  - Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`ExecuteWorkflowsTests`](../../test/component/Elsa.Workflows.ComponentTests/Scenarios/ExecuteWorkflows/ExecuteWorkflowsTests.cs) for an example). 
+  - Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`ExecuteWorkflowsTests`](../../test/component/Elsa.Workflows.ComponentTests/Scenarios/ExecuteWorkflows/ExecuteWorkflowsTests.cs)). 
   - Assert via DB queries or journal parsing.
 
 ---
@@ -48,7 +54,7 @@ This means that if it does not point directly to the source of the issue, it sho
 - **Activities**:
   - Unit test each activity class in isolation.
     - all configurations and edge cases.
-  - Integration test activities using [`TestApplicationBuilder`](../../src/common/Elsa.Testing.Shared.Integration/TestApplicationBuilder.cs) for less common, tricky scenarios (see [`ForEachTests`](../../test/integration/Elsa.Activities.IntegrationTests/ForEachTests.cs) as an example).
+  - Integration test activities using [`TestApplicationBuilder`](../../src/common/Elsa.Testing.Shared.Integration/TestApplicationBuilder.cs) for less common, tricky scenarios (e.g. [`ForEachTests`](../../test/integration/Elsa.Activities.IntegrationTests/ForEachTests.cs)).
 - **Workflow execution**: 
   - Test workflow lifecycle, input/output, bookmarks, persistence, and resumption.
   - Use `RunWorkflowUntilEndAsync` extension method in [`RunWorkflowExtensions`](../../src/common/Elsa.Testing.Shared.Integration/RunWorkflowExtensions.cs) for deterministic execution.
@@ -66,9 +72,13 @@ This means that if it does not point directly to the source of the issue, it sho
 
 ## Unit tests
 
-Do when:
-- Testing individual activity logic or small components in isolation.
-- No need for persistence or real workflow execution.
+Do when testing:
+- Individual activity logic.
+- Small components in isolation.
+- Logic before/after persistence .
+- Logic before/after interactions between components.
+- Expression evaluation.
+- Providers and services (elsa implementations).
 
 ## Integration tests
 

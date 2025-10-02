@@ -1,4 +1,15 @@
 
+## Goals / Non‑functional requirements
+
+1. **Deterministic tests** — tests should not be flaky and should produce the same results independent of circumstance.
+2. **Fast feedback** — unit and integration tests should run quickly to support local development workflows and CI.
+3. **Minimal reliance on real delays** — avoid `Task.Delay`, `Thread.Sleep` or real clocks except where unavoidable; prefer event-driven assertions.
+4. **Environment portability** — tests should run in local dev, Docker or any other container CI environment with minimal changes.
+5. **Version alignment** — workflow definition versions and test artifacts must be explicitly linked so tests refer to a specific workflow definition version.
+6. **Failure simulation** — deterministic ways to simulate activity or host failures and assert correct recovery/compensation.
+
+---
+
 
 - **Bulk provisioning & isolation** — tests should support bulk import of workflow definitions for large-suite runs and ensure clean, isolated state per test.
 - **End‑to‑end tests**: Deploy Elsa Server (or host app) in Docker/K8s with a real DB, then run workflows via REST and assert via durable traces (journal/DB/events). Keep E2E suite small and targeted.
