@@ -2,7 +2,7 @@
 
 **Purpose:**
 
-This document describes recommended testing strategies for the Elsa engine. 
+This document describes recommended testing strategies when contributing features and fixes to the Elsa Workflows project.
 
 It is written for collaborators and aims to provide concrete, repeatable patterns you can adopt in unit, integration and component tests to make test execution deterministic, fast, and resilient.
 
