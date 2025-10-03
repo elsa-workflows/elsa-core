@@ -4,7 +4,7 @@
 
 This document describes recommended testing strategies when contributing features and fixes to the Elsa Workflows project.
 
-It is written for collaborators and aims to provide concrete, repeatable patterns you can adopt in unit, integration and component tests to make test execution deterministic, fast, and resilient.
+It is written for contributors and aims to provide concrete, repeatable patterns you can adopt in unit, integration and component tests to make test execution deterministic, fast, and resilient.
 
 Additionally, it provides a consistent and resilient set of places to assert behavior (journal, activity execution endpoints, DB queries, events) and guidelines for choosing between them.
 
