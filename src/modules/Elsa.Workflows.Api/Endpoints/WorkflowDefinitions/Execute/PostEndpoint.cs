@@ -30,7 +30,7 @@ internal class PostEndpoint(
     {
         PostRequest? request = null;
 
-        if (HttpContext.Request.ContentLength > 0 && (HttpContext.Request.ContentType?.Contains("application/json") ?? true))
+        if (HttpContext.Request.ContentType?.Contains("application/json") ?? true)
         {
             try
             {
@@ -39,6 +39,8 @@ internal class PostEndpoint(
                 {
                     PropertyNameCaseInsensitive = true
                 }, cancellationToken: cancellationToken);
+                if (request is null)
+                    AddError("Body not found for content type application/json.");
             }
             catch
             {
