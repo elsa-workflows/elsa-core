@@ -22,7 +22,7 @@ This means that if it does not point directly to the source of the issue, it sho
 
 ## Goals / Non‑functional requirements
 
-1. **Deterministic tests** — tests should not be flaky and should produce the same results independent of circumstance.
+1. **Deterministic tests** — tests should not be flaky, meaning they should produce the same results consistently on subsequent runs.
 2. **Fast feedback** — unit and integration tests should run quickly to support local development workflows and CI.
 3. **Minimal reliance on real delays** — avoid `Task.Delay`, `Thread.Sleep` or real clocks except where unavoidable; prefer event-driven assertions.
 4. **Version alignment** — workflow definition versions and test artifacts must be explicitly linked so tests refer to a specific workflow definition version.
