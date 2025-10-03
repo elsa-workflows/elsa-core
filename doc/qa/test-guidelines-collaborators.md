@@ -44,7 +44,7 @@ This means that if it does not point directly to the source of the issue, it sho
 - **Component tests**: Exercises multiple components end to end, e.g. all the way from a REST API endpoint down to the persistence layer, touching everything in between.
   - Use real DB (local / containerized, ephemeral databases). Run in CI and locally.
   - Use real components (e.g. [`IWorkflowRuntime`](../../src/modules/Elsa.Workflows.Runtime/Contracts/IWorkflowRuntime.cs), see [`ExecuteWorkflowsTests`](../../test/component/Elsa.Workflows.ComponentTests/Scenarios/ExecuteWorkflows/ExecuteWorkflowsTests.cs)).
-  - Use [`AppComponentTest`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Abstractions/AppComponentTest.cs) with real DB provider. 
+  - Use [`AppComponentTest`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Abstractions/AppComponentTest.cs) with a real persistence provider. 
   - Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`ExecuteWorkflowsTests`](../../test/component/Elsa.Workflows.ComponentTests/Scenarios/ExecuteWorkflows/ExecuteWorkflowsTests.cs)). 
   - Assert via DB queries or journal parsing.
 
