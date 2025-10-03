@@ -47,6 +47,8 @@ This means that if it does not point directly to the source of the issue, it sho
   - Use [`AppComponentTest`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Abstractions/AppComponentTest.cs) with a real persistence provider. 
   - Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`ExecuteWorkflowsTests`](../../test/component/Elsa.Workflows.ComponentTests/Scenarios/ExecuteWorkflows/ExecuteWorkflowsTests.cs)). 
   - Assert via DB queries or journal parsing.
+  - Possible to install spies with DI and inspect them in the assertion steps.
+  
 
 ---
 
