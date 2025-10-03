@@ -29,19 +29,24 @@ internal class PostEndpoint(
     {
         PostRequest? request = null;
 
-        if (HttpContext.Request.ContentLength > 0 && (HttpContext.Request.ContentType?.Contains("application/json") ?? true))
+        if (HttpContext.Request.ContentType?.Contains("application/json") ?? false)
         {
-            try
+            using var reader = new StreamReader(HttpContext.Request.Body);
+            var body = await reader.ReadToEndAsync();
+
+            if (!string.IsNullOrWhiteSpace(body))
             {
-                request = await JsonSerializer.DeserializeAsync<PostRequest>(HttpContext.Request.Body,
-                new JsonSerializerOptions
+                try
                 {
-                    PropertyNameCaseInsensitive = true
-                }, cancellationToken: cancellationToken);
-            }
-            catch
-            {
-                AddError("Invalid request body.");
+                    request = JsonSerializer.Deserialize<PostRequest>(body, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                }
+                catch
+                {
+                    AddError("Invalid request body.");
+                }
             }
         }
 
