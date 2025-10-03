@@ -52,7 +52,7 @@ This means that if it does not point directly to the source of the issue, it sho
 
 ---
 
-## Elsa aspects to be tested:
+## Aspects to be tested:
 - **Activities**:
   - Unit test each activity class in isolation.
     - all configurations and edge cases.
