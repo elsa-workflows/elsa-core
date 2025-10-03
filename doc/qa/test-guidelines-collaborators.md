@@ -11,7 +11,7 @@ Additionally, it provides a consistent and resilient set of places to assert beh
 ---
 
 ## Summary
-The philosophy of elsa test strategy can be summarized as:
+The philosophy of the Elsa test strategy can be summarized as:
 
 ***Whenever a test fails, it should provide a clear direction towards the cause of the problem.***
 --
