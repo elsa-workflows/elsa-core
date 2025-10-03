@@ -1,4 +1,4 @@
-# Elsa Core — Test Strategy Guidelines for Collaborators
+# Elsa Core — Test Strategy Guidelines for Contributors
 
 **Purpose:**
 
