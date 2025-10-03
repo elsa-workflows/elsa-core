@@ -86,41 +86,49 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
 
         _timer.Elapsed += async (_, _) =>
         {
-            _timer?.Dispose();
-            _timer = null;
-            _startAt = _systemClock.UtcNow + _interval;
-
-            using var scope = _scopeFactory.CreateScope();
-            var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
-            var cancellationToken = _cancellationTokenSource.Token;
-            if (!cancellationToken.IsCancellationRequested)
+            try
             {
-                try
-                {
-                    var acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
-                    if (!acquired) return;
-                    _executing = true;
-                    await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
 
-                    if (_cancellationRequested)
+                _timer?.Dispose();
+                _timer = null;
+                _startAt = _systemClock.UtcNow + _interval;
+
+                using var scope = _scopeFactory.CreateScope();
+                var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
+                var cancellationToken = _cancellationTokenSource.Token;
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    try
                     {
-                        _cancellationRequested = false;
-                        _cancellationTokenSource.Cancel();
+                        var acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
+                        if (!acquired) return;
+                        _executing = true;
+                        await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+
+                        if (_cancellationRequested)
+                        {
+                            _cancellationRequested = false;
+                            _cancellationTokenSource.Cancel();
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Error executing scheduled task");
+                    }
+                    finally
+                    {
+                        _executing = false;
+                        _executionSemaphore.Release();
                     }
                 }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Error executing scheduled task");
-                }
-                finally
-                {
-                    _executing = false;
-                    _executionSemaphore.Release();
-                }
-            }
 
-            if (!cancellationToken.IsCancellationRequested)
-                Schedule();
+                if (!cancellationToken.IsCancellationRequested)
+                    Schedule();
+            }
+            catch (ObjectDisposedException ex)
+            {
+                _logger.LogWarning(ex, "Service Provider was disposed.");
+            }
         };
     }
 
