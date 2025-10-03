@@ -36,7 +36,7 @@ This means that if it does not point directly to the source of the issue, it sho
   - Use **xUnit** with [Moq / NSubstitute] for mocking.
   - Test activities and small components in isolation.
   - Use in‑memory stores.
-- **Integration tests**: Core engine components (WorkflowInvoker, Bookmark handling, persistence adapters) with in‑memory or ephemeral DB. Use fake scheduler. Run in CI and locally.
+- **Integration tests**: Core engine components (e.g., workflow invocation, bookmark handling, persistence adapters) with in‑memory or ephemeral databases. Use fake schedulers. Run in CI and locally.
   - Use [`TestApplicationBuilder`](../../src/common/Elsa.Testing.Shared.Integration/TestApplicationBuilder.cs) to create test hosts with DI overrides.
   - Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`MigrationTests`](../../test/integration/Elsa.Alterations.IntegrationTests/MigrationTests.cs)).
   - Use serialized workflow or code-first definitions depending on the amount and scope.
