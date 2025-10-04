@@ -53,7 +53,7 @@ public class SchedulingFeature : FeatureBase
             .AddHandlersFrom<ScheduleWorkflows>()
 
             //Trigger payload validators.
-            .AddTriggerPaylodValidator<CronTriggerPayloadValidator, CronTriggerPayload>();
+            .AddTriggerPayloadValidator<CronTriggerPayloadValidator, CronTriggerPayload>();
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());
     }

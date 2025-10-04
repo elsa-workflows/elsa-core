@@ -222,7 +222,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddScoped<IDownloadableContentHandler, HttpFileDownloadableContentHandler>()
 
             //Trigger payload validators.
-            .AddTriggerPaylodValidator<HttpEndpointTriggerPayloadValidator, HttpEndpointBookmarkPayload>()
+            .AddTriggerPayloadValidator<HttpEndpointTriggerPayloadValidator, HttpEndpointBookmarkPayload>()
 
             // File caches.
             .AddScoped(FileCache)

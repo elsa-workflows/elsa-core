@@ -22,7 +22,7 @@ public static class DependencyInjectionExtensions
     /// <param name="services">Service collection</param>
     /// <typeparam name="TValidator">Validator of the validator</typeparam>
     /// <typeparam name="TPayload">Payload type</typeparam>
-    public static IServiceCollection AddTriggerPaylodValidator<TValidator, TPayload>(this IServiceCollection services)
+    public static IServiceCollection AddTriggerPayloadValidator<TValidator, TPayload>(this IServiceCollection services)
         where TValidator : class, ITriggerPayloadValidator<TPayload>
     {
         return services.AddScoped<ITriggerPayloadValidator<TPayload>, TValidator>();
