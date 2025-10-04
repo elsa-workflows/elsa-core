@@ -30,7 +30,7 @@ public partial class Flowchart : Container
     /// <summary>
     /// The activity to execute when the flowchart starts.
     /// </summary>
-    [Port] [Browsable(false)] public IActivity? Start { get; set; }
+    [Port][Browsable(false)] public IActivity? Start { get; set; }
 
     /// <summary>
     /// A list of connections between activities.

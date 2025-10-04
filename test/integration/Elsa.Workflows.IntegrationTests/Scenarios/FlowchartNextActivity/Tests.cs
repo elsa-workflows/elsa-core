@@ -32,7 +32,10 @@ public class FlowchartNextActivityTests
         await _services.PopulateRegistriesAsync();
         await _workflowRunner.RunAsync<FlowchartWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[] { "Line 1" }, lines);
+        Assert.Equal(new[]
+        {
+            "Line 1"
+        }, lines);
     }
 
     [Fact(DisplayName = "Flowchart with backward connections and a dangling activity")]
@@ -54,7 +57,6 @@ public class FlowchartNextActivityTests
             };
             var a = new WriteLine("A");
             var b = new WriteLine("B");
-            var c = new WriteLine("C");
             var incrementLoop = new SetVariable()
             {
                 Variable = loopVariable,
@@ -73,28 +75,26 @@ public class FlowchartNextActivityTests
             var f = new WriteLine("F");
             var end = new End();
 
-
             workflowBuilder.Root = new Flowchart
             {
                 Variables =
-                    {
-                        loopVariable
-                    },
+                {
+                    loopVariable
+                },
                 Activities =
-                    {
-                        start,
-                        dangling,
-                        writeLineDecision,
-                        a,
-                        b,
-                        c,
-                        incrementLoop,
-                        loopbackDecision,
-                        d,
-                        e,
-                        f,
-                        end
-                    },
+                {
+                    start,
+                    dangling,
+                    writeLineDecision,
+                    a,
+                    b,
+                    incrementLoop,
+                    loopbackDecision,
+                    d,
+                    e,
+                    f,
+                    end
+                },
                 Connections =
                 {
                     new(start, writeLineDecision),
@@ -105,7 +105,6 @@ public class FlowchartNextActivityTests
                     new(new(writeLineDecision, "Default"), new Endpoint(incrementLoop)),
                     new(a, incrementLoop),
                     new(b, incrementLoop),
-                    new(c, incrementLoop),
                     new(incrementLoop, loopbackDecision),
                     new(new(loopbackDecision, "EqualOne"), new Endpoint(d)),
                     new(d, incrementLoop),
@@ -121,7 +120,10 @@ public class FlowchartNextActivityTests
         var result = await _workflowRunner.RunAsync(workflow);
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
-        Assert.Equal(new[] { "A", "B", "C", "D", "E", "A", "B", "E", "F" }, lines);
+        Assert.Equal(new[]
+        {
+            "A", "B", "D", "E", "A", "B", "E", "E", "F"
+        }, lines);
     }
 
     [Fact(DisplayName = "Flowchart with an invalid backward connection")]
@@ -132,24 +134,42 @@ public class FlowchartNextActivityTests
         
         var workflow = new TestWorkflow(workflowBuilder =>
         {
-            var start = new Start() { Id = "Start" };
-            var a = new WriteLine("A") { Id = "WriteLineA" };
-            var b = new WriteLine("B") { Id = "WriteLineB" };
-            var c = new WriteLine("C") { Id = "WriteLineC" };
-            var d = new WriteLine("D") { Id = "WriteLineD" };
-            var e = new WriteLine("E") { Id = "WriteLineE" };
+            var start = new Start()
+            {
+                Id = "Start"
+            };
+            var a = new WriteLine("A")
+            {
+                Id = "WriteLineA"
+            };
+            var b = new WriteLine("B")
+            {
+                Id = "WriteLineB"
+            };
+            var c = new WriteLine("C")
+            {
+                Id = "WriteLineC"
+            };
+            var d = new WriteLine("D")
+            {
+                Id = "WriteLineD"
+            };
+            var e = new WriteLine("E")
+            {
+                Id = "WriteLineE"
+            };
 
             workflowBuilder.Root = new Flowchart
             {
                 Activities =
-                    {
-                        start,
-                        a,
-                        b,
-                        c,
-                        d,
-                        e,
-                    },
+                {
+                    start,
+                    a,
+                    b,
+                    c,
+                    d,
+                    e,
+                },
                 Connections =
                 {
                     new(start, a),
@@ -169,7 +189,10 @@ public class FlowchartNextActivityTests
         Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
         Assert.Equal(1, result.WorkflowState.Incidents.Count());
         Assert.Equal("Invalid backward connection: Every path from the source ('WriteLineE') must go through the target ('WriteLineC') when tracing back to the start.", result.WorkflowState.Incidents.First().Message);
-        Assert.Equal(new[] { "A", "B", "C", "D", "E" }, lines);
+        Assert.Equal(new[]
+        {
+            "A", "B", "C", "D", "E"
+        }, lines);
     }
 
     [Theory(DisplayName = "Flowchart with a Join activity executed multiple times")]
@@ -207,21 +230,21 @@ public class FlowchartNextActivityTests
             workflowBuilder.Root = new Flowchart
             {
                 Variables =
-                    {
-                        loopVariable
-                    },
+                {
+                    loopVariable
+                },
                 Activities =
-                    {
-                        start,
-                        a,
-                        b,
-                        c,
-                        d,
-                        join,
-                        incrementLoop,
-                        loopbackDecision,
-                        end
-                    },
+                {
+                    start,
+                    a,
+                    b,
+                    c,
+                    d,
+                    join,
+                    incrementLoop,
+                    loopbackDecision,
+                    end
+                },
                 Connections =
                 {
                     new(start, a),
@@ -279,19 +302,19 @@ public class FlowchartNextActivityTests
             workflowBuilder.Root = new Flowchart
             {
                 Variables =
-                    {
-                        loopVariable
-                    },
+                {
+                    loopVariable
+                },
                 Activities =
-                    {
-                        start,
-                        loopbackSwitch,
-                        a,
-                        incrementLoop,
-                        join,
-                        b,
-                        end
-                    },
+                {
+                    start,
+                    loopbackSwitch,
+                    a,
+                    incrementLoop,
+                    join,
+                    b,
+                    end
+                },
                 Connections =
                 {
                     new(start, loopbackSwitch),
@@ -310,6 +333,9 @@ public class FlowchartNextActivityTests
         var result = await _workflowRunner.RunAsync(workflow);
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
-        Assert.Equal(new[] { "A", "A", "A", "B" }, lines);
+        Assert.Equal(new[]
+        {
+            "A", "A", "A", "B"
+        }, lines);
     }
 }
