@@ -101,7 +101,6 @@ public class FlowchartNextActivityTests
                     new(dangling, writeLineDecision),
                     new(new(writeLineDecision, "LessThanThree"), new Endpoint(a)),
                     new(new(writeLineDecision, "LessThanThree"), new Endpoint(b)),
-                    new(new(writeLineDecision, "LessThanOne"), new Endpoint(c)),
                     new(new(writeLineDecision, "Default"), new Endpoint(incrementLoop)),
                     new(a, incrementLoop),
                     new(b, incrementLoop),
