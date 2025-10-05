@@ -62,7 +62,7 @@ public class WorkflowDefinitionPublisher(
             StringData = activitySerializer.Serialize(root),
             MaterializerName = JsonWorkflowMaterializer.MaterializerName
         };
-        
+
         return Task.FromResult(workflowDefinition);
     }
 
@@ -71,7 +71,7 @@ public class WorkflowDefinitionPublisher(
     {
         var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
         var definition = await workflowDefinitionStore.FindAsync(filter, cancellationToken);
-        
+
         if (definition == null)
             return new(false, new List<WorkflowValidationError>
             {
@@ -148,6 +148,30 @@ public class WorkflowDefinitionPublisher(
         return definition;
     }
 
+    public async Task<WorkflowDefinition> RevertVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionId = definitionId,
+            VersionOptions = VersionOptions.Latest
+        };
+        var latestVersion = await workflowDefinitionStore.FindAsync(filter, cancellationToken);
+
+        if (latestVersion != null)
+        {
+            latestVersion.IsLatest = false;
+            await workflowDefinitionStore.SaveAsync(latestVersion, cancellationToken);
+        }
+
+        var draft = await GetDraftAsync(definitionId, VersionOptions.SpecificVersion(version), cancellationToken);
+        draft!.Id = identityGenerator.GenerateId();
+        draft.Version = (latestVersion?.Version ?? 0) + 1;
+        draft.IsLatest = true;
+
+        await workflowDefinitionStore.SaveAsync(draft, cancellationToken);
+        return draft;
+    }
+
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> GetDraftAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
@@ -199,7 +223,7 @@ public class WorkflowDefinitionPublisher(
         await workflowDefinitionStore.SaveAsync(draft, cancellationToken);
         await mediator.SendAsync(new WorkflowDefinitionDraftSaved(draft), cancellationToken);
 
-        if (lastVersion is null) 
+        if (lastVersion is null)
             await mediator.SendAsync(new WorkflowDefinitionCreated(definition), cancellationToken);
 
         if (lastVersion is { IsPublished: true, IsLatest: true })
