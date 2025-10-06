@@ -1,3 +1,3 @@
 namespace Elsa.Scheduling.Bookmarks;
 
-internal record StartAtPayload(DateTimeOffset ExecuteAt);
+public record StartAtPayload(DateTimeOffset ExecuteAt);

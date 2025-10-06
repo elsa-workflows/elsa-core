@@ -1,9 +1,9 @@
 using Elsa.Testing.Shared;
-using Elsa.Workflows.IntegrationTests.Scenarios.ImplicitJoins.Workflows;
+using Elsa.Workflows.IntegrationTests.Scenarios.JoinBehaviors.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
-namespace Elsa.Workflows.IntegrationTests.Scenarios.ImplicitJoins;
+namespace Elsa.Workflows.IntegrationTests.Scenarios.JoinBehaviors;
 
 public class ImplicitWorkflowTests
 {

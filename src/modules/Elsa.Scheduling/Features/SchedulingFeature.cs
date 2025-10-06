@@ -48,13 +48,12 @@ public class SchedulingFeature : FeatureBase
             .AddScoped<ITriggerScheduler, DefaultTriggerScheduler>()
             .AddScoped<IBookmarkScheduler, DefaultBookmarkScheduler>()
             .AddScoped<DefaultWorkflowScheduler>()
-            .AddSingleton(CronParser)
             .AddScoped(WorkflowScheduler)
             .AddBackgroundTask<CreateSchedulesBackgroundTask>()
             .AddHandlersFrom<ScheduleWorkflows>()
 
             //Trigger payload validators.
-            .AddTriggerPaylodValidator<CronTriggerPayloadValidator, CronTriggerPayload>();
+            .AddTriggerPayloadValidator<CronTriggerPayloadValidator, CronTriggerPayload>();
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());
     }

@@ -59,6 +59,15 @@ public interface IWorkflowDefinitionPublisher
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The retracted workflow definition.</returns>
     Task<WorkflowDefinition> RetractAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Creates a new workflow definition from the specified version.
+    /// </summary>
+    /// <param name="definitionId">The definition ID.</param>
+    /// <param name="version">The version number.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The new workflow definition.</returns>
+    Task<WorkflowDefinition> RevertVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets or creates a draft for the specified workflow definition.

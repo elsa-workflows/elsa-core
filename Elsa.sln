@@ -224,6 +224,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{0A04B1FD-06C
 		doc\adr\toc.md = doc\adr\toc.md
 		doc\adr\0005-activity-execution-snapshots.md = doc\adr\0004-activity-execution-snapshots.md
 		doc\adr\0006-tenant-deleted-event.md = doc\adr\0005-tenant-deleted-event.md
+		doc\adr\0006-adoption-of-explicit-merge-modes-for-flowchart-joins.md = doc\adr\0006-adoption-of-explicit-merge-modes-for-flowchart-joins.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bounty", "bounty", "{9B80A705-2E31-4012-964A-83963DCDB384}"

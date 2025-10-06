@@ -5,26 +5,26 @@ using Elsa.Workflows.Runtime.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
-namespace Elsa.Workflows.IntegrationTests.Scenarios.ImplicitJoins;
+namespace Elsa.Workflows.IntegrationTests.Scenarios.JoinBehaviors;
 
-public class ParallelJoinCompletesTests
+public class JoinRunsOnceTests
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
 
-    public ParallelJoinCompletesTests(ITestOutputHelper testOutputHelper)
+    public JoinRunsOnceTests(ITestOutputHelper testOutputHelper)
     {
         _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
     }
 
-    [Fact(DisplayName = "The ParallelForEach activity completes when its Body contains a Join activity")]
+    [Fact(DisplayName = "The Join activity executes only once, not twice")]
     public async Task Test1()
     {
         // Populate registries.
         await _services.PopulateRegistriesAsync();
 
         // Import workflow.
-        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync("Scenarios/ImplicitJoins/Workflows/parallel-join.json");
+        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync($"Scenarios/JoinBehaviors/Workflows/join.json");
 
         // Execute.
         var state = await _services.RunWorkflowUntilEndAsync(workflowDefinition.DefinitionId);
@@ -33,7 +33,7 @@ public class ParallelJoinCompletesTests
         var journal = await _services.GetRequiredService<IWorkflowExecutionLogStore>().FindManyAsync(new()
         {
             WorkflowInstanceId = state.Id,
-            ActivityId = "70fc1183cd5800f2",
+            ActivityId = "802725996be1b582",
             EventName = "Completed"
         }, PageArgs.All);
 

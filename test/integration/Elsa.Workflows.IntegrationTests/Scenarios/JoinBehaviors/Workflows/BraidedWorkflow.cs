@@ -2,7 +2,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
 
-namespace Elsa.Workflows.IntegrationTests.Scenarios.ImplicitJoins.Workflows;
+namespace Elsa.Workflows.IntegrationTests.Scenarios.JoinBehaviors.Workflows;
 
 public class BraidedWorkflow : WorkflowBase
 {
@@ -33,18 +33,18 @@ public class BraidedWorkflow : WorkflowBase
 
             Connections =
             {
-                new Connection(writeLine1, writeLine2),
-                new Connection(writeLine1, writeLine3),
+                new(writeLine1, writeLine2),
+                new(writeLine1, writeLine3),
 
-                new Connection(writeLine2, writeLine4),
-                new Connection(writeLine2, writeLine5),
+                new(writeLine2, writeLine4),
+                new(writeLine2, writeLine5),
 
-                new Connection(writeLine3, writeLine5),
-                new Connection(writeLine3, writeLine6),
+                new(writeLine3, writeLine5),
+                new(writeLine3, writeLine6),
 
-                new Connection(writeLine4, writeLine7),
-                new Connection(writeLine5, writeLine7),
-                new Connection(writeLine6, writeLine7),
+                new(writeLine4, writeLine7),
+                new(writeLine5, writeLine7),
+                new(writeLine6, writeLine7),
             }
         };
     }

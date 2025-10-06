@@ -3,6 +3,9 @@ using Elsa.Extensions;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Abstractions;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Contracts;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Models;
+using Elsa.Workflows.Management.Options;
+using JetBrains.Annotations;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Expressions.JavaScript.Providers;
 
