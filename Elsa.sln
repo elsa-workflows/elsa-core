@@ -301,7 +301,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "qa", "qa", "{0478E6EA-DCB2-4667-ADC2-37C62C9C2574}"
 	ProjectSection(SolutionItems) = preProject
 		doc\qa\test-guidelines-collaborators.md = doc\qa\test-guidelines-collaborators.md
-		doc\qa\test-guidelines-integrators.md = doc\qa\test-guidelines-integrators.md
 	EndProjectSection
 EndProject
 Global

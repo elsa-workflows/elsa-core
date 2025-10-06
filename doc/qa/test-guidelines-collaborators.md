@@ -1,306 +1,262 @@
-# Elsa Core — Test Strategy Guidelines for Contributors
+# Elsa Core — Testing Strategy
 
-**Purpose:**
+## Purpose
 
-This document describes recommended testing strategies when contributing features and fixes to the Elsa Workflows project.
-
-It is written for contributors and aims to provide concrete, repeatable patterns you can adopt in unit, integration and component tests to make test execution deterministic, fast, and resilient.
-
-Additionally, it provides a consistent and resilient set of places to assert behavior (e.g., journal, activity execution endpoints, DB queries, events) and guidelines for choosing between them.
+This document is a practical test guideline. It tells you *what* to test, *when* to test it, and *how* to write deterministic, actionable tests using the repository's existing test helpers and patterns.
 
 ---
 
 ## Summary
-The philosophy of the Elsa test strategy can be summarized as:
+The philosophy of testing in Elsa can be summarized as:
 
 ***Whenever a test fails, it should provide a clear direction towards the cause of the problem.***
---
 
-This means that if it does not point directly to the source of the issue, it should take the fewest possible amount of steps to get there.
+Tests should be fast, deterministic, and precise: they should pinpoint the failing subsystem (activity, invoker, persistence, scheduler) with minimal noise. 
 
----
-
-## Goals / Non‑functional requirements
-
-1. **Deterministic tests** — tests should not be flaky, meaning they should produce the same results consistently on subsequent runs.
-2. **Fast feedback** — unit and integration tests should run quickly to support local development workflows and CI.
-3. **Minimal reliance on real delays** — avoid `Task.Delay`, `Thread.Sleep` or real clocks except where unavoidable; prefer event-driven assertions.
-4. **Version alignment** — workflow definition versions and test artifacts must be explicitly linked so tests refer to a specific workflow definition version.
-5. **Failure simulation** — deterministic ways to simulate activity or host failures and assert correct recovery/compensation.
+For contributors, tests are the first line of code review: they must document intended behaviour and prevent regressions.
 
 ---
 
-## High‑level testing pyramid for Elsa
+## High-level testing pyramid
 
-- **Unit tests**: Activity logic, expression evaluators, small helpers, services and providers. In‑process, mocking storage and scheduler. Fast and numerous.
-  - Use **xUnit** with [Moq / NSubstitute] for mocking.
-  - Test activities and small components in isolation.
-  - Use in‑memory stores.
-- **Integration tests**: Core engine components (e.g., workflow invocation, bookmark handling, persistence adapters) with in‑memory or ephemeral databases. Use fake schedulers. Run in CI and locally.
-  - Use [`TestApplicationBuilder`](../../src/common/Elsa.Testing.Shared.Integration/TestApplicationBuilder.cs) to create test hosts with DI overrides.
-  - Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`MigrationTests`](../../test/integration/Elsa.Alterations.IntegrationTests/MigrationTests.cs)).
-  - Use serialized workflow or code-first definitions depending on the amount and scope.
-  - Also, possible to use external tooling like [JTest](https://github.com/nexxbiz/jtest).
-- **Component tests**: Exercises multiple components end to end, e.g. all the way from a REST API endpoint down to the persistence layer, touching everything in between.
-  - Use real DB (local / containerized, ephemeral databases). Run in CI and locally.
-  - Use real components (e.g. [`IWorkflowRuntime`](../../src/modules/Elsa.Workflows.Runtime/Contracts/IWorkflowRuntime.cs), see [`ExecuteWorkflowsTests`](../../test/component/Elsa.Workflows.ComponentTests/Scenarios/ExecuteWorkflows/ExecuteWorkflowsTests.cs)).
-  - Use [`AppComponentTest`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Abstractions/AppComponentTest.cs) with a real persistence provider. 
-  - Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`ExecuteWorkflowsTests`](../../test/component/Elsa.Workflows.ComponentTests/Scenarios/ExecuteWorkflows/ExecuteWorkflowsTests.cs)). 
-  - Assert via DB queries or journal parsing.
-  - Possible to install spies with DI and inspect them in the assertion steps.
-  
+- **Unit tests** — single-class logic (activities, converters, expression evaluators, serializers, service providers). Fast; no persistence.
+- **Integration tests** — multiple Elsa subsystems together (invoker + activities + registries). In-process; may deserialize workflow JSON. Use [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) and [`PopulateRegistriesAsync()`](../../src/common/Elsa.Testing.Shared.Integration/ServiceProviderExtensions.cs) when using existing definitions.
+- **Component tests** — persisted behaviour, journal/instance store assertions, bookmarks/resumption across lifecycle boundaries. Use [`AppComponentTest`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Abstractions/AppComponentTest.cs) to instantiate and [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs) queries for assertions.
+
+Each test layer has distinct goals and clear boundaries — see [**Which parts of Elsa to test**](#which-parts-of-elsa-to-test-and-which-test-types-to-use) for precise mapping of which aspects belong to which layer.
 
 ---
 
-## Aspects to be tested:
-- **Activities**:
-  - Unit test each activity class in isolation.
-    - all configurations and edge cases.
-  - Integration test activities using [`TestApplicationBuilder`](../../src/common/Elsa.Testing.Shared.Integration/TestApplicationBuilder.cs) for less common, tricky scenarios (e.g. [`ForEachTests`](../../test/integration/Elsa.Activities.IntegrationTests/ForEachTests.cs)).
-- **Workflow execution**: 
-  - Test workflow lifecycle, input/output, bookmarks, persistence, and resumption.
-  - Use `RunWorkflowUntilEndAsync` extension method in [`RunWorkflowExtensions`](../../src/common/Elsa.Testing.Shared.Integration/RunWorkflowExtensions.cs) for deterministic execution.
-- **Persistence**: 
-  - Test each [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs) implementation.
-  - Test different storages of variables (Workflow Instance, Memory).
-- **Serialization**: 
-  - Unit test JSON serialization and deserialization of workflow definitions and instances.
-  - Integration test roundtrip of definitions through API.
-- **Triggers:** 
-  - Test triggers for correct scheduling, invocation and resuming of workflows.
-- **API**: 
-  - Test HTTP endpoints for workflow execution, definition management, and instance querying.
+## Quick Start for Contributors
 
+**Before you write a test:**
+1. ✅ Understand what you're testing (see [**Which parts of Elsa to test**](#which-parts-of-elsa-to-test-and-which-test-types-to-use))
+2. ✅ Choose the right test layer (unit vs integration vs component)
+3. ✅ Use existing helpers (don't reinvent - see [**Test Helpers Reference**](#test-helpers-reference-quick-lookup))
 
-## Unit tests
+**5-Minute Checklist:**
+- [ ] Read the relevant section below for your change type:
+    - Changed activity logic? → See [Activities](#activities)
+    - Changed workflow execution? → See [Workflows execution](#workflow-execution-invoker-middleware-bookmarks)
+    - Changed persistence? → See [Persistence & serialization](#persistence--serialization)
+- [ ] Follow steps and code patterns in that section
+- [ ] Run tests locally: `dotnet test`
+- [ ] Verify no flaky behavior (run 10 times: `dotnet test --no-build -- repeat 10`)
 
-Do when testing:
-- Individual activity logic.
-- Small components in isolation.
-- Logic before/after persistence .
-- Logic before/after interactions between components.
-- Expression evaluation.
-- Providers and services (elsa implementations).
+---
 
-## Integration tests
+## Characteristics for testing
 
-Do when:
-- Testing workflow execution with multiple activities.
-- Need to validate persistence, bookmarks, and resumption.
-- Testing core engine components (WorkflowInvoker, Bookmark handling).
+- **Activities:** First-class pluggable units. Each activity implements execution logic and interacts with the [`ActivityExecutionContext`](../../src/modules/Elsa.Workflows.Core/Contexts/ActivityExecutionContext.cs). Many activity tests in the repository use [`RunActivityAsync`](../../src/common/Elsa.Testing.Shared.Integration/RunActivityExtensions.cs) to create the required context and invoke the activity inline.
 
-For component tests, we don't have to register code-first workflows, but we do need to do so explicitly for integration tests when creating the TestApplicationBuilder. For example:
+- **Workflows:** Graphs of activities. A workflow can run synchronously or schedule asynchronous work (bookmarks, timers). When you run a workflow in-process with [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs), the runner will return when synchronous work completes. Some activities set `RunAsynchronously` causing background scheduling — tests need to take care when asserting.
+
+---
+
+## Which parts of Elsa to test, and which test types to use
+
+This section maps Elsa aspects to the exact kinds of tests you should write, with examples and code patterns referencing repository conventions.
+
+### Activities
+
+#### **Unit tests:**
+- Test the activity class logic only (no persistence, no scheduler). Cover configuration permutations and boundary inputs.
+- Use [`TestApplicationBuilder`](../../src/common/Elsa.Testing.Shared.Integration/TestApplicationBuilder.cs) + [`RunActivityAsync`](../../src/common/Elsa.Testing.Shared.Integration/RunActivityExtensions.cs) to obtain an [`ActivityExecutionContext`](../../src/modules/Elsa.Workflows.Core/Contexts/ActivityExecutionContext.cs) and run the activity.
+
+**Example:**
 ```csharp
-_services = new TestApplicationBuilder(testOutputHelper)
-   .WithWorkflowsFromDirectory("Scenarios", "DependencyWorkflows", "Workflows")
-   .Build();
+// Arrange
+var serviceProvider = new TestApplicationBuilder(testOutputHelper)
+    .WithCapturingTextWriter(capturingTextWriter)
+    .Build();
+
+// Act
+var writeLine = new WriteLine("Hello world!");
+await serviceProvider.RunActivityAsync(writeLine);
+
+// Assert
+Assert.Equal("Hello world!", capturingTextWriter.Lines.Single());
 ```
 
-## Component tests
+#### **Integration tests (recommended if activity participates in workflows):**
+- Place the activity inside a minimal workflow definition and run via [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs). Assert outputs/variables and that the activity integrates correctly with preceding/following activities.
+- If activity creates bookmarks or relies on scheduler semantics, integration tests should resume bookmarks via the engine APIs to validate resumption.
 
-Do when:
+Pattern note: [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) returns a [`RunWorkflowResult`](../../src/modules/Elsa.Workflows.Core/Models/RunWorkflowResult.cs) (or equivalent) containing the [`WorkflowInstance`](../../src/modules/Elsa.Workflows.Management/Entities/WorkflowInstance.cs) and output variables when run to completion. 
+Use returned state for deterministic assertions where possible.
 
-## Key constraints & recommended patterns
 
-### 1. Should not be affected by execution times / Not depend on delays unless there is no other way
+### Workflow execution (invoker, middleware, bookmarks)
 
-- **Synchronous execution mode**: Use this for most assertions instead of waiting for background workers.
+#### Unit tests:
+- Rare: low-level pure helpers in the invoker may have unit tests for edge cases. Most invoker behavior requires integration testing.
 
-- **Avoid arbitrary sleeps**: If polling is necessary (e.g. for external system integration), use exponential backoff with short upper bounds and strong invariants (correlation ids) to detect test success quickly.
+#### Integration tests:
+- Use [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) with small workflows to test variables propagation, branch logic (If/ForEach/Parallel), expression evaluation, and `RunAsynchronously` flags.
+- When a workflow schedules async child work (bookmarks), simulate resumption by calling resume APIs.
 
-- **Prefer manual triggers**: For timers or external events, design tests to call the engine's trigger API (e.g. raise signal, post message, call `ResumeBookmark`) rather than waiting for a timer to fire.
 
-- **Async completion waiters**: When invoking workflows through the HTTP `/execute` endpoint (which returns immediately), provide a helper, such as `WaitForCompletionAsync(instanceId)` (example below) that subscribes to completion events. This replaces fragile `Thread.Sleep` patterns and ensures tests only assert once the workflow has actually finished.
+Call the workflow runner to execute a workflow object or a loaded definition. Prefer this when asserting logical flow and outputs.
 
-- **Event-driven assertions**: Subscribe to engine events (WorkflowCompleted, ActivityExecuted, etc.) in tests. Block until the event for the specific instance arrives instead of waiting arbitrary amounts of time.
+```csharp
+var runner = serviceProvider.GetRequiredService<IWorkflowRunner>();
+await serviceProvider.PopulateRegistriesAsync();
+var runResult = await runner.RunAsync(workflow);
+Assert.Equal(WorkflowStatus.Finished, runResult.WorkflowInstance!.Status);
+```
+
+#### Component tests (persistence & resumption):
+- Start a workflow that creates a bookmark. Persisted instance must be found via [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs) after the creation point. Simulate host restart by disposing and rebuilding the service provider (keeping the same persistence store) and resume the bookmark to assert resumption completes.
+
+**Code pattern to resume a bookmark (integration/component):**
+
+```csharp
+// assume instanceId found via RunAsync or correlation id
+await workflowTriggerService.ResumeAsync(instanceId, activityId, input, CancellationToken.None);
+var resumed = await runner.RunAsync(workflowInstance);
+Assert.Equal(WorkflowStatus.Finished, resumed.WorkflowInstance.Status);
+```
+
+### Persistence & Serialization
+
+#### Integration tests:**
+- Import a JSON workflow definition via the same serializers used by the engine (the test helper [`PopulateRegistriesAsync()`](../../src/common/Elsa.Testing.Shared.Integration/ServiceProviderExtensions.cs) demonstrates this pattern). Run the workflow through [`IWorkflowRunner`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) to validate deserialization + execution.
+---
+
+## Test Helpers Reference (Quick Lookup)
+
+| Helper | Purpose | Use When |
+|--------|---------|----------|
+| `TestApplicationBuilder` | Build test service provider | All tests (entry point) |
+| `RunActivityAsync` | Run single activity | Unit testing activities |
+| `IWorkflowRunner.RunAsync` | Execute workflow in-process | Integration tests |
+| `PopulateRegistriesAsync` | Register types for JSON deserialization | Loading JSON workflows |
+| `IWorkflowInstanceStore` | Query persisted instances | Component tests (persistence) |
+| `RunWorkflowUntilEndAsync` | Drive workflow to completion | Complex resumption scenarios |
 
 ---
 
-### Example: Event-driven completion helper
+## Decision helper (what to add — follow in order)
 
-Tests can run workflows using the `RunWorkflowUntilEndAsync` extension method in [`RunWorkflowExtensions`](../../src/common/Elsa.Testing.Shared.Integration/RunWorkflowExtensions.cs) to reliably await for the execution without using `Thread.Sleep` or `Task.Delay`.
+1. **Changed code is a single activity class with no persistence/external calls?** → Unit test only.
+2. **Change touches invoker/scheduler/bookmarks or workflow composition?** → Integration test using [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) and a small workflow. If persistence semantics change, add component tests.
+3. **Change touches persistence/serializers or requires durable evidence (journal, bookmarks)?** → Component tests against [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs).
 
+When in doubt, add the minimal unit tests plus one integration test that reproduces the scenario.
 
-Usage in a test:
+---
+
+## Deterministic patterns to avoid flaky tests
+
+1. **Prefer returned state from [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs).** Always inspect [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) results first — it is deterministic for synchronous workflows.
+2. **Resume bookmarks explicitly.** Do not wait for external schedulers — call the engine's resume/trigger APIs in your test to continue execution.
+3. **Locate instances deterministically.** Use an instance id returned by [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) or attach a `CorrelationId` test variable and query [`IWorkflowInstanceStore.FindByCorrelationIdAsync(...)`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs). Avoid using "latest" queries.
+4. **Use short polling where necessary.** If you must poll the instance store (e.g., testing asynchronous controllers), use a short interval and a deterministic timeout (helper code snippets in examples above).
+
+---
+
+## Failure testing (faults & incidents)
+
+- **Unit test [`Fault`](../../src/modules/Elsa.Workflows.Core/Activities/Fault.cs) activity**: instantiate the [`Fault`](../../src/modules/Elsa.Workflows.Core/Activities/Fault.cs) activity class and assert the expected exception/behavior.
+- **Integration test faulted workflows**: build a workflow that throws and run via [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) — assert [`WorkflowInstance.Status`](../../src/modules/Elsa.Workflows.Management/Entities/WorkflowInstance.cs) == [`Faulted`](../../src/modules/Elsa.Workflows.Core/Enums/WorkflowStatus.cs) on the returned state or via [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs).
+- **Component tests for recovery/resume**: persist a faulted instance (or cause a host restart scenario), run your recovery logic, and assert the final state.
+
+**Tip:** tests that simulate host restart should recreate the service provider but reuse the same persistence store instance (in-memory DB configured at the test scope or repo test fixtures). This proves the engine resumes from persisted state.
+
+---
+
+## Practical test recipes & snippets (copy/paste-ready)
+
+### Unit test (activity) — pattern
 
 ```csharp
-private readonly IServiceProvider _services;
-
-public Tests(ITestOutputHelper testOutputHelper)
-{
-    _services = new TestApplicationBuilder(testOutputHelper)
-        .Build();
-}
-
 [Fact]
-public async Task Test1()
+public async Task MyActivity_WritesExpectedOutput()
 {
-    // Populate registries
-    await _services.PopulateRegistriesAsync();
+    var sp = new TestApplicationBuilder(testOutput).Build();
+    var activity = new MyActivity { Input = "x" };
 
-    // Import workflows
-    await _services.ImportWorkflowDefinitionAsync("Workflows/workflow-1.json");
-    await _services.ImportWorkflowDefinitionAsync("Workflows/workflow-2.json");
+    await sp.RunActivityAsync(activity);
 
-    // Run
-    var workflowState = await _services.RunWorkflowUntilEndAsync("my-workflow");
-    
-    // Assert
-    // .......
+    // assert behavior of activity in isolation
 }
 ```
 
-This extension method ensures assertions only happen once the workflow is complete, making tests both fast and deterministic.
+### Integration test — pattern using [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs)
+
+```csharp
+[Fact]
+public async Task Workflow_With_MyActivity_Completes()
+{
+    var sp = new TestApplicationBuilder(testOutput).Build();
+    await sp.PopulateRegistriesAsync();
+
+    var runner = sp.GetRequiredService<IWorkflowRunner>();
+    var workflow = new MyWorkflowDefinition();
+
+    var result = await runner.RunAsync(workflow);
+
+    Assert.Equal(WorkflowStatus.Finished, result.WorkflowInstance!.Status);
+}
+```
+
+### Component test — pattern asserting persisted state
+
+```csharp
+[Fact]
+public async Task Workflow_Persists_Instance_And_Journal()
+{
+    var sp = new TestApplicationBuilder(testOutput)
+        .UseRealPersistenceForTests()
+        .Build();
+
+    var runner = sp.GetRequiredService<IWorkflowRunner>();
+    var store = sp.GetRequiredService<IWorkflowInstanceStore>();
+
+    var result = await runner.RunAsync(workflow);
+    var instanceId = result.WorkflowInstance!.Id;
+
+    // deterministic lookup: query store until terminal state
+    var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(10);
+    WorkflowInstance? instance = null;
+    while (DateTime.UtcNow < deadline)
+    {
+        instance = await store.FindByIdAsync(instanceId);
+        if (instance is not null && instance.Status is WorkflowStatus.Finished or WorkflowStatus.Faulted)
+            break;
+        await Task.Delay(150);
+    }
+
+    instance.Should().NotBeNull();
+    instance!.Status.Should().Be(WorkflowStatus.Finished);
+}
+```
+---
+
+## FAQ (quick pointers)
+
+**Q: How do I import workflow definitions in tests?**
+A: For JSON-defined workflows use the repo's test integration helpers ([`PopulateRegistriesAsync()`](../../src/common/Elsa.Testing.Shared.Integration/ServiceProviderExtensions.cs) or the test registration helpers in `test/common`). See integration test examples in the test tree.
+
+**Q: Which helper should I use to run a workflow?**
+A: Prefer [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) for in-process deterministic runs. For activities use [`RunActivityAsync`](../../src/common/Elsa.Testing.Shared.Integration/RunActivityExtensions.cs) via [`TestApplicationBuilder`](../../src/common/Elsa.Testing.Shared.Integration/TestApplicationBuilder.cs).
+
+**Q: How do I check persisted journal entries?**
+A: Query [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs) and inspect the persisted journal on the instance. Use deterministic instance id or correlation id to locate the exact instance.
+
+**Q: Do I need a new helper to wait for workflow completion?**
+A: Not yet — the repo provides [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) and integration helpers that cover most scenarios. If you find many duplicated poll loops, open an issue requesting a canonical `WaitForCompletion` helper in `test/shared`.
 
 ---
 
-###  Importing workflow definitions for testing workflows
+## Appendix — examples in the repository (where to look)
 
-Two main patterns:
+Search the `test/` tree for examples that follow the above patterns:
 
-**A. Code‑first registration (recommended for component tests)**
-- Register workflows as code inside test setup. This is fast and avoids serialization roundtrips.
-- Good for tests that validate runtime behavior without involving persistence or designer serialization.
-- Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`ExecuteWorkflowsTests`](../../test/component/Elsa.Workflows.ComponentTests/Scenarios/ExecuteWorkflows/ExecuteWorkflowsTests.cs) for an example).
-
-**B. Serialized definitions (recommended for integration tests)**
-- Place workflow definitions in a `Workflows/` folder located in the root of the test (see [`MigrationTests`](../../test/integration/Elsa.Alterations.IntegrationTests/MigrationTests.cs) for an example).
-
-**Which to use?**
-- Integration tests: use serialized JSON workflows.
-- Component tests: code-first definitions or workflows created via designer and exported to JSON to validate persistence, designer output and versioning behavior.
----
+- Unit activity examples: `test/unit/*` (look for [`RunActivityAsync`](../../src/common/Elsa.Testing.Shared.Integration/RunActivityExtensions.cs) usage).
+- Integration workflow examples: `test/integration/*` (look for [`PopulateRegistriesAsync()`](../../src/common/Elsa.Testing.Shared.Integration/ServiceProviderExtensions.cs) and [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) usage).
+- Component scenarios exercising persistence: `test/component/*` (look for [`AppComponentTest`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Abstractions/AppComponentTest.cs) scaffolds and [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs) assertions).
 
 
 
-### 5. Managing test and workflow definition versions
-
-- **Source control the workflow artifacts** and apply semantic versioning to their filenames or metadata (e.g. `payment-process.v1.2.0.json`).
-- **Immutable artifacts**: Do not overwrite a published artifact used by tests. If a workflow changes, publish a new version and update tests to point to the new artifact.
-- **Automate snapshots**: On CI, capture the actual deployed workflow definition version (ID + version) and record it with test results for traceability.
-
-### 6. Avoiding repetition
-
-**Test lifecycle template (common for integration tests)**
-1. **Provision** the environment (in‑process host or containerized test environment).
-2. **Reset** persistence (drop / recreate DB schema or use a clean DB instance).
-3. **Import/Publish** required workflow definitions.
-4. **Register** test hooks (e.g. fake scheduler, activity test doubles, callback endpoints).
-5. **Invoke** the workflow via the API, direct invoker or trigger.
-6. **Trigger** bookmarks manually if needed.
-7. **Assert** via journal/events/DB/state.
-8. **Tear down** environment and collect artifacts (logs, DB snapshots) on failures.
-
-**Reusable code artifacts**
-- `TestHostFactory`: create and configure test hosts (DI container, fake services).
-- `WorkflowDefinitionLoader`: loads definitions from disk, validates versions, and publishes them.
-- `DeterministicScheduler`: test scheduler with `TriggerOnce(correlationId)`.
-- `ActivityTestProbe`: an in‑process activity wrapper that captures inputs/outputs and emits structured events to assert against.
-- JSON manifest schema for suite imports.
-
-Include these helpers in a shared test utilities NuGet/package so all test projects can reuse them and reduce duplication.
-
-### 7. Assertion targets and alternatives
-
-#### Journal / Activity Execution Endpoints
-
-**Pros**
-- Journal provides a chronological, human‑readable trace of what happened and is close to production observability.
-- Activity execution endpoints (if available) allow real API surface testing and validate telemetry and audit paths.
-
-**Cons**
-- Journal may be high volume and require parsing to find relevant entries; tests risk being brittle if journal format changes.
-- Accessing activity endpoints over HTTP introduces network flakiness in E2E tests.
-
-#### Alternatives / Complementary options
-- **Direct DB queries**: Query the workflow instance table, bookmarks, and activity logs. Stronger for deterministic assertions about state (e.g. `WorkflowInstance.Status == Completed`).
-- **Event stream / notifications**: Subscribe to internal events (in tests) via the mediator or a test `INotificationHandler` to assert lifecycle events as they happen in real time.
-- **Activity test probes**: Instrument activities in tests to emit structured markers (test hooks) that are easier to assert than raw journal text.
-
-**Recommendations:** 
-- For unit and component tests, assert on in‑process events and test probes. For integration/E2E tests assert on durable state in the DB and validated events (or journal), and use correlation ids to make queries deterministic. Avoid relying solely on formatted journal lines.
-- Always propagate and assert on correlation IDs attached to workflow instances and events to locate the exact instance you need.
-
-### 8. Execute endpoint vs HTTP activity for tests
-
-- **Testing activities in isolation**: Unit test each activity class by constructing an `ActivityContext` and invoking `ExecuteAsync()` or using an `ActivityTestProbe`. This is the fastest and most isolated option.
-
-- **Testing activities in workflow**: Component tests should compose small workflows in code and run them through the `WorkflowInvoker` to validate end‑to‑end semantics (including variable passing, bookmarks, parallelism). Keep these tests in‑process to avoid network boundaries.
-
-- **Testing via HTTP**: Use HTTP endpoint activities for integration and true E2E testing of the server host, middleware and serialization. These tests are slower and belong in the E2E suite. There are two possibilities: 
-  - Workflow with the desired activity and a connected entry HTTP endpoint activity;
-  - `/execute` endpoint that runs the workflow directly, in this case, the HTTP endpoint activity is not necessary.
-
-**Recommendation:** Unit test activities directly. Integration test the activity inside workflows with the in‑process invoker. Reserve HTTP‑based tests for integrations and full server behavior validation.
-
-### 9. How to test failures (fail activity, missing instance, etc.)
-
-- **Explicit fail activities**: Unit test fail activities and assert they raise the expected error code and cause the workflow instance to transition to the appropriate state (e.g. Faulted). In integration tests, run the workflow to the failure point synchronously where possible and assert instance state.
-
-- **No workflow instance returned / missing instance**:
-    - Use correlation IDs passed at invocation time. The engine should return an `instanceId` or `correlationId` when starting. Tests should persist that id and query the instance store using it rather than using `GetLatest` semantics.
-    - If there are no guaranteed instance returns, wrap invocation in a test helper that extracts and returns the created instance id from either the API response, journal event, or DB entry.
-
-- **Correlated queries vs GetLatest**: Avoid `GetLatest` in tests because it is non‑deterministic in parallel runs. Use correlation ids, explicit instance IDs, or filters (workflow definition id + start time + unique test tag) to locate the exact instance.
-
-- **Simulating host failures**: In integration tests, simulate crashes by killing the host process/container mid‑execution and restarting it to validate persistence and resume semantics. Use persistent DB so state survives host restart.
-
-### 10. Avoid instance ambiguity
-
-- **Tag instances on creation**: Allow tests to send an explicit `TestCorrelationId` or `TestTag` as part of workflow input/metadata. Persist this tag to the instance record. Use it to query the DB deterministically.
-
-- **Return the instance id on start**: Ensure test harness captures the created instance id from the start API or in‑process invoker and uses that id for all subsequent queries.
-
-### 11. Consistent execution environment
-
-- **Deterministic defaults**: For tests, use known configuration values (e.g. `MaxRetries=0`, `ShortCircuitLongRunning=true`) to eliminate production variability.
-- **Isolated DB per test process**: Use ephemeral DBs (unique DB name per test run) to avoid cross‑test contamination.
-- **Artifact collection**: On failure, collect logs, DB snapshot and exported journal to help triage flakiness.
-
----
-
-
-
-## Failure injection and resilience testing
-
-- **Deterministic fault injection**: provide test stubs for activities that throw predictable exceptions on demand. Use configuration flags or special test input to trigger them.
-- **Host process kill**: in containerized tests, kill the host midway (Docker/kill or stop container) and restart to verify persistence/resumption.
-- **Network partitions**: simulate by blocking network connections to DB/broker in the test environment to ensure graceful failure handling.
-
----
-
-## What to deliver in the repository
-
-- `tests/test-utilities/` project with common helpers (TestHostFactory, DeterministicScheduler, Test probes)
-- `tests/definitions/` with versioned workflow artifacts
-- `tests/manifests/` for suites referencing definitions and versions
-- `tests/ci/docker-compose.yml` and `tests/ci/k8s/` manifests for reproducible integration/E2E runs
-- Example tests showing patterns:
-    - Unit test for `HttpRequestActivity` (activity isolation)
-    - Integration test for basic workflow (deterministic scheduler)
-    - E2E test that deploys a host in Docker and asserts via DB queries and journal
-
----
-
-## Next steps / TODOs for the team
-
-1. **Increase** unit test coverage of existing code using these patterns.
-2. **Add `IDeterministicScheduler` abstractions** and implement test doubles.
-3. **Create `tests/test-utilities` project** and convert a couple of existing tests to use it as examples.
-4. **Define manifest schema** and commit a couple of versioned workflow definitions to `tests/definitions/`.
-5. **Add one CI integration job** that uses Testcontainers (or similar) to run the integration suite against popular db providers (MySql, Postgres and Mongo, for example).
-6. **Add telemetry and event collectors** to support in‑process assertions (easier than parsing journal text).
----
-
-## Appendix: Quick checklist for writing a new test
-
-- [ ] Will this be a unit, integration or E2E test? Choose minimal scope.
-- [ ] Can we avoid real time? If yes, use fake trigger.
-- [ ] Will the test load a workflow definition artifact? Pin its version in the manifest.
-- [ ] Will the test depend on DB state? Use a clean DB instance per test run.
-- [ ] Use correlation ids for all invocations.
-- [ ] Assert using deterministic state (instance id, DB record, or event) rather than `GetLatest`.
-- [ ] On failure, capture logs and DB snapshot for diagnosis.
-
----
 
