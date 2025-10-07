@@ -4,10 +4,20 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - 'main'
+      - 'bug/*'
+      - 'perf/*'
+      - 'patch/*'
+      - 'feat/*'
+      - 'enh/*'
+      - 'rc/*'
+      - 'develop/*'
+      - 'codex/*'
   pull_request:
     branches:
-      - main
+      - 'main'
+      - 'develop/*'
+      - 'patch/*'
   release:
     types: [prereleased, published]
 
