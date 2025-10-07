@@ -9,6 +9,12 @@
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <CollectCoverage Condition="'$(CollectCoverage)' == ''">true</CollectCoverage>
+        <CoverletOutputFormat Condition="'$(CoverletOutputFormat)' == ''">cobertura</CoverletOutputFormat>
+        <CoverletOutput Condition="'$(CoverletOutput)' == ''">$(MSBuildThisFileDirectory)../artifacts/coverage/$(MSBuildProjectName)/coverage</CoverletOutput>
+        <Threshold Condition="'$(Threshold)' == ''">10</Threshold>
+        <ThresholdType Condition="'$(ThresholdType)' == ''">line</ThresholdType>
+        <ThresholdStat Condition="'$(ThresholdStat)' == ''">total</ThresholdStat>
     </PropertyGroup>
 
     <ItemGroup>
@@ -17,7 +23,7 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk"/>
         <PackageReference Include="Moq"/>
         <PackageReference Include="NSubstitute"/>
-        <PackageReference Include="coverlet.collector" PrivateAssets="all"/>
+        <PackageReference Include="coverlet.msbuild" Version="6.0.0" PrivateAssets="all"/>
         <PackageReference Include="xunit"/>
         <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all"/>
     </ItemGroup>
