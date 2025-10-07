@@ -10,11 +10,14 @@
         <IsTestProject>true</IsTestProject>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
         <CollectCoverage Condition="'$(CollectCoverage)' == ''">true</CollectCoverage>
-        <CoverletOutputFormat Condition="'$(CoverletOutputFormat)' == ''">cobertura</CoverletOutputFormat>
+        <CoverletOutputFormat Condition="'$(CoverletOutputFormat)' == ''">cobertura,lcov,opencover</CoverletOutputFormat>
         <CoverletOutput Condition="'$(CoverletOutput)' == ''">$(MSBuildThisFileDirectory)../artifacts/coverage/$(MSBuildProjectName)/coverage</CoverletOutput>
         <Threshold Condition="'$(Threshold)' == ''">10</Threshold>
         <ThresholdType Condition="'$(ThresholdType)' == ''">line</ThresholdType>
         <ThresholdStat Condition="'$(ThresholdStat)' == ''">total</ThresholdStat>
+        <Exclude>
+            [*Elsa.Testing.Shared*]*
+        </Exclude>
     </PropertyGroup>
 
     <ItemGroup>
