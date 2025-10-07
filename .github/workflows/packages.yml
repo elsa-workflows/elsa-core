@@ -16,8 +16,14 @@ on:
   pull_request:
     branches:
       - 'main'
-      - 'develop/*'
+      - 'bug/*'
+      - 'perf/*'
       - 'patch/*'
+      - 'feat/*'
+      - 'enh/*'
+      - 'rc/*'
+      - 'develop/*'
+      - 'codex/*'
   release:
     types: [prereleased, published]
 
@@ -31,6 +37,7 @@ jobs:
     name: Test with coverage
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    if: ${{ github.event_name == 'pull_request' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
