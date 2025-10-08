@@ -21,7 +21,7 @@ public class SetVariableTests
     }
 
     [Fact]
-    public async Task Should_Not_Throw_When_Variable_Is_Null()
+    public async Task Should_Throw_When_Variable_Is_Null()
     {
         // Arrange
         var setVariable = new SetVariable<string>(null!, new Input<string>("test value"));
