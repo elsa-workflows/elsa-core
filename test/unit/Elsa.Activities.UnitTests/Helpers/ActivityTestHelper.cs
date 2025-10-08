@@ -25,7 +25,7 @@ public static class ActivityTestHelper
     /// evaluating inputs, and executing the activity.
     /// </summary>
     /// <param name="activity">The activity to execute</param>
-    /// <returns>Task representing the async execution</returns>
+    /// <returns>The ActivityExecutionContext used for execution</returns>
     public static async Task<ActivityExecutionContext> ExecuteActivityAsync(IActivity activity)
     {
         var context = CreateMinimalActivityExecutionContext(activity, out var serviceProvider);
@@ -35,6 +35,7 @@ public static class ActivityTestHelper
         await SetupInputValuesInMemoryAsync(activity, context, serviceProvider);
         await context.EvaluateInputPropertiesAsync();
         await activity.ExecuteAsync(context);
+        
         return context;
     }
 
