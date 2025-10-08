@@ -29,6 +29,7 @@
     <PackageVersion Include="Confluent.Kafka" Version="2.10.0"/>
     <PackageVersion Include="Confluent.SchemaRegistry.Serdes.Avro" Version="2.10.0"/>
     <PackageVersion Include="coverlet.collector" Version="6.0.4" PrivateAssets="All"/>
+    <PackageVersion Include="coverlet.msbuild" Version="6.0.0" PrivateAssets="All"/>
     <PackageVersion Include="Cronos" Version="0.11.0"/>
     <PackageVersion Include="Dapper" Version="2.1.66"/>
     <PackageVersion Include="Datadog.Trace.Bundle" Version="3.16.0"/>
