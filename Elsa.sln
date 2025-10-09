@@ -62,8 +62,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unit", "unit", "{18453B51-25EB-4317-A4B3-B10518252E92}"
+	ProjectSection(SolutionItems) = preProject
+		test\unit\Directory.Build.props = test\unit\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integration", "integration", "{1B8D5897-902E-4632-8698-E89CAF3DDF54}"
+	ProjectSection(SolutionItems) = preProject
+		test\integration\Directory.Build.props = test\integration\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "component", "component", "{08B41FFA-CEE3-46A7-B5C0-3EB65D37A16C}"
 	ProjectSection(SolutionItems) = preProject
@@ -297,6 +303,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.SqlServer", "src\modules\Elsa.Persistence.EFCore.SqlServer\Elsa.Persistence.EFCore.SqlServer.csproj", "{698051E0-7981-43D4-B7BA-F3D8B65004A1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.IntegrationTests", "test\integration\Elsa.Alterations.IntegrationTests\Elsa.Alterations.IntegrationTests.csproj", "{51C39AF0-4F41-4FC1-AEBD-D1494407D3F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.UnitTests", "test\unit\Elsa.Activities.UnitTests\Elsa.Activities.UnitTests.csproj", "{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "qa", "qa", "{0478E6EA-DCB2-4667-ADC2-37C62C9C2574}"
 	ProjectSection(SolutionItems) = preProject
@@ -607,6 +615,10 @@ Global
 		{51C39AF0-4F41-4FC1-AEBD-D1494407D3F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{51C39AF0-4F41-4FC1-AEBD-D1494407D3F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{51C39AF0-4F41-4FC1-AEBD-D1494407D3F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -633,7 +645,6 @@ Global
 		{5948B0A5-7873-4DBB-BA03-EB283D6EA91B} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{B08B4E00-C2AB-48F3-8389-449F42AEF179} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{28818676-F6AF-4203-8B65-BD33A50CB9A2} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
-		{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{29638A67-E79F-44FE-AC05-DA499EBA929E} = {2F3E1026-5054-4E1F-899B-F1A7F70F9912}
 		{A516931E-EDBB-4FC3-BB94-1BB824D5BC61} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{BBCE36D1-6767-4ED1-B3E8-84D2567A962A} = {A516931E-EDBB-4FC3-BB94-1BB824D5BC61}
@@ -700,6 +711,8 @@ Global
 		{71D5178D-2490-4681-8621-BF8DED964F33} = {3D0A6C71-4B96-411B-80DB-DDFAFF77C748}
 		{698051E0-7981-43D4-B7BA-F3D8B65004A1} = {3D0A6C71-4B96-411B-80DB-DDFAFF77C748}
 		{51C39AF0-4F41-4FC1-AEBD-D1494407D3F9} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
+		{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95} = {18453B51-25EB-4317-A4B3-B10518252E92}
+		{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{0478E6EA-DCB2-4667-ADC2-37C62C9C2574} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

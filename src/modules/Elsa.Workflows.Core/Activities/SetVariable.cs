@@ -89,7 +89,7 @@ public class SetVariable : CodeActivity
     /// The variable to assign the value to.
     /// </summary>
     [Input(Description = "The variable to assign the value to.")]
-    public Variable Variable { get; set; } = null!;
+    public Variable? Variable { get; set; }
 
     /// <summary>
     /// The value to assign.
@@ -101,9 +101,13 @@ public class SetVariable : CodeActivity
     protected override void Execute(ActivityExecutionContext context)
     {
         // Always refer to the variable by ID to ensure that the variable is resolved from the correct scope.
-        var variableId = Variable.Id; 
+        var variableId = Variable?.Id; 
         var variable = context.ExpressionExecutionContext.EnumerateVariablesInScope().FirstOrDefault(x => x.Id == variableId);
+     
+        if (variable == null)
+            throw new InvalidOperationException($"Variable '{variableId}' not found.");
+        
         var value = context.Get(Value);
-        variable?.Set(context, value);
+        variable.Set(context, value);
     }
 }
