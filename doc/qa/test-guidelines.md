@@ -20,7 +20,7 @@ For contributors, tests are the first line of code review: they must document in
 ## High-level testing pyramid
 
 - **Unit tests** — single-class logic (activities, converters, expression evaluators, serializers, service providers). Fast; no persistence.
-- **Integration tests** — multiple Elsa subsystems together (invoker + activities + registries). In-process; may deserialize workflow JSON. Use [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) and [`PopulateRegistriesAsync()`](../../src/common/Elsa.Testing.Shared.Integration/ServiceProviderExtensions.cs) when using existing definitions.
+- **Integration tests** — multiple Elsa subsystems together (e.g., invoker + activities + registries). In-process; may deserialize workflow JSON. Use [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) and [`PopulateRegistriesAsync()`](../../src/common/Elsa.Testing.Shared.Integration/ServiceProviderExtensions.cs) when using existing definitions.
 - **Component tests** — persisted behaviour, journal/instance store assertions, bookmarks/resumption across lifecycle boundaries. Use [`AppComponentTest`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Abstractions/AppComponentTest.cs) to instantiate and [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs) queries for assertions.
 
 Each test layer has distinct goals and clear boundaries — see [**Which parts of Elsa to test**](#which-parts-of-elsa-to-test-and-which-test-types-to-use) for precise mapping of which aspects belong to which layer.
