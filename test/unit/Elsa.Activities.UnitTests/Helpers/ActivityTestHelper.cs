@@ -26,7 +26,7 @@ public static class ActivityTestHelper
     /// evaluating inputs, and executing the activity.
     /// </summary>
     /// <param name="activity">The activity to execute</param>
-    /// <param name="configureServices"></param>
+    /// <param name="configureServices">An optional action to configure the service collection for dependency injection during activity execution.</param>
     /// <returns>The ActivityExecutionContext used for execution</returns>
     public static async Task<ActivityExecutionContext> ExecuteActivityAsync(IActivity activity, Action<IServiceCollection>? configureServices = null)
     {
