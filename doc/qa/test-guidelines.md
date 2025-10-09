@@ -11,7 +11,7 @@ The philosophy of testing in Elsa can be summarized as:
 
 ***Whenever a test fails, it should provide a clear direction towards the cause of the problem.***
 
-Tests should be fast, deterministic, and precise: they should pinpoint the failing subsystem (activity, invoker, persistence, scheduler) with minimal noise. 
+Tests should be fast, deterministic, and precise: they should pinpoint the failing subsystem (activity, invoker, persistence, scheduler, etc.) with minimal noise. 
 
 For contributors, tests are the first line of code review: they must document intended behaviour and prevent regressions.
 
