@@ -31,6 +31,22 @@ public class ForkDecisionJoinTests
         await RunAndAssert("fork-decision-join-waitall.json", ["A", "C", "B", "D"]);
     }
     
+    [Fact(DisplayName = "An implicit join from the True and False branches should execute because the join mode is None and by default, all active branches are joined.")]
+    public async Task ImplicitJoinFromBranchesShouldExecute()
+    {
+        // Populate registries.
+        await _services.PopulateRegistriesAsync();
+
+        // Import workflow.
+        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync($"Scenarios/JoinBehaviors/Workflows/decision-merge-join-none.json");
+
+        // Execute.
+        var workflowState = await _services.RunWorkflowUntilEndAsync(workflowDefinition.DefinitionId);
+        
+        // Assert.
+        Assert.Equal(WorkflowStatus.Finished, workflowState.Status);
+    }
+    
     private async Task RunAndAssert(string workflowFileName, string[] expectedLines)
     {
         // Populate registries.

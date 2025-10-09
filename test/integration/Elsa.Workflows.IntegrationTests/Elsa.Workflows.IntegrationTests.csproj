@@ -32,5 +32,8 @@
         <None Update="Scenarios\JoinBehaviors\Workflows\fork-decision-join-waitall.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="Scenarios\JoinBehaviors\Workflows\decision-merge-join-none.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>
