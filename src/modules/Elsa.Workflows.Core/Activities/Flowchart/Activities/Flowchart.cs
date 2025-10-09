@@ -173,8 +173,8 @@ public class Flowchart : Container
         // Schedule the outbound activities
         var flowGraph = GetFlowGraph(flowchartContext);
         var flowScope = GetFlowScope(flowchartContext);
-        var completedActivityExcecutedByBackwardConnection = completedActivityContext.ActivityInput.GetValueOrDefault<bool>(BackwardConnectionActivityInput);
-        var hasScheduledActivity = await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, completedActivity, outcomes, completedActivityExcecutedByBackwardConnection);
+        var completedActivityExecutedByBackwardConnection = completedActivityContext.ActivityInput.GetValueOrDefault<bool>(BackwardConnectionActivityInput);
+        var hasScheduledActivity = await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, completedActivity, outcomes, completedActivityExecutedByBackwardConnection);
 
         // If there are not any outbound connections, complete the flowchart activity if there is no other pending work.
         if (!hasScheduledActivity)
@@ -211,15 +211,23 @@ public class Flowchart : Container
         {
             flowScope.RegisterActivityVisit(activity);
         }
+        
+        var outboundConnections = flowGraph.GetOutboundConnections(activity);
 
-        // Process each outbound connection from the current activity
-        foreach (var outboundConnection in flowGraph.GetOutboundConnections(activity))
+        // Register the outbound connections as visited.
+        foreach (var outboundConnection in outboundConnections)
         {
             var connectionFollowed = outcomes.Names.Contains(outboundConnection.Source.Port);
             flowScope.RegisterConnectionVisit(outboundConnection, connectionFollowed);
+        }
+
+        // Process each outbound connection from the current activity
+        foreach (var outboundConnection in outboundConnections)
+        {
+            var connectionFollowed = flowScope.GetConnectionLastVisitFollowed(outboundConnection);
             
             if(!connectionFollowed)
-                continue; // Skip if connection was not followed.
+                continue; // Skip if the connection was not followed.
             
             var outboundActivity = outboundConnection.Target.Activity;
 
@@ -280,11 +288,9 @@ public class Flowchart : Container
             await flowchartContext.ScheduleActivityAsync(outboundActivity, OnChildCompletedAsync);
             return true;
         }
-        else
-        {
-            // Propagate skipped connections by scheduling with Outcomes.Empty
-            return await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, outboundActivity, Outcomes.Empty);
-        }
+
+        // Propagate skipped connections by scheduling with Outcomes.Empty
+        return await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, outboundActivity, Outcomes.Empty);
     }
 
     /// <summary>
