@@ -26,6 +26,7 @@ public static class ActivityTestHelper
     /// evaluating inputs, and executing the activity.
     /// </summary>
     /// <param name="activity">The activity to execute</param>
+    /// <param name="configureServices"></param>
     /// <returns>The ActivityExecutionContext used for execution</returns>
     public static async Task<ActivityExecutionContext> ExecuteActivityAsync(IActivity activity, Action<IServiceCollection>? configureServices = null)
     {
@@ -110,7 +111,7 @@ public static class ActivityTestHelper
         var activityType = activity.GetType();
         var variableProperties = activityType.GetProperties()
             .Where(p => p.PropertyType.IsGenericType &&
-                        p.PropertyType.BaseType == typeof(Variable))
+                        p.PropertyType.GetGenericTypeDefinition() == typeof(Variable<>))
             .ToList();
 
         foreach (var variable in variableProperties.Select(property => (Variable)property.GetValue(activity)!))
