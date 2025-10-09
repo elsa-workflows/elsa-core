@@ -57,7 +57,6 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
 
         var activityDescriptor = await activityDescriber.DescribeActivityAsync(activityType, cancellationToken);
 
-
         Add(activityDescriptor, _activityDescriptors, _manualActivityDescriptors);
         _manualActivityDescriptors.Add(activityDescriptor);
     }
