@@ -8,6 +8,7 @@ using Elsa.Workflows.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
+
 public static partial class ActivityExecutionContextExtensions
 {
     /// <summary>
@@ -17,11 +18,14 @@ public static partial class ActivityExecutionContextExtensions
     {
         var activityDescriptor = context.ActivityDescriptor;
         var inputDescriptors = activityDescriptor.Inputs.Where(x => x.AutoEvaluate).ToList();
+
         // Evaluate inputs.
         foreach (var inputDescriptor in inputDescriptors)
             await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
+
         context.SetHasEvaluatedProperties();
     }
+
     /// <summary>
     /// Evaluates the specified input property of the activity.
     /// </summary>
@@ -31,6 +35,7 @@ public static partial class ActivityExecutionContextExtensions
         var input = await EvaluateInputPropertyAsync(context, inputName);
         return input.ConvertTo<T>();
     }
+
     /// <summary>
     /// Evaluates a specific input property of the activity.
     /// </summary>
@@ -40,10 +45,13 @@ public static partial class ActivityExecutionContextExtensions
         var activityRegistryLookup = context.GetRequiredService<IActivityRegistryLookupService>();
         var activityDescriptor = await activityRegistryLookup.FindAsync(activity.Type) ?? throw new Exception("Activity descriptor not found");
         var inputDescriptor = activityDescriptor.GetWrappedInputPropertyDescriptor(activity, inputName);
+
         if (inputDescriptor == null)
             throw new Exception($"No input with name {inputName} could be found");
+
         return await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
     }
+
     /// <summary>
     /// Evaluates the specified input and sets the result in the activity execution context's memory space.
     /// </summary>
@@ -59,7 +67,7 @@ public static partial class ActivityExecutionContextExtensions
         memoryBlockReference.Set(context, value);
         return value;
     }
-
+    
     private static async Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, ActivityDescriptor activityDescriptor, InputDescriptor inputDescriptor)
     {
         try
@@ -71,7 +79,7 @@ public static partial class ActivityExecutionContextExtensions
             throw new InputEvaluationException(inputDescriptor.Name, $"Failed to evaluate activity input '{inputDescriptor.Name}'", e);
         }
     }
-
+    
     private static async Task<object?> EvaluateInputPropertyCoreAsync(this ActivityExecutionContext context, ActivityDescriptor activityDescriptor, InputDescriptor inputDescriptor)
     {
         var activity = context.Activity;
@@ -79,9 +87,11 @@ public static partial class ActivityExecutionContextExtensions
         var value = defaultValue;
         var input = inputDescriptor.ValueGetter(activity);
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
+
         if (inputDescriptor.IsWrapped)
         {
             var wrappedInput = (Input?)input;
+
             if (defaultValue != null && wrappedInput == null)
             {
                 var typedInput = typeof(Input<>).MakeGenericType(inputDescriptor.Type);
@@ -97,6 +107,7 @@ public static partial class ActivityExecutionContextExtensions
                 var expressionEvaluator = context.GetRequiredService<IExpressionEvaluator>();
                 var expressionExecutionContext = context.ExpressionExecutionContext;
                 var inputEvaluatorType = inputDescriptor.EvaluatorType ?? typeof(DefaultActivityInputEvaluator);
+
                 if (wrappedInput?.Expression != null)
                 {
                     var inputEvaluator = (IActivityInputEvaluator)context.GetRequiredService(inputEvaluatorType);
@@ -104,7 +115,9 @@ public static partial class ActivityExecutionContextExtensions
                     value = await inputEvaluator.EvaluateAsync(inputEvaluatorContext);
                 }
             }
+
             var memoryReference = wrappedInput?.MemoryBlockReference();
+
             if (memoryReference != null)
             {
                 // When input is created from an activity provider, there may be no memory block reference ID.
@@ -119,7 +132,9 @@ public static partial class ActivityExecutionContextExtensions
         {
             value = input;
         }
+
         await StoreInputValueAsync(context, inputDescriptor, value!);
+
         return value;
     }
     
@@ -136,6 +151,7 @@ public static partial class ActivityExecutionContextExtensions
             // var filterResult = await manager.RunFiltersAsync(filterContext);
             context.ActivityState[inputDescriptor.Name] = value;
         }
+
         return Task.CompletedTask;
     }
 }

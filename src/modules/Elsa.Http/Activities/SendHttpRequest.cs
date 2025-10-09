@@ -1,7 +1,9 @@
 using System.Runtime.CompilerServices;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
+
 namespace Elsa.Http;
+
 /// <summary>
 /// Send an HTTP request.
 /// </summary>
@@ -12,6 +14,7 @@ public class SendHttpRequest : SendHttpRequestBase
     public SendHttpRequest([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
+
     /// <summary>
     /// A list of expected status codes to handle and the corresponding activity to execute when the status code matches.
     /// </summary>
@@ -20,17 +23,19 @@ public class SendHttpRequest : SendHttpRequestBase
         UIHint = "http-status-codes"
     )]
     public ICollection<HttpStatusCodeCase> ExpectedStatusCodes { get; set; } = new List<HttpStatusCodeCase>();
+
     /// <summary>
     /// The activity to execute when the HTTP status code does not match any of the expected status codes.
     /// </summary>
     [Port]
     public IActivity? UnmatchedStatusCode { get; set; }
+
     /// <summary>
     /// The activity to execute when the HTTP request fails to connect.
     /// </summary>
     [Port]
     public IActivity? FailedToConnect { get; set; }
-
+    
     /// <summary>
     /// The activity to execute when the HTTP request times out.
     /// </summary>
@@ -44,18 +49,22 @@ public class SendHttpRequest : SendHttpRequestBase
         var statusCode = (int)response.StatusCode;
         var matchingCase = expectedStatusCodes.FirstOrDefault(x => x.StatusCode == statusCode);
         var activity = matchingCase != null ? matchingCase.Activity : UnmatchedStatusCode;
+
         await context.ScheduleActivityAsync(activity, OnChildActivityCompletedAsync);
     }
+
     /// <inheritdoc />
     protected override async ValueTask HandleRequestExceptionAsync(ActivityExecutionContext context, HttpRequestException exception)
     {
         await context.ScheduleActivityAsync(FailedToConnect, OnChildActivityCompletedAsync);
     }
+
     /// <inheritdoc />
     protected override async ValueTask HandleTaskCanceledExceptionAsync(ActivityExecutionContext context, TaskCanceledException exception)
     {
         await context.ScheduleActivityAsync(Timeout, OnChildActivityCompletedAsync);
     }
+
     private async ValueTask OnChildActivityCompletedAsync(ActivityCompletedContext context)
     {
         await context.TargetContext.CompleteActivityAsync();
