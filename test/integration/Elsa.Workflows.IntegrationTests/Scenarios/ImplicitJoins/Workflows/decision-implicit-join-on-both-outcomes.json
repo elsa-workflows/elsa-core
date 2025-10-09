@@ -1,0 +1,115 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "e8e53204f45ca599",
+  "definitionId": "b8c92c080faf734f",
+  "name": "Decision Implicit Join On Both Outcomes",
+  "createdAt": "2025-10-09T12:06:51.388915\u002B00:00",
+  "version": 1,
+  "toolVersion": "3.6.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": false,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "990d07168c5223de",
+    "nodeId": "Workflow1:990d07168c5223de",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "text": null,
+        "id": "36874900ac3c0b3e",
+        "nodeId": "Workflow1:990d07168c5223de:36874900ac3c0b3e",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 1.7409133911132812,
+              "y": -481.0423583984375
+            },
+            "size": {
+              "width": 159.6171875,
+              "height": 67.9765625
+            }
+          }
+        }
+      },
+      {
+        "condition": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "JavaScript",
+            "value": "true"
+          }
+        },
+        "id": "da8f7fd55383b02a",
+        "nodeId": "Workflow1:990d07168c5223de:da8f7fd55383b02a",
+        "name": "FlowDecision1",
+        "type": "Elsa.FlowDecision",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -300,
+              "y": -480
+            },
+            "size": {
+              "width": 149.84375,
+              "height": 67.9765625
+            }
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": [
+      {
+        "source": {
+          "activity": "da8f7fd55383b02a",
+          "port": "False"
+        },
+        "target": {
+          "activity": "36874900ac3c0b3e",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "da8f7fd55383b02a",
+          "port": "True"
+        },
+        "target": {
+          "activity": "36874900ac3c0b3e",
+          "port": "In"
+        },
+        "vertices": []
+      }
+    ]
+  }
+}

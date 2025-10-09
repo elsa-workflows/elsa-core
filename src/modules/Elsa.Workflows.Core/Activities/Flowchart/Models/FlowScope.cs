@@ -37,7 +37,7 @@ public class FlowScope
     /// </summary>
     /// <param name="activity">The activity to check.</param>
     /// <returns>The visit count of the activity.</returns>
-    private long GetActivityVisitCount(IActivity activity) => ActivitiesVisitCount.TryGetValue(activity.Id, out var count) ? count : 0;
+    private long GetActivityVisitCount(IActivity activity) => ActivitiesVisitCount.GetValueOrDefault(activity.Id, 0);
 
     /// <summary>
     /// Registers a visit to the specified connection and records whether it was followed.
@@ -46,7 +46,7 @@ public class FlowScope
     /// <param name="followed">Indicates whether the connection was followed.</param>
     public void RegisterConnectionVisit(Connection connection, bool followed)
     {
-        string connectionId = connection.ToString();
+        var connectionId = connection.ToString();
         ConnectionVisitCount.TryAdd(connectionId, 0);
         ConnectionVisitCount[connectionId]++;
         ConnectionLastVisitFollowed[connectionId] = followed;
@@ -57,14 +57,14 @@ public class FlowScope
     /// </summary>
     /// <param name="connection">The connection to check.</param>
     /// <returns>The visit count of the connection.</returns>
-    private long GetConnectionVisitCount(Connection connection) => ConnectionVisitCount.TryGetValue(connection.ToString(), out var count) ? count : 0;
+    private long GetConnectionVisitCount(Connection connection) => ConnectionVisitCount.GetValueOrDefault(connection.ToString(), 0);
 
     /// <summary>
     /// Determines whether the last visit to the specified connection was followed.
     /// </summary>
     /// <param name="connection">The connection to check.</param>
     /// <returns>True if the connection was followed on the last visit, otherwise false.</returns>
-    private bool GetConnectionLastVisitFollowed(Connection connection) => ConnectionLastVisitFollowed.TryGetValue(connection.ToString(), out var followed) ? followed : false;
+    public bool GetConnectionLastVisitFollowed(Connection connection) => ConnectionLastVisitFollowed.GetValueOrDefault(connection.ToString(), false);
 
     /// <summary>
     /// Determines whether all inbound connections to the specified activity have been visited.
@@ -76,7 +76,7 @@ public class FlowScope
     {
         var forwardInboundConnections = flowGraph.GetForwardInboundConnections(activity);
         var outboundActivityVisitCount = GetActivityVisitCount(activity);
-        var minConnectionVisitCount = forwardInboundConnections.Min(c => GetConnectionVisitCount(c));
+        var minConnectionVisitCount = forwardInboundConnections.Min(GetConnectionVisitCount);
         return minConnectionVisitCount > outboundActivityVisitCount;
     }
 
@@ -90,7 +90,7 @@ public class FlowScope
     {
         var forwardInboundConnections = flowGraph.GetForwardInboundConnections(activity);
         var outboundActivityVisitCount = GetActivityVisitCount(activity);
-        var maxConnectionVisitCount = forwardInboundConnections.Max(c => GetConnectionVisitCount(c));
+        var maxConnectionVisitCount = forwardInboundConnections.Max(GetConnectionVisitCount);
         return maxConnectionVisitCount > outboundActivityVisitCount 
             && forwardInboundConnections.Any(c => GetConnectionVisitCount(c) == maxConnectionVisitCount && GetConnectionLastVisitFollowed(c));
     }
