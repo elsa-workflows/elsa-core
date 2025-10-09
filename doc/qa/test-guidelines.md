@@ -36,7 +36,7 @@ Each test layer has distinct goals and clear boundaries — see [**Which parts o
 
 **5-Minute Checklist:**
 - [ ] Read the relevant section below for your change type:
-    - Changed activity logic? → See [Activities](#activities)
+    - Changed activity logic or created a new activity? → See [Activities](#activities)
     - Changed workflow execution? → See [Workflows execution](#workflow-execution-invoker-middleware-bookmarks)
     - Changed persistence? → See [Persistence & serialization](#persistence--serialization)
 - [ ] Follow steps and code patterns in that section
