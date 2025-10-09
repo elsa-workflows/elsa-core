@@ -1,17 +1,15 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Expressions.JavaScript.Contracts;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Contracts;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Models;
-
 namespace Elsa.Expressions.JavaScript.TypeDefinitions.Services;
-
 /// <inheritdoc />
 public class TypeDescriber : ITypeDescriber
 {
     private readonly ITypeAliasRegistry _typeAliasRegistry;
-
     /// <summary>
     /// Constructor.
     /// </summary>
@@ -30,17 +28,18 @@ public class TypeDescriber : ITypeDescriber
             Properties = GetPropertyDefinitions(type).DistinctBy(x => x.Name).ToList(),
             Methods = GetMethodDefinitions(type).DistinctBy(x => x.Name).ToList()
         };
-
         return typeDefinition;
     }
-
     private IEnumerable<FunctionDefinition> GetMethodDefinitions(Type type)
     {
         if(type.IsEnum)
             yield break;
-        
+
 #pragma warning disable IL2070
-        var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(x => !x.IsSpecialName).ToList();
+        var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
+            .Where(x => !x.IsSpecialName)
+            .Where(x => x.GetCustomAttribute<CompilerGeneratedAttribute>() == null)
+            .ToList();
 #pragma warning restore IL2070
 
         foreach (var method in methods)
@@ -53,11 +52,9 @@ public class TypeDescriber : ITypeDescriber
             };
         }
     }
-
     private IEnumerable<ParameterDefinition> GetMethodParameters(MethodInfo method)
     {
         var parameters = method.GetParameters();
-
         foreach (var parameter in parameters)
         {
             yield return new ParameterDefinition
@@ -68,7 +65,6 @@ public class TypeDescriber : ITypeDescriber
             };
         }
     }
-
     private IEnumerable<PropertyDefinition> GetPropertyDefinitions([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type type)
     {
         // If the type is an enum, enumerate its members.
@@ -83,12 +79,10 @@ public class TypeDescriber : ITypeDescriber
                     IsOptional = false,
                 };
             }
-
             yield break;
         }
         
         var properties = type.GetProperties();
-
         foreach (var property in properties)
         {
             yield return new PropertyDefinition
@@ -99,7 +93,6 @@ public class TypeDescriber : ITypeDescriber
             };
         }
     }
-
     private static string GetDeclarationKeyword(Type type) =>
         type switch
         {

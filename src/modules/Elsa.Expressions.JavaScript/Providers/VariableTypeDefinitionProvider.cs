@@ -6,34 +6,32 @@ using Elsa.Expressions.JavaScript.TypeDefinitions.Models;
 using Elsa.Workflows.Management.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
-
 namespace Elsa.Expressions.JavaScript.Providers;
-
 /// <summary>
 /// Produces <see cref="TypeDefinition"/>s for variable types.
 /// </summary>
-internal class VariableTypeDefinitionProvider(ITypeDescriber typeDescriber) : TypeDefinitionProvider
+[UsedImplicitly]
+internal class VariableTypeDefinitionProvider(ITypeDescriber typeDescriber, IOptions<ManagementOptions> options) : TypeDefinitionProvider
 {
     protected override IEnumerable<TypeDefinition> GetTypeDefinitions(TypeDefinitionContext context)
     {
         var excludedTypes = new Func<Type, bool>[]
         {
             type => type == typeof(ExpandoObject),
-            type => typeof(IDictionary<string, object>).IsAssignableFrom(type),
-            type => type == typeof(object)
+            type => type.IsPrimitive,
+            type => type.ContainsGenericParameters,
+            type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IDictionary<,>),
+            type => type == typeof(object),
+            type => type == typeof(string)
         };
 
-        var variables = context.WorkflowGraph.Workflow.Variables;
-
-        var variableTypeQuery =
-            from variable in variables
-            let variableType = variable.GetVariableType()
-            where (variableType.IsClass || variableType.IsInterface || variableType.IsEnum) && !variableType.IsPrimitive && !excludedTypes.Any(x => x(variableType))
+        var variableTypes =
+            from variableDescriptor in options.Value.VariableDescriptors
+            let variableType = variableDescriptor.Type
+            where (variableType.IsClass || variableType.IsInterface || variableType.IsEnum) && !excludedTypes.Any(x => x(variableType))
             select variableType;
 
-        var variableTypes = variableTypeQuery.Distinct();
-
-        foreach (var variableType in variableTypes)
+        foreach (var variableType in variableTypes.Distinct())
         {
             yield return typeDescriber.DescribeType(variableType);
         }

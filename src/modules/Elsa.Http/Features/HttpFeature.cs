@@ -26,9 +26,7 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
-
 namespace Elsa.Http.Features;
-
 /// <summary>
 /// Installs services related to HTTP services and activities.
 /// </summary>
@@ -38,32 +36,26 @@ public class HttpFeature(IModule module) : FeatureBase(module)
 {
     private Func<IServiceProvider, IHttpEndpointRoutesProvider> _httpEndpointRouteProvider = sp => sp.GetRequiredService<DefaultHttpEndpointRoutesProvider>();
     private Func<IServiceProvider, IHttpEndpointBasePathProvider> _httpEndpointBasePathProvider = sp => sp.GetRequiredService<DefaultHttpEndpointBasePathProvider>();
-
     /// <summary>
     /// A delegate to configure <see cref="HttpActivityOptions"/>.
     /// </summary>
     public Action<HttpActivityOptions>? ConfigureHttpOptions { get; set; }
-
     /// <summary>
     /// A delegate to configure <see cref="HttpFileCacheOptions"/>.
     /// </summary>
     public Action<HttpFileCacheOptions>? ConfigureHttpFileCacheOptions { get; set; }
-
     /// <summary>
     /// A delegate that is invoked when authorizing an inbound HTTP request.
     /// </summary>
     public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = sp => sp.GetRequiredService<AuthenticationBasedHttpEndpointAuthorizationHandler>();
-
     /// <summary>
     /// A delegate that is invoked when an HTTP workflow faults.
     /// </summary>
     public Func<IServiceProvider, IHttpEndpointFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = sp => sp.GetRequiredService<DefaultHttpEndpointFaultHandler>();
-
     /// <summary>
     /// A delegate to configure the <see cref="IContentTypeProvider"/>.
     /// </summary>
     public Func<IServiceProvider, IContentTypeProvider> ContentTypeProvider { get; set; } = _ => new FileExtensionContentTypeProvider();
-
     /// <summary>
     /// A delegate to configure the <see cref="IFileCacheStorageProvider"/>.
     /// </summary>
@@ -75,7 +67,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
     };
 
     /// <summary>
-    /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="FlowSendHttpRequest"/> activity.
+    /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="FlowSendHttpRequest"/> and <see cref="SendHttpRequest"/> activities.
     /// </summary>
     public Action<IServiceProvider, HttpClient> HttpClient { get; set; } = (_, _) => { };
 
@@ -83,7 +75,6 @@ public class HttpFeature(IModule module) : FeatureBase(module)
     /// A delegate to configure the <see cref="HttpClientBuilder"/> for <see cref="HttpClient"/>.
     /// </summary>
     public Action<IHttpClientBuilder> HttpClientBuilder { get; set; } = _ => { };
-
     /// <summary>
     /// A list of <see cref="IHttpCorrelationIdSelector"/> types to register with the service collection.
     /// </summary>
@@ -92,7 +83,6 @@ public class HttpFeature(IModule module) : FeatureBase(module)
         typeof(HeaderHttpCorrelationIdSelector),
         typeof(QueryStringHttpCorrelationIdSelector)
     };
-
     /// <summary>
     /// A list of <see cref="IHttpWorkflowInstanceIdSelector"/> types to register with the service collection.
     /// </summary>
@@ -101,12 +91,10 @@ public class HttpFeature(IModule module) : FeatureBase(module)
         typeof(HeaderHttpWorkflowInstanceIdSelector),
         typeof(QueryStringHttpWorkflowInstanceIdSelector)
     };
-
     public HttpFeature WithHttpEndpointRoutesProvider<T>() where T : IHttpEndpointRoutesProvider
     {
         return WithHttpEndpointRoutesProvider(sp => sp.GetRequiredService<T>());
     }
-
     public HttpFeature WithHttpEndpointRoutesProvider(Func<IServiceProvider, IHttpEndpointRoutesProvider> httpEndpointRouteProvider)
     {
         _httpEndpointRouteProvider = httpEndpointRouteProvider;
@@ -124,7 +112,6 @@ public class HttpFeature(IModule module) : FeatureBase(module)
         _httpEndpointBasePathProvider = httpEndpointBasePathProvider;
         return this;
     }
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -140,13 +127,10 @@ public class HttpFeature(IModule module) : FeatureBase(module)
                 typeof(HttpFile),
                 typeof(Downloadable)
             ], "HTTP");
-
             management.AddActivitiesFrom<HttpFeature>();
         });
-
         Module.UseResilience(resilience => resilience.AddResilienceStrategyType<HttpResilienceStrategy>());
     }
-
     /// <inheritdoc />
     public override void Apply()
     {
@@ -155,15 +139,11 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             options.BasePath = "/workflows";
             options.BaseUrl = new Uri("http://localhost");
         });
-
         var configureFileCacheOptions = ConfigureHttpFileCacheOptions ?? (options => { options.TimeToLive = TimeSpan.FromDays(7); });
-
         Services.Configure(configureOptions);
         Services.Configure(configureFileCacheOptions);
-
         var httpClientBuilder = Services.AddHttpClient<SendHttpRequestBase>(HttpClient);
         HttpClientBuilder(httpClientBuilder);
-
         Services
             .AddScoped<IRouteMatcher, RouteMatcher>()
             .AddScoped<IRouteTable, RouteTable>()
@@ -172,31 +152,25 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddScoped<IHttpWorkflowLookupService, HttpWorkflowLookupService>()
             .AddScoped(ContentTypeProvider)
             .AddHttpContextAccessor()
-
             // Handlers.
             .AddNotificationHandler<UpdateRouteTable>()
-
             // Content parsers.
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
             .AddSingleton<IHttpContentParser, PlainTextHttpContentParser>()
             .AddSingleton<IHttpContentParser, TextHtmlHttpContentParser>()
             .AddSingleton<IHttpContentParser, FileHttpContentParser>()
-
             // HTTP content factories.
             .AddScoped<IHttpContentFactory, TextContentFactory>()
             .AddScoped<IHttpContentFactory, JsonContentFactory>()
             .AddScoped<IHttpContentFactory, XmlContentFactory>()
             .AddScoped<IHttpContentFactory, FormUrlEncodedHttpContentFactory>()
-
             // Activity property options providers.
             .AddScoped<IPropertyUIHandler, HttpContentTypeOptionsProvider>()
             .AddScoped<IPropertyUIHandler, HttpEndpointPathUIHandler>()
             .AddScoped(_httpEndpointBasePathProvider)
-
             // Port resolvers.
             .AddScoped<IActivityResolver, SendHttpRequestActivityResolver>()
-
             // HTTP endpoint handlers.
             .AddScoped<AuthenticationBasedHttpEndpointAuthorizationHandler>()
             .AddScoped<AllowAnonymousHttpEndpointAuthorizationHandler>()
@@ -209,7 +183,6 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             
             // Startup tasks.
             .AddStartupTask<UpdateRouteTableStartupTask>()
-
             // Downloadable content handlers.
             .AddScoped<IDownloadableManager, DefaultDownloadableManager>()
             .AddScoped<IDownloadableContentHandler, MultiDownloadableContentHandler>()
@@ -220,28 +193,21 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddScoped<IDownloadableContentHandler, UrlDownloadableContentHandler>()
             .AddScoped<IDownloadableContentHandler, StringDownloadableContentHandler>()
             .AddScoped<IDownloadableContentHandler, HttpFileDownloadableContentHandler>()
-
             //Trigger payload validators.
             .AddTriggerPayloadValidator<HttpEndpointTriggerPayloadValidator, HttpEndpointBookmarkPayload>()
-
             // File caches.
             .AddScoped(FileCache)
             .AddScoped<ZipManager>()
-
             // AuthenticationBasedHttpEndpointAuthorizationHandler requires Authorization services.
             // We could consider creating a separate module for installing authorization services.
             .AddAuthorization();
-
         // HTTP clients.
         Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();
-
         // Add selectors.
         foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes)
             Services.AddScoped(typeof(IHttpCorrelationIdSelector), httpCorrelationIdSelectorType);
-
         foreach (var httpWorkflowInstanceIdSelectorType in HttpWorkflowInstanceIdSelectorTypes)
             Services.AddScoped(typeof(IHttpWorkflowInstanceIdSelector), httpWorkflowInstanceIdSelectorType);
-
         Services.Configure<ExpressionOptions>(options =>
         {
             options.AddTypeAlias<HttpRequest>("HttpRequest");
