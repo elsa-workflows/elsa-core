@@ -37,7 +37,7 @@ public class SetVariableTests
     {
         // Arrange
         var variable = new Variable<string?>("myVar", "initial value", "myVar");
-        var setVariable = new SetVariable<string?>(variable, new Input<string?>(null));
+        var setVariable = new SetVariable<string?>(variable, new Input<string?>((string?)null));
 
         // Act
         var context = await ActivityTestHelper.ExecuteActivityAsync(setVariable);
