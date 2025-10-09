@@ -105,7 +105,7 @@ public class SetVariable : CodeActivity
         var variable = context.ExpressionExecutionContext.EnumerateVariablesInScope().FirstOrDefault(x => x.Id == variableId);
      
         if (variable == null)
-            throw new($"Variable '{variableId}' not found.");
+            throw new InvalidOperationException($"Variable '{variableId}' not found.");
         
         var value = context.Get(Value);
         variable.Set(context, value);
