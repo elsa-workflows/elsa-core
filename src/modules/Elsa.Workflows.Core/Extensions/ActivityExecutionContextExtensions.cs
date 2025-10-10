@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
 using Elsa.Common;
@@ -456,6 +457,23 @@ public static partial class ActivityExecutionContextExtensions
     public static Dictionary<string, object?>? GetExtensionsMetadata(this ActivityExecutionContext context)
     {
         return context.Metadata.TryGetValue(ExtensionsMetadataKey, out var value) ? value as Dictionary<string, object?> : null;
+    }
+
+    public static object? GetExecutionOutput<TProp>(this ActivityExecutionContext context, Expression<Func<Activity, TProp>> property)
+    {
+        if (property.Body is not MemberExpression memberExpr)
+        {
+            return null;
+        }
+        
+        var propertyName = memberExpr.Member.Name;
+        
+        if (context.Get(propertyName) is not null and not 0)
+            return context.Get(propertyName);
+
+        var registry = context.WorkflowExecutionContext.GetActivityOutputRegister();
+            
+        return registry.FindOutputByActivityInstanceId(context.Id, propertyName);
     }
 
     internal static bool GetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties.TryGetValue<bool>("HasEvaluatedProperties", out var value) && value;

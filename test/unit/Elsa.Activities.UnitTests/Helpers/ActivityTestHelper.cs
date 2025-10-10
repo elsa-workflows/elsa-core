@@ -2,7 +2,10 @@ using Elsa.Common;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
+using Elsa.Http.ContentWriters;
+using Elsa.Http.Parsers;
 using Elsa.Mediator.Contracts;
+using Elsa.Resilience;
 using Elsa.Workflows;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Management.Providers;
@@ -10,6 +13,7 @@ using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.PortResolvers;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using Elsa.Http;
 
 namespace Elsa.Activities.UnitTests.Helpers;
 
@@ -119,5 +123,64 @@ public static class ActivityTestHelper
         }
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Creates a mock IResilientActivityInvoker that directly executes the provided action.
+    /// Useful for testing activities that depend on resilient execution without the complexity of retry policies.
+    /// </summary>
+    /// <returns>A mock IResilientActivityInvoker configured to execute actions directly</returns>
+    public static IResilientActivityInvoker CreateMockResilientActivityInvoker()
+    {
+        var mock = Substitute.For<IResilientActivityInvoker>();
+        
+        // Configure the mock to simply execute the provided action directly
+        mock.InvokeAsync<HttpResponseMessage>(
+            Arg.Any<IResilientActivity>(), 
+            Arg.Any<ActivityExecutionContext>(), 
+            Arg.Any<Func<Task<HttpResponseMessage>>>(), 
+            Arg.Any<CancellationToken>())
+            .Returns(callInfo => 
+            {
+                var action = callInfo.ArgAt<Func<Task<HttpResponseMessage>>>(2);
+                return action.Invoke();
+            });
+            
+        return mock;
+    }
+    
+    /// <summary>
+    /// Adds all HTTP-related services to the service collection.
+    /// This includes content factories, parsers, and HTTP client services.
+    /// Use this method when testing HTTP activities that require full HTTP service support.
+    /// </summary>
+    /// <param name="services">The service collection to add HTTP services to</param>
+    public static void AddHttpServices(IServiceCollection services)
+    {
+        // Add all required HTTP services
+        services.AddSingleton<IHttpContentFactory, JsonContentFactory>();
+        services.AddSingleton<IHttpContentFactory, TextContentFactory>();
+        services.AddSingleton<IHttpContentFactory, XmlContentFactory>();
+        services.AddSingleton<IHttpContentFactory, FormUrlEncodedHttpContentFactory>();
+        
+        // Add HTTP content parsers
+        AddHttpContentParsers(services);
+        
+        // Add other required services
+        services.AddHttpClient();
+    }
+    
+    /// <summary>
+    /// Adds HTTP content parsers to the service collection.
+    /// These parsers are responsible for parsing different content types in HTTP responses.
+    /// </summary>
+    /// <param name="services">The service collection to add parsers to</param>
+    private static void AddHttpContentParsers(IServiceCollection services)
+    {
+        services.AddSingleton<IHttpContentParser, JsonHttpContentParser>();
+        services.AddSingleton<IHttpContentParser, PlainTextHttpContentParser>();
+        services.AddSingleton<IHttpContentParser, XmlHttpContentParser>();
+        services.AddSingleton<IHttpContentParser, TextHtmlHttpContentParser>();
+        services.AddSingleton<IHttpContentParser, FileHttpContentParser>();
     }
 }
