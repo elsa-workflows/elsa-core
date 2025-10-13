@@ -38,7 +38,6 @@ public static async ValueTask WaitForHttpRequestAsync(this ActivityExecutionCont
         var expressionExecutionContext = context.ExpressionExecutionContext;
         if (!context.IsTriggerOfWorkflow())
         {
-            // Gebruik de opgegeven bookmarknaam, of standaard HttpStimulusNames.HttpEndpoint
             var name = bookmarkName ?? Elsa.Http.HttpStimulusNames.HttpEndpoint;
             context.CreateBookmarks(expressionExecutionContext.GetHttpEndpointStimuli(options), includeActivityInstanceId: false, callback: callback, bookmarkName: name);
             return;
