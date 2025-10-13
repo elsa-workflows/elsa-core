@@ -306,6 +306,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Integratio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.UnitTests", "test\unit\Elsa.Activities.UnitTests\Elsa.Activities.UnitTests.csproj", "{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "qa", "qa", "{0478E6EA-DCB2-4667-ADC2-37C62C9C2574}"
+	ProjectSection(SolutionItems) = preProject
+		doc\qa\test-guidelines.md = doc\qa\test-guidelines.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -708,6 +713,7 @@ Global
 		{51C39AF0-4F41-4FC1-AEBD-D1494407D3F9} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
 		{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA} = {18453B51-25EB-4317-A4B3-B10518252E92}
+		{0478E6EA-DCB2-4667-ADC2-37C62C9C2574} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
