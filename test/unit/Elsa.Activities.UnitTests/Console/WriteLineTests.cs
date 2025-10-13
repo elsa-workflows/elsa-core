@@ -38,7 +38,7 @@ public class WriteLineTests
     public async Task Should_Write_Null_Value_To_Output()
     {
         // Arrange
-        var writeLine = new WriteLine(new Input<string>(default(string)!));
+        var writeLine = new WriteLine(new Input<string>((string?)null));
 
         // Act
         await ActivityTestHelper.ExecuteActivityAsync(writeLine, services =>
