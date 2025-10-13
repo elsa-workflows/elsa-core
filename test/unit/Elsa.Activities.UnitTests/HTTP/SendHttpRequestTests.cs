@@ -39,7 +39,10 @@ public class SendHttpRequestTests
         {
             Url = new Input<Uri?>(expectedUrl),
             Method = new Input<string>("GET"),
-            // Don't set ExpectedStatusCodes to avoid scheduling issues
+            // Note: Setting ExpectedStatusCodes can cause workflow scheduling issues in test environments,
+            // because the activity may attempt to schedule additional branches for each expected status code,
+            // which can interfere with the test's control flow and assertions. To avoid this, we leave
+            // ExpectedStatusCodes empty in this test.
             ExpectedStatusCodes = new List<HttpStatusCodeCase>()
         };
 
@@ -282,9 +285,10 @@ public class SendHttpRequestTests
         });
 
         // Assert
-        var responseHeaders = (HttpHeaders)context.GetExecutionOutput(_ => sendHttpRequest.ResponseHeaders)!;
+        var responseHeadersObj = context.GetExecutionOutput(_ => sendHttpRequest.ResponseHeaders);
+        var responseHeaders = responseHeadersObj as HttpHeaders;
         Assert.NotNull(responseHeaders);
-        Assert.True(responseHeaders.ContainsKey("Custom-Header"));
+        Assert.True(responseHeaders!.ContainsKey("Custom-Header"));
         Assert.True(responseHeaders.ContainsKey("X-Rate-Limit"));
     }
 

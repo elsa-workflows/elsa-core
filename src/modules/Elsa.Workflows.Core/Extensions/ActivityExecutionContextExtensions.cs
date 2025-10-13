@@ -468,8 +468,10 @@ public static partial class ActivityExecutionContextExtensions
         
         var propertyName = memberExpr.Member.Name;
         
-        if (context.Get(propertyName) is not null and not 0)
-            return context.Get(propertyName);
+        // Treat both null and 0 (for numeric types) as "unset" values.
+        var value = context.Get(propertyName);
+        if (value != null && !(value is int i && i == 0) && !(value is long l && l == 0L) && !(value is double d && d == 0.0) && !(value is float f && f == 0.0f))
+            return value;
 
         var registry = context.WorkflowExecutionContext.GetActivityOutputRegister();
             
