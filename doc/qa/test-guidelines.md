@@ -225,25 +225,9 @@ public async Task Workflow_Persists_Instance_And_Journal()
     var sp = new TestApplicationBuilder(testOutput)
         .Build();
 
-    var runner = sp.GetRequiredService<IWorkflowRunner>();
-    var store = sp.GetRequiredService<IWorkflowInstanceStore>();
-    var client = WorkflowServer.CreateApiClient<IExecuteWorkflowApi>();
-    using var result = await client.ExecuteAsync(workflowId);
-    var instanceId = result.WorkflowInstance!.Id;
-
-    // deterministic lookup: query store until terminal state
-    var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(10);
-    WorkflowInstance? instance = null;
-    while (DateTime.UtcNow < deadline)
-    {
-        instance = await store.FindByIdAsync(instanceId);
-        if (instance is not null && instance.Status is WorkflowStatus.Finished or WorkflowStatus.Faulted)
-            break;
-        await Task.Delay(150);
-    }
-
-    instance.Should().NotBeNull();
-    instance!.Status.Should().Be(WorkflowStatus.Finished);
+    var runner = sp.GetRequiredService<AsyncWorkflowRunner>();
+var result = await runner.RunAndAwaitWorkflowCompletionAsync(WorkflowDefinitionHandle.ByDefinitionId(someDefinitionId, VersionOptions.Published));
+    result.WorkflowExecutionContext.Status.Should().Be(WorkflowStatus.Finished);
 }
 ```
 ---
