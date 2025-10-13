@@ -37,7 +37,7 @@ public class WriteLineTests
         var mockProvider = Substitute.For<IStandardOutStreamProvider>();
         mockProvider.GetTextWriter().Returns(mockTextWriter);
         
-        var writeLine = new WriteLine(new Input<string>(default(string)!));
+        var writeLine = new WriteLine(new Input<string>((string?)null));
 
         // Act
         await ActivityTestHelper.ExecuteActivityAsync(writeLine, services =>
