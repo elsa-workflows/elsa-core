@@ -77,8 +77,9 @@ This section maps Elsa aspects to the exact kinds of tests you should write, wit
 #### **Unit tests:**
 - Test the activity class logic only (no persistence, no scheduler). Cover configuration permutations and boundary inputs.
 - Use [`ActivityTestHelper`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestHelper.cs), `ExecuteActivityAsync` method to run the activity and obtain an [`ActivityExecutionContext`](../../src/modules/Elsa.Workflows.Core/Contexts/ActivityExecutionContext.cs) for assertions.
+- In case the activity sets outputs, assert using `context.GetExecutionOutput()`([extension method](../../src/modules/Elsa.Workflows.Core/Extensions/ActivityExecutionContextExtensions.cs)), otherwise, use `context.Get()`.
 
-**Example:**
+**Example (does not set output):**
 ```csharp
 [Fact]
 public async Task Should_Set_Variable_Integer()
@@ -95,6 +96,32 @@ public async Task Should_Set_Variable_Integer()
     var result = context.Get(variable);
     Assert.Equal(expected, result);
 }
+```
+
+**Example (sets output):**
+```csharp
+[Fact]
+    public async Task Should_Send_GET_Request_And_Handle_Success_Response()
+    {
+        // Arrange
+        // Extra arrange steps omitted for brevity
+        var sendHttpRequest = new SendHttpRequest
+        {
+            Url = new Input<Uri?>(expectedUrl),
+            Method = new Input<string>("GET"),
+            ExpectedStatusCodes = new List<HttpStatusCodeCase>()
+        };
+
+        // Act
+        var context = await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, services =>
+        {
+            // http configuration omitted for brevity
+        });
+
+        // Assert
+        var statusCodeOutput = context.GetExecutionOutput(_ => sendHttpRequest.StatusCode);
+        Assert.Equal(200, statusCodeOutput);
+    }
 ```
 
 #### **Integration tests:**

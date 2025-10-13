@@ -26,7 +26,7 @@ public class SendHttpRequestTests
         };
 
         HttpRequestMessage? capturedRequest = null;
-        var testHandler = new TestHttpMessageHandler((request, ct) =>
+        var testHandler = new TestHttpMessageHandler((request, _) =>
         {
             capturedRequest = request;
             return Task.FromResult(httpResponse);
@@ -59,8 +59,7 @@ public class SendHttpRequestTests
         Assert.NotNull(capturedRequest);
         Assert.Equal(HttpMethod.Get, capturedRequest.Method);
         Assert.Equal(expectedUrl, capturedRequest.RequestUri);
-
-        // Verify outputs are set using context.Get()
+        
         var statusCodeOutput = context.GetExecutionOutput(_ => sendHttpRequest.StatusCode);
         Assert.Equal(200, statusCodeOutput);
     }
@@ -77,7 +76,7 @@ public class SendHttpRequestTests
         var httpResponse = new HttpResponseMessage(HttpStatusCode.Created);
         
         HttpRequestMessage? capturedRequest = null;
-        var testHandler = new TestHttpMessageHandler((request, ct) =>
+        var testHandler = new TestHttpMessageHandler((request, _) =>
         {
             capturedRequest = request;
             return Task.FromResult(httpResponse);
@@ -92,7 +91,6 @@ public class SendHttpRequestTests
             Method = new Input<string>("POST"),
             Content = new Input<object?>(requestContent),
             ContentType = new Input<string?>(contentType),
-            // Don't set ExpectedStatusCodes to avoid scheduling issues
             ExpectedStatusCodes = new List<HttpStatusCodeCase>()
         };
 
@@ -123,7 +121,7 @@ public class SendHttpRequestTests
         var httpResponse = new HttpResponseMessage(HttpStatusCode.OK);
         
         HttpRequestMessage? capturedRequest = null;
-        var testHandler = new TestHttpMessageHandler((request, ct) =>
+        var testHandler = new TestHttpMessageHandler((request, _) =>
         {
             capturedRequest = request;
             return Task.FromResult(httpResponse);
@@ -137,7 +135,6 @@ public class SendHttpRequestTests
             Url = new Input<Uri?>(expectedUrl),
             Method = new Input<string>("GET"),
             Authorization = new Input<string?>(authorizationHeader),
-            // Don't set ExpectedStatusCodes to avoid scheduling issues
             ExpectedStatusCodes = new List<HttpStatusCodeCase>()
         };
 
@@ -157,7 +154,7 @@ public class SendHttpRequestTests
     }
 
     [Fact]
-    public async Task Should_Execute_Matching_Status_Code_Activity()
+    public Task Should_Execute_Matching_Status_Code_Activity()
     {
         // Arrange
         var mockHttpClientFactory = Substitute.For<IHttpClientFactory>();
@@ -189,10 +186,11 @@ public class SendHttpRequestTests
         
         // Test that we can identify the correct status code without execution
         Assert.Equal(2, sendHttpRequest.ExpectedStatusCodes.Count);
+        return Task.CompletedTask;
     }
 
     [Fact]
-    public async Task Should_Execute_UnmatchedStatusCode_Activity_When_No_Match()
+    public Task Should_Execute_UnmatchedStatusCode_Activity_When_No_Match()
     {
         // Arrange
         var mockUnmatchedActivity = Substitute.For<IActivity>();
@@ -215,10 +213,11 @@ public class SendHttpRequestTests
         
         // Verify UnmatchedStatusCode activity is set
         Assert.Equal(mockUnmatchedActivity, sendHttpRequest.UnmatchedStatusCode);
+        return Task.CompletedTask;
     }
 
     [Fact]
-    public async Task Should_Handle_HttpRequestException_And_Execute_FailedToConnect_Activity()
+    public Task Should_Handle_HttpRequestException_And_Execute_FailedToConnect_Activity()
     {
         // Arrange
         var mockFailedToConnectActivity = Substitute.For<IActivity>();
@@ -232,10 +231,11 @@ public class SendHttpRequestTests
 
         // Act & Assert - Test configuration without execution
         Assert.Equal(mockFailedToConnectActivity, sendHttpRequest.FailedToConnect);
+        return Task.CompletedTask;
     }
 
     [Fact]
-    public async Task Should_Handle_TaskCanceledException_And_Execute_Timeout_Activity()
+    public Task Should_Handle_TaskCanceledException_And_Execute_Timeout_Activity()
     {
         // Arrange
         var mockTimeoutActivity = Substitute.For<IActivity>();
@@ -249,6 +249,7 @@ public class SendHttpRequestTests
 
         // Act & Assert - Test configuration without execution
         Assert.Equal(mockTimeoutActivity, sendHttpRequest.Timeout);
+        return Task.CompletedTask;
     }
 
     [Fact]
@@ -261,7 +262,7 @@ public class SendHttpRequestTests
         httpResponse.Headers.Add("Custom-Header", "CustomValue");
         httpResponse.Headers.Add("X-Rate-Limit", "100");
         
-        var testHandler = new TestHttpMessageHandler((request, ct) =>
+        var testHandler = new TestHttpMessageHandler((_, _) =>
             Task.FromResult(httpResponse));
 
         var httpClient = new HttpClient(testHandler);
@@ -271,7 +272,6 @@ public class SendHttpRequestTests
         {
             Url = new Input<Uri?>(new Uri("https://api.example.com/headers")),
             Method = new Input<string>("GET"),
-            // Don't set ExpectedStatusCodes to avoid scheduling issues
             ExpectedStatusCodes = new List<HttpStatusCodeCase>()
         };
 
@@ -288,7 +288,7 @@ public class SendHttpRequestTests
         var responseHeadersObj = context.GetExecutionOutput(_ => sendHttpRequest.ResponseHeaders);
         var responseHeaders = responseHeadersObj as HttpHeaders;
         Assert.NotNull(responseHeaders);
-        Assert.True(responseHeaders!.ContainsKey("Custom-Header"));
+        Assert.True(responseHeaders.ContainsKey("Custom-Header"));
         Assert.True(responseHeaders.ContainsKey("X-Rate-Limit"));
     }
 
@@ -305,7 +305,7 @@ public class SendHttpRequestTests
             Content = responseContent
         };
 
-        var testHandler = new TestHttpMessageHandler((request, ct) =>
+        var testHandler = new TestHttpMessageHandler((_, _) =>
             Task.FromResult(httpResponse));
 
         var httpClient = new HttpClient(testHandler);
@@ -315,7 +315,6 @@ public class SendHttpRequestTests
         {
             Url = new Input<Uri?>(new Uri("https://api.example.com/json")),
             Method = new Input<string>("GET"),
-            // Don't set ExpectedStatusCodes to avoid scheduling issues
             ExpectedStatusCodes = new List<HttpStatusCodeCase>()
         };
 
