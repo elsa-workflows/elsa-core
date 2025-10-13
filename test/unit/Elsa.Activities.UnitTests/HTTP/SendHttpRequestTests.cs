@@ -285,9 +285,10 @@ public class SendHttpRequestTests
         });
 
         // Assert
-        var responseHeaders = (HttpHeaders)context.GetExecutionOutput(_ => sendHttpRequest.ResponseHeaders)!;
+        var responseHeadersObj = context.GetExecutionOutput(_ => sendHttpRequest.ResponseHeaders);
+        var responseHeaders = responseHeadersObj as HttpHeaders;
         Assert.NotNull(responseHeaders);
-        Assert.True(responseHeaders.ContainsKey("Custom-Header"));
+        Assert.True(responseHeaders!.ContainsKey("Custom-Header"));
         Assert.True(responseHeaders.ContainsKey("X-Rate-Limit"));
     }
 
