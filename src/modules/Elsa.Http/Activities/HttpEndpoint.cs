@@ -163,7 +163,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
     {
         var path = Path.Get(context);
         var methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get };
-        await context.WaitForHttpRequestAsync(path, methods, OnResumeAsync);
+        await context.WaitForHttpRequestAsync(path, methods, OnResumeAsync, Elsa.Http.HttpStimulusNames.HttpEndpoint);
     }
 
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)

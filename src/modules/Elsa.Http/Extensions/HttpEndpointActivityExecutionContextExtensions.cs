@@ -9,27 +9,27 @@ namespace Elsa.Http.Extensions;
 
 public static class HttpEndpointActivityExecutionContextExtensions
 {
-public static async ValueTask WaitForHttpRequestAsync(this ActivityExecutionContext context, string path, string method, ExecuteActivityDelegate? callback = null)
+public static async ValueTask WaitForHttpRequestAsync(this ActivityExecutionContext context, string path, string method, ExecuteActivityDelegate? callback = null, string? bookmarkName = null)
 {
     var options = new HttpEndpointOptions
     {
         Path = path,
         Methods = [method]
     };
-    await WaitForHttpRequestAsync(context, options, callback);
+    await WaitForHttpRequestAsync(context, options, callback, bookmarkName);
 }
 
-public static async ValueTask WaitForHttpRequestAsync(this ActivityExecutionContext context, string path, IEnumerable<string> methods, ExecuteActivityDelegate? callback = null)
+public static async ValueTask WaitForHttpRequestAsync(this ActivityExecutionContext context, string path, IEnumerable<string> methods, ExecuteActivityDelegate? callback = null, string? bookmarkName = null)
 {
     var options = new HttpEndpointOptions
     {
         Path = path,
         Methods = methods.ToList()
     };
-    await WaitForHttpRequestAsync(context, options, callback);
+    await WaitForHttpRequestAsync(context, options, callback, bookmarkName);
 }
 
-    public static async ValueTask WaitForHttpRequestAsync(this ActivityExecutionContext context, HttpEndpointOptions options, ExecuteActivityDelegate? callback = null)
+    public static async ValueTask WaitForHttpRequestAsync(this ActivityExecutionContext context, HttpEndpointOptions options, ExecuteActivityDelegate? callback = null, string? bookmarkName = null)
     {
         var path = options.Path;
         if (path.Contains("//"))
@@ -38,7 +38,9 @@ public static async ValueTask WaitForHttpRequestAsync(this ActivityExecutionCont
         var expressionExecutionContext = context.ExpressionExecutionContext;
         if (!context.IsTriggerOfWorkflow())
         {
-            context.CreateBookmarks(expressionExecutionContext.GetHttpEndpointStimuli(options), includeActivityInstanceId: false, callback: callback);
+            // Gebruik de opgegeven bookmarknaam, of standaard HttpStimulusNames.HttpEndpoint
+            var name = bookmarkName ?? Elsa.Http.HttpStimulusNames.HttpEndpoint;
+            context.CreateBookmarks(expressionExecutionContext.GetHttpEndpointStimuli(options), includeActivityInstanceId: false, callback: callback, bookmarkName: name);
             return;
         }
 

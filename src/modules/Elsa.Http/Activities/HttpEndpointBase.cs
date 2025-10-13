@@ -22,8 +22,8 @@ public abstract class HttpEndpointBase<TResult> : Trigger<TResult>
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var options = GetOptions();
-        await context.WaitForHttpRequestAsync(options, HttpRequestReceivedAsync);
+    var options = GetOptions();
+    await context.WaitForHttpRequestAsync(options, HttpRequestReceivedAsync, Elsa.Http.HttpStimulusNames.HttpEndpoint);
     }
 
     protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context)
