@@ -198,9 +198,9 @@ When in doubt, add the minimal unit tests plus one integration test that reprodu
 
 ## Deterministic patterns to avoid flaky tests
 
-1. **For activities unit tests, prefer returned state from [`ExecuteActivityAsync`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestHelper.cs).** Always inspect on the returned context — it is deterministic for synchronous workflows.
+1. **For activity unit tests, prefer returned state from [`ExecuteActivityAsync`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestHelper.cs).** Always inspect on the returned context — it is deterministic for synchronous workflows.
 2. **Resume bookmarks explicitly.** Do not wait for external schedulers — call the engine's resume/trigger APIs in your test to continue execution.
-3. **For integration tests, Locate instances deterministically.** Use an instance id returned by [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) or attach a `CorrelationId` test variable and query [`IWorkflowInstanceStore.FindByCorrelationIdAsync(...)`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs). Avoid using "latest" queries.
+3. **For integration tests, locate instances deterministically.** Use an instance id returned by [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) or attach a `CorrelationId` test variable and query [`IWorkflowInstanceStore.FindByCorrelationIdAsync(...)`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs). Avoid using "latest" queries.
 
 ---
 
