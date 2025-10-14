@@ -1,19 +1,22 @@
+using System.Net;
+using System.Text;
 using Elsa.Common;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
+using Elsa.Http;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Parsers;
 using Elsa.Mediator.Contracts;
 using Elsa.Resilience;
 using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.PortResolvers;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
-using Elsa.Http;
 
 namespace Elsa.Activities.UnitTests.Helpers;
 
@@ -43,14 +46,87 @@ public static class ActivityTestHelper
 
         return context;
     }
-    
+
+    /// <summary>
+    /// Creates a simple HTTP response message with specified status code and optional JSON content.
+    /// </summary>
+    /// <param name="statusCode">The HTTP status code for the response</param>
+    /// <param name="jsonContent">Optional JSON content for the response body</param>
+    /// <param name="additionalHeaders">Optional additional headers to add to the response</param>
+    /// <returns>An HttpResponseMessage configured with the specified parameters</returns>
+    public static HttpResponseMessage CreateHttpResponse(HttpStatusCode statusCode, string? jsonContent = null, Dictionary<string, string>? additionalHeaders = null)
+    {
+        var response = new HttpResponseMessage(statusCode);
+        
+        if (jsonContent != null)
+        {
+            response.Content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+        }
+        
+        if (additionalHeaders != null)
+        {
+            foreach (var header in additionalHeaders)
+            {
+                response.Headers.Add(header.Key, header.Value);
+            }
+        }
+        
+        return response;
+    }
+
+    /// <summary>
+    /// Configures services commonly needed for HTTP activity testing.
+    /// This is a convenience method that combines HTTP services, mock HTTP client factory, and mock resilient invoker.
+    /// </summary>
+    /// <param name="services">The service collection to configure</param>
+    /// <param name="responseHandler">Handler for HTTP requests, or null to use a default OK response</param>
+    public static void ConfigureHttpActivityServices(IServiceCollection services, Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>? responseHandler = null)
+    {
+        var defaultHandler = responseHandler ?? ((_, _) => Task.FromResult(CreateHttpResponse(HttpStatusCode.OK)));
+        var mockHttpClientFactory = CreateMockHttpClientFactory(defaultHandler);
+        
+        services.AddSingleton(mockHttpClientFactory);
+        services.AddSingleton(CreateMockResilientActivityInvoker());
+        AddHttpServices(services);
+        services.AddLogging();
+    }
+
+    /// <summary>
+    /// Validates that an activity has the expected attribute configuration.
+    /// This is useful for ensuring activities are properly decorated with metadata.
+    /// </summary>
+    /// <param name="activityType">The type of activity to validate</param>
+    /// <param name="expectedNamespace">Expected namespace (e.g., "Elsa")</param>
+    /// <param name="expectedCategory">Expected category (e.g., "HTTP")</param>
+    /// <param name="expectedDisplayName">Expected display name</param>
+    /// <param name="expectedDescription">Expected description</param>
+    /// <param name="expectedKind">Expected activity kind</param>
+    public static void AssertActivityAttributes(
+        Type activityType, 
+        string expectedNamespace, 
+        string expectedCategory, 
+        string expectedDisplayName, 
+        string expectedDescription, 
+        ActivityKind expectedKind)
+    {
+        var activityAttribute = activityType.GetCustomAttributes(typeof(ActivityAttribute), false)
+            .Cast<ActivityAttribute>().FirstOrDefault();
+
+        Assert.NotNull(activityAttribute);
+        Assert.Equal(expectedNamespace, activityAttribute.Namespace);
+        Assert.Equal(expectedCategory, activityAttribute.Category);
+        Assert.Equal(expectedDescription, activityAttribute.Description);
+        Assert.Equal(expectedDisplayName, activityAttribute.DisplayName);
+        Assert.Equal(expectedKind, activityAttribute.Kind);
+    }
+
     /// <summary>
     /// Adds all HTTP-related services to the service collection.
     /// This includes content factories, parsers, and HTTP client services.
     /// Use this method when testing HTTP activities that require full HTTP service support.
     /// </summary>
     /// <param name="services">The service collection to add HTTP services to</param>
-    public static void AddHttpServices(IServiceCollection services)
+    private static void AddHttpServices(IServiceCollection services)
     {
         // Add all required HTTP services
         services.AddSingleton<IHttpContentFactory, JsonContentFactory>();
@@ -70,7 +146,7 @@ public static class ActivityTestHelper
     /// Useful for testing activities that depend on resilient execution without the complexity of retry policies.
     /// </summary>
     /// <returns>A mock IResilientActivityInvoker configured to execute actions directly</returns>
-    public static IResilientActivityInvoker CreateMockResilientActivityInvoker()
+    private static IResilientActivityInvoker CreateMockResilientActivityInvoker()
     {
         var mock = Substitute.For<IResilientActivityInvoker>();
         
@@ -88,7 +164,21 @@ public static class ActivityTestHelper
             
         return mock;
     }
-    
+
+    /// <summary>
+    /// Creates a mock HTTP client factory with a test handler for controlled HTTP responses.
+    /// </summary>
+    /// <param name="responseHandler">Function to handle requests and return responses</param>
+    /// <returns>A mock IHttpClientFactory configured with the test handler</returns>
+    private static IHttpClientFactory CreateMockHttpClientFactory(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responseHandler)
+    {
+        var mockHttpClientFactory = Substitute.For<IHttpClientFactory>();
+        var testHandler = new TestHttpMessageHandler(responseHandler);
+        var httpClient = new HttpClient(testHandler);
+        mockHttpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
+        return mockHttpClientFactory;
+    }
+
     /// <summary>
     /// Creates a minimal ActivityExecutionContext suitable for isolated unit testing of activities.
     /// This helper method creates a real WorkflowExecutionContext using the minimal workflow pattern

@@ -170,7 +170,8 @@ Assert.Equal(WorkflowStatus.Finished, resumed.WorkflowInstance.Status);
 | Helper                                    | Purpose                                    | Use When                                                                |
 |-------------------------------------------|--------------------------------------------|-------------------------------------------------------------------------|
 | `TestApplicationBuilder`                  | Build test service provider                | All tests as entry point, <br/>except activities unit tests (see below) |
-| `ActivityTestHelper.ExecuteActivityAsync` | Run single activity, with isolated context | Unit testing activities                                                 |
+| `ActivityTestHelper.ExecuteActivityAsync` | Run single activity, with isolated context | Unit testing activities                                                 | 
+| `context.GetExecutionOutput`              | Get output from isolated context           | Asserting activity outputs in unit tests                                |
 | `IWorkflowRunner.RunAsync`                | Execute workflow in-process                | Integration / Component tests                                           |
 | `PopulateRegistriesAsync`                 | Register types for JSON deserialization.   | Loading JSON workflows. <br/>Integration tests only                     |
 | `IWorkflowInstanceStore`                  | Query persisted instances                  | Component tests (persistence)                                           |

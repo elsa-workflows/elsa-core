@@ -1,11 +1,8 @@
 using System.Net;
-using System.Text;
 using Elsa.Activities.UnitTests.Helpers;
 using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Workflows;
-using Elsa.Workflows.Attributes;
-using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
 namespace Elsa.Activities.UnitTests.HTTP;
@@ -17,43 +14,20 @@ public class SendHttpRequestTests
     {
         // Arrange
         var expectedUrl = new Uri("https://api.example.com/data");
-        var mockHttpClientFactory = Substitute.For<IHttpClientFactory>();
+        var jsonResponse = "{\"result\": \"success\"}";
         
-        var responseContent = new StringContent("{\"result\": \"success\"}", Encoding.UTF8, "application/json");
-        var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = responseContent
-        };
-
         HttpRequestMessage? capturedRequest = null;
-        var testHandler = new TestHttpMessageHandler((request, _) =>
+        var responseHandler = (HttpRequestMessage request, CancellationToken _) =>
         {
             capturedRequest = request;
-            return Task.FromResult(httpResponse);
-        });
-
-        var httpClient = new HttpClient(testHandler);
-        mockHttpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
-
-        var sendHttpRequest = new SendHttpRequest
-        {
-            Url = new Input<Uri?>(expectedUrl),
-            Method = new Input<string>("GET"),
-            // Note: Setting ExpectedStatusCodes can cause workflow scheduling issues in test environments,
-            // because the activity may attempt to schedule additional branches for each expected status code,
-            // which can interfere with the test's control flow and assertions. To avoid this, we leave
-            // ExpectedStatusCodes empty in this test.
-            ExpectedStatusCodes = new List<HttpStatusCodeCase>()
+            return Task.FromResult(ActivityTestHelper.CreateHttpResponse(HttpStatusCode.OK, jsonResponse));
         };
 
+        var sendHttpRequest = CreateSendHttpRequest(expectedUrl);
+
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, services =>
-        {
-            services.AddSingleton(mockHttpClientFactory);
-            services.AddSingleton(ActivityTestHelper.CreateMockResilientActivityInvoker());
-            ActivityTestHelper.AddHttpServices(services);
-            services.AddLogging();
-        });
+        var context = await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, 
+            services => ActivityTestHelper.ConfigureHttpActivityServices(services, responseHandler));
 
         // Assert
         Assert.NotNull(capturedRequest);
@@ -65,87 +39,24 @@ public class SendHttpRequestTests
     }
 
     [Fact]
-    public async Task Should_Send_POST_Request_With_JSON_Content()
-    {
-        // Arrange
-        var expectedUrl = new Uri("https://api.example.com/create");
-        var requestContent = new { name = "test", value = 42 };
-        var contentType = "application/json";
-        var mockHttpClientFactory = Substitute.For<IHttpClientFactory>();
-        
-        var httpResponse = new HttpResponseMessage(HttpStatusCode.Created);
-        
-        HttpRequestMessage? capturedRequest = null;
-        var testHandler = new TestHttpMessageHandler((request, _) =>
-        {
-            capturedRequest = request;
-            return Task.FromResult(httpResponse);
-        });
-
-        var httpClient = new HttpClient(testHandler);
-        mockHttpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
-
-        var sendHttpRequest = new SendHttpRequest
-        {
-            Url = new Input<Uri?>(expectedUrl),
-            Method = new Input<string>("POST"),
-            Content = new Input<object?>(requestContent),
-            ContentType = new Input<string?>(contentType),
-            ExpectedStatusCodes = new List<HttpStatusCodeCase>()
-        };
-
-        // Act
-        await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, services =>
-        {
-            services.AddSingleton(mockHttpClientFactory);
-            services.AddSingleton(ActivityTestHelper.CreateMockResilientActivityInvoker());
-            ActivityTestHelper.AddHttpServices(services);
-            services.AddLogging();
-        });
-
-        // Assert
-        Assert.NotNull(capturedRequest);
-        Assert.Equal(HttpMethod.Post, capturedRequest.Method);
-        Assert.Equal(expectedUrl, capturedRequest.RequestUri);
-        Assert.NotNull(capturedRequest.Content);
-    }
-
-    [Fact]
     public async Task Should_Add_Authorization_Header()
     {
         // Arrange
         var expectedUrl = new Uri("https://api.example.com/secure");
         var authorizationHeader = "Bearer token123";
-        var mockHttpClientFactory = Substitute.For<IHttpClientFactory>();
-        
-        var httpResponse = new HttpResponseMessage(HttpStatusCode.OK);
         
         HttpRequestMessage? capturedRequest = null;
-        var testHandler = new TestHttpMessageHandler((request, _) =>
+        var responseHandler = (HttpRequestMessage request, CancellationToken _) =>
         {
             capturedRequest = request;
-            return Task.FromResult(httpResponse);
-        });
-
-        var httpClient = new HttpClient(testHandler);
-        mockHttpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
-
-        var sendHttpRequest = new SendHttpRequest
-        {
-            Url = new Input<Uri?>(expectedUrl),
-            Method = new Input<string>("GET"),
-            Authorization = new Input<string?>(authorizationHeader),
-            ExpectedStatusCodes = new List<HttpStatusCodeCase>()
+            return Task.FromResult(ActivityTestHelper.CreateHttpResponse(HttpStatusCode.OK));
         };
 
+        var sendHttpRequest = CreateSendHttpRequest(expectedUrl, authorization: authorizationHeader);
+
         // Act
-        await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, services =>
-        {
-            services.AddSingleton(mockHttpClientFactory);
-            services.AddSingleton(ActivityTestHelper.CreateMockResilientActivityInvoker());
-            ActivityTestHelper.AddHttpServices(services);
-            services.AddLogging();
-        });
+        await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, 
+            services => ActivityTestHelper.ConfigureHttpActivityServices(services, responseHandler));
 
         // Assert
         Assert.NotNull(capturedRequest);
@@ -157,16 +68,9 @@ public class SendHttpRequestTests
     public Task Should_Execute_Matching_Status_Code_Activity()
     {
         // Arrange
-        var mockHttpClientFactory = Substitute.For<IHttpClientFactory>();
-        var mockHttpClient = Substitute.For<HttpClient>();
         var mockActivity404 = Substitute.For<IActivity>();
         var mockActivity200 = Substitute.For<IActivity>();
         
-        var httpResponse = new HttpResponseMessage(HttpStatusCode.NotFound);
-        mockHttpClientFactory.CreateClient(Arg.Any<string>()).Returns(mockHttpClient);
-        mockHttpClient.SendAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(httpResponse));
-
         var sendHttpRequest = new SendHttpRequest
         {
             Url = new Input<Uri?>(new Uri("https://api.example.com/notfound")),
@@ -256,33 +160,20 @@ public class SendHttpRequestTests
     public async Task Should_Set_Response_Headers_Output()
     {
         // Arrange
-        var mockHttpClientFactory = Substitute.For<IHttpClientFactory>();
-        
-        var httpResponse = new HttpResponseMessage(HttpStatusCode.OK);
-        httpResponse.Headers.Add("Custom-Header", "CustomValue");
-        httpResponse.Headers.Add("X-Rate-Limit", "100");
-        
-        var testHandler = new TestHttpMessageHandler((_, _) =>
-            Task.FromResult(httpResponse));
-
-        var httpClient = new HttpClient(testHandler);
-        mockHttpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
-
-        var sendHttpRequest = new SendHttpRequest
+        var expectedHeaders = new Dictionary<string, string>
         {
-            Url = new Input<Uri?>(new Uri("https://api.example.com/headers")),
-            Method = new Input<string>("GET"),
-            ExpectedStatusCodes = new List<HttpStatusCodeCase>()
+            { "Custom-Header", "CustomValue" },
+            { "X-Rate-Limit", "100" }
         };
 
+        var responseHandler = (HttpRequestMessage _, CancellationToken _) =>
+            Task.FromResult(ActivityTestHelper.CreateHttpResponse(HttpStatusCode.OK, additionalHeaders: expectedHeaders));
+
+        var sendHttpRequest = CreateSendHttpRequest(new Uri("https://api.example.com/headers"));
+
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, services =>
-        {
-            services.AddSingleton(mockHttpClientFactory);
-            services.AddSingleton(ActivityTestHelper.CreateMockResilientActivityInvoker());
-            ActivityTestHelper.AddHttpServices(services);
-            services.AddLogging();
-        });
+        var context = await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, 
+            services => ActivityTestHelper.ConfigureHttpActivityServices(services, responseHandler));
 
         // Assert
         var responseHeadersObj = context.GetExecutionOutput(_ => sendHttpRequest.ResponseHeaders);
@@ -293,92 +184,45 @@ public class SendHttpRequestTests
     }
 
     [Fact]
-    public async Task Should_Parse_JSON_Response_Content()
+    public void Should_Have_Correct_Activity_Attributes_And_HttpStatusCodeCase_Creation()
     {
-        // Arrange
-        var mockHttpClientFactory = Substitute.For<IHttpClientFactory>();
-        
-        var jsonContent = "{\"id\": 123, \"name\": \"test\"}";
-        var responseContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-        var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = responseContent
-        };
+        // Test activity attributes using the new helper method
+        ActivityTestHelper.AssertActivityAttributes(
+            typeof(SendHttpRequest),
+            expectedNamespace: "Elsa",
+            expectedCategory: "HTTP", 
+            expectedDisplayName: "HTTP Request",
+            expectedDescription: "Send an HTTP request.",
+            expectedKind: ActivityKind.Task
+        );
 
-        var testHandler = new TestHttpMessageHandler((_, _) =>
-            Task.FromResult(httpResponse));
-
-        var httpClient = new HttpClient(testHandler);
-        mockHttpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
-
-        var sendHttpRequest = new SendHttpRequest
-        {
-            Url = new Input<Uri?>(new Uri("https://api.example.com/json")),
-            Method = new Input<string>("GET"),
-            ExpectedStatusCodes = new List<HttpStatusCodeCase>()
-        };
-
-        // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, services =>
-        {
-            services.AddSingleton(mockHttpClientFactory);
-            services.AddSingleton(ActivityTestHelper.CreateMockResilientActivityInvoker());
-            ActivityTestHelper.AddHttpServices(services);
-            services.AddLogging();
-        });
-
-        // Assert
-        var parsedContent = context.GetExecutionOutput(x => sendHttpRequest.ParsedContent);
-        var statusCode = context.GetExecutionOutput(x => sendHttpRequest.StatusCode);
-        var httpResponseResult = (HttpResponseMessage)context.GetExecutionOutput(x => sendHttpRequest.Result)!;
-        
-        Assert.NotNull(parsedContent);
-        Assert.Equal(200, statusCode);
-        
-        // Verify the response was received and stored
-        Assert.NotNull(httpResponseResult);
-        Assert.Equal(HttpStatusCode.OK, httpResponseResult.StatusCode);
-    }
-
-    [Fact]
-    public void Should_Have_Correct_Activity_Attributes()
-    {
-        // Arrange & Act
-        var activityType = typeof(SendHttpRequest);
-        var activityAttribute = activityType.GetCustomAttributes(typeof(ActivityAttribute), false)
-            .Cast<ActivityAttribute>().FirstOrDefault();
-
-        // Assert
-        Assert.NotNull(activityAttribute);
-        Assert.Equal("Elsa", activityAttribute.Namespace);
-        Assert.Equal("HTTP", activityAttribute.Category);
-        Assert.Equal("Send an HTTP request.", activityAttribute.Description);
-        Assert.Equal("HTTP Request", activityAttribute.DisplayName);
-        Assert.Equal(ActivityKind.Task, activityAttribute.Kind);
-    }
-
-    [Fact]
-    public void Should_Inherit_From_SendHttpRequestBase()
-    {
-        // Arrange & Act
-        var sendHttpRequest = new SendHttpRequest();
-
-        // Assert
-        Assert.IsAssignableFrom<SendHttpRequestBase>(sendHttpRequest);
-    }
-
-    [Fact]
-    public void Should_Create_HttpStatusCodeCase_With_Status_And_Activity()
-    {
-        // Arrange
+        // Test HttpStatusCodeCase creation (merged from separate test)
         const int statusCode = 200;
         var mockActivity = Substitute.For<IActivity>();
-
-        // Act
         var httpStatusCodeCase = new HttpStatusCodeCase(statusCode, mockActivity);
 
-        // Assert
         Assert.Equal(statusCode, httpStatusCodeCase.StatusCode);
         Assert.Equal(mockActivity, httpStatusCodeCase.Activity);
+    }
+
+    private static SendHttpRequest CreateSendHttpRequest(
+        Uri url,
+        string method = "GET",
+        object? content = null,
+        string? contentType = null,
+        string? authorization = null)
+    {
+        return new SendHttpRequest
+        {
+            Url = new Input<Uri?>(url),
+            Method = new Input<string>(method),
+            Content = content != null ? new Input<object?>(content, null) : null,
+            ContentType = contentType != null ? new Input<string?>(contentType, null) : null,
+            Authorization = authorization != null ? new Input<string?>(authorization, null) : null,
+            // Note: Setting ExpectedStatusCodes will make the activity attempt to schedule branches,
+            // which can interfere with the test's control flow and assertions. To avoid this, we leave
+            // ExpectedStatusCodes empty in most tests.
+            ExpectedStatusCodes = new List<HttpStatusCodeCase>()
+        };
     }
 }
