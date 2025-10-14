@@ -101,7 +101,7 @@ public async Task Should_Set_Variable_Integer()
 **Example (sets output):**
 ```csharp
 [Fact]
-    public async Task Should_Send_GET_Request_And_Handle_Success_Response()
+    public async Task Should_Send_Get_Request_And_Handle_Success_Response()
     {
         // Arrange
         // Extra arrange steps omitted for brevity
