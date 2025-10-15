@@ -14,6 +14,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         var state = new WorkflowState
         {
             Id = workflowExecutionContext.Id,
+            TenantId = workflowExecutionContext.Workflow?.Identity?.TenantId,
             DefinitionId = workflowExecutionContext.Workflow.Identity.DefinitionId,
             DefinitionVersionId = workflowExecutionContext.Workflow.Identity.Id,
             DefinitionVersion = workflowExecutionContext.Workflow.Identity.Version,

@@ -20,6 +20,7 @@ public class DefaultActivityExecutionMapper() : IActivityExecutionMapper
         return new()
         {
             Id = source.Id,
+            TenantId = source.WorkflowExecutionContext.Workflow?.Identity?.TenantId,
             ActivityId = source.Activity.Id,
             ActivityNodeId = source.NodeId,
             WorkflowInstanceId = source.WorkflowExecutionContext.Id,
