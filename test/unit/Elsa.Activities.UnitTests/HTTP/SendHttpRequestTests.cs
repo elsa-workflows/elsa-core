@@ -58,10 +58,8 @@ public class SendHttpRequestTests
         Assert.Equal(authorizationHeader, requestCapture.CapturedRequest.Headers.Authorization.ToString());
     }
 
-    [Theory]
-    [InlineData(404, "MatchingStatusCode")]
-    [InlineData(500, "UnmatchedStatusCode")]
-    public async Task Should_Schedule_Correct_Activity_Based_On_Status_Code(int responseStatusCode, string expectedSchedulingBehavior)
+    [Fact]
+    public async Task Should_Schedule_Matching_Activity_When_Status_Code_Has_Corresponding_Handler()
     {
         // Arrange
         var mockActivity404 = CreateMockActivity();
@@ -81,7 +79,7 @@ public class SendHttpRequestTests
         };
 
         var childActivities = new[] { mockActivity404, mockActivity200, mockUnmatchedActivity };
-        var responseHandler = CreateResponseHandler((HttpStatusCode)responseStatusCode);
+        var responseHandler = CreateResponseHandler(HttpStatusCode.NotFound); // 404
 
         // Act - Execute with child activities in workflow context
         var context = await ExecuteActivityWithChildActivitiesInBackgroundMode(
@@ -89,22 +87,173 @@ public class SendHttpRequestTests
 
         // Assert - Get scheduled activities and verify correct one was scheduled
         var scheduledActivities = context.GetBackgroundScheduledActivities().ToList();
+        Assert.Single(scheduledActivities);
+        var scheduledActivity = scheduledActivities.First();
+        var expectedNode = context.WorkflowExecutionContext.FindNodeByActivity(mockActivity404);
+        Assert.Equal(expectedNode?.NodeId, scheduledActivity.ActivityNodeId);
+    }
+
+    [Fact]
+    public async Task Should_Schedule_Unmatched_Activity_When_Status_Code_Has_No_Corresponding_Handler()
+    {
+        // Arrange
+        var mockActivity404 = CreateMockActivity();
+        var mockActivity200 = CreateMockActivity();
+        var mockUnmatchedActivity = CreateMockActivity();
         
-        switch (expectedSchedulingBehavior)
+        var sendHttpRequest = new SendHttpRequest
         {
-            case "MatchingStatusCode":
-                Assert.Single(scheduledActivities);
-                var scheduledActivity404 = scheduledActivities.First();
-                var expectedNode404 = context.WorkflowExecutionContext.FindNodeByActivity(mockActivity404);
-                Assert.Equal(expectedNode404?.NodeId, scheduledActivity404.ActivityNodeId);
-                break;
-            case "UnmatchedStatusCode":
-                Assert.Single(scheduledActivities);
-                var scheduledUnmatched = scheduledActivities.First();
-                var expectedUnmatchedNode = context.WorkflowExecutionContext.FindNodeByActivity(mockUnmatchedActivity);
-                Assert.Equal(expectedUnmatchedNode?.NodeId, scheduledUnmatched.ActivityNodeId);
-                break;
-        }
+            Url = new Input<Uri?>(new Uri("https://api.example.com/test")),
+            Method = new Input<string>("GET"),
+            ExpectedStatusCodes = new List<HttpStatusCodeCase>
+            {
+                new(200, mockActivity200),
+                new(404, mockActivity404)
+            },
+            UnmatchedStatusCode = mockUnmatchedActivity
+        };
+
+        var childActivities = new[] { mockActivity404, mockActivity200, mockUnmatchedActivity };
+        var responseHandler = CreateResponseHandler(HttpStatusCode.InternalServerError); // 500 - no match
+
+        // Act - Execute with child activities in workflow context
+        var context = await ExecuteActivityWithChildActivitiesInBackgroundMode(
+            sendHttpRequest, childActivities, responseHandler);
+
+        // Assert - Get scheduled activities and verify correct one was scheduled
+        var scheduledActivities = context.GetBackgroundScheduledActivities().ToList();
+        Assert.Single(scheduledActivities);
+        var scheduledActivity = scheduledActivities.First();
+        var expectedNode = context.WorkflowExecutionContext.FindNodeByActivity(mockUnmatchedActivity);
+        Assert.Equal(expectedNode?.NodeId, scheduledActivity.ActivityNodeId);
+    }
+
+    [Fact]
+    public async Task Should_Schedule_FailedToConnect_Activity_On_HttpRequestException()
+    {
+        // Arrange
+        var mockFailedToConnectActivity = CreateMockActivity();
+        var mockTimeoutActivity = CreateMockActivity();
+        
+        var sendHttpRequest = new SendHttpRequest
+        {
+            Url = new Input<Uri?>(new Uri("https://api.example.com/error")),
+            Method = new Input<string>("GET"),
+            ExpectedStatusCodes = new List<HttpStatusCodeCase>(),
+            FailedToConnect = mockFailedToConnectActivity,
+            Timeout = mockTimeoutActivity
+        };
+
+        var childActivities = new[] { mockFailedToConnectActivity, mockTimeoutActivity };
+        
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responseHandler = 
+            (_, _) => throw new HttpRequestException("Connection failed");
+
+        // Act - Execute with child activities in workflow context
+        var context = await ExecuteActivityWithChildActivitiesInBackgroundMode(
+            sendHttpRequest, childActivities, responseHandler);
+
+        // Assert - Verify the FailedToConnect activity was scheduled
+        var scheduledActivities = context.GetBackgroundScheduledActivities().ToList();
+        Assert.Single(scheduledActivities);
+        
+        var scheduledActivity = scheduledActivities.First();
+        var expectedNode = context.WorkflowExecutionContext.FindNodeByActivity(mockFailedToConnectActivity);
+        Assert.Equal(expectedNode?.NodeId, scheduledActivity.ActivityNodeId);
+    }
+
+    [Fact]
+    public async Task Should_Schedule_Timeout_Activity_On_TaskCanceledException()
+    {
+        // Arrange
+        var mockFailedToConnectActivity = CreateMockActivity();
+        var mockTimeoutActivity = CreateMockActivity();
+        
+        var sendHttpRequest = new SendHttpRequest
+        {
+            Url = new Input<Uri?>(new Uri("https://api.example.com/error")),
+            Method = new Input<string>("GET"),
+            ExpectedStatusCodes = new List<HttpStatusCodeCase>(),
+            FailedToConnect = mockFailedToConnectActivity,
+            Timeout = mockTimeoutActivity
+        };
+
+        var childActivities = new[] { mockFailedToConnectActivity, mockTimeoutActivity };
+        
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responseHandler = 
+            (_, _) => throw new TaskCanceledException("Request timed out");
+
+        // Act - Execute with child activities in workflow context
+        var context = await ExecuteActivityWithChildActivitiesInBackgroundMode(
+            sendHttpRequest, childActivities, responseHandler);
+
+        // Assert - Verify the Timeout activity was scheduled
+        var scheduledActivities = context.GetBackgroundScheduledActivities().ToList();
+        Assert.Single(scheduledActivities);
+        
+        var scheduledActivity = scheduledActivities.First();
+        var expectedNode = context.WorkflowExecutionContext.FindNodeByActivity(mockTimeoutActivity);
+        Assert.Equal(expectedNode?.NodeId, scheduledActivity.ActivityNodeId);
+    }
+
+    [Fact]
+    public void Should_Allow_Configuration_Of_FailedToConnect_Activity()
+    {
+        // Arrange
+        var mockActivity = CreateMockActivity();
+        var url = "https://unreachable.example.com";
+        
+        // Act
+        var sendHttpRequest = new SendHttpRequest
+        {
+            Url = new Input<Uri?>(new Uri(url)),
+            Method = new Input<string>("GET"),
+            ExpectedStatusCodes = new List<HttpStatusCodeCase>(),
+            FailedToConnect = mockActivity
+        };
+
+        // Assert - This tests property configuration
+        Assert.Equal(mockActivity, sendHttpRequest.FailedToConnect);
+    }
+
+    [Fact]
+    public void Should_Allow_Configuration_Of_Timeout_Activity()
+    {
+        // Arrange
+        var mockActivity = CreateMockActivity();
+        var url = "https://slow.example.com";
+        
+        // Act
+        var sendHttpRequest = new SendHttpRequest
+        {
+            Url = new Input<Uri?>(new Uri(url)),
+            Method = new Input<string>("GET"),
+            ExpectedStatusCodes = new List<HttpStatusCodeCase>(),
+            Timeout = mockActivity
+        };
+
+        // Assert - This tests property configuration
+        Assert.Equal(mockActivity, sendHttpRequest.Timeout);
+    }
+
+    [Fact]
+    public void Should_Allow_Configuration_Of_UnmatchedStatusCode_Activity()
+    {
+        // Arrange
+        var mockActivity = CreateMockActivity();
+        var url = "https://api.example.com/error";
+        
+        // Act
+        var sendHttpRequest = new SendHttpRequest
+        {
+            Url = new Input<Uri?>(new Uri(url)),
+            Method = new Input<string>("GET"),
+            ExpectedStatusCodes = new List<HttpStatusCodeCase>(),
+            UnmatchedStatusCode = mockActivity
+        };
+
+        // Assert - This tests property configuration
+        Assert.Equal(mockActivity, sendHttpRequest.UnmatchedStatusCode);
     }
 
     [Fact]
@@ -139,78 +288,6 @@ public class SendHttpRequestTests
         var scheduledActivity = scheduledActivities.First();
         Assert.Null(scheduledActivity.ActivityNodeId); // No activity to schedule, so NodeId is null
         Assert.Equal("OnChildActivityCompletedAsync", scheduledActivity.Options?.CompletionCallback); // But still has completion callback
-    }
-
-    [Theory]
-    [InlineData("FailedToConnect")]
-    [InlineData("Timeout")]
-    public async Task Should_Schedule_Error_Handling_Activity_On_Exception(string errorType)
-    {
-        // Arrange
-        var mockFailedToConnectActivity = CreateMockActivity();
-        var mockTimeoutActivity = CreateMockActivity();
-        
-        var sendHttpRequest = new SendHttpRequest
-        {
-            Url = new Input<Uri?>(new Uri("https://api.example.com/error")),
-            Method = new Input<string>("GET"),
-            ExpectedStatusCodes = new List<HttpStatusCodeCase>(),
-            FailedToConnect = mockFailedToConnectActivity,
-            Timeout = mockTimeoutActivity
-        };
-
-        var childActivities = new[] { mockFailedToConnectActivity, mockTimeoutActivity };
-
-        // Create a response handler that throws the appropriate exception
-        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responseHandler = errorType switch
-        {
-            "FailedToConnect" => (_, _) => throw new HttpRequestException("Connection failed"),
-            "Timeout" => (_, _) => throw new TaskCanceledException("Request timed out"),
-            _ => throw new ArgumentException($"Unknown error type: {errorType}")
-        };
-
-        // Act - Execute with child activities in workflow context
-        var context = await ExecuteActivityWithChildActivitiesInBackgroundMode(
-            sendHttpRequest, childActivities, responseHandler);
-
-        // Assert - Verify the correct error handling activity was scheduled
-        var scheduledActivities = context.GetBackgroundScheduledActivities().ToList();
-        Assert.Single(scheduledActivities);
-        
-        var scheduledActivity = scheduledActivities.First();
-        var expectedActivity = errorType switch
-        {
-            "FailedToConnect" => mockFailedToConnectActivity,
-            "Timeout" => mockTimeoutActivity,
-            _ => throw new ArgumentException($"Unknown error type: {errorType}")
-        };
-        
-        var expectedNode = context.WorkflowExecutionContext.FindNodeByActivity(expectedActivity);
-        Assert.Equal(expectedNode?.NodeId, scheduledActivity.ActivityNodeId);
-    }
-
-    // Keep the original property configuration test but rename it to be clear about what it tests
-    [Theory]
-    [InlineData("FailedToConnect", "https://unreachable.example.com")]
-    [InlineData("Timeout", "https://slow.example.com")]
-    [InlineData("UnmatchedStatusCode", "https://api.example.com/error")]
-    public Task Should_Allow_Configuration_Of_Error_Handling_Activities(string activityType, string url)
-    {
-        // Arrange
-        var mockActivity = CreateMockActivity();
-        var sendHttpRequest = CreateSendHttpRequestWithErrorHandling(url, activityType, mockActivity);
-
-        // Act & Assert - This tests property configuration, not scheduling behavior
-        var configuredActivity = activityType switch
-        {
-            "FailedToConnect" => sendHttpRequest.FailedToConnect,
-            "Timeout" => sendHttpRequest.Timeout,
-            "UnmatchedStatusCode" => sendHttpRequest.UnmatchedStatusCode,
-            _ => throw new ArgumentException($"Unknown activity type: {activityType}")
-        };
-
-        Assert.Equal(mockActivity, configuredActivity);
-        return Task.CompletedTask;
     }
 
     [Fact]
@@ -315,46 +392,6 @@ public class SendHttpRequestTests
             ContentType = contentType != null ? new Input<string?>(contentType, null) : null,
             Authorization = authorization != null ? new Input<string?>(authorization, null) : null,
             ExpectedStatusCodes = new List<HttpStatusCodeCase>()
-        };
-    }
-
-    private static SendHttpRequest CreateSendHttpRequestWithErrorHandling(
-        string url, 
-        string activityType, 
-        IActivity activity)
-    {
-        var request = new SendHttpRequest
-        {
-            Url = new Input<Uri?>(new Uri(url)),
-            Method = new Input<string>("GET"),
-            ExpectedStatusCodes = new List<HttpStatusCodeCase>()
-        };
-
-        switch (activityType)
-        {
-            case "FailedToConnect":
-                request.FailedToConnect = activity;
-                break;
-            case "Timeout":
-                request.Timeout = activity;
-                break;
-            case "UnmatchedStatusCode":
-                request.UnmatchedStatusCode = activity;
-                break;
-        }
-
-        return request;
-    }
-
-    private static SendHttpRequest CreateSendHttpRequestWithStatusCodes(
-        string url, 
-        List<HttpStatusCodeCase> statusCodes)
-    {
-        return new SendHttpRequest
-        {
-            Url = new Input<Uri?>(new Uri(url)),
-            Method = new Input<string>("GET"),
-            ExpectedStatusCodes = statusCodes
         };
     }
 }
