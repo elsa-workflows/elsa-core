@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -351,5 +352,100 @@ public class Tests
         
         if(shouldThrow)
             Assert.Throws<TypeConversionException>(() => input.ConvertTo(targetType, options));    
+    }
+
+    [Fact]
+    public void ConvertTo_WithRegisteredPersonTypeConverter_ConvertsFromJsonToPerson()
+    {
+        try
+        {
+            // Arrange
+            TypeDescriptor.AddAttributes(typeof(Person), new TypeConverterAttribute(typeof(PersonTypeConverter)));
+
+            var json = "{\"Name\":\"Alice\",\"Age\":30}";
+
+            // Act
+            var result = json.ConvertTo<Person>(_objectConverterOptions);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.IsType<Person>(result);
+            Assert.Equal("Alice", result.Name);
+            Assert.Equal(30, result.Age);
+        }
+        finally
+        {
+            // Clean up type descriptor cache so other tests aren't affected
+            TypeDescriptor.Refresh(typeof(Person));
+        }
+    }
+
+    [Fact]
+    public void ConvertTo_WithRegisteredPersonTypeConverter_NullInput_ReturnsNull()
+    {
+        try
+        {
+            // Arrange
+            TypeDescriptor.AddAttributes(typeof(Person), new TypeConverterAttribute(typeof(PersonTypeConverter)));
+
+            string? json = null;
+
+            // Act
+            var result = json.ConvertTo<Person>(_objectConverterOptions);
+
+            // Assert
+            Assert.Null(result);
+        }
+        finally
+        {
+            TypeDescriptor.Refresh(typeof(Person));
+        }
+    }
+
+    [Fact]
+    public void ConvertTo_WithRegisteredPersonTypeConverter_ConvertsFromPersonToJson()
+    {
+        try
+        {
+            // Arrange
+            TypeDescriptor.AddAttributes(typeof(Person), new TypeConverterAttribute(typeof(PersonTypeConverter)));
+
+            var person = new Person { Name = "Bob", Age = 42 };
+
+            // Act
+            var result = person.ConvertTo<string>(_objectConverterOptions);
+
+            // Assert
+            Assert.NotNull(result);
+            var json = Assert.IsType<string>(result);
+            Assert.Contains("\"Name\":\"Bob\"", json);
+            Assert.Contains("\"Age\":42", json);
+        }
+        finally
+        {
+            // Clean up to avoid polluting TypeDescriptor globally
+            TypeDescriptor.Refresh(typeof(Person));
+        }
+    }
+
+    [Fact]
+    public void ConvertTo_WithRegisteredPersonTypeConverter_NullPersonToString_ReturnsNull()
+    {
+        try
+        {
+            // Arrange
+            TypeDescriptor.AddAttributes(typeof(Person), new TypeConverterAttribute(typeof(PersonTypeConverter)));
+            Person? person = null;
+
+            // Act
+            var result = person.ConvertTo<string>(_objectConverterOptions);
+
+            // Assert
+            Assert.Null(result);
+        }
+        finally
+        {
+            TypeDescriptor.Refresh(typeof(Person));
+        }
     }
 }
