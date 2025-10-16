@@ -42,12 +42,11 @@ public static class ActivityTestHelper
         IEnumerable<IActivity>? childActivities = null)
     {
         ActivityExecutionContext context;
-        bool backgroundMode = childActivities != null && childActivities.Any();
 
-        if (backgroundMode)
+        if (childActivities != null && childActivities.Any())
         {
             // Create workflow with child activities for activity scheduling scenarios
-            context = await CreateActivityExecutionContextWithChildActivities(activity, childActivities!, configureServices);
+            context = await CreateActivityExecutionContextWithChildActivities(activity, childActivities, configureServices);
             // Enable background execution mode to capture scheduled activities
             context.SetIsBackgroundExecution();
         }
@@ -137,6 +136,13 @@ public static class ActivityTestHelper
         Assert.Equal(expectedDisplayName, activityAttribute.DisplayName);
         Assert.Equal(expectedKind, activityAttribute.Kind);
     }
+
+    /// <summary>
+    /// Creates a mock activity for testing purposes.
+    /// This is useful for creating placeholder activities when testing activity scheduling behavior.
+    /// </summary>
+    /// <returns>A mock IActivity instance</returns>
+    public static IActivity CreateMockActivity() => Substitute.For<IActivity>();
 
     /// <summary>
     /// Adds all HTTP-related services to the service collection.
