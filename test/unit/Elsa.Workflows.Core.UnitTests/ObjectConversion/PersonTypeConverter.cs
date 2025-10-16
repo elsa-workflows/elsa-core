@@ -27,7 +27,7 @@ public class PersonTypeConverter : TypeConverter
 
         if (value is string json)
         {
-            if (json.Length == 0)
+            if (string.IsNullOrEmpty(json))
             {
                 return null;
             }
