@@ -9,151 +9,210 @@ namespace Elsa.Activities.UnitTests.HTTP;
 
 public class SendHttpRequestTests
 {
-    [Fact]
-    public async Task Should_Send_GET_Request_And_Handle_Success_Response()
+    [Theory]
+    [InlineData("GET", "https://api.example.com/data", "{\"result\": \"success\"}", 200)]
+    [InlineData("POST", "https://api.example.com/create", "{\"id\": 123}", 201)]
+    [InlineData("PUT", "https://api.example.com/update", "{\"updated\": true}", 200)]
+    public async Task Should_Send_Request_And_Handle_Success_Response(string method, string url, string jsonResponse, int expectedStatusCode)
     {
         // Arrange
-        var expectedUrl = new Uri("https://api.example.com/data");
-        var jsonResponse = "{\"result\": \"success\"}";
+        var expectedUrl = new Uri(url);
+        var expectedMethod = new HttpMethod(method);
+        var expectedHttpStatusCode = (HttpStatusCode)expectedStatusCode;
         
-        HttpRequestMessage? capturedRequest = null;
-        var responseHandler = (HttpRequestMessage request, CancellationToken _) =>
-        {
-            capturedRequest = request;
-            return Task.FromResult(ActivityTestHelper.CreateHttpResponse(HttpStatusCode.OK, jsonResponse));
-        };
-
-        var sendHttpRequest = CreateSendHttpRequest(expectedUrl);
+        var requestCapture = new RequestCapture();
+        var responseHandler = CreateResponseHandler(expectedHttpStatusCode, jsonResponse, requestCapture);
+        var sendHttpRequest = CreateSendHttpRequest(expectedUrl, method);
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, 
-            services => ActivityTestHelper.ConfigureHttpActivityServices(services, responseHandler));
+        var context = await ExecuteActivityWithResponseHandler(sendHttpRequest, responseHandler);
 
         // Assert
-        Assert.NotNull(capturedRequest);
-        Assert.Equal(HttpMethod.Get, capturedRequest.Method);
-        Assert.Equal(expectedUrl, capturedRequest.RequestUri);
+        Assert.NotNull(requestCapture.CapturedRequest);
+        Assert.Equal(expectedMethod, requestCapture.CapturedRequest.Method);
+        Assert.Equal(expectedUrl, requestCapture.CapturedRequest.RequestUri);
         
         var statusCodeOutput = context.GetExecutionOutput(_ => sendHttpRequest.StatusCode);
-        Assert.Equal(200, statusCodeOutput);
+        Assert.Equal(expectedStatusCode, statusCodeOutput);
     }
 
-    [Fact]
-    public async Task Should_Add_Authorization_Header()
+    [Theory]
+    [InlineData("Bearer token123")]
+    [InlineData("Basic YWRtaW46cGFzcw==")]
+    [InlineData("ApiKey abc123")]
+    public async Task Should_Add_Authorization_Header(string authorizationHeader)
     {
         // Arrange
         var expectedUrl = new Uri("https://api.example.com/secure");
-        var authorizationHeader = "Bearer token123";
         
-        HttpRequestMessage? capturedRequest = null;
-        var responseHandler = (HttpRequestMessage request, CancellationToken _) =>
-        {
-            capturedRequest = request;
-            return Task.FromResult(ActivityTestHelper.CreateHttpResponse(HttpStatusCode.OK));
-        };
-
+        var requestCapture = new RequestCapture();
+        var responseHandler = CreateResponseHandler(HttpStatusCode.OK, null, requestCapture);
         var sendHttpRequest = CreateSendHttpRequest(expectedUrl, authorization: authorizationHeader);
 
         // Act
-        await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, 
-            services => ActivityTestHelper.ConfigureHttpActivityServices(services, responseHandler));
+        await ExecuteActivityWithResponseHandler(sendHttpRequest, responseHandler);
 
         // Assert
-        Assert.NotNull(capturedRequest);
-        Assert.NotNull(capturedRequest.Headers.Authorization);
-        Assert.Equal(authorizationHeader, capturedRequest.Headers.Authorization.ToString());
+        Assert.NotNull(requestCapture.CapturedRequest);
+        Assert.NotNull(requestCapture.CapturedRequest.Headers.Authorization);
+        Assert.Equal(authorizationHeader, requestCapture.CapturedRequest.Headers.Authorization.ToString());
+    }
+
+    [Theory]
+    [InlineData(new[]{200, 404}, new[]{"mockActivity200", "mockActivity404"}, "mockUnmatchedActivity", HttpStatusCode.NotFound, "mockActivity404")]
+    [InlineData(new[]{200, 404}, new[]{"mockActivity200", "mockActivity404"}, "mockUnmatchedActivity", HttpStatusCode.InternalServerError, "mockUnmatchedActivity")]
+    public async Task Should_Schedule_Activity_According_To_Handlers(int[] statusCodes, string[] activityNames, string handler, HttpStatusCode expectedStatusCode, string expectedScheduledActivityName)
+    {
+        // Arrange
+        var (sendHttpRequest, childActivities) = CreateSendHttpRequestWithStatusHandlers(
+            expectedStatusCodes: [(statusCodes[0], activityNames[0]), (statusCodes[1], activityNames[1])],
+            unmatchedHandler: handler
+        );
+
+        var responseHandler = CreateResponseHandler(expectedStatusCode);
+
+        // Act
+        var context = await ExecuteActivityWithScheduling(sendHttpRequest, responseHandler, childActivities.Values.ToArray());
+
+        // Assert - Verify exactly one activity was scheduled
+        var scheduledActivities = context.GetBackgroundScheduledActivities().ToList();
+        Assert.Single(scheduledActivities);
+        
+        var scheduledActivity = scheduledActivities.First();
+        Assert.NotNull(scheduledActivity.ActivityNodeId);
+        Assert.NotNull(scheduledActivity.OwnerActivityInstanceId);
+        
+        // Verify the correct activity was scheduled (404 handler)
+        var expectedNode = context.WorkflowExecutionContext.FindNodeByActivity(childActivities[expectedScheduledActivityName]);
+        Assert.Equal(expectedNode?.NodeId, scheduledActivity.ActivityNodeId);
     }
 
     [Fact]
-    public Task Should_Execute_Matching_Status_Code_Activity()
+    public async Task Should_Schedule_FailedToConnect_Activity_On_HttpRequestException()
     {
         // Arrange
-        var mockActivity404 = Substitute.For<IActivity>();
-        var mockActivity200 = Substitute.For<IActivity>();
+        var (sendHttpRequest, childActivities) = CreateSendHttpRequestWithErrorHandlers(
+            failedToConnect: "mockFailedToConnect"
+        );
         
-        var sendHttpRequest = new SendHttpRequest
-        {
-            Url = new Input<Uri?>(new Uri("https://api.example.com/notfound")),
-            Method = new Input<string>("GET"),
-            // Test the configuration without actually scheduling activities
-            ExpectedStatusCodes = new List<HttpStatusCodeCase>
-            {
-                new(200, mockActivity200),
-                new(404, mockActivity404)
-            }
-        };
+        var responseHandler = CreateExceptionHandler<HttpRequestException>("Connection failed");
 
-        // Act & Assert - This will fail due to scheduling, so we'll just test the configuration
-        var matchingCase = sendHttpRequest.ExpectedStatusCodes.FirstOrDefault(x => x.StatusCode == 404);
-        Assert.NotNull(matchingCase);
-        Assert.Equal(mockActivity404, matchingCase.Activity);
+        // Act
+        var context = await ExecuteActivityWithScheduling(sendHttpRequest, responseHandler, childActivities.Values.ToArray());
+
+        // Assert - Verify exactly one activity was scheduled
+        var scheduledActivities = context.GetBackgroundScheduledActivities().ToList();
+        Assert.Single(scheduledActivities);
         
-        // Test that we can identify the correct status code without execution
-        Assert.Equal(2, sendHttpRequest.ExpectedStatusCodes.Count);
-        return Task.CompletedTask;
+        var scheduledActivity = scheduledActivities.First();
+        Assert.NotNull(scheduledActivity.ActivityNodeId);
+        Assert.NotNull(scheduledActivity.OwnerActivityInstanceId);
+        
+        // Verify the correct activity was scheduled (FailedToConnect handler)
+        var expectedNode = context.WorkflowExecutionContext.FindNodeByActivity(childActivities["mockFailedToConnect"]);
+        Assert.Equal(expectedNode?.NodeId, scheduledActivity.ActivityNodeId);
     }
 
     [Fact]
-    public Task Should_Execute_UnmatchedStatusCode_Activity_When_No_Match()
+    public async Task Should_Schedule_Timeout_Activity_On_TaskCanceledException()
     {
         // Arrange
-        var mockUnmatchedActivity = Substitute.For<IActivity>();
-        var mockActivity200 = Substitute.For<IActivity>();
+        var (sendHttpRequest, childActivities) = CreateSendHttpRequestWithErrorHandlers(
+            timeout: "mockTimeout"
+        );
         
-        var sendHttpRequest = new SendHttpRequest
-        {
-            Url = new Input<Uri?>(new Uri("https://api.example.com/error")),
-            Method = new Input<string>("GET"),
-            ExpectedStatusCodes = new List<HttpStatusCodeCase>
-            {
-                new(200, mockActivity200)
-            },
-            UnmatchedStatusCode = mockUnmatchedActivity
-        };
+        var responseHandler = CreateExceptionHandler<TaskCanceledException>("Request timed out");
 
-        // Act & Assert - Test configuration without execution
-        var matchingCase = sendHttpRequest.ExpectedStatusCodes.FirstOrDefault(x => x.StatusCode == 500);
-        Assert.Null(matchingCase);
+        // Act
+        var context = await ExecuteActivityWithScheduling(sendHttpRequest, responseHandler, childActivities.Values.ToArray());
+
+        // Assert - Verify exactly one activity was scheduled
+        var scheduledActivities = context.GetBackgroundScheduledActivities().ToList();
+        Assert.Single(scheduledActivities);
         
-        // Verify UnmatchedStatusCode activity is set
-        Assert.Equal(mockUnmatchedActivity, sendHttpRequest.UnmatchedStatusCode);
-        return Task.CompletedTask;
+        var scheduledActivity = scheduledActivities.First();
+        Assert.NotNull(scheduledActivity.ActivityNodeId);
+        Assert.NotNull(scheduledActivity.OwnerActivityInstanceId);
+        
+        // Verify the correct activity was scheduled (Timeout handler)
+        var expectedNode = context.WorkflowExecutionContext.FindNodeByActivity(childActivities["mockTimeout"]);
+        Assert.Equal(expectedNode?.NodeId, scheduledActivity.ActivityNodeId);
     }
 
     [Fact]
-    public Task Should_Handle_HttpRequestException_And_Execute_FailedToConnect_Activity()
+    public void Should_Allow_Configuration_Of_FailedToConnect_Activity()
     {
         // Arrange
-        var mockFailedToConnectActivity = Substitute.For<IActivity>();
+        var mockActivity = Substitute.For<IActivity>();
+        var url = "https://unreachable.example.com";
         
+        // Act
         var sendHttpRequest = new SendHttpRequest
         {
-            Url = new Input<Uri?>(new Uri("https://unreachable.example.com")),
+            Url = new Input<Uri?>(new Uri(url)),
             Method = new Input<string>("GET"),
-            FailedToConnect = mockFailedToConnectActivity
+            ExpectedStatusCodes = new List<HttpStatusCodeCase>(),
+            FailedToConnect = mockActivity
         };
 
-        // Act & Assert - Test configuration without execution
-        Assert.Equal(mockFailedToConnectActivity, sendHttpRequest.FailedToConnect);
-        return Task.CompletedTask;
+        // Assert - This tests property configuration
+        Assert.Equal(mockActivity, sendHttpRequest.FailedToConnect);
     }
 
     [Fact]
-    public Task Should_Handle_TaskCanceledException_And_Execute_Timeout_Activity()
+    public void Should_Allow_Configuration_Of_Timeout_Activity()
     {
         // Arrange
-        var mockTimeoutActivity = Substitute.For<IActivity>();
+        var mockActivity = Substitute.For<IActivity>();
+        var url = "https://slow.example.com";
         
+        // Act
         var sendHttpRequest = new SendHttpRequest
         {
-            Url = new Input<Uri?>(new Uri("https://slow.example.com")),
+            Url = new Input<Uri?>(new Uri(url)),
             Method = new Input<string>("GET"),
-            Timeout = mockTimeoutActivity
+            ExpectedStatusCodes = new List<HttpStatusCodeCase>(),
+            Timeout = mockActivity
         };
 
-        // Act & Assert - Test configuration without execution
-        Assert.Equal(mockTimeoutActivity, sendHttpRequest.Timeout);
-        return Task.CompletedTask;
+        // Assert - This tests property configuration
+        Assert.Equal(mockActivity, sendHttpRequest.Timeout);
+    }
+
+    [Fact]
+    public void Should_Allow_Configuration_Of_UnmatchedStatusCode_Activity()
+    {
+        // Arrange
+        var mockActivity = Substitute.For<IActivity>();
+        var url = "https://api.example.com/error";
+        
+        // Act
+        var sendHttpRequest = new SendHttpRequest
+        {
+            Url = new Input<Uri?>(new Uri(url)),
+            Method = new Input<string>("GET"),
+            ExpectedStatusCodes = new List<HttpStatusCodeCase>(),
+            UnmatchedStatusCode = mockActivity
+        };
+
+        // Assert - This tests property configuration
+        Assert.Equal(mockActivity, sendHttpRequest.UnmatchedStatusCode);
+    }
+
+    [Fact]
+    public async Task Should_Schedule_No_Activity_When_No_Status_Code_Cases_Match_And_No_Unmatched_Handler()
+    {
+        // Arrange
+        var (configured, children) = CreateSendHttpRequestWithStatusHandlers([(200, "handler200")], unmatchedHandler: null); 
+        var responseHandler = CreateResponseHandler(HttpStatusCode.InternalServerError); // 500 - no match
+
+        // Act
+        var context = await ExecuteActivityWithScheduling(configured, responseHandler, children.Values.ToArray());
+
+        // Assert - Verify that no activities were scheduled since there's no handler for this status code
+        // Although child activities were passed to the workflow, none are scheduled because there is no matching status code case and no unmatched handler.
+        var allScheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
+        Assert.Empty(allScheduledActivities);
     }
 
     [Fact]
@@ -166,14 +225,11 @@ public class SendHttpRequestTests
             { "X-Rate-Limit", "100" }
         };
 
-        var responseHandler = (HttpRequestMessage _, CancellationToken _) =>
-            Task.FromResult(ActivityTestHelper.CreateHttpResponse(HttpStatusCode.OK, additionalHeaders: expectedHeaders));
-
+        var responseHandler = CreateResponseHandler(HttpStatusCode.OK, additionalHeaders: expectedHeaders);
         var sendHttpRequest = CreateSendHttpRequest(new Uri("https://api.example.com/headers"));
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, 
-            services => ActivityTestHelper.ConfigureHttpActivityServices(services, responseHandler));
+        var context = await ExecuteActivityWithResponseHandler(sendHttpRequest, responseHandler);
 
         // Assert
         var responseHeadersObj = context.GetExecutionOutput(_ => sendHttpRequest.ResponseHeaders);
@@ -186,7 +242,7 @@ public class SendHttpRequestTests
     [Fact]
     public void Should_Have_Correct_Activity_Attributes_And_HttpStatusCodeCase_Creation()
     {
-        // Test activity attributes using the new helper method
+        // Test activity attributes
         ActivityTestHelper.AssertActivityAttributes(
             typeof(SendHttpRequest),
             expectedNamespace: "Elsa",
@@ -196,13 +252,41 @@ public class SendHttpRequestTests
             expectedKind: ActivityKind.Task
         );
 
-        // Test HttpStatusCodeCase creation (merged from separate test)
+        // Test HttpStatusCodeCase creation
         const int statusCode = 200;
         var mockActivity = Substitute.For<IActivity>();
         var httpStatusCodeCase = new HttpStatusCodeCase(statusCode, mockActivity);
 
         Assert.Equal(statusCode, httpStatusCodeCase.StatusCode);
         Assert.Equal(mockActivity, httpStatusCodeCase.Activity);
+    }
+
+    // Private helper methods placed after all public members
+    private static Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> CreateResponseHandler(
+        HttpStatusCode statusCode, 
+        string? content = null,
+        RequestCapture? requestCapture = null,
+        Dictionary<string, string>? additionalHeaders = null)
+    {
+        return (request, _) =>
+        {
+            if (requestCapture != null)
+                requestCapture.CapturedRequest = request;
+            return Task.FromResult(ActivityTestHelper.CreateHttpResponse(statusCode, content, additionalHeaders));
+        };
+    }
+
+    private sealed class RequestCapture
+    {
+        public HttpRequestMessage? CapturedRequest { get; set; }
+    }
+
+    private static async Task<ActivityExecutionContext> ExecuteActivityWithResponseHandler(
+        SendHttpRequest sendHttpRequest,
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responseHandler)
+    {
+        return await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, 
+            services => ActivityTestHelper.ConfigureHttpActivityServices(services, responseHandler));
     }
 
     private static SendHttpRequest CreateSendHttpRequest(
@@ -216,13 +300,91 @@ public class SendHttpRequestTests
         {
             Url = new Input<Uri?>(url),
             Method = new Input<string>(method),
-            Content = content != null ? new Input<object?>(content, null) : null,
-            ContentType = contentType != null ? new Input<string?>(contentType, null) : null,
-            Authorization = authorization != null ? new Input<string?>(authorization, null) : null,
-            // Note: Setting ExpectedStatusCodes will make the activity attempt to schedule branches,
-            // which can interfere with the test's control flow and assertions. To avoid this, we leave
-            // ExpectedStatusCodes empty in most tests.
+            Content = content != null ? new Input<object?>(content) : null!,
+            ContentType = contentType != null ? new Input<string?>(contentType) : null!,
+            Authorization = authorization != null ? new Input<string?>(authorization) : null!,
             ExpectedStatusCodes = new List<HttpStatusCodeCase>()
         };
+    }
+
+    private static async Task<ActivityExecutionContext> ExecuteActivityWithScheduling(
+        SendHttpRequest sendHttpRequest,
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responseHandler,
+        params IActivity[] childActivities)
+    {
+        return await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, 
+            services => ActivityTestHelper.ConfigureHttpActivityServices(services, responseHandler),
+            childActivities: childActivities);
+    }
+
+    private static (SendHttpRequest sendHttpRequest, Dictionary<string, IActivity> childActivities) CreateSendHttpRequestWithStatusHandlers(
+        (int statusCode, string activityName)[] expectedStatusCodes,
+        string? unmatchedHandler)
+    {
+        var childActivities = new Dictionary<string, IActivity>();
+        
+        // Create mock activities for expected status codes
+        var expectedStatusCodeCases = expectedStatusCodes.Select(x => 
+        {
+            var mockActivity = Substitute.For<IActivity>();
+            childActivities[x.activityName] = mockActivity;
+            return new HttpStatusCodeCase(x.statusCode, mockActivity);
+        }).ToList();
+        
+        // Create mock activity for unmatched handler
+        var unmatchedActivity = Substitute.For<IActivity>();
+        if (unmatchedHandler is not null)
+        {
+            childActivities[unmatchedHandler] = unmatchedActivity;
+        }
+
+        var sendHttpRequest = new SendHttpRequest
+        {
+            Url = new Input<Uri?>(new Uri("https://api.example.com/test")),
+            Method = new Input<string>("GET"),
+            ExpectedStatusCodes = expectedStatusCodeCases,
+            UnmatchedStatusCode = unmatchedHandler is not null ? unmatchedActivity : null
+        };
+
+        return (sendHttpRequest, childActivities);
+    }
+
+    private static (SendHttpRequest sendHttpRequest, Dictionary<string, IActivity> childActivities) CreateSendHttpRequestWithErrorHandlers(
+        string? failedToConnect = null,
+        string? timeout = null)
+    {
+        var childActivities = new Dictionary<string, IActivity>();
+        
+        IActivity? failedToConnectActivity = null;
+        IActivity? timeoutActivity = null;
+        
+        if (failedToConnect != null)
+        {
+            failedToConnectActivity = Substitute.For<IActivity>();
+            childActivities[failedToConnect] = failedToConnectActivity;
+        }
+        
+        if (timeout != null)
+        {
+            timeoutActivity = Substitute.For<IActivity>();
+            childActivities[timeout] = timeoutActivity;
+        }
+
+        var sendHttpRequest = new SendHttpRequest
+        {
+            Url = new Input<Uri?>(new Uri("https://api.example.com/error")),
+            Method = new Input<string>("GET"),
+            ExpectedStatusCodes = new List<HttpStatusCodeCase>(),
+            FailedToConnect = failedToConnectActivity,
+            Timeout = timeoutActivity
+        };
+
+        return (sendHttpRequest, childActivities);
+    }
+
+    private static Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> CreateExceptionHandler<TException>(string message) 
+        where TException : Exception
+    {
+        return (_, _) => throw ((TException)Activator.CreateInstance(typeof(TException), message)!);
     }
 }

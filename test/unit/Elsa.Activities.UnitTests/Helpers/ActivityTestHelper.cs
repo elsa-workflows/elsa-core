@@ -28,16 +28,33 @@ namespace Elsa.Activities.UnitTests.Helpers;
 public static class ActivityTestHelper
 {
     /// <summary>
-    /// Executes an activity in isolation for unit testing purposes and returns the execution context.
-    /// This method handles all the complexity of setting up the execution context,
-    /// evaluating inputs, and executing the activity.
+    /// Executes an activity for unit testing purposes with comprehensive configuration options.
+    /// This unified method handles all activity execution scenarios. When child activities are provided,
+    /// background execution mode is automatically enabled to capture scheduled activities.
     /// </summary>
     /// <param name="activity">The activity to execute</param>
-    /// <param name="configureServices">An optional action to configure the service collection for dependency injection during activity execution.</param>
+    /// <param name="configureServices">Optional action to configure the service collection for dependency injection</param>
+    /// <param name="childActivities">Optional child activities that should be part of the workflow graph. When provided, automatically enables background execution mode to capture scheduled activities.</param>
     /// <returns>The ActivityExecutionContext used for execution</returns>
-    public static async Task<ActivityExecutionContext> ExecuteActivityAsync(IActivity activity, Action<IServiceCollection>? configureServices = null)
+    public static async Task<ActivityExecutionContext> ExecuteActivityAsync(
+        IActivity activity, 
+        Action<IServiceCollection>? configureServices = null,
+        IEnumerable<IActivity>? childActivities = null)
     {
-        var context = await CreateMinimalActivityExecutionContext(activity, configureServices);
+        ActivityExecutionContext context;
+
+        if (childActivities != null && childActivities.Any())
+        {
+            // Create workflow with child activities for activity scheduling scenarios
+            context = await CreateActivityExecutionContextWithChildActivities(activity, childActivities, configureServices);
+            // Enable background execution mode to capture scheduled activities
+            context.SetIsBackgroundExecution();
+        }
+        else
+        {
+            // Create simple workflow for basic activity testing
+            context = await CreateMinimalActivityExecutionContext(activity, configureServices);
+        }
 
         // Set up variables and inputs, then execute the activity
         await SetupExistingVariablesAsync(activity, context);
@@ -119,6 +136,13 @@ public static class ActivityTestHelper
         Assert.Equal(expectedDisplayName, activityAttribute.DisplayName);
         Assert.Equal(expectedKind, activityAttribute.Kind);
     }
+
+    /// <summary>
+    /// Creates a mock activity for testing purposes.
+    /// This is useful for creating placeholder activities when testing activity scheduling behavior.
+    /// </summary>
+    /// <returns>A mock IActivity instance</returns>
+    public static IActivity CreateMockActivity() => Substitute.For<IActivity>();
 
     /// <summary>
     /// Adds all HTTP-related services to the service collection.
@@ -272,5 +296,90 @@ public static class ActivityTestHelper
         services.AddSingleton<IHttpContentParser, XmlHttpContentParser>();
         services.AddSingleton<IHttpContentParser, TextHtmlHttpContentParser>();
         services.AddSingleton<IHttpContentParser, FileHttpContentParser>();
+    }
+
+
+    /// <summary>
+    /// Creates a workflow that includes all the provided activities to ensure they are part of the workflow graph.
+    /// This is necessary for testing activities that schedule child activities.
+    /// </summary>
+    /// <param name="rootActivity">The main activity to execute</param>
+    /// <param name="childActivities">Additional activities that should be part of the workflow graph</param>
+    /// <param name="configureServices">Optional service configuration</param>
+    /// <returns>The ActivityExecutionContext for the root activity</returns>
+    private static async Task<ActivityExecutionContext> CreateActivityExecutionContextWithChildActivities(
+        IActivity rootActivity, 
+        IEnumerable<IActivity> childActivities,
+        Action<IServiceCollection>? configureServices = null)
+    {
+        // Create a workflow that includes all activities
+        var allActivities = new[] { rootActivity }.Concat(childActivities).ToArray();
+        
+        // Create service provider
+        var services = new ServiceCollection();
+        AddCoreWorkflowServices(services);
+        configureServices?.Invoke(services);
+        var serviceProvider = services.BuildServiceProvider();
+        
+        // Register all activities
+        var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
+        foreach (var activity in allActivities)
+        {
+            await activityRegistry.RegisterAsync(activity.GetType());
+        }
+        
+        // Create a sequence workflow that contains all activities
+        var workflow = new Workflow
+        {
+            Root = new Sequence
+            {
+                Activities = allActivities.ToList()
+            }
+        };
+        
+        var workflowGraphBuilder = serviceProvider.GetRequiredService<IWorkflowGraphBuilder>();
+        var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow);
+
+        // Create workflow execution context
+        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
+            serviceProvider,
+            workflowGraph,
+            $"test-instance-{Guid.NewGuid()}",
+            CancellationToken.None
+        );
+
+        // Create ActivityExecutionContext for the root activity
+        return await workflowExecutionContext.CreateActivityExecutionContextAsync(rootActivity);
+    }
+
+    private static void AddCoreWorkflowServices(IServiceCollection services)
+    {
+        // Add core services
+        services.AddLogging();
+        services.AddSingleton<ISystemClock>(_ => Substitute.For<ISystemClock>());
+        services.AddSingleton<INotificationSender>(_ => Substitute.For<INotificationSender>());
+        services.AddSingleton<IActivityVisitor, ActivityVisitor>();
+        services.AddScoped<IExpressionEvaluator, ExpressionEvaluator>();
+        services.AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>();
+        services.AddSingleton<IActivityDescriber, ActivityDescriber>();
+        services.AddSingleton<IPropertyDefaultValueResolver, PropertyDefaultValueResolver>();
+        services.AddSingleton<IActivityFactory, ActivityFactory>();
+        services.AddSingleton<IPropertyUIHandlerResolver, PropertyUIHandlerResolver>();
+        services.AddSingleton<IActivityRegistry, ActivityRegistry>();
+        services.AddScoped<IActivityRegistryLookupService, ActivityRegistryLookupService>();
+        services.AddScoped<IIdentityGraphService, IdentityGraphService>();
+        services.AddScoped<IWorkflowGraphBuilder, WorkflowGraphBuilder>();
+        services.AddScoped<IActivityResolver, PropertyBasedActivityResolver>();
+        services.AddScoped<IActivityResolver, SwitchActivityResolver>();
+        services.AddScoped<DefaultActivityInputEvaluator>();
+
+        // Add expression services
+        services.AddSingleton<IExpressionDescriptorProvider, DefaultExpressionDescriptorProvider>();
+        services.AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>();
+
+        services.AddSingleton<IIdentityGenerator>(_ => Substitute.For<IIdentityGenerator>());
+        services.AddSingleton<IHasher>(_ => Substitute.For<IHasher>());
+        services.AddSingleton<ICommitStateHandler>(_ => Substitute.For<ICommitStateHandler>());
+        services.AddSingleton<IActivitySchedulerFactory>(_ => Substitute.For<IActivitySchedulerFactory>());
     }
 }
