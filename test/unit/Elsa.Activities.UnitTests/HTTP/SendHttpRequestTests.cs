@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Net;
 using Elsa.Activities.UnitTests.Helpers;
 using Elsa.Extensions;
@@ -58,22 +59,25 @@ public class SendHttpRequestTests
         Assert.Equal(authorizationHeader, requestCapture.CapturedRequest.Headers.Authorization.ToString());
     }
 
-    [Fact]
-    public async Task Should_Schedule_Activity_When_Status_Code_Has_Corresponding_Handler()
+    [Theory]
+    [InlineData(new[]{200, 404}, new[]{"mockActivity200", "mockActivity404"}, "mockUnmatchedActivity", HttpStatusCode.NotFound, "mockActivity404")]
+    [InlineData(new[]{200, 404}, new[]{"mockActivity200", "mockActivity404"}, "mockUnmatchedActivity", HttpStatusCode.InternalServerError, "mockUnmatchedActivity")]
+    public async Task Should_Schedule_Activity_According_To_Handlers(int[] statusCodes, string[] activityNames, string handler, HttpStatusCode expectedStatusCode, string expectedScheduledActivityName)
     {
         // Arrange
         var (sendHttpRequest, childActivities) = CreateSendHttpRequestWithStatusHandlers(
-            expectedStatusCodes: new[] { (200, "mockActivity200"), (404, "mockActivity404") },
-            unmatchedHandler: "mockUnmatchedActivity"
+            expectedStatusCodes: [(statusCodes[0], activityNames[0]), (statusCodes[1], activityNames[1])],
+            unmatchedHandler: handler
         );
 
-        var responseHandler = CreateResponseHandler(HttpStatusCode.NotFound); // 404
+        var responseHandler = CreateResponseHandler(expectedStatusCode);
 
         // Act
         var context = await ExecuteActivityWithScheduling(sendHttpRequest, responseHandler, childActivities.Values.ToArray());
 
         // Assert - Verify exactly one activity was scheduled
         var scheduledActivities = context.GetBackgroundScheduledActivities().ToList();
+        var aa = context.WorkflowExecutionContext.Scheduler.Find(x => x.Activity.Name == activityNames[1]);
         Assert.Single(scheduledActivities);
         
         var scheduledActivity = scheduledActivities.First();
@@ -81,34 +85,7 @@ public class SendHttpRequestTests
         Assert.NotNull(scheduledActivity.OwnerActivityInstanceId);
         
         // Verify the correct activity was scheduled (404 handler)
-        var expectedNode = context.WorkflowExecutionContext.FindNodeByActivity(childActivities["mockActivity404"]);
-        Assert.Equal(expectedNode?.NodeId, scheduledActivity.ActivityNodeId);
-    }
-
-    [Fact]
-    public async Task Should_Schedule_Unmatched_Activity_When_Status_Code_Has_No_Corresponding_Handler()
-    {
-        // Arrange
-        var (sendHttpRequest, childActivities) = CreateSendHttpRequestWithStatusHandlers(
-            expectedStatusCodes: new[] { (200, "mockActivity200"), (404, "mockActivity404") },
-            unmatchedHandler: "mockUnmatchedActivity"
-        );
-
-        var responseHandler = CreateResponseHandler(HttpStatusCode.InternalServerError); // 500 - no match
-
-        // Act
-        var context = await ExecuteActivityWithScheduling(sendHttpRequest, responseHandler, childActivities.Values.ToArray());
-
-        // Assert - Verify exactly one activity was scheduled
-        var scheduledActivities = context.GetBackgroundScheduledActivities().ToList();
-        Assert.Single(scheduledActivities);
-        
-        var scheduledActivity = scheduledActivities.First();
-        Assert.NotNull(scheduledActivity.ActivityNodeId);
-        Assert.NotNull(scheduledActivity.OwnerActivityInstanceId);
-        
-        // Verify the correct activity was scheduled (unmatched handler)
-        var expectedNode = context.WorkflowExecutionContext.FindNodeByActivity(childActivities["mockUnmatchedActivity"]);
+        var expectedNode = context.WorkflowExecutionContext.FindNodeByActivity(childActivities[expectedScheduledActivityName]);
         Assert.Equal(expectedNode?.NodeId, scheduledActivity.ActivityNodeId);
     }
 
@@ -241,10 +218,11 @@ public class SendHttpRequestTests
             // No UnmatchedStatusCode activity configured
         };
 
+        var (configured, children) = CreateSendHttpRequestWithStatusHandlers([(200, "handler200")], unmatchedHandler: null); 
         var responseHandler = CreateResponseHandler(HttpStatusCode.InternalServerError); // 500 - no match
 
         // Act
-        var context = await ExecuteActivityWithResponseHandler(sendHttpRequest, responseHandler);
+        var context = await ExecuteActivityWithScheduling(configured, responseHandler, children.Values.ToArray());
 
         // Assert - Verify that no activities were scheduled since there's no handler for this status code
         // Since no child activities were passed to the workflow, the scheduler should be empty
@@ -337,9 +315,9 @@ public class SendHttpRequestTests
         {
             Url = new Input<Uri?>(url),
             Method = new Input<string>(method),
-            Content = (content != null ? new Input<object?>(content) : null)!,
-            ContentType = (contentType != null ? new Input<string?>(contentType) : null)!,
-            Authorization = (authorization != null ? new Input<string?>(authorization) : null)!,
+            Content = content != null ? new Input<object?>(content) : null!,
+            ContentType = contentType != null ? new Input<string?>(contentType) : null!,
+            Authorization = authorization != null ? new Input<string?>(authorization) : null!,
             ExpectedStatusCodes = new List<HttpStatusCodeCase>()
         };
     }
@@ -356,7 +334,7 @@ public class SendHttpRequestTests
 
     private static (SendHttpRequest sendHttpRequest, Dictionary<string, IActivity> childActivities) CreateSendHttpRequestWithStatusHandlers(
         (int statusCode, string activityName)[] expectedStatusCodes,
-        string unmatchedHandler)
+        string? unmatchedHandler)
     {
         var childActivities = new Dictionary<string, IActivity>();
         
@@ -370,7 +348,10 @@ public class SendHttpRequestTests
         
         // Create mock activity for unmatched handler
         var unmatchedActivity = Substitute.For<IActivity>();
-        childActivities[unmatchedHandler] = unmatchedActivity;
+        if (unmatchedHandler is not null)
+        {
+            childActivities[unmatchedHandler] = unmatchedActivity;
+        }
 
         var sendHttpRequest = new SendHttpRequest
         {
