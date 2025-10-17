@@ -210,7 +210,7 @@ public class SendHttpRequestTests
         var context = await ExecuteActivityWithScheduling(configured, responseHandler, children.Values.ToArray());
 
         // Assert - Verify that no activities were scheduled since there's no handler for this status code
-        // Since no child activities were passed to the workflow, the scheduler should be empty
+        // Although child activities were passed to the workflow, none are scheduled because there is no matching status code case and no unmatched handler.
         var allScheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
         Assert.Empty(allScheduledActivities);
     }
