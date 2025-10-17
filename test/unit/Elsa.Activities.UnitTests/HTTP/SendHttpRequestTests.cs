@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Net;
 using Elsa.Activities.UnitTests.Helpers;
 using Elsa.Extensions;
@@ -204,18 +203,7 @@ public class SendHttpRequestTests
     public async Task Should_Schedule_No_Activity_When_No_Status_Code_Cases_Match_And_No_Unmatched_Handler()
     {
         // Arrange
-        var mockActivity200 = Substitute.For<IActivity>();
-        
-        var sendHttpRequest = new SendHttpRequest
-        {
-            Url = new Input<Uri?>(new Uri("https://api.example.com/test")),
-            Method = new Input<string>("GET"),
-            ExpectedStatusCodes = new List<HttpStatusCodeCase>
-            {
-                new(200, mockActivity200)
-            }
-            // No UnmatchedStatusCode activity configured
-        };
+        Substitute.For<IActivity>();
 
         var (configured, children) = CreateSendHttpRequestWithStatusHandlers([(200, "handler200")], unmatchedHandler: null); 
         var responseHandler = CreateResponseHandler(HttpStatusCode.InternalServerError); // 500 - no match
@@ -357,7 +345,7 @@ public class SendHttpRequestTests
             Url = new Input<Uri?>(new Uri("https://api.example.com/test")),
             Method = new Input<string>("GET"),
             ExpectedStatusCodes = expectedStatusCodeCases,
-            UnmatchedStatusCode = unmatchedActivity
+            UnmatchedStatusCode = unmatchedHandler is not null ? unmatchedActivity : null
         };
 
         return (sendHttpRequest, childActivities);
