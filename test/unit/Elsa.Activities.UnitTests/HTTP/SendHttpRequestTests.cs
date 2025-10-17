@@ -72,19 +72,17 @@ public class SendHttpRequestTests
         var responseHandler = CreateResponseHandler(expectedStatusCode);
 
         // Act
-        var context = await ExecuteActivityWithScheduling(sendHttpRequest, responseHandler, childActivities.Values.ToArray());
+        var context = await ExecuteActivityWithScheduling(sendHttpRequest, responseHandler);
 
         // Assert - Verify exactly one activity was scheduled
-        var scheduledActivities = context.GetBackgroundScheduledActivities().ToList();
+        var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
         Assert.Single(scheduledActivities);
         
         var scheduledActivity = scheduledActivities.First();
-        Assert.NotNull(scheduledActivity.ActivityNodeId);
-        Assert.NotNull(scheduledActivity.OwnerActivityInstanceId);
         
         // Verify the correct activity was scheduled (404 handler)
-        var expectedNode = context.WorkflowExecutionContext.FindNodeByActivity(childActivities[expectedScheduledActivityName]);
-        Assert.Equal(expectedNode?.NodeId, scheduledActivity.ActivityNodeId);
+        var expectedActivity = childActivities[expectedScheduledActivityName];
+        Assert.Equal(expectedActivity, scheduledActivity.Activity);
     }
 
     [Fact]
@@ -98,7 +96,7 @@ public class SendHttpRequestTests
         var responseHandler = CreateExceptionHandler<HttpRequestException>("Connection failed");
 
         // Act
-        var context = await ExecuteActivityWithScheduling(sendHttpRequest, responseHandler, childActivities.Values.ToArray());
+        var context = await ExecuteActivityWithScheduling(sendHttpRequest, responseHandler);
 
         // Assert - Verify exactly one activity was scheduled
         var scheduledActivities = context.GetBackgroundScheduledActivities().ToList();
@@ -124,7 +122,7 @@ public class SendHttpRequestTests
         var responseHandler = CreateExceptionHandler<TaskCanceledException>("Request timed out");
 
         // Act
-        var context = await ExecuteActivityWithScheduling(sendHttpRequest, responseHandler, childActivities.Values.ToArray());
+        var context = await ExecuteActivityWithScheduling(sendHttpRequest, responseHandler);
 
         // Assert - Verify exactly one activity was scheduled
         var scheduledActivities = context.GetBackgroundScheduledActivities().ToList();
@@ -203,11 +201,11 @@ public class SendHttpRequestTests
     public async Task Should_Schedule_No_Activity_When_No_Status_Code_Cases_Match_And_No_Unmatched_Handler()
     {
         // Arrange
-        var (configured, children) = CreateSendHttpRequestWithStatusHandlers([(200, "handler200")], unmatchedHandler: null); 
+        var (configured, _) = CreateSendHttpRequestWithStatusHandlers([(200, "handler200")], unmatchedHandler: null); 
         var responseHandler = CreateResponseHandler(HttpStatusCode.InternalServerError); // 500 - no match
 
         // Act
-        var context = await ExecuteActivityWithScheduling(configured, responseHandler, children.Values.ToArray());
+        var context = await ExecuteActivityWithScheduling(configured, responseHandler);
 
         // Assert - Verify that no activities were scheduled since there's no handler for this status code
         // Although child activities were passed to the workflow, none are scheduled because there is no matching status code case and no unmatched handler.
@@ -309,12 +307,10 @@ public class SendHttpRequestTests
 
     private static async Task<ActivityExecutionContext> ExecuteActivityWithScheduling(
         SendHttpRequest sendHttpRequest,
-        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responseHandler,
-        params IActivity[] childActivities)
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responseHandler)
     {
         return await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, 
-            services => ActivityTestHelper.ConfigureHttpActivityServices(services, responseHandler),
-            childActivities: childActivities);
+            services => ActivityTestHelper.ConfigureHttpActivityServices(services, responseHandler));
     }
 
     private static (SendHttpRequest sendHttpRequest, Dictionary<string, IActivity> childActivities) CreateSendHttpRequestWithStatusHandlers(

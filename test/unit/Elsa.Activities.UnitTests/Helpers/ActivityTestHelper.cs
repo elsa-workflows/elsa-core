@@ -38,24 +38,10 @@ public static class ActivityTestHelper
     /// <returns>The ActivityExecutionContext used for execution</returns>
     public static async Task<ActivityExecutionContext> ExecuteActivityAsync(
         IActivity activity, 
-        Action<IServiceCollection>? configureServices = null,
-        IEnumerable<IActivity>? childActivities = null)
+        Action<IServiceCollection>? configureServices = null)
     {
-        ActivityExecutionContext context;
-
-        if (childActivities != null && childActivities.Any())
-        {
-            // Create workflow with child activities for activity scheduling scenarios
-            context = await CreateActivityExecutionContextWithChildActivities(activity, childActivities, configureServices);
-            // Enable background execution mode to capture scheduled activities
-            context.SetIsBackgroundExecution();
-        }
-        else
-        {
-            // Create simple workflow for basic activity testing
-            context = await CreateMinimalActivityExecutionContext(activity, configureServices);
-        }
-
+        var context = await CreateMinimalActivityExecutionContext(activity, configureServices);
+        
         // Set up variables and inputs, then execute the activity
         await SetupExistingVariablesAsync(activity, context);
         await context.EvaluateInputPropertiesAsync();
@@ -120,21 +106,22 @@ public static class ActivityTestHelper
     /// <param name="expectedKind">Expected activity kind</param>
     public static void AssertActivityAttributes(
         Type activityType, 
-        string expectedNamespace, 
-        string expectedCategory, 
-        string expectedDisplayName, 
-        string expectedDescription, 
-        ActivityKind expectedKind)
+        string expectedNamespace,
+        ActivityKind expectedKind, 
+        string? expectedCategory = null, 
+        string? expectedDisplayName = null, 
+        string? expectedDescription = null)
     {
         var activityAttribute = activityType.GetCustomAttributes(typeof(ActivityAttribute), false)
             .Cast<ActivityAttribute>().FirstOrDefault();
 
         Assert.NotNull(activityAttribute);
         Assert.Equal(expectedNamespace, activityAttribute.Namespace);
-        Assert.Equal(expectedCategory, activityAttribute.Category);
-        Assert.Equal(expectedDescription, activityAttribute.Description);
-        Assert.Equal(expectedDisplayName, activityAttribute.DisplayName);
         Assert.Equal(expectedKind, activityAttribute.Kind);
+        
+        if(expectedCategory != null) Assert.Equal(expectedCategory, activityAttribute.Category);
+        if(expectedDescription != null) Assert.Equal(expectedDescription, activityAttribute.Description);
+        if(expectedDisplayName != null) Assert.Equal(expectedDisplayName, activityAttribute.DisplayName);
     }
 
     /// <summary>
@@ -214,33 +201,7 @@ public static class ActivityTestHelper
         var services = new ServiceCollection();
 
         // Add core services
-        services.AddLogging();
-        services.AddSingleton<ISystemClock>(_ => Substitute.For<ISystemClock>());
-        services.AddSingleton<INotificationSender>(_ => Substitute.For<INotificationSender>());
-        services.AddSingleton<IActivityVisitor, ActivityVisitor>();
-        services.AddScoped<IExpressionEvaluator, ExpressionEvaluator>();
-        services.AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>();
-        services.AddSingleton<IActivityDescriber, ActivityDescriber>();
-        services.AddSingleton<IPropertyDefaultValueResolver, PropertyDefaultValueResolver>();
-        services.AddSingleton<IActivityFactory, ActivityFactory>();
-        services.AddSingleton<IPropertyUIHandlerResolver, PropertyUIHandlerResolver>();
-        services.AddSingleton<IActivityRegistry, ActivityRegistry>();
-        services.AddScoped<IActivityRegistryLookupService, ActivityRegistryLookupService>();
-        services.AddScoped<IIdentityGraphService, IdentityGraphService>();
-        services.AddScoped<IWorkflowGraphBuilder, WorkflowGraphBuilder>();
-        services.AddScoped<IActivityResolver, PropertyBasedActivityResolver>();
-        services.AddScoped<IActivityResolver, SwitchActivityResolver>();
-        services.AddScoped<DefaultActivityInputEvaluator>();
-
-        // Add the default expression descriptor provider which includes Literal expressions
-        services.AddSingleton<IExpressionDescriptorProvider, DefaultExpressionDescriptorProvider>();
-        services.AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>();
-
-        services.AddSingleton<IIdentityGenerator>(_ => Substitute.For<IIdentityGenerator>());
-
-        services.AddSingleton<IHasher>(_ => Substitute.For<IHasher>());
-        services.AddSingleton<ICommitStateHandler>(_ => Substitute.For<ICommitStateHandler>());
-        services.AddSingleton<IActivitySchedulerFactory>(_ => Substitute.For<IActivitySchedulerFactory>());
+        AddCoreWorkflowServices(services);
         
         // Call the configure services action if provided.
         configureServices?.Invoke(services);
@@ -315,7 +276,7 @@ public static class ActivityTestHelper
         // Create a workflow that includes all activities
         var allActivities = new[] { rootActivity }.Concat(childActivities).ToArray();
         
-        // Create service provider
+        // Create a service provider.
         var services = new ServiceCollection();
         AddCoreWorkflowServices(services);
         configureServices?.Invoke(services);
@@ -354,7 +315,6 @@ public static class ActivityTestHelper
 
     private static void AddCoreWorkflowServices(IServiceCollection services)
     {
-        // Add core services
         services.AddLogging();
         services.AddSingleton<ISystemClock>(_ => Substitute.For<ISystemClock>());
         services.AddSingleton<INotificationSender>(_ => Substitute.For<INotificationSender>());
@@ -372,14 +332,13 @@ public static class ActivityTestHelper
         services.AddScoped<IActivityResolver, PropertyBasedActivityResolver>();
         services.AddScoped<IActivityResolver, SwitchActivityResolver>();
         services.AddScoped<DefaultActivityInputEvaluator>();
-
-        // Add expression services
         services.AddSingleton<IExpressionDescriptorProvider, DefaultExpressionDescriptorProvider>();
         services.AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>();
-
         services.AddSingleton<IIdentityGenerator>(_ => Substitute.For<IIdentityGenerator>());
         services.AddSingleton<IHasher>(_ => Substitute.For<IHasher>());
         services.AddSingleton<ICommitStateHandler>(_ => Substitute.For<ICommitStateHandler>());
-        services.AddSingleton<IActivitySchedulerFactory>(_ => Substitute.For<IActivitySchedulerFactory>());
+        services.AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>();
+        services.AddSingleton<IWorkflowExecutionContextSchedulerStrategy, FakeWorkflowExecutionContextSchedulerStrategy>();
+        services.AddSingleton<IActivityExecutionContextSchedulerStrategy, FakeActivityExecutionContextSchedulerStrategy>();
     }
 }
