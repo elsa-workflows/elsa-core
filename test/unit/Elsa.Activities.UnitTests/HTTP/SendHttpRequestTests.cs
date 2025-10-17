@@ -203,8 +203,6 @@ public class SendHttpRequestTests
     public async Task Should_Schedule_No_Activity_When_No_Status_Code_Cases_Match_And_No_Unmatched_Handler()
     {
         // Arrange
-        Substitute.For<IActivity>();
-
         var (configured, children) = CreateSendHttpRequestWithStatusHandlers([(200, "handler200")], unmatchedHandler: null); 
         var responseHandler = CreateResponseHandler(HttpStatusCode.InternalServerError); // 500 - no match
 
