@@ -77,7 +77,6 @@ public class SendHttpRequestTests
 
         // Assert - Verify exactly one activity was scheduled
         var scheduledActivities = context.GetBackgroundScheduledActivities().ToList();
-        var aa = context.WorkflowExecutionContext.Scheduler.Find(x => x.Activity.Name == activityNames[1]);
         Assert.Single(scheduledActivities);
         
         var scheduledActivity = scheduledActivities.First();
