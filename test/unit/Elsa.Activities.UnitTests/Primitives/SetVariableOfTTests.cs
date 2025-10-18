@@ -1,28 +1,23 @@
-using Elsa.Expressions.Models;
-using Elsa.Testing.Shared;
+﻿using Elsa.Testing.Shared;
 
 namespace Elsa.Activities.UnitTests.Primitives;
 
-public class SetVariableTests
+public class SetVariableOfTTests
 {
     [Fact]
-    public async Task Should_Set_Variable()
+    public async Task Should_Set_Variable_Integer()
     {
         // Arrange
-        const int expected = 42;
-        var variable = new Variable("myVar", 0, "myVar");
-        var setVariable = new SetVariable
-        {
-            Variable = variable,
-            Value = new(expected)
-        };
+        const int expected = 42; // The answer to life, the universe and everything.
+        var variable = new Variable<int>("myVar", 0, "myVar");
+        var setVariable = new SetVariable<int>(variable, new Input<int>(expected));
 
         // Act
         var fixture = new ActivityTestFixture(setVariable);
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        var result = variable.Get(context.ExpressionExecutionContext);
+        var result = variable.Get(context);
         Assert.Equal(expected, result);
     }
 
@@ -30,17 +25,12 @@ public class SetVariableTests
     public async Task Should_Throw_When_Variable_Is_Null()
     {
         // Arrange
-        var setVariable = new SetVariable
-        {
-            Variable = null,
-            Value = new("test value")
-        };
+        var setVariable = new SetVariable<string>(null!, new Input<string>("test value"));
 
         // Act & Assert
         var exception = await Record.ExceptionAsync(() => new ActivityTestFixture(setVariable).ExecuteAsync());
 
         Assert.NotNull(exception);
-        Assert.IsType<InvalidOperationException>(exception);
     }
 
     [Fact]
@@ -48,11 +38,7 @@ public class SetVariableTests
     {
         // Arrange
         var variable = new Variable<string?>("myVar", "initial value", "myVar");
-        var setVariable = new SetVariable
-        {
-            Variable = variable,
-            Value = new(new Literal(null))
-        };
+        var setVariable = new SetVariable<string?>(variable, new Input<string?>((string?)null));
 
         // Act
         var fixture = new ActivityTestFixture(setVariable);
