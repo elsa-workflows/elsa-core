@@ -3,8 +3,10 @@ using Elsa.Workflows.Options;
 
 namespace Elsa.Workflows;
 
+/// <inheritdoc />
 public class WorkflowExecutionContextSchedulerStrategy : IWorkflowExecutionContextSchedulerStrategy
 {
+    /// <inheritdoc />
     public ActivityWorkItem Schedule(WorkflowExecutionContext context, ActivityNode activityNode, ActivityExecutionContext owner, ScheduleWorkOptions? options = null)
     {
         // Validate that the specified activity is part of the workflow.

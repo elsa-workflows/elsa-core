@@ -4,8 +4,10 @@ using Elsa.Workflows.Options;
 
 namespace Elsa.Workflows;
 
+/// <inheritdoc />
 public class ActivityExecutionContextSchedulerStrategy : IActivityExecutionContextSchedulerStrategy
 {
+    /// <inheritdoc />
     public async Task ScheduleActivityAsync(ActivityExecutionContext context, IActivity? activity, ActivityExecutionContext? owner, ScheduleWorkOptions? options = null)
     {
         var activityNode = activity != null
@@ -14,6 +16,7 @@ public class ActivityExecutionContextSchedulerStrategy : IActivityExecutionConte
         await ScheduleActivityAsync(context, activityNode, owner, options);
     }
 
+    /// <inheritdoc />
     public async Task ScheduleActivityAsync(ActivityExecutionContext context, ActivityNode? activityNode, ActivityExecutionContext? owner = null, ScheduleWorkOptions? options = null)
     {
         var workflowExecutionContext = context.WorkflowExecutionContext;
