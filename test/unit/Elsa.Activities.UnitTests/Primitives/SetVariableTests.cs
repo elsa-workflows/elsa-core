@@ -31,8 +31,7 @@ public class SetVariableTests
         // Act & Assert
         var exception = await Record.ExceptionAsync(async () =>
         {
-            var fixture = new ActivityTestFixture(setVariable);
-            await fixture.ExecuteAsync();
+            await new ActivityTestFixture(setVariable).ExecuteAsync();
         });
 
         Assert.NotNull(exception);
