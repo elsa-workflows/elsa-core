@@ -10,6 +10,7 @@ using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.PortResolvers;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
@@ -21,7 +22,6 @@ namespace Elsa.Testing.Shared;
 /// </summary>
 public class ActivityTestFixture
 {
-    private readonly IServiceCollection _services;
     private Action<ActivityExecutionContext>? _configureContextAction;
 
     /// <summary>
@@ -31,8 +31,8 @@ public class ActivityTestFixture
     public ActivityTestFixture(IActivity activity)
     {
         Activity = activity;
-        _services = new ServiceCollection();
-        AddCoreWorkflowServices(_services);
+        Services = new ServiceCollection();
+        AddCoreWorkflowServices(Services);
     }
 
     /// <summary>
@@ -45,7 +45,8 @@ public class ActivityTestFixture
     /// Gets the service collection for registering additional services.
     /// Use this to add services required by the activity under test.
     /// </summary>
-    public IServiceCollection Services => _services;
+    [UsedImplicitly]
+    public IServiceCollection Services { get; private set; }
 
     /// <summary>
     /// Configures the service collection using a fluent action.
@@ -54,7 +55,7 @@ public class ActivityTestFixture
     /// <returns>The fixture instance for method chaining</returns>
     public ActivityTestFixture ConfigureServices(Action<IServiceCollection> configure)
     {
-        configure(_services);
+        configure(Services);
         return this;
     }
 
@@ -64,6 +65,7 @@ public class ActivityTestFixture
     /// </summary>
     /// <param name="configure">Action to configure the activity execution context</param>
     /// <returns>The fixture instance for method chaining</returns>
+    [UsedImplicitly]
     public ActivityTestFixture ConfigureContext(Action<ActivityExecutionContext> configure)
     {
         _configureContextAction += configure;
@@ -91,7 +93,7 @@ public class ActivityTestFixture
     /// </summary>
     private async Task<ActivityExecutionContext> BuildAsync()
     {
-        var serviceProvider = _services.BuildServiceProvider();
+        var serviceProvider = Services.BuildServiceProvider();
         var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
         var workflowGraphBuilder = serviceProvider.GetRequiredService<IWorkflowGraphBuilder>();
 
