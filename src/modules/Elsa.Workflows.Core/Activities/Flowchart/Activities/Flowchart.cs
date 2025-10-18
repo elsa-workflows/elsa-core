@@ -225,10 +225,6 @@ public class Flowchart : Container
         foreach (var outboundConnection in outboundConnections)
         {
             var connectionFollowed = flowScope.GetConnectionLastVisitFollowed(outboundConnection);
-            
-            if(!connectionFollowed)
-                continue; // Skip if the connection was not followed.
-            
             var outboundActivity = outboundConnection.Target.Activity;
 
             // Determine the scheduling strategy based on connection-type.
