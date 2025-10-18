@@ -5,3 +5,4 @@
 * [3. Direct Bookmark Management in WorkflowExecutionContext](0003-direct-bookmark-management-in-workflowexecutioncontext.md)
 * [4. Activity Execution Snapshots](0004-activity-execution-snapshots.md)
 * [5. Tenant Deleted Event](0005-tenant-deleted-event.md)
+* [6. Formalizing Join Behaviors](0006-formalizing-join-behaviors.md)
