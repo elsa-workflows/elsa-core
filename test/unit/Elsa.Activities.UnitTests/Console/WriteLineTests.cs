@@ -2,6 +2,7 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+// ReSharper disable MethodHasAsyncOverload
 
 namespace Elsa.Activities.UnitTests.Console;
 
@@ -29,7 +30,7 @@ public class WriteLineTests
         await ExecuteWriteLineAsync(writeLine);
 
         // Assert
-        await _mockTextWriter.Received(1).WriteLineAsync(expectedText);
+        _mockTextWriter.Received(1).WriteLine(expectedText);
     }
 
     [Fact]
@@ -42,7 +43,7 @@ public class WriteLineTests
         await ExecuteWriteLineAsync(writeLine);
 
         // Assert
-        await _mockTextWriter.Received(1).WriteLineAsync(Arg.Is<string?>(s => s == null));
+        _mockTextWriter.Received(1).WriteLine(Arg.Is<string?>(s => s == null));
     }
 
     [Fact]
