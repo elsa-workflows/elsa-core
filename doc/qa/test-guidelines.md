@@ -77,7 +77,7 @@ This section maps Elsa aspects to the exact kinds of tests you should write, wit
 #### **Unit tests:**
 - Test the activity class logic only (no persistence, no scheduler). Cover configuration permutations and boundary inputs.
 - Use [`ActivityTestFixture`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestFixture.cs) to configure and execute the activity and obtain an [`ActivityExecutionContext`](../../src/modules/Elsa.Workflows.Core/Contexts/ActivityExecutionContext.cs) for assertions.
-- In case the activity sets outputs, assert using `context.GetExecutionOutput()`([extension method](../../src/modules/Elsa.Workflows.Core/Extensions/ActivityExecutionContextExtensions.cs)), otherwise, use `context.Get()`.
+- In case the activity sets outputs, assert using `context.GetActivityOutput()`([extension method](../../src/modules/Elsa.Workflows.Core/Extensions/ActivityExecutionContextExtensions.cs)), otherwise, use `context.Get()`.
 
 **Example (does not set output):**
 ```csharp
