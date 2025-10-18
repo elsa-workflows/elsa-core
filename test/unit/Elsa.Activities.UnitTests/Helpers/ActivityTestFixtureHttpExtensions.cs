@@ -4,6 +4,7 @@ using Elsa.Http;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Parsers;
 using Elsa.Resilience;
+using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;

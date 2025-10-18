@@ -1,8 +1,9 @@
 using Elsa.Extensions;
 using Elsa.Workflows;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 
-namespace Elsa.Activities.UnitTests.Helpers;
+namespace Elsa.Testing.Shared;
 
 public class FakeActivityExecutionContextSchedulerStrategy : IActivityExecutionContextSchedulerStrategy
 {

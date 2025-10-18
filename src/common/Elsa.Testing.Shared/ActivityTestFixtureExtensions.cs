@@ -1,7 +1,8 @@
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
+using Xunit;
 
-namespace Elsa.Activities.UnitTests.Helpers;
+namespace Elsa.Testing.Shared;
 
 /// <summary>
 /// General extension methods for ActivityTestFixture.
@@ -21,13 +22,13 @@ public static class ActivityTestFixtureExtensions
     /// <param name="expectedDescription">Expected description</param>
     public static void AssertActivityAttributes(
         this ActivityTestFixture fixture,
-        Type activityType,
         string expectedNamespace,
         ActivityKind expectedKind,
         string? expectedCategory = null,
         string? expectedDisplayName = null,
         string? expectedDescription = null)
     {
+        var activityType = fixture.Activity.GetType();
         var activityAttribute = activityType.GetCustomAttributes(typeof(ActivityAttribute), false)
             .Cast<ActivityAttribute>().FirstOrDefault();
 

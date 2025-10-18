@@ -1,4 +1,5 @@
 using Elsa.Activities.UnitTests.Helpers;
+using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;

@@ -4,14 +4,16 @@ using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.PortResolvers;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
-namespace Elsa.Activities.UnitTests.Helpers;
+namespace Elsa.Testing.Shared;
 
 /// <summary>
 /// A test fixture for unit testing activities in isolation.
@@ -19,9 +21,8 @@ namespace Elsa.Activities.UnitTests.Helpers;
 /// </summary>
 public class ActivityTestFixture
 {
-    private readonly IActivity _activity;
     private readonly IServiceCollection _services;
-    private readonly List<Action<ActivityExecutionContext>> _configureContextActions = new();
+    private Action<ActivityExecutionContext>? _configureContextAction;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ActivityTestFixture"/> class.
@@ -29,10 +30,16 @@ public class ActivityTestFixture
     /// <param name="activity">The activity to test</param>
     public ActivityTestFixture(IActivity activity)
     {
-        _activity = activity;
+        Activity = activity;
         _services = new ServiceCollection();
         AddCoreWorkflowServices(_services);
     }
+
+    /// <summary>
+    /// Represents the activity being tested within the context of the activity test fixture.
+    /// Provides access to the activity for configuration, execution, and validation purposes.
+    /// </summary>
+    public IActivity Activity { get; }
 
     /// <summary>
     /// Gets the service collection for registering additional services.
@@ -52,6 +59,18 @@ public class ActivityTestFixture
     }
 
     /// <summary>
+    /// Configures the activity execution context before execution.
+    /// Multiple calls to this method will chain the configuration actions together.
+    /// </summary>
+    /// <param name="configure">Action to configure the activity execution context</param>
+    /// <returns>The fixture instance for method chaining</returns>
+    public ActivityTestFixture ConfigureContext(Action<ActivityExecutionContext> configure)
+    {
+        _configureContextAction += configure;
+        return this;
+    }
+
+    /// <summary>
     /// Executes the activity and returns the execution context.
     /// </summary>
     /// <returns>The ActivityExecutionContext after execution</returns>
@@ -60,9 +79,9 @@ public class ActivityTestFixture
         var context = await BuildAsync();
 
         // Set up variables and inputs, then execute the activity
-        await SetupExistingVariablesAsync(_activity, context);
+        await SetupExistingVariablesAsync(Activity, context);
         await context.EvaluateInputPropertiesAsync();
-        await _activity.ExecuteAsync(context);
+        await Activity.ExecuteAsync(context);
 
         return context;
     }
@@ -76,9 +95,9 @@ public class ActivityTestFixture
         var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
         var workflowGraphBuilder = serviceProvider.GetRequiredService<IWorkflowGraphBuilder>();
 
-        await activityRegistry.RegisterAsync(_activity.GetType());
+        await activityRegistry.RegisterAsync(Activity.GetType());
 
-        var workflow = Workflow.FromActivity(_activity);
+        var workflow = Workflow.FromActivity(Activity);
         var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow);
 
         // Create workflow execution context using the static factory method
@@ -90,13 +109,10 @@ public class ActivityTestFixture
         );
 
         // Create ActivityExecutionContext for the actual activity we want to test
-        var context = await workflowExecutionContext.CreateActivityExecutionContextAsync(_activity);
+        var context = await workflowExecutionContext.CreateActivityExecutionContextAsync(Activity);
 
-        // Apply any context configuration actions
-        foreach (var configureAction in _configureContextActions)
-        {
-            configureAction(context);
-        }
+        // Apply any context configuration action
+        _configureContextAction?.Invoke(context);
 
         return context;
     }

@@ -1,4 +1,5 @@
 ﻿using Elsa.Activities.UnitTests.Helpers;
+using Elsa.Testing.Shared;
 
 namespace Elsa.Activities.UnitTests.Primitives;
 
