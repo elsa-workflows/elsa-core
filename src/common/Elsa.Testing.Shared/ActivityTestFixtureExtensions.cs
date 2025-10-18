@@ -14,19 +14,19 @@ public static class ActivityTestFixtureExtensions
     /// This is useful for ensuring activities are properly decorated with metadata.
     /// </summary>
     /// <param name="fixture">The test fixture (unused but enables extension method syntax)</param>
-    /// <param name="activityType">The type of activity to validate</param>
     /// <param name="expectedNamespace">Expected namespace (e.g., "Elsa")</param>
+    /// /// <param name="expectedKind">Expected activity kind</param>
     /// <param name="expectedCategory">Expected category (e.g., "HTTP")</param>
     /// <param name="expectedDisplayName">Expected display name</param>
     /// <param name="expectedDescription">Expected description</param>
-    /// <param name="expectedKind">Expected activity kind</param>
     public static void AssertActivityAttributes(
         this ActivityTestFixture fixture,
         string expectedNamespace,
+        ActivityKind expectedKind,
         string? expectedCategory = null,
         string? expectedDisplayName = null,
-        string? expectedDescription = null,
-        ActivityKind expectedKind)
+        string? expectedDescription = null
+        )
     {
         var activityType = fixture.Activity.GetType();
         var activityAttribute = activityType.GetCustomAttributes(typeof(ActivityAttribute), false)
