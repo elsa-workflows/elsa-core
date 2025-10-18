@@ -45,8 +45,7 @@ public class ActivityTestFixture
     /// Gets the service collection for registering additional services.
     /// Use this to add services required by the activity under test.
     /// </summary>
-    [UsedImplicitly]
-    public IServiceCollection Services { get; private set; }
+    [UsedImplicitly] public IServiceCollection Services { get; private set; }
 
     /// <summary>
     /// Configures the service collection using a fluent action.
@@ -127,12 +126,15 @@ public class ActivityTestFixture
     {
         var activityType = activity.GetType();
         var variableProperties = activityType.GetProperties()
-            .Where(p => p.PropertyType.IsGenericType &&
-                        p.PropertyType.GetGenericTypeDefinition() == typeof(Variable<>))
+            .Where(p => typeof(Variable).IsAssignableFrom(p.PropertyType))
             .ToList();
 
-        foreach (var variable in variableProperties.Select(property => (Variable)property.GetValue(activity)!))
+        foreach (var variable in variableProperties.Select(property => (Variable?)property.GetValue(activity)))
         {
+            if (variable == null)
+                continue;
+
+            context.WorkflowExecutionContext.ExpressionExecutionContext?.Memory.Declare(variable);
             variable.Set(context.ExpressionExecutionContext, variable.Value);
         }
 
