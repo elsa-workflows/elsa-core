@@ -1,0 +1,349 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "8c4a6ee098b88432",
+  "definitionId": "3d3412c458178fff",
+  "name": "Fork-issues",
+  "description": "show case",
+  "createdAt": "2025-10-18T12:26:05.643822\u002B00:00",
+  "version": 13,
+  "toolVersion": "3.6.0.0",
+  "variables": [
+    {
+      "id": "93b1a1cb9221a635",
+      "name": "myNumber",
+      "typeName": "Int32",
+      "isArray": false,
+      "value": "0",
+      "storageDriverTypeName": "Elsa.Workflows.WorkflowInstanceStorageDriver, Elsa.Workflows.Core"
+    }
+  ],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "VariableTestValues": {}
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "8d3ecf38f4425d86",
+    "nodeId": "Workflow1:8d3ecf38f4425d86",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "code": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "110002"
+          }
+        },
+        "category": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "failure"
+          }
+        },
+        "faultType": null,
+        "message": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "that went south"
+          }
+        },
+        "id": "cfffbc06a0b6eeb0",
+        "nodeId": "Workflow1:8d3ecf38f4425d86:cfffbc06a0b6eeb0",
+        "name": "Fault1",
+        "type": "Elsa.Fault",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 720,
+              "y": 254.2125015258789
+            },
+            "size": {
+              "width": 123.453125,
+              "height": 67.9765625
+            }
+          }
+        }
+      },
+      {
+        "mode": {
+          "typeName": "Elsa.Workflows.Activities.Flowchart.Models.FlowJoinMode, Elsa.Workflows.Core",
+          "expression": {
+            "type": "Literal",
+            "value": "WaitAll"
+          }
+        },
+        "id": "80847eb320f89c72",
+        "nodeId": "Workflow1:8d3ecf38f4425d86:80847eb320f89c72",
+        "name": "FlowJoin1",
+        "type": "Elsa.FlowJoin",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 722.33984375,
+              "y": 6.876556396484375
+            },
+            "size": {
+              "width": 118.7734375,
+              "height": 67.9765625
+            }
+          }
+        }
+      },
+      {
+        "id": "a8ffcec0d7553fa4",
+        "nodeId": "Workflow1:8d3ecf38f4425d86:a8ffcec0d7553fa4",
+        "name": "Start1",
+        "type": "Elsa.Start",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -96.67572855949402,
+              "y": 6.876556396484375
+            },
+            "size": {
+              "width": 122.6484375,
+              "height": 67.9765625
+            }
+          }
+        }
+      },
+      {
+        "condition": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "JavaScript",
+            "value": "return false;"
+          }
+        },
+        "id": "35c0f40b240666c6",
+        "nodeId": "Workflow1:8d3ecf38f4425d86:35c0f40b240666c6",
+        "name": "FlowDecision1",
+        "type": "Elsa.FlowDecision",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 449.82496643066406,
+              "y": 171.87655639648438
+            },
+            "size": {
+              "width": 149.84375,
+              "height": 67.9765625
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Branch 1"
+          }
+        },
+        "id": "c1a7d756c9ad7597",
+        "nodeId": "Workflow1:8d3ecf38f4425d86:c1a7d756c9ad7597",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 147.39996337890625,
+              "y": -136.12344360351562
+            },
+            "size": {
+              "width": 180,
+              "height": 67.9765625
+            }
+          },
+          "displayText": "Branch 1"
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Branch 2"
+          }
+        },
+        "id": "896ddf80e59c66ef",
+        "nodeId": "Workflow1:8d3ecf38f4425d86:896ddf80e59c66ef",
+        "name": "WriteLine2",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 147.39996337890625,
+              "y": 171.87655639648438
+            },
+            "size": {
+              "width": 180,
+              "height": 67.9765625
+            }
+          },
+          "displayText": "Branch 2"
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "End"
+          }
+        },
+        "id": "bfa45877d81d2be6",
+        "nodeId": "Workflow1:8d3ecf38f4425d86:bfa45877d81d2be6",
+        "name": "End",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 975.888671875,
+              "y": 6.876556396484375
+            },
+            "size": {
+              "width": 152.2734375,
+              "height": 67.9765625
+            }
+          },
+          "displayText": "End"
+        }
+      }
+    ],
+    "variables": [],
+    "connections": [
+      {
+        "source": {
+          "activity": "80847eb320f89c72",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "bfa45877d81d2be6",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "35c0f40b240666c6",
+          "port": "True"
+        },
+        "target": {
+          "activity": "80847eb320f89c72",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "a8ffcec0d7553fa4",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "c1a7d756c9ad7597",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "a8ffcec0d7553fa4",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "896ddf80e59c66ef",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "896ddf80e59c66ef",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "35c0f40b240666c6",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "35c0f40b240666c6",
+          "port": "False"
+        },
+        "target": {
+          "activity": "cfffbc06a0b6eeb0",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "c1a7d756c9ad7597",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "80847eb320f89c72",
+          "port": "In"
+        },
+        "vertices": []
+      }
+    ]
+  }
+}
