@@ -25,10 +25,12 @@ public class WriteLineTests
         var writeLine = new WriteLine(expectedText);
 
         // Act
-        await ActivityTestHelper.ExecuteActivityAsync(writeLine, services =>
-        {
-            services.AddSingleton(_mockProvider);
-        });
+        var fixture = new ActivityTestFixture(writeLine)
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton(_mockProvider);
+            });
+        await fixture.ExecuteAsync();
 
         // Assert
         _mockTextWriter.Received(1).WriteLine(expectedText);
@@ -41,10 +43,12 @@ public class WriteLineTests
         var writeLine = new WriteLine(new Input<string>((string?)null));
 
         // Act
-        await ActivityTestHelper.ExecuteActivityAsync(writeLine, services =>
-        {
-            services.AddSingleton(_mockProvider);
-        });
+        var fixture = new ActivityTestFixture(writeLine)
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton(_mockProvider);
+            });
+        await fixture.ExecuteAsync();
 
         // Assert
         _mockTextWriter.Received(1).WriteLine(Arg.Is<string?>(s => s == null));
@@ -58,10 +62,12 @@ public class WriteLineTests
         var writeLine = new WriteLine(expectedText);
 
         // Act
-        await ActivityTestHelper.ExecuteActivityAsync(writeLine, services =>
-        {
-            services.AddSingleton(_mockProvider);
-        });
+        var fixture = new ActivityTestFixture(writeLine)
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton(_mockProvider);
+            });
+        await fixture.ExecuteAsync();
 
         // Assert
         _mockTextWriter.Received(1).WriteLine(expectedText);
@@ -75,9 +81,12 @@ public class WriteLineTests
         var writeLine = new WriteLine(textToWrite);
 
         // Act & Assert - Should not throw exception when no provider is configured
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(writeLine));
-        
+        var exception = await Record.ExceptionAsync(async () =>
+        {
+            var fixture = new ActivityTestFixture(writeLine);
+            await fixture.ExecuteAsync();
+        });
+
         Assert.Null(exception);
     }
 }

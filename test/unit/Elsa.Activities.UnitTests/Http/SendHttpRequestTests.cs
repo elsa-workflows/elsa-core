@@ -160,7 +160,8 @@ public class SendHttpRequestTests
     [Fact]
     public void Should_Have_Correct_Activity_Attributes()
     {
-        ActivityTestHelper.AssertActivityAttributes(
+        var fixture = new ActivityTestFixture(new SendHttpRequest());
+        fixture.AssertActivityAttributes(
             typeof(SendHttpRequest),
             expectedNamespace: "Elsa",
             expectedCategory: "HTTP",
@@ -172,7 +173,7 @@ public class SendHttpRequestTests
 
     // Private helper methods placed after all public members
     private static Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> CreateResponseHandler(
-        HttpStatusCode statusCode, 
+        HttpStatusCode statusCode,
         string? content = null,
         RequestCapture? requestCapture = null,
         Dictionary<string, string>? additionalHeaders = null)
@@ -181,7 +182,7 @@ public class SendHttpRequestTests
         {
             if (requestCapture != null)
                 requestCapture.CapturedRequest = request;
-            return Task.FromResult(ActivityTestHelper.CreateHttpResponse(statusCode, content, additionalHeaders));
+            return Task.FromResult(ActivityTestFixtureHttpExtensions.CreateHttpResponse(statusCode, content, additionalHeaders));
         };
     }
 
@@ -212,8 +213,10 @@ public class SendHttpRequestTests
         SendHttpRequest sendHttpRequest,
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responseHandler)
     {
-        return await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, 
-            services => ActivityTestHelper.ConfigureHttpActivityServices(services, responseHandler));
+        var fixture = new ActivityTestFixture(sendHttpRequest)
+            .WithHttpServices(responseHandler);
+
+        return await fixture.ExecuteAsync();
     }
 
     private static (SendHttpRequest sendHttpRequest, Dictionary<string, IActivity> childActivities) CreateSendHttpRequestWithStatusHandlers(
