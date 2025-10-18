@@ -125,13 +125,6 @@ public static class ActivityTestHelper
     }
 
     /// <summary>
-    /// Creates a mock activity for testing purposes.
-    /// This is useful for creating placeholder activities when testing activity scheduling behavior.
-    /// </summary>
-    /// <returns>A mock IActivity instance</returns>
-    public static IActivity CreateMockActivity() => Substitute.For<IActivity>();
-
-    /// <summary>
     /// Adds all HTTP-related services to the service collection.
     /// This includes content factories, parsers, and HTTP client services.
     /// Use this method when testing HTTP activities that require full HTTP service support.
@@ -257,60 +250,6 @@ public static class ActivityTestHelper
         services.AddSingleton<IHttpContentParser, XmlHttpContentParser>();
         services.AddSingleton<IHttpContentParser, TextHtmlHttpContentParser>();
         services.AddSingleton<IHttpContentParser, FileHttpContentParser>();
-    }
-
-
-    /// <summary>
-    /// Creates a workflow that includes all the provided activities to ensure they are part of the workflow graph.
-    /// This is necessary for testing activities that schedule child activities.
-    /// </summary>
-    /// <param name="rootActivity">The main activity to execute</param>
-    /// <param name="childActivities">Additional activities that should be part of the workflow graph</param>
-    /// <param name="configureServices">Optional service configuration</param>
-    /// <returns>The ActivityExecutionContext for the root activity</returns>
-    private static async Task<ActivityExecutionContext> CreateActivityExecutionContextWithChildActivities(
-        IActivity rootActivity, 
-        IEnumerable<IActivity> childActivities,
-        Action<IServiceCollection>? configureServices = null)
-    {
-        // Create a workflow that includes all activities
-        var allActivities = new[] { rootActivity }.Concat(childActivities).ToArray();
-        
-        // Create a service provider.
-        var services = new ServiceCollection();
-        AddCoreWorkflowServices(services);
-        configureServices?.Invoke(services);
-        var serviceProvider = services.BuildServiceProvider();
-        
-        // Register all activities
-        var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
-        foreach (var activity in allActivities)
-        {
-            await activityRegistry.RegisterAsync(activity.GetType());
-        }
-        
-        // Create a sequence workflow that contains all activities
-        var workflow = new Workflow
-        {
-            Root = new Sequence
-            {
-                Activities = allActivities.ToList()
-            }
-        };
-        
-        var workflowGraphBuilder = serviceProvider.GetRequiredService<IWorkflowGraphBuilder>();
-        var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow);
-
-        // Create workflow execution context
-        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
-            serviceProvider,
-            workflowGraph,
-            $"test-instance-{Guid.NewGuid()}",
-            CancellationToken.None
-        );
-
-        // Create ActivityExecutionContext for the root activity
-        return await workflowExecutionContext.CreateActivityExecutionContextAsync(rootActivity);
     }
 
     private static void AddCoreWorkflowServices(IServiceCollection services)
