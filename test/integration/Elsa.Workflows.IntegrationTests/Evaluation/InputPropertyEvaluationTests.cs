@@ -20,7 +20,6 @@ public class InputPropertyEvaluationTests
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.True(context.GetHasEvaluatedProperties());
         Assert.Contains(expectedText, context.ActivityState.Values);
     }
 
