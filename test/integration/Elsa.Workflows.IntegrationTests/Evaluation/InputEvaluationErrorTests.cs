@@ -20,8 +20,7 @@ public class InputEvaluationErrorTests
     [InlineData(typeof(TimeoutException), "Expression evaluation timed out")]
     public async Task Should_Wrap_Evaluation_Exceptions_In_InputEvaluationException(Type exceptionType, string errorMessage)
     {
-        // Arrange - QA Scenario #29: Logs errors on failed expression evaluation
-        // Reference: ActivityExecutionContextExtensions.InputEvaluation.cs:79
+        // Arrange
         var exception = (Exception)Activator.CreateInstance(exceptionType, errorMessage)!;
         var mockHandler = Substitute.For<IExpressionHandler>();
         mockHandler.EvaluateAsync(
