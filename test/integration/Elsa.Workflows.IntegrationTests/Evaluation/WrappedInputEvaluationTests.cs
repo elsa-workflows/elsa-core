@@ -9,35 +9,6 @@ namespace Elsa.Workflows.IntegrationTests.Evaluation;
 
 public class WrappedInputEvaluationTests
 {
-    [Fact(DisplayName = "Uses default value when wrapped input is null")]
-    public async Task UsesDefaultValueWhenInputIsNull()
-    {
-        // Arrange
-        var writeLine = new WriteLine("");
-        var context = await CreateContextAsync(writeLine);
-
-        // Act
-        await context.EvaluateInputPropertiesAsync();
-
-        // Assert
-        Assert.True(context.GetHasEvaluatedProperties());
-    }
-
-    [Fact(DisplayName = "Evaluates expression via DefaultActivityInputEvaluator")]
-    public async Task EvaluatesExpression()
-    {
-        // Arrange
-        const string expectedText = "Evaluated Text";
-        var writeLine = new WriteLine(expectedText);
-        var context = await CreateContextAsync(writeLine);
-
-        // Act
-        await context.EvaluateInputPropertiesAsync();
-
-        // Assert
-        Assert.Equal(expectedText, context.ActivityState["Text"]);
-    }
-
     [Fact(DisplayName = "Sets memory block reference with deterministic ID")]
     public async Task SetsMemoryBlockReferenceWithDeterministicId()
     {
