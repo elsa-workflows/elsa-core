@@ -9,26 +9,23 @@ using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
+using static Elsa.Workflows.IntegrationTests.Evaluation.EvaluationTestHelpers;
 
 namespace Elsa.Workflows.IntegrationTests.Evaluation;
 
 public class InputEvaluationErrorTests
 {
-    [Theory]
-    [InlineData(typeof(InvalidOperationException), "Expression evaluation failed")]
-    [InlineData(typeof(ArgumentException), "Detailed inner error message")]
-    [InlineData(typeof(TimeoutException), "Expression evaluation timed out")]
-    public async Task Should_Wrap_Evaluation_Exceptions_In_InputEvaluationException(Type exceptionType, string errorMessage)
+    private static async Task<ActivityExecutionContext> CreateContextWithMockEvaluatorAsync(
+        WriteLine writeLine,
+        Exception thrownException)
     {
-        // Arrange
-        var exception = (Exception)Activator.CreateInstance(exceptionType, errorMessage)!;
         var mockHandler = Substitute.For<IExpressionHandler>();
         mockHandler.EvaluateAsync(
                 Arg.Any<Expression>(),
                 Arg.Any<Type>(),
                 Arg.Any<ExpressionExecutionContext>(),
                 Arg.Any<ExpressionEvaluatorOptions>())
-            .Throws(exception);
+            .Throws(thrownException);
 
         var mockDescriptor = new ExpressionDescriptor
         {
@@ -37,22 +34,32 @@ public class InputEvaluationErrorTests
         };
 
         var mockProvider = Substitute.For<IExpressionDescriptorProvider>();
-        mockProvider.GetDescriptors().Returns(new[] { mockDescriptor });
+        mockProvider.GetDescriptors().Returns([mockDescriptor]);
 
-        var writeLine = new WriteLine("Test");
         var fixture = new ActivityTestFixture(writeLine)
             .ConfigureServices(services =>
             {
-                // Replace the default provider with our mock
                 services.RemoveWhere(d => d.ServiceType == typeof(IExpressionDescriptorProvider));
                 services.AddSingleton(mockProvider);
             });
 
-        var context = await fixture.BuildAsync();
+        return await fixture.BuildAsync();
+    }
+
+    [Theory(DisplayName = "Wraps evaluation exceptions in InputEvaluationException")]
+    [InlineData(typeof(InvalidOperationException), "Expression evaluation failed")]
+    [InlineData(typeof(ArgumentException), "Detailed inner error message")]
+    [InlineData(typeof(TimeoutException), "Expression evaluation timed out")]
+    public async Task WrapsEvaluationExceptions(Type exceptionType, string errorMessage)
+    {
+        // Arrange
+        var exception = (Exception)Activator.CreateInstance(exceptionType, errorMessage)!;
+        var writeLine = new WriteLine("Test");
+        var context = await CreateContextWithMockEvaluatorAsync(writeLine, exception);
 
         // Act & Assert
-        var wrappedException = await Assert.ThrowsAsync<InputEvaluationException>(async () =>
-            await context.EvaluateInputPropertiesAsync());
+        var wrappedException = await Assert.ThrowsAsync<InputEvaluationException>(
+            async () => await context.EvaluateInputPropertiesAsync());
 
         Assert.Equal("Text", wrappedException.InputName);
         Assert.Contains("Failed to evaluate activity input 'Text'", wrappedException.Message);
@@ -61,35 +68,34 @@ public class InputEvaluationErrorTests
         Assert.NotNull(wrappedException.InnerException.StackTrace);
     }
 
-    [Fact]
-    public async Task Should_Handle_Null_Expression_Gracefully()
+    [Fact(DisplayName = "Handles null expression gracefully without throwing")]
+    public async Task HandlesNullExpressionGracefully()
     {
-        // Arrange - Input with null expression should not throw
+        // Arrange
         var writeLine = new WriteLine("");
-        var fixture = new ActivityTestFixture(writeLine);
-        var context = await fixture.BuildAsync();
+        var context = await CreateContextAsync(writeLine);
 
         // Act
-        var exception = await Record.ExceptionAsync(async () =>
-            await context.EvaluateInputPropertiesAsync());
+        var exception = await Record.ExceptionAsync(
+            async () => await context.EvaluateInputPropertiesAsync());
 
-        // Assert - Should not throw when expression is null
+        // Assert
         Assert.Null(exception);
     }
 
-    [Fact]
-    public async Task Should_Continue_Evaluation_After_Non_Critical_Errors()
+    [Fact(DisplayName = "Continues evaluation when activity has multiple inputs")]
+    public async Task ContinuesEvaluationForMultipleInputs()
     {
-        // Arrange - Test with SetVariable which has multiple inputs
+        // Arrange
         var variable = new Variable<int>("testVar", 0, "testVar");
         var setVariable = new SetVariable<int>(variable, new Input<int>(42));
-        var fixture = new ActivityTestFixture(setVariable);
-        var context = await fixture.BuildAsync();
+        var context = await CreateContextAsync(setVariable);
 
         // Act
-        var exception = await Record.ExceptionAsync(async () => await context.EvaluateInputPropertiesAsync());
+        var exception = await Record.ExceptionAsync(
+            async () => await context.EvaluateInputPropertiesAsync());
 
-        // Assert - Should complete successfully
+        // Assert
         Assert.Null(exception);
         Assert.True(context.GetHasEvaluatedProperties());
     }

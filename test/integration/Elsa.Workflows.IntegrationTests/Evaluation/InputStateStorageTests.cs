@@ -1,38 +1,72 @@
 using Elsa.Extensions;
-using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using static Elsa.Workflows.IntegrationTests.Evaluation.EvaluationTestHelpers;
 
 namespace Elsa.Workflows.IntegrationTests.Evaluation;
 
 public class InputStateStorageTests
 {
-    [Fact]
-    public async Task Should_Store_Serializable_Inputs_In_ActivityState()
+    [Theory(DisplayName = "Stores primitive values in activity state")]
+    [InlineData(42)]
+    [InlineData(0)]
+    [InlineData(-100)]
+    public async Task StoresPrimitiveIntValues(int expectedValue)
     {
-        // Arrange - Reference: ActivityExecutionContextExtensions.InputEvaluation.cs:152
-        const string expectedValue = "Stored Value";
-        var writeLine = new WriteLine(expectedValue);
-        var fixture = new ActivityTestFixture(writeLine);
-        var context = await fixture.BuildAsync();
+        // Arrange
+        var variable = new Variable<int>("intVar", 0, "intVar");
+        var setVariable = new SetVariable<int>(variable, new Input<int>(expectedValue));
+        var context = await CreateContextAsync(setVariable);
 
         // Act
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.True(context.ActivityState.ContainsKey("Text"));
-        Assert.Equal(expectedValue, context.ActivityState["Text"]);
+        Assert.Contains(expectedValue, context.ActivityState.Values);
     }
 
-    [Fact]
-    public async Task Should_Store_Values_By_Input_Descriptor_Name()
+    [Theory(DisplayName = "Stores boolean values in activity state")]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task StoresBooleanValues(bool expectedValue)
+    {
+        // Arrange
+        var variable = new Variable<bool>("boolVar", false, "boolVar");
+        var setVariable = new SetVariable<bool>(variable, new Input<bool>(expectedValue));
+        var context = await CreateContextAsync(setVariable);
+
+        // Act
+        await context.EvaluateInputPropertiesAsync();
+
+        // Assert
+        Assert.Contains(expectedValue, context.ActivityState.Values);
+    }
+
+    [Theory(DisplayName = "Stores string values in activity state")]
+    [InlineData("Test String")]
+    [InlineData("")]
+    public async Task StoresStringValues(string expectedValue)
+    {
+        // Arrange
+        var variable = new Variable<string>("stringVar", "", "stringVar");
+        var setVariable = new SetVariable<string>(variable, new Input<string>(expectedValue));
+        var context = await CreateContextAsync(setVariable);
+
+        // Act
+        await context.EvaluateInputPropertiesAsync();
+
+        // Assert
+        Assert.Contains(expectedValue, context.ActivityState.Values);
+    }
+
+    [Fact(DisplayName = "Stores values using input descriptor name as key")]
+    public async Task StoresValuesByInputDescriptorName()
     {
         // Arrange
         const string textValue = "Named Input Test";
         var writeLine = new WriteLine(textValue);
-        var fixture = new ActivityTestFixture(writeLine);
-        var context = await fixture.BuildAsync();
+        var context = await CreateContextAsync(writeLine);
 
         // Act
         await context.EvaluateInputPropertiesAsync();
@@ -42,13 +76,12 @@ public class InputStateStorageTests
         Assert.Equal(textValue, context.ActivityState["Text"]);
     }
 
-    [Fact]
-    public async Task Should_Handle_Null_Values_Correctly()
+    [Fact(DisplayName = "Stores null values correctly")]
+    public async Task StoresNullValues()
     {
         // Arrange
         var writeLine = new WriteLine(new Input<string>((string?)null));
-        var fixture = new ActivityTestFixture(writeLine);
-        var context = await fixture.BuildAsync();
+        var context = await CreateContextAsync(writeLine);
 
         // Act
         await context.EvaluateInputPropertiesAsync();
@@ -58,79 +91,21 @@ public class InputStateStorageTests
         Assert.Null(context.ActivityState["Text"]);
     }
 
-    [Theory]
-    [InlineData(42)]
-    [InlineData(0)]
-    [InlineData(-100)]
-    public async Task Should_Store_Integer_Values(int expectedValue)
-    {
-        // Arrange
-        var variable = new Variable<int>("intVar", 0, "intVar");
-        var setVariable = new SetVariable<int>(variable, new Input<int>(expectedValue));
-        var fixture = new ActivityTestFixture(setVariable);
-        var context = await fixture.BuildAsync();
-
-        // Act
-        await context.EvaluateInputPropertiesAsync();
-
-        // Assert
-        Assert.Contains(expectedValue, context.ActivityState.Values);
-    }
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task Should_Store_Boolean_Values(bool expectedValue)
-    {
-        // Arrange
-        var variable = new Variable<bool>("boolVar", false, "boolVar");
-        var setVariable = new SetVariable<bool>(variable, new Input<bool>(expectedValue));
-        var fixture = new ActivityTestFixture(setVariable);
-        var context = await fixture.BuildAsync();
-
-        // Act
-        await context.EvaluateInputPropertiesAsync();
-
-        // Assert
-        Assert.Contains(expectedValue, context.ActivityState.Values);
-    }
-
-    [Theory]
-    [InlineData("Test String")]
-    [InlineData("")]
-    public async Task Should_Store_String_Values(string expectedValue)
-    {
-        // Arrange
-        var variable = new Variable<string>("stringVar", "", "stringVar");
-        var setVariable = new SetVariable<string>(variable, new Input<string>(expectedValue));
-        var fixture = new ActivityTestFixture(setVariable);
-        var context = await fixture.BuildAsync();
-
-        // Act
-        await context.EvaluateInputPropertiesAsync();
-
-        // Assert
-        Assert.Contains(expectedValue, context.ActivityState.Values);
-    }
-
-    [Fact]
-    public async Task Should_Overwrite_Previous_Values_On_Re_Evaluation()
+    [Fact(DisplayName = "Overwrites previous values on re-evaluation")]
+    public async Task OverwritesPreviousValuesOnReEvaluation()
     {
         // Arrange
         const string initialValue = "Initial";
         const string updatedValue = "Updated";
         var writeLine = new WriteLine(initialValue);
-        var fixture = new ActivityTestFixture(writeLine);
-        var context = await fixture.BuildAsync();
+        var context = await CreateContextAsync(writeLine);
 
         // Act - First evaluation
         await context.EvaluateInputPropertiesAsync();
         var firstValue = context.ActivityState["Text"];
 
-        // Modify the input
+        // Modify and re-evaluate
         writeLine.Text = new Input<string>(updatedValue);
-
-        // Re-evaluate
         await context.EvaluateInputPropertyAsync("Text");
         var secondValue = context.ActivityState["Text"];
 
@@ -139,32 +114,28 @@ public class InputStateStorageTests
         Assert.Equal(updatedValue, secondValue);
     }
 
-    [Fact]
-    public async Task Should_Store_Multiple_Inputs_Separately()
+    [Fact(DisplayName = "Stores multiple inputs separately")]
+    public async Task StoresMultipleInputsSeparately()
     {
         // Arrange
         var variable = new Variable<int>("multiVar", 100, "multiVar");
         var setVariable = new SetVariable<int>(variable, new Input<int>(200));
-        var fixture = new ActivityTestFixture(setVariable);
-        var context = await fixture.BuildAsync();
+        var context = await CreateContextAsync(setVariable);
 
         // Act
         await context.EvaluateInputPropertiesAsync();
 
-        // Assert - SetVariable has Variable and Value inputs
+        // Assert
         Assert.True(context.ActivityState.Count >= 1);
     }
 
-
-    [Fact]
-    public async Task Should_Maintain_State_Across_Multiple_Evaluations()
+    [Fact(DisplayName = "Maintains state across multiple evaluations")]
+    public async Task MaintainsStateAcrossMultipleEvaluations()
     {
         // Arrange
         const string value1 = "First";
-        const string value2 = "Second";
         var writeLine1 = new WriteLine(value1);
-        var fixture = new ActivityTestFixture(writeLine1);
-        var context = await fixture.BuildAsync();
+        var context = await CreateContextAsync(writeLine1);
 
         // Act - First evaluation
         await context.EvaluateInputPropertiesAsync();
