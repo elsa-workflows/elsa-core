@@ -27,7 +27,7 @@ public class WriteLineTests
         var writeLine = new WriteLine(expectedText);
 
         // Act
-        await ExecuteWriteLineAsync(writeLine);
+        await ExecuteAsync(writeLine);
 
         // Assert
         _mockTextWriter.Received(1).WriteLine(expectedText);
@@ -40,7 +40,7 @@ public class WriteLineTests
         var writeLine = new WriteLine(new Input<string>(default(string)!));
 
         // Act
-        await ExecuteWriteLineAsync(writeLine);
+        await ExecuteAsync(writeLine);
 
         // Assert
         _mockTextWriter.Received(1).WriteLine(Arg.Is<string?>(s => s == null));
@@ -54,14 +54,14 @@ public class WriteLineTests
         var writeLine = new WriteLine(textToWrite);
 
         // Act & Assert - Should not throw exception when no provider is configured
-        var exception = await Record.ExceptionAsync(() => new ActivityTestFixture(writeLine).ExecuteAsync());
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(writeLine));
 
         Assert.Null(exception);
     }
 
-    private async Task ExecuteWriteLineAsync(WriteLine writeLine)
+    private async Task ExecuteAsync(IActivity activity)
     {
-        await new ActivityTestFixture(writeLine)
+        await new ActivityTestFixture(activity)
             .ConfigureServices(services => services.AddSingleton(_mockProvider))
             .ExecuteAsync();
     }

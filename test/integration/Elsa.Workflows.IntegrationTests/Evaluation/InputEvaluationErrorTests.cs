@@ -43,17 +43,9 @@ public class InputEvaluationErrorTests
         var fixture = new ActivityTestFixture(writeLine)
             .ConfigureServices(services =>
             {
-                // Replace expression descriptor provider
-                var descriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IExpressionDescriptorProvider));
-                if (descriptor != null)
-                    services.Remove(descriptor);
+                // Replace the default provider with our mock
+                services.RemoveWhere(d => d.ServiceType == typeof(IExpressionDescriptorProvider));
                 services.AddSingleton(mockProvider);
-
-                // Re-register registry
-                var registryDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IExpressionDescriptorRegistry));
-                if (registryDescriptor != null)
-                    services.Remove(registryDescriptor);
-                services.AddSingleton<IExpressionDescriptorRegistry, Elsa.Workflows.Management.Services.ExpressionDescriptorRegistry>();
             });
 
         var context = await fixture.BuildAsync();
@@ -95,8 +87,7 @@ public class InputEvaluationErrorTests
         var context = await fixture.BuildAsync();
 
         // Act
-        var exception = await Record.ExceptionAsync(async () =>
-            await context.EvaluateInputPropertiesAsync());
+        var exception = await Record.ExceptionAsync(async () => await context.EvaluateInputPropertiesAsync());
 
         // Assert - Should complete successfully
         Assert.Null(exception);

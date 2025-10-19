@@ -1,9 +1,8 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
-using Elsa.Expressions.Services;
+using Elsa.Extensions;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Exceptions;
-using Elsa.Workflows.Management.Services;
+using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -17,8 +16,7 @@ public class ExpressionEvaluatorTests
     {
         // Arrange
         var activity = new WriteLine("Hello, World!");
-        var fixture = new ActivityTestFixture(activity);
-        var context = await fixture.BuildAsync();
+        var context = await CreateActivityExecutionContextAsync(activity);
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var expression = new Expression("Literal", "Test Value");
 
@@ -34,8 +32,7 @@ public class ExpressionEvaluatorTests
     {
         // Arrange
         var activity = new WriteLine("Hello, World!");
-        var fixture = new ActivityTestFixture(activity);
-        var context = await fixture.BuildAsync();
+        var context = await CreateActivityExecutionContextAsync(activity);
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var expression = new Expression("Literal", 42);
 
@@ -51,8 +48,7 @@ public class ExpressionEvaluatorTests
     {
         // Arrange
         var activity = new WriteLine("Hello, World!");
-        var fixture = new ActivityTestFixture(activity);
-        var context = await fixture.BuildAsync();
+        var context = await CreateActivityExecutionContextAsync(activity);
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var expression = new Expression("NonExistentType", "value");
 
@@ -79,23 +75,15 @@ public class ExpressionEvaluatorTests
         };
 
         var mockProvider = Substitute.For<IExpressionDescriptorProvider>();
-        mockProvider.GetDescriptors().Returns(new[] { mockDescriptor });
+        mockProvider.GetDescriptors().Returns([mockDescriptor]);
 
         var activity = new WriteLine("Hello, World!");
         var fixture = new ActivityTestFixture(activity)
             .ConfigureServices(services =>
             {
                 // Replace the default provider with our mock
-                var descriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IExpressionDescriptorProvider));
-                if (descriptor != null)
-                    services.Remove(descriptor);
+                services.RemoveWhere(d => d.ServiceType == typeof(IExpressionDescriptorProvider));
                 services.AddSingleton(mockProvider);
-
-                // Re-register registry to pick up new provider
-                var registryDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IExpressionDescriptorRegistry));
-                if (registryDescriptor != null)
-                    services.Remove(registryDescriptor);
-                services.AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>();
             });
 
         var context = await fixture.BuildAsync();
@@ -129,21 +117,15 @@ public class ExpressionEvaluatorTests
         };
 
         var mockProvider = Substitute.For<IExpressionDescriptorProvider>();
-        mockProvider.GetDescriptors().Returns(new[] { mockDescriptor });
+        mockProvider.GetDescriptors().Returns([mockDescriptor]);
 
         var activity = new WriteLine("Hello, World!");
         var fixture = new ActivityTestFixture(activity)
             .ConfigureServices(services =>
             {
-                var descriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IExpressionDescriptorProvider));
-                if (descriptor != null)
-                    services.Remove(descriptor);
+                // Replace the default provider with our mock
+                services.RemoveWhere(d => d.ServiceType == typeof(IExpressionDescriptorProvider));
                 services.AddSingleton(mockProvider);
-
-                var registryDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IExpressionDescriptorRegistry));
-                if (registryDescriptor != null)
-                    services.Remove(registryDescriptor);
-                services.AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>();
             });
 
         var context = await fixture.BuildAsync();
@@ -176,21 +158,15 @@ public class ExpressionEvaluatorTests
         };
 
         var mockProvider = Substitute.For<IExpressionDescriptorProvider>();
-        mockProvider.GetDescriptors().Returns(new[] { mockDescriptor });
+        mockProvider.GetDescriptors().Returns([mockDescriptor]);
 
         var activity = new WriteLine("Hello, World!");
         var fixture = new ActivityTestFixture(activity)
             .ConfigureServices(services =>
             {
-                var descriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IExpressionDescriptorProvider));
-                if (descriptor != null)
-                    services.Remove(descriptor);
+                // Replace the default provider with our mock
+                services.RemoveWhere(d => d.ServiceType == typeof(IExpressionDescriptorProvider));
                 services.AddSingleton(mockProvider);
-
-                var registryDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IExpressionDescriptorRegistry));
-                if (registryDescriptor != null)
-                    services.Remove(registryDescriptor);
-                services.AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>();
             });
 
         var context = await fixture.BuildAsync();
@@ -202,5 +178,10 @@ public class ExpressionEvaluatorTests
             await evaluator.EvaluateAsync<string>(expression, context.ExpressionExecutionContext));
 
         Assert.Equal("Handler failed", exception.Message);
+    }
+    
+    private Task<ActivityExecutionContext> CreateActivityExecutionContextAsync(IActivity activity)
+    {
+        return new ActivityTestFixture(activity).BuildAsync();
     }
 }
