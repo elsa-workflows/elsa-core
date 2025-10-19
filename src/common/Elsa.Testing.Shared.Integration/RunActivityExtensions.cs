@@ -1,4 +1,5 @@
 using Elsa.Workflows;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using JetBrains.Annotations;
@@ -41,5 +42,10 @@ public static class RunActivityExtensions
         var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
         var result = await workflowRunner.RunAsync(activity, options, cancellationToken);
         return result;
+    }
+    
+    public static async Task<RunWorkflowResult> RunWorkflowAsync(this IServiceProvider services, Workflow workflow, RunWorkflowOptions options, CancellationToken cancellationToken = default)
+    {
+        return await services.RunActivityAsync(workflow, options, cancellationToken);
     }
 }
