@@ -5,7 +5,7 @@ using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.IntegrationTests.Evaluation;
 
-public class CustomInputEvaluatorTests
+public class InputEvaluationTests
 {
     [Fact]
     public async Task Should_Use_DefaultActivityInputEvaluator_By_Default()
