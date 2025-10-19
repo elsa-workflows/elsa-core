@@ -102,7 +102,7 @@ public class ExpressionEvaluatorTests
     [Fact(DisplayName = "Wraps handler exceptions in evaluation context")]
     public async Task WrapsHandlerExceptions()
     {
-        // Arrange - QA Scenario #29: Logs errors on failed expression evaluation
+        // Arrange
         var mockHandler = CreateMockHandlerThatThrows(new InvalidOperationException("Handler failed"));
         var context = await CreateContextWithMockHandlerAsync("FailingType", mockHandler);
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
