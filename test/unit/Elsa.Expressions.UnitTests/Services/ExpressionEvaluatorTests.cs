@@ -54,7 +54,7 @@ public class ExpressionEvaluatorTests
         var exception = await Assert.ThrowsAsync<Exception>(async () =>
             await evaluator.EvaluateAsync<string>(expression, context.ExpressionExecutionContext));
 
-        Assert.Contains("Could not find an descriptor for expression type", exception.Message);
+        Assert.Contains("Could not find a descriptor for expression type", exception.Message);
         Assert.Contains("NonExistentType", exception.Message);
     }
 
