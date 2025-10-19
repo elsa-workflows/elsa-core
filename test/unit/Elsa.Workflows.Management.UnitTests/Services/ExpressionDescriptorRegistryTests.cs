@@ -3,7 +3,7 @@ using Elsa.Expressions.Models;
 using Elsa.Workflows.Management.Services;
 using NSubstitute;
 
-namespace Elsa.Activities.UnitTests.Expressions;
+namespace Elsa.Workflows.Management.UnitTests.Services;
 
 public class ExpressionDescriptorRegistryTests
 {

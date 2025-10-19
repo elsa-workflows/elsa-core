@@ -3,11 +3,12 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using Elsa.Workflows.Activities;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 
-namespace Elsa.Activities.UnitTests.Expressions;
+namespace Elsa.Expressions.UnitTests.Services;
 
 public class ExpressionEvaluatorTests
 {
