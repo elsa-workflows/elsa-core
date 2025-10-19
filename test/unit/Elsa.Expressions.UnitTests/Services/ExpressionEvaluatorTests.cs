@@ -12,12 +12,11 @@ namespace Elsa.Expressions.UnitTests.Services;
 
 public class ExpressionEvaluatorTests
 {
-    [Fact]
-    public async Task Should_Evaluate_Expression_With_Generic_Type_Parameter()
+    [Fact(DisplayName = "Evaluates expression with generic type parameter")]
+    public async Task EvaluatesExpressionWithGenericTypeParameter()
     {
         // Arrange
-        var activity = new WriteLine("Hello, World!");
-        var context = await CreateActivityExecutionContextAsync(activity);
+        var context = await CreateContextAsync();
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var expression = new Expression("Literal", "Test Value");
 
@@ -28,12 +27,11 @@ public class ExpressionEvaluatorTests
         Assert.Equal("Test Value", result);
     }
 
-    [Fact]
-    public async Task Should_Evaluate_Expression_With_Type_Parameter()
+    [Fact(DisplayName = "Evaluates expression with type parameter")]
+    public async Task EvaluatesExpressionWithTypeParameter()
     {
         // Arrange
-        var activity = new WriteLine("Hello, World!");
-        var context = await CreateActivityExecutionContextAsync(activity);
+        var context = await CreateContextAsync();
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var expression = new Expression("Literal", 42);
 
@@ -44,12 +42,11 @@ public class ExpressionEvaluatorTests
         Assert.Equal(42, result);
     }
 
-    [Fact]
-    public async Task Should_Throw_When_Expression_Type_Not_Found_In_Registry()
+    [Fact(DisplayName = "Throws when expression type not found in registry")]
+    public async Task ThrowsWhenExpressionTypeNotFound()
     {
         // Arrange
-        var activity = new WriteLine("Hello, World!");
-        var context = await CreateActivityExecutionContextAsync(activity);
+        var context = await CreateContextAsync();
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var expression = new Expression("NonExistentType", "value");
 
@@ -61,33 +58,12 @@ public class ExpressionEvaluatorTests
         Assert.Contains("NonExistentType", exception.Message);
     }
 
-    [Fact]
-    public async Task Should_Resolve_Expression_Handler_Via_Descriptor_Factory()
+    [Fact(DisplayName = "Resolves expression handler via descriptor factory")]
+    public async Task ResolvesExpressionHandlerViaDescriptorFactory()
     {
         // Arrange
-        var mockHandler = Substitute.For<IExpressionHandler>();
-        mockHandler.EvaluateAsync(Arg.Any<Expression>(), Arg.Any<Type>(), Arg.Any<ExpressionExecutionContext>(), Arg.Any<ExpressionEvaluatorOptions>())
-            .Returns("Mocked Result");
-
-        var mockDescriptor = new ExpressionDescriptor
-        {
-            Type = "CustomType",
-            HandlerFactory = _ => mockHandler
-        };
-
-        var mockProvider = Substitute.For<IExpressionDescriptorProvider>();
-        mockProvider.GetDescriptors().Returns([mockDescriptor]);
-
-        var activity = new WriteLine("Hello, World!");
-        var fixture = new ActivityTestFixture(activity)
-            .ConfigureServices(services =>
-            {
-                // Replace the default provider with our mock
-                services.RemoveWhere(d => d.ServiceType == typeof(IExpressionDescriptorProvider));
-                services.AddSingleton(mockProvider);
-            });
-
-        var context = await fixture.BuildAsync();
+        var mockHandler = CreateMockHandler("Mocked Result");
+        var context = await CreateContextWithMockHandlerAsync("CustomType", mockHandler);
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var expression = new Expression("CustomType", "test");
 
@@ -103,40 +79,19 @@ public class ExpressionEvaluatorTests
             Arg.Any<ExpressionEvaluatorOptions>());
     }
 
-    [Fact]
-    public async Task Should_Pass_Null_Options_As_Default_When_Not_Provided()
+    [Fact(DisplayName = "Passes non-null options as default when not provided")]
+    public async Task PassesNonNullOptionsAsDefault()
     {
         // Arrange
-        var mockHandler = Substitute.For<IExpressionHandler>();
-        mockHandler.EvaluateAsync(Arg.Any<Expression>(), Arg.Any<Type>(), Arg.Any<ExpressionExecutionContext>(), Arg.Any<ExpressionEvaluatorOptions>())
-            .Returns("Result");
-
-        var mockDescriptor = new ExpressionDescriptor
-        {
-            Type = "TestType",
-            HandlerFactory = _ => mockHandler
-        };
-
-        var mockProvider = Substitute.For<IExpressionDescriptorProvider>();
-        mockProvider.GetDescriptors().Returns([mockDescriptor]);
-
-        var activity = new WriteLine("Hello, World!");
-        var fixture = new ActivityTestFixture(activity)
-            .ConfigureServices(services =>
-            {
-                // Replace the default provider with our mock
-                services.RemoveWhere(d => d.ServiceType == typeof(IExpressionDescriptorProvider));
-                services.AddSingleton(mockProvider);
-            });
-
-        var context = await fixture.BuildAsync();
+        var mockHandler = CreateMockHandler("Result");
+        var context = await CreateContextWithMockHandlerAsync("TestType", mockHandler);
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var expression = new Expression("TestType", "value");
 
         // Act
         await evaluator.EvaluateAsync<string>(expression, context.ExpressionExecutionContext);
 
-        // Assert - Verify that non-null options were passed (default created by evaluator)
+        // Assert
         await mockHandler.Received(1).EvaluateAsync(
             Arg.Any<Expression>(),
             Arg.Any<Type>(),
@@ -144,33 +99,12 @@ public class ExpressionEvaluatorTests
             Arg.Is<ExpressionEvaluatorOptions>(o => o != null));
     }
 
-    [Fact]
-    public async Task Should_Wrap_Handler_Exceptions_In_Evaluation_Context()
+    [Fact(DisplayName = "Wraps handler exceptions in evaluation context")]
+    public async Task WrapsHandlerExceptions()
     {
         // Arrange - QA Scenario #29: Logs errors on failed expression evaluation
-        var mockHandler = Substitute.For<IExpressionHandler>();
-        mockHandler.EvaluateAsync(Arg.Any<Expression>(), Arg.Any<Type>(), Arg.Any<ExpressionExecutionContext>(), Arg.Any<ExpressionEvaluatorOptions>())
-            .Throws(new InvalidOperationException("Handler failed"));
-
-        var mockDescriptor = new ExpressionDescriptor
-        {
-            Type = "FailingType",
-            HandlerFactory = _ => mockHandler
-        };
-
-        var mockProvider = Substitute.For<IExpressionDescriptorProvider>();
-        mockProvider.GetDescriptors().Returns([mockDescriptor]);
-
-        var activity = new WriteLine("Hello, World!");
-        var fixture = new ActivityTestFixture(activity)
-            .ConfigureServices(services =>
-            {
-                // Replace the default provider with our mock
-                services.RemoveWhere(d => d.ServiceType == typeof(IExpressionDescriptorProvider));
-                services.AddSingleton(mockProvider);
-            });
-
-        var context = await fixture.BuildAsync();
+        var mockHandler = CreateMockHandlerThatThrows(new InvalidOperationException("Handler failed"));
+        var context = await CreateContextWithMockHandlerAsync("FailingType", mockHandler);
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var expression = new Expression("FailingType", "bad value");
 
@@ -180,9 +114,56 @@ public class ExpressionEvaluatorTests
 
         Assert.Equal("Handler failed", exception.Message);
     }
-    
-    private Task<ActivityExecutionContext> CreateActivityExecutionContextAsync(IActivity activity)
+
+    private static Task<ActivityExecutionContext> CreateContextAsync()
     {
+        var activity = new WriteLine("Hello, World!");
         return new ActivityTestFixture(activity).BuildAsync();
+    }
+
+    private static async Task<ActivityExecutionContext> CreateContextWithMockHandlerAsync(string expressionType, IExpressionHandler mockHandler)
+    {
+        var mockDescriptor = new ExpressionDescriptor
+        {
+            Type = expressionType,
+            HandlerFactory = _ => mockHandler
+        };
+
+        var mockProvider = Substitute.For<IExpressionDescriptorProvider>();
+        mockProvider.GetDescriptors().Returns([mockDescriptor]);
+
+        var activity = new WriteLine("Hello, World!");
+        var fixture = new ActivityTestFixture(activity)
+            .ConfigureServices(services =>
+            {
+                services.RemoveWhere(d => d.ServiceType == typeof(IExpressionDescriptorProvider));
+                services.AddSingleton(mockProvider);
+            });
+
+        return await fixture.BuildAsync();
+    }
+
+    private static IExpressionHandler CreateMockHandler(object returnValue)
+    {
+        var mockHandler = Substitute.For<IExpressionHandler>();
+        mockHandler.EvaluateAsync(
+                Arg.Any<Expression>(),
+                Arg.Any<Type>(),
+                Arg.Any<ExpressionExecutionContext>(),
+                Arg.Any<ExpressionEvaluatorOptions>())
+            .Returns(returnValue);
+        return mockHandler;
+    }
+
+    private static IExpressionHandler CreateMockHandlerThatThrows(Exception exception)
+    {
+        var mockHandler = Substitute.For<IExpressionHandler>();
+        mockHandler.EvaluateAsync(
+                Arg.Any<Expression>(),
+                Arg.Any<Type>(),
+                Arg.Any<ExpressionExecutionContext>(),
+                Arg.Any<ExpressionEvaluatorOptions>())
+            .Throws(exception);
+        return mockHandler;
     }
 }
