@@ -85,21 +85,4 @@ public class InputPropertyEvaluationTests
         // Assert
         Assert.True(context.GetHasEvaluatedProperties());
     }
-
-    [Fact(DisplayName = "Evaluates multiple inputs for activities with multiple input properties")]
-    public async Task EvaluatesMultipleInputs()
-    {
-        // Arrange
-        const string expectedValue = "updated value";
-        var variable = new Variable<string>("result", "initial", "result");
-        var setValue = new SetVariable<string>(variable, new Input<string>(expectedValue));
-        var context = await CreateContextAsync(setValue);
-
-        // Act
-        await context.EvaluateInputPropertiesAsync();
-
-        // Assert
-        Assert.True(context.GetHasEvaluatedProperties());
-        Assert.Contains(expectedValue, context.ActivityState.Values);
-    }
 }

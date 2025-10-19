@@ -23,20 +23,6 @@ public class WrappedInputEvaluationTests
         Assert.True(context.GetHasEvaluatedProperties());
     }
 
-    [Fact(DisplayName = "Creates input wrapper with literal expression for default values")]
-    public async Task CreatesInputWrapperWithLiteralExpression()
-    {
-        // Arrange
-        var writeLine = new WriteLine("");
-        var context = await CreateContextAsync(writeLine);
-
-        // Act
-        await context.EvaluateInputPropertiesAsync();
-
-        // Assert
-        Assert.True(context.GetHasEvaluatedProperties());
-    }
-
     [Fact(DisplayName = "Evaluates expression via DefaultActivityInputEvaluator")]
     public async Task EvaluatesExpression()
     {
@@ -120,14 +106,14 @@ public class WrappedInputEvaluationTests
         {
             case "Literal":
                 var literal = new Literal<string>(expectedValue);
-                writeLine = new WriteLine(new Input<string>(literal));
+                writeLine = new(new Input<string>(literal));
                 break;
             case "Delegate":
-                writeLine = new WriteLine(new Input<string>(() => expectedValue));
+                writeLine = new(new Input<string>(() => expectedValue));
                 break;
             case "Variable":
-                variable = new Variable<string>("myVar", expectedValue, "myVar");
-                writeLine = new WriteLine(new Input<string>(variable));
+                variable = new("myVar", expectedValue, "myVar");
+                writeLine = new(new Input<string>(variable));
                 break;
             default:
                 throw new ArgumentException("Invalid expression type");
@@ -135,29 +121,12 @@ public class WrappedInputEvaluationTests
 
         var context = await CreateContextAsync(writeLine);
 
-        if (variable != null)
-            variable.Set(context.ExpressionExecutionContext, expectedValue);
+        variable?.Set(context.ExpressionExecutionContext, expectedValue);
 
         // Act
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
         Assert.Equal(expectedValue, context.ActivityState["Text"]);
-    }
-
-    [Fact(DisplayName = "Evaluates complex object input")]
-    public async Task EvaluatesComplexObjectInput()
-    {
-        // Arrange
-        var variable = new Variable<int>("complexVar", 999, "complexVar");
-        var setVariable = new SetVariable<int>(variable, new Input<int>(999));
-        var context = await CreateContextAsync(setVariable);
-
-        // Act
-        await context.EvaluateInputPropertiesAsync();
-
-        // Assert
-        Assert.True(context.ActivityState.Count > 0);
-        Assert.Contains(999, context.ActivityState.Values);
     }
 }

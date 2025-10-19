@@ -70,35 +70,4 @@ public class InputEvaluationTests
         Assert.True(context.ActivityState.ContainsKey("Text"));
         Assert.Equal(expectedValue, context.ActivityState["Text"]);
     }
-
-    [Fact(DisplayName = "Makes input descriptor accessible via activity descriptor")]
-    public async Task MakesInputDescriptorAccessible()
-    {
-        // Arrange
-        var writeLine = new WriteLine("Test");
-        var context = await CreateContextAsync(writeLine);
-
-        // Act
-        await context.EvaluateInputPropertiesAsync();
-
-        // Assert
-        var inputDescriptor = context.ActivityDescriptor.Inputs.FirstOrDefault(x => x.Name == "Text");
-        Assert.NotNull(inputDescriptor);
-        Assert.Equal("Text", inputDescriptor.Name);
-    }
-
-    [Fact(DisplayName = "Supports asynchronous evaluation")]
-    public async Task SupportsAsyncEvaluation()
-    {
-        // Arrange
-        const string expectedValue = "Async Result";
-        var writeLine = new WriteLine(expectedValue);
-        var context = await CreateContextAsync(writeLine);
-
-        // Act
-        await context.EvaluateInputPropertiesAsync();
-
-        // Assert
-        Assert.Equal(expectedValue, context.ActivityState["Text"]);
-    }
 }

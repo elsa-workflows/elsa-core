@@ -1,7 +1,4 @@
 using Elsa.Extensions;
-using Elsa.Testing.Shared;
-using Elsa.Workflows;
-using Elsa.Workflows.Activities;
 using static Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions.TestHelpers;
 
 namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions;

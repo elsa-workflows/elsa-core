@@ -80,7 +80,7 @@ public class InputStateStorageTests
     public async Task StoresNullValues()
     {
         // Arrange
-        var writeLine = new WriteLine(new Input<string>((string?)null));
+        var writeLine = new WriteLine(new Input<string>(default(string)!));
         var context = await CreateContextAsync(writeLine);
 
         // Act
@@ -105,7 +105,7 @@ public class InputStateStorageTests
         var firstValue = context.ActivityState["Text"];
 
         // Modify and re-evaluate
-        writeLine.Text = new Input<string>(updatedValue);
+        writeLine.Text = new(updatedValue);
         await context.EvaluateInputPropertyAsync("Text");
         var secondValue = context.ActivityState["Text"];
 
