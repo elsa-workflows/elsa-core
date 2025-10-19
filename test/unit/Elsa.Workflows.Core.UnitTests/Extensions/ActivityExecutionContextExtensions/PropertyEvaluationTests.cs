@@ -5,7 +5,6 @@ namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExten
 
 public class PropertyEvaluationTests
 {
-
     [Theory]
     [InlineData(false)] // Initial state
     [InlineData(true)]  // After setting flag

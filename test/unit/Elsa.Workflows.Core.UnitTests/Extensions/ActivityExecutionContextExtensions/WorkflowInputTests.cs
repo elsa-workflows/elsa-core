@@ -5,7 +5,6 @@ namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExten
 
 public class WorkflowInputTests
 {
-
     [Theory]
     [InlineData("TestKey", "TestValue", true, "TestValue", null)] // Key exists, string value
     [InlineData("NonExistentKey", null, false, null, null)] // Key doesn't exist
@@ -19,6 +18,7 @@ public class WorkflowInputTests
     {
         // Arrange
         var context = await CreateContextAsync();
+        
         if (stringValue != null)
             context.WorkflowExecutionContext.Input[key] = stringValue;
         else if (inputValue != null)

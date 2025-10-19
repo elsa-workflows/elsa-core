@@ -6,7 +6,6 @@ namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExten
 
 public class OutcomeTests
 {
-
     [Theory]
     [InlineData(typeof(TestActivityWithPort), "Done")]
     [InlineData(typeof(TestActivityWithNamedPort), "CustomOutcome")]

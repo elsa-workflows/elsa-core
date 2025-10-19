@@ -6,7 +6,6 @@ namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExten
 
 public class HierarchyNavigationTests
 {
-
     [Theory]
     [InlineData("GetAncestors")]
     [InlineData("GetDescendants")]

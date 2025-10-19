@@ -5,7 +5,6 @@ namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExten
 
 public class TriggerTests
 {
-
     [Theory]
     [InlineData(true, null)] // null means use context.Activity.Id
     [InlineData(false, "different-id")]

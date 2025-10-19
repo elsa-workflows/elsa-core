@@ -5,7 +5,6 @@ namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExten
 
 public class MetadataTests
 {
-
     [Fact]
     public async Task SetExtensionsMetadata_StoresValue()
     {

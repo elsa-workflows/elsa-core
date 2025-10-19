@@ -5,7 +5,6 @@ namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExten
 
 public class FaultHandlingTests
 {
-
     [Fact]
     public async Task Fault_SetsExceptionAndStatus()
     {

@@ -6,7 +6,6 @@ namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExten
 
 public class ResultTests
 {
-
     [Fact]
     public async Task SetResult_SetsResultProperty_WhenActivityImplementsIActivityWithResult()
     {

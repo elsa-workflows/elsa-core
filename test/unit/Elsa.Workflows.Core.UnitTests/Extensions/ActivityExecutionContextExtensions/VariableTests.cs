@@ -5,7 +5,6 @@ namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExten
 
 public class VariableTests
 {
-
     [Fact]
     public async Task CreateVariable_CreatesNewVariable_WithSpecifiedValue()
     {
