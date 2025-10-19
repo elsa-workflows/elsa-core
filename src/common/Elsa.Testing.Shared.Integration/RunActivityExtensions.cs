@@ -1,5 +1,4 @@
 using Elsa.Workflows;
-using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using JetBrains.Annotations;
