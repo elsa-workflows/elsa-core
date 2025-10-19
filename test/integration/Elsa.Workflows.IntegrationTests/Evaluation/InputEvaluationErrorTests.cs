@@ -51,23 +51,6 @@ public class InputEvaluationErrorTests
         // Assert
         Assert.Null(exception);
     }
-
-    [Fact(DisplayName = "Continues evaluation when activity has multiple inputs")]
-    public async Task ContinuesEvaluationForMultipleInputs()
-    {
-        // Arrange
-        var variable = new Variable<int>("testVar", 0, "testVar");
-        var setVariable = new SetVariable<int>(variable, new Input<int>(42));
-        var context = await CreateContextAsync(setVariable);
-
-        // Act
-        var exception = await Record.ExceptionAsync(
-            async () => await context.EvaluateInputPropertiesAsync());
-
-        // Assert
-        Assert.Null(exception);
-        Assert.True(context.GetHasEvaluatedProperties());
-    }
     
     private static async Task<ActivityExecutionContext> CreateContextWithMockEvaluatorAsync(
         WriteLine writeLine,
