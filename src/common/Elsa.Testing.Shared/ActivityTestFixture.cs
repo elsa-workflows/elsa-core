@@ -2,10 +2,7 @@ using Elsa.Common;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
-using Elsa.Http.ContentWriters;
-using Elsa.Http.Parsers;
 using Elsa.Mediator.Contracts;
-using Elsa.Resilience;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.CommitStates;
@@ -16,7 +13,6 @@ using Elsa.Workflows.PortResolvers;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
-using Elsa.Http;
 
 namespace Elsa.Testing.Shared;
 
