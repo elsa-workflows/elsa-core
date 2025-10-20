@@ -12,7 +12,8 @@ namespace Elsa.Activities.IntegrationTests.Flow;
 /// <summary>
 /// Integration tests for token-based flowchart execution strategy.
 /// </summary>
-public class FlowchartTokenBasedTests
+[Collection("FlowchartTests")]
+public class FlowchartTokenBasedTests : IDisposable
 {
     private readonly IServiceProvider _services;
     private readonly CapturingTextWriter _output;
@@ -26,7 +27,7 @@ public class FlowchartTokenBasedTests
         Flowchart.UseTokenFlow = true;
     }
 
-    ~FlowchartTokenBasedTests()
+    public void Dispose()
     {
         Flowchart.UseTokenFlow = _originalFlowMode;
     }

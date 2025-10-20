@@ -11,7 +11,8 @@ namespace Elsa.Activities.IntegrationTests.Flow;
 /// <summary>
 /// Integration tests for counter-based flowchart execution strategy.
 /// </summary>
-public class FlowchartCounterBasedTests
+[Collection("FlowchartTests")]
+public class FlowchartCounterBasedTests : IDisposable
 {
     private readonly IServiceProvider _services;
     private readonly CapturingTextWriter _output;
@@ -25,7 +26,7 @@ public class FlowchartCounterBasedTests
         Flowchart.UseTokenFlow = false;
     }
 
-    ~FlowchartCounterBasedTests()
+    public void Dispose()
     {
         Flowchart.UseTokenFlow = _originalFlowMode;
     }
