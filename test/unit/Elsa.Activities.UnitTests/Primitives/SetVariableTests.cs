@@ -1,4 +1,4 @@
-﻿using Elsa.Testing.Shared;
+using Elsa.Testing.Shared;
 using Elsa.Workflows;
 
 namespace Elsa.Activities.UnitTests.Primitives;
