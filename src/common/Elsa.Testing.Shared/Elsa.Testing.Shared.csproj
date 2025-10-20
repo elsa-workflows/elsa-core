@@ -9,7 +9,9 @@
 
     <ItemGroup>
         <PackageReference Include="xunit.abstractions" />
+        <PackageReference Include="xunit.assert" />
         <PackageReference Include="xunit.extensibility.core" />
+        <PackageReference Include="NSubstitute" />
     </ItemGroup>
 
     <ItemGroup>

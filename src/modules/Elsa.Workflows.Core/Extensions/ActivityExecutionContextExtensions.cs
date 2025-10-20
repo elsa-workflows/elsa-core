@@ -467,7 +467,7 @@ public static partial class ActivityExecutionContextExtensions
     /// <param name="property"></param>
     /// <typeparam name="TProp"></typeparam>
     /// <returns></returns>
-    public static object? GetExecutionOutput<TProp>(this ActivityExecutionContext context, Expression<Func<Activity, TProp>> property)
+    public static object? GetActivityOutput<TProp>(this ActivityExecutionContext context, Expression<Func<TProp>> property)
     {
         if (property.Body is not MemberExpression memberExpr)
         {

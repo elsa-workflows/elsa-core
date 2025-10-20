@@ -76,8 +76,8 @@ This section maps Elsa aspects to the exact kinds of tests you should write, wit
 
 #### **Unit tests:**
 - Test the activity class logic only (no persistence, no scheduler). Cover configuration permutations and boundary inputs.
-- Use [`ActivityTestHelper`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestHelper.cs), `ExecuteActivityAsync` method to run the activity and obtain an [`ActivityExecutionContext`](../../src/modules/Elsa.Workflows.Core/Contexts/ActivityExecutionContext.cs) for assertions.
-- In case the activity sets outputs, assert using `context.GetExecutionOutput()`([extension method](../../src/modules/Elsa.Workflows.Core/Extensions/ActivityExecutionContextExtensions.cs)), otherwise, use `context.Get()`.
+- Use [`ActivityTestFixture`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestFixture.cs) to configure and execute the activity and obtain an [`ActivityExecutionContext`](../../src/modules/Elsa.Workflows.Core/Contexts/ActivityExecutionContext.cs) for assertions.
+- In case the activity sets outputs, assert using `context.GetActivityOutput()`([extension method](../../src/modules/Elsa.Workflows.Core/Extensions/ActivityExecutionContextExtensions.cs)), otherwise, use `context.Get()`.
 
 **Example (does not set output):**
 ```csharp
@@ -90,7 +90,8 @@ public async Task Should_Set_Variable_Integer()
     var setVariable = new SetVariable<int>(variable, new Input<int>(expected));
 
     // Act
-    var context = await ActivityTestHelper.ExecuteActivityAsync(setVariable);
+    var fixture = new ActivityTestFixture(setVariable);
+    var context = await fixture.ExecuteAsync();
 
     // Assert
     var result = context.Get(variable);
@@ -113,10 +114,9 @@ public async Task Should_Set_Variable_Integer()
         };
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, services =>
-        {
-            // http configuration omitted for brevity
-        });
+        var fixture = new ActivityTestFixture(sendHttpRequest)
+            .WithHttpServices(responseHandler); // HTTP-specific extension
+        var context = await fixture.ExecuteAsync();
 
         // Assert
         var statusCodeOutput = context.GetExecutionOutput(_ => sendHttpRequest.StatusCode);
@@ -167,15 +167,15 @@ Assert.Equal(WorkflowStatus.Finished, resumed.WorkflowInstance.Status);
 
 ## Test Helpers Reference (Quick Lookup)
 
-| Helper                                    | Purpose                                    | Use When                                                                |
-|-------------------------------------------|--------------------------------------------|-------------------------------------------------------------------------|
-| `TestApplicationBuilder`                  | Build test service provider                | All tests as entry point, <br/>except activities unit tests (see below) |
-| `ActivityTestHelper.ExecuteActivityAsync` | Run single activity, with isolated context | Unit testing activities                                                 | 
-| `context.GetExecutionOutput`              | Get output from isolated context           | Asserting activity outputs in unit tests                                |
-| `IWorkflowRunner.RunAsync`                | Execute workflow in-process                | Integration / Component tests                                           |
-| `PopulateRegistriesAsync`                 | Register types for JSON deserialization.   | Loading JSON workflows. <br/>Integration tests only                     |
-| `IWorkflowInstanceStore`                  | Query persisted instances                  | Component tests (persistence)                                           |
-| `RunWorkflowUntilEndAsync`                | Drive workflow to completion.              | Complex resumption scenarios. <br/>Integration tests only               |
+| Helper                           | Purpose                                    | Use When                                                                |
+|----------------------------------|--------------------------------------------|-------------------------------------------------------------------------|
+| `TestApplicationBuilder`         | Build test service provider                | All tests as entry point, <br/>except activities unit tests (see below) |
+| `ActivityTestFixture`            | Configure and run single activity          | Unit testing activities                                                 |
+| `context.GetExecutionOutput`     | Get output from isolated context           | Asserting activity outputs in unit tests                                |
+| `IWorkflowRunner.RunAsync`       | Execute workflow in-process                | Integration / Component tests                                           |
+| `PopulateRegistriesAsync`        | Register types for JSON deserialization.   | Loading JSON workflows. <br/>Integration tests only                     |
+| `IWorkflowInstanceStore`         | Query persisted instances                  | Component tests (persistence)                                           |
+| `RunWorkflowUntilEndAsync`       | Drive workflow to completion.              | Complex resumption scenarios. <br/>Integration tests only               |
 
 ---
 
@@ -199,7 +199,7 @@ When in doubt, add the minimal unit tests plus one integration test that reprodu
 
 ## Deterministic patterns to avoid flaky tests
 
-1. **For activity unit tests, prefer returned state from [`ExecuteActivityAsync`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestHelper.cs).** Always inspect on the returned context — it is deterministic for synchronous workflows.
+1. **For activity unit tests, prefer returned state from [`ActivityTestFixture.ExecuteAsync`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestFixture.cs).** Always inspect on the returned context — it is deterministic for synchronous workflows.
 2. **Resume bookmarks explicitly.** Do not wait for external schedulers — call the engine's resume/trigger APIs in your test to continue execution.
 3. **For integration tests, locate instances deterministically.** Use an instance id returned by [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) or attach a `CorrelationId` test variable and query [`IWorkflowInstanceStore.FindByCorrelationIdAsync(...)`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs). Avoid using "latest" queries.
 
@@ -222,7 +222,8 @@ public async Task MyActivity_Test()
     var activity = new ActivityToTest();
 
     // Act
-    var context = await ActivityTestHelper.ExecuteActivityAsync(activity);
+    var fixture = new ActivityTestFixture(activity);
+    var context = await fixture.ExecuteAsync();
 
     // assert behavior of activity in isolation
 }
@@ -272,7 +273,7 @@ Leave the definitions next to the tests that use them.
 
 **Q: Which helper should I use to run a workflow?**
 
-A: Prefer [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) for in-process deterministic runs. For activities use `ExecuteActivityAsync` via [`ActivityTestHelper`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestHelper.cs).
+A: Prefer [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) for in-process deterministic runs. For activities use [`ActivityTestFixture`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestFixture.cs).
 
 **Q: How do I check persisted journal entries?**
 
@@ -280,7 +281,7 @@ A: Query [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/
 
 **Q: Do I need a new helper to wait for workflow completion?**
 
-A: No. The repo provides [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) for integration tests and [`ExecuteActivityAsync`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestHelper.cs) for activity unit tests, as well as integration helpers that cover all necessary scenarios.
+A: No. The repo provides [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) for integration tests and [`ActivityTestFixture`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestFixture.cs) for activity unit tests, as well as integration helpers that cover all necessary scenarios.
 
 ---
 
@@ -288,7 +289,7 @@ A: No. The repo provides [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Cont
 
 Search the `test/` tree for examples that follow the above patterns:
 
-- Unit test activity examples: `test/unit/Elsa.Activities.UnitTests` (look for [`ExecuteActivityAsync`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestHelper.cs) usage).
+- Unit test activity examples: `test/unit/Elsa.Activities.UnitTests` (look for [`ActivityTestFixture`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestFixture.cs) usage).
 - Integration workflow examples: `test/integration/Elsa.*.IntegrationTests` (look for [`PopulateRegistriesAsync()`](../../src/common/Elsa.Testing.Shared.Integration/ServiceProviderExtensions.cs) and [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) usage).
 - Component scenarios exercising persistence: `test/component/Elsa.Workflows.ComponentTests (look for [`AppComponentTest`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Abstractions/AppComponentTest.cs) scaffolds and [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs) assertions).
 

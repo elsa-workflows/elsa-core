@@ -1,4 +1,4 @@
-﻿using Elsa.Activities.UnitTests.Helpers;
+﻿using Elsa.Testing.Shared;
 
 namespace Elsa.Activities.UnitTests.Primitives;
 
@@ -13,7 +13,8 @@ public class SetVariableTests
         var setVariable = new SetVariable<int>(variable, new Input<int>(expected));
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(setVariable);
+        var fixture = new ActivityTestFixture(setVariable);
+        var context = await fixture.ExecuteAsync();
 
         // Assert
         var result = variable.Get(context);
@@ -27,7 +28,7 @@ public class SetVariableTests
         var setVariable = new SetVariable<string>(null!, new Input<string>("test value"));
 
         // Act & Assert
-        var exception = await Record.ExceptionAsync(async () => await ActivityTestHelper.ExecuteActivityAsync(setVariable));
+        var exception = await Record.ExceptionAsync(() => new ActivityTestFixture(setVariable).ExecuteAsync());
 
         Assert.NotNull(exception);
     }
@@ -40,7 +41,8 @@ public class SetVariableTests
         var setVariable = new SetVariable<string?>(variable, new Input<string?>((string?)null));
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(setVariable);
+        var fixture = new ActivityTestFixture(setVariable);
+        var context = await fixture.ExecuteAsync();
 
         // Assert
         var result = variable.Get(context);
