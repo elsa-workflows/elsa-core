@@ -45,7 +45,7 @@ Each test layer has distinct goals and clear boundaries — see [**Which parts o
 
 ## Quick Start for Contributors
 
-**Before you writ e a test:**
+**Before you write a test:**
 1. ✅ Understand what you're testing (see [**Which parts of Elsa to test**](#which-parts-of-elsa-to-test-and-which-test-types-to-use))
 2. ✅ Choose the right test layer (unit vs integration vs component)
 3. ✅ Use existing helpers (don't reinvent - see [**Test Helpers Reference**](#test-helpers-reference-quick-lookup))
@@ -68,6 +68,24 @@ Each test layer has distinct goals and clear boundaries — see [**Which parts o
 
 ---
 
+## Test Project Organization
+
+Tests are organized by module and test type:
+
+- **`test/unit/Elsa.Activities.UnitTests`** - Activity unit tests
+- **`test/unit/Elsa.Expressions.UnitTests`** - Expression evaluation unit tests
+- **`test/unit/Elsa.Workflows.Core.UnitTests`** - Core workflow unit tests (ActivityExecutionContext extensions, etc.)
+- **`test/unit/Elsa.Workflows.Management.UnitTests`** - Workflow management unit tests
+- **`test/integration/Elsa.Workflows.IntegrationTests`** - Workflow integration tests
+- **`test/component/Elsa.Workflows.ComponentTests`** - End-to-end component tests
+
+**Shared test infrastructure:**
+- **`src/common/Elsa.Testing.Shared`** - Shared test helpers (`ActivityTestFixture`, fake strategies, extensions)
+- **`src/common/Elsa.Testing.Shared.Integration`** - Integration test helpers (`RunActivityExtensions`, `PopulateRegistriesAsync`)
+- **`src/common/Elsa.Testing.Shared.Component`** - Component test helpers (event handlers, workflow events)
+
+---
+
 ## Which parts of Elsa to test, and which test types to use
 
 This section maps Elsa aspects to the exact kinds of tests you should write, with examples and code patterns referencing repository conventions.
@@ -76,8 +94,9 @@ This section maps Elsa aspects to the exact kinds of tests you should write, wit
 
 #### **Unit tests:**
 - Test the activity class logic only (no persistence, no scheduler). Cover configuration permutations and boundary inputs.
-- Use [`ActivityTestFixture`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestFixture.cs) to configure and execute the activity and obtain an [`ActivityExecutionContext`](../../src/modules/Elsa.Workflows.Core/Contexts/ActivityExecutionContext.cs) for assertions.
-- In case the activity sets outputs, assert using `context.GetActivityOutput()`([extension method](../../src/modules/Elsa.Workflows.Core/Extensions/ActivityExecutionContextExtensions.cs)), otherwise, use `context.Get()`.
+- Use [`ActivityTestFixture`](../../src/common/Elsa.Testing.Shared/ActivityTestFixture.cs) to configure and execute the activity and obtain an [`ActivityExecutionContext`](../../src/modules/Elsa.Workflows.Core/Contexts/ActivityExecutionContext.cs) for assertions.
+- Use fluent methods: `ConfigureServices()` to add custom services, `ConfigureContext()` to set up context state
+- Assert using `context.GetActivityOutput()`([extension method](../../src/modules/Elsa.Workflows.Core/Extensions/ActivityExecutionContextExtensions.cs)) for outputs, or `context.Get()` for variables.
 
 **Example (does not set output):**
 ```csharp
@@ -99,38 +118,56 @@ public async Task Should_Set_Variable_Integer()
 }
 ```
 
-**Example (sets output):**
+**Example (sets output using fluent configuration):**
 ```csharp
 [Fact]
-    public async Task Should_Send_Get_Request_And_Handle_Success_Response()
+public async Task Should_Send_Get_Request_And_Handle_Success_Response()
+{
+    // Arrange
+    var expectedUrl = new Uri("https://example.com");
+    var sendHttpRequest = new SendHttpRequest
     {
-        // Arrange
-        // Extra arrange steps omitted for brevity
-        var sendHttpRequest = new SendHttpRequest
-        {
-            Url = new Input<Uri?>(expectedUrl),
-            Method = new Input<string>("GET"),
-            ExpectedStatusCodes = new List<HttpStatusCodeCase>()
-        };
+        Url = new Input<Uri?>(expectedUrl),
+        Method = new Input<string>("GET")
+    };
 
-        // Act
-        var fixture = new ActivityTestFixture(sendHttpRequest)
-            .WithHttpServices(responseHandler); // HTTP-specific extension
-        var context = await fixture.ExecuteAsync();
+    // Act
+    var fixture = new ActivityTestFixture(sendHttpRequest)
+        .WithHttpServices(responseHandler); // HTTP-specific extension
+    var context = await fixture.ExecuteAsync();
 
-        // Assert
-        var statusCodeOutput = context.GetExecutionOutput(_ => sendHttpRequest.StatusCode);
-        Assert.Equal(200, statusCodeOutput);
-    }
+    // Assert
+    var statusCodeOutput = context.GetActivityOutput(_ => sendHttpRequest.StatusCode);
+    Assert.Equal(200, statusCodeOutput);
+}
+```
+
+**Example (checking scheduled activities):**
+```csharp
+[Fact]
+public async Task Should_Schedule_Child_Activity()
+{
+    // Arrange
+    var childActivity = new WriteLine("Hello");
+    var parentActivity = new Sequence { Activities = [childActivity] };
+
+    // Act
+    var fixture = new ActivityTestFixture(parentActivity);
+    var context = await fixture.ExecuteAsync();
+
+    // Assert
+    Assert.True(context.HasScheduledActivity(childActivity));
+}
 ```
 
 #### **Integration tests:**
 - Place the activity inside a minimal workflow definition and run via [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs). Assert outputs/variables and that the activity integrates correctly with preceding/following activities.
 - If activity creates bookmarks or relies on scheduler semantics, integration tests should resume bookmarks via the engine APIs to validate resumption.
 
-Pattern note: [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) returns a [`RunWorkflowResult`](../../src/modules/Elsa.Workflows.Core/Models/RunWorkflowResult.cs) (or equivalent) containing the [`WorkflowInstance`](../../src/modules/Elsa.Workflows.Management/Entities/WorkflowInstance.cs) and output variables when run to completion. 
+Pattern note: [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) returns a [`RunWorkflowResult`](../../src/modules/Elsa.Workflows.Core/Models/RunWorkflowResult.cs) (or equivalent) containing the [`WorkflowInstance`](../../src/modules/Elsa.Workflows.Management/Entities/WorkflowInstance.cs) and output variables when run to completion.
 Use returned state for deterministic assertions where possible.
 
+---
 
 ### Workflow execution (invoker, middleware, bookmarks)
 
@@ -167,15 +204,38 @@ Assert.Equal(WorkflowStatus.Finished, resumed.WorkflowInstance.Status);
 
 ## Test Helpers Reference (Quick Lookup)
 
-| Helper                           | Purpose                                    | Use When                                                                |
-|----------------------------------|--------------------------------------------|-------------------------------------------------------------------------|
-| `TestApplicationBuilder`         | Build test service provider                | All tests as entry point, <br/>except activities unit tests (see below) |
-| `ActivityTestFixture`            | Configure and run single activity          | Unit testing activities                                                 |
-| `context.GetExecutionOutput`     | Get output from isolated context           | Asserting activity outputs in unit tests                                |
-| `IWorkflowRunner.RunAsync`       | Execute workflow in-process                | Integration / Component tests                                           |
-| `PopulateRegistriesAsync`        | Register types for JSON deserialization.   | Loading JSON workflows. <br/>Integration tests only                     |
-| `IWorkflowInstanceStore`         | Query persisted instances                  | Component tests (persistence)                                           |
-| `RunWorkflowUntilEndAsync`       | Drive workflow to completion.              | Complex resumption scenarios. <br/>Integration tests only               |
+| Helper                                          | Purpose                                                      | Use When                                                                |
+|-------------------------------------------------|--------------------------------------------------------------|-------------------------------------------------------------------------|
+| `TestApplicationBuilder`                        | Build test service provider                                  | All tests as entry point, <br/>except activities unit tests (see below) |
+| `ActivityTestFixture`                           | Configure and run single activity in isolation               | Unit testing activities                                                 |
+| `ActivityTestFixture.ConfigureServices`         | Fluent API to add services to fixture                        | Activity unit tests requiring custom services                           |
+| `ActivityTestFixture.ConfigureContext`          | Fluent API to configure execution context before execution   | Setting up test-specific context state                                  |
+| `ActivityTestFixture.BuildAsync`                | Build context without executing activity                     | When you need context setup without execution                           |
+| `ActivityTestFixture.ExecuteAsync`              | Execute activity and return context                          | Standard activity unit test execution                                   |
+| `context.GetActivityOutput`                     | Get output from activity using expression selector           | Asserting activity outputs in unit tests                                |
+| `context.HasScheduledActivity`                  | Check if activity is scheduled                               | Verifying scheduling behavior in unit tests                             |
+| `IWorkflowRunner.RunAsync`                      | Execute workflow in-process                                  | Integration / Component tests                                           |
+| `RunActivityExtensions.RunActivityAsync`        | Run single activity as workflow                              | Integration tests for single activities                                 |
+| `PopulateRegistriesAsync`                       | Register types for JSON deserialization                      | Loading JSON workflows. <br/>Integration tests only                     |
+| `IWorkflowInstanceStore`                        | Query persisted instances                                    | Component tests (persistence)                                           |
+| `AsyncWorkflowRunner.RunAndAwaitWorkflowCompletionAsync` | Drive workflow to completion with activity tracking | Complex async scenarios. <br/>Component tests only                      |
+| `FakeActivityExecutionContextSchedulerStrategy` | Fake scheduler for unit tests                                | Automatically configured in `ActivityTestFixture`                       |
+| `FakeWorkflowExecutionContextSchedulerStrategy` | Fake workflow scheduler for unit tests                       | Automatically configured in `ActivityTestFixture`                       |
+
+---
+
+## Scheduler Strategies for Testing
+
+When testing activities in isolation, Elsa provides fake scheduler strategy implementations that bypass the production scheduling logic:
+
+### Available Strategies
+
+- **`FakeActivityExecutionContextSchedulerStrategy`** ([source](../../src/common/Elsa.Testing.Shared/FakeActivityExecutionContextSchedulerStrategy.cs)) - Schedules activities immediately within the activity execution context for deterministic testing
+- **`FakeWorkflowExecutionContextSchedulerStrategy`** ([source](../../src/common/Elsa.Testing.Shared/FakeWorkflowExecutionContextSchedulerStrategy.cs)) - Schedules activities immediately at the workflow level for deterministic testing
+
+These strategies are automatically configured when using [`ActivityTestFixture`](../../src/common/Elsa.Testing.Shared/ActivityTestFixture.cs) and ensure that scheduled activities execute synchronously in tests, making assertions deterministic.
+
+**Note:** You do not need to manually configure these strategies - `ActivityTestFixture` handles this for you.
 
 ---
 
@@ -199,7 +259,7 @@ When in doubt, add the minimal unit tests plus one integration test that reprodu
 
 ## Deterministic patterns to avoid flaky tests
 
-1. **For activity unit tests, prefer returned state from [`ActivityTestFixture.ExecuteAsync`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestFixture.cs).** Always inspect on the returned context — it is deterministic for synchronous workflows.
+1. **For activity unit tests, prefer returned state from [`ActivityTestFixture.ExecuteAsync`](../../src/common/Elsa.Testing.Shared/ActivityTestFixture.cs).** Always inspect on the returned context — it is deterministic for synchronous workflows.
 2. **Resume bookmarks explicitly.** Do not wait for external schedulers — call the engine's resume/trigger APIs in your test to continue execution.
 3. **For integration tests, locate instances deterministically.** Use an instance id returned by [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) or attach a `CorrelationId` test variable and query [`IWorkflowInstanceStore.FindByCorrelationIdAsync(...)`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs). Avoid using "latest" queries.
 
@@ -211,7 +271,7 @@ When in doubt, add the minimal unit tests plus one integration test that reprodu
 
 ---
 
-## Practical test recipes & snippets (copy/paste-ready)
+## Practical test recipes & snippets
 
 ### Unit test (activity) — pattern
 
@@ -257,10 +317,35 @@ public async Task Workflow_Persists_Instance_And_Journal()
         .Build();
 
     var runner = sp.GetRequiredService<AsyncWorkflowRunner>();
-var result = await runner.RunAndAwaitWorkflowCompletionAsync(WorkflowDefinitionHandle.ByDefinitionId(someDefinitionId, VersionOptions.Published));
+    var result = await runner.RunAndAwaitWorkflowCompletionAsync(
+        WorkflowDefinitionHandle.ByDefinitionId(someDefinitionId, VersionOptions.Published)
+    );
     result.WorkflowExecutionContext.Status.Should().Be(WorkflowStatus.Finished);
 }
 ```
+
+### Component test with async workflow execution
+
+For testing workflows that complete asynchronously (e.g., with timers, external triggers), use [`AsyncWorkflowRunner`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Services/AsyncWorkflowRunner.cs):
+
+```csharp
+[Fact]
+public async Task Workflow_Completes_Asynchronously()
+{
+    var sp = new TestApplicationBuilder(testOutput).Build();
+    var runner = sp.GetRequiredService<AsyncWorkflowRunner>();
+
+    var result = await runner.RunAndAwaitWorkflowCompletionAsync(
+        WorkflowDefinitionHandle.ByDefinitionId(workflowId, VersionOptions.Published)
+    );
+
+    result.WorkflowExecutionContext.Status.Should().Be(WorkflowStatus.Finished);
+    result.ActivityExecutionRecords.Should().HaveCount(expectedCount);
+}
+```
+
+`AsyncWorkflowRunner` tracks activity execution records and awaits workflow completion signals, making it ideal for testing asynchronous workflow behavior deterministically.
+
 ---
 
 ## FAQ (quick pointers)
@@ -273,7 +358,7 @@ Leave the definitions next to the tests that use them.
 
 **Q: Which helper should I use to run a workflow?**
 
-A: Prefer [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) for in-process deterministic runs. For activities use [`ActivityTestFixture`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestFixture.cs).
+A: Prefer [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) for in-process deterministic runs. For activities use [`ActivityTestFixture`](../../src/common/Elsa.Testing.Shared/ActivityTestFixture.cs).
 
 **Q: How do I check persisted journal entries?**
 
@@ -281,7 +366,7 @@ A: Query [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/
 
 **Q: Do I need a new helper to wait for workflow completion?**
 
-A: No. The repo provides [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) for integration tests and [`ActivityTestFixture`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestFixture.cs) for activity unit tests, as well as integration helpers that cover all necessary scenarios.
+A: No. The repo provides [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) for integration tests and [`ActivityTestFixture`](../../src/common/Elsa.Testing.Shared/ActivityTestFixture.cs) for activity unit tests, as well as integration helpers that cover all necessary scenarios. For async workflows in component tests, use [`AsyncWorkflowRunner`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Services/AsyncWorkflowRunner.cs).
 
 ---
 
@@ -289,9 +374,9 @@ A: No. The repo provides [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Cont
 
 Search the `test/` tree for examples that follow the above patterns:
 
-- Unit test activity examples: `test/unit/Elsa.Activities.UnitTests` (look for [`ActivityTestFixture`](../../test/unit/Elsa.Activities.UnitTests/Helpers/ActivityTestFixture.cs) usage).
-- Integration workflow examples: `test/integration/Elsa.*.IntegrationTests` (look for [`PopulateRegistriesAsync()`](../../src/common/Elsa.Testing.Shared.Integration/ServiceProviderExtensions.cs) and [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) usage).
-- Component scenarios exercising persistence: `test/component/Elsa.Workflows.ComponentTests (look for [`AppComponentTest`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Abstractions/AppComponentTest.cs) scaffolds and [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs) assertions).
+- **Unit test activity examples:** `test/unit/Elsa.Activities.UnitTests` (look for [`ActivityTestFixture`](../../src/common/Elsa.Testing.Shared/ActivityTestFixture.cs) usage)
+- **Integration workflow examples:** `test/integration/Elsa.*.IntegrationTests` (look for [`PopulateRegistriesAsync()`](../../src/common/Elsa.Testing.Shared.Integration/ServiceProviderExtensions.cs) and [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) usage)
+- **Component scenarios exercising persistence:** `test/component/Elsa.Workflows.ComponentTests` (look for [`AsyncWorkflowRunner`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Services/AsyncWorkflowRunner.cs) and [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs) assertions)
 
 
 
