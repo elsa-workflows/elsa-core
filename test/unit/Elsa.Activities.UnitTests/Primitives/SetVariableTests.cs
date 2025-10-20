@@ -1,5 +1,6 @@
 using Elsa.Expressions.Models;
 using Elsa.Testing.Shared;
+using Elsa.Workflows;
 
 namespace Elsa.Activities.UnitTests.Primitives;
 
@@ -18,8 +19,7 @@ public class SetVariableTests
         };
 
         // Act
-        var fixture = new ActivityTestFixture(setVariable);
-        var context = await fixture.ExecuteAsync();
+        var context = await ExecuteAsync(setVariable);
 
         // Assert
         var result = variable.Get(context.ExpressionExecutionContext);
@@ -37,7 +37,7 @@ public class SetVariableTests
         };
 
         // Act & Assert
-        var exception = await Record.ExceptionAsync(() => new ActivityTestFixture(setVariable).ExecuteAsync());
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(setVariable));
 
         Assert.NotNull(exception);
         Assert.IsType<InvalidOperationException>(exception);
@@ -55,11 +55,15 @@ public class SetVariableTests
         };
 
         // Act
-        var fixture = new ActivityTestFixture(setVariable);
-        var context = await fixture.ExecuteAsync();
+        var context = await ExecuteAsync(setVariable);
 
         // Assert
         var result = variable.Get(context);
         Assert.Null(result);
+    }
+    
+    private static Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)
+    {
+        return new ActivityTestFixture(activity).ExecuteAsync();
     }
 }

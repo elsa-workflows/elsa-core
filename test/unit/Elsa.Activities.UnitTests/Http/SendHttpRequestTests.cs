@@ -208,14 +208,11 @@ public class SendHttpRequestTests
         };
     }
 
-    private static async Task<ActivityExecutionContext> ExecuteActivityAsync(
+    private static Task<ActivityExecutionContext> ExecuteActivityAsync(
         SendHttpRequest sendHttpRequest,
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responseHandler)
     {
-        var fixture = new ActivityTestFixture(sendHttpRequest)
-            .WithHttpServices(responseHandler);
-
-        return await fixture.ExecuteAsync();
+        return new ActivityTestFixture(sendHttpRequest).WithHttpServices(responseHandler).ExecuteAsync();
     }
 
     private static (SendHttpRequest sendHttpRequest, Dictionary<string, IActivity> childActivities) CreateSendHttpRequestWithStatusHandlers(

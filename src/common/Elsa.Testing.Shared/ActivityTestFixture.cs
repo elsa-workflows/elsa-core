@@ -90,7 +90,7 @@ public class ActivityTestFixture
     /// <summary>
     /// Builds the ActivityExecutionContext without executing the activity.
     /// </summary>
-    private async Task<ActivityExecutionContext> BuildAsync()
+    public async Task<ActivityExecutionContext> BuildAsync()
     {
         var serviceProvider = Services.BuildServiceProvider();
         var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
