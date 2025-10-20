@@ -16,7 +16,6 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 /// </summary>
 [Activity("Elsa", "Branching", "[Obsolete] - Explicitly merge multiple branches into a single branch of execution.", DisplayName = "Join")]
 [UsedImplicitly]
-[Obsolete("Each activity now supports the MergeMode property, making the use of this activity obsolete.", false)]
 public class FlowJoin : Activity, IJoinNode
 {
     /// <inheritdoc />
@@ -38,8 +37,9 @@ public class FlowJoin : Activity, IJoinNode
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         if(!Flowchart.UseTokenFlow)
-            await context.ParentActivityExecutionContext.CancelInboundAncestorsAsync(this);
-        
+            if (context.ParentActivityExecutionContext != null)
+                await context.ParentActivityExecutionContext.CancelInboundAncestorsAsync(this);
+
         await context.CompleteActivityAsync();
     }
 

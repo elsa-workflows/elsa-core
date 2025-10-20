@@ -17,7 +17,7 @@ public static class ActivityExtensions
         if (value == null)
             activity.CustomProperties.Remove("mergeMode");
         else
-            activity.CustomProperties["mergeMode"] = value;
+            activity.CustomProperties["mergeMode"] = value.ToString()!;
     }
     
     public static async Task<MergeMode?> GetMergeModeAsync(this IActivity activity, ActivityExecutionContext context)
