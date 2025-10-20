@@ -34,7 +34,7 @@ public static class ActivityExtensions
         return joinMode switch
         {
             FlowJoinMode.WaitAny => MergeMode.Race,
-            _ => MergeMode.Converge
+            _ => MergeMode.Merge  // WaitAll maps to Merge (wait for all activated branches)
         };
     }
 }
