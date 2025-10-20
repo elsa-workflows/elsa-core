@@ -459,7 +459,15 @@ public static partial class ActivityExecutionContextExtensions
         return context.Metadata.TryGetValue(ExtensionsMetadataKey, out var value) ? value as Dictionary<string, object?> : null;
     }
 
-    public static object? GetExecutionOutput<TProp>(this ActivityExecutionContext context, Expression<Func<Activity, TProp>> property)
+    /// <summary>
+    /// Gets the output of an activity even when the context is not the same as the activity's context.
+    /// This is useful when you want to get the output of a previously executed activity.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="property"></param>
+    /// <typeparam name="TProp"></typeparam>
+    /// <returns></returns>
+    public static object? GetActivityOutput<TProp>(this ActivityExecutionContext context, Expression<Func<TProp>> property)
     {
         if (property.Body is not MemberExpression memberExpr)
         {
@@ -467,10 +475,10 @@ public static partial class ActivityExecutionContextExtensions
         }
         
         var propertyName = memberExpr.Member.Name;
-        
-        // Treat both null and 0 (for numeric types) as "unset" values.
+            
         var value = context.Get(propertyName);
-        if (value != null && !(value is int i && i == 0) && !(value is long l && l == 0L) && !(value is double d && d == 0.0) && !(value is float f && f == 0.0f))
+        
+        if (value != null)
             return value;
 
         var registry = context.WorkflowExecutionContext.GetActivityOutputRegister();
@@ -478,6 +486,6 @@ public static partial class ActivityExecutionContextExtensions
         return registry.FindOutputByActivityInstanceId(context.Id, propertyName);
     }
 
-    internal static bool GetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties.TryGetValue<bool>("HasEvaluatedProperties", out var value) && value;
-    internal static void SetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties["HasEvaluatedProperties"] = true;
+    public static bool GetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties.TryGetValue<bool>("HasEvaluatedProperties", out var value) && value;
+    public static void SetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties["HasEvaluatedProperties"] = true;
 }
