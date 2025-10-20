@@ -1,5 +1,5 @@
-using Elsa.Activities.UnitTests.Helpers;
 using Elsa.Expressions.Models;
+using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using NSubstitute;
 
@@ -14,8 +14,7 @@ public class SwitchTests
         var switchActivity = new Switch();
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -35,8 +34,7 @@ public class SwitchTests
         };
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -47,7 +45,7 @@ public class SwitchTests
         // Arrange
         var switchActivity = new Switch
         {
-            Mode = new Input<SwitchMode>(SwitchMode.MatchFirst),
+            Mode = new(SwitchMode.MatchFirst),
             Cases = new List<SwitchCase>
             {
                 new("Case 1", Expression.LiteralExpression(false), Substitute.For<IActivity>()),
@@ -57,8 +55,7 @@ public class SwitchTests
         };
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -69,7 +66,7 @@ public class SwitchTests
         // Arrange
         var switchActivity = new Switch
         {
-            Mode = new Input<SwitchMode>(SwitchMode.MatchFirst),
+            Mode = new(SwitchMode.MatchFirst),
             Cases = new List<SwitchCase>
             {
                 new("False Case", Expression.LiteralExpression(false), Substitute.For<IActivity>()),
@@ -78,8 +75,7 @@ public class SwitchTests
         };
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -90,7 +86,7 @@ public class SwitchTests
         // Arrange
         var switchActivity = new Switch
         {
-            Mode = new Input<SwitchMode>(SwitchMode.MatchFirst),
+            Mode = new(SwitchMode.MatchFirst),
             Cases = new List<SwitchCase>
             {
                 new("First True", Expression.LiteralExpression(true), Substitute.For<IActivity>()),
@@ -99,8 +95,7 @@ public class SwitchTests
         };
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -111,7 +106,7 @@ public class SwitchTests
         // Arrange
         var switchActivity = new Switch
         {
-            Mode = new Input<SwitchMode>(SwitchMode.MatchAny),
+            Mode = new(SwitchMode.MatchAny),
             Cases = new List<SwitchCase>
             {
                 new("First True", Expression.LiteralExpression(true), Substitute.For<IActivity>()),
@@ -121,8 +116,7 @@ public class SwitchTests
         };
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -133,7 +127,7 @@ public class SwitchTests
         // Arrange
         var switchActivity = new Switch
         {
-            Mode = new Input<SwitchMode>(SwitchMode.MatchAny),
+            Mode = new(SwitchMode.MatchAny),
             Cases = new List<SwitchCase>
             {
                 new("Case 1", Expression.LiteralExpression(false), Substitute.For<IActivity>()),
@@ -143,8 +137,7 @@ public class SwitchTests
         };
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -163,8 +156,7 @@ public class SwitchTests
         };
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -180,8 +172,7 @@ public class SwitchTests
         };
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -197,8 +188,7 @@ public class SwitchTests
         };
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -209,7 +199,7 @@ public class SwitchTests
         // Arrange
         var switchActivity = new Switch
         {
-            Mode = new Input<SwitchMode>(SwitchMode.MatchFirst),
+            Mode = new(SwitchMode.MatchFirst),
             Cases = new List<SwitchCase>
             {
                 new("First", Expression.LiteralExpression(false), Substitute.For<IActivity>()),
@@ -219,8 +209,7 @@ public class SwitchTests
         };
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -231,7 +220,7 @@ public class SwitchTests
         // Arrange
         var switchActivity = new Switch
         {
-            Mode = new Input<SwitchMode>(SwitchMode.MatchAny),
+            Mode = new(SwitchMode.MatchAny),
             Cases = new List<SwitchCase>
             {
                 new("First", Expression.LiteralExpression(true), Substitute.For<IActivity>()),
@@ -241,8 +230,7 @@ public class SwitchTests
         };
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -262,8 +250,7 @@ public class SwitchTests
         };
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -276,14 +263,13 @@ public class SwitchTests
         {
             Cases = new List<SwitchCase>
             {
-                new("Null condition", Expression.LiteralExpression((bool?)null), Substitute.For<IActivity>())
+                new("Null condition", Expression.LiteralExpression(null), Substitute.For<IActivity>())
             },
             Default = Substitute.For<IActivity>()
         };
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -301,8 +287,7 @@ public class SwitchTests
         };
 
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -318,12 +303,11 @@ public class SwitchTests
         Assert.Empty(switchActivity.Cases);
         
         // Test that we can add cases
-        switchActivity.Cases.Add(new SwitchCase("Test", Expression.LiteralExpression(true), Substitute.For<IActivity>()));
+        switchActivity.Cases.Add(new("Test", Expression.LiteralExpression(true), Substitute.For<IActivity>()));
         Assert.Single(switchActivity.Cases);
         
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
@@ -338,12 +322,17 @@ public class SwitchTests
         Assert.NotNull(switchActivity.Mode);
         
         // Test setting different modes
-        switchActivity.Mode = new Input<SwitchMode>(SwitchMode.MatchAny);
+        switchActivity.Mode = new(SwitchMode.MatchAny);
         
         // Act & Assert - Should not throw any exceptions
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(switchActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(switchActivity));
         
         Assert.Null(exception);
     }
+    
+    private static Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)
+    {
+        return new ActivityTestFixture(activity).ExecuteAsync();
+    }
+    
 }
