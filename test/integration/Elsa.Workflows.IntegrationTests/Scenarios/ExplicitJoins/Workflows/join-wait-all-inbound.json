@@ -1,0 +1,155 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "f4a17a538f5edea8",
+  "definitionId": "e17919de81f2c75f",
+  "name": "Wait All Inbound",
+  "createdAt": "2025-10-20T13:04:50.382447\u002B00:00",
+  "version": 5,
+  "toolVersion": "3.2.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": false,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "c7c246972503aeef",
+    "nodeId": "Workflow1:c7c246972503aeef",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "condition": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "Literal",
+            "value": false
+          }
+        },
+        "id": "70cb8cef7c5bb01b",
+        "nodeId": "Workflow1:c7c246972503aeef:70cb8cef7c5bb01b",
+        "name": "FlowDecision1",
+        "type": "Elsa.FlowDecision",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -269.5,
+              "y": -230
+            },
+            "size": {
+              "width": 149.84375,
+              "height": 67.9765625
+            }
+          }
+        }
+      },
+      {
+        "id": "958cd6b8fa221e0a",
+        "nodeId": "Workflow1:c7c246972503aeef:958cd6b8fa221e0a",
+        "name": "End1",
+        "type": "Elsa.End",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 199.38671875,
+              "y": -230
+            },
+            "size": {
+              "width": 115.3125,
+              "height": 67.9765625
+            }
+          }
+        }
+      },
+      {
+        "mode": {
+          "typeName": "Elsa.Workflows.Activities.Flowchart.Models.FlowJoinMode, Elsa.Workflows.Core",
+          "expression": {
+            "type": "Literal",
+            "value": "WaitAllInbound"
+          }
+        },
+        "id": "ff9bd958a2c9291",
+        "nodeId": "Workflow1:c7c246972503aeef:ff9bd958a2c9291",
+        "name": "FlowJoin1",
+        "type": "Elsa.FlowJoin",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 14.5,
+              "y": -230
+            },
+            "size": {
+              "width": 118.7734375,
+              "height": 67.9765625
+            }
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": [
+      {
+        "source": {
+          "activity": "ff9bd958a2c9291",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "958cd6b8fa221e0a",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "70cb8cef7c5bb01b",
+          "port": "True"
+        },
+        "target": {
+          "activity": "ff9bd958a2c9291",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "70cb8cef7c5bb01b",
+          "port": "False"
+        },
+        "target": {
+          "activity": "ff9bd958a2c9291",
+          "port": "In"
+        },
+        "vertices": []
+      }
+    ]
+  }
+}

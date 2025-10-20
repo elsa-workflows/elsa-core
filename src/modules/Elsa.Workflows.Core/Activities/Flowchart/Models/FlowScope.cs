@@ -91,8 +91,35 @@ public class FlowScope
         var forwardInboundConnections = flowGraph.GetForwardInboundConnections(activity);
         var outboundActivityVisitCount = GetActivityVisitCount(activity);
         var maxConnectionVisitCount = forwardInboundConnections.Max(GetConnectionVisitCount);
-        return maxConnectionVisitCount > outboundActivityVisitCount 
+        return maxConnectionVisitCount > outboundActivityVisitCount
             && forwardInboundConnections.Any(c => GetConnectionVisitCount(c) == maxConnectionVisitCount && GetConnectionLastVisitFollowed(c));
+    }
+
+    /// <summary>
+    /// Determines whether all inbound connections to the specified activity have been both visited and followed.
+    /// This is stricter than AllInboundConnectionsVisited as it requires all connections to be actively followed.
+    /// </summary>
+    /// <param name="flowGraph">The flow graph containing connections.</param>
+    /// <param name="activity">The activity to check.</param>
+    /// <returns>True if all inbound connections have been visited and followed, otherwise false.</returns>
+    public bool AllInboundConnectionsFollowed(FlowGraph flowGraph, IActivity activity)
+    {
+        var forwardInboundConnections = flowGraph.GetForwardInboundConnections(activity);
+        var outboundActivityVisitCount = GetActivityVisitCount(activity);
+
+        foreach (var connection in forwardInboundConnections)
+        {
+            var connectionVisitCount = GetConnectionVisitCount(connection);
+            var connectionFollowed = GetConnectionLastVisitFollowed(connection);
+
+            // Connection must be visited more than the activity and must have been followed
+            if (connectionVisitCount <= outboundActivityVisitCount || !connectionFollowed)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>

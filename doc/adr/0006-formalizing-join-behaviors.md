@@ -21,14 +21,15 @@ There was a need to improve the join implementation and formalize the expected j
 
 ### Join Modes
 
-There are two join modes available:
+There are three join modes available:
 
 1. **WaitAll** - The join waits for all active inbound branches to complete before proceeding
 2. **WaitAny** - The join proceeds as soon as any active inbound branch completes
+3. **WaitAllInbound** - The join waits for all defined inbound connections to be followed before proceeding (stricter than WaitAll)
 
 ### Explicit Joins
 
-When using the `Join` activity, users can explicitly select either `WaitAll` or `WaitAny` mode.
+When using the `Join` activity, users can explicitly select between `WaitAll`, `WaitAny`, or `WaitAllInbound` mode.
 
 ### Implicit Joins
 
@@ -56,6 +57,17 @@ A `WaitAny` join completes as soon as any active inbound branch reaches it. When
 **Use case example:** A race between a `Delay` activity (waiting 5 minutes) and a `UserTask` activity (waiting for user action):
 - If the user acts within 5 minutes, the `UserTask` completes first, the join proceeds, and the `Delay` activity is cancelled
 - If the user does not act within 5 minutes, the `Delay` completes first, the join proceeds, and the `UserTask` is cancelled (preventing delayed user actions from having any effect)
+
+### WaitAllInbound Behavior
+
+A `WaitAllInbound` join completes only when all defined inbound connections have been followed (not just visited). This is stricter than `WaitAll` because:
+- `WaitAll` waits only for active branches (connections that were traversed)
+- `WaitAllInbound` waits for all inbound connections to be actively followed, regardless of whether some branches were conditionally skipped
+
+**Use case example:** Static parallel execution patterns where all paths must execute:
+- In a workflow with 3 parallel branches feeding into a join, if one branch conditionally skips execution, `WaitAll` would proceed, but `WaitAllInbound` would block
+- This is useful when you want to validate that your workflow structure executed exactly as designed
+- If a path is not followed, the workflow will wait indefinitely (or until timeout), signaling that the workflow did not execute as expected
 
 ## Consequences
 

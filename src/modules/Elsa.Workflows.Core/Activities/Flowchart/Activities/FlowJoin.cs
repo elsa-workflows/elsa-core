@@ -55,6 +55,16 @@ public class FlowJoin : Activity, IJoinNode
                 await context.CompleteActivityAsync();
                 break;
             }
+            case FlowJoinMode.WaitAllInbound:
+            {
+                if (Flowchart.CanWaitAllInboundProceed(context))
+                {
+                    Flowchart.CancelAncestorActivatesAsync(context);
+                    await context.CompleteActivityAsync();
+                }
+
+                break;
+            }
         }
     }
 }

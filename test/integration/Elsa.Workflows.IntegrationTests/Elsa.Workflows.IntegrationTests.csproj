@@ -34,5 +34,8 @@
         <None Update="Scenarios\ExplicitJoins\Workflows\join-active-branches-only.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="Scenarios\ExplicitJoins\Workflows\join-wait-all-inbound.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>

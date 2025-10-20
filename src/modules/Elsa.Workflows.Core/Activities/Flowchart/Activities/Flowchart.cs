@@ -347,6 +347,17 @@ public class Flowchart : Container
         return flowScope.AllInboundConnectionsVisited(flowGraph, activity);
     }
 
+    public static bool CanWaitAllInboundProceed(ActivityExecutionContext context)
+    {
+        var flowchartContext = context.ParentActivityExecutionContext!;
+        var flowchart = (Flowchart)flowchartContext.Activity;
+        var flowGraph = flowchart.GetFlowGraph(flowchartContext);
+        var flowScope = flowchart.GetFlowScope(flowchartContext);
+        var activity = context.Activity;
+
+        return flowScope.AllInboundConnectionsFollowed(flowGraph, activity);
+    }
+
     public static async void CancelAncestorActivatesAsync(ActivityExecutionContext context)
     {
         var flowchartContext = context.ParentActivityExecutionContext!;
