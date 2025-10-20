@@ -3,6 +3,7 @@ using System.Text;
 using Elsa.Activities.UnitTests.Helpers;
 using Elsa.Extensions;
 using Elsa.Http;
+using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,8 +38,8 @@ public class SendHttpRequestTests
 
         var sendHttpRequest = new SendHttpRequest
         {
-            Url = new Input<Uri?>(expectedUrl),
-            Method = new Input<string>("GET"),
+            Url = new(expectedUrl),
+            Method = new("GET"),
             // Note: Setting ExpectedStatusCodes can cause workflow scheduling issues in test environments,
             // because the activity may attempt to schedule additional branches for each expected status code,
             // which can interfere with the test's control flow and assertions. To avoid this, we leave
@@ -47,20 +48,14 @@ public class SendHttpRequestTests
         };
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, services =>
-        {
-            services.AddSingleton(mockHttpClientFactory);
-            services.AddSingleton(ActivityTestHelper.CreateMockResilientActivityInvoker());
-            ActivityTestHelper.AddHttpServices(services);
-            services.AddLogging();
-        });
+        var context = await ExecuteAsync(sendHttpRequest, mockHttpClientFactory);
 
         // Assert
         Assert.NotNull(capturedRequest);
         Assert.Equal(HttpMethod.Get, capturedRequest.Method);
         Assert.Equal(expectedUrl, capturedRequest.RequestUri);
-        
-        var statusCodeOutput = context.GetExecutionOutput(_ => sendHttpRequest.StatusCode);
+
+        var statusCodeOutput = context.GetActivityOutput(() => sendHttpRequest.StatusCode);
         Assert.Equal(200, statusCodeOutput);
     }
 
@@ -87,21 +82,15 @@ public class SendHttpRequestTests
 
         var sendHttpRequest = new SendHttpRequest
         {
-            Url = new Input<Uri?>(expectedUrl),
-            Method = new Input<string>("POST"),
-            Content = new Input<object?>(requestContent),
-            ContentType = new Input<string?>(contentType),
+            Url = new(expectedUrl),
+            Method = new("POST"),
+            Content = new(requestContent),
+            ContentType = new(contentType),
             ExpectedStatusCodes = new List<HttpStatusCodeCase>()
         };
 
         // Act
-        await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, services =>
-        {
-            services.AddSingleton(mockHttpClientFactory);
-            services.AddSingleton(ActivityTestHelper.CreateMockResilientActivityInvoker());
-            ActivityTestHelper.AddHttpServices(services);
-            services.AddLogging();
-        });
+        await ExecuteAsync(sendHttpRequest, mockHttpClientFactory);
 
         // Assert
         Assert.NotNull(capturedRequest);
@@ -132,20 +121,14 @@ public class SendHttpRequestTests
 
         var sendHttpRequest = new SendHttpRequest
         {
-            Url = new Input<Uri?>(expectedUrl),
-            Method = new Input<string>("GET"),
-            Authorization = new Input<string?>(authorizationHeader),
+            Url = new(expectedUrl),
+            Method = new("GET"),
+            Authorization = new(authorizationHeader),
             ExpectedStatusCodes = new List<HttpStatusCodeCase>()
         };
 
         // Act
-        await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, services =>
-        {
-            services.AddSingleton(mockHttpClientFactory);
-            services.AddSingleton(ActivityTestHelper.CreateMockResilientActivityInvoker());
-            ActivityTestHelper.AddHttpServices(services);
-            services.AddLogging();
-        });
+        await ExecuteAsync(sendHttpRequest, mockHttpClientFactory);
 
         // Assert
         Assert.NotNull(capturedRequest);
@@ -169,8 +152,8 @@ public class SendHttpRequestTests
 
         var sendHttpRequest = new SendHttpRequest
         {
-            Url = new Input<Uri?>(new Uri("https://api.example.com/notfound")),
-            Method = new Input<string>("GET"),
+            Url = new(new Uri("https://api.example.com/notfound")),
+            Method = new("GET"),
             // Test the configuration without actually scheduling activities
             ExpectedStatusCodes = new List<HttpStatusCodeCase>
             {
@@ -198,8 +181,8 @@ public class SendHttpRequestTests
         
         var sendHttpRequest = new SendHttpRequest
         {
-            Url = new Input<Uri?>(new Uri("https://api.example.com/error")),
-            Method = new Input<string>("GET"),
+            Url = new(new Uri("https://api.example.com/error")),
+            Method = new("GET"),
             ExpectedStatusCodes = new List<HttpStatusCodeCase>
             {
                 new(200, mockActivity200)
@@ -224,8 +207,8 @@ public class SendHttpRequestTests
         
         var sendHttpRequest = new SendHttpRequest
         {
-            Url = new Input<Uri?>(new Uri("https://unreachable.example.com")),
-            Method = new Input<string>("GET"),
+            Url = new(new Uri("https://unreachable.example.com")),
+            Method = new("GET"),
             FailedToConnect = mockFailedToConnectActivity
         };
 
@@ -242,8 +225,8 @@ public class SendHttpRequestTests
         
         var sendHttpRequest = new SendHttpRequest
         {
-            Url = new Input<Uri?>(new Uri("https://slow.example.com")),
-            Method = new Input<string>("GET"),
+            Url = new(new Uri("https://slow.example.com")),
+            Method = new("GET"),
             Timeout = mockTimeoutActivity
         };
 
@@ -270,22 +253,16 @@ public class SendHttpRequestTests
 
         var sendHttpRequest = new SendHttpRequest
         {
-            Url = new Input<Uri?>(new Uri("https://api.example.com/headers")),
-            Method = new Input<string>("GET"),
+            Url = new(new Uri("https://api.example.com/headers")),
+            Method = new("GET"),
             ExpectedStatusCodes = new List<HttpStatusCodeCase>()
         };
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, services =>
-        {
-            services.AddSingleton(mockHttpClientFactory);
-            services.AddSingleton(ActivityTestHelper.CreateMockResilientActivityInvoker());
-            ActivityTestHelper.AddHttpServices(services);
-            services.AddLogging();
-        });
+        var context = await ExecuteAsync(sendHttpRequest, mockHttpClientFactory);
 
         // Assert
-        var responseHeadersObj = context.GetExecutionOutput(_ => sendHttpRequest.ResponseHeaders);
+        var responseHeadersObj = context.GetActivityOutput(() => sendHttpRequest.ResponseHeaders);
         var responseHeaders = responseHeadersObj as HttpHeaders;
         Assert.NotNull(responseHeaders);
         Assert.True(responseHeaders.ContainsKey("Custom-Header"));
@@ -313,28 +290,22 @@ public class SendHttpRequestTests
 
         var sendHttpRequest = new SendHttpRequest
         {
-            Url = new Input<Uri?>(new Uri("https://api.example.com/json")),
-            Method = new Input<string>("GET"),
+            Url = new(new Uri("https://api.example.com/json")),
+            Method = new("GET"),
             ExpectedStatusCodes = new List<HttpStatusCodeCase>()
         };
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(sendHttpRequest, services =>
-        {
-            services.AddSingleton(mockHttpClientFactory);
-            services.AddSingleton(ActivityTestHelper.CreateMockResilientActivityInvoker());
-            ActivityTestHelper.AddHttpServices(services);
-            services.AddLogging();
-        });
+        var context = await ExecuteAsync(sendHttpRequest, mockHttpClientFactory);
 
         // Assert
-        var parsedContent = context.GetExecutionOutput(x => sendHttpRequest.ParsedContent);
-        var statusCode = context.GetExecutionOutput(x => sendHttpRequest.StatusCode);
-        var httpResponseResult = (HttpResponseMessage)context.GetExecutionOutput(x => sendHttpRequest.Result)!;
-        
+        var parsedContent = context.GetActivityOutput(() => sendHttpRequest.ParsedContent);
+        var statusCode = context.GetActivityOutput(() => sendHttpRequest.StatusCode);
+        var httpResponseResult = (HttpResponseMessage)context.GetActivityOutput(() => sendHttpRequest.Result)!;
+
         Assert.NotNull(parsedContent);
         Assert.Equal(200, statusCode);
-        
+
         // Verify the response was received and stored
         Assert.NotNull(httpResponseResult);
         Assert.Equal(HttpStatusCode.OK, httpResponseResult.StatusCode);
@@ -380,5 +351,17 @@ public class SendHttpRequestTests
         // Assert
         Assert.Equal(statusCode, httpStatusCodeCase.StatusCode);
         Assert.Equal(mockActivity, httpStatusCodeCase.Activity);
+    }
+
+    private static Task<ActivityExecutionContext> ExecuteAsync(IActivity activity, IHttpClientFactory httpClientFactory)
+    {
+        return new ActivityTestFixture(activity)
+            .WithHttpServices()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton(httpClientFactory);
+                services.AddLogging();
+            })
+            .ExecuteAsync();
     }
 }

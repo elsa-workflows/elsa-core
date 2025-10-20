@@ -1,5 +1,6 @@
-using Elsa.Activities.UnitTests.Helpers;
 using Elsa.Extensions;
+using Elsa.Testing.Shared;
+using Elsa.Workflows;
 
 namespace Elsa.Activities.UnitTests.Branching;
 
@@ -12,10 +13,10 @@ public class IfTests
         var ifActivity = new If(() => true);
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(ifActivity);
+        var context = await ExecuteAsync(ifActivity);
 
         // Assert
-        var resultValue = (bool)context.GetExecutionOutput(_ => ifActivity.Result)!;
+        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
         Assert.True(resultValue);
     }
 
@@ -32,10 +33,10 @@ public class IfTests
         };
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(ifActivity);
+        var context = await ExecuteAsync(ifActivity);
 
         // Assert
-        var resultValue = (bool)context.GetExecutionOutput(_ => ifActivity.Result)!;
+        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
         Assert.True(resultValue);
     }
 
@@ -52,10 +53,10 @@ public class IfTests
         };
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(ifActivity);
+        var context = await ExecuteAsync(ifActivity);
 
         // Assert
-        var resultValue = (bool)context.GetExecutionOutput(_ => ifActivity.Result)!;
+        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
         Assert.False(resultValue);
     }
 
@@ -76,10 +77,10 @@ public class IfTests
         };
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(ifActivity);
+        var context = await ExecuteAsync(ifActivity);
 
         // Assert
-        var resultValue = (bool)context.GetExecutionOutput(_ => ifActivity.Result)!;
+        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
         Assert.True(resultValue);
     }
 
@@ -100,10 +101,10 @@ public class IfTests
         };
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(ifActivity);
+        var context = await ExecuteAsync(ifActivity);
 
         // Assert
-        var resultValue = (bool)context.GetExecutionOutput(_ => ifActivity.Result)!;
+        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
         Assert.False(resultValue);
     }
 
@@ -121,10 +122,10 @@ public class IfTests
         };
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(ifActivity);
+        var context = await ExecuteAsync(ifActivity);
 
         // Assert
-        var resultValue = (bool)context.GetExecutionOutput(_ => ifActivity.Result)!;
+        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
         Assert.True(resultValue);
     }
 
@@ -142,10 +143,10 @@ public class IfTests
         };
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(ifActivity);
+        var context = await ExecuteAsync(ifActivity);
 
         // Assert
-        var resultValue = (bool)context.GetExecutionOutput(_ => ifActivity.Result)!;
+        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
         Assert.False(resultValue);
     }
 
@@ -163,10 +164,10 @@ public class IfTests
         };
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(ifActivity);
+        var context = await ExecuteAsync(ifActivity);
 
         // Assert
-        var resultValue = (bool)context.GetExecutionOutput(_ => ifActivity.Result)!;
+        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
         Assert.True(resultValue);
     }
 
@@ -184,10 +185,10 @@ public class IfTests
         };
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(ifActivity);
+        var context = await ExecuteAsync(ifActivity);
 
         // Assert
-        var resultValue = (bool)context.GetExecutionOutput(_ => ifActivity.Result)!;
+        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
         Assert.False(resultValue);
     }
 
@@ -201,7 +202,7 @@ public class IfTests
         };
 
         // Act & Assert
-        var exception = await Record.ExceptionAsync(async () => await ActivityTestHelper.ExecuteActivityAsync(ifActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(ifActivity));
         
         Assert.Null(exception);
     }
@@ -216,7 +217,7 @@ public class IfTests
         };
 
         // Act & Assert
-        var exception = await Record.ExceptionAsync(async () => await ActivityTestHelper.ExecuteActivityAsync(ifActivity));
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(ifActivity));
         
         Assert.Null(exception);
     }
@@ -231,10 +232,16 @@ public class IfTests
         };
 
         // Act
-        var context = await ActivityTestHelper.ExecuteActivityAsync(ifActivity);
+        var context = await ExecuteAsync(ifActivity);
 
         // Assert
-        var resultValue = (bool)context.GetExecutionOutput(_ => ifActivity.Result)!;
+        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
         Assert.True(resultValue);
     }
+    
+    private static Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)
+    {
+        return new ActivityTestFixture(activity).ExecuteAsync();
+    }
+    
 }
