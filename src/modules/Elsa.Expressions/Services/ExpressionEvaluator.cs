@@ -19,7 +19,7 @@ public class ExpressionEvaluator(IExpressionDescriptorRegistry registry, IServic
         var expressionDescriptor = registry.Find(expressionType);
 
         if (expressionDescriptor == null)
-            throw new($"Could not find an descriptor for expression type \"{expressionType}\".");
+            throw new($"Could not find a descriptor for expression type \"{expressionType}\".");
 
         var handler = expressionDescriptor.HandlerFactory(serviceProvider);
         options ??= new();
