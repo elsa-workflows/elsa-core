@@ -1,7 +1,8 @@
-using Elsa.Activities.UnitTests.Helpers;
+using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+// ReSharper disable MethodHasAsyncOverload
 
 namespace Elsa.Activities.UnitTests.Console;
 
@@ -17,18 +18,16 @@ public class WriteLineTests
         _mockProvider.GetTextWriter().Returns(_mockTextWriter);
     }
     
-    [Fact]
-    public async Task Should_Write_String_Literal_To_Output()
+    [Theory]
+    [InlineData("Hello, World!")]
+    [InlineData("")]
+    public async Task Should_Write_Text_To_Output(string expectedText)
     {
         // Arrange
-        const string expectedText = "Hello, World!";
         var writeLine = new WriteLine(expectedText);
 
         // Act
-        await ActivityTestHelper.ExecuteActivityAsync(writeLine, services =>
-        {
-            services.AddSingleton(_mockProvider);
-        });
+        await ExecuteAsync(writeLine);
 
         // Assert
         _mockTextWriter.Received(1).WriteLine(expectedText);
@@ -38,33 +37,13 @@ public class WriteLineTests
     public async Task Should_Write_Null_Value_To_Output()
     {
         // Arrange
-        var writeLine = new WriteLine(new Input<string>((string?)null));
+        var writeLine = new WriteLine(new Input<string>(default(string)!));
 
         // Act
-        await ActivityTestHelper.ExecuteActivityAsync(writeLine, services =>
-        {
-            services.AddSingleton(_mockProvider);
-        });
+        await ExecuteAsync(writeLine);
 
         // Assert
         _mockTextWriter.Received(1).WriteLine(Arg.Is<string?>(s => s == null));
-    }
-
-    [Fact]
-    public async Task Should_Write_Empty_String_To_Output()
-    {
-        // Arrange
-        const string expectedText = "";
-        var writeLine = new WriteLine(expectedText);
-
-        // Act
-        await ActivityTestHelper.ExecuteActivityAsync(writeLine, services =>
-        {
-            services.AddSingleton(_mockProvider);
-        });
-
-        // Assert
-        _mockTextWriter.Received(1).WriteLine(expectedText);
     }
 
     [Fact]
@@ -75,9 +54,15 @@ public class WriteLineTests
         var writeLine = new WriteLine(textToWrite);
 
         // Act & Assert - Should not throw exception when no provider is configured
-        var exception = await Record.ExceptionAsync(async () => 
-            await ActivityTestHelper.ExecuteActivityAsync(writeLine));
-        
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(writeLine));
+
         Assert.Null(exception);
+    }
+
+    private async Task ExecuteAsync(IActivity activity)
+    {
+        await new ActivityTestFixture(activity)
+            .ConfigureServices(services => services.AddSingleton(_mockProvider))
+            .ExecuteAsync();
     }
 }

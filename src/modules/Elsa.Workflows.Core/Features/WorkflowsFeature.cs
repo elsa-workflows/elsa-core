@@ -170,6 +170,8 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IWorkflowGraphBuilder, WorkflowGraphBuilder>()
             .AddScoped<IWorkflowStateExtractor, WorkflowStateExtractor>()
             .AddScoped<IActivitySchedulerFactory, ActivitySchedulerFactory>()
+            .AddSingleton<IWorkflowExecutionContextSchedulerStrategy, WorkflowExecutionContextSchedulerStrategy>()
+            .AddSingleton<IActivityExecutionContextSchedulerStrategy, ActivityExecutionContextSchedulerStrategy>()
             .AddScoped(CommitStateHandler)
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IStimulusHasher, StimulusHasher>()
