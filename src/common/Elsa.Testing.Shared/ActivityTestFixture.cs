@@ -134,7 +134,10 @@ public class ActivityTestFixture
             if (variable == null)
                 continue;
 
-            context.WorkflowExecutionContext.ExpressionExecutionContext?.Memory.Declare(variable);
+            if(context.WorkflowExecutionContext.ExpressionExecutionContext == null)
+                continue;
+            
+            context.WorkflowExecutionContext.ExpressionExecutionContext.Memory.Declare(variable);
             variable.Set(context.ExpressionExecutionContext, variable.Value);
         }
 
