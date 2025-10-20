@@ -311,6 +311,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "qa", "qa", "{0478E6EA-DCB2-
 		doc\qa\test-guidelines.md = doc\qa\test-guidelines.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Management.UnitTests", "test\unit\Elsa.Workflows.Management.UnitTests\Elsa.Workflows.Management.UnitTests.csproj", "{20C75446-CAE0-48D1-85D9-459541C4D8B6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.UnitTests", "test\unit\Elsa.Expressions.UnitTests\Elsa.Expressions.UnitTests.csproj", "{67E1F0CC-C436-4D71-AD2C-AE42E3AA8A0B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -619,6 +623,14 @@ Global
 		{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20C75446-CAE0-48D1-85D9-459541C4D8B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20C75446-CAE0-48D1-85D9-459541C4D8B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20C75446-CAE0-48D1-85D9-459541C4D8B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20C75446-CAE0-48D1-85D9-459541C4D8B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{67E1F0CC-C436-4D71-AD2C-AE42E3AA8A0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67E1F0CC-C436-4D71-AD2C-AE42E3AA8A0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67E1F0CC-C436-4D71-AD2C-AE42E3AA8A0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67E1F0CC-C436-4D71-AD2C-AE42E3AA8A0B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -714,6 +726,8 @@ Global
 		{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{0478E6EA-DCB2-4667-ADC2-37C62C9C2574} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
+		{20C75446-CAE0-48D1-85D9-459541C4D8B6} = {18453B51-25EB-4317-A4B3-B10518252E92}
+		{67E1F0CC-C436-4D71-AD2C-AE42E3AA8A0B} = {18453B51-25EB-4317-A4B3-B10518252E92}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
