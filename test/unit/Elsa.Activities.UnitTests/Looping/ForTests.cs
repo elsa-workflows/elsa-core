@@ -239,7 +239,7 @@ public class ForTests
         return increment && inclusive ? currentValue <= end
             : increment && !inclusive ? currentValue < end
             : !increment && inclusive ? currentValue >= end
-            : !increment && !inclusive && currentValue > end;
+            : !increment && !inclusive ? currentValue > end : false;
     }
 
     /// <summary>
