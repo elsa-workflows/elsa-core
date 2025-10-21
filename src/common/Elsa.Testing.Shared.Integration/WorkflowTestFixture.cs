@@ -1,7 +1,8 @@
-using Elsa.Extensions;
+using Elsa.Expressions.Models;
 using Elsa.Features.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
@@ -25,8 +26,8 @@ public class WorkflowTestFixture
     /// <param name="testOutputHelper">The test output helper</param>
     public WorkflowTestFixture(ITestOutputHelper testOutputHelper)
     {
-        _testApplicationBuilder = new TestApplicationBuilder(testOutputHelper);
-        CapturingTextWriter = new CapturingTextWriter();
+        _testApplicationBuilder = new(testOutputHelper);
+        CapturingTextWriter = new();
         _testApplicationBuilder.WithCapturingTextWriter(CapturingTextWriter);
     }
 
@@ -38,7 +39,7 @@ public class WorkflowTestFixture
     /// <summary>
     /// Gets the service provider. Throws if Build() hasn't been called yet.
     /// </summary>
-    private IServiceProvider Services => _services ?? throw new InvalidOperationException("Build() must be called before accessing services");
+    public IServiceProvider Services => _services ?? throw new InvalidOperationException("Build() must be called before accessing services");
 
     /// <summary>
     /// Configures Elsa features.
@@ -191,5 +192,97 @@ public class WorkflowTestFixture
             .FirstOrDefault(c => c.Activity.Id == activity.Id);
 
         return activityContext?.Status;
+    }
+
+    /// <summary>
+    /// Creates a WorkflowExecutionContext for testing.
+    /// This creates a minimal workflow execution context without executing the workflow.
+    /// </summary>
+    /// <param name="variables">Optional workflow variables to include in the workflow</param>
+    /// <returns>A WorkflowExecutionContext that can be used for testing</returns>
+    public async Task<WorkflowExecutionContext> CreateWorkflowExecutionContextAsync(Variable[]? variables = null)
+    {
+        if (_services == null)
+            await BuildAsync();
+
+        // Create a minimal workflow with variables
+        var workflow = new Workflow
+        {
+            Root = new Sequence()
+        };
+
+        if (variables != null)
+            foreach (var variable in variables)
+                workflow.Variables.Add(variable);
+
+        // Build the workflow graph
+        var workflowGraphBuilder = Services.GetRequiredService<IWorkflowGraphBuilder>();
+        var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow);
+
+        // Create workflow execution context
+        return await WorkflowExecutionContext.CreateAsync(
+            Services,
+            workflowGraph,
+            $"test-instance-{Guid.NewGuid()}",
+            CancellationToken.None
+        );
+    }
+
+    /// <summary>
+    /// Creates an ActivityExecutionContext for testing.
+    /// Creates a workflow execution context first, then creates an activity execution context for the specified activity.
+    /// </summary>
+    /// <param name="activity">The activity to create a context for. If null, uses the workflow itself.</param>
+    /// <param name="variables">Optional workflow variables to include</param>
+    /// <returns>An ActivityExecutionContext that can be used for testing</returns>
+    public async Task<ActivityExecutionContext> CreateActivityExecutionContextAsync(IActivity? activity = null, Variable[]? variables = null)
+    {
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(variables);
+        return await CreateActivityExecutionContextAsync(workflowExecutionContext, activity);
+    }
+
+    /// <summary>
+    /// Creates an ActivityExecutionContext for testing using an existing WorkflowExecutionContext.
+    /// </summary>
+    /// <param name="workflowExecutionContext">The workflow execution context to use</param>
+    /// <param name="activity">The activity to create a context for. If null, uses the workflow itself.</param>
+    /// <returns>An ActivityExecutionContext that can be used for testing</returns>
+    public async Task<ActivityExecutionContext> CreateActivityExecutionContextAsync(WorkflowExecutionContext workflowExecutionContext, IActivity? activity = null)
+    {
+        // Use the workflow itself if no activity specified, as Workflow implements IVariableContainer.
+        // This ensures variables are accessible.
+        var targetActivity = activity ?? workflowExecutionContext.Workflow;
+        return await workflowExecutionContext.CreateActivityExecutionContextAsync(targetActivity);
+    }
+
+    /// <summary>
+    /// Creates an ExpressionExecutionContext for testing expression evaluation.
+    /// This creates a minimal workflow and activity execution context, then initializes variables.
+    /// Variables are properly registered and accessible via dynamic accessors (e.g., getMyVariable, setMyVariable).
+    /// </summary>
+    /// <param name="variables">Optional workflow variables to include in the execution context</param>
+    /// <returns>An ExpressionExecutionContext that can be used for expression evaluation</returns>
+    public async Task<ExpressionExecutionContext> CreateExpressionExecutionContextAsync(Variable[]? variables = null)
+    {
+        var activityContext = await CreateActivityExecutionContextAsync(activity: null, variables: variables);
+        return await CreateExpressionExecutionContextAsync(activityContext, variables);
+    }
+
+    /// <summary>
+    /// Creates an ExpressionExecutionContext using an existing ActivityExecutionContext.
+    /// Initializes variables if provided.
+    /// </summary>
+    /// <param name="activityContext">The activity execution context to use</param>
+    /// <param name="variables">Optional workflow variables to initialize</param>
+    /// <returns>An ExpressionExecutionContext that can be used for expression evaluation</returns>
+    public Task<ExpressionExecutionContext> CreateExpressionExecutionContextAsync(ActivityExecutionContext activityContext, Variable[]? variables = null)
+    {
+        // Initialize variables in the execution context if provided
+        // Use Variable.Set() to properly register variables (same approach as ActivityTestFixture)
+        if (variables != null)
+            foreach (var variable in variables) 
+                variable.Set(activityContext.ExpressionExecutionContext, variable.Value);
+
+        return Task.FromResult(activityContext.ExpressionExecutionContext);
     }
 }

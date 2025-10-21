@@ -336,6 +336,9 @@ Assert.Equal(WorkflowStatus.Finished, resumed.WorkflowInstance.Status);
 | `WorkflowTestFixture.GetOutcomes`               | Get all outcomes from specific activity                      | Asserting activity outcomes in integration tests                        |
 | `WorkflowTestFixture.HasOutcome`                | Check if activity produced specific outcome                  | Asserting single outcome in integration tests                           |
 | `WorkflowTestFixture.GetActivityStatus`         | Get execution status of specific activity                    | Asserting activity status (Faulted, Completed, etc.)                    |
+| `WorkflowTestFixture.CreateWorkflowExecutionContextAsync` | Create workflow execution context without running workflow | Testing workflow-level concerns or base context setup                    |
+| `WorkflowTestFixture.CreateActivityExecutionContextAsync` | Create activity execution context (2 overloads)        | Testing activity scheduling/execution or when needing activity context   |
+| `WorkflowTestFixture.CreateExpressionExecutionContextAsync` | Create expression execution context (2 overloads)    | Testing expression evaluators (JavaScript, Liquid, C#) with variables    |
 | `context.GetActivityOutput`                     | Get output from activity using expression selector           | Asserting activity outputs in unit tests                                |
 | `context.HasScheduledActivity`                  | Check if activity is scheduled                               | Verifying scheduling behavior in unit tests                             |
 | `context.GetOutcomes`                           | Get all outcomes from activity execution                     | Asserting multiple outcomes in unit tests                               |
@@ -438,6 +441,95 @@ Assert.Equal(ActivityStatus.Faulted, status);
 - `ActivityStatus.Completed` - Activity completed successfully
 - `ActivityStatus.Canceled` - Activity was canceled
 - `ActivityStatus.Faulted` - Activity encountered an error
+
+### Creating Execution Contexts for Testing
+
+`WorkflowTestFixture` provides layered methods for creating execution contexts at different levels, giving you fine-grained control over test setup:
+
+#### Creating a Workflow Execution Context
+
+Use `CreateWorkflowExecutionContextAsync` to create a minimal workflow execution context without running the workflow:
+
+```csharp
+var context = await _fixture.CreateWorkflowExecutionContextAsync(variables: new[]
+{
+    new Variable<int>("Counter", 0)
+});
+```
+
+#### Creating an Activity Execution Context
+
+Use `CreateActivityExecutionContextAsync` to create an activity execution context. Two overloads available:
+
+**Without existing workflow context (creates one automatically):**
+```csharp
+var activityContext = await _fixture.CreateActivityExecutionContextAsync(
+    activity: myActivity,
+    variables: new[] { new Variable<string>("MyVar", "value") }
+);
+```
+
+**With existing workflow context:**
+```csharp
+var workflowContext = await _fixture.CreateWorkflowExecutionContextAsync();
+var activityContext = await _fixture.CreateActivityExecutionContextAsync(
+    workflowContext,
+    activity: myActivity
+);
+```
+
+#### Creating an Expression Execution Context
+
+Use `CreateExpressionExecutionContextAsync` to create a context for testing expression evaluation (e.g., JavaScript, Liquid). Variables are properly registered and accessible via dynamic accessors. Two overloads available:
+
+**Without existing activity context (creates one automatically):**
+```csharp
+var expressionContext = await _fixture.CreateExpressionExecutionContextAsync(new[]
+{
+    new Variable<string>("MyVariable", "test value")
+});
+
+// Variables are accessible via dynamic accessors in expressions
+// e.g., getMyVariable() and setMyVariable(value) in JavaScript
+```
+
+**With existing activity context:**
+```csharp
+var activityContext = await _fixture.CreateActivityExecutionContextAsync();
+var expressionContext = await _fixture.CreateExpressionExecutionContextAsync(
+    activityContext,
+    variables: new[] { new Variable<int>("Count", 42) }
+);
+```
+
+**Example: Testing JavaScript Expression Evaluation**
+```csharp
+[Fact]
+public async Task Dynamic_Variable_Accessors_Should_Work()
+{
+    // Arrange
+    var script = @"
+        setMyVariable('updated value');
+        return getMyVariable();
+    ";
+    var context = await _fixture.CreateExpressionExecutionContextAsync(new[]
+    {
+        new Variable<string>("MyVariable", "initial value")
+    });
+
+    // Act
+    var evaluator = _fixture.Services.GetRequiredService<IJavaScriptEvaluator>();
+    var result = await evaluator.EvaluateAsync(script, typeof(string), context);
+
+    // Assert
+    Assert.Equal("updated value", result);
+}
+```
+
+**When to use each method:**
+- Use `CreateWorkflowExecutionContextAsync` when testing workflow-level concerns or when you need a base context for further customization
+- Use `CreateActivityExecutionContextAsync` when testing activity scheduling, execution, or when you need access to activity-specific context
+- Use `CreateExpressionExecutionContextAsync` when testing expression evaluators (JavaScript, Liquid, C#) or when you need variables to be accessible in expressions
 
 ---
 
