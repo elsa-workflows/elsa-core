@@ -160,6 +160,42 @@ public async Task Should_Schedule_Child_Activity()
 }
 ```
 
+**Example (checking activity outcomes):**
+```csharp
+[Fact]
+public async Task Should_Return_Multiple_Outcomes()
+{
+    // Arrange
+    var flowFork = new FlowFork
+    {
+        Branches = new(new[] { "Branch1", "Branch2", "Branch3" })
+    };
+
+    // Act
+    var context = await new ActivityTestFixture(flowFork).ExecuteAsync();
+
+    // Assert - Check all outcomes
+    var outcomes = context.GetOutcomes().ToList();
+    Assert.Equal(3, outcomes.Count);
+    Assert.Contains("Branch1", outcomes);
+    Assert.Contains("Branch2", outcomes);
+    Assert.Contains("Branch3", outcomes);
+}
+
+[Fact]
+public async Task Should_Return_Default_Outcome()
+{
+    // Arrange
+    var flowSwitch = new FlowSwitch();
+
+    // Act
+    var context = await new ActivityTestFixture(flowSwitch).ExecuteAsync();
+
+    // Assert - Check single outcome
+    Assert.True(context.HasOutcome("Default"));
+}
+```
+
 #### **Integration tests:**
 - Place the activity inside a minimal workflow definition and run via [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs). Assert outputs/variables and that the activity integrates correctly with preceding/following activities.
 - If activity creates bookmarks or relies on scheduler semantics, integration tests should resume bookmarks via the engine APIs to validate resumption.
@@ -214,6 +250,8 @@ Assert.Equal(WorkflowStatus.Finished, resumed.WorkflowInstance.Status);
 | `ActivityTestFixture.ExecuteAsync`              | Execute activity and return context                          | Standard activity unit test execution                                   |
 | `context.GetActivityOutput`                     | Get output from activity using expression selector           | Asserting activity outputs in unit tests                                |
 | `context.HasScheduledActivity`                  | Check if activity is scheduled                               | Verifying scheduling behavior in unit tests                             |
+| `context.GetOutcomes`                           | Get all outcomes from activity execution                     | Asserting multiple outcomes in unit tests                               |
+| `context.HasOutcome`                            | Check if activity has specific outcome                       | Asserting single outcome in unit tests                                  |
 | `IWorkflowRunner.RunAsync`                      | Execute workflow in-process                                  | Integration / Component tests                                           |
 | `RunActivityExtensions.RunActivityAsync`        | Run single activity as workflow                              | Integration tests for single activities                                 |
 | `PopulateRegistriesAsync`                       | Register types for JSON deserialization                      | Loading JSON workflows. <br/>Integration tests only                     |
