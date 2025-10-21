@@ -17,4 +17,16 @@ public static class ActivityExecutionContextExtensions
     {
         return activityExecutionContext.WorkflowExecutionContext.Scheduler.Find(x => x.Activity == activity) != null;
     }
+    
+    public static IEnumerable<string> GetOutcomes(this ActivityExecutionContext activityExecutionContext)
+    {
+        if (activityExecutionContext.JournalData.TryGetValue("Outcomes", out var outcomesObj) && outcomesObj is string[] outcomes)
+            return outcomes;
+        return [];
+    }
+    
+    public static bool HasOutcome(this ActivityExecutionContext activityExecutionContext, string outcome)
+    {
+        return activityExecutionContext.GetOutcomes().Contains(outcome);
+    }
 }
