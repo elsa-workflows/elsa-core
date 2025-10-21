@@ -1,0 +1,23 @@
+{
+  "id": "parent-with-io-v1",
+  "definitionId": "parent-with-io",
+  "name": "ParentWithIO",
+  "version": 1,
+  "toolVersion": "3.6.0.0",
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "type": "ChildWithInput",
+    "version": 1,
+    "id": "ChildActivity1",
+    "workflowDefinitionId": "child-with-input",
+    "workflowDefinitionVersionId": "child-with-input-v1",
+    "message": {
+      "typeName": "String",
+      "expression": {
+        "type": "Literal",
+        "value": "Test message"
+      }
+    }
+  }
+}
