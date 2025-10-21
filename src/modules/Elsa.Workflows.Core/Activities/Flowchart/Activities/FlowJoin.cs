@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 /// Note that this activity is no longer necessary for either AND or OR merges, because all activities inherit the Join Kind property.
 /// Use this activity if an explicit join step is desired.
 /// </summary>
-[Activity("Elsa", "Branching", "`Explicitly merge multiple branches into a single branch of execution.", DisplayName = "Join")]
+[Activity("Elsa", "Branching", "Explicitly merge multiple branches into a single branch of execution.`", DisplayName = "Join")]
 [UsedImplicitly]
 public class FlowJoin : Activity, IJoinNode
 {
