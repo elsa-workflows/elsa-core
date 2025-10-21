@@ -1,0 +1,147 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "a09fb3bdfd316332",
+  "definitionId": "parent-with-outcomes",
+  "name": "ParentWithOutcomes",
+  "createdAt": "2025-10-21T13:11:28.283567\u002B00:00",
+  "version": 2,
+  "toolVersion": "3.6.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "Flowchart1",
+    "nodeId": "Workflow2:Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "workflowDefinitionId": "7ee5c04453217e3f",
+        "workflowDefinitionVersionId": "85761829037332b7",
+        "latestAvailablePublishedVersion": 2,
+        "latestAvailablePublishedVersionId": "85761829037332b7",
+        "id": "ChildActivity1",
+        "nodeId": "Workflow2:Flowchart1:ChildActivity1",
+        "name": null,
+        "type": "ChildWithOutcomes",
+        "version": 2,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -140,
+              "y": 0
+            },
+            "size": {
+              "width": 198.7421875,
+              "height": 67.9765625
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Failed path taken"
+          }
+        },
+        "id": "WriteLineFailed",
+        "nodeId": "Workflow2:Flowchart1:WriteLineFailed",
+        "name": null,
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 140,
+              "y": 80
+            },
+            "size": {
+              "width": 159.6171875,
+              "height": 67.9765625
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Success path taken"
+          }
+        },
+        "id": "WriteLineSuccess",
+        "nodeId": "Workflow2:Flowchart1:WriteLineSuccess",
+        "name": null,
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 180,
+              "y": -220
+            },
+            "size": {
+              "width": 159.6171875,
+              "height": 67.9765625
+            }
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": [
+      {
+        "source": {
+          "activity": "ChildActivity1",
+          "port": "Success"
+        },
+        "target": {
+          "activity": "WriteLineSuccess",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "ChildActivity1",
+          "port": "Failed"
+        },
+        "target": {
+          "activity": "WriteLineFailed",
+          "port": "In"
+        },
+        "vertices": []
+      }
+    ]
+  }
+}

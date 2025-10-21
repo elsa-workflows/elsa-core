@@ -1,0 +1,23 @@
+{
+  "id": "child-published-v1",
+  "definitionId": "child-published",
+  "name": "ChildPublished",
+  "version": 1,
+  "isLatest": true,
+  "isPublished": true,
+  "usableAsActivity": true,
+  "inputs": [],
+  "outputs": [],
+  "root": {
+    "type": "Elsa.WriteLine",
+    "version": 1,
+    "id": "WriteLine1",
+    "text": {
+      "typeName": "String",
+      "expression": {
+        "type": "Literal",
+        "value": "Published version executed"
+      }
+    }
+  }
+}

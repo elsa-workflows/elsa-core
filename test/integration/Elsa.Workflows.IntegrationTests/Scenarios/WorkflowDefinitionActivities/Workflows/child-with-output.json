@@ -1,0 +1,84 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "4da8180d0c9f7e3f",
+  "definitionId": "5781ed56ea4b160",
+  "name": "ChildWithOutput",
+  "createdAt": "2025-10-21T12:15:08.404102\u002B00:00",
+  "version": 4,
+  "toolVersion": "3.6.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [
+    {
+      "type": "String",
+      "name": "Output",
+      "displayName": "Output",
+      "description": "The result value",
+      "category": "Primitives"
+    }
+  ],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true
+  },
+  "root": {
+    "id": "14493561a73301af",
+    "nodeId": "Workflow1:14493561a73301af",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "outputName": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Output"
+          }
+        },
+        "outputValue": {
+          "typeName": "Object",
+          "expression": {
+            "type": "Literal",
+            "value": "Child output value"
+          }
+        },
+        "id": "461b5cebad79475c",
+        "nodeId": "Workflow1:14493561a73301af:461b5cebad79475c",
+        "name": "SetOutput1",
+        "type": "Elsa.SetOutput",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -353.5,
+              "y": -235.5
+            },
+            "size": {
+              "width": 132.3203125,
+              "height": 67.9765625
+            }
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": []
+  }
+}

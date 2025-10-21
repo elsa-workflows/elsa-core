@@ -467,7 +467,7 @@ public static partial class ActivityExecutionContextExtensions
     /// <param name="property"></param>
     /// <typeparam name="TProp"></typeparam>
     /// <returns></returns>
-    public static object? GetExecutionOutput<TProp>(this ActivityExecutionContext context, Expression<Func<Activity, TProp>> property)
+    public static object? GetActivityOutput<TProp>(this ActivityExecutionContext context, Expression<Func<TProp>> property)
     {
         if (property.Body is not MemberExpression memberExpr)
         {
@@ -486,6 +486,6 @@ public static partial class ActivityExecutionContextExtensions
         return registry.FindOutputByActivityInstanceId(context.Id, propertyName);
     }
 
-    internal static bool GetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties.TryGetValue<bool>("HasEvaluatedProperties", out var value) && value;
-    internal static void SetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties["HasEvaluatedProperties"] = true;
+    public static bool GetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties.TryGetValue<bool>("HasEvaluatedProperties", out var value) && value;
+    public static void SetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties["HasEvaluatedProperties"] = true;
 }

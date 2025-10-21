@@ -1,0 +1,72 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "85761829037332b7",
+  "definitionId": "7ee5c04453217e3f",
+  "name": "ChildWithOutcomes",
+  "createdAt": "2025-10-21T13:11:59.899105\u002B00:00",
+  "version": 2,
+  "toolVersion": "3.6.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [
+    "Success",
+    "Failed"
+  ],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true
+  },
+  "root": {
+    "id": "3519519e32e50f38",
+    "nodeId": "Workflow1:3519519e32e50f38",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "outcomes": {
+          "typeName": "Object",
+          "expression": {
+            "type": "Literal",
+            "value": "Success"
+          }
+        },
+        "id": "a093b294de68dc32",
+        "nodeId": "Workflow1:3519519e32e50f38:a093b294de68dc32",
+        "name": "Complete1",
+        "type": "Elsa.Complete",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -160.5,
+              "y": -143.5
+            },
+            "size": {
+              "width": 157.15625,
+              "height": 67.9765625
+            }
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": []
+  }
+}
