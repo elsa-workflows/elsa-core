@@ -1,4 +1,4 @@
-namespace Elsa.Activities.UnitTests.Helpers;
+namespace Elsa.Activities.UnitTests.Http.Helpers;
 
 /// <summary>
 /// Custom test HTTP message handler that allows full control over HTTP responses for testing.
