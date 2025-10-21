@@ -204,7 +204,7 @@ public async Task Should_Return_Default_Outcome()
 Pattern note: [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) returns a [`RunWorkflowResult`](../../src/modules/Elsa.Workflows.Core/Models/RunWorkflowResult.cs) (or equivalent) containing the [`WorkflowInstance`](../../src/modules/Elsa.Workflows.Management/Entities/WorkflowInstance.cs) and output variables when run to completion.
 Use returned state for deterministic assertions where possible.
 
-**Example (using WorkflowTestFixture):**
+**Example (using WorkflowTestFixture - basic):**
 ```csharp
 public class RunJavaScriptTests
 {
@@ -215,18 +215,50 @@ public class RunJavaScriptTests
         _fixture = new WorkflowTestFixture(testOutputHelper);
     }
 
-    [Fact(DisplayName = "RunJavaScript should execute simple arithmetic script")]
-    public async Task Should_Execute_Simple_Script()
+    [Fact(DisplayName = "RunJavaScript should execute and return output")]
+    public async Task Should_Execute_And_Return_Output()
     {
         // Arrange
         var script = "return 1 + 1;";
         var activity = new RunJavaScript { Script = new(script), Result = new() };
 
         // Act
-        await _fixture.RunActivityAsync(activity);
+        var result = await _fixture.RunActivityAsync(activity);
 
-        // Assert - workflow completes successfully
-        Assert.Empty(_fixture.CapturingTextWriter.Lines);
+        // Assert - activity produced expected output
+        var output = result.GetActivityOutput<object>(activity);
+        Assert.Equal(2, output);
+    }
+
+    [Fact(DisplayName = "RunJavaScript should set outcomes")]
+    public async Task Should_Set_Outcomes()
+    {
+        // Arrange
+        var script = "setOutcomes(['Branch1', 'Branch2']);";
+        var activity = new RunJavaScript { Script = new(script) };
+
+        // Act
+        var result = await _fixture.RunActivityAsync(activity);
+
+        // Assert - activity produced expected outcomes
+        var outcomes = _fixture.GetOutcomes(result, activity);
+        Assert.Contains("Branch1", outcomes);
+        Assert.Contains("Branch2", outcomes);
+    }
+
+    [Fact(DisplayName = "RunJavaScript should fault on invalid syntax")]
+    public async Task Should_Fault_On_Invalid_Syntax()
+    {
+        // Arrange
+        var script = "this is not valid javascript";
+        var activity = new RunJavaScript { Script = new(script) };
+
+        // Act
+        var result = await _fixture.RunActivityAsync(activity);
+
+        // Assert - activity should be in faulted state
+        var status = _fixture.GetActivityStatus(result, activity);
+        Assert.Equal(ActivityStatus.Faulted, status);
     }
 }
 ```
@@ -301,6 +333,9 @@ Assert.Equal(WorkflowStatus.Finished, resumed.WorkflowInstance.Status);
 | `WorkflowTestFixture.RunActivityAsync`          | Run single activity as workflow                              | Integration tests for single activities                                 |
 | `WorkflowTestFixture.RunWorkflowAsync`          | Run workflow or workflow by definition ID                    | Integration tests for workflows                                         |
 | `WorkflowTestFixture.CapturingTextWriter`       | Capture WriteLine output                                     | Asserting text output in integration tests                              |
+| `WorkflowTestFixture.GetOutcomes`               | Get all outcomes from specific activity                      | Asserting activity outcomes in integration tests                        |
+| `WorkflowTestFixture.HasOutcome`                | Check if activity produced specific outcome                  | Asserting single outcome in integration tests                           |
+| `WorkflowTestFixture.GetActivityStatus`         | Get execution status of specific activity                    | Asserting activity status (Faulted, Completed, etc.)                    |
 | `context.GetActivityOutput`                     | Get output from activity using expression selector           | Asserting activity outputs in unit tests                                |
 | `context.HasScheduledActivity`                  | Check if activity is scheduled                               | Verifying scheduling behavior in unit tests                             |
 | `context.GetOutcomes`                           | Get all outcomes from activity execution                     | Asserting multiple outcomes in unit tests                               |
@@ -356,7 +391,58 @@ When in doubt, add the minimal unit tests plus one integration test that reprodu
 
 ---
 
+## WorkflowTestFixture Helper Methods
+
+When using [`WorkflowTestFixture`](../../src/common/Elsa.Testing.Shared.Integration/WorkflowTestFixture.cs) for integration tests, use these helper methods to assert on activity behavior:
+
+### Asserting Activity Outputs
+
+Use `result.GetActivityOutput<T>(activity)` to retrieve the output value from an activity:
+
+```csharp
+var result = await _fixture.RunActivityAsync(activity);
+var output = result.GetActivityOutput<object>(activity);
+Assert.Equal(expectedValue, output);
+```
+
+### Asserting Activity Outcomes
+
+Use `_fixture.GetOutcomes(result, activity)` to retrieve all outcomes produced by an activity:
+
+```csharp
+var result = await _fixture.RunActivityAsync(activity);
+var outcomes = _fixture.GetOutcomes(result, activity);
+Assert.Contains("ExpectedOutcome", outcomes);
+```
+
+Or use `_fixture.HasOutcome(result, activity, outcome)` to check for a specific outcome:
+
+```csharp
+var result = await _fixture.RunActivityAsync(activity);
+Assert.True(_fixture.HasOutcome(result, activity, "Success"));
+```
+
+### Asserting Activity Status
+
+Use `_fixture.GetActivityStatus(result, activity)` to check the execution status of an activity:
+
+```csharp
+var result = await _fixture.RunActivityAsync(activity);
+var status = _fixture.GetActivityStatus(result, activity);
+Assert.Equal(ActivityStatus.Faulted, status);
+```
+
+**Available activity statuses:**
+- `ActivityStatus.Pending` - Activity is pending execution
+- `ActivityStatus.Running` - Activity is currently running
+- `ActivityStatus.Completed` - Activity completed successfully
+- `ActivityStatus.Canceled` - Activity was canceled
+- `ActivityStatus.Faulted` - Activity encountered an error
+
+---
+
 ## Failure testing (faults & incidents)
+- **Integration test faulted activities**: Use `_fixture.GetActivityStatus(result, activity)` to assert that a specific activity faulted, rather than checking workflow-level status.
 - **Integration test faulted workflows**: build a workflow that throws and run via [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) — assert [`WorkflowInstance.Status`](../../src/modules/Elsa.Workflows.Management/Entities/WorkflowInstance.cs) == [`Faulted`](../../src/modules/Elsa.Workflows.Core/Enums/WorkflowStatus.cs) on the returned state or via [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs).
 - **Component tests for recovery/resume**: persist a faulted instance (or cause a host restart scenario), run your recovery logic, and assert the final state.
 

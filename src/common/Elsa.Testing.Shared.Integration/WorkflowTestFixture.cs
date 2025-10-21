@@ -152,4 +152,44 @@ public class WorkflowTestFixture
 
         return await Services.RunWorkflowUntilEndAsync(definitionId, input);
     }
+
+    /// <summary>
+    /// Gets the outcomes produced by a specific activity from the workflow result.
+    /// </summary>
+    /// <param name="result">The workflow run result</param>
+    /// <param name="activity">The activity to get outcomes for</param>
+    /// <returns>Collection of outcome names</returns>
+    public IEnumerable<string> GetOutcomes(RunWorkflowResult result, IActivity activity)
+    {
+        var activityContext = result.Journal.ActivityExecutionContexts
+            .FirstOrDefault(c => c.Activity.Id == activity.Id);
+
+        return activityContext?.GetOutcomes() ?? [];
+    }
+
+    /// <summary>
+    /// Checks if a specific activity produced a specific outcome.
+    /// </summary>
+    /// <param name="result">The workflow run result</param>
+    /// <param name="activity">The activity to check</param>
+    /// <param name="outcome">The outcome name to check for</param>
+    /// <returns>True if the activity produced the specified outcome</returns>
+    public bool HasOutcome(RunWorkflowResult result, IActivity activity, string outcome)
+    {
+        return GetOutcomes(result, activity).Contains(outcome);
+    }
+
+    /// <summary>
+    /// Gets the execution status of a specific activity from the workflow result.
+    /// </summary>
+    /// <param name="result">The workflow run result</param>
+    /// <param name="activity">The activity to get status for</param>
+    /// <returns>The activity status, or null if the activity wasn't found in the journal</returns>
+    public ActivityStatus? GetActivityStatus(RunWorkflowResult result, IActivity activity)
+    {
+        var activityContext = result.Journal.ActivityExecutionContexts
+            .FirstOrDefault(c => c.Activity.Id == activity.Id);
+
+        return activityContext?.Status;
+    }
 }
