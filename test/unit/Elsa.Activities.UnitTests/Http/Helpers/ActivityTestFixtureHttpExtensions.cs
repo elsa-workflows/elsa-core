@@ -9,7 +9,7 @@ using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
-namespace Elsa.Activities.UnitTests.Helpers;
+namespace Elsa.Activities.UnitTests.Http.Helpers;
 
 /// <summary>
 /// Extension methods for configuring HTTP-related services in ActivityTestFixture.

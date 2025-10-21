@@ -1,5 +1,5 @@
 using System.Net;
-using Elsa.Activities.UnitTests.Helpers;
+using Elsa.Activities.UnitTests.Http.Helpers;
 using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Testing.Shared;
