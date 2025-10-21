@@ -20,7 +20,9 @@ public static class ActivityExecutionContextExtensions
     
     public static IEnumerable<string> GetOutcomes(this ActivityExecutionContext activityExecutionContext)
     {
-        return activityExecutionContext.JournalData["Outcomes"] as string[] ?? [];
+        if (activityExecutionContext.JournalData.TryGetValue("Outcomes", out var outcomesObj) && outcomesObj is string[] outcomes)
+            return outcomes;
+        return [];
     }
     
     public static bool HasOutcome(this ActivityExecutionContext activityExecutionContext, string outcome)
