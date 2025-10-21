@@ -25,9 +25,7 @@ public static class ActivityExecutionContextExtensions
     /// <returns>A collection of outcome strings, or an empty collection if no outcomes are present.</returns>
     public static IEnumerable<string> GetOutcomes(this ActivityExecutionContext activityExecutionContext)
     {
-        if (activityExecutionContext.JournalData.TryGetValue("Outcomes", out var outcomes) && outcomes is string[] arr)
-            return arr;
-        return [];
+        return activityExecutionContext.JournalData.TryGetValue("Outcomes", out var outcomes) && outcomes is string[] arr ? arr : [];
     }
 
     /// <summary>
