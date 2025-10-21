@@ -131,8 +131,11 @@ public class ActivityTestFixture
             .Where(p => typeof(Variable).IsAssignableFrom(p.PropertyType))
             .ToList();
 
-        foreach (var variable in variableProperties.Select(property => (Variable)property.GetValue(activity)!))
+        foreach (var variable in variableProperties.Select(property => (Variable?)property.GetValue(activity)))
         {
+            if(variable == null)
+                continue;
+            
             context.WorkflowExecutionContext.MemoryRegister.Declare(variable);
             variable.Set(context.ExpressionExecutionContext, variable.Value);
         }

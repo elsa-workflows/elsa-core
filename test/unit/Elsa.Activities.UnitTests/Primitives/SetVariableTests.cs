@@ -1,4 +1,5 @@
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 
@@ -22,7 +23,7 @@ public class SetVariableTests
         var context = await ExecuteAsync(setVariable);
 
         // Assert
-        var result = variable.Get(context.ExpressionExecutionContext);
+        var result = variable.Get(context);
         Assert.Equal(expected, result);
     }
 
@@ -40,7 +41,7 @@ public class SetVariableTests
         var exception = await Record.ExceptionAsync(() => ExecuteAsync(setVariable));
 
         Assert.NotNull(exception);
-        Assert.IsType<NullReferenceException>(exception);
+        Assert.IsType<InvalidOperationException>(exception);
     }
 
     [Fact]
