@@ -1,0 +1,92 @@
+{
+  "id": "parent-capture-output-v1",
+  "definitionId": "parent-capture-output",
+  "name": "Parent Capture Output",
+  "createdAt": "2025-01-15T00:00:00.000000+00:00",
+  "version": 1,
+  "variables": [
+    {
+      "id": "ChildResult",
+      "name": "ChildResult",
+      "typeName": "Object",
+      "isArray": false,
+      "value": null,
+      "storageDriverType": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+    }
+  ],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "type": "Elsa.Sequence",
+    "version": 1,
+    "id": "Sequence1",
+    "metadata": {},
+    "customProperties": {
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "workflowDefinitionId": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "child-with-output"
+          },
+          "memoryReference": {
+            "id": "ExecuteWorkflow1:workflowDefinitionId"
+          }
+        },
+        "waitForCompletion": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "Literal",
+            "value": true
+          },
+          "memoryReference": {
+            "id": "ExecuteWorkflow1:waitForCompletion"
+          }
+        },
+        "result": {
+          "typeName": "ExecuteWorkflowResult",
+          "memoryReference": {
+            "id": "ChildResult"
+          }
+        },
+        "id": "ExecuteWorkflow1",
+        "type": "Elsa.ExecuteWorkflow",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {}
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "`Parent received: ${getChildResult().output.Result}`"
+          },
+          "memoryReference": {
+            "id": "WriteLine1:input-1"
+          }
+        },
+        "id": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {}
+      }
+    ]
+  }
+}

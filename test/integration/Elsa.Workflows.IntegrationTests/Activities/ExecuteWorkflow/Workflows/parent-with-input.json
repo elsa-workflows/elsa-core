@@ -1,0 +1,71 @@
+{
+  "id": "parent-with-input-v1",
+  "definitionId": "parent-with-input",
+  "name": "Parent With Input",
+  "createdAt": "2025-01-15T00:00:00.000000+00:00",
+  "version": 1,
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "Flowchart1",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "start": "ExecuteWorkflow1",
+    "activities": [
+      {
+        "workflowDefinitionId": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "child-with-input"
+          },
+          "memoryReference": {
+            "id": "ExecuteWorkflow1:workflowDefinitionId"
+          }
+        },
+        "input": {
+          "typeName": "IDictionary<String, Object>",
+          "expression": {
+            "type": "JavaScript",
+            "value": "({ Message: 'Hello from parent' })"
+          },
+          "memoryReference": {
+            "id": "ExecuteWorkflow1:input"
+          }
+        },
+        "waitForCompletion": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "Literal",
+            "value": true
+          },
+          "memoryReference": {
+            "id": "ExecuteWorkflow1:waitForCompletion"
+          }
+        },
+        "id": "ExecuteWorkflow1",
+        "type": "Elsa.ExecuteWorkflow",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {}
+      }
+    ],
+    "connections": []
+  }
+}
