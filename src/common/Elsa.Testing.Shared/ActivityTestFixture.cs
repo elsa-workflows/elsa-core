@@ -83,6 +83,7 @@ public class ActivityTestFixture
         // Set up variables and inputs, then execute the activity
         await SetupExistingVariablesAsync(Activity, context);
         await context.EvaluateInputPropertiesAsync();
+        context.TransitionTo(ActivityStatus.Running);
         await Activity.ExecuteAsync(context);
 
         return context;
