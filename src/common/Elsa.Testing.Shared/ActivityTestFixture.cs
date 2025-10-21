@@ -58,7 +58,7 @@ public class ActivityTestFixture
         configure(Services);
         return this;
     }
-    
+
     /// <summary>
     /// Configures the activity execution context before execution.
     /// Multiple calls to this method will chain the configuration actions together.

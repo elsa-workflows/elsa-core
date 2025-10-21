@@ -8,12 +8,14 @@ namespace Elsa.Activities.UnitTests.Branching;
 public class SwitchTests
 {
     [Theory]
-    [InlineData(SwitchMode.MatchFirst)]
-    [InlineData(SwitchMode.MatchAny)]
-    public async Task Should_Schedule_Default_Activity_When_No_Cases_Match(SwitchMode mode)
+    [InlineData(SwitchMode.MatchFirst, true)]
+    [InlineData(SwitchMode.MatchAny, true)]
+    [InlineData(SwitchMode.MatchFirst, false)]
+    [InlineData(SwitchMode.MatchAny, false)]
+    public async Task Should_Handle_No_Matching_Cases_Correctly(SwitchMode mode, bool hasDefault)
     {
         // Arrange
-        var defaultActivity = Substitute.For<IActivity>();
+        var defaultActivity = hasDefault ? Substitute.For<IActivity>() : null;
         var switchActivity = new Switch
         {
             Mode = new(mode),
@@ -29,70 +31,32 @@ public class SwitchTests
 
         // Assert
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Single(scheduledActivities);
-        Assert.Equal(defaultActivity, scheduledActivities.First().Activity);
-    }
-
-    [Fact]
-    public async Task Should_Schedule_No_Activities_When_No_Cases_Match_And_No_Default()
-    {
-        // Arrange
-        var switchActivity = new Switch
+        if (hasDefault)
         {
-            Cases = new List<SwitchCase>
-            {
-                new("False Case", Expression.LiteralExpression(false), Substitute.For<IActivity>())
-            },
-            Default = null
-        };
-
-        // Act
-        var context = await ExecuteAsync(switchActivity);
-
-        // Assert
-        var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Empty(scheduledActivities);
+            Assert.Single(scheduledActivities);
+            Assert.Equal(defaultActivity, scheduledActivities.First().Activity);
+        }
+        else
+        {
+            Assert.Empty(scheduledActivities);
+        }
     }
 
-    [Fact]
-    public async Task Should_Schedule_First_Matching_Case_In_MatchFirst_Mode()
+    [Theory]
+    [InlineData(SwitchMode.MatchFirst, 1)]
+    [InlineData(SwitchMode.MatchAny, 2)]
+    public async Task Should_Handle_Multiple_Matching_Cases_According_To_Mode(SwitchMode mode, int expectedScheduledCount)
     {
         // Arrange
         var firstTrueActivity = Substitute.For<IActivity>();
         var secondTrueActivity = Substitute.For<IActivity>();
         var switchActivity = new Switch
         {
-            Mode = new(SwitchMode.MatchFirst),
+            Mode = new(mode),
             Cases = new List<SwitchCase>
             {
-                new("False Case", Expression.LiteralExpression(false), Substitute.For<IActivity>()),
-                new("First True", Expression.LiteralExpression(true), firstTrueActivity),
-                new("Second True", Expression.LiteralExpression(true), secondTrueActivity)
-            }
-        };
-
-        // Act
-        var context = await ExecuteAsync(switchActivity);
-
-        // Assert
-        var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Single(scheduledActivities);
-        Assert.Equal(firstTrueActivity, scheduledActivities.First().Activity);
-    }
-
-    [Fact]
-    public async Task Should_Schedule_All_Matching_Cases_In_MatchAny_Mode()
-    {
-        // Arrange
-        var firstTrueActivity = Substitute.For<IActivity>();
-        var secondTrueActivity = Substitute.For<IActivity>();
-        var switchActivity = new Switch
-        {
-            Mode = new(SwitchMode.MatchAny),
-            Cases = new List<SwitchCase>
-            {
-                new("First True", Expression.LiteralExpression(true), firstTrueActivity),
                 new("False", Expression.LiteralExpression(false), Substitute.For<IActivity>()),
+                new("First True", Expression.LiteralExpression(true), firstTrueActivity),
                 new("Second True", Expression.LiteralExpression(true), secondTrueActivity)
             }
         };
@@ -102,9 +66,17 @@ public class SwitchTests
 
         // Assert
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Equal(2, scheduledActivities.Count);
-        Assert.Contains(scheduledActivities, s => s.Activity == firstTrueActivity);
-        Assert.Contains(scheduledActivities, s => s.Activity == secondTrueActivity);
+        Assert.Equal(expectedScheduledCount, scheduledActivities.Count);
+        
+        if (mode == SwitchMode.MatchFirst)
+        {
+            Assert.Equal(firstTrueActivity, scheduledActivities.First().Activity);
+        }
+        else // MatchAny
+        {
+            Assert.Contains(scheduledActivities, s => s.Activity == firstTrueActivity);
+            Assert.Contains(scheduledActivities, s => s.Activity == secondTrueActivity);
+        }
     }
 
     [Fact]
@@ -126,7 +98,7 @@ public class SwitchTests
         // Act
         var context = await ExecuteAsync(switchActivity);
 
-        // Assert - Should only schedule the first matching case, proving MatchFirst is the default
+        // Assert
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
         Assert.Single(scheduledActivities);
         Assert.Equal(firstTrueActivity, scheduledActivities.First().Activity);
@@ -152,44 +124,25 @@ public class SwitchTests
         // Act
         var context = await ExecuteAsync(switchActivity);
 
-        // Assert - Null conditions should not match, so default should be scheduled
+        // Assert
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
         Assert.Single(scheduledActivities);
         Assert.Equal(defaultActivity, scheduledActivities.First().Activity);
     }
 
     [Theory]
-    [InlineData(SwitchMode.MatchFirst)]
-    [InlineData(SwitchMode.MatchAny)]
-    public async Task Should_Schedule_No_Activities_When_Empty_Cases_And_No_Default(SwitchMode mode)
+    [InlineData(SwitchMode.MatchFirst, true)]
+    [InlineData(SwitchMode.MatchAny, true)]
+    [InlineData(SwitchMode.MatchFirst, false)]
+    [InlineData(SwitchMode.MatchAny, false)]
+    public async Task Should_Handle_Empty_Cases_Correctly(SwitchMode mode, bool hasDefault)
     {
         // Arrange
+        var defaultActivity = hasDefault ? Substitute.For<IActivity>() : null;
         var switchActivity = new Switch
         {
             Mode = new(mode),
-            Cases = new List<SwitchCase>(), // Empty collection
-            Default = null
-        };
-
-        // Act
-        var context = await ExecuteAsync(switchActivity);
-
-        // Assert
-        var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Empty(scheduledActivities);
-    }
-
-    [Theory]
-    [InlineData(SwitchMode.MatchFirst)]
-    [InlineData(SwitchMode.MatchAny)]
-    public async Task Should_Schedule_Default_When_Empty_Cases_And_Default_Present(SwitchMode mode)
-    {
-        // Arrange
-        var defaultActivity = Substitute.For<IActivity>();
-        var switchActivity = new Switch
-        {
-            Mode = new(mode),
-            Cases = new List<SwitchCase>(), // Empty collection
+            Cases = new List<SwitchCase>(),
             Default = defaultActivity
         };
 
@@ -198,8 +151,15 @@ public class SwitchTests
 
         // Assert
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Single(scheduledActivities);
-        Assert.Equal(defaultActivity, scheduledActivities.First().Activity);
+        if (hasDefault)
+        {
+            Assert.Single(scheduledActivities);
+            Assert.Equal(defaultActivity, scheduledActivities.First().Activity);
+        }
+        else
+        {
+            Assert.Empty(scheduledActivities);
+        }
     }
 
     [Fact]
@@ -212,7 +172,6 @@ public class SwitchTests
         Assert.NotNull(switchActivity.Cases);
         Assert.Empty(switchActivity.Cases);
         
-        // Test that we can add cases
         switchActivity.Cases.Add(new("Test", Expression.LiteralExpression(true), Substitute.For<IActivity>()));
         Assert.Single(switchActivity.Cases);
     }
@@ -226,59 +185,6 @@ public class SwitchTests
         // Assert
         Assert.NotNull(switchActivity.Mode);
         // The actual default value verification is handled by the mode-specific behavior tests
-    }
-
-    [Fact]
-    public async Task Should_Handle_Mixed_True_And_False_Cases_In_MatchFirst_Mode()
-    {
-        // Arrange
-        var firstTrueActivity = Substitute.For<IActivity>();
-        var secondTrueActivity = Substitute.For<IActivity>();
-        var switchActivity = new Switch
-        {
-            Mode = new(SwitchMode.MatchFirst),
-            Cases = new List<SwitchCase>
-            {
-                new("False", Expression.LiteralExpression(false), Substitute.For<IActivity>()),
-                new("First True", Expression.LiteralExpression(true), firstTrueActivity),
-                new("Second True", Expression.LiteralExpression(true), secondTrueActivity)
-            }
-        };
-
-        // Act
-        var context = await ExecuteAsync(switchActivity);
-
-        // Assert - Should only schedule the first true case
-        var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Single(scheduledActivities);
-        Assert.Equal(firstTrueActivity, scheduledActivities.First().Activity);
-    }
-
-    [Fact]
-    public async Task Should_Handle_Mixed_True_And_False_Cases_In_MatchAny_Mode()
-    {
-        // Arrange
-        var firstTrueActivity = Substitute.For<IActivity>();
-        var secondTrueActivity = Substitute.For<IActivity>();
-        var switchActivity = new Switch
-        {
-            Mode = new(SwitchMode.MatchAny),
-            Cases = new List<SwitchCase>
-            {
-                new("First True", Expression.LiteralExpression(true), firstTrueActivity),
-                new("False", Expression.LiteralExpression(false), Substitute.For<IActivity>()),
-                new("Second True", Expression.LiteralExpression(true), secondTrueActivity)
-            }
-        };
-
-        // Act
-        var context = await ExecuteAsync(switchActivity);
-
-        // Assert - Should schedule all true cases
-        var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Equal(2, scheduledActivities.Count);
-        Assert.Contains(scheduledActivities, s => s.Activity == firstTrueActivity);
-        Assert.Contains(scheduledActivities, s => s.Activity == secondTrueActivity);
     }
     
     private static Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)
