@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using Elsa.Activities.UnitTests.Http.Helpers;
 using Elsa.Extensions;
 using Elsa.Http;
