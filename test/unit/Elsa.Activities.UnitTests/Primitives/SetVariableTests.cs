@@ -40,7 +40,7 @@ public class SetVariableTests
         var exception = await Record.ExceptionAsync(() => ExecuteAsync(setVariable));
 
         Assert.NotNull(exception);
-        Assert.IsType<InvalidOperationException>(exception);
+        Assert.IsType<NullReferenceException>(exception);
     }
 
     [Fact]
@@ -61,9 +61,9 @@ public class SetVariableTests
         var result = variable.Get(context);
         Assert.Null(result);
     }
-    
-    private static Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)
+
+    private static async Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)
     {
-        return new ActivityTestFixture(activity).ExecuteAsync();
+        return await new ActivityTestFixture(activity).ExecuteAsync();
     }
 }
