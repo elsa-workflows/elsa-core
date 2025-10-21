@@ -1,0 +1,23 @@
+{
+  "id": "parent-version-fallback-v1",
+  "definitionId": "parent-version-fallback",
+  "name": "ParentVersionFallback",
+  "version": 1,
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "Flowchart1",
+    "start": "ChildActivity1",
+    "activities": [
+      {
+        "type": "ChildPublished",
+        "version": 1,
+        "id": "ChildActivity1",
+        "workflowDefinitionId": "child-published",
+        "workflowDefinitionVersionId": "non-existent-version-id"
+      }
+    ]
+  }
+}
