@@ -2,14 +2,13 @@
 using System.Numerics;
 using System.Text.Json;
 using Elsa.Common.Converters;
-using Elsa.Expressions.Models;
 using Elsa.Expressions.JavaScript.Contracts;
+using Elsa.Expressions.Models;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 using Xunit.Abstractions;
 
-namespace Elsa.Expressions.JavaScript.IntegrationTests;
+namespace Elsa.JavaScript.IntegrationTests;
 public class JsonConverterTest(ITestOutputHelper testOutputHelper)
 {
     private readonly IServiceProvider _serviceProvider = new TestApplicationBuilder(testOutputHelper).Build();
@@ -23,7 +22,7 @@ public class JsonConverterTest(ITestOutputHelper testOutputHelper)
 }";
         var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, new MemoryRegister());
         var result = (await javaScriptEvaluator.EvaluateAsync(script, typeof(ExpandoObject), expressionExecutionContext))!;
-        var options = new JsonSerializerOptions()
+        var options = new JsonSerializerOptions
         {
             Converters = { new BigIntegerJsonConverter() }
         };
@@ -47,9 +46,9 @@ public class JsonConverterTest(ITestOutputHelper testOutputHelper)
     }
 
     [Fact(DisplayName = "BigIntegerJsonConverter Deserialize")]
-    public async Task Test3()
+    public Task Test3()
     {
-        var options = new JsonSerializerOptions()
+        var options = new JsonSerializerOptions
         {
             Converters = { new BigIntegerJsonConverter() }
         };
@@ -57,5 +56,6 @@ public class JsonConverterTest(ITestOutputHelper testOutputHelper)
         BigInteger bigInteger = JsonSerializer.Deserialize<BigInteger>("7239948466988781569", options);
 
         Assert.Equal(7239948466988781569, bigInteger);
+        return Task.CompletedTask;
     }
 }
