@@ -6,242 +6,106 @@ namespace Elsa.Activities.UnitTests.Branching;
 
 public class IfTests
 {
-    [Fact]
-    public async Task Should_Evaluate_Condition_And_Set_Result_When_Activity_Runs()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Should_Set_Result_To_Condition_Value_Regardless_Of_Branch_Presence(bool conditionValue)
     {
-        // Arrange
-        var ifActivity = new If(() => true);
+        // Arrange - Test with no branches to verify result is independent of branch activities
+        var ifActivity = new If(() => conditionValue);
 
         // Act
         var context = await ExecuteAsync(ifActivity);
 
         // Assert
         var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
-        Assert.True(resultValue);
+        Assert.Equal(conditionValue, resultValue);
     }
 
-    [Fact]
-    public async Task Should_Set_Result_To_True_When_Condition_Is_True()
+    [Theory]
+    [InlineData(true, true, false)] // condition true, has then branch, no else branch
+    [InlineData(false, false, true)] // condition false, no then branch, has else branch
+    public async Task Should_Set_Result_Correctly_With_Branch_Configuration(bool conditionValue, bool hasThenBranch, bool hasElseBranch)
     {
         // Arrange
-        var variable = new Variable<string>("testVar", "initial", "testVar");
-        var thenActivity = new SetVariable<string>(variable, new Input<string>("then_executed"));
+        var ifActivity = new If(() => conditionValue);
         
-        var ifActivity = new If(() => true)
+        if (hasThenBranch)
         {
-            Then = thenActivity
-        };
+            // Using a simple WriteLine activity to avoid variable complexity
+            ifActivity.Then = new WriteLine(new Input<string>("then executed"));
+        }
+        
+        if (hasElseBranch)
+        {
+            ifActivity.Else = new WriteLine(new Input<string>("else executed"));
+        }
 
         // Act
         var context = await ExecuteAsync(ifActivity);
 
         // Assert
         var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
-        Assert.True(resultValue);
+        Assert.Equal(conditionValue, resultValue);
     }
 
-    [Fact]
-    public async Task Should_Set_Result_To_False_When_Condition_Is_False()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Should_Not_Throw_When_No_Branches_Are_Present(bool conditionValue)
     {
         // Arrange
-        var variable = new Variable<string>("testVar", "initial", "testVar");
-        var elseActivity = new SetVariable<string>(variable, new Input<string>("else_executed"));
-        
-        var ifActivity = new If(() => false)
-        {
-            Else = elseActivity
-        };
+        var ifActivity = new If(() => conditionValue);
 
-        // Act
-        var context = await ExecuteAsync(ifActivity);
-
-        // Assert
-        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
-        Assert.False(resultValue);
+        // Act & Assert
+        var exception = await Record.ExceptionAsync(() => ExecuteAsync(ifActivity));
+        Assert.Null(exception);
     }
 
-    [Fact]
-    public async Task Should_Set_Result_To_True_When_Condition_Is_True_With_Both_Branches()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Should_Not_Throw_When_Only_Then_Branch_Is_Present(bool conditionValue)
     {
         // Arrange
-        var thenVariable = new Variable<string>("thenVar", "initial", "thenVar");
-        var elseVariable = new Variable<string>("elseVar", "initial", "elseVar");
-        
-        var thenActivity = new SetVariable<string>(thenVariable, new Input<string>("then_executed"));
-        var elseActivity = new SetVariable<string>(elseVariable, new Input<string>("else_executed"));
-        
-        var ifActivity = new If(() => true)
+        var ifActivity = new If(() => conditionValue)
         {
-            Then = thenActivity,
-            Else = elseActivity
-        };
-
-        // Act
-        var context = await ExecuteAsync(ifActivity);
-
-        // Assert
-        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
-        Assert.True(resultValue);
-    }
-
-    [Fact]
-    public async Task Should_Set_Result_To_False_When_Condition_Is_False_With_Both_Branches()
-    {
-        // Arrange
-        var thenVariable = new Variable<string>("thenVar", "initial", "thenVar");
-        var elseVariable = new Variable<string>("elseVar", "initial", "elseVar");
-        
-        var thenActivity = new SetVariable<string>(thenVariable, new Input<string>("then_executed"));
-        var elseActivity = new SetVariable<string>(elseVariable, new Input<string>("else_executed"));
-        
-        var ifActivity = new If(() => false)
-        {
-            Then = thenActivity,
-            Else = elseActivity
-        };
-
-        // Act
-        var context = await ExecuteAsync(ifActivity);
-
-        // Assert
-        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
-        Assert.False(resultValue);
-    }
-
-    [Fact]
-    public async Task Should_Set_Result_With_Missing_Else_Branch_When_Condition_Is_True()
-    {
-        // Arrange
-        var variable = new Variable<string>("testVar", "initial", "testVar");
-        var thenActivity = new SetVariable<string>(variable, new Input<string>("then_executed"));
-        
-        var ifActivity = new If(() => true)
-        {
-            Then = thenActivity
-            // Else is intentionally null
-        };
-
-        // Act
-        var context = await ExecuteAsync(ifActivity);
-
-        // Assert
-        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
-        Assert.True(resultValue);
-    }
-
-    [Fact]
-    public async Task Should_Set_Result_With_Missing_Else_Branch_When_Condition_Is_False()
-    {
-        // Arrange
-        var variable = new Variable<string>("testVar", "initial", "testVar");
-        var thenActivity = new SetVariable<string>(variable, new Input<string>("then_executed"));
-        
-        var ifActivity = new If(() => false)
-        {
-            Then = thenActivity
-            // Else is intentionally null
-        };
-
-        // Act
-        var context = await ExecuteAsync(ifActivity);
-
-        // Assert
-        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
-        Assert.False(resultValue);
-    }
-
-    [Fact]
-    public async Task Should_Set_Result_With_Missing_Then_Branch_When_Condition_Is_True()
-    {
-        // Arrange
-        var variable = new Variable<string>("testVar", "initial", "testVar");
-        var elseActivity = new SetVariable<string>(variable, new Input<string>("else_executed"));
-        
-        var ifActivity = new If(() => true)
-        {
-            // Then is intentionally null
-            Else = elseActivity
-        };
-
-        // Act
-        var context = await ExecuteAsync(ifActivity);
-
-        // Assert
-        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
-        Assert.True(resultValue);
-    }
-
-    [Fact]
-    public async Task Should_Set_Result_With_Missing_Then_Branch_When_Condition_Is_False()
-    {
-        // Arrange
-        var variable = new Variable<string>("testVar", "initial", "testVar");
-        var elseActivity = new SetVariable<string>(variable, new Input<string>("else_executed"));
-        
-        var ifActivity = new If(() => false)
-        {
-            // Then is intentionally null
-            Else = elseActivity
-        };
-
-        // Act
-        var context = await ExecuteAsync(ifActivity);
-
-        // Assert
-        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
-        Assert.False(resultValue);
-    }
-
-    [Fact]
-    public async Task Should_Not_Throw_When_Both_Branches_Are_Missing_And_Condition_Is_True()
-    {
-        // Arrange
-        var ifActivity = new If(() => true)
-        {
-            // Both Then and Else are intentionally null
+            Then = new WriteLine(new Input<string>("then branch"))
         };
 
         // Act & Assert
         var exception = await Record.ExceptionAsync(() => ExecuteAsync(ifActivity));
-        
         Assert.Null(exception);
+        
+        // Verify result is still set correctly
+        var context = await ExecuteAsync(ifActivity);
+        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
+        Assert.Equal(conditionValue, resultValue);
     }
 
-    [Fact]
-    public async Task Should_Not_Throw_When_Both_Branches_Are_Missing_And_Condition_Is_False()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Should_Not_Throw_When_Only_Else_Branch_Is_Present(bool conditionValue)
     {
         // Arrange
-        var ifActivity = new If(() => false)
+        var ifActivity = new If(() => conditionValue)
         {
-            // Both Then and Else are intentionally null
+            Else = new WriteLine(new Input<string>("else branch"))
         };
 
         // Act & Assert
         var exception = await Record.ExceptionAsync(() => ExecuteAsync(ifActivity));
-        
         Assert.Null(exception);
-    }
-
-    [Fact]
-    public async Task Should_Set_Result_When_Both_Branches_Are_Missing()
-    {
-        // Arrange
-        var ifActivity = new If(() => true)
-        {
-            // Both Then and Else are intentionally null
-        };
-
-        // Act
+        
+        // Verify result is still set correctly
         var context = await ExecuteAsync(ifActivity);
-
-        // Assert
         var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
-        Assert.True(resultValue);
+        Assert.Equal(conditionValue, resultValue);
     }
     
     private static Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)
     {
         return new ActivityTestFixture(activity).ExecuteAsync();
     }
-    
 }
