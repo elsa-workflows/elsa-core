@@ -35,5 +35,32 @@
         <None Update="Scenarios\JoinBehaviors\Workflows\decision-merge-join-none.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="Scenarios\WorkflowDefinitionActivities\Workflows\parent-with-input.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowDefinitionActivities\Workflows\child-with-input.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowDefinitionActivities\Workflows\child-with-outcomes.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowDefinitionActivities\Workflows\child-with-output.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowDefinitionActivities\Workflows\parent-version-fallback.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowDefinitionActivities\Workflows\parent-with-io.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowDefinitionActivities\Workflows\parent-with-outcomes.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowDefinitionActivities\Workflows\parent-with-output.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowDefinitionActivities\Workflows\child-published-version.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>

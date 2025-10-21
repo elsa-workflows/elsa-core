@@ -1,0 +1,74 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "70a093d85f846d05",
+  "definitionId": "parent-with-input",
+  "name": "ParentWithInput",
+  "createdAt": "2025-10-21T12:08:40.940992\u002B00:00",
+  "version": 4,
+  "toolVersion": "3.6.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "Flowchart1",
+    "nodeId": "Workflow2:Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "workflowDefinitionId": "d0ae88e4c15eacc0",
+        "workflowDefinitionVersionId": "e694d38a6d17f6ab",
+        "latestAvailablePublishedVersion": 1,
+        "latestAvailablePublishedVersionId": "e694d38a6d17f6ab",
+        "id": "ChildActivity1",
+        "nodeId": "Workflow2:Flowchart1:ChildActivity1",
+        "name": null,
+        "type": "ChildWithInput",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -80,
+              "y": -40
+            },
+            "size": {
+              "width": 161.8515625,
+              "height": 67.9765625
+            }
+          }
+        },
+        "message": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Hello from parent!"
+          },
+          "memoryReference": {
+            "id": "ChildActivity1:input-message"
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": []
+  }
+}
