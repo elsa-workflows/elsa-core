@@ -17,12 +17,23 @@ public static class ActivityExecutionContextExtensions
     {
         return activityExecutionContext.WorkflowExecutionContext.Scheduler.Find(x => x.Activity == activity) != null;
     }
-    
+
+    /// <summary>
+    /// Retrieves the collection of outcomes recorded in the execution context's journal data.
+    /// </summary>
+    /// <param name="activityExecutionContext">The activity execution context from which to retrieve the outcomes.</param>
+    /// <returns>A collection of outcome strings, or an empty collection if no outcomes are present.</returns>
     public static IEnumerable<string> GetOutcomes(this ActivityExecutionContext activityExecutionContext)
     {
         return activityExecutionContext.JournalData["Outcomes"] as string[] ?? [];
     }
-    
+
+    /// <summary>
+    /// Determines whether the specified outcome exists in the current activity execution context.
+    /// </summary>
+    /// <param name="activityExecutionContext">The activity execution context to check for the outcome.</param>
+    /// <param name="outcome">The outcome to verify within the execution context.</param>
+    /// <returns>True if the specified outcome exists; otherwise, false.</returns>
     public static bool HasOutcome(this ActivityExecutionContext activityExecutionContext, string outcome)
     {
         return activityExecutionContext.GetOutcomes().Contains(outcome);
