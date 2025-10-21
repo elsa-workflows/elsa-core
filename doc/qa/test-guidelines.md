@@ -198,10 +198,57 @@ public async Task Should_Return_Default_Outcome()
 
 #### **Integration tests:**
 - Place the activity inside a minimal workflow definition and run via [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs). Assert outputs/variables and that the activity integrates correctly with preceding/following activities.
+- Use [`WorkflowTestFixture`](../../src/common/Elsa.Testing.Shared.Integration/WorkflowTestFixture.cs) for simplified integration testing with automatic service provider setup and output capture.
 - If activity creates bookmarks or relies on scheduler semantics, integration tests should resume bookmarks via the engine APIs to validate resumption.
 
 Pattern note: [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) returns a [`RunWorkflowResult`](../../src/modules/Elsa.Workflows.Core/Models/RunWorkflowResult.cs) (or equivalent) containing the [`WorkflowInstance`](../../src/modules/Elsa.Workflows.Management/Entities/WorkflowInstance.cs) and output variables when run to completion.
 Use returned state for deterministic assertions where possible.
+
+**Example (using WorkflowTestFixture):**
+```csharp
+public class RunJavaScriptTests
+{
+    private readonly WorkflowTestFixture _fixture;
+
+    public RunJavaScriptTests(ITestOutputHelper testOutputHelper)
+    {
+        _fixture = new WorkflowTestFixture(testOutputHelper);
+    }
+
+    [Fact(DisplayName = "RunJavaScript should execute simple arithmetic script")]
+    public async Task Should_Execute_Simple_Script()
+    {
+        // Arrange
+        var script = "return 1 + 1;";
+        var activity = new RunJavaScript { Script = new(script), Result = new() };
+
+        // Act
+        await _fixture.RunActivityAsync(activity);
+
+        // Assert - workflow completes successfully
+        Assert.Empty(_fixture.CapturingTextWriter.Lines);
+    }
+}
+```
+
+**Example (using manual setup with IWorkflowRunner):**
+```csharp
+[Fact]
+public async Task Should_Execute_Workflow()
+{
+    // Arrange
+    var services = new TestApplicationBuilder(testOutputHelper).Build();
+    await services.PopulateRegistriesAsync();
+    var runner = services.GetRequiredService<IWorkflowRunner>();
+    var workflow = Workflow.FromActivity(new WriteLine("Hello"));
+
+    // Act
+    var result = await runner.RunAsync(workflow);
+
+    // Assert
+    Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
+}
+```
 
 ---
 
@@ -248,6 +295,12 @@ Assert.Equal(WorkflowStatus.Finished, resumed.WorkflowInstance.Status);
 | `ActivityTestFixture.ConfigureContext`          | Fluent API to configure execution context before execution   | Setting up test-specific context state                                  |
 | `ActivityTestFixture.BuildAsync`                | Build context without executing activity                     | When you need context setup without execution                           |
 | `ActivityTestFixture.ExecuteAsync`              | Execute activity and return context                          | Standard activity unit test execution                                   |
+| `WorkflowTestFixture`                           | Configure and run workflows/activities in integration tests  | Integration testing workflows and activities                            |
+| `WorkflowTestFixture.ConfigureElsa`             | Fluent API to configure Elsa features                        | Integration tests requiring custom Elsa configuration                   |
+| `WorkflowTestFixture.ConfigureServices`         | Fluent API to add services to fixture                        | Integration tests requiring custom services                             |
+| `WorkflowTestFixture.RunActivityAsync`          | Run single activity as workflow                              | Integration tests for single activities                                 |
+| `WorkflowTestFixture.RunWorkflowAsync`          | Run workflow or workflow by definition ID                    | Integration tests for workflows                                         |
+| `WorkflowTestFixture.CapturingTextWriter`       | Capture WriteLine output                                     | Asserting text output in integration tests                              |
 | `context.GetActivityOutput`                     | Get output from activity using expression selector           | Asserting activity outputs in unit tests                                |
 | `context.HasScheduledActivity`                  | Check if activity is scheduled                               | Verifying scheduling behavior in unit tests                             |
 | `context.GetOutcomes`                           | Get all outcomes from activity execution                     | Asserting multiple outcomes in unit tests                               |
@@ -327,8 +380,37 @@ public async Task MyActivity_Test()
 }
 ```
 
+### Integration test — pattern using [`WorkflowTestFixture`](../../src/common/Elsa.Testing.Shared.Integration/WorkflowTestFixture.cs)
+
+**Recommended approach** for activity integration tests:
+```csharp
+public class MyActivityTests
+{
+    private readonly WorkflowTestFixture _fixture;
+
+    public MyActivityTests(ITestOutputHelper testOutputHelper)
+    {
+        _fixture = new WorkflowTestFixture(testOutputHelper);
+    }
+
+    [Fact]
+    public async Task Activity_Completes_Successfully()
+    {
+        // Arrange
+        var activity = new MyActivity { Input = new("test") };
+
+        // Act
+        var result = await _fixture.RunActivityAsync(activity);
+
+        // Assert
+        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
+    }
+}
+```
+
 ### Integration test — pattern using [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs)
 
+**Alternative approach** with manual setup (use when you need more control):
 ```csharp
 [Fact]
 public async Task Workflow_With_MyActivity_Completes()
