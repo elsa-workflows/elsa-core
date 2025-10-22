@@ -1,7 +1,5 @@
 using System.Runtime.CompilerServices;
-using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Contracts;
-using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
@@ -35,26 +33,7 @@ public class FlowJoin : Activity, IJoinNode
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var mode = context.Get(Mode);
-
-        switch (mode)
-        {
-            case FlowJoinMode.WaitAll:
-            {
-                if (Flowchart.CanWaitAllProceed(context))
-                {
-                    Flowchart.CancelAncestorActivatesAsync(context);
-                    await context.CompleteActivityAsync();
-                }
-
-                break;
-            }
-            case FlowJoinMode.WaitAny:
-            {
-                Flowchart.CancelAncestorActivatesAsync(context);
-                await context.CompleteActivityAsync();
-                break;
-            }
-        }
+        // The join behavior is handled by Flowchart, so we can simply complete the activity here.
+        await context.CompleteActivityAsync();
     }
 }
