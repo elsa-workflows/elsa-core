@@ -166,6 +166,7 @@ public class ActivityTestFixture
         services.AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>();
         services.AddSingleton<IIdentityGenerator>(_ => Substitute.For<IIdentityGenerator>());
         services.AddSingleton<IHasher>(_ => Substitute.For<IHasher>());
+        services.AddSingleton<IStimulusHasher, StimulusHasher>();
         services.AddSingleton<ICommitStateHandler>(_ => Substitute.For<ICommitStateHandler>());
         services.AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>();
         services.AddSingleton<IWorkflowExecutionContextSchedulerStrategy, FakeWorkflowExecutionContextSchedulerStrategy>();
