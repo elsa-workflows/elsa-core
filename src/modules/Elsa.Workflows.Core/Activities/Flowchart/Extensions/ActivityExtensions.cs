@@ -8,8 +8,16 @@ public static class ActivityExtensions
 {
     public static MergeMode? GetMergeMode(this IActivity activity)
     {
-        activity.CustomProperties.TryGetValue("mergeMode", out var mergeModeString);
-        return Enum.TryParse<MergeMode>((string?)mergeModeString, true, out var mergeMode) ? mergeMode : null;
+        if (!activity.CustomProperties.TryGetValue("mergeMode", out var value))
+            return null;
+
+        // Handle both string and enum values for backwards compatibility
+        return value switch
+        {
+            MergeMode mode => mode,
+            string str when Enum.TryParse<MergeMode>(str, true, out var mode) => mode,
+            _ => null
+        };
     }
 
     public static void SetMergeMode(this IActivity activity, MergeMode? value)
@@ -17,7 +25,7 @@ public static class ActivityExtensions
         if (value == null)
             activity.CustomProperties.Remove("mergeMode");
         else
-            activity.CustomProperties["mergeMode"] = value;
+            activity.CustomProperties["mergeMode"] = value.ToString()!;
     }
     
     public static async Task<MergeMode?> GetMergeModeAsync(this IActivity activity, ActivityExecutionContext context)
