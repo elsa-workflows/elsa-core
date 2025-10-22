@@ -73,12 +73,10 @@ public class IfTests
             Then = new WriteLine(new Input<string>("then branch"))
         };
 
-        // Act & Assert
-        var exception = await Record.ExceptionAsync(() => ExecuteAsync(ifActivity));
-        Assert.Null(exception);
-        
-        // Verify result is still set correctly
+        // Act
         var context = await ExecuteAsync(ifActivity);
+
+        // Assert
         var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
         Assert.Equal(conditionValue, resultValue);
     }
@@ -94,12 +92,10 @@ public class IfTests
             Else = new WriteLine(new Input<string>("else branch"))
         };
 
-        // Act & Assert
-        var exception = await Record.ExceptionAsync(() => ExecuteAsync(ifActivity));
-        Assert.Null(exception);
-        
-        // Verify result is still set correctly
+        // Act
         var context = await ExecuteAsync(ifActivity);
+
+        // Assert
         var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
         Assert.Equal(conditionValue, resultValue);
     }
