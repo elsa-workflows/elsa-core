@@ -38,7 +38,7 @@ public class IfTests
         
         if (hasElseBranch)
         {
-            ifActivity.Else = new WriteLine(new Input<string>("else executed"));
+            ifActivity.Else = new WriteLine("else executed");
         }
 
         // Act
