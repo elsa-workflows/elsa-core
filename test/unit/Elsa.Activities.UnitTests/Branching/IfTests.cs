@@ -33,7 +33,7 @@ public class IfTests
         if (hasThenBranch)
         {
             // Using a simple WriteLine activity to avoid variable complexity
-            ifActivity.Then = new WriteLine(new Input<string>("then executed"));
+            ifActivity.Then = new WriteLine("then executed");
         }
         
         if (hasElseBranch)
