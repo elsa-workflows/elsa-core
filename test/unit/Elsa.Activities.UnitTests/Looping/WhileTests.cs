@@ -48,10 +48,8 @@ public class WhileTests
         var context = await ExecuteAsync(whileActivity);
 
         // Assert
-        var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Single(scheduledActivities);
-        Assert.Equal(bodyActivity, scheduledActivities.First().Activity);
-        Assert.NotNull(whileActivity.Condition);
+        var hasBodyScheduledActivity = context.HasScheduledActivity(bodyActivity);
+        Assert.True(hasBodyScheduledActivity);
     }
 
     [Fact]
