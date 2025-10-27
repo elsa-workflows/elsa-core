@@ -297,10 +297,4 @@ public class WriteHttpResponseTests
         using var reader = new StreamReader(httpContext.Response.Body);
         return reader.ReadToEnd();
     }
-
-    private static byte[] GetResponseBytes(HttpContext httpContext)
-    {
-        httpContext.Response.Body.Seek(0, SeekOrigin.Begin);
-        return ((MemoryStream)httpContext.Response.Body).ToArray();
-    }
 }
