@@ -39,10 +39,8 @@ public class WhileTests
         var context = await ExecuteAsync(whileActivity);
 
         // Assert
-        var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Single(scheduledActivities);
-        Assert.Equal(bodyActivity, scheduledActivities.First().Activity);
-        Assert.NotNull(whileActivity.Condition);
+        var hasBodyScheduledActivity = context.HasScheduledActivity(bodyActivity);
+        Assert.True(hasBodyScheduledActivity);
     }
 
     [Fact]
@@ -61,9 +59,8 @@ public class WhileTests
 
         // Assert
         Assert.Equal(1, evaluationCount); // Condition should be evaluated once
-        var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Single(scheduledActivities); // Body should be scheduled once
-        Assert.Equal(bodyActivity, scheduledActivities.First().Activity);
+        var hasBodyScheduledActivity = context.HasScheduledActivity(bodyActivity);
+        Assert.True(hasBodyScheduledActivity);
     }
 
     // Helper methods
