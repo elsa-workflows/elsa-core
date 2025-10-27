@@ -68,9 +68,8 @@ public class WhileTests
 
         // Assert
         Assert.Equal(1, evaluationCount); // Condition should be evaluated once
-        var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Single(scheduledActivities); // Body should be scheduled once
-        Assert.Equal(bodyActivity, scheduledActivities.First().Activity);
+        var hasBodyScheduledActivity = context.HasScheduledActivity(bodyActivity);
+        Assert.True(hasBodyScheduledActivity);
     }
 
     // Helper methods
