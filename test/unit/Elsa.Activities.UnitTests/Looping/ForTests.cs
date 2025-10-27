@@ -10,10 +10,7 @@ public class ForTests
     [Theory]
     [InlineData(1, 3, 1)] // Ascending loop
     [InlineData(5, 1, -1)] // Descending loop  
-    [InlineData(10, 12, 1)] // UpdatesCurrentValueEachIteration
-    [InlineData(0, 4, 1)] // HandlesFloatingPointSteps equivalent
-    [InlineData(10, 15, 1)] // PreservesIterationCountAccuracy
-    [InlineData(-1, -5, -1)] // NegativeRangeAndNegativeStep
+    [InlineData(-1, -5, -1)] // Descending negative loop
     public async Task ExecutesValidLoopConfigurations_SchedulesChildActivity(int start, int end, int step)
     {
         // Arrange
@@ -114,28 +111,10 @@ public class ForTests
         Assert.Equal(1, currentValue);
     }
 
-    [Fact] 
-    public async Task ValidConfiguration_SchedulesChildActivity()
-    {
-        // Arrange
-        var mockBody = new MockBodyActivity();
-        var forActivity = new For(100, 102, 1) { Body = mockBody };
-        var fixture = new ActivityTestFixture(forActivity);
-
-        // Act
-        var context = await fixture.ExecuteAsync();
-
-        // Assert
-        Assert.True(context.HasScheduledActivity(mockBody));
-        
-        var currentValue = context.GetActivityOutput(() => forActivity.CurrentValue);
-        Assert.Equal(100, currentValue);
-    }
-
     [Theory]
-    [InlineData(0, 5)] // Start with default value (0)
-    [InlineData(1, 0)] // End with explicit zero value
-    public async Task HandlesDefaultValues(int start, int end)
+    [InlineData(0, 5, true)]  // Start with default value (0), should execute
+    [InlineData(1, 0, false)] // End with explicit zero value, should not execute (wrong direction)
+    public async Task HandlesDefaultValues(int start, int end, bool shouldExecute)
     {
         // Arrange
         var mockBody = new MockBodyActivity();
@@ -152,10 +131,9 @@ public class ForTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        bool shouldSchedule = ShouldExecuteLoop(start, end, 1);
-        Assert.Equal(shouldSchedule, context.HasScheduledActivity(mockBody));
+        Assert.Equal(shouldExecute, context.HasScheduledActivity(mockBody));
         
-        if (shouldSchedule)
+        if (shouldExecute)
         {
             var currentValue = context.GetActivityOutput(() => forActivity.CurrentValue);
             Assert.Equal(start, currentValue);
