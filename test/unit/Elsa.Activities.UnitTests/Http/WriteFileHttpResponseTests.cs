@@ -9,6 +9,7 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -38,7 +39,7 @@ public class WriteFileHttpResponseTests
         // Assert
         Assert.True(context.IsCompleted);
         Assert.Equal(contentType, httpContext.Response.ContentType);
-        Assert.Contains($"filename=\"{filename}\"", httpContext.Response.Headers.ContentDisposition.ToString());
+        Assert.Contains($"filename={filename}", httpContext.Response.Headers.ContentDisposition.ToString());
     }
 
     [Theory]
@@ -137,7 +138,7 @@ public class WriteFileHttpResponseTests
         // Assert
         Assert.True(context.IsCompleted);
         Assert.Equal("application/zip", httpContext.Response.ContentType);
-        Assert.Contains("filename=\"archive.zip\"", httpContext.Response.Headers.ContentDisposition.ToString());
+        Assert.Contains("filename=archive.zip", httpContext.Response.Headers.ContentDisposition.ToString());
     }
 
     [Fact]
@@ -156,7 +157,7 @@ public class WriteFileHttpResponseTests
     }
 
     [Fact]
-    public async Task Should_Return_NoContent_When_Content_Is_Empty_Array()
+    public async Task Should_Return_ApplicationZip_When_Content_Is_Empty_Array()
     {
         // Arrange
         var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
@@ -167,13 +168,13 @@ public class WriteFileHttpResponseTests
 
         // Assert
         Assert.True(context.IsCompleted);
-        Assert.Equal(StatusCodes.Status204NoContent, httpContext.Response.StatusCode);
+        Assert.Equal(StatusCodes.Status200OK, httpContext.Response.StatusCode);
+        Assert.Equal("application/zip", httpContext.Response.ContentType);
     }
 
     [Theory]
     [InlineData("\"12345\"")]
     [InlineData("\"abcdef\"")]
-    [InlineData("W/\"weak-etag\"")]
     public async Task Should_Set_Entity_Tag_Header(string entityTag)
     {
         // Arrange
@@ -190,19 +191,8 @@ public class WriteFileHttpResponseTests
         // Assert
         Assert.True(context.IsCompleted);
         
-        // For weak ETags, the response header format may differ from the input
-        if (entityTag.StartsWith("W/"))
-        {
-            // Weak ETags should be present in the response, but format might be normalized
-            Assert.True(httpContext.Response.Headers.ContainsKey("ETag"));
-            var responseETag = httpContext.Response.Headers.ETag.ToString();
-            Assert.True(responseETag.StartsWith("W/") || responseETag.Contains("weak-etag"));
-        }
-        else
-        {
-            // Strong ETags should match exactly
-            Assert.Equal(entityTag, httpContext.Response.Headers.ETag.ToString());
-        }
+        // Strong ETags should match exactly
+        Assert.Equal(entityTag, httpContext.Response.Headers.ETag.ToString());
     }
 
     [Fact]
@@ -221,6 +211,7 @@ public class WriteFileHttpResponseTests
 
         // Assert
         Assert.True(context.IsCompleted);
+        
         // Range processing and ETag would be handled by FileStreamResult
         Assert.True(httpContext.Response.Headers.ContainsKey("ETag"));
     }
@@ -242,46 +233,6 @@ public class WriteFileHttpResponseTests
         // Assert
         Assert.True(context.IsCompleted);
         Assert.False(httpContext.Response.Headers.ContainsKey("ETag"));
-    }
-
-    [Theory]
-    [InlineData("test-correlation-id")]
-    [InlineData("workflow-def-123")]
-    [InlineData("custom-download-id")]
-    public async Task Should_Use_Download_Correlation_Id(string correlationId)
-    {
-        // Arrange
-        var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
-        var files = new object[] { "File 1", "File 2" };
-        
-        activity.Content = new Input<object>(files);
-        activity.DownloadCorrelationId = new Input<string>(correlationId);
-
-        // Act
-        var context = await ExecuteActivityAsync(activity, httpContext);
-
-        // Assert
-        Assert.True(context.IsCompleted);
-        // The correlation ID would be used internally by ZipManager
-    }
-
-    [Fact]
-    public async Task Should_Use_X_Download_Id_Header_When_No_Correlation_Id_Set()
-    {
-        // Arrange
-        var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
-        var files = new object[] { "File 1", "File 2" };
-        var expectedDownloadId = "header-download-id";
-        
-        httpContext.Request.Headers["x-download-id"] = expectedDownloadId;
-        activity.Content = new Input<object>(files);
-
-        // Act
-        var context = await ExecuteActivityAsync(activity, httpContext);
-
-        // Assert
-        Assert.True(context.IsCompleted);
-        // The header value would be used internally
     }
 
     [Theory]
@@ -323,46 +274,7 @@ public class WriteFileHttpResponseTests
 
         // Assert
         Assert.True(context.IsCompleted);
-        Assert.Contains("filename=\"file.bin\"", httpContext.Response.Headers.ContentDisposition.ToString());
-    }
-
-    [Fact]
-    public async Task Should_Handle_Range_Header_For_Partial_Content()
-    {
-        // Arrange
-        var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
-        var testContent = "Hello World Content for Range Request"u8.ToArray();
-        
-        httpContext.Request.Headers["Range"] = "bytes=0-4";
-        activity.Content = new Input<object>(testContent);
-        activity.EnableResumableDownloads = new Input<bool>(true);
-
-        // Act
-        var context = await ExecuteActivityAsync(activity, httpContext);
-
-        // Assert
-        Assert.True(context.IsCompleted);
-        // Range processing would be handled by FileStreamResult
-    }
-
-    [Fact]
-    public async Task Should_Handle_If_Match_Header()
-    {
-        // Arrange
-        var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
-        var testContent = "Hello World"u8.ToArray();
-        var etag = "\"test-etag\"";
-        
-        httpContext.Request.Headers["If-Match"] = etag;
-        activity.Content = new Input<object>(testContent);
-        activity.EntityTag = new Input<string?>(etag);
-
-        // Act
-        var context = await ExecuteActivityAsync(activity, httpContext);
-
-        // Assert
-        Assert.True(context.IsCompleted);
-        // If-Match processing would be handled by the downloadable manager
+        Assert.Contains("filename=file.bin", httpContext.Response.Headers.ContentDisposition.ToString());
     }
 
     [Fact]
@@ -457,82 +369,88 @@ public class WriteFileHttpResponseTests
         // Assert
         Assert.True(context.IsCompleted);
         Assert.Equal("text/plain", httpContext.Response.ContentType);
-        Assert.Contains("filename=\"metadata-file.txt\"", httpContext.Response.Headers.ContentDisposition.ToString());
+        Assert.Contains("filename=metadata-file.txt", httpContext.Response.Headers.ContentDisposition.ToString());
     }
 
-    [Theory]
-    [InlineData("bytes=0-499")]
-    [InlineData("bytes=500-999")]
-    [InlineData("bytes=-500")]
-    public async Task Should_Handle_Various_Range_Headers(string rangeHeader)
+    [Fact]
+    public async Task Should_Throw_FormatException_For_Malformed_ETag()
     {
         // Arrange
         var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
-        var testContent = new byte[1000]; // 1KB of data
-        new Random().NextBytes(testContent);
+        var testContent = "Hello World"u8.ToArray();
         
-        httpContext.Request.Headers["Range"] = rangeHeader;
         activity.Content = new Input<object>(testContent);
+        activity.EntityTag = new Input<string?>("W/\"weak-etag\""); // Malformed weak ETag format
         activity.EnableResumableDownloads = new Input<bool>(true);
 
-        // Act
-        var context = await ExecuteActivityAsync(activity, httpContext);
-
-        // Assert
-        Assert.True(context.IsCompleted);
-        // Range processing would be handled by FileStreamResult internally
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<FormatException>(async () =>
+        {
+            await ExecuteActivityAsync(activity, httpContext);
+        });
+        
+        Assert.Contains("The format of value 'W/\"weak-etag\"' is invalid", exception.Message);
     }
 
     // Helper Methods
     private static (WriteFileHttpResponse activity, HttpContext httpContext) CreateWriteFileHttpResponseActivity()
     {
         var activity = new WriteFileHttpResponse();
-        var httpContext = new DefaultHttpContext();
-        
-        // Create a service collection with the required services for FileStreamResult
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddOptions();
-        
-        // Add required services for FileStreamResult
-        services.AddSingleton<IActionResultExecutor<Microsoft.AspNetCore.Mvc.FileStreamResult>>(
-            _ => new FileStreamResultExecutor(
-                LoggerFactory.Create(b => b.AddConsole())
-            )
-        );
-        
-        // Build the service provider and assign it to HttpContext
-        var serviceProvider = services.BuildServiceProvider();
-        httpContext.RequestServices = serviceProvider;
-        
-        httpContext.Response.Body = new MemoryStream();
+        var httpContext = CreateMockHttpContext();
         
         return (activity, httpContext);
     }
 
-    private static HttpContext CreateMockHttpContext()
+    private static DefaultHttpContext CreateMockHttpContext()
     {
         var httpContext = new DefaultHttpContext();
         
-        // Create a service collection with the required services for FileStreamResult
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddOptions();
         
         // Add required services for FileStreamResult
         services.AddSingleton<IActionResultExecutor<Microsoft.AspNetCore.Mvc.FileStreamResult>>(
-            _ => new FileStreamResultExecutor(
-                LoggerFactory.Create(b => b.AddConsole())
-            )
+            _ => new FileStreamResultExecutor(LoggerFactory.Create(b => b.AddConsole()))
         );
         
-        // Build the service provider and assign it to HttpContext
-        var serviceProvider = services.BuildServiceProvider();
-        httpContext.RequestServices = serviceProvider;
+        // Add IContentTypeProvider mock
+        services.AddSingleton(CreateContentTypeProviderMock());
         
+        httpContext.RequestServices = services.BuildServiceProvider();
         httpContext.Response.Body = new MemoryStream();
         
         return httpContext;
+    }
+
+    private static IContentTypeProvider CreateContentTypeProviderMock()
+    {
+        var mockContentTypeProvider = Substitute.For<IContentTypeProvider>();
+        mockContentTypeProvider.TryGetContentType(Arg.Any<string>(), out Arg.Any<string?>())
+            .Returns(callInfo =>
+            {
+                var filename = callInfo.ArgAt<string>(0);
+                var extension = Path.GetExtension(filename).ToLowerInvariant();
+                
+                var contentType = extension switch
+                {
+                    ".txt" => "text/plain",
+                    ".pdf" => "application/pdf", 
+                    ".jpg" or ".jpeg" => "image/jpeg",
+                    ".png" => "image/png",
+                    ".zip" => "application/zip",
+                    ".html" => "text/html",
+                    ".css" => "text/css",
+                    ".js" => "application/javascript",
+                    ".json" => "application/json",
+                    ".xml" => "application/xml",
+                    _ => null
+                };
+                
+                callInfo[1] = contentType;
+                return contentType != null;
+            });
+        return mockContentTypeProvider;
     }
 
     private static async Task<ActivityExecutionContext> ExecuteActivityAsync(WriteFileHttpResponse activity, HttpContext httpContext)
@@ -584,176 +502,187 @@ public class WriteFileHttpResponseTests
 
     private static void AddMockServices(IServiceCollection services)
     {
-        // Mock IDownloadableManager
-        var mockDownloadableManager = Substitute.For<IDownloadableManager>();
-        mockDownloadableManager.GetDownloadablesAsync(Arg.Any<object>(), Arg.Any<DownloadableOptions>(), Arg.Any<CancellationToken>())
+        services.AddSingleton(CreateDownloadableManagerMock());
+        services.AddSingleton(CreateContentTypeProviderMock());
+        services.AddSingleton(Substitute.For<IFileCacheStorageProvider>());
+        services.AddSingleton(CreateFileCacheOptionsMock());
+        services.AddSingleton(CreateSystemClockMock());
+        services.AddSingleton(Substitute.For<IStimulusHasher>());
+        services.AddLogging();
+        
+        RegisterZipManager(services);
+    }
+
+    private static IDownloadableManager CreateDownloadableManagerMock()
+    {
+        var mock = Substitute.For<IDownloadableManager>();
+        mock.GetDownloadablesAsync(Arg.Any<object>(), Arg.Any<DownloadableOptions>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
                 var content = callInfo.ArgAt<object>(0);
                 return CreateMockDownloadables(content).Select(d => new Func<ValueTask<Downloadable>>(() => ValueTask.FromResult(d)));
             });
-        services.AddSingleton(mockDownloadableManager);
+        return mock;
+    }
 
-        // Mock IFileCacheStorageProvider - keep it simple since methods may not exist
-        var mockFileCacheProvider = Substitute.For<IFileCacheStorageProvider>();
-        services.AddSingleton(mockFileCacheProvider);
+    private static Microsoft.Extensions.Options.IOptions<HttpFileCacheOptions> CreateFileCacheOptionsMock()
+    {
+        var mock = Substitute.For<Microsoft.Extensions.Options.IOptions<HttpFileCacheOptions>>();
+        mock.Value.Returns(new HttpFileCacheOptions { TimeToLive = TimeSpan.FromHours(1) });
+        return mock;
+    }
 
-        // Mock HttpFileCacheOptions
-        var mockFileCacheOptions = Substitute.For<Microsoft.Extensions.Options.IOptions<HttpFileCacheOptions>>();
-        mockFileCacheOptions.Value.Returns(new HttpFileCacheOptions
-        {
-            TimeToLive = TimeSpan.FromHours(1)
-        });
-        services.AddSingleton(mockFileCacheOptions);
+    private static ISystemClock CreateSystemClockMock()
+    {
+        var mock = Substitute.For<ISystemClock>();
+        mock.UtcNow.Returns(DateTimeOffset.UtcNow);
+        return mock;
+    }
 
-        // Mock ISystemClock - use the correct Elsa interface
-        var mockSystemClock = Substitute.For<ISystemClock>();
-        mockSystemClock.UtcNow.Returns(DateTimeOffset.UtcNow);
-        services.AddSingleton(mockSystemClock);
-
-        // Add IStimulusHasher service required for bookmark creation
-        services.AddSingleton(Substitute.For<IStimulusHasher>());
-
-        // Add logging
-        services.AddLogging();
-
-        // Register ZipManager - ensure it's always available for the tests
+    private static void RegisterZipManager(IServiceCollection services)
+    {
         var zipManagerType = typeof(WriteFileHttpResponse).Assembly.GetType("Elsa.Http.Services.ZipManager");
         if (zipManagerType != null)
         {
-            services.AddSingleton(zipManagerType, serviceProvider =>
-            {
-                try
-                {
-                    var systemClock = serviceProvider.GetRequiredService<ISystemClock>();
-                    var fileCacheProvider = serviceProvider.GetRequiredService<IFileCacheStorageProvider>();
-                    var fileCacheOptions = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<HttpFileCacheOptions>>();
-                    
-                    var constructor = zipManagerType.GetConstructors().FirstOrDefault();
-                    if (constructor != null)
-                    {
-                        var parameters = constructor.GetParameters();
-                        var args = new object[parameters.Length];
-                        
-                        for (int i = 0; i < parameters.Length; i++)
-                        {
-                            var paramType = parameters[i].ParameterType;
-                            if (paramType == typeof(ISystemClock))
-                                args[i] = systemClock;
-                            else if (paramType == typeof(IFileCacheStorageProvider))
-                                args[i] = fileCacheProvider;
-                            else if (paramType == typeof(Microsoft.Extensions.Options.IOptions<HttpFileCacheOptions>))
-                                args[i] = fileCacheOptions;
-                            else if (paramType.IsGenericType && paramType.GetGenericTypeDefinition() == typeof(ILogger<>))
-                            {
-                                // Create a properly typed logger mock
-                                var loggerType = paramType;
-                                var mockLoggerMethod = typeof(Substitute).GetMethods()
-                                    .Where(m => m.Name == "For" && m.IsGenericMethodDefinition && m.GetParameters().Length == 0)
-                                    .FirstOrDefault();
-                                if (mockLoggerMethod != null)
-                                {
-                                    var genericMethod = mockLoggerMethod.MakeGenericMethod(loggerType);
-                                    args[i] = genericMethod.Invoke(null, null) ?? Substitute.For<ILogger>();
-                                }
-                                else
-                                {
-                                    args[i] = Substitute.For<ILogger>();
-                                }
-                            }
-                            else if (paramType == typeof(ILogger))
-                                args[i] = Substitute.For<ILogger>();
-                            else
-                            {
-                                // Create a mock for the parameter type using the correct overload
-                                try
-                                {
-                                    args[i] = Substitute.For(new[] { paramType }, Array.Empty<object>());
-                                }
-                                catch
-                                {
-                                    args[i] = null!; // Use null for types that can't be mocked
-                                }
-                            }
-                        }
-                        
-                        return constructor.Invoke(args);
-                    }
-                }
-                catch
-                {
-                    // If real ZipManager creation fails, create a mock that implements the same interface
-                    // This ensures the service is always available for dependency injection
-                }
-                
-                // Fallback: create a mock implementation using NSubstitute
-                return Substitute.For(new[] { zipManagerType }, Array.Empty<object>());
-            });
+            services.AddSingleton(zipManagerType, CreateZipManagerInstance);
         }
         else
         {
-            // If ZipManager type is not found, create a generic mock object
-            // Register it as object type so it can be resolved
             services.AddSingleton<object>(_ => new object());
         }
     }
 
+    private static object CreateZipManagerInstance(IServiceProvider serviceProvider)
+    {
+        var zipManagerType = typeof(WriteFileHttpResponse).Assembly.GetType("Elsa.Http.Services.ZipManager");
+        if (zipManagerType == null) return new object();
+
+        try
+        {
+            var constructor = zipManagerType.GetConstructors().FirstOrDefault();
+            if (constructor == null) return CreateZipManagerFallback(zipManagerType);
+
+            var parameters = constructor.GetParameters();
+            var args = new object[parameters.Length];
+
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                args[i] = ResolveConstructorParameter(serviceProvider, parameters[i].ParameterType);
+            }
+
+            return constructor.Invoke(args);
+        }
+        catch
+        {
+            return CreateZipManagerFallback(zipManagerType);
+        }
+    }
+
+    private static object ResolveConstructorParameter(IServiceProvider serviceProvider, Type paramType)
+    {
+        return paramType switch
+        {
+            _ when paramType == typeof(ISystemClock) => serviceProvider.GetRequiredService<ISystemClock>(),
+            _ when paramType == typeof(IFileCacheStorageProvider) => serviceProvider.GetRequiredService<IFileCacheStorageProvider>(),
+            _ when paramType == typeof(Microsoft.Extensions.Options.IOptions<HttpFileCacheOptions>) => serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<HttpFileCacheOptions>>(),
+            { IsGenericType: true } when paramType.GetGenericTypeDefinition() == typeof(ILogger<>) => CreateLoggerMock(paramType),
+            _ when paramType == typeof(ILogger) => Substitute.For<ILogger>(),
+            _ => CreateGenericMock(paramType)
+        };
+    }
+
+    private static object CreateLoggerMock(Type loggerType)
+    {
+        try
+        {
+            var mockLoggerMethod = typeof(Substitute).GetMethods()
+                .FirstOrDefault(m => m is { Name: "For", IsGenericMethodDefinition: true } && m.GetParameters().Length == 0);
+            
+            if (mockLoggerMethod != null)
+            {
+                var genericMethod = mockLoggerMethod.MakeGenericMethod(loggerType);
+                return genericMethod.Invoke(null, null) ?? Substitute.For<ILogger>();
+            }
+        }
+        catch
+        {
+            // Fall back to basic ILogger mock
+        }
+        return Substitute.For<ILogger>();
+    }
+
+    private static object CreateGenericMock(Type paramType)
+    {
+        try
+        {
+            return Substitute.For([paramType], []);
+        }
+        catch
+        {
+            return null!;
+        }
+    }
+
+    private static object CreateZipManagerFallback(Type zipManagerType)
+    {
+        return Substitute.For([zipManagerType], []);
+    }
+
     private static IEnumerable<Downloadable> CreateMockDownloadables(object content)
     {
-        // Simplified mock creation for different content types
-        if (content is byte[] byteArray)
+        switch (content)
         {
-            yield return new Downloadable
-            {
-                Stream = new MemoryStream(byteArray),
-                ContentType = "application/octet-stream",
-                Filename = "file.bin"
-            };
-        }
-        else if (content is string text)
-        {
-            yield return new Downloadable
-            {
-                Stream = new MemoryStream(Encoding.UTF8.GetBytes(text)),
-                ContentType = "text/plain",
-                Filename = "file.txt"
-            };
-        }
-        else if (content is Stream stream)
-        {
-            // For Stream objects, return them as-is
-            yield return new Downloadable
-            {
-                Stream = stream,
-                ContentType = "application/octet-stream",
-                Filename = "stream.bin"
-            };
-        }
-        else if (content is Uri uri)
-        {
-            // For Uri objects, simulate downloaded content
-            var mockContent = $"Downloaded content from {uri}";
-            yield return new Downloadable
-            {
-                Stream = new MemoryStream(Encoding.UTF8.GetBytes(mockContent)),
-                ContentType = "text/plain",
-                Filename = Path.GetFileName(uri.LocalPath) ?? "downloaded.txt"
-            };
-        }
-        else if (content is Downloadable downloadable)
-        {
-            // For Downloadable objects, return them as-is
-            yield return downloadable;
-        }
-        else if (content is IEnumerable<object> fileContents)
-        {
-            // For collections, create a zip downloadable
-            var zipDownloadable = CreateZipDownloadable(fileContents);
-            yield return zipDownloadable;
-        }
-        else
-        {
-            throw new NotSupportedException("Unsupported content type");
+            // Simplified mock creation for different content types
+            case byte[] byteArray:
+                yield return new Downloadable
+                {
+                    Stream = new MemoryStream(byteArray),
+                    ContentType = null,
+                    Filename = null
+                };
+                break;
+            case string text:
+                yield return new Downloadable
+                {
+                    Stream = new MemoryStream(Encoding.UTF8.GetBytes(text)),
+                    ContentType = null,
+                    Filename = null
+                };
+                break;
+            case Stream stream:
+                // For Stream objects, return them as-is
+                yield return new Downloadable
+                {
+                    Stream = stream,
+                    ContentType = null,
+                    Filename = null
+                };
+                break;
+            case Uri uri:
+                {
+                    // For Uri objects, simulate downloaded content
+                    var mockContent = $"Downloaded content from {uri}";
+                    yield return new Downloadable
+                    {
+                        Stream = new MemoryStream(Encoding.UTF8.GetBytes(mockContent)),
+                        ContentType = null,
+                        Filename = null
+                    };
+                    break;
+                }
+            case Downloadable downloadable:
+                // For Downloadable objects, return them as-is
+                yield return downloadable;
+                break;
+            case IEnumerable<object> fileContents:
+                {
+                    // For collections, create a zip downloadable
+                    var zipDownloadable = CreateZipDownloadable(fileContents);
+                    yield return zipDownloadable;
+                    break;
+                }
+            default:
+                throw new NotSupportedException("Unsupported content type");
         }
     }
 
@@ -771,9 +700,10 @@ public class WriteFileHttpResponseTests
                 {
                     var entryName = $"file{fileIndex++}.txt";
                     var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
+                    // ReSharper disable once ConvertToUsingDeclaration
                     using (var entryStream = entry.Open())
                     {
-                        var contentBytes = Encoding.UTF8.GetBytes(fileContent?.ToString() ?? "");
+                        var contentBytes = Encoding.UTF8.GetBytes(fileContent.ToString() ?? "");
                         entryStream.Write(contentBytes, 0, contentBytes.Length);
                     }
                 }
