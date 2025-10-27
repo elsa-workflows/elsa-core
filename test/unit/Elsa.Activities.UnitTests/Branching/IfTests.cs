@@ -170,7 +170,7 @@ public class IfTests
     }
     
     [Fact]
-    public async Task Should_Not_Throw_Error_When_Condition_Is_Not_Set()
+    public async Task Should_Return_False_When_Condition_Is_Not_Set()
     {
         // Arrange
         var ifActivity = new If(); // no condition provided
@@ -181,7 +181,9 @@ public class IfTests
         var context = await ExecuteAsync(ifActivity);
         
         // Assert
-        Assert.NotNull(context);
+        var resultValue = (bool)context.GetActivityOutput(() => ifActivity.Result)!;
+        Assert.False(resultValue, "If activity should return false when no condition is set");
+        Assert.False(context.HasScheduledActivity(thenActivity), "Then branch should not be scheduled when condition defaults to false");
     }
     
     [Fact]
