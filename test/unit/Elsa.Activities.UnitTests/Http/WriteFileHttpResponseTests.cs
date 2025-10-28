@@ -700,7 +700,7 @@ public class WriteFileHttpResponseTests
                 {
                     var entryName = $"file{fileIndex++}.txt";
                     var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
-                    // ReSharper disable once ConvertToUsingDeclaration
+                    
                     using (var entryStream = entry.Open())
                     {
                         var contentBytes = Encoding.UTF8.GetBytes(fileContent.ToString() ?? "");
