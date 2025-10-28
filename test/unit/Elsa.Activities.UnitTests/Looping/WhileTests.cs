@@ -51,21 +51,39 @@ public class WhileTests
     [InlineData(10)]
     public async Task Should_Evaluate_Condition_Before_Each_Iteration(int maxIterations)
     {
-        // Arrange
-        var evaluationCount = 0;
+        // Arrange - Create separate condition functions for each test case to verify 
+        // that each execution of the While activity evaluates the condition exactly once
+        var conditionEvaluationCount = 0;
         var bodyActivity = Substitute.For<IActivity>();
-        var whileActivity = new While(
-            condition: new Input<bool>(_ => ++evaluationCount <= maxIterations),
-            body: bodyActivity
-        );
+        
+        // Create condition that tracks evaluation count across multiple While activity executions
+        var condition = new Input<bool>(_ => 
+        {
+            conditionEvaluationCount++;
+            // Return true for the first few evaluations, then false to exit
+            return conditionEvaluationCount <= maxIterations;
+        });
+        
+        var whileActivity = new While(condition, bodyActivity);
 
-        // Act
-        var context = await ExecuteAsync(whileActivity);
-
-        // Assert
-        Assert.Equal(1, evaluationCount); // While activity evaluates condition once per execution
-        var hasBodyScheduledActivity = context.HasScheduledActivity(bodyActivity);
-        Assert.True(hasBodyScheduledActivity); // Body should be scheduled since condition is true on first evaluation
+        // Act - Execute the While activity multiple times to simulate loop iterations
+        // Each execution represents one iteration of the loop in real workflow execution
+        for (var iteration = 1; iteration <= maxIterations; iteration++)
+        {
+            // Execute the While activity (this represents one iteration of the loop)
+            var context = await ExecuteAsync(whileActivity);
+            
+            // Assert this iteration
+            Assert.Equal(iteration, conditionEvaluationCount); // Condition evaluated exactly once per execution
+            Assert.True(context.HasScheduledActivity(bodyActivity)); // Body should be scheduled because condition is true
+        }
+        
+        // Execute one final time - this should make the condition false and not schedule the body
+        var finalContext = await ExecuteAsync(whileActivity);
+        
+        // Assert final execution
+        Assert.Equal(maxIterations + 1, conditionEvaluationCount); // One final evaluation that returns false
+        Assert.False(finalContext.HasScheduledActivity(bodyActivity)); // Body NOT scheduled because condition is false
     }
     
     [Fact]
