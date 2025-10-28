@@ -45,14 +45,17 @@ public class WhileTests
         Assert.True(hasBodyScheduledActivity);
     }
 
-    [Fact]
-    public async Task Should_Evaluate_Condition_Before_Each_Iteration()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(5)]
+    [InlineData(10)]
+    public async Task Should_Evaluate_Condition_Before_Each_Iteration(int maxIterations)
     {
         // Arrange
         var evaluationCount = 0;
         var bodyActivity = Substitute.For<IActivity>();
         var whileActivity = new While(
-            condition: new Input<bool>(_ => ++evaluationCount <= 1), // Only true for first evaluation
+            condition: new Input<bool>(_ => ++evaluationCount <= maxIterations),
             body: bodyActivity
         );
 
@@ -60,9 +63,9 @@ public class WhileTests
         var context = await ExecuteAsync(whileActivity);
 
         // Assert
-        Assert.Equal(1, evaluationCount); // Condition should be evaluated once
+        Assert.Equal(1, evaluationCount); // While activity evaluates condition once per execution
         var hasBodyScheduledActivity = context.HasScheduledActivity(bodyActivity);
-        Assert.True(hasBodyScheduledActivity);
+        Assert.True(hasBodyScheduledActivity); // Body should be scheduled since condition is true on first evaluation
     }
     
     [Fact]
