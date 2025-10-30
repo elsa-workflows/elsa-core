@@ -25,7 +25,7 @@ public class RunJavaScript : CodeActivity<object?>
     /// <inheritdoc />
     public RunJavaScript(string script, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
-        Script = new Input<string>(script);
+        Script = new(script);
     }
 
     /// <summary>

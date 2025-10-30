@@ -11,7 +11,7 @@ public class ForkTests
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
-    private IServiceProvider _services;
+    private readonly IServiceProvider _services;
 
     public ForkTests(ITestOutputHelper testOutputHelper)
     {

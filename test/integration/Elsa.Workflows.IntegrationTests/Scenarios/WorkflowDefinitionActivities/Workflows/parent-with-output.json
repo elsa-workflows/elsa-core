@@ -1,0 +1,107 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "b1f4fc14b3c6b51",
+  "definitionId": "parent-with-output",
+  "name": "ParentWithOutput",
+  "createdAt": "2025-10-21T12:27:50.918094\u002B00:00",
+  "version": 1,
+  "toolVersion": "3.6.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "bcbe1e9e5a9c9b0e",
+    "nodeId": "Workflow2:bcbe1e9e5a9c9b0e",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "workflowDefinitionId": "5781ed56ea4b160",
+        "workflowDefinitionVersionId": "4da8180d0c9f7e3f",
+        "latestAvailablePublishedVersion": 4,
+        "latestAvailablePublishedVersionId": "4da8180d0c9f7e3f",
+        "id": "c98383464dab2047",
+        "nodeId": "Workflow2:bcbe1e9e5a9c9b0e:c98383464dab2047",
+        "name": "ChildWithOutput1",
+        "type": "ChildWithOutput",
+        "version": 4,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -323.5,
+              "y": -85.5
+            },
+            "size": {
+              "width": 174.1640625,
+              "height": 67.9765625
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "\u0060Received from child: ${getOutputFromChildWithOutput1()}\u0060"
+          }
+        },
+        "id": "b4f314dce11c7135",
+        "nodeId": "Workflow2:bcbe1e9e5a9c9b0e:b4f314dce11c7135",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -27.5,
+              "y": -85.5
+            },
+            "size": {
+              "width": 159.6171875,
+              "height": 67.9765625
+            }
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": [
+      {
+        "source": {
+          "activity": "c98383464dab2047",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "b4f314dce11c7135",
+          "port": "In"
+        },
+        "vertices": []
+      }
+    ]
+  }
+}

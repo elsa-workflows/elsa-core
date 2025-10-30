@@ -1,3 +1,5 @@
+using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 
@@ -6,12 +8,16 @@ namespace Elsa.Activities.UnitTests.Primitives;
 public class SetVariableTests
 {
     [Fact]
-    public async Task Should_Set_Variable_Integer()
+    public async Task Should_Set_Variable()
     {
         // Arrange
-        const int expected = 42; // The answer to life, the universe and everything.
-        var variable = new Variable<int>("myVar", 0, "myVar");
-        var setVariable = new SetVariable<int>(variable, new Input<int>(expected));
+        const int expected = 42;
+        var variable = new Variable("myVar", 0, "myVar");
+        var setVariable = new SetVariable
+        {
+            Variable = variable,
+            Value = new(expected)
+        };
 
         // Act
         var context = await ExecuteAsync(setVariable);
@@ -25,12 +31,17 @@ public class SetVariableTests
     public async Task Should_Throw_When_Variable_Is_Null()
     {
         // Arrange
-        var setVariable = new SetVariable<string>(null!, new Input<string>("test value"));
+        var setVariable = new SetVariable
+        {
+            Variable = null,
+            Value = new("test value")
+        };
 
         // Act & Assert
         var exception = await Record.ExceptionAsync(() => ExecuteAsync(setVariable));
 
         Assert.NotNull(exception);
+        Assert.IsType<InvalidOperationException>(exception);
     }
 
     [Fact]
@@ -38,7 +49,11 @@ public class SetVariableTests
     {
         // Arrange
         var variable = new Variable<string?>("myVar", "initial value", "myVar");
-        var setVariable = new SetVariable<string?>(variable, new Input<string?>((string?)null));
+        var setVariable = new SetVariable
+        {
+            Variable = variable,
+            Value = new(new Literal(null))
+        };
 
         // Act
         var context = await ExecuteAsync(setVariable);
@@ -47,9 +62,9 @@ public class SetVariableTests
         var result = variable.Get(context);
         Assert.Null(result);
     }
-    
-    private static Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)
+
+    private static async Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)
     {
-        return new ActivityTestFixture(activity).ExecuteAsync();
+        return await new ActivityTestFixture(activity).ExecuteAsync();
     }
 }
