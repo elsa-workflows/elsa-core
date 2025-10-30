@@ -134,6 +134,12 @@ public class HttpEndpoint : Trigger<HttpRequest>
     public Output<IFormFile[]> Files { get; set; } = null!;
 
     /// <summary>
+    /// The first uploaded file, if any.
+    /// </summary>
+    [Output(Description = "The first uploaded file, if any.", IsSerializable = false)]
+    public Output<IFormFile?> File { get; set; } = null!;
+
+    /// <summary>
     /// The parsed route data, if any.
     /// </summary>
     [Output(Description = "The parsed route data, if any.")]
@@ -246,6 +252,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
                 }
 
                 Files.Set(context, files.ToArray());
+                File.Set(context, files.FirstOrDefault());
             }
         }
         else

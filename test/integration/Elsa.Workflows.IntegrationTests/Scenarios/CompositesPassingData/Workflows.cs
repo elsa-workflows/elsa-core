@@ -11,15 +11,15 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.CompositesPassingData;
 /// </summary>
 public class AddTextSubWorkflow : Composite
 {
-    public Input<string> A { get; set; } = default!;
-    public Output<string> B { get; set; } = default!;
+    public Input<string> A { get; set; } = null!;
+    public Output<string> B { get; set; } = null!;
 
     public AddTextSubWorkflow()
     {
         var setOutput = new SetOutput()
         {
-            OutputName = new Input<string>("B"),
-            OutputValue = new Input<object?>(context => "hi there " + A.Get(context))
+            OutputName = new("B"),
+            OutputValue = new(context => "hi there " + A.Get(context))
         };
 
         Root = new Sequence

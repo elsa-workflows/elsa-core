@@ -128,12 +128,15 @@ public class ActivityTestFixture
     {
         var activityType = activity.GetType();
         var variableProperties = activityType.GetProperties()
-            .Where(p => p.PropertyType.IsGenericType &&
-                        p.PropertyType.GetGenericTypeDefinition() == typeof(Variable<>))
+            .Where(p => typeof(Variable).IsAssignableFrom(p.PropertyType))
             .ToList();
 
-        foreach (var variable in variableProperties.Select(property => (Variable)property.GetValue(activity)!))
+        foreach (var variable in variableProperties.Select(property => (Variable?)property.GetValue(activity)))
         {
+            if(variable == null)
+                continue;
+            
+            context.WorkflowExecutionContext.MemoryRegister.Declare(variable);
             variable.Set(context.ExpressionExecutionContext, variable.Value);
         }
 
@@ -163,6 +166,7 @@ public class ActivityTestFixture
         services.AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>();
         services.AddSingleton<IIdentityGenerator>(_ => Substitute.For<IIdentityGenerator>());
         services.AddSingleton<IHasher>(_ => Substitute.For<IHasher>());
+        services.AddSingleton<IStimulusHasher, StimulusHasher>();
         services.AddSingleton<ICommitStateHandler>(_ => Substitute.For<ICommitStateHandler>());
         services.AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>();
         services.AddSingleton<IWorkflowExecutionContextSchedulerStrategy, FakeWorkflowExecutionContextSchedulerStrategy>();

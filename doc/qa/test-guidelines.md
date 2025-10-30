@@ -195,13 +195,91 @@ public async Task Should_Return_Default_Outcome()
     Assert.True(context.HasOutcome("Default"));
 }
 ```
-
 #### **Integration tests:**
 - Place the activity inside a minimal workflow definition and run via [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs). Assert outputs/variables and that the activity integrates correctly with preceding/following activities.
+- Use [`WorkflowTestFixture`](../../src/common/Elsa.Testing.Shared.Integration/WorkflowTestFixture.cs) for simplified integration testing with automatic service provider setup and output capture.
 - If activity creates bookmarks or relies on scheduler semantics, integration tests should resume bookmarks via the engine APIs to validate resumption.
 
 Pattern note: [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) returns a [`RunWorkflowResult`](../../src/modules/Elsa.Workflows.Core/Models/RunWorkflowResult.cs) (or equivalent) containing the [`WorkflowInstance`](../../src/modules/Elsa.Workflows.Management/Entities/WorkflowInstance.cs) and output variables when run to completion.
 Use returned state for deterministic assertions where possible.
+
+**Example (using WorkflowTestFixture - basic):**
+```csharp
+public class RunJavaScriptTests
+{
+    private readonly WorkflowTestFixture _fixture;
+
+    public RunJavaScriptTests(ITestOutputHelper testOutputHelper)
+    {
+        _fixture = new WorkflowTestFixture(testOutputHelper);
+    }
+
+    [Fact(DisplayName = "RunJavaScript should execute and return output")]
+    public async Task Should_Execute_And_Return_Output()
+    {
+        // Arrange
+        var script = "return 1 + 1;";
+        var activity = new RunJavaScript { Script = new(script), Result = new() };
+
+        // Act
+        var result = await _fixture.RunActivityAsync(activity);
+
+        // Assert - activity produced expected output
+        var output = result.GetActivityOutput<object>(activity);
+        Assert.Equal(2, output);
+    }
+
+    [Fact(DisplayName = "RunJavaScript should set outcomes")]
+    public async Task Should_Set_Outcomes()
+    {
+        // Arrange
+        var script = "setOutcomes(['Branch1', 'Branch2']);";
+        var activity = new RunJavaScript { Script = new(script) };
+
+        // Act
+        var result = await _fixture.RunActivityAsync(activity);
+
+        // Assert - activity produced expected outcomes
+        var outcomes = _fixture.GetOutcomes(result, activity);
+        Assert.Contains("Branch1", outcomes);
+        Assert.Contains("Branch2", outcomes);
+    }
+
+    [Fact(DisplayName = "RunJavaScript should fault on invalid syntax")]
+    public async Task Should_Fault_On_Invalid_Syntax()
+    {
+        // Arrange
+        var script = "this is not valid javascript";
+        var activity = new RunJavaScript { Script = new(script) };
+
+        // Act
+        var result = await _fixture.RunActivityAsync(activity);
+
+        // Assert - activity should be in faulted state
+        var status = _fixture.GetActivityStatus(result, activity);
+        Assert.Equal(ActivityStatus.Faulted, status);
+    }
+}
+```
+
+**Example (using manual setup with IWorkflowRunner):**
+```csharp
+[Fact]
+public async Task Should_Execute_Workflow()
+{
+    // Arrange
+    var services = new TestApplicationBuilder(testOutputHelper).Build();
+    await services.PopulateRegistriesAsync();
+    var runner = services.GetRequiredService<IWorkflowRunner>();
+    var workflow = Workflow.FromActivity(new WriteLine("Hello"));
+
+    // Act
+    var result = await runner.RunAsync(workflow);
+
+    // Assert
+    Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
+}
+```
 
 ---
 
@@ -248,6 +326,18 @@ Assert.Equal(WorkflowStatus.Finished, resumed.WorkflowInstance.Status);
 | `ActivityTestFixture.ConfigureContext`          | Fluent API to configure execution context before execution   | Setting up test-specific context state                                  |
 | `ActivityTestFixture.BuildAsync`                | Build context without executing activity                     | When you need context setup without execution                           |
 | `ActivityTestFixture.ExecuteAsync`              | Execute activity and return context                          | Standard activity unit test execution                                   |
+| `WorkflowTestFixture`                           | Configure and run workflows/activities in integration tests  | Integration testing workflows and activities                            |
+| `WorkflowTestFixture.ConfigureElsa`             | Fluent API to configure Elsa features                        | Integration tests requiring custom Elsa configuration                   |
+| `WorkflowTestFixture.ConfigureServices`         | Fluent API to add services to fixture                        | Integration tests requiring custom services                             |
+| `WorkflowTestFixture.RunActivityAsync`          | Run single activity as workflow                              | Integration tests for single activities                                 |
+| `WorkflowTestFixture.RunWorkflowAsync`          | Run workflow or workflow by definition ID                    | Integration tests for workflows                                         |
+| `WorkflowTestFixture.CapturingTextWriter`       | Capture WriteLine output                                     | Asserting text output in integration tests                              |
+| `WorkflowTestFixture.GetOutcomes`               | Get all outcomes from specific activity                      | Asserting activity outcomes in integration tests                        |
+| `WorkflowTestFixture.HasOutcome`                | Check if activity produced specific outcome                  | Asserting single outcome in integration tests                           |
+| `WorkflowTestFixture.GetActivityStatus`         | Get execution status of specific activity                    | Asserting activity status (Faulted, Completed, etc.)                    |
+| `WorkflowTestFixture.CreateWorkflowExecutionContextAsync` | Create workflow execution context without running workflow | Testing workflow-level concerns or base context setup                    |
+| `WorkflowTestFixture.CreateActivityExecutionContextAsync` | Create activity execution context (2 overloads)        | Testing activity scheduling/execution or when needing activity context   |
+| `WorkflowTestFixture.CreateExpressionExecutionContextAsync` | Create expression execution context (2 overloads)    | Testing expression evaluators (JavaScript, Liquid, C#) with variables    |
 | `context.GetActivityOutput`                     | Get output from activity using expression selector           | Asserting activity outputs in unit tests                                |
 | `context.HasScheduledActivity`                  | Check if activity is scheduled                               | Verifying scheduling behavior in unit tests                             |
 | `context.GetOutcomes`                           | Get all outcomes from activity execution                     | Asserting multiple outcomes in unit tests                               |
@@ -303,7 +393,147 @@ When in doubt, add the minimal unit tests plus one integration test that reprodu
 
 ---
 
+## WorkflowTestFixture Helper Methods
+
+When using [`WorkflowTestFixture`](../../src/common/Elsa.Testing.Shared.Integration/WorkflowTestFixture.cs) for integration tests, use these helper methods to assert on activity behavior:
+
+### Asserting Activity Outputs
+
+Use `result.GetActivityOutput<T>(activity)` to retrieve the output value from an activity:
+
+```csharp
+var result = await _fixture.RunActivityAsync(activity);
+var output = result.GetActivityOutput<object>(activity);
+Assert.Equal(expectedValue, output);
+```
+
+### Asserting Activity Outcomes
+
+Use `_fixture.GetOutcomes(result, activity)` to retrieve all outcomes produced by an activity:
+
+```csharp
+var result = await _fixture.RunActivityAsync(activity);
+var outcomes = _fixture.GetOutcomes(result, activity);
+Assert.Contains("ExpectedOutcome", outcomes);
+```
+
+Or use `_fixture.HasOutcome(result, activity, outcome)` to check for a specific outcome:
+
+```csharp
+var result = await _fixture.RunActivityAsync(activity);
+Assert.True(_fixture.HasOutcome(result, activity, "Success"));
+```
+
+### Asserting Activity Status
+
+Use `_fixture.GetActivityStatus(result, activity)` to check the execution status of an activity:
+
+```csharp
+var result = await _fixture.RunActivityAsync(activity);
+var status = _fixture.GetActivityStatus(result, activity);
+Assert.Equal(ActivityStatus.Faulted, status);
+```
+
+**Available activity statuses:**
+- `ActivityStatus.Pending` - Activity is pending execution
+- `ActivityStatus.Running` - Activity is currently running
+- `ActivityStatus.Completed` - Activity completed successfully
+- `ActivityStatus.Canceled` - Activity was canceled
+- `ActivityStatus.Faulted` - Activity encountered an error
+
+### Creating Execution Contexts for Testing
+
+`WorkflowTestFixture` provides layered methods for creating execution contexts at different levels, giving you fine-grained control over test setup:
+
+#### Creating a Workflow Execution Context
+
+Use `CreateWorkflowExecutionContextAsync` to create a minimal workflow execution context without running the workflow:
+
+```csharp
+var context = await _fixture.CreateWorkflowExecutionContextAsync(variables: new[]
+{
+    new Variable<int>("Counter", 0)
+});
+```
+
+#### Creating an Activity Execution Context
+
+Use `CreateActivityExecutionContextAsync` to create an activity execution context. Two overloads available:
+
+**Without existing workflow context (creates one automatically):**
+```csharp
+var activityContext = await _fixture.CreateActivityExecutionContextAsync(
+    activity: myActivity,
+    variables: new[] { new Variable<string>("MyVar", "value") }
+);
+```
+
+**With existing workflow context:**
+```csharp
+var workflowContext = await _fixture.CreateWorkflowExecutionContextAsync();
+var activityContext = await _fixture.CreateActivityExecutionContextAsync(
+    workflowContext,
+    activity: myActivity
+);
+```
+
+#### Creating an Expression Execution Context
+
+Use `CreateExpressionExecutionContextAsync` to create a context for testing expression evaluation (e.g., JavaScript, Liquid). Variables are properly registered and accessible via dynamic accessors. Two overloads available:
+
+**Without existing activity context (creates one automatically):**
+```csharp
+var expressionContext = await _fixture.CreateExpressionExecutionContextAsync(new[]
+{
+    new Variable<string>("MyVariable", "test value")
+});
+
+// Variables are accessible via dynamic accessors in expressions
+// e.g., getMyVariable() and setMyVariable(value) in JavaScript
+```
+
+**With existing activity context:**
+```csharp
+var activityContext = await _fixture.CreateActivityExecutionContextAsync();
+var expressionContext = await _fixture.CreateExpressionExecutionContextAsync(
+    activityContext,
+    variables: new[] { new Variable<int>("Count", 42) }
+);
+```
+
+**Example: Testing JavaScript Expression Evaluation**
+```csharp
+[Fact]
+public async Task Dynamic_Variable_Accessors_Should_Work()
+{
+    // Arrange
+    var script = @"
+        setMyVariable('updated value');
+        return getMyVariable();
+    ";
+    var context = await _fixture.CreateExpressionExecutionContextAsync(new[]
+    {
+        new Variable<string>("MyVariable", "initial value")
+    });
+
+    // Act
+    var evaluator = _fixture.Services.GetRequiredService<IJavaScriptEvaluator>();
+    var result = await evaluator.EvaluateAsync(script, typeof(string), context);
+
+    // Assert
+    Assert.Equal("updated value", result);
+}
+```
+
+**When to use each method:**
+- Use `CreateWorkflowExecutionContextAsync` when testing workflow-level concerns or when you need a base context for further customization
+- Use `CreateActivityExecutionContextAsync` when testing activity scheduling, execution, or when you need access to activity-specific context
+- Use `CreateExpressionExecutionContextAsync` when testing expression evaluators (JavaScript, Liquid, C#) or when you need variables to be accessible in expressions
+
+---
+
 ## Failure testing (faults & incidents)
+- **Integration test faulted activities**: Use `_fixture.GetActivityStatus(result, activity)` to assert that a specific activity faulted, rather than checking workflow-level status.
 - **Integration test faulted workflows**: build a workflow that throws and run via [`RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) — assert [`WorkflowInstance.Status`](../../src/modules/Elsa.Workflows.Management/Entities/WorkflowInstance.cs) == [`Faulted`](../../src/modules/Elsa.Workflows.Core/Enums/WorkflowStatus.cs) on the returned state or via [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs).
 - **Component tests for recovery/resume**: persist a faulted instance (or cause a host restart scenario), run your recovery logic, and assert the final state.
 
@@ -327,8 +557,37 @@ public async Task MyActivity_Test()
 }
 ```
 
+### Integration test — pattern using [`WorkflowTestFixture`](../../src/common/Elsa.Testing.Shared.Integration/WorkflowTestFixture.cs)
+
+**Recommended approach** for activity integration tests:
+```csharp
+public class MyActivityTests
+{
+    private readonly WorkflowTestFixture _fixture;
+
+    public MyActivityTests(ITestOutputHelper testOutputHelper)
+    {
+        _fixture = new WorkflowTestFixture(testOutputHelper);
+    }
+
+    [Fact]
+    public async Task Activity_Completes_Successfully()
+    {
+        // Arrange
+        var activity = new MyActivity { Input = new("test") };
+
+        // Act
+        var result = await _fixture.RunActivityAsync(activity);
+
+        // Assert
+        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
+    }
+}
+```
+
 ### Integration test — pattern using [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs)
 
+**Alternative approach** with manual setup (use when you need more control):
 ```csharp
 [Fact]
 public async Task Workflow_With_MyActivity_Completes()
