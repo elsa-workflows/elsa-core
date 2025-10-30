@@ -14,20 +14,6 @@ namespace Elsa.Common.Serialization;
 [PublicAPI]
 public class IEnumerableTypeConverter : TypeConverter
 {
-    public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
-    {
-        return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
-    }
-
-    public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
-    {
-        if (value is string stringValue && new char[] { '[', '{' }.Contains(stringValue.TrimStart().FirstOrDefault()))
-        {
-            return JsonSerializer.Deserialize<object[]>(stringValue);
-        }
-        return base.ConvertFrom(context, culture, value);
-    }
-
     public override bool CanConvertTo(ITypeDescriptorContext? context, Type? destinationType)
     {
         return destinationType == typeof(string) || base.CanConvertTo(context, destinationType);
@@ -37,6 +23,8 @@ public class IEnumerableTypeConverter : TypeConverter
     {
         if (destinationType == typeof(string) && value is IEnumerable enumerable)
         {
+            // string is an IEnumerable
+            if (value is string) return value;
             return JsonSerializer.Serialize(enumerable);
         }
         return base.ConvertTo(context, culture, value, destinationType);
