@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Models;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.Activities;
@@ -6,7 +7,9 @@ using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.ComponentTests.Scenarios.BulkDispatch.Workflows;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.BulkDispatch;
@@ -32,8 +35,50 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
     [Fact(DisplayName = "BulkDispatchWorkflows should dispatch and not wait when WaitForCompletion is false")]
     public async Task BulkDispatchFireAndForget_ShouldNotWaitForChildWorkflows()
     {
-        var result = await RunWorkflowAsync(BulkDispatchFireAndForgetWorkflow.DefinitionId);
-        AssertWorkflowFinished(result);
+        var workflowEvents = Scope.ServiceProvider.GetRequiredService<WorkflowEvents>();
+        var completedChildWorkflows = new List<WorkflowExecutionContext>();
+        var childWorkflowCompletionTcs = new TaskCompletionSource();
+        var expectedChildCount = 3;
+
+        // Subscribe to child workflow completion events
+        void OnWorkflowStateCommitted(object? sender, WorkflowStateCommittedEventArgs e)
+        {
+            if (e.WorkflowExecutionContext.Workflow.Identity.DefinitionId != SlowBulkChildWorkflow.DefinitionId)
+                return;
+            
+            if(e.WorkflowExecutionContext.Status != WorkflowStatus.Finished)
+                return;
+
+            completedChildWorkflows.Add(e.WorkflowExecutionContext);
+            if (completedChildWorkflows.Count == expectedChildCount)
+                childWorkflowCompletionTcs.TrySetResult();
+        }
+
+        workflowEvents.WorkflowStateCommitted += OnWorkflowStateCommitted;
+
+        try
+        {
+            // Run the main workflow
+            var result = await RunWorkflowAsync(BulkDispatchFireAndForgetWorkflow.DefinitionId);
+            AssertWorkflowFinished(result);
+
+            var mainWorkflowCompletedAt = result.WorkflowExecutionContext.UpdatedAt;
+
+            // Wait for all child workflows to complete
+            await childWorkflowCompletionTcs.Task;
+
+            // Assert that all child workflows completed after the main workflow
+            Assert.Equal(expectedChildCount, completedChildWorkflows.Count);
+            foreach (var childContext in completedChildWorkflows)
+            {
+                Assert.True(childContext.UpdatedAt > mainWorkflowCompletedAt,
+                    $"Child workflow should complete after main workflow. Main: {mainWorkflowCompletedAt}, Child: {childContext.UpdatedAt}");
+            }
+        }
+        finally
+        {
+            workflowEvents.WorkflowStateCommitted -= OnWorkflowStateCommitted;
+        }
     }
 
     [Fact(DisplayName = "BulkDispatchWorkflows should handle dictionary items")]

@@ -11,8 +11,8 @@ public class BulkDispatchFireAndForgetWorkflow : WorkflowBase
         builder.WithDefinitionId(DefinitionId);
         builder.Root = new BulkDispatchWorkflows
         {
-            WorkflowDefinitionId = new(BulkChildWorkflow.DefinitionId),
-            Items = new(new object[] { 1, 2, 3 }),
+            WorkflowDefinitionId = new(SlowBulkChildWorkflow.DefinitionId),
+            Items = new(new object[] { "A", "B", "C" }),
             WaitForCompletion = new(false)
         };
     }
