@@ -1,0 +1,17 @@
+namespace Elsa.Workflows.ComponentTests.Scenarios.BulkDispatch.Workflows;
+
+public class BulkDispatchFireAndForgetWorkflow : WorkflowBase
+{
+    public static readonly string DefinitionId = Guid.NewGuid().ToString();
+
+    protected override void Build(IWorkflowBuilder builder)
+    {
+        builder.WithDefinitionId(DefinitionId);
+        builder.Root = new Runtime.Activities.BulkDispatchWorkflows
+        {
+            WorkflowDefinitionId = new(BulkChildWorkflow.DefinitionId),
+            Items = new(new object[] { 1, 2, 3 }),
+            WaitForCompletion = new(false)
+        };
+    }
+}

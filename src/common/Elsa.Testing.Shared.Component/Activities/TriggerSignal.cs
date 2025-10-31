@@ -4,9 +4,9 @@ using Elsa.Workflows.Runtime;
 
 namespace Elsa.Testing.Shared.Activities;
 
-public class TriggerSignal(object signal) : CodeActivity
+public class TriggerSignal(string signal) : CodeActivity
 {
-    public object Signal { get; set; } = signal;
+    public string Signal { get; set; } = signal;
 
     protected override void Execute(ActivityExecutionContext context)
     {
