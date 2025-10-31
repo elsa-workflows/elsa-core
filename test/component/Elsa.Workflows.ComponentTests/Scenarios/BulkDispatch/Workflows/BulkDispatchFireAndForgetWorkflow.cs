@@ -1,3 +1,5 @@
+using Elsa.Workflows.Runtime.Activities;
+
 namespace Elsa.Workflows.ComponentTests.Scenarios.BulkDispatch.Workflows;
 
 public class BulkDispatchFireAndForgetWorkflow : WorkflowBase
@@ -7,7 +9,7 @@ public class BulkDispatchFireAndForgetWorkflow : WorkflowBase
     protected override void Build(IWorkflowBuilder builder)
     {
         builder.WithDefinitionId(DefinitionId);
-        builder.Root = new Runtime.Activities.BulkDispatchWorkflows
+        builder.Root = new BulkDispatchWorkflows
         {
             WorkflowDefinitionId = new(BulkChildWorkflow.DefinitionId),
             Items = new(new object[] { 1, 2, 3 }),

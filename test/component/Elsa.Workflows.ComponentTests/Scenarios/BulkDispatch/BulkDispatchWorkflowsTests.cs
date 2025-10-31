@@ -1,6 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Testing.Shared.Models;
 using Elsa.Testing.Shared.Services;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.ComponentTests.Scenarios.BulkDispatch.Workflows;
@@ -81,6 +82,14 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
 
         var writeLineExecutionRecords = result.ActivityExecutionRecords.Where(x => x.ActivityType == "Elsa.WriteLine").ToList();
         Assert.Equal(3, writeLineExecutionRecords.Count);
+
+        var writtenTexts = writeLineExecutionRecords
+            .Select(x => x.ActivityState?[nameof(WriteLine.Text)] as string)
+            .ToList();
+
+        Assert.Contains("Mixing Apple", writtenTexts);
+        Assert.Contains("Mixing Banana", writtenTexts);
+        Assert.Contains("Mixing Cherry", writtenTexts);
     }
 
     private Task<TestWorkflowExecutionResult> RunWorkflowAsync(string workflowDefinitionId)
