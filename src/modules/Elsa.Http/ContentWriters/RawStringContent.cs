@@ -1,48 +1,29 @@
-using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 
 namespace Elsa.Http.ContentWriters;
 
 /// <summary>
-/// A <see cref="HttpContent"/> implementation that allows setting the content type without automatically appending charset information.
+/// HTTP content based on a string that preserves the provided media type as-is (no automatic charset parameter).
+/// Uses a pre-encoded byte array to guarantee Content-Length == bytes written.
 /// </summary>
-public class RawStringContent : HttpContent
+public sealed class RawStringContent : ByteArrayContent
 {
-    private readonly string _content;
-    private readonly Encoding _encoding;
-
-    /// <summary>
-    /// Creates a new instance of the <see cref="RawStringContent"/> class.
-    /// </summary>
-    /// <param name="content">The content to send.</param>
-    /// <param name="encoding">The encoding to use when sending the content.</param>
-    /// <param name="mediaType">The media type to use for the content.</param>
     public RawStringContent(string content, Encoding encoding, string mediaType)
+        : base(GetBytes(content, encoding))
     {
-        _content = content;
-        _encoding = encoding;
-        
-        // Set the media type exactly as provided without appending charset information
-        Headers.ContentType = new MediaTypeHeaderValue(mediaType);
+        // Set media type exactly as provided, without charset parameter.
+        Headers.ContentType = new(mediaType);
     }
 
-    /// <inheritdoc />
-    protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) => 
-        SerializeToStreamAsync(stream, context, CancellationToken.None);
-
-    /// <inheritdoc />
-    protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context, CancellationToken cancellationToken)
+    private static byte[] GetBytes(string content, Encoding encoding)
     {
-        await using var writer = new StreamWriter(stream, _encoding, leaveOpen: true);
-        await writer.WriteAsync(_content.AsMemory(), cancellationToken);
-        await writer.FlushAsync(cancellationToken);
-    }
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(encoding);
 
-    /// <inheritdoc />
-    protected override bool TryComputeLength(out long length)
-    {
-        length = _encoding.GetByteCount(_content);
-        return true;
+        // Ensure we don't include a BOM/preamble. Most Encoding instances can expose a preamble.
+        // If encoding has a preamble, we must not include it, so use GetBytes directly (preamble is only returned by GetPreamble()).
+        // For safety, if the encoding instance is a BOM-producing variant (e.g., new UTF8Encoding(true)),
+        // GetBytes does not include the BOM; only GetPreamble() would. So this is safe.
+        return encoding.GetBytes(content);
     }
 }

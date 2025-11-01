@@ -11,7 +11,7 @@ namespace Elsa.Http.ContentWriters;
 public class JsonContentFactory : IHttpContentFactory
 {
     /// <inheritdoc />
-    public IEnumerable<string> SupportedContentTypes => new[] { MediaTypeNames.Application.Json, "text/json" };
+    public IEnumerable<string> SupportedContentTypes => [MediaTypeNames.Application.Json, "text/json"];
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The JsonSerializer type is not trim-compatible.")]
