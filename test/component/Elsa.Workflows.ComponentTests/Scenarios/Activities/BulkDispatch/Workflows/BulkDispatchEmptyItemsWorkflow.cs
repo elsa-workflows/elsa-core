@@ -1,7 +1,7 @@
 using Elsa.Workflows.Runtime.Activities;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.BulkDispatch.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatch.Workflows;
 
 [UsedImplicitly]
 public class BulkDispatchEmptyItemsWorkflow : WorkflowBase

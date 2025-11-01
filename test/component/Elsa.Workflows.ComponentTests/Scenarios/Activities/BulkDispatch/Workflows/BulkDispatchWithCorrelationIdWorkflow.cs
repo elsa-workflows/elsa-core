@@ -1,8 +1,7 @@
 using Elsa.Expressions.JavaScript.Models;
-using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Activities;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.BulkDispatch.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatch.Workflows;
 
 public class BulkDispatchWithCorrelationIdWorkflow : WorkflowBase
 {

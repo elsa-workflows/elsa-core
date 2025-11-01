@@ -1,13 +1,13 @@
 ﻿using Elsa.Common.Models;
 using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
-using Elsa.Workflows.ComponentTests.Scenarios.ExecuteWorkflows.Workflows;
+using Elsa.Workflows.ComponentTests.Scenarios.Activities.ExecuteWorkflows.Workflows;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.ExecuteWorkflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.ExecuteWorkflows;
 
 public class ExecuteWorkflowsTests : AppComponentTest
 {
@@ -22,7 +22,7 @@ public class ExecuteWorkflowsTests : AppComponentTest
     public async Task ExecuteWorkflow_ShouldExecuteWorkflow()
     {
         var workflowClient = await _workflowRuntime.CreateClientAsync();
-        await workflowClient.CreateInstanceAsync(new CreateWorkflowInstanceRequest
+        await workflowClient.CreateInstanceAsync(new()
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(MainWorkflow.DefinitionId, VersionOptions.Published)
         });

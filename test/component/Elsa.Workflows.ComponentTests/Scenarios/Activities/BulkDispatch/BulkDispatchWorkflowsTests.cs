@@ -5,12 +5,12 @@ using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
-using Elsa.Workflows.ComponentTests.Scenarios.BulkDispatch.Workflows;
+using Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatch.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.BulkDispatch;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatch;
 
 public class BulkDispatchWorkflowsTests : AppComponentTest
 {
