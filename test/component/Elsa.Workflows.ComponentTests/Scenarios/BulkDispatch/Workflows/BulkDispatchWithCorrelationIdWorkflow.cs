@@ -1,3 +1,5 @@
+using Elsa.Expressions.JavaScript.Models;
+using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Activities;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.BulkDispatch.Workflows;
@@ -16,7 +18,7 @@ public class BulkDispatchWithCorrelationIdWorkflow : WorkflowBase
         {
             WorkflowDefinitionId = new(BulkChildWorkflow.DefinitionId),
             Items = new(items),
-            CorrelationIdFunction = new("\"correlation-\" + Item"),
+            CorrelationIdFunction = new(JavaScriptExpression.Create("`correlation-${getItem()}`")),
             WaitForCompletion = new(true)
         };
     }

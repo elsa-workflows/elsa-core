@@ -1,5 +1,5 @@
+using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Memory;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.BulkDispatch.Workflows;
@@ -12,15 +12,13 @@ public class BulkChildWorkflow : WorkflowBase
     protected override void Build(IWorkflowBuilder builder)
     {
         builder.WithDefinitionId(DefinitionId);
-
-        var itemVariable = new Variable<object>("Item", "Item");
-        builder.WithVariable(itemVariable);
+        var item = builder.WithInput<string>("Item");
 
         builder.Root = new Sequence
         {
             Activities =
             {
-                new WriteLine(context => $"Processing item: {itemVariable.Get(context)}")
+                new WriteLine(context => $"Processing item: {context.GetInput<string>(item)}")
             }
         };
     }
