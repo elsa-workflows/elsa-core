@@ -2,10 +2,10 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatch.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatchWorkflows.Workflows;
 
 [UsedImplicitly]
-public class FruitWorkflow : WorkflowBase
+public class BulkChildWorkflow : WorkflowBase
 {
     public static readonly string DefinitionId = Guid.NewGuid().ToString();
 
@@ -13,6 +13,13 @@ public class FruitWorkflow : WorkflowBase
     {
         builder.WithDefinitionId(DefinitionId);
         var item = builder.WithInput<string>("Item");
-        builder.Root = new WriteLine(x => $"Mixing {x.GetInput<string>(item)}");
+
+        builder.Root = new Sequence
+        {
+            Activities =
+            {
+                new WriteLine(context => $"Processing item: {context.GetInput<string>(item)}")
+            }
+        };
     }
 }

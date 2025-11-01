@@ -1,7 +1,6 @@
-using Elsa.Workflows.Runtime.Activities;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatch.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatchWorkflows.Workflows;
 
 [UsedImplicitly]
 public class BulkDispatchEmptyItemsWorkflow : WorkflowBase
@@ -12,7 +11,7 @@ public class BulkDispatchEmptyItemsWorkflow : WorkflowBase
     {
         builder.WithDefinitionId(DefinitionId);
 
-        builder.Root = new BulkDispatchWorkflows
+        builder.Root = new Runtime.Activities.BulkDispatchWorkflows
         {
             WorkflowDefinitionId = new(BulkChildWorkflow.DefinitionId),
             Items = new(Array.Empty<object>()),

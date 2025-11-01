@@ -1,9 +1,8 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.IncidentStrategies;
-using Elsa.Workflows.Runtime.Activities;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatch.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatchWorkflows.Workflows;
 
 [UsedImplicitly]
 public class BulkDispatchInvalidDefinitionWorkflow : WorkflowBase
@@ -20,7 +19,7 @@ public class BulkDispatchInvalidDefinitionWorkflow : WorkflowBase
         {
             Activities =
             {
-                new BulkDispatchWorkflows
+                new Runtime.Activities.BulkDispatchWorkflows
                 {
                     WorkflowDefinitionId = new(InvalidChildWorkflowId),
                     Items = new(() => new object[] { 1 }),

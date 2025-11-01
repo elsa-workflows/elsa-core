@@ -1,8 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Runtime.Activities;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatch.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatchWorkflows.Workflows;
 
 public class BulkDispatchWithChildPortsWorkflow : WorkflowBase
 {
@@ -15,7 +14,7 @@ public class BulkDispatchWithChildPortsWorkflow : WorkflowBase
         var completedCountVariable = builder.WithVariable("CompletedCount", 0).WithWorkflowStorage();
         var faultedCountVariable = builder.WithVariable("FaultedCount", 0).WithWorkflowStorage();
 
-        builder.Root = new BulkDispatchWorkflows
+        builder.Root = new Runtime.Activities.BulkDispatchWorkflows
         {
             WorkflowDefinitionId = new(FaultingChildWorkflow.DefinitionId),
             Items = new(new object[] { 1, 2, 3 }),

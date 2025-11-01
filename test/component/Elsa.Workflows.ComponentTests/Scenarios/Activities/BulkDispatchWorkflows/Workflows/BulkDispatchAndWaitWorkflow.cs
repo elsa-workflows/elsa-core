@@ -1,7 +1,6 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Runtime.Activities;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatch.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatchWorkflows.Workflows;
 
 public class BulkDispatchAndWaitWorkflow : WorkflowBase
 {
@@ -14,7 +13,7 @@ public class BulkDispatchAndWaitWorkflow : WorkflowBase
         {
             Activities =
             {
-                new BulkDispatchWorkflows
+                new Runtime.Activities.BulkDispatchWorkflows
                 {
                     WorkflowDefinitionId = new(BulkChildWorkflow.DefinitionId),
                     Items = new(new object[] { 1, 2, 3 }),

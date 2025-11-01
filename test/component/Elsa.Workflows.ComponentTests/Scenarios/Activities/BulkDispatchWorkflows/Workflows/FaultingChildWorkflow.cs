@@ -1,24 +1,27 @@
-using Elsa.Extensions;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.IncidentStrategies;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatch.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatchWorkflows.Workflows;
 
 [UsedImplicitly]
-public class BulkChildWorkflow : WorkflowBase
+public class FaultingChildWorkflow : WorkflowBase
 {
     public static readonly string DefinitionId = Guid.NewGuid().ToString();
 
     protected override void Build(IWorkflowBuilder builder)
     {
         builder.WithDefinitionId(DefinitionId);
-        var item = builder.WithInput<string>("Item");
+        builder.WorkflowOptions.IncidentStrategyType = typeof(FaultStrategy);
 
         builder.Root = new Sequence
         {
             Activities =
             {
-                new WriteLine(context => $"Processing item: {context.GetInput<string>(item)}")
+                new Fault
+                {
+                    Message = new("Child workflow failed")
+                }
             }
         };
     }

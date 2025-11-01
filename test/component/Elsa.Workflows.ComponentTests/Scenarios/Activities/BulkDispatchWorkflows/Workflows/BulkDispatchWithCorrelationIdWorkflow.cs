@@ -1,7 +1,6 @@
 using Elsa.Expressions.JavaScript.Models;
-using Elsa.Workflows.Runtime.Activities;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatch.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatchWorkflows.Workflows;
 
 public class BulkDispatchWithCorrelationIdWorkflow : WorkflowBase
 {
@@ -13,7 +12,7 @@ public class BulkDispatchWithCorrelationIdWorkflow : WorkflowBase
 
         var items = new object[] { 1, 2, 3 };
 
-        builder.Root = new BulkDispatchWorkflows
+        builder.Root = new Runtime.Activities.BulkDispatchWorkflows
         {
             WorkflowDefinitionId = new(BulkChildWorkflow.DefinitionId),
             Items = new(items),
