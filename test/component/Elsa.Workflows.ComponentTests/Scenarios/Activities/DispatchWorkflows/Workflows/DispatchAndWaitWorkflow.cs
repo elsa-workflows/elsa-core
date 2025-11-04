@@ -2,7 +2,7 @@ using Elsa.Testing.Shared.Activities;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Runtime.Activities;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.DispatchWorkflows.Workflows;
 
 public class DispatchAndWaitWorkflow : WorkflowBase
 {

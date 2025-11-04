@@ -1,6 +1,7 @@
+using Elsa.Workflows;
 using Elsa.Workflows.Runtime.Entities;
 
-namespace Elsa.Workflows.ComponentTests.Models;
+namespace Elsa.Testing.Shared.Models;
 
 /// <summary>
 /// Represents the result of a test workflow execution, including the workflow execution context and activity execution records.

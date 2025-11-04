@@ -1,8 +1,8 @@
 ﻿using Elsa.Common.Models;
+using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.ComponentTests.Scenarios.Activities.ForEach.Workflows;
-using Elsa.Workflows.ComponentTests.Services;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
 

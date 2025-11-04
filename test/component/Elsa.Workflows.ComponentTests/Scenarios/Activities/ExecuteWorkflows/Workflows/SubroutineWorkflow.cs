@@ -3,7 +3,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Activities.SetOutput;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.ExecuteWorkflows.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.ExecuteWorkflows.Workflows;
 
 [UsedImplicitly]
 public class SubroutineWorkflow : WorkflowBase

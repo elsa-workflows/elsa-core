@@ -1,16 +1,16 @@
 using Elsa.Workflows.Activities.Flowchart.Activities;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.FlowJoins;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.FlowJoin;
 
 public class SingleJoinWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
     {
-        builder.Root = new Elsa.Workflows.Activities.Flowchart.Activities.Flowchart
+        builder.Root = new Flowchart
         {
             Activities =
             {
-                new FlowJoin()
+                new Workflows.Activities.Flowchart.Activities.FlowJoin()
             }
         };
     }

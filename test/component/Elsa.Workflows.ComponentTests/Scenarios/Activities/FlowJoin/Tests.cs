@@ -2,7 +2,7 @@
 using Elsa.Workflows.ComponentTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.FlowJoins;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.FlowJoin;
 
 public class Tests(App app) : AppComponentTest(app)
 {
