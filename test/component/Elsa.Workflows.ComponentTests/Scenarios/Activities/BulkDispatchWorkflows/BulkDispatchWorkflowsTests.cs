@@ -131,7 +131,7 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
     {
         var variableManager = Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceVariableManager>();
         var variables = await variableManager.GetVariablesAsync(result.WorkflowExecutionContext);
-        return (T)variables.FirstOrDefault(v => v.Variable.Name == variableName)?.Value!;
+        return (T?)variables.FirstOrDefault(v => v.Variable.Name == variableName)?.Value;
     }
 
     private async Task<(TestWorkflowExecutionResult Result, List<WorkflowExecutionContext> CompletedChildWorkflows)> RunWorkflowAndWaitForChildWorkflowsAsync(
