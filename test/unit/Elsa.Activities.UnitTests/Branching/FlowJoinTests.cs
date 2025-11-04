@@ -138,7 +138,6 @@ public class FlowJoinTests
     [InlineData(false, FlowJoinMode.WaitAll)]
     public async Task Should_Execute_In_Flowchart_Context_For_All_Combinations(bool useTokenFlow, FlowJoinMode joinMode)
     {
-        // Test all combinations within a flowchart context
         // Arrange
         var originalValue = Flowchart.UseTokenFlow;
         Flowchart.UseTokenFlow = useTokenFlow;
