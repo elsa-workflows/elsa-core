@@ -1,18 +1,13 @@
 using Elsa.Workflows.Activities;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.BulkDispatchWorkflows.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatchWorkflows.Workflows;
 
-public class MixFruitsWorkflow : WorkflowBase
+public class BulkDispatchAndWaitWorkflow : WorkflowBase
 {
     public static readonly string DefinitionId = Guid.NewGuid().ToString();
 
     protected override void Build(IWorkflowBuilder builder)
     {
-        var fruits = new[]
-        {
-            "Apple", "Banana", "Cherry"
-        };
-        
         builder.WithDefinitionId(DefinitionId);
         builder.Root = new Sequence
         {
@@ -20,10 +15,11 @@ public class MixFruitsWorkflow : WorkflowBase
             {
                 new Runtime.Activities.BulkDispatchWorkflows
                 {
-                    WorkflowDefinitionId = new(FruitWorkflow.DefinitionId),
-                    Items = new(fruits),
+                    WorkflowDefinitionId = new(BulkChildWorkflow.DefinitionId),
+                    Items = new(new object[] { 1, 2, 3 }),
                     WaitForCompletion = new(true)
-                }
+                },
+                new WriteLine("Done")
             }
         };
     }

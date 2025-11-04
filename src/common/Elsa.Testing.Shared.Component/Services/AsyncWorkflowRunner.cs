@@ -1,13 +1,12 @@
-using Elsa.Testing.Shared;
-using Elsa.Testing.Shared.Services;
-using Elsa.Workflows.ComponentTests.Models;
+using System.Collections.Concurrent;
+using Elsa.Testing.Shared.Models;
+using Elsa.Workflows;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Messages;
-using System.Collections.Concurrent;
 
-namespace Elsa.Workflows.ComponentTests.Services;
+namespace Elsa.Testing.Shared.Services;
 
 /// <summary>
 /// Provides functionality to execute workflows asynchronously and await their completion for testing purposes.
