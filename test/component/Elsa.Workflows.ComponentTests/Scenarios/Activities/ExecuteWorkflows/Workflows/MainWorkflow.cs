@@ -3,7 +3,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Activities;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.ExecuteWorkflows.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.ExecuteWorkflows.Workflows;
 
 public class MainWorkflow : WorkflowBase
 {
