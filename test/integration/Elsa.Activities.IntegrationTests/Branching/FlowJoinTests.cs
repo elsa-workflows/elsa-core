@@ -60,21 +60,17 @@ public class FlowJoinTests : IDisposable
         // Assert
         Assert.Contains("Start", _output.Lines);
         
-        // Document expected behavior for different combinations
-        if (useTokenFlow)
-        {
-            // In token flow mode, both WaitAny and WaitAll should act as no-ops
-            // The flowchart should execute normally: Start -> FlowJoin -> AfterJoin
-            Assert.Contains("AfterJoin", _output.Lines);
-        }
-        else
-        {
-            // In counter flow mode:
-            // - WaitAny should allow continuation after first inbound connection
-            // - WaitAll should wait for all inbound connections (in this case just one)
-            // Since there's only one inbound connection, both should behave similarly
-            Assert.Contains("AfterJoin", _output.Lines);
-        }
+      
+        // In token flow mode, both WaitAny and WaitAll should act as no-ops
+        // The flowchart should execute normally: Start -> FlowJoin -> AfterJoin
+        
+        // In counter flow mode:
+        // - WaitAny should allow continuation after first inbound connection
+        // - WaitAll should wait for all inbound connections (in this case just one)
+        
+        // Since there's only one inbound connection, both should behave similarly
+        
+        Assert.Contains("AfterJoin", _output.Lines);
     }
 
     [Theory]
