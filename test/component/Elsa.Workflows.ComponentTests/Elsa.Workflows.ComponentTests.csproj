@@ -99,4 +99,10 @@
         </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Scenarios\Activities\Branching\" />
+      <Folder Include="Scenarios\Activities\Composition\" />
+      <Folder Include="Scenarios\Activities\Looping\" />
+    </ItemGroup>
+
 </Project>
