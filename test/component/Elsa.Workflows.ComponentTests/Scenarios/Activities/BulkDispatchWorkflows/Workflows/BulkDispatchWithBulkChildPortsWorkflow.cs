@@ -3,7 +3,7 @@ using Elsa.Workflows.Activities;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatchWorkflows.Workflows;
 
-public class BulkDispatchWithChildPortsWorkflow : WorkflowBase
+public class BulkDispatchWithBulkChildPortsWorkflow : WorkflowBase
 {
     public static readonly string DefinitionId = Guid.NewGuid().ToString();
 
@@ -16,7 +16,7 @@ public class BulkDispatchWithChildPortsWorkflow : WorkflowBase
 
         builder.Root = new Runtime.Activities.BulkDispatchWorkflows
         {
-            WorkflowDefinitionId = new(FaultingChildWorkflow.DefinitionId),
+            WorkflowDefinitionId = new(FaultingBulkChildWorkflow.DefinitionId),
             Items = new(new object[] { 1, 2, 3 }),
             WaitForCompletion = new(true),
             ChildCompleted = new Sequence

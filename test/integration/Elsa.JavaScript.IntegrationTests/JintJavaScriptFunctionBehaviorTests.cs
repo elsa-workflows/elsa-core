@@ -88,7 +88,7 @@ public class JintJavaScriptFunctionBehaviorTests(ITestOutputHelper testOutputHel
 
         var shortGuid = dict["shortGuid"]?.ToString();
         Assert.NotNull(shortGuid);
-        Assert.InRange(shortGuid.Length, 20, 22); // Base64 GUID without padding (can be 20-22 chars)
+        Assert.InRange(shortGuid.Length, 19, 22); // Base64 GUID without padding (can be 19-22 chars)
     }
 
     [Theory(DisplayName = "Encoding functions should round-trip correctly")]

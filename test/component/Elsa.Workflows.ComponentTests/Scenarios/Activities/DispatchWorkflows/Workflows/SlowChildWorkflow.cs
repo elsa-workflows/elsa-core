@@ -1,9 +1,11 @@
+using Elsa.Scheduling.Activities;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Runtime.Activities;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.DispatchWorkflows.Workflows;
 
-public class DispatchAndWaitWorkflow : WorkflowBase
+[UsedImplicitly]
+public class SlowChildWorkflow : WorkflowBase
 {
     public static readonly string DefinitionId = Guid.NewGuid().ToString();
 
@@ -14,12 +16,8 @@ public class DispatchAndWaitWorkflow : WorkflowBase
         {
             Activities =
             {
-                new DispatchWorkflow
-                {
-                    WorkflowDefinitionId = new(ChildWorkflow.DefinitionId),
-                    WaitForCompletion = new(true)
-                },
-                new WriteLine("Parent completed")
+                Delay.FromMilliseconds(10),
+                new WriteLine("Slow child workflow executed")
             }
         };
     }
