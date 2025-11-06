@@ -10,8 +10,4 @@
       <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Timers\" />
-    </ItemGroup>
-
 </Project>
