@@ -58,8 +58,8 @@ public class CronTests
         var context = await ExecuteAsync(activity, cronParser);
 
         // Assert
-        Assert.True(context.JournalData.ContainsKey("ExecuteAt"));
-        Assert.Equal(expectedTime, context.JournalData["ExecuteAt"]);
+        Assert.True(context.JournalData.TryGetValue("ExecuteAt", out var executeAt));
+        Assert.Equal(expectedTime, executeAt);
     }
 
     [Fact]
