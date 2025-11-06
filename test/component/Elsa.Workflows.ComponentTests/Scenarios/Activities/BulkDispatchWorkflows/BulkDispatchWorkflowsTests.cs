@@ -78,7 +78,7 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
     [Fact(DisplayName = "BulkDispatchWorkflows should execute ChildFaulted ports")]
     public async Task BulkDispatchWithChildPorts_ShouldExecuteChildFaultedPortForFaultedWorkflows()
     {
-        var result = await RunWorkflowAsync(BulkDispatchWithChildPortsWorkflow.DefinitionId);
+        var result = await RunWorkflowAsync(BulkDispatchWithBulkChildPortsWorkflow.DefinitionId);
         AssertWorkflowFinished(result);
 
         var faultedCount = await GetWorkflowVariableAsync<int>(result, "FaultedCount");

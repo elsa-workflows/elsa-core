@@ -1,13 +1,15 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.IncidentStrategies;
+using Elsa.Workflows.Runtime.Activities;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.BulkDispatchWorkflows.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.DispatchWorkflows.Workflows;
 
 [UsedImplicitly]
-public class FaultingChildWorkflow : WorkflowBase
+public class DispatchInvalidDefinitionWorkflow : WorkflowBase
 {
     public static readonly string DefinitionId = Guid.NewGuid().ToString();
+    public static readonly string InvalidChildWorkflowId = "NonExistentWorkflow";
 
     protected override void Build(IWorkflowBuilder builder)
     {
@@ -18,9 +20,10 @@ public class FaultingChildWorkflow : WorkflowBase
         {
             Activities =
             {
-                new Fault
+                new DispatchWorkflow
                 {
-                    Message = new("Child workflow failed")
+                    WorkflowDefinitionId = new(InvalidChildWorkflowId),
+                    WaitForCompletion = new(true)
                 }
             }
         };
