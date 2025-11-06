@@ -15,6 +15,8 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.DispatchWorkflows;
 public class DispatchWorkflowsTests : AppComponentTest
 {
     private readonly AsyncWorkflowRunner _workflowRunner;
+    private const int ExpectedWriteLineCount = 2; // One from parent, one from child
+    private const int ChildWorkflowTimeoutSeconds = 30;
 
     public DispatchWorkflowsTests(App app) : base(app)
     {
@@ -28,7 +30,7 @@ public class DispatchWorkflowsTests : AppComponentTest
 
         AssertWorkflowFinished(result);
         var writeLineExecutionRecords = result.ActivityExecutionRecords.Where(x => x.ActivityType == "Elsa.WriteLine").ToList();
-        Assert.Equal(2, writeLineExecutionRecords.Count); // Child + Parent
+        Assert.Equal(ExpectedWriteLineCount, writeLineExecutionRecords.Count);
     }
 
     [Fact(DisplayName = "DispatchWorkflow should dispatch and not wait when WaitForCompletion is false")]
@@ -43,8 +45,7 @@ public class DispatchWorkflowsTests : AppComponentTest
         var mainWorkflowCompletedAt = result.WorkflowExecutionContext.UpdatedAt;
 
         // Assert that the child workflow completed after the main workflow
-        Assert.Single(completedChildWorkflows);
-        var childContext = completedChildWorkflows[0];
+        var childContext = Assert.Single(completedChildWorkflows);
         Assert.True(childContext.UpdatedAt > mainWorkflowCompletedAt,
             $"Child workflow should complete after main workflow. Main: {mainWorkflowCompletedAt}, Child: {childContext.UpdatedAt}");
     }
@@ -56,10 +57,10 @@ public class DispatchWorkflowsTests : AppComponentTest
 
         AssertWorkflowFinished(result);
         var writeLineExecutionRecords = result.ActivityExecutionRecords.Where(x => x.ActivityType == "Elsa.WriteLine").ToList();
-        Assert.Equal(2, writeLineExecutionRecords.Count);
+        Assert.Equal(ExpectedWriteLineCount, writeLineExecutionRecords.Count);
 
         var writtenTexts = writeLineExecutionRecords
-            .Select(x => x.ActivityState?[nameof(WriteLine.Text)] as string)
+            .Select(x => x.ActivityState?[nameof(WriteLine.Text)] as string ?? string.Empty)
             .ToList();
 
         Assert.Contains("Received: Hello from parent!", writtenTexts);
@@ -77,8 +78,7 @@ public class DispatchWorkflowsTests : AppComponentTest
         AssertWorkflowFinished(result);
 
         // Assert that the child workflow has the expected correlation ID
-        Assert.Single(completedChildWorkflows);
-        var childContext = completedChildWorkflows[0];
+        var childContext = Assert.Single(completedChildWorkflows);
         Assert.Equal("test-correlation-id-123", childContext.CorrelationId);
     }
 
@@ -128,7 +128,7 @@ public class DispatchWorkflowsTests : AppComponentTest
             var result = await RunWorkflowAsync(parentWorkflowDefinitionId);
 
             // Wait for the child workflow to complete
-            await childWorkflowCompletionTcs.Task;
+            await childWorkflowCompletionTcs.Task.WaitAsync(TimeSpan.FromSeconds(ChildWorkflowTimeoutSeconds));
 
             return (result, completedChildWorkflows);
         }
