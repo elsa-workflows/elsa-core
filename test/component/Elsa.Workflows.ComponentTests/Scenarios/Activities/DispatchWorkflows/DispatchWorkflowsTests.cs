@@ -99,13 +99,6 @@ public class DispatchWorkflowsTests : AppComponentTest
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowExecutionContext.SubStatus);
     }
 
-    private async Task<T> GetWorkflowVariableAsync<T>(TestWorkflowExecutionResult result, string variableName)
-    {
-        var variableManager = Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceVariableManager>();
-        var variables = await variableManager.GetVariablesAsync(result.WorkflowExecutionContext);
-        return (T?)variables.FirstOrDefault(v => v.Variable.Name == variableName)?.Value;
-    }
-
     private async Task<(TestWorkflowExecutionResult Result, List<WorkflowExecutionContext> CompletedChildWorkflows)> RunWorkflowAndWaitForChildWorkflowAsync(
         string parentWorkflowDefinitionId,
         string childWorkflowDefinitionId)
