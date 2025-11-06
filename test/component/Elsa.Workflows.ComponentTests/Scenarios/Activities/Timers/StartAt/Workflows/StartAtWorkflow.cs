@@ -1,4 +1,3 @@
-using Elsa.Scheduling.Activities;
 using Elsa.Workflows.Activities;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Timers.StartAt.Workflows;
