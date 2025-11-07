@@ -4,13 +4,16 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.DispatchWorkflows.Workflows;
 
 [UsedImplicitly]
-public class ChildWorkflow : WorkflowBase
+public class FaultingChildWorkflow : WorkflowBase
 {
     public static readonly string DefinitionId = Guid.NewGuid().ToString();
 
     protected override void Build(IWorkflowBuilder builder)
     {
         builder.WithDefinitionId(DefinitionId);
-        builder.Root = new WriteLine("Child workflow executed");
+        builder.Root = new Fault
+        {
+            Message = new("Child workflow failed intentionally")
+        };
     }
 }

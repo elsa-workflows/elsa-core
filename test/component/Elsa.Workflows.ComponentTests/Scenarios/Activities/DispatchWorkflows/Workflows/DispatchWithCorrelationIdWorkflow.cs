@@ -3,7 +3,7 @@ using Elsa.Workflows.Runtime.Activities;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.DispatchWorkflows.Workflows;
 
-public class DispatchAndWaitWorkflow : WorkflowBase
+public class DispatchWithCorrelationIdWorkflow : WorkflowBase
 {
     public static readonly string DefinitionId = Guid.NewGuid().ToString();
 
@@ -17,6 +17,7 @@ public class DispatchAndWaitWorkflow : WorkflowBase
                 new DispatchWorkflow
                 {
                     WorkflowDefinitionId = new(ChildWorkflow.DefinitionId),
+                    CorrelationId = new("test-correlation-id-123"),
                     WaitForCompletion = new(true)
                 },
                 new WriteLine("Parent completed")

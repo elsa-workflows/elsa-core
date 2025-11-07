@@ -3,7 +3,7 @@ using Elsa.Workflows.Runtime.Activities;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.DispatchWorkflows.Workflows;
 
-public class DispatchAndWaitWorkflow : WorkflowBase
+public class DispatchWithInputWorkflow : WorkflowBase
 {
     public static readonly string DefinitionId = Guid.NewGuid().ToString();
 
@@ -16,7 +16,11 @@ public class DispatchAndWaitWorkflow : WorkflowBase
             {
                 new DispatchWorkflow
                 {
-                    WorkflowDefinitionId = new(ChildWorkflow.DefinitionId),
+                    WorkflowDefinitionId = new(ChildWorkflowWithInput.DefinitionId),
+                    Input = new(new Dictionary<string, object>
+                    {
+                        ["Message"] = "Hello from parent!"
+                    }),
                     WaitForCompletion = new(true)
                 },
                 new WriteLine("Parent completed")
