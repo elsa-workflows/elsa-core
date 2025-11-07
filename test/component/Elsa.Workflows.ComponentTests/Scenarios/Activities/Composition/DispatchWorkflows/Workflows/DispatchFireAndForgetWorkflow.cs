@@ -1,6 +1,6 @@
 using Elsa.Workflows.Runtime.Activities;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Composition.DispatchWorkflows.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.DispatchWorkflows.Workflows;
 
 public class DispatchFireAndForgetWorkflow : WorkflowBase
 {
