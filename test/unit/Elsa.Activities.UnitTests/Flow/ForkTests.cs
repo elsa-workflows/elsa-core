@@ -319,7 +319,8 @@ public class ForkTests
 
     private static WriteLine[] CreateBranches(int count, string namePrefix = "Branch")
     {
-        return Enumerable.Range(1, count)
+        return Enumerable
+            .Range(1, count)
             .Select(i => new WriteLine($"{namePrefix} {i}")
             {
                 Id = $"{namePrefix.ToLower()}-{i}"
