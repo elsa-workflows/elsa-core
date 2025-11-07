@@ -8,8 +8,4 @@
         <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="NSubstitute" Version="5.1.0" />
-    </ItemGroup>
-
 </Project>
