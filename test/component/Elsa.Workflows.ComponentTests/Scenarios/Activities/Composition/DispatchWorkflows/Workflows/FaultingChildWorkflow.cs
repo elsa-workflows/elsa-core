@@ -1,7 +1,7 @@
 using Elsa.Workflows.Activities;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.DispatchWorkflows.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Composition.DispatchWorkflows.Workflows;
 
 [UsedImplicitly]
 public class FaultingChildWorkflow : WorkflowBase

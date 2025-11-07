@@ -1,7 +1,7 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Runtime.Activities;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.DispatchWorkflows.Workflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Composition.DispatchWorkflows.Workflows;
 
 public class DispatchWithCorrelationIdWorkflow : WorkflowBase
 {
