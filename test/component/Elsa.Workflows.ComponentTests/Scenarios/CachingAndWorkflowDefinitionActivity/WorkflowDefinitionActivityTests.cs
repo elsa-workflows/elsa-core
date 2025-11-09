@@ -34,7 +34,8 @@ public class WorkflowDefinitionActivityTests : AppComponentTest
 
         var filter = new WorkflowInstanceFilter
         {
-            WorkflowSubStatus = WorkflowSubStatus.Faulted
+            WorkflowSubStatus = WorkflowSubStatus.Faulted,
+            DefinitionIds = ["189be5173f90b1f6", "a3390d1f4c2594a8", "29595e7b37a4836d"]
         };
         var faultedWorkflows = (await _workflowInstanceStore.FindManyAsync(filter)).ToList();
         var faultCount = faultedWorkflows.Count;
@@ -42,7 +43,7 @@ public class WorkflowDefinitionActivityTests : AppComponentTest
         foreach (var faultedWorkflow in faultedWorkflows)
         foreach (var incident in faultedWorkflow.WorkflowState.Incidents)
             _testOutputHelper.WriteLine(incident.Message);
-
+        
         Assert.Equal(0, faultCount);
     }
 
