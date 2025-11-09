@@ -16,10 +16,9 @@ namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 /// Loads and executes an <see cref="WorkflowDefinition"/>.
 /// </summary>
 [Browsable(false)]
-public class WorkflowDefinitionActivity : Composite, IInitializable, IDisposable
+public class WorkflowDefinitionActivity : Composite, IInitializable
 {
     private bool IsInitialized => Root.Id != null!;
-    private readonly SemaphoreSlim _initializationSemaphore = new(1, 1);
 
     /// <summary>
     /// The definition ID of the workflow to schedule for execution.
@@ -49,46 +48,34 @@ public class WorkflowDefinitionActivity : Composite, IInitializable, IDisposable
         if (IsInitialized)
             return;
 
-        await _initializationSemaphore.WaitAsync(context.CancellationToken);
-        try
+        var serviceProvider = context.ServiceProvider;
+        var cancellationToken = context.CancellationToken;
+
+        // Find the workflow definition and not the graph; the graph must be computed at runtime, since NodeIds will vary across graphs.
+        var workflowDefinition = await GetWorkflowDefinitionAsync(serviceProvider, cancellationToken);
+
+        if (workflowDefinition == null)
+            throw new Exception($"Could not find workflow definition with ID {WorkflowDefinitionId}.");
+
+        var activityDescriptor = await FindActivityDescriptorAsync(serviceProvider);
+
+        if (activityDescriptor == null)
         {
-            // Double-check after acquiring the lock
-            if (IsInitialized)
-                return;
-
-            var serviceProvider = context.ServiceProvider;
-            var cancellationToken = context.CancellationToken;
-
-            // Find the workflow definition and not the graph; the graph must be computed at runtime, since NodeIds will vary across graphs.
-            var workflowDefinition = await GetWorkflowDefinitionAsync(serviceProvider, cancellationToken);
-
-            if (workflowDefinition == null)
-                throw new Exception($"Could not find workflow definition with ID {WorkflowDefinitionId}.");
-
-            var activityDescriptor = await FindActivityDescriptorAsync(serviceProvider);
-
-            if (activityDescriptor == null)
-            {
-                var logger = serviceProvider.GetRequiredService<ILogger<WorkflowDefinitionActivity>>();
-                logger.LogWarning("Could not find activity descriptor for activity type {ActivityType}", Type);
-            }
-            else
-            {
-                // Declare input and output variables.
-                DeclareInputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
-                DeclareOutputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
-            }
-
-            var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
-            var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-
-            // Set the root activity.
-            Root = workflowGraph.Workflow;
+            var logger = serviceProvider.GetRequiredService<ILogger<WorkflowDefinitionActivity>>();
+            logger.LogWarning("Could not find activity descriptor for activity type {ActivityType}", Type);
         }
-        finally
+        else
         {
-            _initializationSemaphore.Release();
+            // Declare input and output variables.
+            DeclareInputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
+            DeclareOutputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
         }
+
+        var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
+        var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+
+        // Set the root activity.
+        Root = workflowGraph.Workflow;
     }
 
     /// <inheritdoc />
@@ -218,11 +205,5 @@ public class WorkflowDefinitionActivity : Composite, IInitializable, IDisposable
     {
         var activityRegistryLookup = serviceProvider.GetRequiredService<IActivityRegistryLookupService>();
         return await activityRegistryLookup.FindAsync(Type, Version) ?? await activityRegistryLookup.FindAsync(Type);
-    }
-
-    /// <inheritdoc />
-    public void Dispose()
-    {
-        _initializationSemaphore.Dispose();
     }
 }
