@@ -43,7 +43,7 @@ public class WorkflowDefinitionActivityTests : AppComponentTest
         foreach (var faultedWorkflow in faultedWorkflows)
         foreach (var incident in faultedWorkflow.WorkflowState.Incidents)
             _testOutputHelper.WriteLine(incident.Message);
-        
+
         Assert.Equal(0, faultCount);
     }
 
