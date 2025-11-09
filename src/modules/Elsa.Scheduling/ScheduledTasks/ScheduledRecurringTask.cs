@@ -98,9 +98,10 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
                 var cancellationToken = _cancellationTokenSource.Token;
                 if (!cancellationToken.IsCancellationRequested)
                 {
+                    var acquired = false;
                     try
                     {
-                        var acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
+                        acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
                         if (!acquired) return;
                         _executing = true;
                         await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
@@ -118,7 +119,8 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
                     finally
                     {
                         _executing = false;
-                        _executionSemaphore.Release();
+                        if (acquired)
+                            _executionSemaphore.Release();
                     }
                 }
 

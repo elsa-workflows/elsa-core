@@ -109,9 +109,10 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
 
             if (!cancellationToken.IsCancellationRequested)
             {
+                var acquired = false;
                 try
                 {
-                    var acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
+                    acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
                     if (!acquired) return;
 
                     _executing = true;
@@ -130,7 +131,8 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
                 finally
                 {
                     _executing = false;
-                    _executionSemaphore.Release();
+                    if (acquired)
+                        _executionSemaphore.Release();
                 }
             }
 
