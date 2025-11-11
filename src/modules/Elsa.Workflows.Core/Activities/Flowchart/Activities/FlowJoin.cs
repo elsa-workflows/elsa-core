@@ -43,7 +43,7 @@ public class FlowJoin : Activity, IJoinNode
             {
                 if (Flowchart.CanWaitAllProceed(context))
                 {
-                    Flowchart.CancelAncestorActivatesAsync(context);
+                    await Flowchart.CancelAncestorActivitiesAsync(context);
                     await context.CompleteActivityAsync();
                 }
 
@@ -51,7 +51,7 @@ public class FlowJoin : Activity, IJoinNode
             }
             case FlowJoinMode.WaitAny:
             {
-                Flowchart.CancelAncestorActivatesAsync(context);
+                await Flowchart.CancelAncestorActivitiesAsync(context);
                 await context.CompleteActivityAsync();
                 break;
             }

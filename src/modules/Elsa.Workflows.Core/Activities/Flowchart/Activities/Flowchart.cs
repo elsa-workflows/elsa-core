@@ -351,7 +351,7 @@ public class Flowchart : Container
         return flowScope.AllInboundConnectionsVisited(flowGraph, activity);
     }
 
-    public static async void CancelAncestorActivatesAsync(ActivityExecutionContext context)
+    public static async Task CancelAncestorActivitiesAsync(ActivityExecutionContext context)
     {
         var flowchartContext = context.ParentActivityExecutionContext!;
         var flowchart = (Flowchart)flowchartContext.Activity;
