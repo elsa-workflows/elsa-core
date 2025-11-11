@@ -78,7 +78,10 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
     private void TrySetupTimer(TimeSpan delay)
     {
         if (delay <= TimeSpan.Zero)
-            return;
+        {
+            _logger.LogWarning("Calculated delay is {Delay} which is not positive. Using minimum delay of 1ms to ensure timer fires", delay);
+            delay = TimeSpan.FromMilliseconds(1);
+        }
 
         try
         {
