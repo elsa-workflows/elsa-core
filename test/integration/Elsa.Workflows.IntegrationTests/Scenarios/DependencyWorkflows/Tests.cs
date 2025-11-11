@@ -17,12 +17,13 @@ public class Tests
     }
 
     [Fact(DisplayName = "Workflows provided from JSON files that depend on other workflows are executed correctly.")]
-    public async Task Test1()
+    public async Task Should_Execute_Multi_Level_Nested_Workflow_Definitions()
     {
         // Populate registries.
         await _services.PopulateRegistriesAsync();
 
-        // Run the "matter" workflow.
+        // Run the "matter" workflow which contains MoleculeActivity, which contains AtomActivity.
+        // Matter -> 3x Molecule -> each Molecule contains 3x Atom = 9 "Atom" outputs total
         await _services.RunWorkflowUntilEndAsync("matter-workflow");
 
         // Assert.

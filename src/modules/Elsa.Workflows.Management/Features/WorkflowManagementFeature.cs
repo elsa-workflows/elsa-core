@@ -28,6 +28,7 @@ using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Serialization.Serializers;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Workflows.Management.Features;
 
@@ -51,6 +52,7 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
     private const string SystemCategory = "System";
 
     private Func<IServiceProvider, IWorkflowDefinitionPublisher> _workflowDefinitionPublisher = sp => ActivatorUtilities.CreateInstance<WorkflowDefinitionPublisher>(sp);
+    private Func<IServiceProvider, IWorkflowReferenceQuery> _workflowReferenceQuery = sp => ActivatorUtilities.CreateInstance<DefaultWorkflowReferenceQuery>(sp);
 
     private string CompressionAlgorithm { get; set; } = nameof(None);
     private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
@@ -191,9 +193,21 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
         return this;
     }
 
-    public WorkflowManagementFeature WithWorkflowDefinitionPublisher(Func<IServiceProvider, IWorkflowDefinitionPublisher> workflowDefinitionPublisher)
+    public WorkflowManagementFeature UseWorkflowDefinitionPublisher(Func<IServiceProvider, IWorkflowDefinitionPublisher> workflowDefinitionPublisher)
     {
         _workflowDefinitionPublisher = workflowDefinitionPublisher;
+        return this;
+    }
+    
+    public WorkflowManagementFeature UseWorkflowReferenceFinder<T>() where T : class, IWorkflowReferenceQuery
+    {
+        Services.TryAddScoped<T>();
+        return UseWorkflowReferenceFinder(sp => sp.GetRequiredService<T>());
+    }
+    
+    public WorkflowManagementFeature UseWorkflowReferenceFinder(Func<IServiceProvider, IWorkflowReferenceQuery> workflowReferenceFinder)
+    {
+        _workflowReferenceQuery = workflowReferenceFinder;
         return this;
     }
 
@@ -212,11 +226,13 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
             .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
             .AddActivityProvider<TypedActivityProvider>()
             .AddActivityProvider<WorkflowDefinitionActivityProvider>()
+            .AddScoped<WorkflowDefinitionActivityDescriptorFactory>()
             .AddScoped<WorkflowDefinitionActivityProvider>()
             .AddScoped<IWorkflowDefinitionActivityRegistryUpdater, WorkflowDefinitionActivityRegistryUpdater>()
             .AddScoped<IWorkflowDefinitionService, WorkflowDefinitionService>()
             .AddScoped<IWorkflowSerializer, WorkflowSerializer>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
+            .AddScoped(_workflowReferenceQuery)
             .AddScoped(_workflowDefinitionPublisher)
             .AddScoped<IWorkflowDefinitionImporter, WorkflowDefinitionImporter>()
             .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()

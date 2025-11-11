@@ -25,7 +25,7 @@ internal class List(IExpressionDescriptorRegistry expressionDescriptorRegistry) 
         var descriptors = expressionDescriptorRegistry.ListAll().ToList();
         var models = Map(descriptors).ToList();
         var response = new ListResponse<ExpressionDescriptorModel>(models);
-        return SendOkAsync(response, cancellationToken);
+        return Send.OkAsync(response, cancellationToken);
     }
 
     private static IEnumerable<ExpressionDescriptorModel> Map(List<ExpressionDescriptor> descriptors) => descriptors.Select(Map);

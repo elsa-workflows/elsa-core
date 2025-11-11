@@ -8,7 +8,7 @@ public class MemoryRegister
     /// <summary>
     /// Constructor.
     /// </summary>
-    public MemoryRegister(IDictionary<string, MemoryBlock>? blocks = default)
+    public MemoryRegister(IDictionary<string, MemoryBlock>? blocks = null)
     {
         Blocks = blocks ?? new Dictionary<string, MemoryBlock>();
     }

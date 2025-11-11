@@ -3,7 +3,6 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Runtime.Features;
-using Elsa.Workflows.Runtime.Handlers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Distributed.Features;
@@ -33,7 +32,6 @@ public class DistributedRuntimeFeature : FeatureBase
     {
         Services
             .AddScoped<DistributedWorkflowRuntime>()
-            .AddScoped<DistributedBookmarkQueueWorker>()
-            .AddCommandHandler<CancelWorkflowsCommandHandler>();
+            .AddScoped<DistributedBookmarkQueueWorker>();
     }
 }

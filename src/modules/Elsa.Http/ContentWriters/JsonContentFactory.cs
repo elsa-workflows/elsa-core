@@ -11,7 +11,7 @@ namespace Elsa.Http.ContentWriters;
 public class JsonContentFactory : IHttpContentFactory
 {
     /// <inheritdoc />
-    public IEnumerable<string> SupportedContentTypes => new[] { MediaTypeNames.Application.Json, "text/json" };
+    public IEnumerable<string> SupportedContentTypes => [MediaTypeNames.Application.Json, "text/json"];
 
     private static readonly UTF8Encoding _utf8Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 

@@ -142,7 +142,8 @@ public class LocalWorkflowClient(
             Status = workflowState.Status,
             SubStatus = workflowState.SubStatus,
             Incidents = workflowState.Incidents,
-            Output = request.IncludeWorkflowOutput ? new Dictionary<string, object>(workflowState.Output) : null
+            Output = request.IncludeWorkflowOutput ? new Dictionary<string, object>(workflowState.Output) : null,
+            Bookmarks = workflowState.Bookmarks
         };
     }
     

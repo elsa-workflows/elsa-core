@@ -37,7 +37,7 @@ internal class Endpoint(
         if (workflowGraph == null)
         {
             AddError("Workflow definition not found.");
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
         
@@ -46,12 +46,12 @@ internal class Endpoint(
         if (activity == null)
         {
             AddError("Activity not found.");
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
 
         var activityExecutionContext = await activityTestRunner.RunAsync(workflowGraph, activity, cancellationToken);
-        var record = activityExecutionMapper.Map(activityExecutionContext);
+        var record = await activityExecutionMapper.MapAsync(activityExecutionContext);
         var activityState = record.ActivityState ?? new Dictionary<string, object?>(); 
 
         var response = new Response
@@ -63,7 +63,7 @@ internal class Endpoint(
             Status = record.Status
         };
         
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }
 

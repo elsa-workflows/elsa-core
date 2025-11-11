@@ -43,7 +43,7 @@ public class SimulateResponseEndpoint(IMemoryCache memoryCache) : EndpointWithou
             });
         }
 
-        await SendAsync(new(message), currentCode, ct);
+        await Send.ResponseAsync(new(message), currentCode, ct);
     }
 
     private int[] GetCodes()

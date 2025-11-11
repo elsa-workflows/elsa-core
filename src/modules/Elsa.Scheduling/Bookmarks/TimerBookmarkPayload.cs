@@ -1,3 +1,3 @@
 namespace Elsa.Scheduling.Bookmarks;
 
-internal record TimerBookmarkPayload(DateTimeOffset ResumeAt);
+public record TimerBookmarkPayload(DateTimeOffset ResumeAt);

@@ -20,8 +20,8 @@ internal class Delete(IWorkflowInstanceManager store) : ElsaEndpoint<Request>
         var deleted = await store.DeleteAsync(filter, cancellationToken);
 
         if (deleted)
-            await SendNoContentAsync(cancellationToken);
+            await Send.NoContentAsync(cancellationToken);
         else
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
     }
 }

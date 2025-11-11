@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
+[Obsolete("Use WorkflowResumer instead.")]
 public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bookmarkStore, IStimulusHasher stimulusHasher, ILogger<BookmarkResumer> logger) : IBookmarkResumer
 {
     /// <inheritdoc />

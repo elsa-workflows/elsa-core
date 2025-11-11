@@ -29,16 +29,17 @@ public class EventPublisher(IStimulusSender stimulusSender, IStimulusDispatcher 
             WorkflowInstanceId = workflowInstanceId,
             Input = workflowInput
         };
+        var triggerName = ActivityTypeNameHelper.GenerateTypeName<Event>();
         if (asynchronous)
         {
             await stimulusDispatcher.SendAsync(new()
             {
-                ActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<Event>(),
+                ActivityTypeName = triggerName,
                 Stimulus = stimulus,
                 Metadata = metadata
             }, cancellationToken);
         }
         else
-            await stimulusSender.SendAsync<Event>(stimulus, metadata, cancellationToken);
+            await stimulusSender.SendAsync(triggerName, stimulus, metadata, cancellationToken);
     }
 }

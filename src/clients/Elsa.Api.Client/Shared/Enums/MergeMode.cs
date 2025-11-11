@@ -6,17 +6,24 @@ namespace Elsa.Api.Client.Shared.Enums;
 public enum MergeMode
 {
     /// <summary>
-    /// Wait for all inbound paths before proceeding. 
+    /// No special merging; use approximation that proceeds after all upstream sources complete, ignoring dead paths.
+    /// Suitable for flexible, unstructured merges where optional branches shouldn't block.
+    /// </summary>
+    None,
+
+    /// <summary>
+    /// Strict wait for tokens from all forward inbound connections. Blocks on dead/untaken paths.
+    /// Use for required synchronization points.
     /// </summary>
     Converge,
-    
+
     /// <summary>
-    /// Proceed when any one inbound path completes; cancel all others.
+    /// Schedule on each arriving token, allowing multiple executions if supported.
     /// </summary>
-    Race,
-    
+    Stream,
+
     /// <summary>
-    /// Proceed when any one inbound path completes; do not cancel others.
+    /// Schedule on the first arriving token, block or cancel others.
     /// </summary>
-    Stream
+    Race
 }

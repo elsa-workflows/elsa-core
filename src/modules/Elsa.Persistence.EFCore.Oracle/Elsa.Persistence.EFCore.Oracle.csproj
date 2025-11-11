@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides Oracle EF Core migrations for various modules.
+        </Description>
+        <PackageTags>elsa extension module persistence efcore oracle</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+        <PackageReference Include="Oracle.EntityFrameworkCore" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Persistence.EFCore\Elsa.Persistence.EFCore.csproj" />
+    </ItemGroup>
+
+</Project>

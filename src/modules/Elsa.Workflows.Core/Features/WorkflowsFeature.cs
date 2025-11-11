@@ -22,6 +22,7 @@ using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Serialization.Serializers;
 using Elsa.Workflows.Services;
 using Elsa.Workflows.UIHints.CheckList;
+using Elsa.Workflows.UIHints.Dictionary;
 using Elsa.Workflows.UIHints.Dropdown;
 using Elsa.Workflows.UIHints.JsonEditor;
 using Elsa.Workflows.UIHints.RadioList;
@@ -169,6 +170,8 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IWorkflowGraphBuilder, WorkflowGraphBuilder>()
             .AddScoped<IWorkflowStateExtractor, WorkflowStateExtractor>()
             .AddScoped<IActivitySchedulerFactory, ActivitySchedulerFactory>()
+            .AddSingleton<IWorkflowExecutionContextSchedulerStrategy, WorkflowExecutionContextSchedulerStrategy>()
+            .AddSingleton<IActivityExecutionContextSchedulerStrategy, ActivityExecutionContextSchedulerStrategy>()
             .AddScoped(CommitStateHandler)
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IStimulusHasher, StimulusHasher>()
@@ -188,6 +191,7 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IActivityStateFilterManager, DefaultActivityStateFilterManager>()
             .AddScoped<IWorkflowInstanceVariableReader, DefaultWorkflowInstanceVariableReader>()
             .AddScoped<IWorkflowInstanceVariableWriter, DefaultWorkflowInstanceVariableWriter>()
+            .AddScoped<DefaultActivityInputEvaluator>()
 
             // Incident Strategies.
             .AddTransient<IIncidentStrategy, FaultStrategy>()
@@ -229,17 +233,17 @@ public class WorkflowsFeature : FeatureBase
             // Instantiation strategies.
             .AddScoped<IWorkflowActivationStrategy, AllowAlwaysStrategy>()
 
-            // UI hints.
+            // UI.
             .AddScoped<IUIHintHandler, DropDownUIHintHandler>()
             .AddScoped<IUIHintHandler, CheckListUIHintHandler>()
             .AddScoped<IUIHintHandler, RadioListUIHintHandler>()
             .AddScoped<IUIHintHandler, JsonEditorUIHintHandler>()
-
-            // UI property handlers.
             .AddScoped<IPropertyUIHandler, StaticCheckListOptionsProvider>()
             .AddScoped<IPropertyUIHandler, StaticRadioListOptionsProvider>()
             .AddScoped<IPropertyUIHandler, StaticDropDownOptionsProvider>()
             .AddScoped<IPropertyUIHandler, JsonCodeOptionsProvider>()
+            .AddScoped<DictionaryValueEvaluator>()
+            .AddSingleton<IActivityDescriptorModifier, DictionaryUIHintInputModifier>()
 
             // Logger state generators.
             .AddSingleton(WorkflowLoggerStateGenerator)

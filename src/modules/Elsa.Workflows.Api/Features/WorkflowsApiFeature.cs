@@ -2,7 +2,6 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Http.Features;
 using Elsa.SasTokens.Features;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
@@ -21,15 +20,9 @@ namespace Elsa.Workflows.Api.Features;
 [DependsOn(typeof(WorkflowInstancesFeature))]
 [DependsOn(typeof(WorkflowManagementFeature))]
 [DependsOn(typeof(WorkflowRuntimeFeature))]
-[DependsOn(typeof(HttpFeature))]
 [DependsOn(typeof(SasTokensFeature))]
-public class WorkflowsApiFeature : FeatureBase
+public class WorkflowsApiFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public WorkflowsApiFeature(IModule module) : base(module)
-    {
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -43,7 +36,6 @@ public class WorkflowsApiFeature : FeatureBase
         Module.AddFastEndpointsFromModule();
 
         Services.AddScoped<IWorkflowDefinitionLinker, StaticWorkflowDefinitionLinker>();
-
         Services.AddScoped<IAuthorizationHandler, NotReadOnlyRequirementHandler>();
         Services.Configure<AuthorizationOptions>(options =>
         {

@@ -26,7 +26,7 @@ internal class Endpoint(IWorkflowDefinitionService workflowDefinitionService, IW
         
         if (workflowGraph == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
@@ -48,6 +48,6 @@ internal class Endpoint(IWorkflowDefinitionService workflowDefinitionService, IW
             instanceIds.Add(instanceId);
         }
 
-        await SendOkAsync(new Response(instanceIds), cancellationToken);
+        await Send.OkAsync(new Response(instanceIds), cancellationToken);
     }
 }

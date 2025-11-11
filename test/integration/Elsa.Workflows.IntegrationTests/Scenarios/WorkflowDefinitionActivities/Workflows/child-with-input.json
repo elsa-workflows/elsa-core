@@ -1,0 +1,79 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "e694d38a6d17f6ab",
+  "definitionId": "d0ae88e4c15eacc0",
+  "name": "ChildWithInput",
+  "createdAt": "2025-10-21T12:06:12.52497\u002B00:00",
+  "version": 1,
+  "toolVersion": "3.6.0.0",
+  "variables": [],
+  "inputs": [
+    {
+      "uiHint": "singleline",
+      "storageDriverType": "Elsa.Workflows.WorkflowInstanceStorageDriver, Elsa.Workflows.Core",
+      "type": "String",
+      "name": "Message",
+      "displayName": "Message",
+      "description": "The message to write",
+      "category": "Primitives"
+    }
+  ],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true
+  },
+  "root": {
+    "id": "855226c76e9ad551",
+    "nodeId": "Workflow1:855226c76e9ad551",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getMessage()"
+          }
+        },
+        "id": "eff084a902159510",
+        "nodeId": "Workflow1:855226c76e9ad551:eff084a902159510",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -278.5,
+              "y": -178.5
+            },
+            "size": {
+              "width": 159.6171875,
+              "height": 67.9765625
+            }
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": []
+  }
+}

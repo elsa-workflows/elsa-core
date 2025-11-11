@@ -35,11 +35,15 @@ public static class RunWorkflowExtensions
     {
         var workflowDefinitionService = services.GetRequiredService<IWorkflowDefinitionService>();
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, versionOptions ?? VersionOptions.Published);
+        
+        if (workflowGraph == null)
+            throw new InvalidOperationException($"Workflow definition with ID '{workflowDefinitionId}' not found.");
+        
         var workflowRuntime = services.GetRequiredService<IWorkflowRuntime>();
         var workflowClient = await workflowRuntime.CreateClientAsync();
         var response = await workflowClient.CreateAndRunInstanceAsync(new()
         {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph!.Workflow.Identity.Id),
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph.Workflow.Identity.Id),
             Input = input
         });
         

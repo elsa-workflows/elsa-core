@@ -95,4 +95,18 @@ public class WorkflowDefinitionService(
 
         return await MaterializeWorkflowAsync(definition, cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<WorkflowGraph>> FindWorkflowGraphsAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    {
+        var workflowDefinitions = await workflowDefinitionStore.FindManyAsync(filter, cancellationToken);
+        var workflowGraphs = new List<WorkflowGraph>();
+        foreach (var workflowDefinition in workflowDefinitions)
+        {
+            var workflowGraph = await MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+            workflowGraphs.Add(workflowGraph);
+        }
+
+        return workflowGraphs;
+    }
 }

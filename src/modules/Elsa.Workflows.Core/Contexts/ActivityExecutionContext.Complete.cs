@@ -1,4 +1,5 @@
 using Elsa.Extensions;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Signals;
 

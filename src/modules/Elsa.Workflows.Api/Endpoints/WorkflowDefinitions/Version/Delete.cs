@@ -38,7 +38,7 @@ public class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManager,
 
         if (definition == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
@@ -46,7 +46,7 @@ public class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManager,
 
         if (!authorizationResult.Succeeded)
         {
-            await SendForbiddenAsync(cancellationToken);
+            await Send.ForbiddenAsync(cancellationToken);
             return;
         }
 
@@ -54,10 +54,10 @@ public class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManager,
 
         if (!result)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
-        await SendOkAsync(cancellationToken);
+        await Send.OkAsync(cancellationToken);
     }
 }

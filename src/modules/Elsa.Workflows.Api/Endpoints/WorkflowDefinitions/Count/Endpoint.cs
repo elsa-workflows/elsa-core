@@ -20,6 +20,6 @@ internal class Count(IWorkflowDefinitionStore store) : ElsaEndpointWithoutReques
     {
         var count = await store.CountDistinctAsync(cancellationToken);
         var response = new Response(count);
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }

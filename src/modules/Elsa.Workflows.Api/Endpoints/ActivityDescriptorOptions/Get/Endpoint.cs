@@ -30,18 +30,18 @@ internal class Get : ElsaEndpoint<Request, Response>
     {
         var descriptor = request.Version == null ? await _registryLookup.FindAsync(request.ActivityTypeName) : await _registryLookup.FindAsync(request.ActivityTypeName, request.Version.Value);
         if (descriptor == null)
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
 
         var propertyDescriptor =  descriptor!.Inputs.FirstOrDefault(x => x.Name == request.PropertyName);
 
         if(propertyDescriptor == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
         
         var inputOptions = await _optionsResolver.GetUIPropertiesAsync(propertyDescriptor.PropertyInfo!, request.Context, cancellationToken);
 
-        await SendOkAsync(new Response(inputOptions), cancellationToken);
+        await Send.OkAsync(new Response(inputOptions), cancellationToken);
     }
 }

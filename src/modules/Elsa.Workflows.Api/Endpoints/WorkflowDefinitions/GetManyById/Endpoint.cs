@@ -26,6 +26,6 @@ internal class GetManyById(IWorkflowDefinitionStore store, IWorkflowDefinitionLi
         var definitions = (await store.FindManyAsync(filter, cancellationToken)).ToList();
         var models = await linker.MapAsync(definitions, cancellationToken);
         var response = new ListResponse<LinkedWorkflowDefinitionModel>(models);
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }

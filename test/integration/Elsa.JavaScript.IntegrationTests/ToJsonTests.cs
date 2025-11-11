@@ -1,13 +1,12 @@
 using System.Text.Json;
-using Elsa.Expressions.Models;
 using Elsa.Expressions.JavaScript.Contracts;
+using Elsa.Expressions.Models;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 using Xunit.Abstractions;
 
-namespace Elsa.Expressions.JavaScript.IntegrationTests;
+namespace Elsa.JavaScript.IntegrationTests;
 
 public class ToJsonTests(ITestOutputHelper testOutputHelper)
 {

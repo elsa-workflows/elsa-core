@@ -21,20 +21,21 @@ public class InputDescriptor : PropertyDescriptor
         bool isWrapped,
         string uiHint,
         string displayName,
-        string? description = default,
-        string? category = default,
+        string? description = null,
+        string? category = null,
         float order = 0,
-        object? defaultValue = default,
+        object? defaultValue = null,
         string? defaultSyntax = "Literal",
         bool isReadOnly = false,
         bool isBrowsable = true,
         bool isSerializable = true,
         bool isSynthetic = false,
         bool autoEvaluate = true,
-        Type? storageDriverType = default,
-        PropertyInfo? propertyInfo = default,
-        IDictionary<string, object>? uiSpecifications = default
-        )
+        Type? evaluatorType = null,
+        Type? storageDriverType = null,
+        PropertyInfo? propertyInfo = null,
+        IDictionary<string, object>? uiSpecifications = null
+    )
     {
         Name = name;
         Type = type;
@@ -50,6 +51,7 @@ public class InputDescriptor : PropertyDescriptor
         DefaultSyntax = defaultSyntax;
         IsReadOnly = isReadOnly;
         AutoEvaluate = autoEvaluate;
+        EvaluatorType = evaluatorType;
         StorageDriverType = storageDriverType;
         IsSynthetic = isSynthetic;
         IsBrowsable = isBrowsable;
@@ -66,7 +68,7 @@ public class InputDescriptor : PropertyDescriptor
     /// <summary>
     /// A string value that hints at what UI control might be used to render in a UI tool.  
     /// </summary>
-    public string UIHint { get; set; } = default!;
+    public string UIHint { get; set; } = null!;
 
     /// <summary>
     /// The category to which this input belongs. Can be used by UI to e.g. render different inputs in different tabs.
@@ -104,6 +106,12 @@ public class InputDescriptor : PropertyDescriptor
     /// True if the expression should be evaluated automatically, false otherwise. Defaults to true.
     /// </summary>
     public bool AutoEvaluate { get; set; } = true;
+    
+    /// <summary>
+    /// Specifies the type of a custom evaluator to use for evaluating the input property value.
+    /// The evaluator type determines how the value for the property is resolved at runtime.
+    /// </summary>
+    public Type? EvaluatorType { get; set; }
 
     /// <summary>
     /// A dictionary of UI specifications to be used by the UI.

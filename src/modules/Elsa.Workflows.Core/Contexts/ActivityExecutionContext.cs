@@ -314,10 +314,8 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <param name="options">The options used to schedule the activity.</param>
     public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityExecutionContext? owner, ScheduleWorkOptions? options = null)
     {
-        var activityNode = activity != null
-            ? WorkflowExecutionContext.FindNodeByActivity(activity) ?? throw new InvalidOperationException("The specified activity is not part of the workflow.")
-            : null;
-        await ScheduleActivityAsync(activityNode, owner, options);
+        var schedulerStrategy = GetRequiredService<IActivityExecutionContextSchedulerStrategy>();
+        await schedulerStrategy.ScheduleActivityAsync(this, activity, owner, options);
     }
 
     /// <summary>
@@ -326,55 +324,10 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <param name="activityNode">The activity node to schedule.</param>
     /// <param name="owner">The activity execution context that owns the scheduled activity.</param>
     /// <param name="options">The options used to schedule the activity.</param>
-    public async ValueTask ScheduleActivityAsync(ActivityNode? activityNode, ActivityExecutionContext? owner = null, ScheduleWorkOptions? options = null)
+    public async Task ScheduleActivityAsync(ActivityNode? activityNode, ActivityExecutionContext? owner = null, ScheduleWorkOptions? options = null)
     {
-        if (this.GetIsBackgroundExecution())
-        {
-            // Validate that the specified activity is part of the workflow.
-            if (activityNode != null && !WorkflowExecutionContext.NodeActivityLookup.ContainsKey(activityNode.Activity))
-                throw new InvalidOperationException("The specified activity is not part of the workflow.");
-
-            var scheduledActivity = new ScheduledActivity
-            {
-                ActivityNodeId = activityNode?.NodeId,
-                OwnerActivityInstanceId = owner?.Id,
-                Options = options != null
-                    ? new ScheduledActivityOptions
-                    {
-                        CompletionCallback = options?.CompletionCallback?.Method.Name,
-                        Tag = options?.Tag,
-                        ExistingActivityInstanceId = options?.ExistingActivityExecutionContext?.Id,
-                        PreventDuplicateScheduling = options?.PreventDuplicateScheduling ?? false,
-                        Variables = options?.Variables?.ToList(),
-                        Input = options?.Input
-                    }
-                    : null
-            };
-
-            var scheduledActivities = this.GetBackgroundScheduledActivities().ToList();
-            scheduledActivities.Add(scheduledActivity);
-            this.SetBackgroundScheduledActivities(scheduledActivities);
-            return;
-        }
-
-        var completionCallback = options?.CompletionCallback;
-        owner ??= this;
-
-        if (activityNode == null)
-        {
-            if (completionCallback != null)
-            {
-                Tag = options?.Tag;
-                var completedContext = new ActivityCompletedContext(this, this);
-                await completionCallback(completedContext);
-            }
-            else
-                await owner.CompleteActivityAsync();
-
-            return;
-        }
-
-        WorkflowExecutionContext.Schedule(activityNode, owner, options);
+        var schedulerStrategy = GetRequiredService<IActivityExecutionContextSchedulerStrategy>();
+        await schedulerStrategy.ScheduleActivityAsync(this, activityNode, owner, options);
     }
 
     /// <summary>
@@ -751,12 +704,6 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         if (memoryBlock != null)
         {
             value = memoryBlock.Value;
-            return true;
-        }
-
-        if (blockReference is Literal literal)
-        {
-            value = literal.Value;
             return true;
         }
 

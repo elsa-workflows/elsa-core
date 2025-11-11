@@ -45,7 +45,6 @@
         - "5500:5500"
       volumes:
         - ./data/oracle-data:/opt/oracle/oradata
-        - ./setup/oracle-setup:/opt/oracle/scripts/setup
   
   mongodb:
     image: mongo:latest
@@ -158,7 +157,6 @@
 volumes:
   sqlserver_data:
   postgres-data:
-  oracle-data-free1:
   mysql_data2:
   cockroachdb-data:
   mongodb_data:

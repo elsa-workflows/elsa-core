@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
 using Elsa.Common;
@@ -24,6 +25,8 @@ namespace Elsa.Extensions;
 [PublicAPI]
 public static partial class ActivityExecutionContextExtensions
 {
+    private const string ExtensionsMetadataKey = "Extensions";
+
     /// <summary>
     /// Attempts to get a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
     /// </summary>
@@ -436,6 +439,53 @@ public static partial class ActivityExecutionContextExtensions
         }
     }
 
-    internal static bool GetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties.TryGetValue<bool>("HasEvaluatedProperties", out var value) && value;
-    internal static void SetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties["HasEvaluatedProperties"] = true;
+    /// <summary>
+    /// Sets extension data in the metadata. Represents specific data that is exposed generically for an activity.
+    /// </summary>
+    public static void SetExtensionsMetadata(this ActivityExecutionContext context, string key, object? value)
+    {
+        var extensionsDictionary = context.GetExtensionsMetadata() ?? new Dictionary<string, object?>();
+
+        extensionsDictionary[key] = value;
+        
+        context.Metadata[ExtensionsMetadataKey] = extensionsDictionary;
+    }
+
+    /// <summary>
+    /// Retrieves the extension data from the metadata. Represents specific data that is exposed generically for an activity.
+    /// </summary>
+    public static Dictionary<string, object?>? GetExtensionsMetadata(this ActivityExecutionContext context)
+    {
+        return context.Metadata.TryGetValue(ExtensionsMetadataKey, out var value) ? value as Dictionary<string, object?> : null;
+    }
+
+    /// <summary>
+    /// Gets the output of an activity even when the context is not the same as the activity's context.
+    /// This is useful when you want to get the output of a previously executed activity.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="property"></param>
+    /// <typeparam name="TProp"></typeparam>
+    /// <returns></returns>
+    public static object? GetActivityOutput<TProp>(this ActivityExecutionContext context, Expression<Func<TProp>> property)
+    {
+        if (property.Body is not MemberExpression memberExpr)
+        {
+            return null;
+        }
+        
+        var propertyName = memberExpr.Member.Name;
+            
+        var value = context.Get(propertyName);
+        
+        if (value != null)
+            return value;
+
+        var registry = context.WorkflowExecutionContext.GetActivityOutputRegister();
+            
+        return registry.FindOutputByActivityInstanceId(context.Id, propertyName);
+    }
+
+    public static bool GetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties.TryGetValue<bool>("HasEvaluatedProperties", out var value) && value;
+    public static void SetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties["HasEvaluatedProperties"] = true;
 }

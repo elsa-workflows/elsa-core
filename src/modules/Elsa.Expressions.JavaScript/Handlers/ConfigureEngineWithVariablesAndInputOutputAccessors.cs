@@ -75,6 +75,6 @@ public class ConfigureEngineWithVariablesAndInputOutputAccessors(IOptions<JintOp
 
         await foreach (var activityOutput in activityOutputs)
         foreach (var outputName in activityOutput.OutputNames.FilterInvalidVariableNames())
-            engine.SetValue($"get{outputName}From{activityOutput.ActivityName}", (Func<object?>)(() => context.GetOutput(activityOutput.ActivityId, outputName)));
+            engine.SetValue($"get{outputName}From{activityOutput.ActivityName.Pascalize()}", (Func<object?>)(() => context.GetOutput(activityOutput.ActivityId, outputName)));
     }
 }

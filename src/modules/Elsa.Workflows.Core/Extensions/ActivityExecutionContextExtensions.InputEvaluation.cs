@@ -3,6 +3,7 @@ using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Models;
 
 // ReSharper disable once CheckNamespace
@@ -69,6 +70,18 @@ public static partial class ActivityExecutionContextExtensions
     
     private static async Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, ActivityDescriptor activityDescriptor, InputDescriptor inputDescriptor)
     {
+        try
+        {
+            return await EvaluateInputPropertyCoreAsync(context, activityDescriptor, inputDescriptor);
+        }
+        catch (Exception e)
+        {
+            throw new InputEvaluationException(inputDescriptor.Name, $"Failed to evaluate activity input '{inputDescriptor.Name}'", e);
+        }
+    }
+    
+    private static async Task<object?> EvaluateInputPropertyCoreAsync(this ActivityExecutionContext context, ActivityDescriptor activityDescriptor, InputDescriptor inputDescriptor)
+    {
         var activity = context.Activity;
         var defaultValue = inputDescriptor.DefaultValue;
         var value = defaultValue;
@@ -91,16 +104,26 @@ public static partial class ActivityExecutionContextExtensions
             }
             else
             {
-                var evaluator = context.GetRequiredService<IExpressionEvaluator>();
+                var expressionEvaluator = context.GetRequiredService<IExpressionEvaluator>();
                 var expressionExecutionContext = context.ExpressionExecutionContext;
-                value = wrappedInput?.Expression != null ? await evaluator.EvaluateAsync(wrappedInput, expressionExecutionContext) : defaultValue;
+                var inputEvaluatorType = inputDescriptor.EvaluatorType ?? typeof(DefaultActivityInputEvaluator);
+
+                if (wrappedInput?.Expression != null)
+                {
+                    var inputEvaluator = (IActivityInputEvaluator)context.GetRequiredService(inputEvaluatorType);
+                    var inputEvaluatorContext = new ActivityInputEvaluatorContext(context, expressionExecutionContext, inputDescriptor, wrappedInput, expressionEvaluator);
+                    value = await inputEvaluator.EvaluateAsync(inputEvaluatorContext);
+                }
             }
 
             var memoryReference = wrappedInput?.MemoryBlockReference();
 
-            // When input is created from an activity provider, there may be no memory block reference.
-            if (memoryReference?.Id != null!)
+            if (memoryReference != null)
             {
+                // When input is created from an activity provider, there may be no memory block reference ID.
+                if (memoryReference.Id == null!) 
+                    memoryReference.Id = $"{activity.NodeId}.{inputDescriptor.Name}"; // Construct a deterministic ID.
+                
                 // Declare the input memory block in the current context. 
                 context.ExpressionExecutionContext.Set(memoryReference, value!);
             }

@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Expressions.JavaScript.Contracts;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Contracts;
@@ -40,7 +41,10 @@ public class TypeDescriber : ITypeDescriber
             yield break;
         
 #pragma warning disable IL2070
-        var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(x => !x.IsSpecialName).ToList();
+        var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
+            .Where(x => !x.IsSpecialName)
+            .Where(x => x.GetCustomAttribute<CompilerGeneratedAttribute>() == null)
+            .ToList();
 #pragma warning restore IL2070
 
         foreach (var method in methods)

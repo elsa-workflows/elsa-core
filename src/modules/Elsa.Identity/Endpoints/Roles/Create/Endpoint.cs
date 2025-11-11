@@ -60,6 +60,6 @@ internal class Create : ElsaEndpoint<Request, Response>
             role.Name,
             role.Permissions);
 
-        await SendOkAsync(response, cancellationToken);
+        await Send.OkAsync(response, cancellationToken);
     }
 }

@@ -32,7 +32,10 @@ public class FlowchartNextActivityTests
         await _services.PopulateRegistriesAsync();
         await _workflowRunner.RunAsync<FlowchartWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[] { "Line 1" }, lines);
+        Assert.Equal(new[]
+        {
+            "Line 1"
+        }, lines);
     }
 
     [Fact(DisplayName = "Flowchart with backward connections and a dangling activity")]
@@ -44,74 +47,71 @@ public class FlowchartNextActivityTests
 
             var start = new Start();
             var dangling = new WriteLine("dangling");
-            var writeLineDecision = new FlowSwitch()
+            var writeLineDecision = new FlowSwitch
             {
-                Cases = {
-                    new FlowSwitchCase("LessThanThree", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
-                    new FlowSwitchCase("LessThanOne", new Expression("JavaScript", "getVariable('LoopCount') < 1")),
-                }, 
+                Cases =
+                {
+                    new("LessThanThree", new Expression("JavaScript", "getVariable('LoopCount') < 3"))
+                },
                 Mode = new(SwitchMode.MatchAny)
             };
             var a = new WriteLine("A");
             var b = new WriteLine("B");
-            var c = new WriteLine("C");
-            var incrementLoop = new SetVariable()
+            var incrementLoop = new SetVariable
             {
                 Variable = loopVariable,
-                Value = new Models.Input<object?>(new Expression("JavaScript", "getVariable('LoopCount') + 1"))
+                Value = new(new Expression("JavaScript", "getVariable('LoopCount') + 1"))
             };
-            var loopbackDecision = new FlowSwitch()
+            var loopbackDecision = new FlowSwitch
             {
-                Cases = {
-                    new FlowSwitchCase("EqualOne", new Expression("JavaScript", "getVariable('LoopCount') == 1")),
-                    new FlowSwitchCase("LessThanFour", new Expression("JavaScript", "getVariable('LoopCount') < 4")),
-                }, 
-                Mode = new(SwitchMode.MatchFirst)
+                Cases =
+                {
+                    new("EqualOne", new Expression("JavaScript", "getVariable('LoopCount') == 1")),
+                    new("LessThanFour", new Expression("JavaScript", "getVariable('LoopCount') < 4")),
+                    new("EqualThree", new Expression("JavaScript", "getVariable('LoopCount') == 3")),
+                },
+                Mode = new(SwitchMode.MatchAny)
             };
             var d = new WriteLine("D");
             var e = new WriteLine("E");
             var f = new WriteLine("F");
             var end = new End();
 
-
             workflowBuilder.Root = new Flowchart
             {
                 Variables =
-                    {
-                        loopVariable
-                    },
+                {
+                    loopVariable
+                },
                 Activities =
-                    {
-                        start,
-                        dangling,
-                        writeLineDecision,
-                        a,
-                        b,
-                        c,
-                        incrementLoop,
-                        loopbackDecision,
-                        d,
-                        e,
-                        f,
-                        end
-                    },
+                {
+                    start,
+                    dangling,
+                    writeLineDecision,
+                    a,
+                    b,
+                    incrementLoop,
+                    loopbackDecision,
+                    d,
+                    e,
+                    f,
+                    end
+                },
                 Connections =
                 {
                     new(start, writeLineDecision),
                     new(dangling, writeLineDecision),
-                    new(new Endpoint(writeLineDecision, "LessThanThree"), new Endpoint(a)),
-                    new(new Endpoint(writeLineDecision, "LessThanThree"), new Endpoint(b)),
-                    new(new Endpoint(writeLineDecision, "LessThanOne"), new Endpoint(c)),
-                    new(new Endpoint(writeLineDecision, "Default"), new Endpoint(incrementLoop)),
+                    new(new(writeLineDecision, "LessThanThree"), new Endpoint(a)),
+                    new(new(writeLineDecision, "LessThanThree"), new Endpoint(b)),
+                    new(new(writeLineDecision, "Default"), new Endpoint(incrementLoop)),
                     new(a, incrementLoop),
                     new(b, incrementLoop),
-                    new(c, incrementLoop),
                     new(incrementLoop, loopbackDecision),
-                    new(new Endpoint(loopbackDecision, "EqualOne"), new Endpoint(d)),
+                    new(new(loopbackDecision, "EqualOne"), new Endpoint(d)),
                     new(d, incrementLoop),
-                    new(new Endpoint(loopbackDecision, "LessThanFour"), new Endpoint(e)),
+                    new(new(loopbackDecision, "LessThanFour"), new Endpoint(e)),
                     new(e, writeLineDecision),
-                    new(new Endpoint(loopbackDecision, "Default"), new Endpoint(f)),
+                    new(new(loopbackDecision, "EqualThree"), new Endpoint(f)),
                     new(f, end),
                 }
             };
@@ -121,7 +121,10 @@ public class FlowchartNextActivityTests
         var result = await _workflowRunner.RunAsync(workflow);
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
-        Assert.Equal(new[] { "A", "B", "C", "D", "E", "A", "B", "E", "F" }, lines);
+        Assert.Equal(new[]
+        {
+            "A", "B", "D", "E", "A", "B", "E", "E", "F"
+        }, lines);
     }
 
     [Fact(DisplayName = "Flowchart with an invalid backward connection")]
@@ -132,24 +135,42 @@ public class FlowchartNextActivityTests
         
         var workflow = new TestWorkflow(workflowBuilder =>
         {
-            var start = new Start() { Id = "Start" };
-            var a = new WriteLine("A") { Id = "WriteLineA" };
-            var b = new WriteLine("B") { Id = "WriteLineB" };
-            var c = new WriteLine("C") { Id = "WriteLineC" };
-            var d = new WriteLine("D") { Id = "WriteLineD" };
-            var e = new WriteLine("E") { Id = "WriteLineE" };
+            var start = new Start
+            {
+                Id = "Start"
+            };
+            var a = new WriteLine("A")
+            {
+                Id = "WriteLineA"
+            };
+            var b = new WriteLine("B")
+            {
+                Id = "WriteLineB"
+            };
+            var c = new WriteLine("C")
+            {
+                Id = "WriteLineC"
+            };
+            var d = new WriteLine("D")
+            {
+                Id = "WriteLineD"
+            };
+            var e = new WriteLine("E")
+            {
+                Id = "WriteLineE"
+            };
 
             workflowBuilder.Root = new Flowchart
             {
                 Activities =
-                    {
-                        start,
-                        a,
-                        b,
-                        c,
-                        d,
-                        e,
-                    },
+                {
+                    start,
+                    a,
+                    b,
+                    c,
+                    d,
+                    e,
+                },
                 Connections =
                 {
                     new(start, a),
@@ -169,7 +190,10 @@ public class FlowchartNextActivityTests
         Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
         Assert.Equal(1, result.WorkflowState.Incidents.Count());
         Assert.Equal("Invalid backward connection: Every path from the source ('WriteLineE') must go through the target ('WriteLineC') when tracing back to the start.", result.WorkflowState.Incidents.First().Message);
-        Assert.Equal(new[] { "A", "B", "C", "D", "E" }, lines);
+        Assert.Equal(new[]
+        {
+            "A", "B", "C", "D", "E"
+        }, lines);
     }
 
     [Theory(DisplayName = "Flowchart with a Join activity executed multiple times")]
@@ -186,43 +210,42 @@ public class FlowchartNextActivityTests
             var b = new WriteLine("B");
             var c = new WriteLine("C");
             var d = new WriteLine("D");
-            var join = new FlowJoin()
+            var join = new FlowJoin
             {
                 Mode = new(joinMode)
             };
-            var incrementLoop = new SetVariable()
+            var incrementLoop = new SetVariable
             {
                 Variable = loopVariable,
-                Value = new Models.Input<object?>(new Expression("JavaScript", "getVariable('LoopCount') + 1"))
+                Value = new(new Expression("JavaScript", "getVariable('LoopCount') + 1"))
             };
-            var loopbackDecision = new FlowSwitch()
+            var loopbackDecision = new FlowSwitch
             {
                 Cases = {
-                    new FlowSwitchCase("LessThanThree", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
+                    new("LessThanThree", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
                 },
                 Mode = new(SwitchMode.MatchFirst)
             };
             var end = new End();
-
-
+            
             workflowBuilder.Root = new Flowchart
             {
                 Variables =
-                    {
-                        loopVariable
-                    },
+                {
+                    loopVariable
+                },
                 Activities =
-                    {
-                        start,
-                        a,
-                        b,
-                        c,
-                        d,
-                        join,
-                        incrementLoop,
-                        loopbackDecision,
-                        end
-                    },
+                {
+                    start,
+                    a,
+                    b,
+                    c,
+                    d,
+                    join,
+                    incrementLoop,
+                    loopbackDecision,
+                    end
+                },
                 Connections =
                 {
                     new(start, a),
@@ -234,8 +257,8 @@ public class FlowchartNextActivityTests
                     new(d, join),
                     new(join, incrementLoop),
                     new(incrementLoop,loopbackDecision),
-                    new(new Endpoint(loopbackDecision, "LessThanThree"), new Endpoint(a)),
-                    new(new Endpoint(loopbackDecision, "Default"), new Endpoint(end)),
+                    new(new(loopbackDecision, "LessThanThree"), new Endpoint(a)),
+                    new(new(loopbackDecision, "Default"), new Endpoint(end)),
                 }
             };
         });
@@ -245,7 +268,6 @@ public class FlowchartNextActivityTests
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
         Assert.Equal(new[] { "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D"}, lines);
-    
     }
 
     [Theory(DisplayName = "Flowchart with a Join activity executed multiple times, bug 6479")]
@@ -258,49 +280,48 @@ public class FlowchartNextActivityTests
             var loopVariable = new Variable<int>("LoopCount", 0);
 
             var start = new Start();
-            var loopbackSwitch = new FlowSwitch()
+            var loopbackSwitch = new FlowSwitch
             {
                 Cases = {
-                    new FlowSwitchCase("DoLoopback", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
+                    new("DoLoopback", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
                 },
                 Mode = new(SwitchMode.MatchFirst)
             };
             var a = new WriteLine("A");
-            var incrementLoop = new SetVariable()
+            var incrementLoop = new SetVariable
             {
                 Variable = loopVariable,
-                Value = new Models.Input<object?>(new Expression("JavaScript", "getVariable('LoopCount') + 1"))
+                Value = new(new Expression("JavaScript", "getVariable('LoopCount') + 1"))
             };
-            var join = new FlowJoin()
+            var join = new FlowJoin
             {
                 Mode = new(joinMode)
             };
             var b = new WriteLine("B");
             var end = new End();
-
-
+            
             workflowBuilder.Root = new Flowchart
             {
                 Variables =
-                    {
-                        loopVariable
-                    },
+                {
+                    loopVariable
+                },
                 Activities =
-                    {
-                        start,
-                        loopbackSwitch,
-                        a,
-                        incrementLoop,
-                        join,
-                        b,
-                        end
-                    },
+                {
+                    start,
+                    loopbackSwitch,
+                    a,
+                    incrementLoop,
+                    join,
+                    b,
+                    end
+                },
                 Connections =
                 {
                     new(start, loopbackSwitch),
-                    new(new Endpoint(loopbackSwitch, "DoLoopback"), new Endpoint(a)),
-                    new(new Endpoint(loopbackSwitch, "DoLoopback"), new Endpoint(incrementLoop)),
-                    new(new Endpoint(loopbackSwitch, "Default"), new Endpoint(b)),
+                    new(new(loopbackSwitch, "DoLoopback"), new Endpoint(a)),
+                    new(new(loopbackSwitch, "DoLoopback"), new Endpoint(incrementLoop)),
+                    new(new(loopbackSwitch, "Default"), new Endpoint(b)),
                     new(a, join),
                     new(incrementLoop, join),
                     new(join, loopbackSwitch),
@@ -313,6 +334,9 @@ public class FlowchartNextActivityTests
         var result = await _workflowRunner.RunAsync(workflow);
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
-        Assert.Equal(new[] { "A", "A", "A", "B" }, lines);
+        Assert.Equal(new[]
+        {
+            "A", "A", "A", "B"
+        }, lines);
     }
 }

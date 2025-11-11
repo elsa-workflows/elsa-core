@@ -23,12 +23,12 @@ public class Endpoint(IRetryAttemptReader reader) : ElsaEndpointWithoutRequest
         if (string.IsNullOrWhiteSpace(activityInstanceId))
         {
             AddError("ActivityInstanceId is required.");
-            await SendErrorsAsync(cancellation: ct);
+            await Send.ErrorsAsync(cancellation: ct);
             return;
         }
 
         var page = await reader.ReadAttemptsAsync(activityInstanceId, pageArgs, ct);
         var response = new PagedListResponse<RetryAttemptRecord>(page);
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

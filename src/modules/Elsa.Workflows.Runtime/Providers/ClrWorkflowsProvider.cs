@@ -51,6 +51,6 @@ public class ClrWorkflowsProvider(
         };
 
         var materializerContext = new ClrWorkflowMaterializerContext(workflowBuilder.GetType());
-        return new MaterializedWorkflow(workflow, Name, ClrWorkflowMaterializer.MaterializerName, materializerContext);
+        return new(workflow, Name, ClrWorkflowMaterializer.MaterializerName, materializerContext);
     }
 }

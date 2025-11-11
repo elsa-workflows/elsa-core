@@ -1,6 +1,8 @@
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
 
@@ -10,6 +12,7 @@ public class DefaultCommitStateHandler(
     IWorkflowInstanceManager workflowInstanceManager,
     IBookmarksPersister bookmarkPersister,
     IVariablePersistenceManager variablePersistenceManager,
+    IMediator mediator,
     ILogRecordSink<ActivityExecutionRecord> activityExecutionLogRecordSink,
     ILogRecordSink<WorkflowExecutionLogRecord> workflowExecutionLogRecordSink) : ICommitStateHandler
 {
@@ -26,9 +29,10 @@ public class DefaultCommitStateHandler(
         await activityExecutionLogRecordSink.PersistExecutionLogsAsync(workflowExecutionContext, cancellationToken);
         await workflowExecutionLogRecordSink.PersistExecutionLogsAsync(workflowExecutionContext, cancellationToken);
         await variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
-        await workflowInstanceManager.SaveAsync(workflowState, cancellationToken);
+        var workflowInstance = await workflowInstanceManager.SaveAsync(workflowState, cancellationToken);
         workflowExecutionContext.ExecutionLog.Clear();
         workflowExecutionContext.ClearCompletedActivityExecutionContexts();
         await workflowExecutionContext.ExecuteDeferredTasksAsync();
+        await mediator.SendAsync(new WorkflowStateCommitted(workflowExecutionContext, workflowState, workflowInstance), cancellationToken);
     }
 }

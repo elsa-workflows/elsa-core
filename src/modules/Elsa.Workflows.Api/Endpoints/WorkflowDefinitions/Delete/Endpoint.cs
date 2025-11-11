@@ -29,7 +29,7 @@ internal class Delete(IWorkflowDefinitionManager workflowDefinitionManager, IAut
 
         if (definition == null)
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
@@ -37,15 +37,15 @@ internal class Delete(IWorkflowDefinitionManager workflowDefinitionManager, IAut
 
         if (!authorizationResult.Succeeded)
         {
-            await SendForbiddenAsync(cancellationToken);
+            await Send.ForbiddenAsync(cancellationToken);
             return;
         }
 
         var result = await workflowDefinitionManager.DeleteByDefinitionIdAsync(request.DefinitionId, cancellationToken);
 
         if (result == 0)
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
         else
-            await SendNoContentAsync(cancellationToken);
+            await Send.NoContentAsync(cancellationToken);
     }
 }

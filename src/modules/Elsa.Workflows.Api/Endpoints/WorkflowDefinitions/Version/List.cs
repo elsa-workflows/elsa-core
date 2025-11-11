@@ -32,10 +32,10 @@ internal class ListVersions(IWorkflowDefinitionStore store) : ElsaEndpointWithou
         
         if (!definitions.Any())
         {
-            await SendNotFoundAsync(cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
-        await SendAsync(definitions, StatusCodes.Status200OK, cancellationToken);
+        await Send.OkAsync(definitions, cancellationToken);
     }
 }

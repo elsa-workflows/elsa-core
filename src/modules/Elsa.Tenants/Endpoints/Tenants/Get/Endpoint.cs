@@ -19,10 +19,10 @@ public class Endpoint(ITenantService tenantService) : ElsaEndpointWithoutRequest
         
         if (tenant == null)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
         
-        await SendOkAsync(tenant, ct);
+        await Send.OkAsync(tenant, ct);
     }
 }
