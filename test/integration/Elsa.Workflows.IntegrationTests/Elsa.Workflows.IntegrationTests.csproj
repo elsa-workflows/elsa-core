@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     
     <PropertyGroup>
         <ProjectGuid>{ca65b7d5-57e8-4932-b8b8-732d040c9b3a}</ProjectGuid>
@@ -21,6 +21,9 @@
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="Scenarios\DependencyWorkflowsPublishing\Workflows\parent.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\ImplicitJoins\Workflows\decision-implicit-join-on-both-outcomes.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="Scenarios\ImplicitJoins\Workflows\fork-decision-join-converge.json">

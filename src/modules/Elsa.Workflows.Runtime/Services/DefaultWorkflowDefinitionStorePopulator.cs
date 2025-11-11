@@ -83,8 +83,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         await AssignIdentities(materializedWorkflow.Workflow, cancellationToken);
         var workflowDefinition = await AddOrUpdateAsync(materializedWorkflow, cancellationToken);
 
-        if (indexTriggers)
-            await IndexTriggersAsync(workflowDefinition, cancellationToken);
+        if (indexTriggers && workflowDefinition.IsPublished)
+            await _triggerIndexer.IndexTriggersAsync(workflowDefinition, cancellationToken);
 
         return workflowDefinition;
     }
@@ -259,8 +259,6 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             }
         }
     }
-
-    private async Task IndexTriggersAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken) => await _triggerIndexer.IndexTriggersAsync(workflowDefinition, cancellationToken);
 
     /// <summary>
     /// Syncs the items in the primary list with existing items in the secondary list, even when the object instances are not the same (but their IDs are).

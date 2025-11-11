@@ -218,10 +218,15 @@ public static class ObjectConverter
 
         if (sourceTypeConverter.CanConvertTo(underlyingTargetType))
         {
-            var isValid = targetTypeConverter.IsValid(value);
-
-            if (isValid)
+            // TypeConverter.IsValid is not supported for ConvertTo, so we have to try and ignore any exceptions.
+            try
+            {
                 return sourceTypeConverter.ConvertTo(value, underlyingTargetType);
+            }
+            catch
+            {
+                // Ignore and try other conversion strategies.
+            }
         }
 
         if (underlyingTargetType.IsEnum)
