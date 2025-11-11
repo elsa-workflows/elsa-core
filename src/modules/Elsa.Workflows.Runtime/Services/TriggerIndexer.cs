@@ -89,7 +89,7 @@ public class TriggerIndexer : ITriggerIndexer
         // Collect new triggers **if the workflow is published**.
         var newTriggers = workflow.Publication.IsPublished
             ? await GetTriggersInternalAsync(workflow, cancellationToken).ToListAsync(cancellationToken)
-            : new List<StoredTrigger>(0);
+            : new(0);
 
         // Diff triggers.
         var diff = Diff.For(currentTriggers, newTriggers, new WorkflowTriggerEqualityComparer());
