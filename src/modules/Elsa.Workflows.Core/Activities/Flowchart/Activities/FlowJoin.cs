@@ -24,7 +24,7 @@ public class FlowJoin : Activity, IJoinNode
     /// The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All).
     /// </summary>
     [Input(
-        Description = "The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All).",
+        Description = "The join mode determines whether this activity should continue as soon as one inbound path comes in (WaitAny), or once all inbound paths have executed (WaitAll). To wait for all activated inbound paths, set the mode to WaitAllActive.",
         DefaultValue = FlowJoinMode.WaitAny,
         UIHint = InputUIHints.DropDown
     )]
