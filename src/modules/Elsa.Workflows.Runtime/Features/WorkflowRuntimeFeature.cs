@@ -119,6 +119,14 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     /// </summary>
     public Func<IServiceProvider, ICommandHandler> DispatchWorkflowCommandHandler { get; set; } = sp => sp.GetRequiredService<DispatchWorkflowCommandHandler>();
 
+    /// <summary>
+    /// A factory that instantiates an <see cref="IWorkflowResumer"/>.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowResumer> WorkflowResumer { get; set; } = sp => sp.GetRequiredService<WorkflowResumer>();
+
+    /// <summary>
+    /// A factory that instantiates an <see cref="IBookmarkQueueWorker"/>.
+    /// </summary>
     public Func<IServiceProvider, IBookmarkQueueWorker> BookmarkQueueWorker { get; set; } = sp => sp.GetRequiredService<BookmarkQueueWorker>();
 
     /// <summary>
@@ -250,7 +258,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddSingleton(BackgroundActivityScheduler)
             .AddSingleton<RandomLongIdentityGenerator>()
             .AddSingleton<IBookmarkQueueSignaler, BookmarkQueueSignaler>()
-            .AddScoped<IBookmarkQueueWorker, BookmarkQueueWorker>()
+            .AddScoped(BookmarkQueueWorker)
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
             .AddScoped<IActivityExecutionManager, DefaultActivityExecutionManager>()
             .AddScoped<IActivityExecutionStatsService, ActivityExecutionStatsService>()
@@ -276,7 +284,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
             .AddScoped<IBookmarkResumer, BookmarkResumer>()
             .AddScoped<IBookmarkQueue, StoreBookmarkQueue>()
-            .AddScoped<IWorkflowResumer, WorkflowResumer>()
+            .AddScoped(WorkflowResumer)
             .AddScoped<ITriggerInvoker, TriggerInvoker>()
             .AddScoped<IWorkflowCanceler, WorkflowCanceler>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
