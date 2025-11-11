@@ -418,13 +418,15 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <param name="payloads">The payloads to create bookmarks for.</param>
     /// <param name="callback">An optional callback that is invoked when the bookmark is resumed.</param>
     /// <param name="includeActivityInstanceId">Whether or not the activity instance ID should be included in the bookmark payload.</param>
-    public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = null, bool includeActivityInstanceId = true)
+    /// <param name="bookmarkName">An optional name to use for the bookmark. Defaults to the activity type.</param>
+    public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = null, bool includeActivityInstanceId = true, string? bookmarkName = null)
     {
         foreach (var payload in payloads)
             CreateBookmark(new()
             {
                 Stimulus = payload,
                 Callback = callback,
+                BookmarkName = bookmarkName,
                 IncludeActivityInstanceId = includeActivityInstanceId
             });
     }
