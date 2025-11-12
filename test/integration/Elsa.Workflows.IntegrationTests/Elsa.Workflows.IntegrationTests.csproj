@@ -2,6 +2,8 @@
     
     <PropertyGroup>
         <ProjectGuid>{ca65b7d5-57e8-4932-b8b8-732d040c9b3a}</ProjectGuid>
+        <Include>[Elsa.Expressions.JavaScript]*,[Elsa.Http]*,[Elsa.Scheduling]*,[Elsa.Workflows.Api]*,[Elsa.Workflows.Runtime.Distributed]*,[Elsa.Workflows.Runtime]*</Include>
+        <Threshold>5</Threshold>
     </PropertyGroup>
 
     <ItemGroup>

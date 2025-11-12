@@ -27,6 +27,10 @@
         <PackageReference Include="Moq"/>
         <PackageReference Include="NSubstitute"/>
         <PackageReference Include="coverlet.msbuild"/>
+        <PackageReference Include="coverlet.collector">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="xunit"/>
         <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all"/>
     </ItemGroup>
