@@ -137,7 +137,7 @@ public class ScheduledCronTaskTests : IDisposable
         // Act - This should not crash and should set up a timer with minimum delay
         CreateScheduledTask();
 
-        // Assert - Should call GetNextOccurrence twice (initial + retry) and log warning
+        // Assert - Should call GetNextOccurrence twice (initial + retry) and log warning once (on final attempt)
         _cronParser.Received(2).GetNextOccurrence(DefaultCronExpression);
         AssertWarningLogged();
     }
@@ -180,10 +180,13 @@ public class ScheduledCronTaskTests : IDisposable
 
     public void Dispose()
     {
+        // Dispose tasks first to stop timers before disposing ServiceProvider
         foreach (var task in _tasksToDispose)
         {
             ((IDisposable)task).Dispose();
         }
+        // Small delay to ensure any timer callbacks have completed
+        Thread.Sleep(10);
         _serviceProvider.Dispose();
     }
 }
