@@ -17,6 +17,7 @@ using Elsa.Workflows.CommitStates.Strategies;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Options;
+using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
 using JetBrains.Annotations;
@@ -70,6 +71,7 @@ services
             {
                 runtime.UseEntityFrameworkCore(ef => ef.UseSqlite());
                 runtime.UseCache();
+                runtime.UseDistributedRuntime();
             })
             .UseWorkflowsApi()
             .UseScheduling()
@@ -124,7 +126,7 @@ services.Configure<RecurringTaskOptions>(options =>
 });
 
 services.Configure<RuntimeOptions>(options => { options.InactivityThreshold = TimeSpan.FromSeconds(15); });
-services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(10));
+services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(3600));
 services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.Configure<IncidentOptions>(options => options.DefaultIncidentStrategy = typeof(ContinueWithIncidentsStrategy));
 services.AddHealthChecks();

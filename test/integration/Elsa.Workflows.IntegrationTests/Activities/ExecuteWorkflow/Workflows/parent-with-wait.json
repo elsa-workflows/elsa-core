@@ -1,0 +1,97 @@
+{
+  "id": "parent-with-wait-v1",
+  "definitionId": "parent-with-wait",
+  "name": "Parent With Wait",
+  "createdAt": "2025-01-15T00:00:00.000000+00:00",
+  "version": 1,
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "type": "Elsa.Sequence",
+    "version": 1,
+    "id": "Sequence1",
+    "metadata": {},
+    "customProperties": {
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Parent: Before child"
+          },
+          "memoryReference": {
+            "id": "WriteLine1:input-1"
+          }
+        },
+        "id": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {}
+      },
+      {
+        "workflowDefinitionId": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "child-workflow"
+          },
+          "memoryReference": {
+            "id": "ExecuteWorkflow1:workflowDefinitionId"
+          }
+        },
+        "waitForCompletion": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "Literal",
+            "value": true
+          },
+          "memoryReference": {
+            "id": "ExecuteWorkflow1:waitForCompletion"
+          }
+        },
+        "id": "ExecuteWorkflow1",
+        "type": "Elsa.ExecuteWorkflow",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {}
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Parent: After child"
+          },
+          "memoryReference": {
+            "id": "WriteLine2:input-1"
+          }
+        },
+        "id": "WriteLine2",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {}
+      }
+    ]
+  }
+}

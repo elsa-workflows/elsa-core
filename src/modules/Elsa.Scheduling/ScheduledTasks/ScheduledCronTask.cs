@@ -77,8 +77,13 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
 
     private void TrySetupTimer(TimeSpan delay)
     {
+        // Handle edge cases where delay is zero or negative (e.g., due to clock drift, fast execution, or time alignment)
+        // Instead of silently returning, use a minimum delay to ensure the timer fires and workflow continues scheduling
         if (delay <= TimeSpan.Zero)
-            return;
+        {
+            _logger.LogWarning("Calculated delay is {Delay} which is not positive. Using minimum delay of 1ms to ensure timer fires", delay);
+            delay = TimeSpan.FromMilliseconds(1);
+        }
 
         try
         {
@@ -109,9 +114,10 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
 
             if (!cancellationToken.IsCancellationRequested)
             {
+                var acquired = false;
                 try
                 {
-                    var acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
+                    acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
                     if (!acquired) return;
 
                     _executing = true;
@@ -130,7 +136,8 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
                 finally
                 {
                     _executing = false;
-                    _executionSemaphore.Release();
+                    if (acquired)
+                        _executionSemaphore.Release();
                 }
             }
 

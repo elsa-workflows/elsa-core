@@ -12,7 +12,6 @@ using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Decorators;
 using Elsa.Workflows.ComponentTests.Materializers;
-using Elsa.Workflows.ComponentTests.Services;
 using Elsa.Workflows.ComponentTests.WorkflowProviders;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;

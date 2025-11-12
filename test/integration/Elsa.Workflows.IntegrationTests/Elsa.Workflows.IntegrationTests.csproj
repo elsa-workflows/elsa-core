@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     
     <PropertyGroup>
         <ProjectGuid>{ca65b7d5-57e8-4932-b8b8-732d040c9b3a}</ProjectGuid>
@@ -21,6 +21,9 @@
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="Scenarios\DependencyWorkflowsPublishing\Workflows\parent.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\ImplicitJoins\Workflows\decision-implicit-join-on-both-outcomes.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="Scenarios\ImplicitJoins\Workflows\fork-decision-join-converge.json">
@@ -60,6 +63,30 @@
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="Scenarios\WorkflowDefinitionActivities\Workflows\child-published-version.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Activities\ExecuteWorkflow\Workflows\child-with-input.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Activities\ExecuteWorkflow\Workflows\child-with-output.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Activities\ExecuteWorkflow\Workflows\child-workflow.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Activities\ExecuteWorkflow\Workflows\parent-capture-output.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Activities\ExecuteWorkflow\Workflows\parent-no-wait.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Activities\ExecuteWorkflow\Workflows\parent-with-correlation.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Activities\ExecuteWorkflow\Workflows\parent-with-input.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Activities\ExecuteWorkflow\Workflows\parent-with-wait.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>

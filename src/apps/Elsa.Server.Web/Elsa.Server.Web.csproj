@@ -7,6 +7,7 @@
 		<ProjectReference Include="..\..\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+		<ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Expressions.CSharp\Elsa.Expressions.CSharp.csproj" />
