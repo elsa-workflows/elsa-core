@@ -1,3 +1,4 @@
+using System.Collections;
 using System.ComponentModel;
 using Elsa.Common.Serialization;
 using Elsa.Common.Services;
@@ -11,6 +12,7 @@ public class DefaultFormattersFeature(IModule module) : FeatureBase(module)
 {
     public override void Configure()
     {
+        TypeDescriptor.AddAttributes(typeof(IEnumerable), new TypeConverterAttribute(typeof(EnumerableTypeConverter)));
         TypeDescriptor.AddAttributes(typeof(Type), new TypeConverterAttribute(typeof(TypeTypeConverter)));
         Module.Services.AddSingleton<IFormatter, JsonFormatter>();
     }

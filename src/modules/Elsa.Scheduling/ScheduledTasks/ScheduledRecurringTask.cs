@@ -23,6 +23,7 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
     private Timer? _timer;
     private bool _executing;
     private bool _cancellationRequested;
+    private bool _disposed;
 
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledRecurringTask"/>.
@@ -77,7 +78,13 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
 
     private void SetupTimer(TimeSpan delay)
     {
-        if (delay < TimeSpan.Zero) delay = TimeSpan.FromSeconds(1);
+        // Handle edge cases where delay is zero or negative (e.g., due to clock drift, fast execution, or time alignment)
+        // Instead of silently returning, use a minimum delay to ensure the timer fires and workflow continues scheduling
+        if (delay <= TimeSpan.Zero)
+        {
+            _logger.LogWarning("Calculated delay is {Delay} which is not positive. Using minimum delay of 1ms to ensure timer fires", delay);
+            delay = TimeSpan.FromMilliseconds(1);
+        }
 
         _timer = new(delay.TotalMilliseconds)
         {
@@ -86,58 +93,59 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
 
         _timer.Elapsed += async (_, _) =>
         {
-            try
+            _timer?.Dispose();
+            _timer = null;
+
+            // Check if disposed before proceeding
+            if (_disposed) return;
+
+            _startAt = _systemClock.UtcNow + _interval;
+
+            using var scope = _scopeFactory.CreateScope();
+            var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
+
+            // Check disposed again before accessing CancellationTokenSource
+            if (_disposed) return;
+
+            var cancellationToken = _cancellationTokenSource.Token;
+            if (!cancellationToken.IsCancellationRequested)
             {
-
-                _timer?.Dispose();
-                _timer = null;
-                _startAt = _systemClock.UtcNow + _interval;
-
-                using var scope = _scopeFactory.CreateScope();
-                var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
-                var cancellationToken = _cancellationTokenSource.Token;
-                if (!cancellationToken.IsCancellationRequested)
+                var acquired = false;
+                try
                 {
-                    var acquired = false;
-                    try
-                    {
-                        acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
-                        if (!acquired) return;
-                        _executing = true;
-                        await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+                    acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
+                    if (!acquired) return;
+                    _executing = true;
+                    await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
 
-                        if (_cancellationRequested)
-                        {
-                            _cancellationRequested = false;
-                            _cancellationTokenSource.Cancel();
-                        }
-                    }
-                    catch (Exception e)
+                    if (_cancellationRequested)
                     {
-                        _logger.LogError(e, "Error executing scheduled task");
-                    }
-                    finally
-                    {
-                        _executing = false;
-                        if (acquired)
-                            _executionSemaphore.Release();
+                        _cancellationRequested = false;
+                        _cancellationTokenSource.Cancel();
                     }
                 }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error executing scheduled task");
+                }
+                finally
+                {
+                    _executing = false;
+                    if (acquired && !_disposed)
+                        _executionSemaphore.Release();
+                }
+            }
 
-                if (!cancellationToken.IsCancellationRequested)
-                    Schedule();
-            }
-            catch (ObjectDisposedException ex)
-            {
-                _logger.LogWarning(ex, "Service Provider was disposed.");
-            }
+            if (!cancellationToken.IsCancellationRequested && !_disposed)
+                Schedule();
         };
     }
 
     void IDisposable.Dispose()
     {
-        _cancellationTokenSource.Dispose();
+        _disposed = true;
         _timer?.Dispose();
+        _cancellationTokenSource.Dispose();
         _executionSemaphore.Dispose();
     }
 }

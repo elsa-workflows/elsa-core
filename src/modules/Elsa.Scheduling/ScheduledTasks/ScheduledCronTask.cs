@@ -23,6 +23,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
     private readonly SemaphoreSlim _executionSemaphore = new(1, 1);
     private bool _executing;
     private bool _cancellationRequested;
+    private bool _disposed;
 
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledCronTask"/>.
@@ -107,6 +108,9 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
             _timer?.Dispose();
             _timer = null;
 
+            // Check if disposed before proceeding
+            if (_disposed) return;
+
             using var scope = _scopeFactory.CreateScope();
             var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
 
@@ -136,18 +140,19 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
                 finally
                 {
                     _executing = false;
-                    if (acquired)
+                    if (acquired && !_disposed)
                         _executionSemaphore.Release();
                 }
             }
 
-            if (!cancellationToken.IsCancellationRequested)
+            if (!cancellationToken.IsCancellationRequested && !_disposed)
                 Schedule();
         };
     }
 
     void IDisposable.Dispose()
     {
+        _disposed = true;
         _timer?.Dispose();
         _cancellationTokenSource.Dispose();
         _executionSemaphore.Dispose();
