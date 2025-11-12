@@ -8,51 +8,44 @@ using NSubstitute;
 namespace Elsa.Scheduling.UnitTests.ScheduledTasks;
 
 /// <summary>
-/// Tests for ScheduledCronTask to ensure cron triggers continue to fire even in edge cases.
+/// Tests for ScheduledRecurringTask to ensure recurring tasks handle edge cases correctly.
 /// </summary>
-public class ScheduledCronTaskTests : IDisposable
+public class ScheduledRecurringTaskTests : IDisposable
 {
-    private const string DefaultCronExpression = "0 */5 * * * *";
     private static readonly DateTimeOffset DefaultNow = new(2025, 11, 06, 22, 50, 00, 0, TimeSpan.Zero);
+    private static readonly TimeSpan DefaultInterval = TimeSpan.FromMinutes(5);
 
     private readonly ServiceProvider _serviceProvider;
     private readonly ISystemClock _systemClock;
-    private readonly ICronParser _cronParser;
-    private readonly ILogger<ScheduledCronTask> _logger;
-    private readonly List<ScheduledCronTask> _tasksToDispose = new();
+    private readonly ILogger<ScheduledRecurringTask> _logger;
+    private readonly List<ScheduledRecurringTask> _tasksToDispose = new();
 
-    public ScheduledCronTaskTests()
+    public ScheduledRecurringTaskTests()
     {
         var services = new ServiceCollection();
         _systemClock = Substitute.For<ISystemClock>();
-        _cronParser = Substitute.For<ICronParser>();
-        _logger = Substitute.For<ILogger<ScheduledCronTask>>();
-        
+        _logger = Substitute.For<ILogger<ScheduledRecurringTask>>();
+
         services.AddSingleton(Substitute.For<ICommandSender>());
         _serviceProvider = services.BuildServiceProvider();
     }
 
-    private ScheduledCronTask CreateScheduledTask(
-        string? cronExpression = null,
-        ICronParser? cronParser = null,
+    private ScheduledRecurringTask CreateScheduledTask(
+        DateTimeOffset? startAt = null,
+        TimeSpan? interval = null,
         ISystemClock? systemClock = null)
     {
         var task = Substitute.For<ITask>();
-        var scheduledTask = new ScheduledCronTask(
+        var scheduledTask = new ScheduledRecurringTask(
             task,
-            cronExpression ?? DefaultCronExpression,
-            cronParser ?? _cronParser,
-            _serviceProvider.CreateScope().ServiceProvider.GetRequiredService<IServiceScopeFactory>(),
+            startAt ?? DefaultNow.AddMinutes(5),
+            interval ?? DefaultInterval,
             systemClock ?? _systemClock,
+            _serviceProvider.CreateScope().ServiceProvider.GetRequiredService<IServiceScopeFactory>(),
             _logger
         );
         _tasksToDispose.Add(scheduledTask);
         return scheduledTask;
-    }
-
-    private void SetupCronParser(params DateTimeOffset[] occurrences)
-    {
-        _cronParser.GetNextOccurrence(Arg.Any<string>()).Returns(occurrences[0], occurrences.Skip(1).ToArray());
     }
 
     private void SetupSystemClock(params DateTimeOffset[] times)
@@ -85,10 +78,10 @@ public class ScheduledCronTaskTests : IDisposable
     {
         // Arrange - simulate a case where the delay is very small (1 tick = 100ns)
         SetupSystemClock(DefaultNow);
-        SetupCronParser(DefaultNow.AddTicks(1)); // Only 1 tick in the future (100 nanoseconds)
+        var startAt = DefaultNow.AddTicks(1); // Only 1 tick in the future (100 nanoseconds)
 
         // Act
-        CreateScheduledTask();
+        CreateScheduledTask(startAt: startAt);
 
         // Assert - Verify that no error was logged (timer should be set up successfully)
         AssertNoErrorLogged();
@@ -100,13 +93,13 @@ public class ScheduledCronTaskTests : IDisposable
         // Arrange - simulate a case where the first call returns exactly now
         // but the second call returns a proper future time
         SetupSystemClock(DefaultNow, DefaultNow);
-        SetupCronParser(DefaultNow, DefaultNow.AddMinutes(5)); // First: delay=0, Second: proper future time
+        var startAt = DefaultNow; // First: delay=0
 
         // Act
-        CreateScheduledTask();
+        CreateScheduledTask(startAt: startAt);
 
-        // Assert - Should call GetNextOccurrence twice (once for initial delay=0, once for retry)
-        _cronParser.Received(2).GetNextOccurrence(DefaultCronExpression);
+        // Assert - System clock should be called twice (once for initial delay=0, once for retry)
+        _ = _systemClock.Received(2).UtcNow;
     }
 
     [Fact]
@@ -114,13 +107,13 @@ public class ScheduledCronTaskTests : IDisposable
     {
         // Arrange - simulate a case where the first call returns a time in the past
         SetupSystemClock(DefaultNow, DefaultNow);
-        SetupCronParser(DefaultNow.AddMinutes(-1), DefaultNow.AddMinutes(5)); // First: past, Second: future
+        var startAt = DefaultNow.AddMinutes(-1); // Past time
 
         // Act
-        CreateScheduledTask();
+        CreateScheduledTask(startAt: startAt);
 
-        // Assert - Should call GetNextOccurrence twice
-        _cronParser.Received(2).GetNextOccurrence(DefaultCronExpression);
+        // Assert - System clock should be called twice
+        _ = _systemClock.Received(2).UtcNow;
     }
 
     [Fact]
@@ -129,13 +122,13 @@ public class ScheduledCronTaskTests : IDisposable
         // Arrange - simulate the bug scenario: both attempts return zero/negative delay
         // This can happen if the system clock doesn't advance or if there's clock drift
         SetupSystemClock(DefaultNow);
-        SetupCronParser(DefaultNow); // Both calls return exactly now (delay = 0)
+        var startAt = DefaultNow; // Both calls return exactly now (delay = 0)
 
         // Act - This should not crash and should set up a timer with minimum delay
-        CreateScheduledTask();
+        CreateScheduledTask(startAt: startAt);
 
-        // Assert - Should call GetNextOccurrence twice (initial + retry) and log warning once (on final attempt)
-        _cronParser.Received(2).GetNextOccurrence(DefaultCronExpression);
+        // Assert - Should call UtcNow twice (initial + retry) and log warning
+        _ = _systemClock.Received(2).UtcNow;
         AssertWarningLogged();
     }
 
@@ -145,34 +138,29 @@ public class ScheduledCronTaskTests : IDisposable
         // Arrange - simulate a case where even after retry, delay is negative
         // This could happen due to system clock adjustments
         SetupSystemClock(DefaultNow, DefaultNow);
-        SetupCronParser(DefaultNow.AddMilliseconds(-100), DefaultNow.AddMilliseconds(-50));
+        var startAt = DefaultNow.AddMilliseconds(-100); // Negative delay
 
         // Act - Should handle negative delay gracefully
-        CreateScheduledTask();
+        CreateScheduledTask(startAt: startAt);
 
         // Assert - Should log a warning and still set up timer
         AssertWarningLogged();
     }
 
     [Fact]
-    public void ReproduceOriginalIssue_WithRealCronParser_DemonstratesBugScenario()
+    public void DisposeDuringTimerCallback_ShouldNotCrash()
     {
-        // This test reproduces the exact scenario from the original issue report
-        // Using the real CronosCronParser with specific times that trigger the bug
-        
-        // Arrange - Use the exact times from the issue that cause delay.Milliseconds to be 0
-        var now = new DateTimeOffset(2025, 11, 06, 22, 50, 00, 0, TimeZoneInfo.Utc.GetUtcOffset(DateTimeOffset.UtcNow));
-        var systemClock = Substitute.For<ISystemClock>();
-        systemClock.UtcNow.Returns(now);
-        var realCronParser = new Elsa.Scheduling.Services.CronosCronParser(systemClock);
-        
-        // Act - Create scheduled task with real cron parser
-        // Before the fix: This would silently fail to schedule if delay <= 0
-        // After the fix: This should log warning and use minimum delay
-        CreateScheduledTask(cronParser: realCronParser, systemClock: systemClock);
-        
-        // Assert - The key is that the task was created successfully without throwing or silently failing
-        // This test passes with the fix, demonstrating the issue is resolved
+        // Arrange - set up a very short delay so timer fires quickly
+        SetupSystemClock(DefaultNow);
+        var startAt = DefaultNow; // Will use 1ms minimum delay
+
+        // Act - Create task and immediately dispose it (simulating race condition)
+        var task = CreateScheduledTask(startAt: startAt);
+        Thread.Sleep(5); // Give timer a chance to start firing
+        ((IDisposable)task).Dispose();
+        Thread.Sleep(10); // Give any in-flight callbacks time to complete
+
+        // Assert - Should not crash (implicit - test passes if no exception thrown)
     }
 
     public void Dispose()
