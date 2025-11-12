@@ -1,4 +1,3 @@
-#pragma warning disable CS0618 // Type or member is obsolete
 
 using Elsa.Common.Models;
 using Elsa.Workflows.Management;
