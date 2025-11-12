@@ -17,7 +17,7 @@ public record IdentifierExpr(string Name, SourceSpan Span) : Expr(Span);
 
 public record TemplateStringExpr(IList<object> Parts, SourceSpan Span) : Expr(Span);
 
-public record LambdaExpr(string Language, string Code, SourceSpan Span) : Expr(Span);
+public record LambdaExpr(string? Language, string Code, SourceSpan Span) : Expr(Span);
 
 public record RawExpr(string Code, SourceSpan Span) : Expr(Span);
 

@@ -4,6 +4,7 @@
     <PackageTags>elsa dsl scripting parlot workflow</PackageTags>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Parlot" Version="1.0.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />
   </ItemGroup>

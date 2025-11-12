@@ -170,7 +170,7 @@ public class Lowerer
             LiteralExpr literal => literal.Value,
             IdentifierExpr identifier => new { Type = "Identifier", Name = identifier.Name },
             TemplateStringExpr template => new { Type = "Template", Language = defaultLanguage, Parts = template.Parts },
-            LambdaExpr lambda => new { Type = "Expression", Language = lambda.Language, Code = lambda.Code },
+            LambdaExpr lambda => new { Type = "Expression", Language = lambda.Language ?? defaultLanguage, Code = lambda.Code },
             RawExpr raw => new { Type = "Expression", Language = defaultLanguage, Code = raw.Code },
             _ => null
         };
