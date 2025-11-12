@@ -14,12 +14,14 @@
 # </auto-generated>
 # ------------------------------------------------------------------------------
 
-name: PR
+name: pr
 
 on:
   pull_request:
     branches:
       - main
+      - 'patch/*'
+      - 'develop/*'
     paths:
       - '**/*'
 
@@ -37,5 +39,5 @@ jobs:
           dotnet-version: |
             9.x
       - uses: actions/checkout@v4
-      - name: 'Run: Compile, Test, Pack'
-        run: ./build.cmd Compile Test Pack
+      - name: 'Run: Compile, Test'
+        run: ./build.cmd Compile Test

@@ -13,17 +13,6 @@ on:
       - 'rc/*'
       - 'develop/*'
       - 'codex/*'
-  pull_request:
-    branches:
-      - 'main'
-      - 'bug/*'
-      - 'perf/*'
-      - 'patch/*'
-      - 'feat/*'
-      - 'enh/*'
-      - 'rc/*'
-      - 'develop/*'
-      - 'codex/*'
   release:
     types: [prereleased, published]
 

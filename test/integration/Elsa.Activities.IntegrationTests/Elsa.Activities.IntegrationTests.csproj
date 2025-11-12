@@ -2,6 +2,8 @@
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
+        <Include>[Elsa.Workflows.Core]*</Include>
+        <Threshold>25</Threshold>
     </PropertyGroup>
 
     <ItemGroup>
