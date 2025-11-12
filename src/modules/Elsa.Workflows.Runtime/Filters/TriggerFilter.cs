@@ -69,7 +69,7 @@ public class TriggerFilter
         if (WorkflowDefinitionVersionId != null) queryable = queryable.Where(x => x.WorkflowDefinitionVersionId == WorkflowDefinitionVersionId);
         if (WorkflowDefinitionVersionIds != null) queryable = queryable.Where(x => WorkflowDefinitionVersionIds.Contains(x.WorkflowDefinitionVersionId));
         if (Name != null) queryable = queryable.Where(x => x.Name == Name);
-        if (Names != null) queryable = queryable.Where(x => Names.Contains(x.Name));
+        if (Names != null) queryable = queryable.Where(x => Names.Contains(x.Name!));
         if (Hash != null) queryable = queryable.Where(x => x.Hash == Hash);
         return queryable;
     }

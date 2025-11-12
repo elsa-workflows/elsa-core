@@ -8,7 +8,7 @@ namespace Elsa.Extensions;
 
 internal static class HttpActivityExecutionContextExtensions
 {
-    public static async Task<object?> ParseContentAsync(this ActivityExecutionContext context, Stream content, string contentType, Type? returnType, Dictionary<string, string?[]> headers, CancellationToken cancellationToken)
+    public static async Task<object?> ParseContentAsync(this ActivityExecutionContext context, Stream content, string contentType, Type? returnType, Dictionary<string, string[]> headers, CancellationToken cancellationToken)
     {
         var parsers = context.GetServices<IHttpContentParser>().OrderByDescending(x => x.Priority).ToList();
         var httpResponseParserContext = new HttpResponseParserContext(content, contentType, returnType, headers, cancellationToken);

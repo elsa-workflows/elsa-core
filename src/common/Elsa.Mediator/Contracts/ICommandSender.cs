@@ -28,7 +28,7 @@ public interface ICommandSender
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <typeparam name="T">The type of the result.</typeparam>
     /// <returns>The result.</returns>
-    Task<T> SendAsync<T>(ICommand<T> command, ICommandStrategy strategy, CancellationToken cancellationToken = default);
+    Task<T> SendAsync<T>(ICommand<T> command, ICommandStrategy? strategy, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Sends a command using the specified strategy.
@@ -39,7 +39,7 @@ public interface ICommandSender
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <typeparam name="T">The type of the result.</typeparam>
     /// <returns>The result.</returns>
-    Task<T> SendAsync<T>(ICommand<T> command, ICommandStrategy strategy, IDictionary<object, object> headers, CancellationToken cancellationToken = default);
+    Task<T> SendAsync<T>(ICommand<T> command, ICommandStrategy? strategy, IDictionary<object, object> headers, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Sends a command using the default strategy.
@@ -54,7 +54,7 @@ public interface ICommandSender
     /// <param name="command">The command to send.</param>
     /// <param name="strategy">The command strategy to use.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    Task SendAsync(ICommand command, ICommandStrategy strategy, CancellationToken cancellationToken = default);
+    Task SendAsync(ICommand command, ICommandStrategy? strategy, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Sends a command using the specified strategy.
@@ -63,5 +63,5 @@ public interface ICommandSender
     /// <param name="strategy">The command strategy to use.</param>
     /// <param name="headers">Any headers to pass along.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    Task SendAsync(ICommand command, ICommandStrategy strategy, IDictionary<object, object> headers, CancellationToken cancellationToken = default);
+    Task SendAsync(ICommand command, ICommandStrategy? strategy, IDictionary<object, object> headers, CancellationToken cancellationToken = default);
 }

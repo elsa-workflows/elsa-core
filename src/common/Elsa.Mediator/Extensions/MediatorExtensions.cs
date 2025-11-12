@@ -39,7 +39,7 @@ public static class MediatorExtensions
     /// <param name="cancellationToken">The cancellation token.</param>
     public static async Task SendAsync(this IMediator mediator, ICommand command, CancellationToken cancellationToken = default)
     {
-        await mediator.SendAsync(command, default, cancellationToken);
+        await mediator.SendAsync(command, null, cancellationToken);
     }
     
     /// <summary>
@@ -50,6 +50,6 @@ public static class MediatorExtensions
     /// <param name="cancellationToken">The cancellation token.</param>
     public static async Task SendAsync(this ICommandSender commandSender, ICommand command, CancellationToken cancellationToken = default)
     {
-        await commandSender.SendAsync(command, default, cancellationToken);
+        await commandSender.SendAsync(command, null, cancellationToken);
     }
 }

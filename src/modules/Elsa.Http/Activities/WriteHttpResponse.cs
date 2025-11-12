@@ -101,7 +101,7 @@ public class WriteHttpResponse : Activity
         // Add headers.
         var headers = context.GetHeaders(ResponseHeaders);
         foreach (var header in headers)
-            response.Headers.Add(header.Key, header.Value);
+            response.Headers[header.Key] = header.Value;
 
         // Get content and content type.
         var content = context.Get(Content);

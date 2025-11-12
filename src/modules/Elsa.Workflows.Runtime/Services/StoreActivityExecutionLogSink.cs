@@ -3,14 +3,13 @@ using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Notifications;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// This implementation saves <see cref="ActivityExecutionRecord"/> directly through the store.
 /// </summary>
 public class StoreActivityExecutionLogSink(
     IActivityExecutionStore activityExecutionStore,
-    IActivityExecutionMapper mapper,
     INotificationSender notificationSender)
     : ILogRecordSink<ActivityExecutionRecord>
 {

@@ -160,7 +160,7 @@ public static class JsonObjectExtensions
         {
             return model.GetProperty<T>(path);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             return default;
         }

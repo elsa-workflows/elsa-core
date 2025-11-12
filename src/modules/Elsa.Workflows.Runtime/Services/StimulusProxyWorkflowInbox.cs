@@ -182,7 +182,7 @@ public class StimulusProxyWorkflowInbox(
             new List<Bookmark>(),
             response.Incidents,
             null,
-            null)
+            new Dictionary<string, object>())
         );
     }
 }

@@ -33,7 +33,7 @@ public class ArgumentJsonConverter : JsonConverter<ArgumentDefinition>
         var typeAlias = _wellKnownTypeRegistry.TryGetAlias(typeName, out var alias) ? alias : null;
         var isArray = typeName.IsArray;
         var isCollection = typeName.IsCollectionType();
-        var elementTypeName = isArray ? typeName.GetElementType() : isCollection ? typeName.GenericTypeArguments[0] : typeName;
+        var elementTypeName = isArray ? typeName.GetElementType()! : isCollection ? typeName.GenericTypeArguments[0] : typeName;
         var elementTypeAlias = _wellKnownTypeRegistry.GetAliasOrDefault(elementTypeName);
         var isAliasedArray = (isArray || isCollection) && typeAlias != null;
         var finalTypeAlias = isArray || isCollection ? typeAlias ?? elementTypeAlias : elementTypeAlias;

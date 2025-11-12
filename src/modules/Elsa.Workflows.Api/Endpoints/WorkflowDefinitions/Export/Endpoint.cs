@@ -48,13 +48,14 @@ internal class Export : ElsaEndpoint<Request>
     {
         if (request.DefinitionId != null)
             await DownloadSingleWorkflowAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
-        else
+        else if (request.Ids != null)
             await DownloadMultipleWorkflowsAsync(request.Ids, cancellationToken);
+        else await Send.NoContentAsync(cancellationToken);
     }
 
     private async Task DownloadMultipleWorkflowsAsync(ICollection<string> ids, CancellationToken cancellationToken)
     {
-        List<WorkflowDefinition> definitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter
+        List<WorkflowDefinition> definitions = (await _store.FindManyAsync(new()
         {
             Ids = ids
         }, cancellationToken)).ToList();
@@ -88,7 +89,7 @@ internal class Export : ElsaEndpoint<Request>
     private async Task DownloadSingleWorkflowAsync(string definitionId, string? versionOptions, CancellationToken cancellationToken)
     {
         var parsedVersionOptions = string.IsNullOrEmpty(versionOptions) ? VersionOptions.Latest : VersionOptions.FromString(versionOptions);
-        WorkflowDefinition? definition = (await _store.FindManyAsync(new WorkflowDefinitionFilter
+        WorkflowDefinition? definition = (await _store.FindManyAsync(new()
         {
             DefinitionId = definitionId,
             VersionOptions = parsedVersionOptions

@@ -45,7 +45,7 @@ public class TriggerSignal : CodeActivity
     /// <inheritdoc />
     public TriggerSignal(Input<string> eventName, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line) => EventName = eventName;
 
-    public Input<string> EventName { get; set; }
+    public Input<string> EventName { get; set; } = null!;
 
     protected override void Execute(ActivityExecutionContext context)
     {

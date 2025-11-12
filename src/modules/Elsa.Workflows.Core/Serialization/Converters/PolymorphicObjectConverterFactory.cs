@@ -51,6 +51,6 @@ public class PolymorphicObjectConverterFactory : JsonConverterFactory
         if (typeof(IDictionary<string, object>).IsAssignableFrom(typeToConvert))
             return new PolymorphicDictionaryConverter(options, _wellKnownTypeRegistry);
 
-        return new PolymorphicObjectConverter(_wellKnownTypeRegistry);
+        return new PolymorphicObjectConverter();
     }
 }

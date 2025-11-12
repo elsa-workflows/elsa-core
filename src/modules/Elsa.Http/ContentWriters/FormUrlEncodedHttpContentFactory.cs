@@ -20,7 +20,7 @@ public class FormUrlEncodedHttpContentFactory : IHttpContentFactory
             return dictionary.ToDictionary(x => x.Key, x => x.Value.ToString() ?? string.Empty);
 
         if (content is string or JsonObject)
-            return JsonSerializer.Deserialize<Dictionary<string, string>>(JsonSerializer.Serialize(content));
+            return JsonSerializer.Deserialize<Dictionary<string, string>>(JsonSerializer.Serialize(content))!;
 
         var jsonElement = JsonSerializer.SerializeToElement(content);
         return jsonElement.EnumerateObject().ToDictionary(x => x.Name, x => x.Value.ToString());
