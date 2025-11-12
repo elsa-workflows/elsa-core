@@ -8,6 +8,6 @@ public class RemoveTopElementStep : Activity
     {
         var elements = context.GetVariable<string[]>("Elements");
         context.SetVariable("Elements", elements!.Skip(1).ToArray());
-        context?.CreateBookmark();
+        context.CreateBookmark();
     }
 }
