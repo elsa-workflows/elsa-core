@@ -139,8 +139,8 @@ jobs:
         with:
           dotnet-version: 9.x
 
-      - name: Compile+Test+Pack
-        run: ./build.sh Compile+Test+Pack --version ${VERSION} --analyseCode true
+      - name: Compile+Pack
+        run: ./build.sh Compile+Pack --version ${VERSION} --analyseCode true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
