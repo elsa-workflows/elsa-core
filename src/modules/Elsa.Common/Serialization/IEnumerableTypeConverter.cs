@@ -12,6 +12,9 @@ using JetBrains.Annotations;
 namespace Elsa.Common.Serialization;
 
 [PublicAPI]
+/// <summary>
+/// A type converter that converts <see cref="IEnumerable"/> types to and from strings using JSON serialization.
+/// </summary>
 public class IEnumerableTypeConverter : TypeConverter
 {
     public override bool CanConvertTo(ITypeDescriptorContext? context, Type? destinationType)
