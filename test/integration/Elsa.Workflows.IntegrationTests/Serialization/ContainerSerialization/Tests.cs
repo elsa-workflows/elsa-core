@@ -203,9 +203,8 @@ public class Tests
             activity.Behaviors.Clear();
         }
 
-        foreach (var activity1 in container.Activities)
+        foreach (var activity in container.Activities.Cast<Activity>())
         {
-            var activity = (Activity)activity1;
             activity.Behaviors.Clear();
         }
 
