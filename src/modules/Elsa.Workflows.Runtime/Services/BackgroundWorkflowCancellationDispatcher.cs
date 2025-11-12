@@ -9,7 +9,7 @@ using Elsa.Workflows.Runtime.Responses;
 namespace Elsa.Workflows.Runtime;
 
 /// <summary>
-/// Dispatches workflow cancellation requests to a local background worker.
+///     Dispatches workflow cancellation requests to a local background worker.
 /// </summary>
 public class BackgroundWorkflowCancellationDispatcher(ICommandSender commandSender, ITenantAccessor tenantAccessor) : IWorkflowCancellationDispatcher
 {
@@ -17,11 +17,10 @@ public class BackgroundWorkflowCancellationDispatcher(ICommandSender commandSend
     public async Task<DispatchCancelWorkflowsResponse> DispatchAsync(DispatchCancelWorkflowRequest request, CancellationToken cancellationToken = default)
     {
         var command = new CancelWorkflowsCommand(request);
-        await commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
+        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), cancellationToken);
         return new DispatchCancelWorkflowsResponse();
     }
-    
-    
+
     private IDictionary<object, object> CreateHeaders()
     {
         return TenantHeaders.CreateHeaders(tenantAccessor.Tenant?.Id);
