@@ -461,7 +461,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var contentType = httpRequest.ContentType!;
         var headers = httpRequest.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray());
 
-        return await context.ParseContentAsync(contentStream, contentType, targetType, headers, cancellationToken);
+        return await context.ParseContentAsync(contentStream, contentType, targetType, headers!, cancellationToken);
     }
 
     private static bool HasContent(HttpRequest httpRequest) => httpRequest.Headers.ContentLength > 0;

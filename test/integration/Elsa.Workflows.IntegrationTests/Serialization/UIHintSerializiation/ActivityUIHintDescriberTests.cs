@@ -45,11 +45,11 @@ public class Tests
         var description = await activityDescriber.DescribeActivityAsync(typeof(TestActivity));
 
         var inputDescription = description.Inputs.First();
-        Assert.True(inputDescription.UISpecifications.ContainsKey(InputUIHints.DropDown));
+        Assert.True(inputDescription.UISpecifications!.ContainsKey(InputUIHints.DropDown));
         Assert.True(inputDescription.UISpecifications[InputUIHints.DropDown] is DropDownProps);
         var dropDownProperties = (DropDownProps) inputDescription.UISpecifications[InputUIHints.DropDown];
 
-        Assert.Collection(dropDownProperties.SelectList.Items,
+        Assert.Collection(dropDownProperties.SelectList!.Items,
             item => { Assert.Equal("OptionsAreNice", item.Text); Assert.Equal("OptionsAreNice", item.Value); },
             item => { Assert.Equal("ToHave", item.Text); Assert.Equal("ToHave", item.Value); },
             item => { Assert.Equal("IfYouCanChooseThem", item.Text); Assert.Equal("IfYouCanChooseThem", item.Value); });

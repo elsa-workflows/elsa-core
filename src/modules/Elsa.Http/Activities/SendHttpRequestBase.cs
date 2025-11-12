@@ -240,8 +240,8 @@ public abstract class SendHttpRequestBase(string? source = null, int? line = nul
             _ => typeof(string)
         };
 
-        var contentHeadersDictionary = contentHeaders.ToDictionary(x => x.Key, x => x.Value.Cast<string?>().ToArray(), StringComparer.OrdinalIgnoreCase);
-        var responseHeadersDictionary = responseHeaders.ToDictionary(x => x.Key, x => x.Value.Cast<string?>().ToArray(), StringComparer.OrdinalIgnoreCase);
+        var contentHeadersDictionary = contentHeaders.ToDictionary(x => x.Key, x => x.Value.ToArray(), StringComparer.OrdinalIgnoreCase);
+        var responseHeadersDictionary = responseHeaders.ToDictionary(x => x.Key, x => x.Value.ToArray(), StringComparer.OrdinalIgnoreCase);
         var headersDictionary = contentHeadersDictionary.Concat(responseHeadersDictionary).ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
         return await context.ParseContentAsync(contentStream, contentType, targetType, headersDictionary, cancellationToken);
     }

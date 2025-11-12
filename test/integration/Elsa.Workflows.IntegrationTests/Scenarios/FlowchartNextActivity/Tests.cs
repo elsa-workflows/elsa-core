@@ -188,7 +188,7 @@ public class FlowchartNextActivityTests
         var result = await _workflowRunner.RunAsync(workflow);
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
-        Assert.Equal(1, result.WorkflowState.Incidents.Count());
+        Assert.Single(result.WorkflowState.Incidents);
         Assert.Equal("Invalid backward connection: Every path from the source ('WriteLineE') must go through the target ('WriteLineC') when tracing back to the start.", result.WorkflowState.Incidents.First().Message);
         Assert.Equal(new[]
         {

@@ -15,7 +15,7 @@ public class ValidatingWorkflowDispatcher(IWorkflowDispatcher decoratedService, 
     private IWorkflowDispatcher DecoratedService { get; set; } = decoratedService;
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         if (!ValidateChannel(options?.Channel))
             return DispatchWorkflowResponse.UnknownChannel();
@@ -24,7 +24,7 @@ public class ValidatingWorkflowDispatcher(IWorkflowDispatcher decoratedService, 
     }
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         if (!ValidateChannel(options?.Channel))
             return DispatchWorkflowResponse.UnknownChannel();
@@ -33,7 +33,7 @@ public class ValidatingWorkflowDispatcher(IWorkflowDispatcher decoratedService, 
     }
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         if (!ValidateChannel(options?.Channel))
             return DispatchWorkflowResponse.UnknownChannel();
@@ -42,7 +42,7 @@ public class ValidatingWorkflowDispatcher(IWorkflowDispatcher decoratedService, 
     }
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
         if (!ValidateChannel(options?.Channel))
             return DispatchWorkflowResponse.UnknownChannel();

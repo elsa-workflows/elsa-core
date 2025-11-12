@@ -13,7 +13,10 @@ namespace Elsa.Persistence.EFCore;
 /// For plain objects, fall back to deep equality comparison using JSON serialization
 /// (safe, but inefficient).
 /// </remarks>
-public class JsonValueComparer<T> : ValueComparer<T> {
+public class JsonValueComparer<T>() : ValueComparer<T>((t1, t2) => DoEquals(t1!, t2!),
+    t => DoGetHashCode(t),
+    t => DoGetSnapshot(t))
+{
 
     private static string Json(T instance) {
         return JsonSerializer.Serialize(instance);
@@ -24,9 +27,7 @@ public class JsonValueComparer<T> : ValueComparer<T> {
         if (instance is ICloneable cloneable)
             return (T)cloneable.Clone();
 
-        var result = (T)JsonSerializer.Deserialize<T>(Json(instance));
-        return result;
-
+        return JsonSerializer.Deserialize<T>(Json(instance))!;
     }
 
     private static int DoGetHashCode(T instance) {
@@ -43,15 +44,6 @@ public class JsonValueComparer<T> : ValueComparer<T> {
         if (left is IEquatable<T> equatable)
             return equatable.Equals(right);
 
-        var result = Json(left).Equals(Json(right));
-        return result;
-
+        return Json(left).Equals(Json(right));
     }
-
-    public JsonValueComparer() : base(
-        (t1, t2) => DoEquals(t1, t2), 
-        t => DoGetHashCode(t), 
-        t => DoGetSnapshot(t)) {
-    }
-
 }

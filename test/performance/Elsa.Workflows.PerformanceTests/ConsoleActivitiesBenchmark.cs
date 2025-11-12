@@ -8,9 +8,9 @@ namespace Elsa.Workflows.PerformanceTests;
 [Config(typeof(Config))]
 public class ConsoleActivitiesBenchmark
 {
-    private WriteLine _writeLineWorkflow;
-    private IWorkflowRunner _workflowRunner;
-    private ServiceProvider _serviceProvider;
+    private WriteLine _writeLineWorkflow = null!;
+    private IWorkflowRunner _workflowRunner = null!;
+    private ServiceProvider _serviceProvider = null!;
 
     [GlobalSetup]
     public void GlobalSetup()
@@ -21,7 +21,7 @@ public class ConsoleActivitiesBenchmark
         _serviceProvider = services.BuildServiceProvider();
         _workflowRunner = _serviceProvider.GetRequiredService<IWorkflowRunner>();
         
-        _writeLineWorkflow = new WriteLine("Hello, World!");
+        _writeLineWorkflow = new("Hello, World!");
     }
     
     [Benchmark]

@@ -221,7 +221,7 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         if (filter.IsSystem != null)
             queryable = filter.IsSystem == true
                 ? queryable.Where(x => x.IsSystem == true)
-                : queryable.Where(x => x.IsSystem == false || x.IsSystem == null);
+                : queryable.Where(x => x.IsSystem == false || x.IsSystem == null!);
 
         if (filter.IsReadonly != null) queryable = queryable.Where(x => x.IsReadonly == filter.IsReadonly);
         return queryable;

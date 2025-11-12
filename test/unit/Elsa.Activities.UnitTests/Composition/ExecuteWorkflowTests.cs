@@ -50,7 +50,7 @@ public class ExecuteWorkflowTests
                 opts.CorrelationId == DefaultCorrelationId &&
                 opts.Input != null && opts.Input.ContainsKey("Key1") && (string)opts.Input["Key1"] == "Value1" &&
                 opts.Input.ContainsKey("ParentInstanceId") && (string)opts.Input["ParentInstanceId"] == parentInstanceId &&
-                opts.Properties.ContainsKey("ParentInstanceId") && (string)opts.Properties["ParentInstanceId"] == parentInstanceId &&
+                opts.Properties!.ContainsKey("ParentInstanceId") && (string)opts.Properties["ParentInstanceId"] == parentInstanceId &&
                 (waitForCompletion ? opts.Properties.ContainsKey("WaitForCompletion") && (bool)opts.Properties["WaitForCompletion"] : !opts.Properties.ContainsKey("WaitForCompletion"))
             ),
             Arg.Any<CancellationToken>()
@@ -226,7 +226,7 @@ public class ExecuteWorkflowTests
         {
             Status = status,
             SubStatus = subStatus,
-            Output = output
+            Output = output ?? new Dictionary<string, object>()
         };
         var workflowResult = new RunWorkflowResult(null!, workflowState, workflow, null, Journal.Empty);
 
