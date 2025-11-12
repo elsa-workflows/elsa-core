@@ -2,7 +2,7 @@
     
     <PropertyGroup>
         <ProjectGuid>{ca65b7d5-57e8-4932-b8b8-732d040c9b3a}</ProjectGuid>
-        <Include>[Elsa.Expressions.JavaScript]*,[Elsa.Http]*,[Elsa.Scheduling]*,[Elsa.Workflows.Api]*,[Elsa.Workflows.Runtime.Distributed]*,[Elsa.Workflows.Runtime]*</Include>
+        <Include>[Elsa.Expressions.JavaScript]*,[Elsa.Http]*,[Elsa.Scheduling]*,[Elsa.Workflows.Runtime.Distributed]*,[Elsa.Workflows.Runtime]*</Include>
         <Threshold>5</Threshold>
     </PropertyGroup>
 
@@ -11,7 +11,6 @@
         <ProjectReference Include="..\..\..\src\modules\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
-        <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
