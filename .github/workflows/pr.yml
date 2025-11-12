@@ -20,6 +20,8 @@ on:
   pull_request:
     branches:
       - main
+      - 'patch/*'
+      - 'develop/*'
     paths:
       - '**/*'
 
