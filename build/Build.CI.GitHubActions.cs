@@ -11,7 +11,7 @@ using Nuke.Components;
         OnPullRequestBranches = ["main", "patch/*", "develop/*"],
         OnPullRequestIncludePaths = ["**/*"],
         PublishArtifacts = false,
-        InvokedTargets = [nameof(ICompile.Compile), nameof(ITest.Test), nameof(IPack.Pack)],
+        InvokedTargets = [nameof(ICompile.Compile), nameof(ITest.Test)],
         CacheKeyFiles = [],
         ConcurrencyCancelInProgress = true
     )
