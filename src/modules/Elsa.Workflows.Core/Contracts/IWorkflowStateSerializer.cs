@@ -131,7 +131,6 @@ public interface IWorkflowStateSerializer
     /// Deserializes the specified serialized state.
     /// </summary>
     /// <param name="serializedState">The serialized state.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The deserialized workflow state.</returns>
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The deserialization process may require access to the type.")]
     T Deserialize<T>(string serializedState);

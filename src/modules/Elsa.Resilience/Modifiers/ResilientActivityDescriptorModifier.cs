@@ -4,7 +4,7 @@ using Elsa.Workflows.Models;
 namespace Elsa.Resilience.Modifiers;
 
 /// <summary>
-/// Modifies the <see cref="ActivityDescriptor"/> of the <see cref="Cron"/> activity.
+/// Modifies the <see cref="ActivityDescriptor"/> for resilient activities.
 /// </summary>
 public class ResilientActivityDescriptorModifier : IActivityDescriptorModifier
 {

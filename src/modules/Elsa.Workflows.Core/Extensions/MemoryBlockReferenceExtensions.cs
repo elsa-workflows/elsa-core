@@ -15,7 +15,7 @@ public static class MemoryBlockReferenceExtensions
     /// </summary>
     /// <param name="context">The <see cref="ExpressionExecutionContext"/> to get the value from.</param>
     /// <param name="blockId">The ID of the memory block to get the value for.</param>
-    /// <returns>The value of the memory reference referenced by the specified <see cref="blockId"/>.</returns>
+    /// <returns>The value of the memory reference referenced by the specified block ID.</returns>
     public static object? Get(this ExpressionExecutionContext context, string blockId)
     {
         var matchingContext = context.FindContextContainingBlock(blockId) ?? context;
@@ -27,7 +27,7 @@ public static class MemoryBlockReferenceExtensions
     /// </summary>
     /// <param name="context">The <see cref="ActivityExecutionContext"/> to get the value from.</param>
     /// <param name="blockId">The ID of the memory block to get the value for.</param>
-    /// <returns>The value of the memory reference referenced by the specified <see cref="blockId"/>.</returns>
+    /// <returns>The value of the memory reference referenced by the specified block ID.</returns>
     public static object? Get(this ActivityExecutionContext context, string blockId) => context.ExpressionExecutionContext.Get(blockId);
 
     /// <summary>

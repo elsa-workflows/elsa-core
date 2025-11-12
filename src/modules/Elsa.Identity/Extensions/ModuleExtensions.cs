@@ -10,7 +10,7 @@ namespace Elsa.Extensions;
 public static class ModuleExtensions
 {
     /// <summary>
-    /// Installs & configures the <see cref="IdentityFeature"/> feature.
+    /// Installs and configures the <see cref="IdentityFeature"/> feature.
     /// </summary>
     public static IModule UseIdentity(this IModule module, Action<IdentityFeature>? configure = null)
     {
@@ -19,7 +19,7 @@ public static class ModuleExtensions
     }
     
     /// <summary>
-    /// Installs & configures the <see cref="IdentityFeature"/> feature.
+    /// Installs and configures the <see cref="IdentityFeature"/> feature.
     /// </summary>
     public static IModule UseIdentity(this IModule module, string signingKey, string issuer = "http://elsa.api", string audience = "http://elsa.api", TimeSpan? tokenLifetime = null)
     {
@@ -34,7 +34,7 @@ public static class ModuleExtensions
     }
     
     /// <summary>
-    /// Installs & configures the <see cref="IdentityFeature"/> feature.
+    /// Installs and configures the <see cref="DefaultAuthenticationFeature"/> feature.
     /// </summary>
     public static IModule UseDefaultAuthentication(this IModule module, Action<DefaultAuthenticationFeature>? configure = null)
     {
