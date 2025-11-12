@@ -36,7 +36,7 @@ internal class List(IWorkflowInstanceVariableManager workflowInstanceVariableMan
 
 internal class Request
 {
-    public ICollection<VariableUpdateValue> Variables { get; set; }
+    public ICollection<VariableUpdateValue> Variables { get; set; } = null!;
 }
 
 internal record ResolvedVariableModel(string Id, string Name, object? Value);

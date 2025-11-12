@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -45,6 +46,7 @@ public class ArgumentJsonConverter : JsonConverter<ArgumentDefinition>
     }
 
     /// <inheritdoc />
+    [UnconditionalSuppressMessage("Trimming", "IL2055:Call to MakeGenericType can not be statically analyzed", Justification = "Types are dynamically resolved from workflow definitions and registered in the well-known type registry.")]
     public override ArgumentDefinition Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var jsonObject = (JsonObject)JsonNode.Parse(ref reader)!;

@@ -9,8 +9,9 @@ using Elsa.Workflows.Models;
 namespace Elsa.Workflows.Activities;
 
 /// <summary>
-/// A strongly-typed for-each construct where <see cref="T"/> is the item type.
+/// A strongly-typed for-each construct where <typeparamref name="T"/> is the item type.
 /// </summary>
+/// <typeparam name="T">The type of items in the collection to iterate over.</typeparam>
 public class ForEach<T> : Activity
 {
     private const string CurrentIndexProperty = "CurrentIndex";

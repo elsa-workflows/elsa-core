@@ -28,6 +28,7 @@ public class DefaultMediator : IMediator
     /// <param name="commandPipeline">The command pipeline.</param>
     /// <param name="notificationPipeline">The notification pipeline.</param>
     /// <param name="options">The mediator options.</param>
+    /// <param name="serviceProvider">The service provider.</param>
     public DefaultMediator(
         IRequestPipeline requestPipeline,
         ICommandPipeline commandPipeline,

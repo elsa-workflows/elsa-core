@@ -105,12 +105,12 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
 
     /// <summary>
-    /// A factory that instantiates an <see cref="ILogRecordSink"/> for an <see cref="ActivityExecutionRecord"/>.
+    /// A factory that instantiates a log record sink for an <see cref="ActivityExecutionRecord"/>.
     /// </summary>
     public Func<IServiceProvider, ILogRecordSink<ActivityExecutionRecord>> ActivityExecutionLogSink { get; set; } = sp => sp.GetRequiredService<StoreActivityExecutionLogSink>();
 
     /// <summary>
-    /// A factory that instantiates an <see cref="ILogRecordSink"/> for an <see cref="WorkflowExecutionLogRecord"/>.
+    /// A factory that instantiates a log record sink for an <see cref="WorkflowExecutionLogRecord"/>.
     /// </summary>
     public Func<IServiceProvider, ILogRecordSink<WorkflowExecutionLogRecord>> WorkflowExecutionLogSink { get; set; } = sp => sp.GetRequiredService<StoreWorkflowExecutionLogSink>();
 

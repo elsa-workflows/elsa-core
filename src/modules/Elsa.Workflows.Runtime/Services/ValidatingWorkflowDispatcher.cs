@@ -9,6 +9,7 @@ namespace Elsa.Workflows.Runtime;
 /// Validates the workflow request before dispatching it to the workflow dispatcher.
 /// </summary>
 /// <param name="decoratedService">The workflow dispatcher to decorate.</param>
+/// <param name="dispatcherOptions">The workflow dispatcher options.</param>
 public class ValidatingWorkflowDispatcher(IWorkflowDispatcher decoratedService, IOptions<WorkflowDispatcherOptions> dispatcherOptions) : IWorkflowDispatcher
 {
     private IWorkflowDispatcher DecoratedService { get; set; } = decoratedService;
