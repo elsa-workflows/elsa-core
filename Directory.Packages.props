@@ -4,8 +4,8 @@
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <PropertyGroup>
-    <MicrosoftVersion>9.0.10</MicrosoftVersion>
-    <ResilienceVersion>9.10.0</ResilienceVersion>
+    <MicrosoftVersion>10.0.0</MicrosoftVersion>
+    <ResilienceVersion>10.0.0</ResilienceVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Antlr4.Runtime.Standard" Version="4.13.1" PrivateAssets="All" />
