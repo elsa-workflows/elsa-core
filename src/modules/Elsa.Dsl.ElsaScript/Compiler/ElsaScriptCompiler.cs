@@ -94,22 +94,63 @@ public class ElsaScriptCompiler : IElsaScriptCompiler
 
     private IActivity CompileActivityInvocation(ActivityInvocationNode actInv)
     {
-        // Try to find the activity type by name
+        // Try to find the activity type by name - try several strategies
         var activityDescriptor = _activityRegistry.Find(actInv.ActivityName);
+        
+        // If not found, try with "Elsa." prefix
+        if (activityDescriptor == null)
+        {
+            activityDescriptor = _activityRegistry.Find($"Elsa.{actInv.ActivityName}");
+        }
+        
+        // If still not found, search by descriptor name
+        if (activityDescriptor == null)
+        {
+            activityDescriptor = _activityRegistry.Find(d => d.Name == actInv.ActivityName);
+        }
         
         if (activityDescriptor == null)
         {
             throw new InvalidOperationException($"Activity '{actInv.ActivityName}' not found in registry");
         }
 
-        // Create an instance of the activity using a minimal constructor context
-        var emptyElement = System.Text.Json.JsonDocument.Parse("{}").RootElement;
-        var context = new ActivityConstructorContext(activityDescriptor, emptyElement, new System.Text.Json.JsonSerializerOptions());
-        var activity = activityDescriptor.Constructor(context);
+        // Find the activity type by searching loaded assemblies
+        var activityType = AppDomain.CurrentDomain.GetAssemblies()
+            .Select(a => a.GetType(activityDescriptor.TypeName))
+            .FirstOrDefault(t => t != null);
+            
+        if (activityType == null)
+        {
+            // Try with full namespace
+            activityType = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(a => a.GetTypes())
+                .FirstOrDefault(t => t.FullName == activityDescriptor.TypeName || t.Name == activityDescriptor.TypeName);
+        }
+        
+        if (activityType == null)
+        {
+            throw new InvalidOperationException($"Could not load type '{activityDescriptor.TypeName}'");
+        }
+
+        // Create an instance using the parameterless constructor if available
+        IActivity activity;
+        var parameterlessConstructor = activityType.GetConstructor(
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance,
+            null,
+            new Type[] { typeof(string), typeof(int?) },
+            null);
+            
+        if (parameterlessConstructor != null)
+        {
+            activity = (IActivity)parameterlessConstructor.Invoke(new object?[] { null, null });
+        }
+        else
+        {
+            // Try the default constructor
+            activity = (IActivity)Activator.CreateInstance(activityType, true)!;
+        }
 
         // Set properties based on arguments
-        var activityType = activity.GetType();
-        
         foreach (var arg in actInv.Arguments)
         {
             var propertyName = arg.Name ?? GetDefaultPropertyName(actInv.ActivityName);
