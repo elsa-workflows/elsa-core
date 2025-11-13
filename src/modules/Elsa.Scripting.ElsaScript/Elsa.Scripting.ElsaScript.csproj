@@ -4,7 +4,7 @@
     <PackageTags>elsa dsl scripting parlot workflow</PackageTags>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Parlot" Version="1.0.2" />
+    <PackageReference Include="Parlot" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />
   </ItemGroup>
@@ -13,5 +13,11 @@
     <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
     <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     <ProjectReference Include="..\Elsa.Expressions\Elsa.Expressions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Parlot-based parsers are scaffolded but need refactoring - excluded for now -->
+    <Compile Remove="Parsers\**\*.cs" />
+    <!-- Full Elsa activity compiler needs more work - excluded for now -->
+    <Compile Remove="Lowering\Compiler.cs" />
   </ItemGroup>
 </Project>

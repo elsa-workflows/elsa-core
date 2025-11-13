@@ -1,38 +1,42 @@
-using System.Collections.Generic;
-using System.Linq;
-using Elsa.Scripting.ElsaScript;
-using Elsa.Scripting.ElsaScript.Lowering;
-using Xunit;
+using Elsa.Workflows.Activities;
 
 namespace Elsa.Scripting.ElsaScript.IntegrationTests;
 
 public class ElsaScriptCompilerTests
 {
-    private readonly ElsaScriptCompiler _compiler = new();
+    private readonly Lowering.ElsaScriptCompiler _compiler = new();
 
     [Fact]
-    public void CompilesForLoopIntoStubModel()
+    public void CompilesForLoopIntoWorkflow()
     {
         const string script = @"
 use expressions js;
 for (let i = 0; => i < 3; => i = i + 1) {
-  WriteLine(Text: \"Hello\");
+  WriteLine(Text: ""Hello"");
 }
 ";
 
-        var workflow = Assert.IsType<WfSequence>(_compiler.Compile(script));
-        var forActivity = Assert.IsType<WfActivity>(workflow.Activities.Single());
-        Assert.Equal("For", forActivity.Type);
+        var workflow = _compiler.Compile(script);
+        Assert.NotNull(workflow);
+        Assert.IsType<Workflow>(workflow);
 
-        var initializer = Assert.IsType<dynamic>(forActivity.Inputs["Initializer"]!);
-        Assert.Equal("let", (string)initializer.Kind);
-        Assert.Equal("i", (string)initializer.Name);
-        Assert.NotNull(initializer.Initializer);
+        // Root should be a Sequence
+        var rootSequence = Assert.IsType<Sequence>(workflow.Root);
+        Assert.Single(rootSequence.Activities);
 
-        var body = Assert.IsType<WfSequence>(forActivity.Inputs["Body"]);
-        var writeLine = Assert.IsType<WfActivity>(body.Activities.Single());
-        Assert.Equal("WriteLine", writeLine.Type);
-        Assert.True(((bool?)writeLine.CanStart) is null or false);
+        // For loop is compiled as While with metadata
+        var whileActivity = Assert.IsType<While>(rootSequence.Activities.Single());
+        Assert.NotNull(whileActivity.Condition);
+        Assert.NotNull(whileActivity.Body);
+
+        // Check metadata
+        Assert.True(whileActivity.CustomProperties.ContainsKey("ElsaScript.Type"));
+        Assert.Equal("for", whileActivity.CustomProperties["ElsaScript.Type"]);
+
+        // Check body contains WriteLine
+        var bodySequence = Assert.IsType<Sequence>(whileActivity.Body);
+        Assert.Single(bodySequence.Activities);
+        Assert.IsType<WriteLine>(bodySequence.Activities.Single());
     }
 
     [Fact]
@@ -41,15 +45,24 @@ for (let i = 0; => i < 3; => i = i + 1) {
         const string script = @"
 use expressions js;
 while (=> shouldContinue()) {
-  Log(=> \"loop\");
+  Log(=> ""loop"");
 }
 ";
 
-        var workflow = Assert.IsType<WfSequence>(_compiler.Compile(script));
-        var whileActivity = Assert.IsType<WfActivity>(workflow.Activities.Single());
-        Assert.Equal("While", whileActivity.Type);
-        var body = Assert.IsType<WfSequence>(whileActivity.Inputs["Body"]);
+        var workflow = _compiler.Compile(script);
+        Assert.NotNull(workflow);
+        Assert.IsType<Workflow>(workflow);
+
+        var rootSequence = Assert.IsType<Sequence>(workflow.Root);
+        var whileActivity = Assert.IsType<While>(rootSequence.Activities.Single());
+        Assert.NotNull(whileActivity.Condition);
+
+        var body = Assert.IsType<Sequence>(whileActivity.Body);
         Assert.Single(body.Activities);
+
+        // Log is a generic activity
+        var logActivity = body.Activities.Single();
+        Assert.Equal("Log", logActivity.Type);
     }
 
     [Fact]
@@ -57,24 +70,40 @@ while (=> shouldContinue()) {
     {
         const string script = @"
 switch (=> status) {
-  case \"Ok\": {
-    WriteLine(\"OK\");
+  case ""Ok"": {
+    WriteLine(""OK"");
   }
-  case \"Error\": {
-    WriteLine(\"ERR\");
+  case ""Error"": {
+    WriteLine(""ERR"");
   }
   default: {
-    WriteLine(\"???\");
+    WriteLine(""???"");
   }
 }
 ";
 
-        var workflow = Assert.IsType<WfSequence>(_compiler.Compile(script));
-        var switchActivity = Assert.IsType<WfActivity>(workflow.Activities.Single());
-        Assert.Equal("Switch", switchActivity.Type);
+        var workflow = _compiler.Compile(script);
+        Assert.NotNull(workflow);
+        Assert.IsType<Workflow>(workflow);
 
-        var cases = Assert.IsAssignableFrom<IEnumerable<WfSwitchCase>>(switchActivity.Inputs["Cases"]!);
-        Assert.Equal(2, cases.Count());
-        Assert.NotNull(switchActivity.Inputs["Default"]);
+        var rootSequence = Assert.IsType<Sequence>(workflow.Root);
+        var switchActivity = Assert.IsType<Switch>(rootSequence.Activities.Single());
+
+        Assert.Equal(2, switchActivity.Cases.Count);
+        Assert.NotNull(switchActivity.Default);
+
+        // Check that each case has a body
+        foreach (var switchCase in switchActivity.Cases)
+        {
+            Assert.NotNull(switchCase.Activity);
+            var caseBody = Assert.IsType<Sequence>(switchCase.Activity);
+            Assert.Single(caseBody.Activities);
+            Assert.IsType<WriteLine>(caseBody.Activities.Single());
+        }
+
+        // Check default
+        var defaultBody = Assert.IsType<Sequence>(switchActivity.Default);
+        Assert.Single(defaultBody.Activities);
+        Assert.IsType<WriteLine>(defaultBody.Activities.Single());
     }
 }

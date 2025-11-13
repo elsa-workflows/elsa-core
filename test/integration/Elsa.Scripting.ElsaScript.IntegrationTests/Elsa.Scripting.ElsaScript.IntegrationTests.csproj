@@ -2,6 +2,8 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Threshold>10</Threshold>
+    <CollectCoverage>true</CollectCoverage>
+    <Include>[Elsa.Scripting.ElsaScript*]*</Include>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\modules\Elsa.Scripting.ElsaScript\Elsa.Scripting.ElsaScript.csproj" />
