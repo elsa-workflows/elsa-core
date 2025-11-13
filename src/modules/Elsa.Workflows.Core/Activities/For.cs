@@ -62,7 +62,12 @@ public class For : Activity
     public IActivity? Body { get; set; }
 
     /// <summary>
-    /// Stores the current value for each iteration. 
+    /// The name of the loop variable exposed to the body.
+    /// </summary>
+    public string CurrentValueVariableName { get; set; } = "CurrentValue";
+
+    /// <summary>
+    /// Stores the current value for each iteration.
     /// </summary>
     [Output]
     public Output<object?> CurrentValue { get; set; } = new();
@@ -104,11 +109,11 @@ public class For : Activity
             {
                 var variables = new[]
                 {
-                    new Variable("CurrentValue", currentValue)
+                    new Variable(CurrentValueVariableName, currentValue)
                 };
                 await context.ScheduleActivityAsync(iterateNode, OnChildComplete, variables: variables);
             }
-            
+
 
             // Update internal step.
             context.SetProperty(CurrentStepProperty, currentValue);

@@ -7,11 +7,11 @@ public class ElsaScriptCompilerTests
     private readonly Lowering.ElsaScriptCompiler _compiler = new();
 
     [Fact]
-    public void CompilesForLoopIntoWorkflow()
+    public void CompilesRangeForLoopWithToKeyword()
     {
         const string script = @"
 use expressions js;
-for (let i = 0; => i < 3; => i = i + 1) {
+for i = 0 to 3 {
   WriteLine(Text: ""Hello"");
 }
 ";
@@ -24,19 +24,65 @@ for (let i = 0; => i < 3; => i = i + 1) {
         var rootSequence = Assert.IsType<Sequence>(workflow.Root);
         Assert.Single(rootSequence.Activities);
 
-        // For loop is compiled as While with metadata
-        var whileActivity = Assert.IsType<While>(rootSequence.Activities.Single());
-        Assert.NotNull(whileActivity.Condition);
-        Assert.NotNull(whileActivity.Body);
+        // For loop is compiled as For activity
+        var forActivity = Assert.IsType<For>(rootSequence.Activities.Single());
+        Assert.NotNull(forActivity.Start);
+        Assert.NotNull(forActivity.End);
+        Assert.NotNull(forActivity.Step);
+        Assert.NotNull(forActivity.Body);
+        Assert.NotNull(forActivity.CurrentValueVariableName);
 
-        // Check metadata
-        Assert.True(whileActivity.CustomProperties.ContainsKey("ElsaScript.Type"));
-        Assert.Equal("for", whileActivity.CustomProperties["ElsaScript.Type"]);
+        // Check properties - OuterBoundInclusive should be false for "to"
+        // Note: Can't easily test Input<> values without execution context, but we can verify structure
 
         // Check body contains WriteLine
-        var bodySequence = Assert.IsType<Sequence>(whileActivity.Body);
+        var bodySequence = Assert.IsType<Sequence>(forActivity.Body);
         Assert.Single(bodySequence.Activities);
         Assert.IsType<WriteLine>(bodySequence.Activities.Single());
+    }
+
+    [Fact]
+    public void CompilesRangeForLoopWithThroughKeyword()
+    {
+        const string script = @"
+for index = 0 through 10 {
+  WriteLine(Text: ""Iteration"");
+}
+";
+
+        var workflow = _compiler.Compile(script);
+        var rootSequence = Assert.IsType<Sequence>(workflow.Root);
+        var forActivity = Assert.IsType<For>(rootSequence.Activities.Single());
+
+        // OuterBoundInclusive should be true for "through"
+        Assert.NotNull(forActivity.OuterBoundInclusive);
+        Assert.NotNull(forActivity.CurrentValueVariableName);
+
+        var bodySequence = Assert.IsType<Sequence>(forActivity.Body);
+        Assert.Single(bodySequence.Activities);
+        Assert.IsType<WriteLine>(bodySequence.Activities.Single());
+    }
+
+    [Fact]
+    public void CompilesRangeForLoopWithStepExpression()
+    {
+        const string script = @"
+for i = 0 to 10 step 2 {
+  WriteLine(Text: ""Even"");
+}
+";
+
+        var workflow = _compiler.Compile(script);
+        var rootSequence = Assert.IsType<Sequence>(workflow.Root);
+        var forActivity = Assert.IsType<For>(rootSequence.Activities.Single());
+
+        Assert.NotNull(forActivity.Start);
+        Assert.NotNull(forActivity.End);
+        Assert.NotNull(forActivity.Step);
+        Assert.NotNull(forActivity.Body);
+
+        var bodySequence = Assert.IsType<Sequence>(forActivity.Body);
+        Assert.Single(bodySequence.Activities);
     }
 
     [Fact]

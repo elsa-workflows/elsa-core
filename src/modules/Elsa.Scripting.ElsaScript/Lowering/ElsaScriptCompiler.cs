@@ -46,39 +46,56 @@ public class ElsaScriptCompiler
         var idx = s.IndexOf("for", StringComparison.Ordinal);
         if (idx < 0) return false;
 
-        var headerStart = s.IndexOf('(', idx);
-        if (headerStart < 0) return false;
-        var headerEnd = FindMatchingParen(s, headerStart);
-        if (headerEnd < 0) return false;
-        var header = s.Substring(headerStart + 1, headerEnd - headerStart - 1);
-        var parts = SplitTopLevel(header, ';');
-        if (parts.Count != 3) return false;
+        // Parse: for varName = startExpr to/through endExpr [step stepExpr] { ... }
+        // Match pattern: for <identifier> = <expr> (to|through) <expr> [step <expr>] {
+        var forPattern = new Regex(@"for\s+(?<var>\w+)\s*=\s*(?<start>[^{]+?)\s+(?<op>to|through)\s+(?<end>[^{]+?)(?:\s+step\s+(?<step>[^{]+?))?\s*\{", RegexOptions.IgnoreCase);
+        var match = forPattern.Match(s);
+        if (!match.Success) return false;
 
-        var init = parts[0].Trim();
-        var cond = parts[1].Trim();
-        var iter = parts[2].Trim();
+        var varName = match.Groups["var"].Value;
+        var startText = match.Groups["start"].Value.Trim();
+        var endText = match.Groups["end"].Value.Trim();
+        var stepText = match.Groups["step"].Success ? match.Groups["step"].Value.Trim() : "1";
+        var rangeOp = match.Groups["op"].Value.ToLowerInvariant();
+        var isInclusive = rangeOp == "through";
 
-        var bodyStart = s.IndexOf('{', headerEnd);
+        // Find the body
+        var bodyStart = match.Index + match.Length - 1; // Position of '{'
         var bodyEnd = FindMatchingBrace(s, bodyStart);
         var bodyText = bodyStart >= 0 && bodyEnd > bodyStart ? s.Substring(bodyStart + 1, bodyEnd - bodyStart - 1) : string.Empty;
 
         var body = new Sequence();
         ParseBlockActivities(bodyText, body);
 
-        // Note: Elsa's For activity expects Start/End/Step, not JavaScript-style initializer/condition/iterator
-        // This is a simplified mapping - we use While as a workaround since it's closer to JavaScript semantics
-        var whileActivity = new While(
-            new Input<bool>(new Expression("JavaScript", TrimArrow(cond))),
-            body
-        );
+        // Create For activity with range semantics
+        var forActivity = new For
+        {
+            Start = new Input<int>(ParseExpressionAsInt(startText)),
+            End = new Input<int>(ParseExpressionAsInt(endText)),
+            Step = new Input<int>(ParseExpressionAsInt(stepText)),
+            OuterBoundInclusive = new Input<bool>(isInclusive),
+            CurrentValueVariableName = varName,
+            Body = body
+        };
 
-        // Store metadata about the original for loop structure for debugging/introspection
-        whileActivity.CustomProperties["ElsaScript.Type"] = "for";
-        whileActivity.CustomProperties["ElsaScript.Initializer"] = init;
-        whileActivity.CustomProperties["ElsaScript.Iterator"] = iter;
-
-        result = whileActivity;
+        result = forActivity;
         return true;
+    }
+
+    private static Expression ParseExpressionAsInt(string text)
+    {
+        text = text.Trim();
+
+        // Inline expression: => code
+        if (text.StartsWith("=>"))
+            return new Expression("JavaScript", text.Substring(2).Trim());
+
+        // Try parse as integer literal
+        if (int.TryParse(text, out var intValue))
+            return new Expression("Literal", intValue);
+
+        // Default: treat as JavaScript expression (could be a variable reference)
+        return new Expression("JavaScript", text);
     }
 
     private static bool TryParseWhile(string s, out IActivity? result)
