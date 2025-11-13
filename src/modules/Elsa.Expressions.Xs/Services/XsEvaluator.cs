@@ -49,17 +49,14 @@ public class XsEvaluator(IOptions<XsOptions> options, IMemoryCache memoryCache) 
         var typeResolver = TypeResolver.Create(references);
 
         // Get or create compiled delegate
-        var compiledDelegate = GetCompiledDelegate(expression, returnType, xsConfig, typeResolver);
-
-        // Create globals
-        var globals = new Globals(context, options.Arguments);
+        var compiledDelegate = GetCompiledDelegate(expression, returnType, xsConfig, typeResolver, context, options);
 
         // Execute the delegate
         return await Task.Run(() =>
         {
             try
             {
-                return compiledDelegate.DynamicInvoke(globals);
+                return compiledDelegate.DynamicInvoke();
             }
             catch (TargetInvocationException ex) when (ex.InnerException != null)
             {
@@ -69,7 +66,7 @@ public class XsEvaluator(IOptions<XsOptions> options, IMemoryCache memoryCache) 
         }, cancellationToken);
     }
 
-    private Delegate GetCompiledDelegate(string expression, Type returnType, XsConfig xsConfig, TypeResolver typeResolver)
+    private Delegate GetCompiledDelegate(string expression, Type returnType, XsConfig xsConfig, TypeResolver typeResolver, ExpressionExecutionContext context, ExpressionEvaluatorOptions options)
     {
         var cacheKey = "xs:expression:" + Hash(expression);
 
@@ -82,9 +79,9 @@ public class XsEvaluator(IOptions<XsOptions> options, IMemoryCache memoryCache) 
             var parser = new XsParser(xsConfig);
             var parsedExpression = parser.Parse(expression);
 
-            // Create a lambda expression with Globals as parameter
-            var globalsParam = LinqExpression.Parameter(typeof(Globals), "globals");
-            var lambda = LinqExpression.Lambda(parsedExpression, globalsParam);
+            // Create a lambda expression without parameters
+            // TODO: Add support for accessing workflow context (globals) through expression transformation
+            var lambda = LinqExpression.Lambda(parsedExpression);
 
             // Compile the lambda
             return lambda.Compile();
