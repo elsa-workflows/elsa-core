@@ -12,17 +12,12 @@ namespace Elsa.WorkflowProviders.BlobStorage.ElsaScript.Features;
 /// A feature that enables ElsaScript support for the BlobStorage workflow provider.
 /// </summary>
 [DependsOn(typeof(BlobStorageFeature))]
-public class ElsaScriptBlobStorageFeature : FeatureBase
+public class ElsaScriptBlobStorageFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public ElsaScriptBlobStorageFeature(IModule module) : base(module)
-    {
-    }
-
     /// <inheritdoc />
     public override void Apply()
     {
         // Register the ElsaScript format handler
-        Services.AddSingleton<IBlobWorkflowFormatHandler, ElsaScriptBlobWorkflowFormatHandler>();
+        Services.AddScoped<IBlobWorkflowFormatHandler, ElsaScriptBlobWorkflowFormatHandler>();
     }
 }

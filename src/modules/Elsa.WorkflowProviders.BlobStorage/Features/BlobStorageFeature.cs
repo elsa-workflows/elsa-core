@@ -34,7 +34,7 @@ public class BlobStorageFeature : FeatureBase
         Services.AddScoped<IBlobStorageProvider>(sp => new BlobStorageProvider(BlobStorage(sp)));
 
         // Register the JSON format handler (built-in support)
-        Services.AddSingleton<IBlobWorkflowFormatHandler, JsonBlobWorkflowFormatHandler>();
+        Services.AddScoped<IBlobWorkflowFormatHandler, JsonBlobWorkflowFormatHandler>();
 
         Services.AddWorkflowsProvider<BlobStorageWorkflowsProvider>();
     }
