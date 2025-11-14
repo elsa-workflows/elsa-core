@@ -1,0 +1,11 @@
+use expressions js;
+
+WriteLine("Demonstrating while loops in ElsaScript");
+WriteLine("");
+
+WriteLine("Counting down from 5 to 1:");
+while (=> counter > 0) {
+    WriteLine(=> `Counter: ${counter}`);
+}
+
+WriteLine("While loop demo complete!");

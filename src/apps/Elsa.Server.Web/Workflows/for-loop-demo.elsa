@@ -1,0 +1,22 @@
+WriteLine("Demonstrating for loops in ElsaScript");
+WriteLine("");
+
+WriteLine("Example 1: for i = 0 to 5 (exclusive)");
+for i = 0 to 5 {
+    WriteLine(=> `Loop iteration: ${i}`);
+}
+
+WriteLine("");
+WriteLine("Example 2: for index = 0 through 3 (inclusive)");
+for index = 0 through 3 {
+    WriteLine(=> `Index is: ${index}`);
+}
+
+WriteLine("");
+WriteLine("Example 3: for counter = 0 to 10 step 2 (even numbers)");
+for counter = 0 to 10 step 2 {
+    WriteLine(=> `Counter: ${counter}`);
+}
+
+WriteLine("");
+WriteLine("For loop demos complete!");

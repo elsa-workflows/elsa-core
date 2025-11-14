@@ -18,6 +18,8 @@
 		<ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+		<ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
+		<ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage.ElsaScript\Elsa.WorkflowProviders.BlobStorage.ElsaScript.csproj" />
     </ItemGroup>
 
 	<ItemGroup>

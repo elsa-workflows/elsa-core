@@ -8,15 +8,8 @@ namespace Elsa.WorkflowProviders.BlobStorage.ElsaScript.Handlers;
 /// <summary>
 /// Handles ElsaScript-formatted workflow definitions from blob storage.
 /// </summary>
-public class ElsaScriptBlobWorkflowFormatHandler : IBlobWorkflowFormatHandler
+public class ElsaScriptBlobWorkflowFormatHandler(ElsaScriptCompiler compiler) : IBlobWorkflowFormatHandler
 {
-    private readonly ElsaScriptCompiler _compiler;
-
-    public ElsaScriptBlobWorkflowFormatHandler(ElsaScriptCompiler compiler)
-    {
-        _compiler = compiler;
-    }
-
     /// <inheritdoc />
     public string Name => "ElsaScript";
 
@@ -37,7 +30,7 @@ public class ElsaScriptBlobWorkflowFormatHandler : IBlobWorkflowFormatHandler
     {
         try
         {
-            var workflow = _compiler.Compile(content);
+            var workflow = compiler.Compile(content);
 
             var materialized = new MaterializedWorkflow(
                 workflow,
