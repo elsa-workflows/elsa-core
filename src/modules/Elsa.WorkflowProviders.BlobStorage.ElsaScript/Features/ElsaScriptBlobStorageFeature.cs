@@ -1,6 +1,7 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Scripting.ElsaScript.Lowering;
 using Elsa.WorkflowProviders.BlobStorage.Contracts;
 using Elsa.WorkflowProviders.BlobStorage.ElsaScript.Handlers;
 using Elsa.WorkflowProviders.BlobStorage.Features;
@@ -17,6 +18,8 @@ public class ElsaScriptBlobStorageFeature(IModule module) : FeatureBase(module)
     /// <inheritdoc />
     public override void Apply()
     {
+        Services.AddSingleton<Compiler>();
+
         // Register the ElsaScript format handler
         Services.AddScoped<IBlobWorkflowFormatHandler, ElsaScriptBlobWorkflowFormatHandler>();
     }

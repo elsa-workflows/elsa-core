@@ -14,10 +14,4 @@
     <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     <ProjectReference Include="..\Elsa.Expressions\Elsa.Expressions.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <!-- Parlot-based parsers are scaffolded but need refactoring - excluded for now -->
-    <Compile Remove="Parsers\**\*.cs" />
-    <!-- Full Elsa activity compiler needs more work - excluded for now -->
-    <Compile Remove="Lowering\Compiler.cs" />
-  </ItemGroup>
 </Project>

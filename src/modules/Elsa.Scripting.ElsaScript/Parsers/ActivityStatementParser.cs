@@ -24,7 +24,7 @@ public static class ActivityStatementParser
             {
                 IsListen = result.Item1.Item1.HasValue,
                 Call = result.Item1.Item2,
-                Alias = result.Item2
+                Alias = result.Item2?.ToString()
             });
     }
 
@@ -37,7 +37,7 @@ public static class ActivityStatementParser
             .AndSkip(Terms.Char(')'))
             .Then(result => new ActivityCall
             {
-                Name = result.Item1,
+                Name = result.Item1.ToString(),
                 Arguments = result.Item2 ?? new List<Argument>()
             });
     }
@@ -63,7 +63,7 @@ public static class ActivityStatementParser
             .And(ExpressionParser.Instance)
             .Then(result => new Argument
             {
-                Name = result.Item1,
+                Name = result.Item1.ToString(),
                 Value = result.Item2
             });
     }

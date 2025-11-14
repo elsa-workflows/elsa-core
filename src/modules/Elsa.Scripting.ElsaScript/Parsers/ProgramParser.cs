@@ -1,5 +1,6 @@
 using Parlot.Fluent;
 using Elsa.Scripting.ElsaScript.Ast;
+using Elsa.Scripting.ElsaScript.Parsers.Metadata;
 using static Parlot.Fluent.Parsers;
 
 namespace Elsa.Scripting.ElsaScript.Parsers;
@@ -10,8 +11,17 @@ public static class ProgramParser
 
     private static Parser<Program> Program()
     {
-        return ZeroOrMany(StatementParser.Instance)
-            .Then(stmts => new Program { Statements = stmts.ToList() });
+        return ZeroOrOne(WorkflowStatementParser.Instance)
+            .And(ZeroOrMany(StatementParser.Instance))
+            .Then(result =>
+            {
+                var workflow = result.Item1 as WorkflowStatement;
+                var statements = result.Item2;
+                return new Program
+                {
+                    Workflow = workflow,
+                    Statements = statements.ToList()
+                };
+            });
     }
 }
-

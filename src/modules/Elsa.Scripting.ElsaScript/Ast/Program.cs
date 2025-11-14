@@ -5,5 +5,6 @@ namespace Elsa.Scripting.ElsaScript.Ast;
 /// </summary>
 public class Program : AstNode
 {
+    public WorkflowStatement? Workflow { get; set; }
     public List<Statement> Statements { get; set; } = new();
 }

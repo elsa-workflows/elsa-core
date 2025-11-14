@@ -4,17 +4,19 @@ using Elsa.Scripting.ElsaScript.Ast;
 using Elsa.Scripting.ElsaScript.Parsers.Expressions;
 using Elsa.Scripting.ElsaScript.Parsers.ControlFlow;
 using Elsa.Scripting.ElsaScript.Parsers.Containers;
+using Elsa.Scripting.ElsaScript.Parsers.Metadata;
 using static Parlot.Fluent.Parsers;
 
 namespace Elsa.Scripting.ElsaScript.Parsers;
 
 public static class StatementParser
 {
-    public static readonly Parser<Statement> Instance = Deferred<Statement>(Statement);
+    public static readonly Parser<Statement> Instance = Deferred<Statement>(() => Statement());
 
     private static Parser<Statement> Statement()
     {
         return OneOf(
+            WorkflowStatementParser.Instance,
             VarDeclaration(),
             LetDeclaration(),
             ConstDeclaration(),
@@ -40,8 +42,8 @@ public static class StatementParser
             .AndSkip(ZeroOrOne(Terms.Char(';')))
             .Then<Statement>(result => new VarDeclaration
             {
-                Name = result.Item1.Item1,
-                Type = result.Item1.Item2,
+                Name = result.Item1.Item1.ToString(),
+                Type = result.Item1.Item2?.ToString(),
                 Initializer = result.Item2
             });
     }
@@ -55,8 +57,8 @@ public static class StatementParser
             .AndSkip(ZeroOrOne(Terms.Char(';')))
             .Then<Statement>(result => new LetDeclaration
             {
-                Name = result.Item1.Item1,
-                Type = result.Item1.Item2,
+                Name = result.Item1.Item1.ToString(),
+                Type = result.Item1.Item2?.ToString(),
                 Initializer = result.Item2
             });
     }
@@ -71,8 +73,8 @@ public static class StatementParser
             .AndSkip(ZeroOrOne(Terms.Char(';')))
             .Then<Statement>(result => new ConstDeclaration
             {
-                Name = result.Item1.Item1,
-                Type = result.Item1.Item2,
+                Name = result.Item1.Item1.ToString(),
+                Type = result.Item1.Item2?.ToString(),
                 Initializer = result.Item2
             });
     }

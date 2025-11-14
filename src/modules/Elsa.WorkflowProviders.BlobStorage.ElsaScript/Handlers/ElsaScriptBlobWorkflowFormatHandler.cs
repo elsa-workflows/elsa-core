@@ -8,7 +8,7 @@ namespace Elsa.WorkflowProviders.BlobStorage.ElsaScript.Handlers;
 /// <summary>
 /// Handles ElsaScript-formatted workflow definitions from blob storage.
 /// </summary>
-public class ElsaScriptBlobWorkflowFormatHandler(ElsaScriptCompiler compiler) : IBlobWorkflowFormatHandler
+public class ElsaScriptBlobWorkflowFormatHandler(Compiler compiler) : IBlobWorkflowFormatHandler
 {
     /// <inheritdoc />
     public string Name => "ElsaScript";
@@ -26,11 +26,11 @@ public class ElsaScriptBlobWorkflowFormatHandler(ElsaScriptCompiler compiler) : 
     }
 
     /// <inheritdoc />
-    public ValueTask<MaterializedWorkflow?> TryParseAsync(Blob blob, string content, CancellationToken cancellationToken = default)
+    public async ValueTask<MaterializedWorkflow?> TryParseAsync(Blob blob, string content, CancellationToken cancellationToken = default)
     {
         try
         {
-            var workflow = compiler.Compile(content);
+            var workflow = await compiler.CompileAsync(content, cancellationToken);
 
             var materialized = new MaterializedWorkflow(
                 workflow,
@@ -38,12 +38,12 @@ public class ElsaScriptBlobWorkflowFormatHandler(ElsaScriptCompiler compiler) : 
                 MaterializerName: "ElsaScript"
             );
 
-            return new(materialized);
+            return materialized;
         }
         catch
         {
             // If ElsaScript parsing fails, return null to indicate this handler can't process the content
-            return new((MaterializedWorkflow?)null);
+            return null;
         }
     }
 }

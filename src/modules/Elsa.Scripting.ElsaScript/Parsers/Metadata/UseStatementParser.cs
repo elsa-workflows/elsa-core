@@ -13,7 +13,7 @@ public static class UseStatementParser
         // use namespace; or use expressions lang; or use strict types;
         // For now, just consume and ignore these directives
         return Terms.Text("use")
-            .SkipAnd(OneOrMany(Terms.Identifier().Or(Terms.Text("strict").Or(Terms.Text("expressions")))))
+            .SkipAnd(OneOrMany(OneOf(Terms.Identifier(), Terms.Text("strict"), Terms.Text("expressions"))))
             .AndSkip(ZeroOrOne(Terms.Char(';')))
             .Then<Statement>(_ => new UseStatement { Namespace = "ignored", Directive = "ignored" });
     }

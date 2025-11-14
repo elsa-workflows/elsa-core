@@ -1,12 +1,17 @@
 using Elsa.Scripting.ElsaScript.Ast;
+using Elsa.Scripting.ElsaScript.Parsers;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Memory;
 using Elsa.Extensions;
+using Parlot;
 
 namespace Elsa.Scripting.ElsaScript.Lowering;
 
+/// <summary>
+/// Compiles ElsaScript syntax to Elsa Workflow objects.
+/// </summary>
 public class Compiler
 {
     private readonly IActivityRegistryLookupService _activityLookup;
@@ -16,7 +21,25 @@ public class Compiler
         _activityLookup = activityLookup;
     }
 
-    public async Task<IActivity> CompileAsync(Program program, CancellationToken ct = default)
+    /// <summary>
+    /// Compiles an ElsaScript string to a Workflow.
+    /// </summary>
+    public async Task<Workflow> CompileAsync(string script, CancellationToken ct = default)
+    {
+        var context = new Parlot.ParseContext(script);
+        if (!ProgramParser.Instance.TryParse(context, out var program))
+        {
+            throw new InvalidOperationException($"Failed to parse ElsaScript at position {context.Scanner.Cursor.Offset}");
+        }
+
+        var activity = await CompileProgramAsync(program, ct);
+        return new Workflow(activity);
+    }
+
+    /// <summary>
+    /// Compiles a Program AST to an IActivity.
+    /// </summary>
+    public async Task<IActivity> CompileProgramAsync(Ast.Program program, CancellationToken ct = default)
     {
         var seq = new Sequence();
 
@@ -38,8 +61,16 @@ public class Compiler
                 return await LowerActivityStatementAsync(a, ct);
             case IfStatement i:
                 return await LowerIfAsync(i, ct);
-            case ForEachStatement f:
-                return await LowerForEachAsync(f, ct);
+            case ForStatement f:
+                return await LowerForAsync(f, ct);
+            case ForEachStatement fe:
+                return await LowerForEachAsync(fe, ct);
+            case WhileStatement w:
+                return await LowerWhileAsync(w, ct);
+            case SwitchStatement s:
+                return await LowerSwitchAsync(s, ct);
+            case UseStatement:
+                return null; // Ignore use statements
             default:
                 return null;
         }
@@ -59,6 +90,20 @@ public class Compiler
         return ifAct;
     }
 
+    private async Task<IActivity> LowerForAsync(ForStatement node, CancellationToken ct)
+    {
+        var forActivity = new For
+        {
+            Start = new Input<int>(MapExpression(node.Start)),
+            End = new Input<int>(MapExpression(node.End)),
+            Step = new Input<int>(node.Step != null ? MapExpression(node.Step) : Elsa.Expressions.Models.Expression.LiteralExpression(1)),
+            OuterBoundInclusive = new Input<bool>(node.IsInclusive),
+            CurrentValueVariableName = node.VariableName,
+            Body = await LowerBlockAsync(node.Body, ct)
+        };
+        return forActivity;
+    }
+
     private async Task<IActivity> LowerForEachAsync(ForEachStatement node, CancellationToken ct)
     {
         var forEach = new ForEach
@@ -66,13 +111,49 @@ public class Compiler
             Items = new Input<ICollection<object>>(MapExpression(node.Items))
         };
 
-        // CurrentValue binding to a variable of given name
         var variable = new Variable(node.VariableName);
         forEach.CurrentValue = new Output<object>(((Elsa.Expressions.Models.MemoryBlockReference)variable));
 
-        // Body.
         forEach.Body = await LowerBlockAsync(node.Body, ct);
         return forEach;
+    }
+
+    private async Task<IActivity> LowerWhileAsync(WhileStatement node, CancellationToken ct)
+    {
+        return new While(
+            new Input<bool>(MapExpression(node.Condition)),
+            await LowerBlockAsync(node.Body, ct)
+        );
+    }
+
+    private async Task<IActivity> LowerSwitchAsync(SwitchStatement node, CancellationToken ct)
+    {
+        var switchActivity = new Switch();
+        switchActivity.Cases = new List<Elsa.Workflows.Activities.SwitchCase>();
+
+        var switchExpr = MapExpression(node.Expression);
+
+        foreach (var caseNode in node.Cases)
+        {
+            var caseValue = MapExpression(caseNode.Value);
+            var conditionCode = $"({GetExpressionCode(switchExpr)}) == ({GetExpressionCode(caseValue)})";
+            var condition = new Elsa.Expressions.Models.Expression("JavaScript", conditionCode);
+
+            var caseActivity = new Elsa.Workflows.Activities.SwitchCase
+            {
+                Label = GetExpressionLabel(caseValue),
+                Condition = condition,
+                Activity = await LowerBlockAsync(caseNode.Body, ct)
+            };
+            switchActivity.Cases.Add(caseActivity);
+        }
+
+        if (node.Default != null)
+        {
+            switchActivity.Default = await LowerBlockAsync(node.Default, ct);
+        }
+
+        return switchActivity;
     }
 
     private async Task<IActivity> LowerStatementOrBlockAsync(StatementOrBlock sob, CancellationToken ct)
@@ -145,21 +226,20 @@ public class Compiler
                 var syntax = string.IsNullOrWhiteSpace(ie.Language) ? "JavaScript" : LanguageToSyntax(ie.Language);
                 return new Elsa.Expressions.Models.Expression(syntax, ie.Code);
             case TemplateStringExpression ts:
-                var js = BuildTemplateString(ts);
-                return new Elsa.Expressions.Models.Expression("JavaScript", js);
+                return new Elsa.Expressions.Models.Expression("JavaScript", BuildTemplateString(ts));
             default:
                 return Elsa.Expressions.Models.Expression.LiteralExpression(null);
         }
     }
 
-    private static string BuildTemplateString(TemplateStringExpression ts)
+    private string BuildTemplateString(TemplateStringExpression ts)
     {
         var sb = new System.Text.StringBuilder();
         sb.Append('`');
         foreach (var part in ts.Parts)
         {
             if (part.Text is not null)
-                sb.Append(part.Text.Replace("`", "\\``"));
+                sb.Append(part.Text.Replace("`", "\\`"));
             else if (part.Expression is not null)
             {
                 if (part.Expression is InlineExpression inl)
@@ -191,5 +271,35 @@ public class Compiler
         var arg = stmt.Call.Arguments.FirstOrDefault();
         if (arg == null) return Elsa.Expressions.Models.Expression.LiteralExpression(string.Empty);
         return MapExpression(arg.Value);
+    }
+
+    private async Task<IActivity> LowerBlockAsync(Block block, CancellationToken ct)
+    {
+        var seq = new Sequence();
+        foreach (var stmt in block.Statements)
+        {
+            var activity = await LowerStatementAsync(stmt, ct);
+            if (activity != null)
+                seq.Activities.Add(activity);
+        }
+        return seq;
+    }
+
+    private string GetExpressionCode(Elsa.Expressions.Models.Expression expr)
+    {
+        if (expr.Type == "Literal")
+        {
+            return System.Text.Json.JsonSerializer.Serialize(expr.Value);
+        }
+        return expr.Value?.ToString() ?? "null";
+    }
+
+    private string GetExpressionLabel(Elsa.Expressions.Models.Expression expr)
+    {
+        if (expr.Type == "Literal")
+        {
+            return expr.Value?.ToString() ?? "null";
+        }
+        return expr.Value?.ToString() ?? "expression";
     }
 }

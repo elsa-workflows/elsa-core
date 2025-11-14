@@ -22,11 +22,13 @@ public static class ExpressionParser
 
     private static Parser<InlineExpression> InlineExpression()
     {
-        // (Lang '=>')? raw code until ',' or ')' at same paren nesting
-        // Support optional lang id (js, cs, py, liquid)
-        return new Parser<InlineExpression>((ctx, out InlineExpression value) =>
+        return new CustomInlineExpressionParser();
+    }
+
+    private class CustomInlineExpressionParser : Parser<InlineExpression>
+    {
+        public override bool Parse(ParseContext ctx, ref ParseResult<InlineExpression> result)
         {
-            value = default!;
             var scanner = ctx.Scanner;
             scanner.SkipWhiteSpace();
 
@@ -88,16 +90,20 @@ public static class ExpressionParser
             var end = scanner.Cursor.Position;
             var slice = scanner.Buffer[start..end];
             var code = slice.ToString().Trim();
-            value = new InlineExpression { Language = lang, Code = code };
+            result.Set(true, true, new InlineExpression { Language = lang, Code = code });
             return true;
-        });
+        }
     }
 
     private static Parser<TemplateStringExpression> TemplateString()
     {
-        return new Parser<TemplateStringExpression>((ctx, out TemplateStringExpression value) =>
+        return new CustomTemplateStringParser();
+    }
+
+    private class CustomTemplateStringParser : Parser<TemplateStringExpression>
+    {
+        public override bool Parse(ParseContext ctx, ref ParseResult<TemplateStringExpression> result)
         {
-            value = default!;
             var scanner = ctx.Scanner;
             scanner.SkipWhiteSpace();
             if (!scanner.ReadChar('`')) return false;
@@ -118,7 +124,7 @@ public static class ExpressionParser
                         parts.Add(new TemplatePart { Text = textBuffer.ToString() });
                         textBuffer.Clear();
                     }
-                    value = new TemplateStringExpression { Parts = parts };
+                    result.Set(true, true, new TemplateStringExpression { Parts = parts });
                     return true;
                 }
                 if (c == '$' && scanner.ReadChar('{'))
@@ -166,20 +172,22 @@ public static class ExpressionParser
             }
 
             return false;
-        });
+        }
     }
 
     private static Parser<IdentifierExpression> Identifier()
     {
-        return Parsers.Terms.Identifier().Then<IdentifierExpression>(name => new IdentifierExpression { Name = name });
+        return Terms.Identifier().Then(name => new IdentifierExpression { Name = name.ToString() });
     }
 
     private static Parser<LiteralExpression> Literal()
     {
-        return Parsers.Terms.Number().Then<LiteralExpression>(n => new LiteralExpression { Value = n })
-            .Or(Parsers.Terms.String(StringLiteralQuotes.SingleOrDouble).Then<LiteralExpression>(s => new LiteralExpression { Value = s }))
-            .Or(Parsers.Terms.Text("true").Then<LiteralExpression>(_ => new LiteralExpression { Value = true }))
-            .Or(Parsers.Terms.Text("false").Then<LiteralExpression>(_ => new LiteralExpression { Value = false }));
+        return OneOf(
+            Terms.Number().Then(n => new LiteralExpression { Value = n }),
+            Terms.String(StringLiteralQuotes.SingleOrDouble).Then(s => new LiteralExpression { Value = s.ToString() }),
+            Terms.Text("true").Then(_ => new LiteralExpression { Value = true }),
+            Terms.Text("false").Then(_ => new LiteralExpression { Value = false })
+        );
     }
 
     private static bool ReadIdentifier(Scanner scanner, out ReadOnlySpan<char> value)
@@ -187,12 +195,12 @@ public static class ExpressionParser
         value = default;
         var start = scanner.Cursor.Position;
         var slice = scanner.ReadIdentifier();
-        if (slice == null)
+        if (!slice.HasValue)
         {
             scanner.Cursor.ResetPosition(start);
             return false;
         }
-        value = slice.Value;
+        value = slice.Value.Span;
         return true;
     }
 }

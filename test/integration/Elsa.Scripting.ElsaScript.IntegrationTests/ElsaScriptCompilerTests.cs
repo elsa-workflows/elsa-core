@@ -1,13 +1,22 @@
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Models;
+using NSubstitute;
 
 namespace Elsa.Scripting.ElsaScript.IntegrationTests;
 
 public class ElsaScriptCompilerTests
 {
-    private readonly Lowering.ElsaScriptCompiler _compiler = new();
+    private readonly Lowering.Compiler _compiler;
+
+    public ElsaScriptCompilerTests()
+    {
+        // Create a mock activity lookup service
+        var activityLookup = Substitute.For<IActivityRegistryLookupService>();
+        _compiler = new Lowering.Compiler(activityLookup);
+    }
 
     [Fact]
-    public void CompilesRangeForLoopWithToKeyword()
+    public async Task CompilesRangeForLoopWithToKeyword()
     {
         const string script = @"
 use expressions js;
@@ -16,7 +25,7 @@ for i = 0 to 3 {
 }
 ";
 
-        var workflow = _compiler.Compile(script);
+        var workflow = await _compiler.CompileAsync(script);
         Assert.NotNull(workflow);
         Assert.IsType<Workflow>(workflow);
 
@@ -42,7 +51,7 @@ for i = 0 to 3 {
     }
 
     [Fact]
-    public void CompilesRangeForLoopWithThroughKeyword()
+    public async Task CompilesRangeForLoopWithThroughKeyword()
     {
         const string script = @"
 for index = 0 through 10 {
@@ -50,7 +59,7 @@ for index = 0 through 10 {
 }
 ";
 
-        var workflow = _compiler.Compile(script);
+        var workflow = await _compiler.CompileAsync(script);
         var rootSequence = Assert.IsType<Sequence>(workflow.Root);
         var forActivity = Assert.IsType<For>(rootSequence.Activities.Single());
 
@@ -64,7 +73,7 @@ for index = 0 through 10 {
     }
 
     [Fact]
-    public void CompilesRangeForLoopWithStepExpression()
+    public async Task CompilesRangeForLoopWithStepExpression()
     {
         const string script = @"
 for i = 0 to 10 step 2 {
@@ -72,7 +81,7 @@ for i = 0 to 10 step 2 {
 }
 ";
 
-        var workflow = _compiler.Compile(script);
+        var workflow = await _compiler.CompileAsync(script);
         var rootSequence = Assert.IsType<Sequence>(workflow.Root);
         var forActivity = Assert.IsType<For>(rootSequence.Activities.Single());
 
@@ -86,16 +95,16 @@ for i = 0 to 10 step 2 {
     }
 
     [Fact]
-    public void CompilesWhileLoop()
+    public async Task CompilesWhileLoop()
     {
         const string script = @"
 use expressions js;
 while (=> shouldContinue()) {
-  Log(=> ""loop"");
+  WriteLine(=> ""loop"");
 }
 ";
 
-        var workflow = _compiler.Compile(script);
+        var workflow = await _compiler.CompileAsync(script);
         Assert.NotNull(workflow);
         Assert.IsType<Workflow>(workflow);
 
@@ -105,14 +114,11 @@ while (=> shouldContinue()) {
 
         var body = Assert.IsType<Sequence>(whileActivity.Body);
         Assert.Single(body.Activities);
-
-        // Log is a generic activity
-        var logActivity = body.Activities.Single();
-        Assert.Equal("Log", logActivity.Type);
+        Assert.IsType<WriteLine>(body.Activities.Single());
     }
 
     [Fact]
-    public void CompilesSwitchStatement()
+    public async Task CompilesSwitchStatement()
     {
         const string script = @"
 switch (=> status) {
@@ -128,7 +134,7 @@ switch (=> status) {
 }
 ";
 
-        var workflow = _compiler.Compile(script);
+        var workflow = await _compiler.CompileAsync(script);
         Assert.NotNull(workflow);
         Assert.IsType<Workflow>(workflow);
 

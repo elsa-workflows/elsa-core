@@ -3,6 +3,7 @@ using Parlot.Fluent;
 using Elsa.Scripting.ElsaScript.Ast;
 using Elsa.Scripting.ElsaScript.Parsers.Containers;
 using Elsa.Scripting.ElsaScript.Parsers.Expressions;
+using static Parlot.Fluent.Parsers;
 
 namespace Elsa.Scripting.ElsaScript.Parsers.ControlFlow;
 
@@ -12,29 +13,41 @@ public static class ForStatementParser
 
     private static Parser<Statement> For()
     {
-        var initializer = StatementParser.VarDeclaration()
-            .Or(StatementParser.LetDeclaration())
-            .Or(StatementParser.ConstDeclaration())
-            .Or(ExpressionParser.Instance.Then<Statement>(e => new InlineStatement { Expression = e as InlineExpression ?? new InlineExpression { Code = e switch { IdentifierExpression id => id.Name, LiteralExpression lit => lit.Value?.ToString() ?? string.Empty, _ => string.Empty } } }));
-
         return new Parser<Statement>((ctx, out Statement value) =>
         {
             value = default!;
-            if (!Parsers.Terms.Text("for").TryParse(ctx, out _)) return false;
-            if (!Parsers.Terms.Char('(').TryParse(ctx, out _)) return false;
-            if (!initializer.TryParse(ctx, out var init)) return false;
-            if (!Parsers.Terms.Char(';').TryParse(ctx, out _)) return false;
-            if (!ExpressionParser.Instance.TryParse(ctx, out var cond)) return false;
-            if (!Parsers.Terms.Char(';').TryParse(ctx, out _)) return false;
-            if (!ExpressionParser.Instance.TryParse(ctx, out var iterExpr)) return false;
-            if (!Parsers.Terms.Char(')').TryParse(ctx, out _)) return false;
+            if (!Terms.Text("for").TryParse(ctx, out _)) return false;
+            if (!Terms.Char('(').TryParse(ctx, out _)) return false;
+
+            // Parse initializer (var/let/const declaration or expression)
+            Statement? initializer = null;
+            if (StatementParser.VarDeclaration().TryParse(ctx, out var varDecl))
+                initializer = varDecl;
+            else if (StatementParser.LetDeclaration().TryParse(ctx, out var letDecl))
+                initializer = letDecl;
+            else if (StatementParser.ConstDeclaration().TryParse(ctx, out var constDecl))
+                initializer = constDecl;
+            else if (ExpressionParser.Instance.TryParse(ctx, out var expr))
+                initializer = new InlineStatement { Expression = expr as InlineExpression ?? new InlineExpression { Code = expr.ToString() ?? "" } };
+
+            if (!Terms.Char(';').TryParse(ctx, out _)) return false;
+
+            // Parse condition
+            if (!ExpressionParser.Instance.TryParse(ctx, out var condition)) return false;
+            if (!Terms.Char(';').TryParse(ctx, out _)) return false;
+
+            // Parse iterator
+            if (!ExpressionParser.Instance.TryParse(ctx, out var iterator)) return false;
+            if (!Terms.Char(')').TryParse(ctx, out _)) return false;
+
+            // Parse body
             if (!BlockParser.Instance.TryParse(ctx, out var body)) return false;
 
             value = new ForStatement
             {
-                Initializer = init,
-                Condition = cond,
-                Iterator = new InlineStatement { Expression = iterExpr as InlineExpression ?? new InlineExpression { Code = string.Empty } },
+                Initializer = initializer,
+                Condition = condition,
+                Iterator = new InlineStatement { Expression = iterator as InlineExpression ?? new InlineExpression { Code = iterator.ToString() ?? "" } },
                 Body = body
             };
             return true;
