@@ -1,0 +1,184 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "strict-converge-test",
+  "definitionId": "strict-converge-001",
+  "name": "Fork-Decision-Converge-Strict",
+  "description": "Tests the strictest Converge mode that requires ALL inbound connections to execute",
+  "createdAt": "2025-10-20T00:00:00.000000+00:00",
+  "version": 1,
+  "toolVersion": "3.6.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "flowchart-root",
+    "nodeId": "Workflow1:flowchart-root",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "condition": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "JavaScript",
+            "value": "return false;"
+          }
+        },
+        "id": "decision-1",
+        "nodeId": "Workflow1:flowchart-root:decision-1",
+        "name": "FlowDecision1",
+        "type": "Elsa.FlowDecision",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {}
+      },
+      {
+        "id": "start-1",
+        "nodeId": "Workflow1:flowchart-root:start-1",
+        "name": "Start1",
+        "type": "Elsa.Start",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {}
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "A"
+          }
+        },
+        "id": "writeline-a",
+        "nodeId": "Workflow1:flowchart-root:writeline-a",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {}
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "B"
+          }
+        },
+        "id": "writeline-b",
+        "nodeId": "Workflow1:flowchart-root:writeline-b",
+        "name": "WriteLine2",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {}
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "C"
+          }
+        },
+        "id": "writeline-c",
+        "nodeId": "Workflow1:flowchart-root:writeline-c",
+        "name": "WriteLine3",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false,
+          "mergeMode": "Converge"
+        },
+        "metadata": {}
+      }
+    ],
+    "variables": [],
+    "connections": [
+      {
+        "source": {
+          "activity": "writeline-a",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "writeline-c",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "writeline-b",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "writeline-c",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "start-1",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "writeline-a",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "start-1",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "decision-1",
+          "port": "In"
+        },
+        "vertices": []
+      },
+      {
+        "source": {
+          "activity": "decision-1",
+          "port": "True"
+        },
+        "target": {
+          "activity": "writeline-b",
+          "port": "In"
+        },
+        "vertices": []
+      }
+    ]
+  }
+}
