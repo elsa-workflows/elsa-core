@@ -32,6 +32,7 @@ public class WorkflowDefinitionActivityDescriptorFactory
         return new()
         {
             TypeName = typeName,
+            ClrType = typeof(WorkflowDefinitionActivity),
             Name = typeName,
             Version = definition.Version,
             DisplayName = definition.Name,

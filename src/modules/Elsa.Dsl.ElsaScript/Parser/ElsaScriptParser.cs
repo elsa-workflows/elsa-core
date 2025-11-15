@@ -26,7 +26,7 @@ public class ElsaScriptParser : IElsaScriptParser
 
         // Basic tokens
         var identifier = Terms.Identifier();
-        var stringLiteral = Terms.String(StringLiteralQuotes.SingleOrDouble);
+        var stringLiteral = Terms.String();
         var integerLiteral = Terms.Integer();
         var decimalLiteral = Terms.Decimal();
 

@@ -70,6 +70,7 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
         var descriptor = new ActivityDescriptor
         {
             TypeName = fullTypeName,
+            ClrType = activityType,
             Namespace = ns,
             Name = typeName,
             Category = category,

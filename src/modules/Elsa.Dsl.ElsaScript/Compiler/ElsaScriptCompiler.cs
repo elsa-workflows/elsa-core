@@ -1,3 +1,4 @@
+using System.Reflection;
 using Elsa.Dsl.ElsaScript.Ast;
 using Elsa.Dsl.ElsaScript.Contracts;
 using Elsa.Dsl.ElsaScript.Helpers;
@@ -120,25 +121,39 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
             throw new InvalidOperationException($"Activity '{actInv.ActivityName}' not found in registry");
         }
 
-        // Create an empty JsonElement representing an empty object:
-        var createContext = new ActivityConstructorContext(activityDescriptor, ActivityActivator.Create);
-        var activity = activityDescriptor.Constructor(createContext);
-        var activityType = activity.GetType();
+        var activityType = activityDescriptor.ClrType;
 
-        // Set properties based on arguments
-        foreach (var arg in actInv.Arguments)
+        // Separate named and positional arguments
+        var namedArgs = actInv.Arguments.Where(a => a.Name != null).ToList();
+        var positionalArgs = actInv.Arguments.Where(a => a.Name == null).ToList();
+
+        IActivity activity;
+
+        // If we have positional arguments, try to find a matching constructor
+        if (positionalArgs.Any())
         {
-            var propertyName = arg.Name ?? GetDefaultPropertyName(actInv.ActivityName);
+            activity = InstantiateActivityUsingConstructor(activityType, positionalArgs);
+        }
+        else
+        {
+            // No positional arguments, use default constructor
+            var activityConstructorContext = new ActivityConstructorContext(activityDescriptor, ActivityActivator.Create);
+            activity = activityDescriptor.Constructor(activityConstructorContext);
+        }
 
-            if (propertyName != null)
+        // Set named argument properties
+        foreach (var arg in namedArgs)
+        {
+            var property = activityType.GetProperty(arg.Name!);
+
+            if (property != null)
             {
-                var property = activityType.GetProperty(propertyName);
-
-                if (property != null)
-                {
-                    var value = CompileExpression(arg.Value, property.PropertyType);
-                    property.SetValue(activity, value);
-                }
+                var value = CompileExpression(arg.Value, property.PropertyType);
+                property.SetValue(activity, value);
+            }
+            else
+            {
+                throw new InvalidOperationException($"Property '{arg.Name}' not found on activity type '{activityType.Name}'");
             }
         }
 
@@ -343,17 +358,85 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
         return null;
     }
 
-    private string? GetDefaultPropertyName(string activityName)
+    private IActivity InstantiateActivityUsingConstructor(Type activityType, List<ArgumentNode> positionalArgs)
     {
-        // Map common activity names to their primary property
-        return activityName switch
+        // Get all public constructors
+        var constructors = activityType.GetConstructors(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+
+        // Filter constructors that:
+        // 1. Have the same number of required Input<T> parameters as positional arguments (excluding optional params)
+        // 2. All non-optional parameters are Input<T> types
+        var matchingConstructors = new List<(System.Reflection.ConstructorInfo ctor, System.Reflection.ParameterInfo[] inputParams)>();
+
+        foreach (var ctor in constructors)
         {
-            "WriteLine" => "Text",
-            "WriteHttpResponse" => "Content",
-            "SendEmail" => "Body",
-            "HttpEndpoint" => "Path",
-            _ => null
-        };
+            var parameters = ctor.GetParameters();
+
+            // Filter to only Input<T> parameters that are not optional (don't have default values or CallerMemberName attributes)
+            var inputParams = parameters.Where(p =>
+                p.ParameterType.IsGenericType &&
+                p.ParameterType.GetGenericTypeDefinition() == typeof(Input<>) &&
+                !p.IsOptional &&
+                !p.GetCustomAttributes(typeof(System.Runtime.CompilerServices.CallerFilePathAttribute), false).Any() &&
+                !p.GetCustomAttributes(typeof(System.Runtime.CompilerServices.CallerLineNumberAttribute), false).Any() &&
+                !p.GetCustomAttributes(typeof(System.Runtime.CompilerServices.CallerMemberNameAttribute), false).Any()
+            ).ToArray();
+
+            // Check if the number of required Input<T> params matches our positional args
+            if (inputParams.Length == positionalArgs.Count)
+            {
+                matchingConstructors.Add((ctor, inputParams));
+            }
+        }
+
+        if (!matchingConstructors.Any())
+        {
+            throw new InvalidOperationException(
+                $"No matching constructor found for activity type '{activityType.Name}' with {positionalArgs.Count} positional argument(s). " +
+                $"Constructors must have Input<T> parameters matching the number of positional arguments.");
+        }
+
+        if (matchingConstructors.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"Multiple matching constructors found for activity type '{activityType.Name}' with {positionalArgs.Count} positional argument(s). " +
+                $"Please use named arguments to disambiguate.");
+        }
+
+        var (selectedCtor, selectedInputParams) = matchingConstructors[0];
+
+        // Build the constructor arguments
+        var ctorArgs = new List<object?>();
+        var allParams = selectedCtor.GetParameters();
+
+        foreach (var param in allParams)
+        {
+            // Check if this is one of our Input<T> parameters
+            var inputParamIndex = Array.IndexOf(selectedInputParams, param);
+
+            if (inputParamIndex >= 0)
+            {
+                // This is an Input<T> parameter - compile the corresponding positional argument
+                var arg = positionalArgs[inputParamIndex];
+                var value = CompileExpression(arg.Value, param.ParameterType);
+                ctorArgs.Add(value);
+            }
+            else if (param.IsOptional)
+            {
+                // This is an optional parameter (like CallerFilePath) - use its default value
+                ctorArgs.Add(param.DefaultValue);
+            }
+            else
+            {
+                // This shouldn't happen if our filtering is correct
+                throw new InvalidOperationException(
+                    $"Unexpected non-optional, non-Input<T> parameter '{param.Name}' in constructor for '{activityType.Name}'");
+            }
+        }
+
+        // Instantiate the activity using the constructor
+        var activity = (IActivity)selectedCtor.Invoke(ctorArgs.ToArray());
+        return activity;
     }
 
     private string MapLanguageName(string dslLanguage)

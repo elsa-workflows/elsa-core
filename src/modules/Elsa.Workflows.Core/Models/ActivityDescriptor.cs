@@ -16,6 +16,11 @@ public class ActivityDescriptor
     public string TypeName { get; set; } = null!;
 
     /// <summary>
+    /// The .NET type of the activity type.
+    /// </summary>
+    public Type ClrType { get; set; } = null!;
+
+    /// <summary>
     /// The namespace of the activity type.
     /// </summary>
     public string Namespace { get; set; } = null!;
@@ -124,6 +129,3 @@ public class ActivityDescriptor
     [JsonIgnore]
     public Func<JsonSerializerOptions, JsonSerializerOptions>? ConfigureSerializerOptions { get; set; }
 }
-
-// TODO: Refactor this to remove the dependency on JsonElement and JsonSerializerOptions.
-// This limits the ability to use this class in other contexts, such as constructing activities from the DSL.
