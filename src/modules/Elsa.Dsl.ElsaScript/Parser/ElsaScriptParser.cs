@@ -15,17 +15,19 @@ public class ElsaScriptParser : IElsaScriptParser
     public WorkflowNode Parse(string source)
     {
         var workflow = new WorkflowNode();
-        var lines = source.Split('\n').Select(l => l.Trim()).Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
-        
+
+        // First, tokenize the source into statements
+        var statements = TokenizeStatements(source);
+
         var i = 0;
-        
+
         // Parse use statements
-        while (i < lines.Count && lines[i].StartsWith("use "))
+        while (i < statements.Count && statements[i].StartsWith("use "))
         {
-            var useLine = lines[i];
-            if (useLine.Contains("expressions"))
+            var useStatement = statements[i];
+            if (useStatement.Contains("expressions"))
             {
-                var match = Regex.Match(useLine, @"use\s+expressions\s+(\w+);");
+                var match = Regex.Match(useStatement, @"use\s+expressions\s+(\w+)");
                 if (match.Success)
                 {
                     workflow.UseStatements.Add(new()
@@ -37,7 +39,7 @@ public class ElsaScriptParser : IElsaScriptParser
             }
             else
             {
-                var match = Regex.Match(useLine, @"use\s+([\w\.]+);");
+                var match = Regex.Match(useStatement, @"use\s+([\w\.]+)");
                 if (match.Success)
                 {
                     workflow.UseStatements.Add(new()
@@ -49,36 +51,149 @@ public class ElsaScriptParser : IElsaScriptParser
             }
             i++;
         }
-        
+
         // Parse workflow declaration
-        if (i < lines.Count && lines[i].StartsWith("workflow "))
+        if (i < statements.Count && statements[i].StartsWith("workflow "))
         {
-            var match = Regex.Match(lines[i], @"workflow\s+""([^""]+)""\s*\{");
+            var match = Regex.Match(statements[i], @"workflow\s+""([^""]+)""\s*\{");
             if (match.Success)
             {
                 workflow.Name = match.Groups[1].Value;
                 i++;
             }
         }
-        
+
         // Parse body (simple statements only for now)
-        while (i < lines.Count && !lines[i].StartsWith("}"))
+        while (i < statements.Count && statements[i] != "}")
         {
-            var statement = ParseStatement(lines[i]);
+            var statement = ParseStatement(statements[i]);
             if (statement != null)
             {
                 workflow.Body.Add(statement);
             }
             i++;
         }
-        
+
         return workflow;
     }
 
-    private StatementNode? ParseStatement(string line)
+    private List<string> TokenizeStatements(string source)
     {
-        // Variable declaration: var name = value;
-        var varMatch = Regex.Match(line, @"(var|let|const)\s+(\w+)\s*=\s*(.+);");
+        var statements = new List<string>();
+        var current = new System.Text.StringBuilder();
+        var inString = false;
+        var stringChar = '\0';
+        var depth = 0;
+        var parenDepth = 0;
+
+        for (int i = 0; i < source.Length; i++)
+        {
+            var ch = source[i];
+
+            if (!inString)
+            {
+                if (ch == '"' || ch == '\'')
+                {
+                    inString = true;
+                    stringChar = ch;
+                    current.Append(ch);
+                }
+                else if (ch == '(')
+                {
+                    parenDepth++;
+                    current.Append(ch);
+                }
+                else if (ch == ')')
+                {
+                    parenDepth--;
+                    current.Append(ch);
+                }
+                else if (ch == '{')
+                {
+                    depth++;
+                    current.Append(ch);
+
+                    // Opening brace for workflow block is a statement terminator
+                    if (depth == 1 && current.ToString().Trim().StartsWith("workflow "))
+                    {
+                        var trimmed = current.ToString().Trim();
+                        if (!string.IsNullOrWhiteSpace(trimmed))
+                        {
+                            statements.Add(trimmed);
+                        }
+                        current.Clear();
+                    }
+                }
+                else if (ch == '}')
+                {
+                    depth--;
+
+                    // Standalone closing brace at depth 0 is a statement terminator
+                    if (depth == 0)
+                    {
+                        var trimmed = current.ToString().Trim();
+                        if (!string.IsNullOrWhiteSpace(trimmed))
+                        {
+                            statements.Add(trimmed);
+                        }
+                        statements.Add("}");
+                        current.Clear();
+                    }
+                    else
+                    {
+                        current.Append(ch);
+                    }
+                }
+                else if (ch == ';' && parenDepth == 0)
+                {
+                    // Semicolon terminates a statement (at any depth, but not inside parens)
+                    var trimmed = current.ToString().Trim();
+                    if (!string.IsNullOrWhiteSpace(trimmed))
+                    {
+                        statements.Add(trimmed);
+                    }
+                    current.Clear();
+                }
+                else if (ch == '\n' && depth > 0 && parenDepth == 0)
+                {
+                    // Newline inside workflow block (depth > 0) also terminates a statement
+                    // but only if we're not inside parentheses
+                    var trimmed = current.ToString().Trim();
+                    if (!string.IsNullOrWhiteSpace(trimmed))
+                    {
+                        statements.Add(trimmed);
+                        current.Clear();
+                    }
+                }
+                else if (!char.IsWhiteSpace(ch) || current.Length > 0)
+                {
+                    current.Append(ch);
+                }
+            }
+            else
+            {
+                current.Append(ch);
+                if (ch == stringChar && (i == 0 || source[i - 1] != '\\'))
+                {
+                    inString = false;
+                }
+            }
+        }
+
+        // Add any remaining content
+        var final = current.ToString().Trim();
+        if (!string.IsNullOrWhiteSpace(final))
+        {
+            statements.Add(final);
+        }
+
+        return statements;
+    }
+
+    private StatementNode? ParseStatement(string statement)
+    {
+        // Variable declaration: var name = value
+        var varMatch = Regex.Match(statement, @"(var|let|const)\s+(\w+)\s*=\s*(.+)");
         if (varMatch.Success)
         {
             var kind = varMatch.Groups[1].Value switch
@@ -88,7 +203,7 @@ public class ElsaScriptParser : IElsaScriptParser
                 "const" => VariableKind.Const,
                 _ => VariableKind.Var
             };
-            
+
             return new VariableDeclarationNode
             {
                 Kind = kind,
@@ -96,39 +211,39 @@ public class ElsaScriptParser : IElsaScriptParser
                 Value = ParseExpression(varMatch.Groups[3].Value)
             };
         }
-        
-        // Activity invocation: ActivityName(args);
-        var actMatch = Regex.Match(line, @"(\w+)\s*\(([^)]*)\)\s*;");
+
+        // Activity invocation: ActivityName(args)
+        var actMatch = Regex.Match(statement, @"(\w+)\s*\(([^)]*)\)");
         if (actMatch.Success)
         {
             var activityName = actMatch.Groups[1].Value;
             var argsStr = actMatch.Groups[2].Value;
-            
+
             var activity = new ActivityInvocationNode
             {
                 ActivityName = activityName,
                 Arguments = ParseArguments(argsStr)
             };
-            
+
             return activity;
         }
-        
-        // Listen statement: listen ActivityName(args);
-        var listenMatch = Regex.Match(line, @"listen\s+(\w+)\s*\(([^)]*)\)\s*;");
+
+        // Listen statement: listen ActivityName(args)
+        var listenMatch = Regex.Match(statement, @"listen\s+(\w+)\s*\(([^)]*)\)");
         if (listenMatch.Success)
         {
             var activityName = listenMatch.Groups[1].Value;
             var argsStr = listenMatch.Groups[2].Value;
-            
+
             var activity = new ActivityInvocationNode
             {
                 ActivityName = activityName,
                 Arguments = ParseArguments(argsStr)
             };
-            
+
             return new ListenNode { Activity = activity };
         }
-        
+
         return null;
     }
 
