@@ -1,0 +1,26 @@
+use expressions js;
+
+WriteLine("Demonstrating switch statements in ElsaScript");
+WriteLine("");
+
+WriteLine("Testing switch with day of week:");
+switch (=> dayOfWeek) {
+    case "Monday": {
+        WriteLine("Start of the work week!");
+    }
+    case "Friday": {
+        WriteLine("TGIF!");
+    }
+    case "Saturday": {
+        WriteLine("Weekend time!");
+    }
+    case "Sunday": {
+        WriteLine("Relaxing Sunday!");
+    }
+    default: {
+        WriteLine("Just another day...");
+    }
+}
+
+WriteLine("");
+WriteLine("Switch demo complete!");
