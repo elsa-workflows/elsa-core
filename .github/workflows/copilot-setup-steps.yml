@@ -18,11 +18,5 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - name: Build project
-        run: ./build.cmd Compile
-
-      - name: Run tests
-        run: ./build.cmd Test
-
-      - name: Create NuGet packages
-        run: ./build.cmd Pack
+      - name: Build, test, and pack
+        run: ./build.cmd Compile Test Pack
