@@ -18,9 +18,6 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - name: Restore NuGet packages
-        run: dotnet restore --ignore-failed-sources
-
       - name: Build project
         run: ./build.cmd Compile
 
