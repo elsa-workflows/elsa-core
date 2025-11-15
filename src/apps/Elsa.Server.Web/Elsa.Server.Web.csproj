@@ -31,6 +31,9 @@
 	  <None Update="Workflows\hello-world.elsa">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
+	  <None Update="Workflows\hello-world-http.elsa">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>

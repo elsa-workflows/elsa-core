@@ -1,4 +1,3 @@
-use Elsa.Activities.Console;
 use expressions js;
 
 workflow "HelloWorldDsl" {
