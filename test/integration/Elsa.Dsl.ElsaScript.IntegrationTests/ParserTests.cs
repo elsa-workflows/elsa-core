@@ -99,7 +99,7 @@ workflow ""ActivityTest"" {
         Assert.Equal("Text", activity.Arguments[0].Name);
     }
 
-    [Fact(DisplayName = "Parser can parse listen statements", Skip = "Parser needs enhancement to handle multiple statements including listen")]
+    [Fact(DisplayName = "Parser can parse listen statements")]
     public void Parse_WithListenStatement_ShouldReturnWorkflowWithListenNode()
     {
         // Arrange
@@ -135,5 +135,66 @@ workflow ""ListenTest"" {
         // Assert
         Assert.NotNull(workflow);
         Assert.Equal(2, workflow.Body.Count);
+    }
+
+    [Fact(DisplayName = "Parser can parse complex workflow with variables, listen statements, and ElsaScript expressions")]
+    public void Parse_WithComplexWorkflow_ShouldReturnWorkflowWithCorrectStructure()
+    {
+        // Arrange
+        var source = @"
+use expressions js;
+
+workflow ""HelloWorldHttpDsl"" {
+    var message = ""Hello World from DSL via Expressions!"";
+    listen HttpEndpoint(""/hello-world-dsl"");
+    WriteLine(js => `Message: ${message}`);
+    WriteHttpResponse(message);
+}";
+
+        // Act
+        var workflow = _parser.Parse(source);
+
+        // Assert
+        Assert.NotNull(workflow);
+        Assert.Equal("HelloWorldHttpDsl", workflow.Name);
+
+        // Verify use statement
+        Assert.Single(workflow.UseStatements);
+        var useStatement = workflow.UseStatements[0];
+        Assert.Equal(Ast.UseType.Expressions, useStatement.Type);
+        Assert.Equal("js", useStatement.Value);
+
+        // Verify body contains: var declaration, listen statement, WriteLine, WriteHttpResponse
+        Assert.Equal(4, workflow.Body.Count);
+
+        // Verify variable declaration
+        var varDecl = workflow.Body[0] as Ast.VariableDeclarationNode;
+        Assert.NotNull(varDecl);
+        Assert.Equal("message", varDecl!.Name);
+        Assert.Equal(Ast.VariableKind.Var, varDecl.Kind);
+
+        // Verify listen statement
+        var listenNode = workflow.Body[1] as Ast.ListenNode;
+        Assert.NotNull(listenNode);
+        Assert.Equal("HttpEndpoint", listenNode!.Activity.ActivityName);
+        Assert.Single(listenNode.Activity.Arguments);
+
+        // Verify WriteLine with ElsaScript expression
+        var writeLineNode = workflow.Body[2] as Ast.ActivityInvocationNode;
+        Assert.NotNull(writeLineNode);
+        Assert.Equal("WriteLine", writeLineNode!.ActivityName);
+        Assert.Single(writeLineNode.Arguments);
+        var writeLineExpr = writeLineNode.Arguments[0].Value as Ast.ElsaExpressionNode;
+        Assert.NotNull(writeLineExpr);
+        Assert.Equal("js", writeLineExpr!.Language);
+
+        // Verify WriteHttpResponse with variable reference
+        var writeHttpNode = workflow.Body[3] as Ast.ActivityInvocationNode;
+        Assert.NotNull(writeHttpNode);
+        Assert.Equal("WriteHttpResponse", writeHttpNode!.ActivityName);
+        Assert.Single(writeHttpNode.Arguments);
+        var writeHttpArg = writeHttpNode.Arguments[0].Value as Ast.IdentifierNode;
+        Assert.NotNull(writeHttpArg);
+        Assert.Equal("message", writeHttpArg!.Name);
     }
 }

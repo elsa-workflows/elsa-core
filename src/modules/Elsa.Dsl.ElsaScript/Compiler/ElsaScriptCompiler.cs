@@ -289,7 +289,7 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
 
         if (exprNode is ElsaExpressionNode elsaExpr)
         {
-            var language = elsaExpr.Language ?? _defaultExpressionLanguage;
+            var language = elsaExpr.Language != null ? MapLanguageName(elsaExpr.Language) : _defaultExpressionLanguage;
             var expression = new Expression(language, elsaExpr.Expression);
             return new(expression);
         }
@@ -313,7 +313,7 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
 
         if (exprNode is ElsaExpressionNode elsaExpr)
         {
-            var language = elsaExpr.Language ?? _defaultExpressionLanguage;
+            var language = elsaExpr.Language != null ? MapLanguageName(elsaExpr.Language) : _defaultExpressionLanguage;
             return new(language, elsaExpr.Expression);
         }
 

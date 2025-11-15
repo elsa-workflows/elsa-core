@@ -69,22 +69,27 @@ public class ElsaScriptParser : IElsaScriptParser
         var arrayLiteral = Between(leftBracket, ZeroOrMany(commaSeparatedExpression), rightBracket)
             .Then<ExpressionNode>(elements => new ArrayLiteralNode { Elements = elements.ToList() });
 
-        // Elsa expression: lang => "code" or => "code"
+        // Elsa expression: lang => <raw text until matching )>
+        // We need to capture raw text after => up to the closing parenthesis
+        // This supports nested parentheses by counting depth
+        // Use a custom scanner-based parser wrapped in RawExpressionParser
+        var rawExpressionText = new RawExpressionParser();
+
         var elsaExpressionWithLang = identifier
             .And(arrow)
-            .And(stringLiteral)
+            .And(rawExpressionText)
             .Then<ExpressionNode>(x => new ElsaExpressionNode
             {
                 Language = x.Item1.ToString(),
-                Expression = x.Item3.ToString()
+                Expression = x.Item3.ToString().Trim()
             });
 
         var elsaExpressionWithoutLang = arrow
-            .And(stringLiteral)
+            .And(rawExpressionText)
             .Then<ExpressionNode>(x => new ElsaExpressionNode
             {
                 Language = null,
-                Expression = x.Item2.ToString()
+                Expression = x.Item2.ToString().Trim()
             });
 
         var elsaExpression = elsaExpressionWithLang.Or(elsaExpressionWithoutLang);
@@ -252,5 +257,58 @@ public class ParseException : Exception
 {
     public ParseException(string message) : base(message)
     {
+    }
+}
+
+/// <summary>
+/// Custom parser that captures raw text after => until the matching closing parenthesis.
+/// Supports nested parentheses.
+/// </summary>
+internal sealed class RawExpressionParser : Parser<TextSpan>
+{
+    public override bool Parse(ParseContext context, ref ParseResult<TextSpan> result)
+    {
+        context.EnterParser(this);
+
+        var scanner = context.Scanner;
+        var start = scanner.Cursor.Offset;
+        var depth = 0;
+
+        while (!scanner.Cursor.Eof)
+        {
+            var ch = scanner.Cursor.Current;
+
+            if (ch == '(')
+            {
+                depth++;
+                scanner.Cursor.Advance();
+            }
+            else if (ch == ')')
+            {
+                if (depth == 0)
+                {
+                    // This is the closing paren for the activity invocation
+                    break;
+                }
+                depth--;
+                scanner.Cursor.Advance();
+            }
+            else
+            {
+                scanner.Cursor.Advance();
+            }
+        }
+
+        var length = scanner.Cursor.Offset - start;
+        if (length == 0)
+        {
+            context.ExitParser(this);
+            return false;
+        }
+
+        var text = new TextSpan(scanner.Buffer, start, length);
+        result.Set(start, scanner.Cursor.Offset, text);
+        context.ExitParser(this);
+        return true;
     }
 }
