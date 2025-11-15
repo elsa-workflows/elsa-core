@@ -170,11 +170,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: ${{ github.event.action == 'published' }}
+    permissions:
+      id-token: write
     steps:
       - name: Download Packages
         uses: actions/download-artifact@v4.1.7
         with:
           name: elsa-nuget-packages
 
+      - name: NuGet login
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Publish to nuget.org
-        run: dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s ${{ env.nuget_feed_source }} --skip-duplicate
+        run: dotnet nuget push *.nupkg -k ${{ steps.nuget-login.outputs.NUGET_API_KEY }} -s ${{ env.nuget_feed_source }} --skip-duplicate
