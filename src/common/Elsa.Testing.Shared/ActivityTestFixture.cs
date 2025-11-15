@@ -153,7 +153,6 @@ public class ActivityTestFixture
         services.AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>();
         services.AddSingleton<IActivityDescriber, ActivityDescriber>();
         services.AddSingleton<IPropertyDefaultValueResolver, PropertyDefaultValueResolver>();
-        services.AddSingleton<IActivityFactory, ActivityFactory>();
         services.AddSingleton<IPropertyUIHandlerResolver, PropertyUIHandlerResolver>();
         services.AddSingleton<IActivityRegistry, ActivityRegistry>();
         services.AddScoped<IActivityRegistryLookupService, ActivityRegistryLookupService>();

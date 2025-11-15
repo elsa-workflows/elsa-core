@@ -1,32 +1,36 @@
+using System.Text.Json;
 using Elsa.Dsl.ElsaScript.Ast;
 using Elsa.Dsl.ElsaScript.Contracts;
+using Elsa.Dsl.ElsaScript.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Dsl.ElsaScript.Compiler;
 
 /// <summary>
 /// Compiles an ElsaScript AST into an Elsa workflow.
 /// </summary>
-public class ElsaScriptCompiler : IElsaScriptCompiler
+public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryLookupService, IElsaScriptParser parser) : IElsaScriptCompiler
 {
-    private readonly IActivityRegistry _activityRegistry;
     private string _defaultExpressionLanguage = "JavaScript";
     private readonly Dictionary<string, Variable> _variables = new();
 
-    public ElsaScriptCompiler(IActivityRegistry activityRegistry)
+    /// <inheritdoc />
+    public Task<Workflow> CompileAsync(string source, CancellationToken cancellationToken = default)
     {
-        _activityRegistry = activityRegistry;
+        var workflowNode = parser.Parse(source);
+        return CompileAsync(workflowNode, cancellationToken);
     }
 
     /// <inheritdoc />
-    public Workflow Compile(WorkflowNode workflowNode)
+    public async Task<Workflow> CompileAsync(WorkflowNode workflowNode, CancellationToken cancellationToken = default)
     {
         _variables.Clear();
-        
+
         // Process use statements
         foreach (var useNode in workflowNode.UseStatements)
         {
@@ -40,7 +44,7 @@ public class ElsaScriptCompiler : IElsaScriptCompiler
         var activities = new List<IActivity>();
         foreach (var statement in workflowNode.Body)
         {
-            var activity = CompileStatement(statement);
+            var activity = await CompileStatementAsync(statement, cancellationToken);
             if (activity != null)
             {
                 activities.Add(activity);
@@ -48,14 +52,18 @@ public class ElsaScriptCompiler : IElsaScriptCompiler
         }
 
         // Create the root activity (Sequence containing all statements)
-        var root = activities.Count == 1 
-            ? activities[0] 
-            : new Sequence { Activities = activities };
+        var root = activities.Count == 1
+            ? activities[0]
+            : new Sequence
+            {
+                Activities = activities
+            };
 
         // Create the workflow
         var workflow = new Workflow
         {
             Name = workflowNode.Name,
+            WorkflowMetadata = new(workflowNode.Name, workflowNode.Description, ToolVersion: new("3.6.0")),
             Root = root,
             Variables = _variables.Values.ToList()
         };
@@ -63,20 +71,20 @@ public class ElsaScriptCompiler : IElsaScriptCompiler
         return workflow;
     }
 
-    private IActivity? CompileStatement(StatementNode statement)
+    private async Task<IActivity?> CompileStatementAsync(StatementNode statement, CancellationToken cancellationToken = default)
     {
         return statement switch
         {
             VariableDeclarationNode varDecl => CompileVariableDeclaration(varDecl),
-            ActivityInvocationNode actInv => CompileActivityInvocation(actInv),
-            BlockNode block => CompileBlock(block),
-            IfNode ifNode => CompileIf(ifNode),
-            ForEachNode forEach => CompileForEach(forEach),
-            ForNode forNode => CompileFor(forNode),
-            WhileNode whileNode => CompileWhile(whileNode),
-            SwitchNode switchNode => CompileSwitch(switchNode),
+            ActivityInvocationNode actInv => await CompileActivityInvocationAsync(actInv, cancellationToken),
+            BlockNode block => await CompileBlockAsync(block, cancellationToken),
+            IfNode ifNode => await CompileIfAsync(ifNode, cancellationToken),
+            ForEachNode forEach => await CompileForEachAsync(forEach, cancellationToken),
+            ForNode forNode => await CompileForAsync(forNode, cancellationToken),
+            WhileNode whileNode => await CompileWhileAsync(whileNode, cancellationToken),
+            SwitchNode switchNode => await CompileSwitchAsync(switchNode, cancellationToken),
             FlowchartNode flowchart => CompileFlowchart(flowchart),
-            ListenNode listen => CompileListen(listen),
+            ListenNode listen => await CompileListenAsync(listen, cancellationToken),
             _ => throw new NotSupportedException($"Statement type {statement.GetType().Name} is not supported")
         };
     }
@@ -87,78 +95,47 @@ public class ElsaScriptCompiler : IElsaScriptCompiler
         var initialValue = varDecl.Value != null ? EvaluateConstantExpression(varDecl.Value) : null;
         var variable = new Variable(varDecl.Name, initialValue);
         _variables[varDecl.Name] = variable;
-        
+
         // Variable declarations don't produce activities themselves
         return null;
     }
 
-    private IActivity CompileActivityInvocation(ActivityInvocationNode actInv)
+    private async Task<IActivity> CompileActivityInvocationAsync(ActivityInvocationNode actInv, CancellationToken cancellationToken = default)
     {
         // Try to find the activity type by name - try several strategies
-        var activityDescriptor = _activityRegistry.Find(actInv.ActivityName);
-        
+        var activityDescriptor = await activityRegistryLookupService.FindAsync(actInv.ActivityName);
+
         // If not found, try with "Elsa." prefix
         if (activityDescriptor == null)
         {
-            activityDescriptor = _activityRegistry.Find($"Elsa.{actInv.ActivityName}");
+            activityDescriptor = await activityRegistryLookupService.FindAsync($"Elsa.{actInv.ActivityName}");
         }
-        
+
         // If still not found, search by descriptor name
         if (activityDescriptor == null)
         {
-            activityDescriptor = _activityRegistry.Find(d => d.Name == actInv.ActivityName);
+            activityDescriptor = await activityRegistryLookupService.FindAsync(d => d.Name == actInv.ActivityName);
         }
-        
+
         if (activityDescriptor == null)
         {
             throw new InvalidOperationException($"Activity '{actInv.ActivityName}' not found in registry");
         }
 
-        // Find the activity type by searching loaded assemblies
-        var activityType = AppDomain.CurrentDomain.GetAssemblies()
-            .Select(a => a.GetType(activityDescriptor.TypeName))
-            .FirstOrDefault(t => t != null);
-            
-        if (activityType == null)
-        {
-            // Try with full namespace
-            activityType = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => a.GetTypes())
-                .FirstOrDefault(t => t.FullName == activityDescriptor.TypeName || t.Name == activityDescriptor.TypeName);
-        }
-        
-        if (activityType == null)
-        {
-            throw new InvalidOperationException($"Could not load type '{activityDescriptor.TypeName}'");
-        }
-
-        // Create an instance using the parameterless constructor if available
-        IActivity activity;
-        var parameterlessConstructor = activityType.GetConstructor(
-            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance,
-            null,
-            new Type[] { typeof(string), typeof(int?) },
-            null);
-            
-        if (parameterlessConstructor != null)
-        {
-            activity = (IActivity)parameterlessConstructor.Invoke(new object?[] { null, null });
-        }
-        else
-        {
-            // Try the default constructor
-            activity = (IActivity)Activator.CreateInstance(activityType, true)!;
-        }
+        // Create an empty JsonElement representing an empty object:
+        var createContext = new ActivityConstructorContext(activityDescriptor, ActivityActivator.Create);
+        var activity = activityDescriptor.Constructor(createContext);
+        var activityType = activity.GetType();
 
         // Set properties based on arguments
         foreach (var arg in actInv.Arguments)
         {
             var propertyName = arg.Name ?? GetDefaultPropertyName(actInv.ActivityName);
-            
+
             if (propertyName != null)
             {
                 var property = activityType.GetProperty(propertyName);
-                
+
                 if (property != null)
                 {
                     var value = CompileExpression(arg.Value, property.PropertyType);
@@ -170,27 +147,30 @@ public class ElsaScriptCompiler : IElsaScriptCompiler
         return activity;
     }
 
-    private IActivity CompileBlock(BlockNode block)
+    private async Task<IActivity> CompileBlockAsync(BlockNode block, CancellationToken cancellationToken = default)
     {
         var activities = new List<IActivity>();
-        
+
         foreach (var statement in block.Statements)
         {
-            var activity = CompileStatement(statement);
+            var activity = await CompileStatementAsync(statement, cancellationToken);
             if (activity != null)
             {
                 activities.Add(activity);
             }
         }
 
-        return new Sequence { Activities = activities };
+        return new Sequence
+        {
+            Activities = activities
+        };
     }
 
-    private IActivity CompileIf(IfNode ifNode)
+    private async Task<IActivity> CompileIfAsync(IfNode ifNode, CancellationToken cancellationToken = default)
     {
         var condition = CompileExpressionAsInput<bool>(ifNode.Condition);
-        var thenActivity = CompileStatement(ifNode.Then);
-        var elseActivity = ifNode.Else != null ? CompileStatement(ifNode.Else) : null;
+        var thenActivity = await CompileStatementAsync(ifNode.Then, cancellationToken);
+        var elseActivity = ifNode.Else != null ? await CompileStatementAsync(ifNode.Else, cancellationToken) : null;
 
         return new If(condition)
         {
@@ -199,35 +179,35 @@ public class ElsaScriptCompiler : IElsaScriptCompiler
         };
     }
 
-    private IActivity CompileForEach(ForEachNode forEach)
+    private async Task<IActivity> CompileForEachAsync(ForEachNode forEach, CancellationToken cancellationToken = default)
     {
         // Create the loop variable
         var loopVariable = new Variable<object>(forEach.VariableName, null);
         _variables[forEach.VariableName] = loopVariable;
 
         var items = CompileExpressionAsInput<ICollection<object>>(forEach.Collection);
-        var body = CompileStatement(forEach.Body);
+        var body = await CompileStatementAsync(forEach.Body, cancellationToken);
 
         var forEachActivity = new ForEach<object>(items)
         {
-            CurrentValue = new Output<object>(loopVariable),
+            CurrentValue = new(loopVariable),
             Body = body
         };
 
         return forEachActivity;
     }
 
-    private IActivity CompileFor(ForNode forNode)
+    private async Task<IActivity> CompileForAsync(ForNode forNode, CancellationToken cancellationToken = default)
     {
         // For now, implement a simplified version using While
         // A full implementation would need to handle initializer and iterator properly
         throw new NotImplementedException("For loops are not yet fully implemented");
     }
 
-    private IActivity CompileWhile(WhileNode whileNode)
+    private async Task<IActivity> CompileWhileAsync(WhileNode whileNode, CancellationToken cancellationToken = default)
     {
         var condition = CompileExpressionAsInput<bool>(whileNode.Condition);
-        var body = CompileStatement(whileNode.Body);
+        var body = await CompileStatementAsync(whileNode.Body, cancellationToken);
 
         return new While(condition)
         {
@@ -235,18 +215,18 @@ public class ElsaScriptCompiler : IElsaScriptCompiler
         };
     }
 
-    private IActivity CompileSwitch(SwitchNode switchNode)
+    private async Task<IActivity> CompileSwitchAsync(SwitchNode switchNode, CancellationToken cancellationToken = default)
     {
         var cases = new List<SwitchCase>();
-        
+
         foreach (var caseNode in switchNode.Cases)
         {
             var caseExpression = CompileExpressionAsExpression(caseNode.Value);
-            var caseBody = CompileStatement(caseNode.Body);
-            cases.Add(new SwitchCase("Case", caseExpression, caseBody!));
+            var caseBody = await CompileStatementAsync(caseNode.Body, cancellationToken);
+            cases.Add(new("Case", caseExpression, caseBody!));
         }
 
-        var defaultActivity = switchNode.Default != null ? CompileStatement(switchNode.Default) : null;
+        var defaultActivity = switchNode.Default != null ? await CompileStatementAsync(switchNode.Default, cancellationToken) : null;
 
         return new Switch
         {
@@ -260,11 +240,11 @@ public class ElsaScriptCompiler : IElsaScriptCompiler
         throw new NotImplementedException("Flowchart support is not yet implemented");
     }
 
-    private IActivity CompileListen(ListenNode listen)
+    private async Task<IActivity> CompileListenAsync(ListenNode listen, CancellationToken cancellationToken = default)
     {
         // Listen is just a regular activity invocation that can start a workflow
-        var activity = CompileActivityInvocation(listen.Activity);
-        
+        var activity = await CompileActivityInvocationAsync(listen.Activity, cancellationToken);
+
         // Try to set CanStartWorkflow if the activity supports it
         var canStartWorkflowProp = activity.GetType().GetProperty("CanStartWorkflow");
         if (canStartWorkflowProp != null && canStartWorkflowProp.PropertyType == typeof(bool))
@@ -279,7 +259,7 @@ public class ElsaScriptCompiler : IElsaScriptCompiler
     {
         if (exprNode is LiteralNode literal)
         {
-            return new Input<T>((T)literal.Value!);
+            return new(new Literal(literal.Value!));
         }
 
         if (exprNode is IdentifierNode identifier)
@@ -287,25 +267,25 @@ public class ElsaScriptCompiler : IElsaScriptCompiler
             // Reference to a variable
             if (_variables.TryGetValue(identifier.Name, out var variable))
             {
-                return new Input<T>(variable);
+                return new(variable);
             }
-            
+
             // If not found, treat as a literal
-            return new Input<T>(new Literal<T>(default!));
+            return new(new Literal<T>(default!));
         }
 
         if (exprNode is ElsaExpressionNode elsaExpr)
         {
             var language = elsaExpr.Language ?? _defaultExpressionLanguage;
             var expression = new Expression(language, elsaExpr.Expression);
-            return new Input<T>(expression);
+            return new(expression);
         }
 
         if (exprNode is ArrayLiteralNode arrayLiteral)
         {
             // For array literals, evaluate to a constant array if all elements are literals
             var elements = arrayLiteral.Elements.Select(EvaluateConstantExpression).ToArray();
-            return new Input<T>((T)(object)elements);
+            return new((T)(object)elements);
         }
 
         throw new NotSupportedException($"Expression type {exprNode.GetType().Name} is not supported");
@@ -321,7 +301,7 @@ public class ElsaScriptCompiler : IElsaScriptCompiler
         if (exprNode is ElsaExpressionNode elsaExpr)
         {
             var language = elsaExpr.Language ?? _defaultExpressionLanguage;
-            return new Expression(language, elsaExpr.Expression);
+            return new(language, elsaExpr.Expression);
         }
 
         throw new NotSupportedException($"Expression type {exprNode.GetType().Name} is not supported as Expression");
@@ -329,15 +309,24 @@ public class ElsaScriptCompiler : IElsaScriptCompiler
 
     private object CompileExpression(ExpressionNode exprNode, Type targetType)
     {
-        // Determine the Input<T> type
-        var inputType = typeof(Input<>).MakeGenericType(targetType);
-        
+        // Check if targetType is already Input<T>
+        Type innerType;
+        if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Input<>))
+        {
+            // Extract the T from Input<T>
+            innerType = targetType.GetGenericArguments()[0];
+        }
+        else
+        {
+            innerType = targetType;
+        }
+
         // Use reflection to call CompileExpressionAsInput<T>
-        var method = GetType().GetMethod(nameof(CompileExpressionAsInput), 
+        var method = GetType().GetMethod(nameof(CompileExpressionAsInput),
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var genericMethod = method!.MakeGenericMethod(targetType);
-        
-        return genericMethod.Invoke(this, new object[] { exprNode })!;
+        var genericMethod = method!.MakeGenericMethod(innerType);
+
+        return genericMethod.Invoke(this, [exprNode])!;
     }
 
     private object? EvaluateConstantExpression(ExpressionNode exprNode)

@@ -1,8 +1,6 @@
 using Elsa.Dsl.ElsaScript.Contracts;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
-using Elsa.Workflows;
-using Elsa.Workflows.Activities;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
@@ -15,32 +13,19 @@ namespace Elsa.Dsl.ElsaScript.IntegrationTests;
 /// </summary>
 public class CompilerTests
 {
-    private readonly IServiceProvider _services;
-    private readonly IElsaScriptParser _parser;
     private readonly IElsaScriptCompiler _compiler;
 
     public CompilerTests(ITestOutputHelper testOutputHelper)
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        var services = new TestApplicationBuilder(testOutputHelper)
             .ConfigureElsa(elsa => elsa.UseElsaScript())
             .Build();
 
-        _parser = _services.GetRequiredService<IElsaScriptParser>();
-        _compiler = _services.GetRequiredService<IElsaScriptCompiler>();
+        _compiler = services.GetRequiredService<IElsaScriptCompiler>();
     }
 
-    [Fact(DisplayName = "Compiler service is registered and available")]
-    public void Test1()
-    {
-        // Arrange & Act
-        var compiler = _services.GetRequiredService<IElsaScriptCompiler>();
-
-        // Assert
-        Assert.NotNull(compiler);
-    }
-
-    [Fact(DisplayName = "Compiler can parse and analyze a workflow AST")]
-    public void Test2()
+    [Fact(DisplayName = "Compiler can compile a simple workflow from source")]
+    public async Task Test1()
     {
         // Arrange
         var source = @"
@@ -52,20 +37,16 @@ workflow ""HelloWorld"" {
 }";
 
         // Act
-        var ast = _parser.Parse(source);
-        
-        // Assert - verify the AST is correctly parsed
-        Assert.NotNull(ast);
-        Assert.Equal("HelloWorld", ast.Name);
-        Assert.Single(ast.Body);
-        
-        var activity = ast.Body[0] as Ast.ActivityInvocationNode;
-        Assert.NotNull(activity);
-        Assert.Equal("WriteLine", activity!.ActivityName);
+        var workflow = await _compiler.CompileAsync(source);
+
+        // Assert - verify the workflow is correctly compiled
+        Assert.NotNull(workflow);
+        Assert.Equal("HelloWorld", workflow.Name);
+        Assert.NotNull(workflow.Root);
     }
 
-    [Fact(DisplayName = "Compiler recognizes variable declarations in AST")]
-    public void Test3()
+    [Fact(DisplayName = "Compiler can compile workflow with variable declarations")]
+    public async Task Test2()
     {
         // Arrange
         var source = @"
@@ -78,17 +59,16 @@ workflow ""VariableTest"" {
 }";
 
         // Act
-        var ast = _parser.Parse(source);
+        var workflow = await _compiler.CompileAsync(source);
 
-        // Assert - verify variables are recognized
-        Assert.NotNull(ast);
-        Assert.Equal(3, ast.Body.Count);
-        
-        var varDecls = ast.Body.OfType<Ast.VariableDeclarationNode>().ToList();
-        Assert.Equal(3, varDecls.Count);
-        Assert.Equal("message", varDecls[0].Name);
-        Assert.Equal("count", varDecls[1].Name);
-        Assert.Equal("pi", varDecls[2].Name);
+        // Assert - verify variables are compiled correctly
+        Assert.NotNull(workflow);
+        Assert.Equal("VariableTest", workflow.Name);
+        Assert.Equal(3, workflow.Variables.Count);
+
+        Assert.Contains(workflow.Variables, v => v.Name == "message");
+        Assert.Contains(workflow.Variables, v => v.Name == "count");
+        Assert.Contains(workflow.Variables, v => v.Name == "pi");
     }
 }
 

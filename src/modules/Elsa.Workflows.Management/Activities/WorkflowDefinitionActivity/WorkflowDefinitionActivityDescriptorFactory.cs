@@ -5,7 +5,7 @@ using Humanizer;
 
 namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 
-public class WorkflowDefinitionActivityDescriptorFactory(IActivityFactory activityFactory)
+public class WorkflowDefinitionActivityDescriptorFactory
 {
     public ActivityDescriptor CreateDescriptor(WorkflowDefinition definition, WorkflowDefinition? latestPublishedDefinition = null)
     {
@@ -56,7 +56,7 @@ public class WorkflowDefinitionActivityDescriptorFactory(IActivityFactory activi
             },
             Constructor = context =>
             {
-                var activity = (WorkflowDefinitionActivity)activityFactory.Create(typeof(WorkflowDefinitionActivity), context);
+                var activity = context.CreateActivity<WorkflowDefinitionActivity>();
                 activity.Type = typeName;
                 activity.WorkflowDefinitionId = definition.DefinitionId;
                 activity.WorkflowDefinitionVersionId = definition.Id;

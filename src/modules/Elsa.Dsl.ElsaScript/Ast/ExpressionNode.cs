@@ -43,7 +43,7 @@ public class TemplateStringNode : ExpressionNode
     /// <summary>
     /// The parts of the template string (alternating between literals and expressions).
     /// </summary>
-    public List<TemplatePartNode> Parts { get; set; } = new();
+    public List<TemplatePartNode> Parts { get; set; } = [];
 }
 
 /// <summary>
@@ -81,7 +81,7 @@ public class ArrayLiteralNode : ExpressionNode
     /// <summary>
     /// The elements of the array.
     /// </summary>
-    public List<ExpressionNode> Elements { get; set; } = new();
+    public List<ExpressionNode> Elements { get; set; } = [];
 }
 
 /// <summary>

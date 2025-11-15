@@ -127,4 +127,3 @@ public class ActivityDescriptor
 
 // TODO: Refactor this to remove the dependency on JsonElement and JsonSerializerOptions.
 // This limits the ability to use this class in other contexts, such as constructing activities from the DSL.
-public record ActivityConstructorContext(ActivityDescriptor ActivityDescriptor, JsonElement Element, JsonSerializerOptions SerializerOptions);

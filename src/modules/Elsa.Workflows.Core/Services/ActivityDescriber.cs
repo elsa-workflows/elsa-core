@@ -15,7 +15,7 @@ using Container = Elsa.Workflows.Activities.Container;
 namespace Elsa.Workflows;
 
 /// <inheritdoc />
-public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolver, IActivityFactory activityFactory, IPropertyUIHandlerResolver propertyUIHandlerResolver) : IActivityDescriber
+public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolver, IPropertyUIHandlerResolver propertyUIHandlerResolver) : IActivityDescriber
 {
     /// <inheritdoc />
     public async Task<ActivityDescriptor> DescribeActivityAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default)
@@ -91,7 +91,7 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
             },
             Constructor = context =>
             {
-                var activity = activityFactory.Create(activityType, context);
+                var activity = context.CreateActivity(activityType);
                 activity.Type = fullTypeName;
                 return activity;
             },

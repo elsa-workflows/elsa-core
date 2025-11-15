@@ -1,21 +1,35 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Memory;
-using Elsa.Workflows.Models;
 using Humanizer;
 
-namespace Elsa.Workflows;
+namespace Elsa.Workflows.Models;
 
-/// <inheritdoc />
-public class ActivityFactory : IActivityFactory
+public record ActivityConstructorContext(ActivityDescriptor ActivityDescriptor, Func<Type, IActivity> ActivityFactory)
 {
-    public IActivity Create(Type type, ActivityConstructorContext context)
+    public T CreateActivity<T>() where T : IActivity => (T)ActivityFactory(typeof(T));
+    public IActivity CreateActivity(Type type) => ActivityFactory(type);
+}
+
+public static class JsonActivityConstructorContextHelper
+{
+    public static ActivityConstructorContext Create(ActivityDescriptor activityDescriptor, JsonElement element, JsonSerializerOptions serializerOptions)
+    {
+        return new ActivityConstructorContext(activityDescriptor, type => CreateActivity(activityDescriptor, type, element, serializerOptions));
+    }
+
+    public static T CreateActivity<T>(ActivityDescriptor activityDescriptor, JsonElement element, JsonSerializerOptions serializerOptions) where T : IActivity
+    {
+        return (T)CreateActivity(activityDescriptor, typeof(T), element, serializerOptions);
+    }
+
+    public static IActivity CreateActivity(ActivityDescriptor activityDescriptor, Type type, JsonElement element, JsonSerializerOptions serializerOptions)
     {
         // 1) Grab the raw text
-        var raw = context.Element.GetRawText();
+        var raw = element.GetRawText();
 
         // 2) Parse into a JsonNode so we can mutate
         var node = JsonNode.Parse(raw)!;
@@ -24,21 +38,21 @@ public class ActivityFactory : IActivityFactory
         StripTypeMetadata(node);
 
         // 4) Get a cleaned JSON string
-        var cleanedJson = node.ToJsonString(new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var cleanedJson = node.ToJsonString(new(JsonSerializerDefaults.Web));
 
         // 5) Parse it back to a JsonDocument so we can get a clean JsonElement
         using var doc = JsonDocument.Parse(cleanedJson);
         var cleanedElement = doc.RootElement.Clone();
 
-        // 6) Deserialize into your IActivity
-        var activity = (IActivity)JsonSerializer.Deserialize(cleanedJson, type, context.SerializerOptions)!;
+        // 6) Deserialize into IActivity, or create a plain instance
+        var activity = (IActivity)JsonSerializer.Deserialize(cleanedJson, type, serializerOptions)!;
 
         // 7) Pull out your boolean flags from the cleaned element
         var canStartWorkflow = GetBoolean(cleanedElement, "canStartWorkflow");
         var runAsynchronously = GetNullableBoolean(cleanedElement, "runAsynchronously");
         if (runAsynchronously is null)
         {
-            if (context.ActivityDescriptor.Attributes.OfType<TaskActivityAttribute>().FirstOrDefault() is { } taskActivityAttribute)
+            if (activityDescriptor.Attributes.OfType<TaskActivityAttribute>().FirstOrDefault() is { } taskActivityAttribute)
             {
                 runAsynchronously = taskActivityAttribute.RunAsynchronously;
             }
@@ -53,8 +67,8 @@ public class ActivityFactory : IActivityFactory
             composite.Setup();
 
         // 9) Your existing synthetic inputs/outputs routines, using the cleanedElement
-        ReadSyntheticInputs(context.ActivityDescriptor, activity, cleanedElement, context.SerializerOptions);
-        ReadSyntheticOutputs(context.ActivityDescriptor, activity, cleanedElement);
+        ReadSyntheticInputs(activityDescriptor, activity, cleanedElement, serializerOptions);
+        ReadSyntheticOutputs(activityDescriptor, activity, cleanedElement);
 
         // 10) Finally re‑apply those flags
         activity.SetCanStartWorkflow(canStartWorkflow);
@@ -67,7 +81,7 @@ public class ActivityFactory : IActivityFactory
     /// Recursively remove any "_type" properties and unwrap any
     /// { "_type": "...", "items": [ ... ] } or "values": [ ... ] wrappers
     /// </summary>
-    private void StripTypeMetadata(JsonNode node)
+    private static void StripTypeMetadata(JsonNode node)
     {
         switch (node)
         {
@@ -137,7 +151,7 @@ public class ActivityFactory : IActivityFactory
         }
     }
 
-    private void ReadSyntheticInputs(ActivityDescriptor activityDescriptor, IActivity activity, JsonElement activityRoot, JsonSerializerOptions options)
+    private static void ReadSyntheticInputs(ActivityDescriptor activityDescriptor, IActivity activity, JsonElement activityRoot, JsonSerializerOptions options)
     {
         foreach (var inputDescriptor in activityDescriptor.Inputs.Where(x => x.IsSynthetic))
         {
@@ -165,7 +179,7 @@ public class ActivityFactory : IActivityFactory
         }
     }
 
-    private void ReadSyntheticOutputs(ActivityDescriptor activityDescriptor, IActivity activity, JsonElement activityRoot)
+    private static void ReadSyntheticOutputs(ActivityDescriptor activityDescriptor, IActivity activity, JsonElement activityRoot)
     {
         foreach (var outputDescriptor in activityDescriptor.Outputs.Where(x => x.IsSynthetic))
         {
@@ -182,7 +196,10 @@ public class ActivityFactory : IActivityFactory
             if (!memoryReferenceElement.TryGetProperty("id", out var memoryReferenceIdElement))
                 continue;
 
-            var variable = new Variable { Id = memoryReferenceIdElement.GetString()! };
+            var variable = new Variable
+            {
+                Id = memoryReferenceIdElement.GetString()!
+            };
             variable.Name = variable.Id;
 
             var output = Activator.CreateInstance(wrappedType, variable)!;
@@ -193,12 +210,15 @@ public class ActivityFactory : IActivityFactory
 
     private static bool GetBoolean(JsonElement element, string propertyName)
     {
-        return GetNullableBoolean(element, propertyName) ?? false; 
+        return GetNullableBoolean(element, propertyName) ?? false;
     }
-    
+
     private static bool? GetNullableBoolean(JsonElement element, string propertyName)
     {
-        var propertyNames = new[] { propertyName.Camelize(), propertyName.Pascalize() };
+        var propertyNames = new[]
+        {
+            propertyName.Camelize(), propertyName.Pascalize()
+        };
 
         foreach (var name in propertyNames)
         {
@@ -208,7 +228,7 @@ public class ActivityFactory : IActivityFactory
                     return (bool?)canStartWorkflowElement.GetValue();
             }
 
-            if (element.TryGetProperty(propertyName.Camelize(), out var property) 
+            if (element.TryGetProperty(propertyName.Camelize(), out var property)
                 && (bool?)property.GetValue() is { } propValue)
                 return propValue;
         }

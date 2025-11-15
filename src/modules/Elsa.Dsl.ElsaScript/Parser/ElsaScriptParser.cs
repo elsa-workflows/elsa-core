@@ -28,7 +28,7 @@ public class ElsaScriptParser : IElsaScriptParser
                 var match = Regex.Match(useLine, @"use\s+expressions\s+(\w+);");
                 if (match.Success)
                 {
-                    workflow.UseStatements.Add(new UseNode
+                    workflow.UseStatements.Add(new()
                     {
                         Type = UseType.Expressions,
                         Value = match.Groups[1].Value
@@ -40,7 +40,7 @@ public class ElsaScriptParser : IElsaScriptParser
                 var match = Regex.Match(useLine, @"use\s+([\w\.]+);");
                 if (match.Success)
                 {
-                    workflow.UseStatements.Add(new UseNode
+                    workflow.UseStatements.Add(new()
                     {
                         Type = UseType.Namespace,
                         Value = match.Groups[1].Value
@@ -152,7 +152,7 @@ public class ElsaScriptParser : IElsaScriptParser
             var namedMatch = Regex.Match(trimmed, @"(\w+)\s*:\s*(.+)");
             if (namedMatch.Success)
             {
-                arguments.Add(new ArgumentNode
+                arguments.Add(new()
                 {
                     Name = namedMatch.Groups[1].Value,
                     Value = ParseExpression(namedMatch.Groups[2].Value)
@@ -161,7 +161,7 @@ public class ElsaScriptParser : IElsaScriptParser
             else
             {
                 // Positional argument
-                arguments.Add(new ArgumentNode
+                arguments.Add(new()
                 {
                     Value = ParseExpression(trimmed)
                 });

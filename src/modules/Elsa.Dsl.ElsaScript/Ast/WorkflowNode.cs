@@ -11,12 +11,17 @@ public class WorkflowNode : AstNode
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// The description of the workflow.
+    /// </summary>
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>
     /// The use statements (imports and expression language settings).
     /// </summary>
-    public List<UseNode> UseStatements { get; set; } = new();
+    public List<UseNode> UseStatements { get; set; } = [];
 
     /// <summary>
     /// The body of the workflow (a sequence of statements).
     /// </summary>
-    public List<StatementNode> Body { get; set; } = new();
+    public List<StatementNode> Body { get; set; } = [];
 }
