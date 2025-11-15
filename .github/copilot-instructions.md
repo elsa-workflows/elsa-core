@@ -216,6 +216,83 @@ Multiple Docker configurations available:
    dotnet build --no-restore
    ```
 
+## Running the Applications
+
+### Development Workflow Server
+
+To run the workflow server for development:
+
+```bash
+cd src/apps/Elsa.Server.Web
+dotnet restore --ignore-failed-sources
+dotnet run
+```
+
+The server will start on the configured ports (check `appsettings.json` or environment variables).
+
+### Combined Server and Studio
+
+To run both the workflow server and visual studio together:
+
+```bash
+cd src/apps/Elsa.ServerAndStudio.Web
+dotnet restore --ignore-failed-sources
+dotnet run
+```
+
+Access the studio at the configured URL (typically `http://localhost:5000` or as configured).
+
+### Using Docker
+
+For quick testing with Docker (see README for full details):
+
+```bash
+docker pull elsaworkflows/elsa-server-and-studio-v3:latest
+docker run -t -i -e ASPNETCORE_ENVIRONMENT='Development' -e HTTP_PORTS=8080 -e HTTP__BASEURL=http://localhost:13000 -p 13000:8080 elsaworkflows/elsa-server-and-studio-v3:latest
+```
+
+Default credentials: username `admin`, password `password`
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Missing External Packages**: If you encounter `NU1101` errors for Elsa.Studio packages:
+   - This is expected for studio-related apps
+   - Focus development on core workflow modules instead
+   - Or use Docker images that have pre-built studio components
+
+2. **Build Fails on Server Apps**: If `Elsa.Server.Web` fails due to WebhooksCore:
+   - This is a known issue with external package feeds
+   - Try building individual core modules instead
+   - Use `--ignore-failed-sources` flag consistently
+
+3. **Test Failures**: If many tests fail to run:
+   - External package dependencies may be unavailable
+   - Run tests for specific core modules individually
+   - Focus on tests that don't require studio packages
+
+4. **Slow Initial Build**: First restore and compile can take 5-10+ minutes:
+   - This is normal for a large solution with 100+ projects
+   - Subsequent builds are much faster (incremental)
+   - Consider building specific projects/modules when iterating
+
+## Additional Resources
+
+### Documentation
+- **Official Documentation**: [https://docs.elsaworkflows.io/](https://docs.elsaworkflows.io/)
+- **README**: See [README.md](../README.md) for quick start and features overview
+- **Contributing Guide**: See [CONTRIBUTING.md](../CONTRIBUTING.md) for contribution guidelines
+
+### Community Support
+- **GitHub Issues**: [Report bugs and request features](https://github.com/elsa-workflows/elsa-core/issues)
+- **GitHub Discussions**: [Ask questions and discuss](https://github.com/elsa-workflows/elsa-core/discussions)
+- **Discord**: [Join the community chat](https://discord.gg/hhChk5H472)
+- **Stack Overflow**: [Tag: elsa-workflows](http://stackoverflow.com/questions/tagged/elsa-workflows)
+
+### Enterprise Support
+- **ELSA-X**: [Professional support and enterprise solutions](https://elsa-x.io)
+
 ## Important Notes for Coding Agents
 
 1. **Always use `--ignore-failed-sources`** when restoring packages
