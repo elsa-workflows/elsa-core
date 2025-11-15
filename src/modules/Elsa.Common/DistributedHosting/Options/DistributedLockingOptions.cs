@@ -3,7 +3,7 @@ using JetBrains.Annotations;
 namespace Elsa.Common.DistributedHosting;
 
 /// <summary>
-/// Provides options related to distributed locking, which is used by <see cref="DefaultWorkflowRuntime"/>.
+/// Configuration options for distributed locking mechanisms used in the system.
 /// </summary>
 [UsedImplicitly]
 public class DistributedLockingOptions

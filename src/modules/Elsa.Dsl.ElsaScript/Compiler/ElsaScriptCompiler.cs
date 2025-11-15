@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Elsa.Dsl.ElsaScript.Ast;
 using Elsa.Dsl.ElsaScript.Contracts;
 using Elsa.Dsl.ElsaScript.Helpers;
@@ -7,7 +6,6 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Dsl.ElsaScript.Compiler;
 

@@ -1,5 +1,6 @@
-using Elsa.Dsl.ElsaScript.Compiler;
+using Elsa.Dsl.ElsaScript.Contracts;
 using Elsa.WorkflowProviders.BlobStorage.Contracts;
+using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Runtime;
 using FluentStorage.Blobs;
 
@@ -8,7 +9,7 @@ namespace Elsa.WorkflowProviders.BlobStorage.ElsaScript.Handlers;
 /// <summary>
 /// Handles ElsaScript-formatted workflow definitions from blob storage.
 /// </summary>
-public class ElsaScriptBlobWorkflowFormatHandler(ElsaScriptCompiler compiler) : IBlobWorkflowFormatHandler
+public class ElsaScriptBlobWorkflowFormatHandler(IElsaScriptCompiler compiler) : IBlobWorkflowFormatHandler
 {
     /// <inheritdoc />
     public string Name => "ElsaScript";
@@ -35,7 +36,7 @@ public class ElsaScriptBlobWorkflowFormatHandler(ElsaScriptCompiler compiler) : 
             var materialized = new MaterializedWorkflow(
                 workflow,
                 ProviderName: "FluentStorage",
-                MaterializerName: "ElsaScript"
+                MaterializerName: JsonWorkflowMaterializer.MaterializerName
             );
 
             return materialized;

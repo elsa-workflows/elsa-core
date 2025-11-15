@@ -1,3 +1,6 @@
-workflow ""HelloWorldDsl"" {
-  WriteLine(""Hello World from DSL!"");
-}"
+use Elsa.Activities.Console;
+use expressions js;
+
+workflow "HelloWorldDsl" {
+  WriteLine("Hello World from Elsa DSL!");
+}";

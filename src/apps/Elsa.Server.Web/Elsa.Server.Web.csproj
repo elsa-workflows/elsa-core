@@ -29,7 +29,7 @@
 
 	<ItemGroup>
 	  <None Update="Workflows\hello-world.elsa">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>
 

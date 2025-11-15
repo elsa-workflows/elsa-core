@@ -27,6 +27,6 @@ public class ElsaScriptFeature : FeatureBase
     public override void Apply()
     {
         Services.AddSingleton<IElsaScriptParser, ElsaScriptParser>();
-        Services.AddSingleton<IElsaScriptCompiler, ElsaScriptCompiler>();
+        Services.AddScoped<IElsaScriptCompiler, ElsaScriptCompiler>();
     }
 }

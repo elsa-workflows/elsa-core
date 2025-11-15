@@ -1,4 +1,5 @@
 using Elsa.Dsl.ElsaScript.Compiler;
+using Elsa.Dsl.ElsaScript.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -13,13 +14,12 @@ namespace Elsa.WorkflowProviders.BlobStorage.ElsaScript.Features;
 /// A feature that enables ElsaScript support for the BlobStorage workflow provider.
 /// </summary>
 [DependsOn(typeof(BlobStorageFeature))]
+[DependsOn(typeof(ElsaScriptFeature))]
 public class ElsaScriptBlobStorageFeature(IModule module) : FeatureBase(module)
 {
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSingleton<ElsaScriptCompiler>();
-
         // Register the ElsaScript format handler
         Services.AddScoped<IBlobWorkflowFormatHandler, ElsaScriptBlobWorkflowFormatHandler>();
     }
