@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides an XS expression provider using Hyperbee.XS.
+        </Description>
+        <PackageTags>elsa module expressions scripting xs hyperbee</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Hyperbee.XS" />
+        <PackageReference Include="Hyperbee.Xs.Extensions" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Expressions\Elsa.Expressions.csproj" />
+      <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+    </ItemGroup>
+
+</Project>
