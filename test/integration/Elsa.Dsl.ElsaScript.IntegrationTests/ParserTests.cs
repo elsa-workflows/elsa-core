@@ -25,7 +25,7 @@ public class ParserTests
     }
 
     [Fact(DisplayName = "Parser can parse a simple workflow definition")]
-    public void Test1()
+    public void Parse_WithSimpleWorkflowDefinition_ShouldReturnWorkflowWithCorrectStructure()
     {
         // Arrange
         var source = @"
@@ -48,7 +48,7 @@ workflow ""HelloWorld"" {
     }
 
     [Fact(DisplayName = "Parser can parse variable declarations")]
-    public void Test2()
+    public void Parse_WithVariableDeclarations_ShouldReturnWorkflowWithAllVariableNodes()
     {
         // Arrange
         var source = @"
@@ -75,7 +75,7 @@ workflow ""VariableTest"" {
     }
 
     [Fact(DisplayName = "Parser can parse activity invocations with named arguments")]
-    public void Test3()
+    public void Parse_WithActivityInvocationWithNamedArguments_ShouldReturnActivityNodeWithCorrectArguments()
     {
         // Arrange
         var source = @"
@@ -100,7 +100,7 @@ workflow ""ActivityTest"" {
     }
 
     [Fact(DisplayName = "Parser can parse listen statements", Skip = "Parser needs enhancement to handle multiple statements including listen")]
-    public void Test4()
+    public void Parse_WithListenStatement_ShouldReturnWorkflowWithListenNode()
     {
         // Arrange
         var source = @"
@@ -117,9 +117,23 @@ workflow ""ListenTest"" {
         // Assert
         Assert.NotNull(workflow);
         Assert.Equal(2, workflow.Body.Count);
-        
+
         var listen = workflow.Body[0] as Ast.ListenNode;
         Assert.NotNull(listen);
         Assert.Equal("HttpEndpoint", listen!.Activity.ActivityName);
+    }
+
+    [Fact(DisplayName = "Parser can parse workflow without workflow keyword")]
+    public void Parse_WithoutWorkflowKeyword_ShouldReturnWorkflowWithCorrectStructure()
+    {
+        // Arrange
+        var source = @"WriteLine(""Hello World""); WriteLine(""Great to meet you!"");";
+
+        // Act
+        var workflow = _parser.Parse(source);
+
+        // Assert
+        Assert.NotNull(workflow);
+        Assert.Equal(2, workflow.Body.Count);
     }
 }

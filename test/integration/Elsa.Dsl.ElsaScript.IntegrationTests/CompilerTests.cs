@@ -25,7 +25,7 @@ public class CompilerTests
     }
 
     [Fact(DisplayName = "Compiler can compile a simple workflow from source")]
-    public async Task Test1()
+    public async Task CompileAsync_WithSimpleWorkflowSource_ShouldCreateWorkflowWithCorrectName()
     {
         // Arrange
         var source = @"
@@ -46,7 +46,7 @@ workflow ""HelloWorld"" {
     }
 
     [Fact(DisplayName = "Compiler can compile workflow with variable declarations")]
-    public async Task Test2()
+    public async Task CompileAsync_WithVariableDeclarations_ShouldCreateWorkflowWithAllVariables()
     {
         // Arrange
         var source = @"
@@ -69,6 +69,20 @@ workflow ""VariableTest"" {
         Assert.Contains(workflow.Variables, v => v.Name == "message");
         Assert.Contains(workflow.Variables, v => v.Name == "count");
         Assert.Contains(workflow.Variables, v => v.Name == "pi");
+    }
+
+    [Fact(DisplayName = "Compiler can compile workflow without workflow keyword")]
+    public async Task CompileAsync_WithoutWorkflowKeyword_ShouldCreateWorkflow()
+    {
+        // Arrange
+        var source = @"WriteLine(""Hello World"");";
+
+        // Act
+        var workflow = await _compiler.CompileAsync(source);
+
+        // Assert
+        Assert.NotNull(workflow);
+        Assert.NotNull(workflow.Root);
     }
 }
 
