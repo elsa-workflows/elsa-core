@@ -1,7 +1,37 @@
 <Project>
-  
-  <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet"/>
-  </ItemGroup>
+
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"/>
+
+    <PropertyGroup>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <OutputType>Exe</OutputType>
+        <CollectCoverage>false</CollectCoverage>
+        <!-- This is a BenchmarkDotNet performance test, not an xUnit test -->
+        <IsTestProject>false</IsTestProject>
+    </PropertyGroup>
+
+    <!-- Remove xUnit packages inherited from test/Directory.Build.props -->
+    <ItemGroup>
+        <PackageReference Remove="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Remove="xunit"/>
+        <PackageReference Remove="xunit.runner.visualstudio"/>
+        <PackageReference Remove="Microsoft.AspNetCore.Mvc.Testing"/>
+        <PackageReference Remove="Moq"/>
+        <PackageReference Remove="NSubstitute"/>
+        <PackageReference Remove="coverlet.msbuild"/>
+        <PackageReference Remove="coverlet.collector"/>
+        <PackageReference Remove="GitHubActionsTestLogger"/>
+    </ItemGroup>
+
+    <!-- Remove xUnit usings -->
+    <ItemGroup>
+        <Using Remove="Xunit"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet"/>
+    </ItemGroup>
 
 </Project>
