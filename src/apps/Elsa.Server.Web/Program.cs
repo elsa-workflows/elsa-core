@@ -11,6 +11,7 @@ using Elsa.Persistence.EFCore.Modules.Runtime;
 using Elsa.Server.Web.Filters;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
+using Elsa.WorkflowProviders.BlobStorage.ElsaScript.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Api;
 using Elsa.Workflows.CommitStates.Strategies;
@@ -74,6 +75,8 @@ services
                 runtime.UseDistributedRuntime();
             })
             .UseWorkflowsApi()
+            .UseFluentStorageProvider()
+            .UseElsaScriptBlobStorage()
             .UseScheduling()
             .UseCSharp(options =>
             {

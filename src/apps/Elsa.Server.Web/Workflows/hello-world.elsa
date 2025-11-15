@@ -1,0 +1,3 @@
+workflow ""HelloWorldDsl"" {
+  WriteLine(""Hello World from DSL!"");
+}"
