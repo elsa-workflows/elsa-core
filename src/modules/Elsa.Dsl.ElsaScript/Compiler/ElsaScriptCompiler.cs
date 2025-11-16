@@ -1,4 +1,3 @@
-using System.Reflection;
 using Elsa.Dsl.ElsaScript.Ast;
 using Elsa.Dsl.ElsaScript.Contracts;
 using Elsa.Dsl.ElsaScript.Helpers;

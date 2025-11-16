@@ -32,6 +32,15 @@ public class WorkflowDefinitionMapper
     /// <returns>The mapped <see cref="Workflow"/>.</returns>
     public Workflow Map(WorkflowDefinition source)
     {
+        // NEW WAY: If OriginalSource is present, deserialize the full WorkflowDefinitionModel
+        // This enables symmetric round-trip without re-serialization
+        if (!string.IsNullOrEmpty(source.OriginalSource))
+        {
+            var model = _activitySerializer.Deserialize<WorkflowDefinitionModel>(source.OriginalSource);
+            return MapFromModelWithIdentity(model, source);
+        }
+
+        // OLD WAY: Deserialize from StringData (backwards compatibility)
         var root = _activitySerializer.Deserialize(source.StringData!);
 
         return new(
@@ -47,6 +56,30 @@ public class WorkflowDefinitionMapper
             source.CustomProperties,
             source.IsReadonly,
             source.IsSystem);
+    }
+
+    /// <summary>
+    /// Maps a <see cref="WorkflowDefinitionModel"/> to a <see cref="Workflow"/>, using identity from stored definition.
+    /// </summary>
+    private Workflow MapFromModelWithIdentity(WorkflowDefinitionModel model, WorkflowDefinition storedDefinition)
+    {
+        var root = model.Root!;
+        var variables = _variableDefinitionMapper.Map(model.Variables).ToList();
+        var options = model.Options ?? new WorkflowOptions();
+
+        return new(
+            new(storedDefinition.DefinitionId, storedDefinition.Version, storedDefinition.Id, storedDefinition.TenantId),
+            new(storedDefinition.IsLatest, storedDefinition.IsPublished),
+            new(model.Name, model.Description, model.CreatedAt, model.ToolVersion),
+            options,
+            root,
+            variables,
+            model.Inputs ?? new List<InputDefinition>(),
+            model.Outputs ?? new List<OutputDefinition>(),
+            model.Outcomes ?? new List<string>(),
+            model.CustomProperties ?? new Dictionary<string, object>(),
+            storedDefinition.IsReadonly,
+            storedDefinition.IsSystem);
     }
 
     /// <summary>

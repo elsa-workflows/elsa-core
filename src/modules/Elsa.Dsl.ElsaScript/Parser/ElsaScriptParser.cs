@@ -2,7 +2,6 @@ using Elsa.Dsl.ElsaScript.Ast;
 using Elsa.Dsl.ElsaScript.Contracts;
 using Parlot;
 using Parlot.Fluent;
-using static Parlot.Fluent.Parsers;
 
 namespace Elsa.Dsl.ElsaScript.Parser;
 
@@ -11,7 +10,7 @@ namespace Elsa.Dsl.ElsaScript.Parser;
 /// </summary>
 public class ElsaScriptParser : IElsaScriptParser
 {
-    private static readonly Parser<WorkflowNode> _workflowParser;
+    private static readonly Parser<WorkflowNode> WorkflowParser;
 
     static ElsaScriptParser()
     {
@@ -236,13 +235,13 @@ public class ElsaScriptParser : IElsaScriptParser
                 };
             });
 
-        _workflowParser = workflowParser;
+        WorkflowParser = workflowParser;
     }
 
     /// <inheritdoc />
     public WorkflowNode Parse(string source)
     {
-        if (!_workflowParser.TryParse(source, out var result, out var error))
+        if (!WorkflowParser.TryParse(source, out var result, out var error))
         {
             throw new ParseException($"Failed to parse ElsaScript: {error}");
         }

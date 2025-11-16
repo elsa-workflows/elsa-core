@@ -50,7 +50,9 @@ public class JsonBlobWorkflowFormatHandler : IBlobWorkflowFormatHandler
             var materialized = new MaterializedWorkflow(
                 workflow,
                 ProviderName: "FluentStorage",
-                MaterializerName: JsonWorkflowMaterializer.MaterializerName
+                MaterializerName: JsonWorkflowMaterializer.MaterializerName,
+                MaterializerContext: null,
+                OriginalSource: content // Preserve full JSON for symmetric round-trip
             );
 
             return new(materialized);

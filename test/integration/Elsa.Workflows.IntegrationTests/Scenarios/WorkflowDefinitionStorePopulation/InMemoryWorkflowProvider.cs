@@ -1,7 +1,5 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Activities;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.WorkflowDefinitionStorePopulation;
 
@@ -14,8 +12,7 @@ public class InMemoryWorkflowsProvider(Workflow workflow) : IWorkflowsProvider
         var materializedWorkflow = new MaterializedWorkflow(
             Workflow: workflow,
             ProviderName: "InMemory",
-            MaterializerName: "InMemory",
-            MaterializerContext: null
+            MaterializerName: "InMemory"
         );
 
         return new([materializedWorkflow]);

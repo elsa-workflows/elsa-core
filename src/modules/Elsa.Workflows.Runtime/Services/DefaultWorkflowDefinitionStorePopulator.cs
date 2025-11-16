@@ -120,8 +120,31 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         var materializerContext = materializedWorkflow.MaterializerContext;
         var materializerContextJson = materializerContext != null ? _payloadSerializer.Serialize(materializerContext) : null;
 
-        // Serialize the workflow root.
-        var workflowJson = _activitySerializer.Serialize(workflow.Root);
+        // Determine StringData and OriginalSource based on what's provided
+        string? stringData;
+        string? originalSource = materializedWorkflow.OriginalSource;
+
+        if (originalSource != null)
+        {
+            // NEW WAY: OriginalSource is provided
+            // For JSON workflows, we still need to populate StringData with the serialized root for backwards compatibility
+            if (materializedWorkflow.MaterializerName == "Json")
+            {
+                stringData = _activitySerializer.Serialize(workflow.Root);
+            }
+            else
+            {
+                // For new formats (ElsaScript, YAML, etc.), only OriginalSource is needed
+                // StringData can be null as these materializers only use OriginalSource
+                stringData = null;
+            }
+        }
+        else
+        {
+            // OLD WAY: No OriginalSource provided (backwards compatibility for existing workflows)
+            // Serialize the workflow root as before
+            stringData = _activitySerializer.Serialize(workflow.Root);
+        }
 
         // Check if there's already a workflow definition stored with this definition ID and version.
         var specificVersionFilter = new WorkflowDefinitionFilter
@@ -171,7 +194,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         workflowDefinition.Inputs = workflow.Inputs;
         workflowDefinition.Outputs = workflow.Outputs;
         workflowDefinition.Outcomes = workflow.Outcomes;
-        workflowDefinition.StringData = workflowJson;
+        workflowDefinition.StringData = stringData;
+        workflowDefinition.OriginalSource = originalSource;
         workflowDefinition.CreatedAt = workflow.WorkflowMetadata.CreatedAt == default ? _systemClock.UtcNow : workflow.WorkflowMetadata.CreatedAt;
         workflowDefinition.Options = workflow.Options;
         workflowDefinition.ProviderName = materializedWorkflow.ProviderName;
