@@ -4,13 +4,14 @@ using Elsa.WorkflowProviders.BlobStorage.Contracts;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Runtime;
 using FluentStorage.Blobs;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.WorkflowProviders.BlobStorage.ElsaScript.Handlers;
 
 /// <summary>
 /// Handles ElsaScript-formatted workflow definitions from blob storage.
 /// </summary>
-public class ElsaScriptBlobWorkflowFormatHandler(IElsaScriptCompiler compiler) : IBlobWorkflowFormatHandler
+public class ElsaScriptBlobWorkflowFormatHandler(IElsaScriptCompiler compiler, ILogger<ElsaScriptBlobWorkflowFormatHandler> logger) : IBlobWorkflowFormatHandler
 {
     /// <inheritdoc />
     public string Name => "ElsaScript";
@@ -42,9 +43,12 @@ public class ElsaScriptBlobWorkflowFormatHandler(IElsaScriptCompiler compiler) :
                 OriginalSource: content // Preserve the original ElsaScript source
             );
         }
-        catch
+        catch (Exception ex)
         {
-            // If ElsaScript parsing fails, return null to indicate this handler can't process the content
+            // Log the error for troubleshooting
+            logger.LogWarning(ex, "Failed to parse ElsaScript workflow from blob '{BlobPath}'. The file will be skipped.", blob.FullPath);
+
+            // Return null to indicate this handler can't process the content
             return null;
         }
     }

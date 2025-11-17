@@ -1,8 +1,18 @@
 use expressions js;
 
-workflow ForLoopInclusiveTest {
-  for (var i = 0 through 10 step 2)
-  {
-    WriteLine(js => `Step: ${variables.i}`)
-  }
+workflow ForLoopInclusiveTest 
+{
+    WriteLine("First loop")
+
+    for (var i = 0 through 10 step 1)
+    {
+        WriteLine(js => `Step: ${variables.i}`)
+    }
+    
+    WriteLine("Second loop")
+  
+    for (var i = 0 to 10 step 2)
+      WriteLine(js => `Step: ${variables.i}`)
+      
+    WriteLine("Done!")
 }

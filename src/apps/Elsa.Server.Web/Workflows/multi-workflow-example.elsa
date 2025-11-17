@@ -7,7 +7,8 @@ workflow HelloWorldDsl(
   DefinitionVersionId: "hello-world-dsl-v1",
   Version: 1,
   UsableAsActivity: true
-) {
+) 
+{
   use expressions js;
 
   WriteLine("Hello World from Elsa DSL!");
@@ -20,7 +21,8 @@ workflow HelloWorldAsActivity(
   DefinitionVersionId: "hello-world-activity-v1",
   Version: 1,
   UsableAsActivity: true
-) {
+)
+{
   use expressions js;
 
   WriteLine(`Inner hello at ${Date.now()}`);

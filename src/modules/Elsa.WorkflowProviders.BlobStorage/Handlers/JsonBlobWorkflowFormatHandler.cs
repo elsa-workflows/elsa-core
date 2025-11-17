@@ -5,6 +5,7 @@ using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime;
 using FluentStorage.Blobs;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.WorkflowProviders.BlobStorage.Handlers;
 
@@ -15,13 +16,16 @@ public class JsonBlobWorkflowFormatHandler : IBlobWorkflowFormatHandler
 {
     private readonly IActivitySerializer _activitySerializer;
     private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
+    private readonly ILogger<JsonBlobWorkflowFormatHandler> _logger;
 
     public JsonBlobWorkflowFormatHandler(
         IActivitySerializer activitySerializer,
-        WorkflowDefinitionMapper workflowDefinitionMapper)
+        WorkflowDefinitionMapper workflowDefinitionMapper,
+        ILogger<JsonBlobWorkflowFormatHandler> logger)
     {
         _activitySerializer = activitySerializer;
         _workflowDefinitionMapper = workflowDefinitionMapper;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -57,9 +61,12 @@ public class JsonBlobWorkflowFormatHandler : IBlobWorkflowFormatHandler
 
             return new(materialized);
         }
-        catch
+        catch (Exception ex)
         {
-            // If JSON parsing fails, return null
+            // Log the error for troubleshooting
+            _logger.LogWarning(ex, "Failed to parse JSON workflow from blob '{BlobPath}'. The file will be skipped.", blob.FullPath);
+
+            // Return null to indicate this handler can't process the content
             return new((MaterializedWorkflow?)null);
         }
     }
