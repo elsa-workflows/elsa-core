@@ -23,6 +23,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
     private readonly SemaphoreSlim _executionSemaphore = new(1, 1);
     private bool _executing;
     private bool _cancellationRequested;
+    private bool _disposed;
 
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledCronTask"/>.
@@ -107,47 +108,82 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
             _timer?.Dispose();
             _timer = null;
 
-            using var scope = _scopeFactory.CreateScope();
-            var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
+            // Early exit if disposed to prevent accessing disposed resources
+            if (_disposed)
+                return;
 
-            var cancellationToken = _cancellationTokenSource.Token;
-
-            if (!cancellationToken.IsCancellationRequested)
+            IServiceScope? scope = null;
+            try
             {
-                var acquired = false;
-                try
-                {
-                    acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
-                    if (!acquired) return;
-
-                    _executing = true;
-                    await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
-
-                    if (_cancellationRequested)
-                    {
-                        _cancellationRequested = false;
-                        _cancellationTokenSource.Cancel();
-                    }
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Error executing scheduled task");
-                }
-                finally
-                {
-                    _executing = false;
-                    if (acquired)
-                        _executionSemaphore.Release();
-                }
+                scope = _scopeFactory.CreateScope();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Service provider was disposed, exit gracefully
+                return;
             }
 
-            if (!cancellationToken.IsCancellationRequested)
-                Schedule();
+            using (scope)
+            {
+                var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
+                var cancellationToken = _cancellationTokenSource.Token;
+
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    var acquired = false;
+                    try
+                    {
+                        acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
+                        if (!acquired) return;
+
+                        _executing = true;
+                        await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+
+                        if (_cancellationRequested)
+                        {
+                            _cancellationRequested = false;
+                            _cancellationTokenSource.Cancel();
+                        }
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // Semaphore was disposed during execution, exit gracefully
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Error executing scheduled task");
+                    }
+                    finally
+                    {
+                        _executing = false;
+                        if (acquired)
+                        {
+                            try
+                            {
+                                _executionSemaphore.Release();
+                            }
+                            catch (ObjectDisposedException)
+                            {
+                                // Semaphore was disposed, ignore
+                            }
+                        }
+                    }
+                }
+
+                // Check again if disposed before scheduling next execution
+                if (!cancellationToken.IsCancellationRequested && !_disposed)
+                    Schedule();
+            }
         };
     }
 
     void IDisposable.Dispose()
     {
+        if (_disposed)
+            return;
+
+        _disposed = true;
         _timer?.Dispose();
         _cancellationTokenSource.Dispose();
         _executionSemaphore.Dispose();
