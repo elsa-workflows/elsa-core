@@ -18,6 +18,14 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Management
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AddColumn<string>(
+                name: "OriginalSource",
+                schema: _schema.Schema,
+                table: "WorkflowDefinitions",
+                type: "longtext",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
+
             migrationBuilder.AlterColumn<string>(
                 name: "StringData",
                 schema: _schema.Schema,
@@ -45,6 +53,11 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Management
                 oldNullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4")
                 .OldAnnotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.DropColumn(
+                name: "OriginalSource",
+                schema: _schema.Schema,
+                table: "WorkflowDefinitions");
         }
     }
 }

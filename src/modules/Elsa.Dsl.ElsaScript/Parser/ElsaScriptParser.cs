@@ -22,6 +22,10 @@ public class ElsaScriptParser : IElsaScriptParser
         var varKeyword = Terms.Text("var");
         var letKeyword = Terms.Text("let");
         var constKeyword = Terms.Text("const");
+        var forKeyword = Terms.Text("for");
+        var toKeyword = Terms.Text("to");
+        var throughKeyword = Terms.Text("through");
+        var stepKeyword = Terms.Text("step");
 
         // Basic tokens
         var identifier = Terms.Identifier();
@@ -173,12 +177,74 @@ public class ElsaScriptParser : IElsaScriptParser
         var activityStatement = activityInvocation
             .Then<StatementNode>(x => x);
 
+        // Declare deferred for loop parser
+        var forStatement = Deferred<StatementNode>();
+
         statement.Parser = variableDeclaration
             .Or(listenStatement)
+            .Or(forStatement)
             .Or(activityStatement);
 
         // Statement with optional semicolon
         var statementWithSemicolon = statement.And(ZeroOrOne(semicolon)).Then(x => x.Item1);
+
+        // For loop statement: for i = start to/through end step stepValue { body }
+        // Must be defined after statementWithSemicolon
+        var rangeOperator = toKeyword.Or(throughKeyword);
+        var forBody = Between(leftBrace, ZeroOrMany(statementWithSemicolon), rightBrace);
+
+        // Build parser in a simpler way
+        // Parlot flattens tuples up to 7 elements, after that it nests
+        // So: (for, id, =, startExpr, rangeOp, endExpr, step), stepExpr, body
+        var forStatementParser = forKeyword
+            .And(identifier)
+            .And(equals)
+            .And(expression)
+            .And(rangeOperator)
+            .And(expression)
+            .And(stepKeyword)
+            .And(expression)
+            .And(forBody)
+            .Then<StatementNode>(result =>
+            {
+                // result structure: ((for, id, =, startExpr, rangeOp, endExpr, step), stepExpr, body)
+                // result.Item1 = (for, id, =, startExpr, rangeOp, endExpr, step) [7-tuple]
+                // result.Item2 = stepExpr (ExpressionNode)
+                // result.Item3 = body (IReadOnlyList<StatementNode>)
+
+                var firstSeven = result.Item1;
+                // firstSeven.Item1 = for keyword (TextSpan)
+                // firstSeven.Item2 = identifier (TextSpan)
+                // firstSeven.Item3 = equals (TextSpan)
+                // firstSeven.Item4 = start expression (ExpressionNode)
+                // firstSeven.Item5 = range operator (TextSpan)
+                // firstSeven.Item6 = end expression (ExpressionNode)
+                // firstSeven.Item7 = step keyword (TextSpan)
+
+                var variableName = firstSeven.Item2;
+                var startExpr = firstSeven.Item4;
+                var rangeOp = firstSeven.Item5;
+                var endExpr = firstSeven.Item6;
+                var stepExpr = result.Item2;
+                var body = result.Item3;
+
+                var bodyStatements = body.ToList();
+                var bodyStatement = bodyStatements.Count == 1
+                    ? bodyStatements[0]
+                    : new BlockNode { Statements = bodyStatements };
+
+                return new ForNode
+                {
+                    VariableName = variableName.ToString(),
+                    Start = startExpr,
+                    End = endExpr,
+                    Step = stepExpr,
+                    IsInclusive = rangeOp.ToString() == "through",
+                    Body = bodyStatement
+                };
+            });
+
+        forStatement.Parser = forStatementParser;
 
         // Use statement: use Namespace; or use expressions lang;
         var namespaceUse = identifier

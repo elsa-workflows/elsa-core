@@ -211,9 +211,26 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
 
     private async Task<IActivity> CompileForAsync(ForNode forNode, CancellationToken cancellationToken = default)
     {
-        // For now, implement a simplified version using While
-        // A full implementation would need to handle initializer and iterator properly
-        throw new NotImplementedException("For loops are not yet fully implemented");
+        // Create the loop variable
+        var loopVariable = new Variable<int>(forNode.VariableName, 0);
+        _variables[forNode.VariableName] = loopVariable;
+
+        var start = CompileExpressionAsInput<int>(forNode.Start);
+        var end = CompileExpressionAsInput<int>(forNode.End);
+        var step = CompileExpressionAsInput<int>(forNode.Step);
+        var body = await CompileStatementAsync(forNode.Body, cancellationToken);
+
+        var forActivity = new For
+        {
+            Start = start,
+            End = end,
+            Step = step,
+            OuterBoundInclusive = new Input<bool>(forNode.IsInclusive),
+            CurrentValue = new Output<object?>(loopVariable),
+            Body = body
+        };
+
+        return forActivity;
     }
 
     private async Task<IActivity> CompileWhileAsync(WhileNode whileNode, CancellationToken cancellationToken = default)
@@ -440,6 +457,7 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
 
     private string MapLanguageName(string dslLanguage)
     {
+        // TODO: Replace hardcoded mappings with a configuration-based approach.
         return dslLanguage.ToLowerInvariant() switch
         {
             "js" => "JavaScript",

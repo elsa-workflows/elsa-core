@@ -1,24 +1,34 @@
 namespace Elsa.Dsl.ElsaScript.Ast;
 
 /// <summary>
-/// Represents a for statement.
+/// Represents a range-based for statement (e.g., for i = 0 to 10 step 1).
 /// </summary>
 public class ForNode : StatementNode
 {
     /// <summary>
-    /// The initializer statement.
+    /// The loop variable name.
     /// </summary>
-    public StatementNode? Initializer { get; set; }
+    public string VariableName { get; set; } = null!;
 
     /// <summary>
-    /// The condition expression.
+    /// The start value expression.
     /// </summary>
-    public ExpressionNode? Condition { get; set; }
+    public ExpressionNode Start { get; set; } = null!;
 
     /// <summary>
-    /// The iterator expression.
+    /// The end value expression.
     /// </summary>
-    public ExpressionNode? Iterator { get; set; }
+    public ExpressionNode End { get; set; } = null!;
+
+    /// <summary>
+    /// The step value expression.
+    /// </summary>
+    public ExpressionNode Step { get; set; } = null!;
+
+    /// <summary>
+    /// Whether the end value is inclusive (through) or exclusive (to).
+    /// </summary>
+    public bool IsInclusive { get; set; }
 
     /// <summary>
     /// The body statement.

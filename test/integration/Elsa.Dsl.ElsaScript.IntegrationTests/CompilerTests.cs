@@ -163,5 +163,89 @@ workflow ""HelloWorldHttpDsl"" {
         Assert.NotNull(memoryBlockReference);
         Assert.Equal(messageVar.Id, memoryBlockReference!.Id);
     }
+
+    [Fact(DisplayName = "Compiler can compile for loop with 'to' keyword (exclusive)")]
+    public async Task CompileAsync_WithForLoopExclusive_ShouldCreateForActivity()
+    {
+        // Arrange
+        var source = @"
+use expressions js;
+
+workflow ""ForLoopTest"" {
+  for i = 0 to 10 step 1
+  {
+    WriteLine(js => `Step: ${i}`)
+  }
+}";
+
+        // Act
+        var workflow = await _compiler.CompileAsync(source);
+
+        // Assert
+        Assert.NotNull(workflow);
+        Assert.Equal("ForLoopTest", workflow.Name);
+
+        // Verify the For activity is created
+        var forActivity = Assert.IsType<For>(workflow.Root);
+        Assert.NotNull(forActivity);
+
+        // Verify Start, End, Step values
+        Assert.NotNull(forActivity.Start);
+        Assert.NotNull(forActivity.End);
+        Assert.NotNull(forActivity.Step);
+
+        // Verify OuterBoundInclusive is false (exclusive 'to')
+        Assert.NotNull(forActivity.OuterBoundInclusive);
+        var outerBoundInput = forActivity.OuterBoundInclusive;
+        var outerBoundExpr = outerBoundInput.Expression;
+        Assert.NotNull(outerBoundExpr);
+        Assert.False((bool)outerBoundExpr!.Value);
+
+        // Verify loop variable exists
+        Assert.Single(workflow.Variables);
+        var loopVar = workflow.Variables.First();
+        Assert.Equal("i", loopVar.Name);
+
+        // Verify body exists
+        Assert.NotNull(forActivity.Body);
+    }
+
+    [Fact(DisplayName = "Compiler can compile for loop with 'through' keyword (inclusive)")]
+    public async Task CompileAsync_WithForLoopInclusive_ShouldCreateForActivity()
+    {
+        // Arrange
+        var source = @"
+use expressions js;
+
+workflow ""ForLoopInclusiveTest"" {
+  for i = 0 through 10 step 1
+  {
+    WriteLine(js => `Step: ${i}`)
+  }
+}";
+
+        // Act
+        var workflow = await _compiler.CompileAsync(source);
+
+        // Assert
+        Assert.NotNull(workflow);
+        Assert.Equal("ForLoopInclusiveTest", workflow.Name);
+
+        // Verify the For activity is created
+        var forActivity = Assert.IsType<For>(workflow.Root);
+        Assert.NotNull(forActivity);
+
+        // Verify OuterBoundInclusive is true (inclusive 'through')
+        Assert.NotNull(forActivity.OuterBoundInclusive);
+        var outerBoundInput = forActivity.OuterBoundInclusive;
+        var outerBoundExpr = outerBoundInput.Expression;
+        Assert.NotNull(outerBoundExpr);
+        Assert.True((bool)outerBoundExpr!.Value);
+
+        // Verify loop variable exists
+        Assert.Single(workflow.Variables);
+        var loopVar = workflow.Variables.First();
+        Assert.Equal("i", loopVar.Name);
+    }
 }
 

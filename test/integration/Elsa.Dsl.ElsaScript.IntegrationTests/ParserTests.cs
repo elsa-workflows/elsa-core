@@ -197,4 +197,73 @@ workflow ""HelloWorldHttpDsl"" {
         Assert.NotNull(writeHttpArg);
         Assert.Equal("message", writeHttpArg!.Name);
     }
+
+    [Fact(DisplayName = "Parser can parse for loop with 'to' keyword (exclusive)")]
+    public void Parse_WithForLoopExclusive_ShouldReturnWorkflowWithForNode()
+    {
+        // Arrange
+        var source = @"
+use expressions js;
+
+workflow ""ForLoopTest"" {
+  for i = 0 to 10 step 1
+  {
+    WriteLine(js => `Step: ${i}`)
+  }
+}";
+
+        // Act
+        var workflow = _parser.Parse(source);
+
+        // Assert
+        Assert.NotNull(workflow);
+        Assert.Equal("ForLoopTest", workflow.Name);
+        Assert.Single(workflow.Body);
+
+        var forNode = workflow.Body[0] as Ast.ForNode;
+        Assert.NotNull(forNode);
+        Assert.Equal("i", forNode!.VariableName);
+        Assert.False(forNode.IsInclusive);
+
+        var startLiteral = forNode.Start as Ast.LiteralNode;
+        Assert.NotNull(startLiteral);
+        // Numbers are parsed as decimals by the parser
+        Assert.Equal(0m, Convert.ToDecimal(startLiteral!.Value!));
+
+        var endLiteral = forNode.End as Ast.LiteralNode;
+        Assert.NotNull(endLiteral);
+        Assert.Equal(10m, Convert.ToDecimal(endLiteral!.Value!));
+
+        var stepLiteral = forNode.Step as Ast.LiteralNode;
+        Assert.NotNull(stepLiteral);
+        Assert.Equal(1m, Convert.ToDecimal(stepLiteral!.Value!));
+    }
+
+    [Fact(DisplayName = "Parser can parse for loop with 'through' keyword (inclusive)")]
+    public void Parse_WithForLoopInclusive_ShouldReturnWorkflowWithForNode()
+    {
+        // Arrange
+        var source = @"
+use expressions js;
+
+workflow ""ForLoopInclusiveTest"" {
+  for i = 0 through 10 step 1
+  {
+    WriteLine(js => `Step: ${i}`)
+  }
+}";
+
+        // Act
+        var workflow = _parser.Parse(source);
+
+        // Assert
+        Assert.NotNull(workflow);
+        Assert.Equal("ForLoopInclusiveTest", workflow.Name);
+        Assert.Single(workflow.Body);
+
+        var forNode = workflow.Body[0] as Ast.ForNode;
+        Assert.NotNull(forNode);
+        Assert.Equal("i", forNode!.VariableName);
+        Assert.True(forNode.IsInclusive);
+    }
 }
