@@ -563,7 +563,7 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
         return dslLanguage.ToLowerInvariant() switch
         {
             "js" => "JavaScript",
-            "cs" => "C#",
+            "cs" => "CSharp",
             "py" => "Python",
             "liquid" => "Liquid",
             _ => dslLanguage

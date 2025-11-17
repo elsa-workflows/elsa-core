@@ -1,4 +1,6 @@
 use expressions js;
 
-workflow HelloWorldDsl
+workflow HelloWorldDsl 
+{
   WriteLine("Hello World from Elsa DSL!");
+}
