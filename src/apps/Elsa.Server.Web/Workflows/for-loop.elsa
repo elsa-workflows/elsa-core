@@ -1,0 +1,8 @@
+use expressions js;
+
+workflow "ForLoopInclusiveTest" {
+  for i = 0 through 10 step 1
+  {
+    WriteLine(js => `Step: ${variables.i}`)
+  }
+}

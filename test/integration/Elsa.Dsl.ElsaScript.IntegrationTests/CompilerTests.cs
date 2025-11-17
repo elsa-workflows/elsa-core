@@ -247,5 +247,47 @@ workflow ""ForLoopInclusiveTest"" {
         var loopVar = workflow.Variables.First();
         Assert.Equal("i", loopVar.Name);
     }
+
+    [Fact(DisplayName = "Compiler can compile workflow with metadata")]
+    public async Task CompileAsync_WithWorkflowMetadata_ShouldCreateWorkflowWithCorrectMetadata()
+    {
+        // Arrange
+        var source = @"
+use Elsa.Activities.Console;
+
+workflow ""HelloWorldDsl""(
+  DisplayName: ""Hello World DSL"",
+  Description: ""Demonstrates ElsaScript with metadata"",
+  DefinitionId: ""hello-world-dsl"",
+  DefinitionVersionId: ""hello-world-dsl-v1"",
+  Version: 2,
+  UsableAsActivity: true
+) {
+  use expressions js;
+
+  WriteLine(""Hello World from Elsa DSL!"");
+}";
+
+        // Act
+        var workflow = await _compiler.CompileAsync(source);
+
+        // Assert
+        Assert.NotNull(workflow);
+
+        // Check identity
+        Assert.Equal("hello-world-dsl", workflow.Identity.DefinitionId);
+        Assert.Equal(2, workflow.Identity.Version);
+        Assert.Equal("hello-world-dsl-v1", workflow.Identity.Id);
+
+        // Check metadata
+        Assert.Equal("Hello World DSL", workflow.WorkflowMetadata.Name);
+        Assert.Equal("Demonstrates ElsaScript with metadata", workflow.WorkflowMetadata.Description);
+
+        // Check options
+        Assert.True(workflow.Options.UsableAsActivity);
+
+        // Check root activity
+        Assert.NotNull(workflow.Root);
+    }
 }
 

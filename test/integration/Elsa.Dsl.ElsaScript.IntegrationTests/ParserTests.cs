@@ -38,12 +38,21 @@ workflow ""HelloWorld"" {
 }";
 
         // Act
-        var workflow = _parser.Parse(source);
+        var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(workflow);
-        Assert.Equal("HelloWorld", workflow.Name);
-        Assert.Equal(2, workflow.UseStatements.Count);
+        Assert.NotNull(program);
+        Assert.Single(program.Workflows);
+
+        var workflow = program.Workflows[0];
+        Assert.Equal("HelloWorld", workflow.Id);
+
+        // Global use statements
+        Assert.Equal(2, program.GlobalUseStatements.Count);
+
+        // No workflow-level use statements (all are global)
+        Assert.Empty(workflow.UseStatements);
+
         Assert.Equal(2, workflow.Body.Count);
     }
 
@@ -61,13 +70,16 @@ workflow ""VariableTest"" {
 }";
 
         // Act
-        var workflow = _parser.Parse(source);
+        var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(workflow);
-        Assert.Equal("VariableTest", workflow.Name);
+        Assert.NotNull(program);
+        Assert.Single(program.Workflows);
+
+        var workflow = program.Workflows[0];
+        Assert.Equal("VariableTest", workflow.Id);
         Assert.Equal(3, workflow.Body.Count);
-        
+
         var varDecl = workflow.Body[0] as Ast.VariableDeclarationNode;
         Assert.NotNull(varDecl);
         Assert.Equal(Ast.VariableKind.Var, varDecl!.Kind);
@@ -86,12 +98,15 @@ workflow ""ActivityTest"" {
 }";
 
         // Act
-        var workflow = _parser.Parse(source);
+        var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(workflow);
+        Assert.NotNull(program);
+        Assert.Single(program.Workflows);
+
+        var workflow = program.Workflows[0];
         Assert.Single(workflow.Body);
-        
+
         var activity = workflow.Body[0] as Ast.ActivityInvocationNode;
         Assert.NotNull(activity);
         Assert.Equal("WriteLine", activity!.ActivityName);
@@ -112,10 +127,13 @@ workflow ""ListenTest"" {
 }";
 
         // Act
-        var workflow = _parser.Parse(source);
+        var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(workflow);
+        Assert.NotNull(program);
+        Assert.Single(program.Workflows);
+
+        var workflow = program.Workflows[0];
         Assert.Equal(2, workflow.Body.Count);
 
         var listen = workflow.Body[0] as Ast.ListenNode;
@@ -130,10 +148,13 @@ workflow ""ListenTest"" {
         var source = @"WriteLine(""Hello World""); WriteLine(""Great to meet you!"");";
 
         // Act
-        var workflow = _parser.Parse(source);
+        var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(workflow);
+        Assert.NotNull(program);
+        Assert.Single(program.Workflows);
+
+        var workflow = program.Workflows[0];
         Assert.Equal(2, workflow.Body.Count);
     }
 
@@ -152,17 +173,23 @@ workflow ""HelloWorldHttpDsl"" {
 }";
 
         // Act
-        var workflow = _parser.Parse(source);
+        var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(workflow);
-        Assert.Equal("HelloWorldHttpDsl", workflow.Name);
+        Assert.NotNull(program);
+        Assert.Single(program.Workflows);
 
-        // Verify use statement
-        Assert.Single(workflow.UseStatements);
-        var useStatement = workflow.UseStatements[0];
+        var workflow = program.Workflows[0];
+        Assert.Equal("HelloWorldHttpDsl", workflow.Id);
+
+        // Verify global use statement
+        Assert.Single(program.GlobalUseStatements);
+        var useStatement = program.GlobalUseStatements[0];
         Assert.Equal(Ast.UseType.Expressions, useStatement.Type);
         Assert.Equal("js", useStatement.Value);
+
+        // No workflow-level use statements
+        Assert.Empty(workflow.UseStatements);
 
         // Verify body contains: var declaration, listen statement, WriteLine, WriteHttpResponse
         Assert.Equal(4, workflow.Body.Count);
@@ -213,11 +240,14 @@ workflow ""ForLoopTest"" {
 }";
 
         // Act
-        var workflow = _parser.Parse(source);
+        var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(workflow);
-        Assert.Equal("ForLoopTest", workflow.Name);
+        Assert.NotNull(program);
+        Assert.Single(program.Workflows);
+
+        var workflow = program.Workflows[0];
+        Assert.Equal("ForLoopTest", workflow.Id);
         Assert.Single(workflow.Body);
 
         var forNode = workflow.Body[0] as Ast.ForNode;
@@ -254,11 +284,14 @@ workflow ""ForLoopInclusiveTest"" {
 }";
 
         // Act
-        var workflow = _parser.Parse(source);
+        var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(workflow);
-        Assert.Equal("ForLoopInclusiveTest", workflow.Name);
+        Assert.NotNull(program);
+        Assert.Single(program.Workflows);
+
+        var workflow = program.Workflows[0];
+        Assert.Equal("ForLoopInclusiveTest", workflow.Id);
         Assert.Single(workflow.Body);
 
         var forNode = workflow.Body[0] as Ast.ForNode;
@@ -266,4 +299,52 @@ workflow ""ForLoopInclusiveTest"" {
         Assert.Equal("i", forNode!.VariableName);
         Assert.True(forNode.IsInclusive);
     }
+
+    [Fact(DisplayName = "Parser can parse workflow with metadata")]
+    public void Parse_WithWorkflowMetadata_ShouldReturnWorkflowWithCorrectMetadata()
+    {
+        // Arrange
+        var source = @"
+use Elsa.Activities.Console;
+
+workflow ""HelloWorldDsl""(
+  DisplayName: ""Hello World DSL"",
+  Description: ""Demonstrates ElsaScript with metadata"",
+  DefinitionId: ""hello-world-dsl"",
+  DefinitionVersionId: ""hello-world-dsl-v1"",
+  Version: 1,
+  UsableAsActivity: true
+) {
+  use expressions js;
+
+  WriteLine(""Hello World from Elsa DSL!"");
+}";
+
+        // Act
+        var program = _parser.Parse(source);
+
+        // Assert
+        Assert.NotNull(program);
+        Assert.Single(program.Workflows);
+
+        var workflow = program.Workflows[0];
+        Assert.Equal("HelloWorldDsl", workflow.Id);
+
+        // Check metadata
+        Assert.Equal("Hello World DSL", (string)workflow.Metadata["DisplayName"]);
+        Assert.Equal("Demonstrates ElsaScript with metadata", (string)workflow.Metadata["Description"]);
+        Assert.Equal("hello-world-dsl", (string)workflow.Metadata["DefinitionId"]);
+        Assert.Equal("hello-world-dsl-v1", (string)workflow.Metadata["DefinitionVersionId"]);
+        Assert.Equal(1L, Convert.ToInt64(workflow.Metadata["Version"]));
+        Assert.True(Convert.ToBoolean(workflow.Metadata["UsableAsActivity"]));
+
+        // Check use statements (workflow-level only, global handled separately)
+        Assert.Single(workflow.UseStatements);
+        Assert.Equal(Ast.UseType.Expressions, workflow.UseStatements[0].Type);
+        Assert.Equal("js", workflow.UseStatements[0].Value);
+
+        // Check body
+        Assert.Single(workflow.Body);
+    }
+
 }

@@ -10,7 +10,7 @@ using Elsa.Workflows.Models;
 namespace Elsa.Dsl.ElsaScript.Compiler;
 
 /// <summary>
-/// Compiles an ElsaScript AST into an Elsa workflow.
+/// Compiles an ElsaScript AST into Elsa workflows.
 /// </summary>
 public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryLookupService, IElsaScriptParser parser) : IElsaScriptCompiler
 {
@@ -18,18 +18,40 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
     private readonly Dictionary<string, Variable> _variables = new();
 
     /// <inheritdoc />
-    public Task<Workflow> CompileAsync(string source, CancellationToken cancellationToken = default)
+    public async Task<Workflow> CompileAsync(string source, CancellationToken cancellationToken = default)
     {
-        var workflowNode = parser.Parse(source);
-        return CompileAsync(workflowNode, cancellationToken);
+        var programNode = parser.Parse(source);
+        return await CompileAsync(programNode, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<Workflow> CompileAsync(WorkflowNode workflowNode, CancellationToken cancellationToken = default)
+    public async Task<Workflow> CompileAsync(ProgramNode programNode, CancellationToken cancellationToken = default)
+    {
+        // Get the single workflow (enforced by parser)
+        var workflowNode = programNode.Workflows.First();
+
+        // Merge global use statements with workflow-level ones
+        var allUseStatements = new List<UseNode>();
+        allUseStatements.AddRange(programNode.GlobalUseStatements);
+        allUseStatements.AddRange(workflowNode.UseStatements);
+
+        // Create a temporary workflow node with merged use statements
+        var mergedWorkflowNode = new WorkflowNode
+        {
+            Id = workflowNode.Id,
+            Metadata = workflowNode.Metadata,
+            UseStatements = allUseStatements,
+            Body = workflowNode.Body
+        };
+
+        return await CompileWorkflowNodeAsync(mergedWorkflowNode, cancellationToken);
+    }
+
+    private async Task<Workflow> CompileWorkflowNodeAsync(WorkflowNode workflowNode, CancellationToken cancellationToken = default)
     {
         _variables.Clear();
 
-        // Process use statements
+        // Process use statements (workflow-level overrides global)
         foreach (var useNode in workflowNode.UseStatements)
         {
             if (useNode.Type == UseType.Expressions)
@@ -57,16 +79,70 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
                 Activities = activities
             };
 
+        // Extract metadata with defaults
+        var definitionId = GetMetadataValue<string>(workflowNode.Metadata, "DefinitionId") ?? workflowNode.Id;
+        var displayName = GetMetadataValue<string>(workflowNode.Metadata, "DisplayName") ?? workflowNode.Id;
+        var description = GetMetadataValue<string>(workflowNode.Metadata, "Description") ?? string.Empty;
+        var definitionVersionId = GetMetadataValue<string>(workflowNode.Metadata, "DefinitionVersionId") ?? $"{definitionId}-v1";
+        var version = GetMetadataValueOrDefault(workflowNode.Metadata, "Version", 1);
+        var usableAsActivity = GetMetadataValue<bool?>(workflowNode.Metadata, "UsableAsActivity");
+
         // Create the workflow
         var workflow = new Workflow
         {
-            Name = workflowNode.Name,
-            WorkflowMetadata = new(workflowNode.Name, workflowNode.Description, ToolVersion: new("3.6.0")),
+            Name = displayName,
+            Identity = new WorkflowIdentity(definitionId, version, definitionVersionId, null),
+            WorkflowMetadata = new(displayName, description, ToolVersion: new("3.6.0")),
             Root = root,
-            Variables = _variables.Values.ToList()
+            Variables = _variables.Values.ToList(),
+            Options = new()
+            {
+                UsableAsActivity = usableAsActivity
+            }
         };
 
         return workflow;
+    }
+
+    private T? GetMetadataValue<T>(Dictionary<string, object> metadata, string key)
+    {
+        if (!metadata.TryGetValue(key, out var value))
+            return default;
+
+        // Handle type conversion
+        if (value is T typedValue)
+            return typedValue;
+
+        // Try to convert
+        try
+        {
+            var underlyingType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+            return (T)Convert.ChangeType(value, underlyingType);
+        }
+        catch
+        {
+            return default;
+        }
+    }
+
+    private T GetMetadataValueOrDefault<T>(Dictionary<string, object> metadata, string key, T defaultValue)
+    {
+        if (!metadata.TryGetValue(key, out var value))
+            return defaultValue;
+
+        // Handle type conversion
+        if (value is T typedValue)
+            return typedValue;
+
+        // Try to convert
+        try
+        {
+            return (T)Convert.ChangeType(value, typeof(T));
+        }
+        catch
+        {
+            return defaultValue;
+        }
     }
 
     private async Task<IActivity?> CompileStatementAsync(StatementNode statement, CancellationToken cancellationToken = default)

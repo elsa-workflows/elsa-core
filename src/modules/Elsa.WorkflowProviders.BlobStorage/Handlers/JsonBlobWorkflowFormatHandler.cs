@@ -59,7 +59,7 @@ public class JsonBlobWorkflowFormatHandler : IBlobWorkflowFormatHandler
         }
         catch
         {
-            // If JSON parsing fails, return null to indicate this handler can't process the content
+            // If JSON parsing fails, return null
             return new((MaterializedWorkflow?)null);
         }
     }

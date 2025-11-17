@@ -34,15 +34,13 @@ public class ElsaScriptBlobWorkflowFormatHandler(IElsaScriptCompiler compiler) :
         {
             var workflow = await compiler.CompileAsync(content, cancellationToken);
 
-            var materialized = new MaterializedWorkflow(
+            return new MaterializedWorkflow(
                 workflow,
                 ProviderName: "FluentStorage",
                 MaterializerName: ElsaScriptWorkflowMaterializer.MaterializerName,
                 MaterializerContext: null,
                 OriginalSource: content // Preserve the original ElsaScript source
             );
-
-            return materialized;
         }
         catch
         {

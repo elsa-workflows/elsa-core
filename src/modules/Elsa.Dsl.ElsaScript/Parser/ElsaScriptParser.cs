@@ -10,7 +10,7 @@ namespace Elsa.Dsl.ElsaScript.Parser;
 /// </summary>
 public class ElsaScriptParser : IElsaScriptParser
 {
-    private static readonly Parser<WorkflowNode> WorkflowParser;
+    private static readonly Parser<ProgramNode> ProgramParser;
 
     static ElsaScriptParser()
     {
@@ -268,50 +268,141 @@ public class ElsaScriptParser : IElsaScriptParser
             .And(ZeroOrOne(semicolon))
             .Then(x => x.Item2);
 
-        // Workflow block: workflow "name" { statements }
-        var workflowDeclaration = workflowKeyword
+        // Workflow metadata: name: value
+        var metadataEntry = identifier
+            .And(colon)
+            .And(expression)
+            .Then(x => (Name: x.Item1.ToString(), Value: EvaluateConstantExpressionStatic(x.Item3)));
+
+        var commaSeparatedMetadata = metadataEntry.And(ZeroOrOne(comma)).Then(x => x.Item1);
+        var metadataList = ZeroOrMany(commaSeparatedMetadata);
+
+        // Workflow declaration: workflow "id" [(metadata)] { [use statements] [statements] }
+        var workflowMetadata = Between(leftParen, metadataList, rightParen);
+
+        // Workflow body can contain use statements and regular statements
+        var workflowUseStatement = useStatement;
+
+        var workflowBodyElement = Deferred<object>();
+        workflowBodyElement.Parser = workflowUseStatement
+            .Then<object>(u => u)
+            .Or(statementWithSemicolon.Then<object>(s => s));
+
+        var workflowBody = Between(leftBrace, ZeroOrMany(workflowBodyElement), rightBrace);
+
+        var workflowWithMetadata = workflowKeyword
             .And(stringLiteral)
-            .And(Between(leftBrace, ZeroOrMany(statementWithSemicolon), rightBrace))
+            .And(workflowMetadata)
+            .Then(x => (WorkflowId: x.Item2.ToString(), Metadata: x.Item3));
+
+        var workflowWithoutMetadata = workflowKeyword
+            .And(stringLiteral)
+            .Then(x => (WorkflowId: x.Item2.ToString(), Metadata: (IReadOnlyList<(string Name, object Value)>?)null));
+
+        var workflowHeader = workflowWithMetadata.Or(workflowWithoutMetadata);
+
+        var workflowDeclaration = workflowHeader
+            .And(workflowBody)
             .Then(x =>
             {
-                // x is (TextSpan, TextSpan, IReadOnlyList<StatementNode>)
-                // x.Item1 is workflow keyword
-                // x.Item2 is string literal (name)
-                // x.Item3 is IReadOnlyList<StatementNode>
-                return (x.Item2.ToString(), x.Item3.ToList());
-            });
+                var header = x.Item1;
+                var bodyElements = x.Item2;
 
-        // Top-level: [use statements] [workflow declaration | statements]
-        // Try workflow declaration first, if that fails, try statements
-        var workflowOrStatements = workflowDeclaration
-            .Or(ZeroOrMany(statementWithSemicolon).Then(stmts => ((string?)null, stmts.ToList())));
+                var metadataDict = new Dictionary<string, object>();
+                if (header.Metadata != null)
+                {
+                    foreach (var entry in header.Metadata)
+                    {
+                        metadataDict[entry.Name] = entry.Value;
+                    }
+                }
 
-        var workflowParser = ZeroOrMany(useStatement)
-            .And(workflowOrStatements)
-            .Then(x =>
-            {
-                var useStatements = x.Item1.Select(u => (UseNode)u).ToList();
-                var workflowInfo = x.Item2;
+                // Separate use statements from regular statements in body
+                var workflowUses = new List<UseNode>();
+                var statements = new List<StatementNode>();
+
+                foreach (var element in bodyElements)
+                {
+                    if (element is UseNode useNode)
+                        workflowUses.Add(useNode);
+                    else if (element is StatementNode stmt)
+                        statements.Add(stmt);
+                }
 
                 return new WorkflowNode
                 {
-                    UseStatements = useStatements,
-                    Name = workflowInfo.Item1,
-                    Body = workflowInfo.Item2 ?? new List<StatementNode>()
+                    Id = header.WorkflowId,
+                    Metadata = metadataDict,
+                    UseStatements = workflowUses,
+                    Body = statements
                 };
             });
 
-        WorkflowParser = workflowParser;
+        // Program with single workflow: [global use statements] [workflow declaration]
+        var programWithWorkflow = ZeroOrMany(useStatement)
+            .And(workflowDeclaration)
+            .Then(x =>
+            {
+                var globalUses = x.Item1.Select(u => (UseNode)u).ToList();
+                var workflow = x.Item2;
+
+                return new ProgramNode
+                {
+                    GlobalUseStatements = globalUses,
+                    Workflows = new List<WorkflowNode> { workflow }
+                };
+            });
+
+        // Fallback: raw statements without workflow keyword (backward compatibility)
+        // Only match if there are actual statements (OneOrMany)
+        var programWithStatements = ZeroOrMany(useStatement)
+            .And(OneOrMany(statementWithSemicolon))
+            .Then(x =>
+            {
+                var globalUses = x.Item1.Select(u => (UseNode)u).ToList();
+                var statements = x.Item2.ToList();
+
+                return new ProgramNode
+                {
+                    GlobalUseStatements = globalUses,
+                    Workflows = new List<WorkflowNode>
+                    {
+                        new WorkflowNode
+                        {
+                            Id = "DefaultWorkflow",
+                            UseStatements = new List<UseNode>(),
+                            Body = statements
+                        }
+                    }
+                };
+            });
+
+        var programParser = programWithWorkflow.Or(programWithStatements);
+
+        ProgramParser = programParser;
     }
 
     /// <inheritdoc />
-    public WorkflowNode Parse(string source)
+    public ProgramNode Parse(string source)
     {
-        if (!WorkflowParser.TryParse(source, out var result, out var error))
+        if (!ProgramParser.TryParse(source, out var result, out var error))
         {
             throw new ParseException($"Failed to parse ElsaScript: {error}");
         }
         return result;
+    }
+
+    /// <summary>
+    /// Static helper to evaluate constant expressions during parsing.
+    /// </summary>
+    private static object EvaluateConstantExpressionStatic(ExpressionNode exprNode)
+    {
+        return exprNode switch
+        {
+            LiteralNode literal => literal.Value ?? string.Empty,
+            IdentifierNode identifier => identifier.Name,
+            _ => string.Empty
+        };
     }
 }
 

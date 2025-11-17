@@ -23,7 +23,7 @@ public interface IBlobWorkflowFormatHandler
 
     /// <summary>
     /// Attempts to parse the blob content into a MaterializedWorkflow.
-    /// Returns null if the content is not a valid workflow for this handler.
+    /// Returns null if the content is not valid for this handler.
     /// </summary>
     /// <param name="blob">The blob being parsed.</param>
     /// <param name="content">The text content of the blob.</param>

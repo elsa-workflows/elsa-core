@@ -6,17 +6,19 @@ namespace Elsa.Dsl.ElsaScript.Ast;
 public class WorkflowNode : AstNode
 {
     /// <summary>
-    /// The name of the workflow.
+    /// The workflow identifier used in the DSL (the string after "workflow" keyword).
+    /// This also serves as the default DefinitionId if not explicitly specified in metadata.
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public string Id { get; set; } = string.Empty;
 
     /// <summary>
-    /// The description of the workflow.
+    /// Workflow metadata properties (DisplayName, Description, DefinitionId, Version, etc.)
+    /// These are specified in the optional parenthesized argument list after the workflow id.
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    public Dictionary<string, object> Metadata { get; set; } = new();
 
     /// <summary>
-    /// The use statements (imports and expression language settings).
+    /// The use statements (imports and expression language settings) at workflow scope.
     /// </summary>
     public List<UseNode> UseStatements { get; set; } = [];
 

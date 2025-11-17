@@ -8,9 +8,9 @@ namespace Elsa.Dsl.ElsaScript.Contracts;
 public interface IElsaScriptParser
 {
     /// <summary>
-    /// Parses the given source code into a workflow AST.
+    /// Parses the given source code into a program AST that can contain multiple workflows.
     /// </summary>
     /// <param name="source">The ElsaScript source code.</param>
-    /// <returns>The parsed workflow AST.</returns>
-    WorkflowNode Parse(string source);
+    /// <returns>The parsed program AST containing all workflows.</returns>
+    ProgramNode Parse(string source);
 }

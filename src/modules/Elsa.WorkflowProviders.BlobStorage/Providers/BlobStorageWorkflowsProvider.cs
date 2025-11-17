@@ -43,10 +43,9 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
 
         foreach (var blob in blobs)
         {
-            var materialized = await TryReadWorkflowAsync(blob, cancellationToken);
-
-            if (materialized != null)
-                results.Add(materialized);
+            var workflow = await TryReadWorkflowAsync(blob, cancellationToken);
+            if (workflow != null)
+                results.Add(workflow);
         }
 
         return results;
