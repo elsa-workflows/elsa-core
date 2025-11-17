@@ -20,9 +20,10 @@ public class ElsaScriptParser : IElsaScriptParser
         var expressionsKeyword = Terms.Text("expressions");
         var listenKeyword = Terms.Text("listen");
         var varKeyword = Terms.Text("var");
-        var letKeyword = Terms.Text("let");
         var constKeyword = Terms.Text("const");
         var forKeyword = Terms.Text("for");
+        var foreachKeyword = Terms.Text("foreach");
+        var inKeyword = Terms.Text("in");
         var toKeyword = Terms.Text("to");
         var throughKeyword = Terms.Text("through");
         var stepKeyword = Terms.Text("step");
@@ -142,8 +143,8 @@ public class ElsaScriptParser : IElsaScriptParser
 
         var activityInvocation = activityInvocationWithArgs.Or(activityInvocationNoArgs);
 
-        // Variable declaration: var/let/const name = expr
-        var variableKindParser = varKeyword.Or(letKeyword).Or(constKeyword);
+        // Variable declaration: var/const name = expr
+        var variableKindParser = varKeyword.Or(constKeyword);
 
         var variableDeclaration = variableKindParser
             .And(identifier)
@@ -155,7 +156,6 @@ public class ElsaScriptParser : IElsaScriptParser
                 var kind = x.Item1.ToString() switch
                 {
                     "var" => VariableKind.Var,
-                    "let" => VariableKind.Let,
                     "const" => VariableKind.Const,
                     _ => VariableKind.Var
                 };
@@ -177,74 +177,123 @@ public class ElsaScriptParser : IElsaScriptParser
         var activityStatement = activityInvocation
             .Then<StatementNode>(x => x);
 
-        // Declare deferred for loop parser
+        // Declare deferred for loop and foreach parsers
         var forStatement = Deferred<StatementNode>();
+        var foreachStatement = Deferred<StatementNode>();
 
         statement.Parser = variableDeclaration
             .Or(listenStatement)
             .Or(forStatement)
+            .Or(foreachStatement)
             .Or(activityStatement);
 
         // Statement with optional semicolon
         var statementWithSemicolon = statement.And(ZeroOrOne(semicolon)).Then(x => x.Item1);
 
-        // For loop statement: for i = start to/through end step stepValue { body }
+        // For loop statement: for (var i = 0 to 10 step 1) { body } or for (i = 0 to 10) statement
         // Must be defined after statementWithSemicolon
         var rangeOperator = toKeyword.Or(throughKeyword);
-        var forBody = Between(leftBrace, ZeroOrMany(statementWithSemicolon), rightBrace);
 
-        // Build parser in a simpler way
-        // Parlot flattens tuples up to 7 elements, after that it nests
-        // So: (for, id, =, startExpr, rangeOp, endExpr, step), stepExpr, body
+        // For body can be either a block or a single statement
+        var forBlockBody = Between(leftBrace, ZeroOrMany(statementWithSemicolon), rightBrace)
+            .Then(statements => (StatementNode)(statements.Count == 1
+                ? statements.First()
+                : new BlockNode { Statements = statements.ToList() }));
+        var forSingleStatementBody = statement;
+        var forBody = forBlockBody.Or(forSingleStatementBody);
+
+        // For header with optional var: (var i = start to/through end step stepValue)
+        // or (i = start to/through end step stepValue)
+        // Step clause is optional
+        var optionalVarKeyword = ZeroOrOne(varKeyword);
+        var optionalStepClause = ZeroOrOne(stepKeyword.And(expression).Then(x => x.Item2));
+
+        var forHeader = Between(leftParen,
+            optionalVarKeyword
+                .And(identifier)
+                .And(equals)
+                .And(expression)
+                .And(rangeOperator)
+                .And(expression)
+                .And(optionalStepClause)
+                .Then(x => (
+                    HasVar: x.Item1 != null,
+                    VarName: x.Item2.ToString(),
+                    Start: x.Item4,
+                    RangeOp: x.Item5.ToString(),
+                    End: x.Item6,
+                    Step: x.Item7
+                )),
+            rightParen);
+
         var forStatementParser = forKeyword
-            .And(identifier)
-            .And(equals)
-            .And(expression)
-            .And(rangeOperator)
-            .And(expression)
-            .And(stepKeyword)
-            .And(expression)
+            .And(forHeader)
             .And(forBody)
             .Then<StatementNode>(result =>
             {
-                // result structure: ((for, id, =, startExpr, rangeOp, endExpr, step), stepExpr, body)
-                // result.Item1 = (for, id, =, startExpr, rangeOp, endExpr, step) [7-tuple]
-                // result.Item2 = stepExpr (ExpressionNode)
-                // result.Item3 = body (IReadOnlyList<StatementNode>)
-
-                var firstSeven = result.Item1;
-                // firstSeven.Item1 = for keyword (TextSpan)
-                // firstSeven.Item2 = identifier (TextSpan)
-                // firstSeven.Item3 = equals (TextSpan)
-                // firstSeven.Item4 = start expression (ExpressionNode)
-                // firstSeven.Item5 = range operator (TextSpan)
-                // firstSeven.Item6 = end expression (ExpressionNode)
-                // firstSeven.Item7 = step keyword (TextSpan)
-
-                var variableName = firstSeven.Item2;
-                var startExpr = firstSeven.Item4;
-                var rangeOp = firstSeven.Item5;
-                var endExpr = firstSeven.Item6;
-                var stepExpr = result.Item2;
+                var header = result.Item2;
                 var body = result.Item3;
 
-                var bodyStatements = body.ToList();
-                var bodyStatement = bodyStatements.Count == 1
-                    ? bodyStatements[0]
-                    : new BlockNode { Statements = bodyStatements };
+                // Default step to 1 if not specified
+                var stepExpr = header.Step ?? new LiteralNode { Value = 1 };
 
                 return new ForNode
                 {
-                    VariableName = variableName.ToString(),
-                    Start = startExpr,
-                    End = endExpr,
+                    DeclaresVariable = header.HasVar,
+                    VariableName = header.VarName,
+                    Start = header.Start,
+                    End = header.End,
                     Step = stepExpr,
-                    IsInclusive = rangeOp.ToString() == "through",
-                    Body = bodyStatement
+                    IsInclusive = header.RangeOp == "through",
+                    Body = body
                 };
             });
 
         forStatement.Parser = forStatementParser;
+
+        // ForEach statement: foreach (var item in collection) { body } or foreach (item in collection) statement
+        // Must be defined after statementWithSemicolon
+        // ForEach body can be either a block or a single statement
+        var foreachBlockBody = Between(leftBrace, ZeroOrMany(statementWithSemicolon), rightBrace)
+            .Then(statements => (StatementNode)(statements.Count == 1
+                ? statements.First()
+                : new BlockNode { Statements = statements.ToList() }));
+        var foreachSingleStatementBody = statement;
+        var foreachBody = foreachBlockBody.Or(foreachSingleStatementBody);
+
+        // ForEach header with optional var: (var item in collection) or (item in collection)
+        var foreachOptionalVarKeyword = ZeroOrOne(varKeyword);
+
+        var foreachHeader = Between(leftParen,
+            foreachOptionalVarKeyword
+                .And(identifier)
+                .And(inKeyword)
+                .And(expression)
+                .Then(x => (
+                    HasVar: x.Item1 != null,
+                    VarName: x.Item2.ToString(),
+                    Collection: x.Item4
+                )),
+            rightParen);
+
+        var foreachStatementParser = foreachKeyword
+            .And(foreachHeader)
+            .And(foreachBody)
+            .Then<StatementNode>(result =>
+            {
+                var header = result.Item2;
+                var body = result.Item3;
+
+                return new ForEachNode
+                {
+                    DeclaresVariable = header.HasVar,
+                    VariableName = header.VarName,
+                    Collection = header.Collection,
+                    Body = body
+                };
+            });
+
+        foreachStatement.Parser = foreachStatementParser;
 
         // Use statement: use Namespace; or use expressions lang;
         var namespaceUse = identifier

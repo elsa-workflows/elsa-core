@@ -1,10 +1,15 @@
 namespace Elsa.Dsl.ElsaScript.Ast;
 
 /// <summary>
-/// Represents a range-based for statement (e.g., for i = 0 to 10 step 1).
+/// Represents a range-based for statement (e.g., for (var i = 0 to 10 step 1)).
 /// </summary>
 public class ForNode : StatementNode
 {
+    /// <summary>
+    /// Whether this for loop declares a new variable (var present in header).
+    /// </summary>
+    public bool DeclaresVariable { get; set; }
+
     /// <summary>
     /// The loop variable name.
     /// </summary>

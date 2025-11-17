@@ -269,9 +269,22 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
 
     private async Task<IActivity> CompileForEachAsync(ForEachNode forEach, CancellationToken cancellationToken = default)
     {
-        // Create the loop variable
-        var loopVariable = new Variable<object>(forEach.VariableName, null);
-        _variables[forEach.VariableName] = loopVariable;
+        Variable loopVariable;
+
+        if (forEach.DeclaresVariable)
+        {
+            // Create a new loop variable
+            loopVariable = new Variable<object>(forEach.VariableName, null!);
+            _variables[forEach.VariableName] = loopVariable;
+        }
+        else
+        {
+            // Reuse existing variable
+            if (!_variables.TryGetValue(forEach.VariableName, out loopVariable!))
+            {
+                throw new InvalidOperationException($"Variable '{forEach.VariableName}' is not declared. Use 'var {forEach.VariableName}' to declare a new variable in the foreach loop.");
+            }
+        }
 
         var items = CompileExpressionAsInput<ICollection<object>>(forEach.Collection);
         var body = await CompileStatementAsync(forEach.Body, cancellationToken);
@@ -287,9 +300,22 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
 
     private async Task<IActivity> CompileForAsync(ForNode forNode, CancellationToken cancellationToken = default)
     {
-        // Create the loop variable
-        var loopVariable = new Variable<int>(forNode.VariableName, 0);
-        _variables[forNode.VariableName] = loopVariable;
+        Variable loopVariable;
+
+        if (forNode.DeclaresVariable)
+        {
+            // Create a new loop variable
+            loopVariable = new Variable<int>(forNode.VariableName, 0);
+            _variables[forNode.VariableName] = loopVariable;
+        }
+        else
+        {
+            // Reuse existing variable
+            if (!_variables.TryGetValue(forNode.VariableName, out loopVariable!))
+            {
+                throw new InvalidOperationException($"Variable '{forNode.VariableName}' is not declared. Use 'var {forNode.VariableName}' to declare a new variable in the for loop.");
+            }
+        }
 
         var start = CompileExpressionAsInput<int>(forNode.Start);
         var end = CompileExpressionAsInput<int>(forNode.End);

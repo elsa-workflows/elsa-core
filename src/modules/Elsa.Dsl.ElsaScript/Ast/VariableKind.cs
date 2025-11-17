@@ -6,6 +6,5 @@ namespace Elsa.Dsl.ElsaScript.Ast;
 public enum VariableKind
 {
     Var,
-    Let,
     Const
 }

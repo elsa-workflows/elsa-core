@@ -61,7 +61,7 @@ use expressions js;
 
 workflow ""VariableTest"" {
   var message = ""Hello from variable"";
-  let count = 42;
+  var count = 42;
   const pi = 3.14;
 }";
 
@@ -172,7 +172,7 @@ workflow ""HelloWorldHttpDsl"" {
 use expressions js;
 
 workflow ""ForLoopTest"" {
-  for i = 0 to 10 step 1
+  for (var i = 0 to 10 step 1)
   {
     WriteLine(js => `Step: ${i}`)
   }
@@ -218,7 +218,7 @@ workflow ""ForLoopTest"" {
 use expressions js;
 
 workflow ""ForLoopInclusiveTest"" {
-  for i = 0 through 10 step 1
+  for (var i = 0 through 10 step 1)
   {
     WriteLine(js => `Step: ${i}`)
   }

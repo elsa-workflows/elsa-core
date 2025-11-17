@@ -65,7 +65,7 @@ use expressions js;
 
 workflow ""VariableTest"" {
   var greeting = ""Hello"";
-  let count = 42;
+  var count = 42;
   const pi = 3.14;
 }";
 
@@ -233,7 +233,7 @@ workflow ""HelloWorldHttpDsl"" {
 use expressions js;
 
 workflow ""ForLoopTest"" {
-  for i = 0 to 10 step 1
+  for (var i = 0 to 10 step 1)
   {
     WriteLine(js => `Step: ${i}`)
   }
@@ -252,7 +252,8 @@ workflow ""ForLoopTest"" {
 
         var forNode = workflow.Body[0] as Ast.ForNode;
         Assert.NotNull(forNode);
-        Assert.Equal("i", forNode!.VariableName);
+        Assert.True(forNode!.DeclaresVariable); // var i
+        Assert.Equal("i", forNode.VariableName);
         Assert.False(forNode.IsInclusive);
 
         var startLiteral = forNode.Start as Ast.LiteralNode;
@@ -277,7 +278,7 @@ workflow ""ForLoopTest"" {
 use expressions js;
 
 workflow ""ForLoopInclusiveTest"" {
-  for i = 0 through 10 step 1
+  for (var i = 0 through 10 step 1)
   {
     WriteLine(js => `Step: ${i}`)
   }
@@ -296,7 +297,8 @@ workflow ""ForLoopInclusiveTest"" {
 
         var forNode = workflow.Body[0] as Ast.ForNode;
         Assert.NotNull(forNode);
-        Assert.Equal("i", forNode!.VariableName);
+        Assert.True(forNode!.DeclaresVariable); // var i
+        Assert.Equal("i", forNode.VariableName);
         Assert.True(forNode.IsInclusive);
     }
 
