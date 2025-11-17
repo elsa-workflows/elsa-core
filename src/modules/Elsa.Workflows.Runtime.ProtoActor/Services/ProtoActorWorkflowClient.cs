@@ -19,6 +19,7 @@ namespace Elsa.Workflows.Runtime.ProtoActor.Services;
 [UsedImplicitly]
 public class ProtoActorWorkflowClient : IWorkflowClient
 {
+    private readonly Cluster _cluster;
     private readonly Mappers.Mappers _mappers;
     private readonly ITenantAccessor _tenantAccessor;
     private readonly WorkflowInstanceClient _actorClient;
@@ -29,6 +30,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     public ProtoActorWorkflowClient(string workflowInstanceId, Cluster cluster, Mappers.Mappers mappers, ITenantAccessor tenantAccessor, IWorkflowActivationStrategyEvaluator workflowActivationStrategyEvaluator)
     {
         WorkflowInstanceId = workflowInstanceId;
+        _cluster = cluster;
         _mappers = mappers;
         _tenantAccessor = tenantAccessor;
         _actorClient = cluster.GetNamedWorkflowInstanceClient(WorkflowInstanceId);
@@ -41,7 +43,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     public async Task<CreateWorkflowInstanceResponse> CreateInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var protoRequest = _mappers.CreateWorkflowInstanceRequestMapper.Map(WorkflowInstanceId, request);
-        var response = await _actorClient.Create(protoRequest, CreateHeaders(), cancellationToken);
+        var response = await ExecuteAsync(client => client.Create(protoRequest, CreateHeaders(), cancellationToken));
         return _mappers.CreateWorkflowInstanceResponseMapper.Map(response!);
     }
 
@@ -49,7 +51,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     public async Task<RunWorkflowInstanceResponse> RunInstanceAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var protoRequest = _mappers.RunWorkflowInstanceRequestMapper.Map(request);
-        var response = await _actorClient.Run(protoRequest, CreateHeaders(), cancellationToken);
+        var response = await ExecuteAsync(client => client.Run(protoRequest, CreateHeaders(), cancellationToken));
         return _mappers.RunWorkflowInstanceResponseMapper.Map(WorkflowInstanceId, response!);
     }
 
@@ -57,20 +59,20 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     public async Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var protoRequest = _mappers.CreateAndRunWorkflowInstanceRequestMapper.Map(WorkflowInstanceId, request);
-        var response = await _actorClient.CreateAndRun(protoRequest, CreateHeaders(), cancellationToken);
+        var response = await ExecuteAsync(client => client.CreateAndRun(protoRequest, CreateHeaders(), cancellationToken));
         return _mappers.RunWorkflowInstanceResponseMapper.Map(WorkflowInstanceId, response!);
     }
 
     /// <inheritdoc />
     public async Task CancelAsync(CancellationToken cancellationToken = default)
     {
-        await _actorClient.Cancel(CreateHeaders(), cancellationToken);
+        await ExecuteAsync(client => client.Cancel(CreateHeaders(), cancellationToken));
     }
 
     /// <inheritdoc />
     public async Task<WorkflowState> ExportStateAsync(CancellationToken cancellationToken = default)
     {
-        var response = await _actorClient.ExportState(CreateHeaders(), cancellationToken);
+        var response = await ExecuteAsync(client => client.ExportState(CreateHeaders(), cancellationToken));
         return _mappers.WorkflowStateJsonMapper.Map(response!.SerializedWorkflowState);
     }
 
@@ -82,12 +84,24 @@ public class ProtoActorWorkflowClient : IWorkflowClient
         {
             SerializedWorkflowState = protoJson
         };
-        await _actorClient.ImportState(request, CreateHeaders(), cancellationToken);
+        await ExecuteAsync(client => client.ImportState(request, CreateHeaders(), cancellationToken));
     }
 
     public Task<bool> InstanceExistsAsync(CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
+    }
+
+    private async Task ExecuteAsync(Func<WorkflowInstanceClient, Task> action)
+    {
+        await _cluster.JoinedCluster;
+        await action(_actorClient);
+    }
+
+    private async Task<T> ExecuteAsync<T>(Func<WorkflowInstanceClient, Task<T>> action)
+    {
+        await _cluster.JoinedCluster;
+        return await action(_actorClient);
     }
 
     private IDictionary<string, string> CreateHeaders()
