@@ -6,12 +6,17 @@ namespace Elsa.Dsl.ElsaScript.Ast;
 public class FlowchartNode : StatementNode
 {
     /// <summary>
-    /// The labeled activities in the flowchart.
+    /// Variable declarations scoped to the flowchart.
+    /// </summary>
+    public List<VariableDeclarationNode> Variables { get; set; } = [];
+
+    /// <summary>
+    /// The labeled activities (nodes) in the flowchart.
     /// </summary>
     public List<LabeledActivityNode> Activities { get; set; } = [];
 
     /// <summary>
-    /// The connections between activities.
+    /// The connections (edges) between activities.
     /// </summary>
     public List<ConnectionNode> Connections { get; set; } = [];
 

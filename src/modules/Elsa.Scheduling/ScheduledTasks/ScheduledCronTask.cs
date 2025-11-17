@@ -152,7 +152,18 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
                     }
                     catch (Exception e)
                     {
-                        _logger.LogError(e, "Error executing scheduled task");
+                        // Only log if not disposed to avoid logging after test context is disposed
+                        if (!_disposed)
+                        {
+                            try
+                            {
+                                _logger.LogError(e, "Error executing scheduled task");
+                            }
+                            catch
+                            {
+                                // Ignore logging errors (e.g., when test output is no longer available)
+                            }
+                        }
                     }
                     finally
                     {

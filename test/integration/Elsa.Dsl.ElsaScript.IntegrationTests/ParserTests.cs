@@ -349,4 +349,29 @@ workflow HelloWorldDsl(
         Assert.Single(workflow.Body);
     }
 
+    [Fact(DisplayName = "Parser can parse empty flowchart")]
+    public void Parse_WithEmptyFlowchart_ShouldReturnFlowchartNode()
+    {
+        // Arrange
+        var source = @"
+workflow FlowchartTest {
+  flowchart {
+  }
+}";
+
+        // Act
+        var program = _parser.Parse(source);
+
+        // Assert
+        Assert.NotNull(program);
+        Assert.Single(program.Workflows);
+
+        var workflow = program.Workflows[0];
+        Assert.Equal("FlowchartTest", workflow.Id);
+        Assert.Single(workflow.Body);
+
+        var flowchart = workflow.Body[0] as Ast.FlowchartNode;
+        Assert.NotNull(flowchart);
+    }
+
 }

@@ -27,6 +27,8 @@ public class ElsaScriptParser : IElsaScriptParser
         var toKeyword = Terms.Text("to");
         var throughKeyword = Terms.Text("through");
         var stepKeyword = Terms.Text("step");
+        var flowchartKeyword = Terms.Text("flowchart");
+        var entryKeyword = Terms.Text("entry");
 
         // Basic tokens
         var identifier = Terms.Identifier();
@@ -46,6 +48,7 @@ public class ElsaScriptParser : IElsaScriptParser
         var rightBracket = Terms.Char(']');
         var dot = Terms.Char('.');
         var arrow = Terms.Text("=>");
+        var rightArrow = Terms.Text("->");
         var equals = Terms.Char('=');
 
         // Deferred parsers for recursive structures
@@ -177,14 +180,16 @@ public class ElsaScriptParser : IElsaScriptParser
         var activityStatement = activityInvocation
             .Then<StatementNode>(x => x);
 
-        // Declare deferred for loop and foreach parsers
+        // Declare deferred for loop, foreach, and flowchart parsers
         var forStatement = Deferred<StatementNode>();
         var foreachStatement = Deferred<StatementNode>();
+        var flowchartStatement = Deferred<StatementNode>();
 
         statement.Parser = variableDeclaration
             .Or(listenStatement)
             .Or(forStatement)
             .Or(foreachStatement)
+            .Or(flowchartStatement)
             .Or(activityStatement);
 
         // Statement with optional semicolon
@@ -294,6 +299,109 @@ public class ElsaScriptParser : IElsaScriptParser
             });
 
         foreachStatement.Parser = foreachStatementParser;
+
+        // Flowchart statement: flowchart { [variables] [nodes] [connections] [entry] }
+        // Node declaration: label: statement;
+        // Entry declaration: entry label;
+        // Connection declaration: source -> target; or source.Outcome -> target;
+
+        // Flowchart body element can be:
+        // 1. Variable declaration
+        // 2. Node declaration (label: statement)
+        // 3. Entry declaration (entry label)
+        // 4. Connection declaration (source -> target or source.Outcome -> target)
+
+        // Node declaration: label: activityInvocation; or label: { block }
+        // Note: We use activityInvocation directly (not statement) to avoid circular dependency
+        // since statement includes flowchart which would include node declarations
+        var nodeBlock = Between(leftBrace, ZeroOrMany(statementWithSemicolon), rightBrace)
+            .Then<StatementNode>(statements => statements.Count == 1
+                ? statements.First()
+                : new BlockNode { Statements = statements.ToList() });
+
+        var nodeActivityStatement = activityInvocation.Then<StatementNode>(s => s);
+
+        var nodeDeclaration = identifier
+            .And(colon)
+            .And(nodeBlock.Or(nodeActivityStatement))
+            .And(ZeroOrOne(semicolon))
+            .Then(x => new LabeledActivityNode
+            {
+                Label = x.Item1.ToString(),
+                Activity = x.Item3
+            });
+
+        // Entry declaration: entry label;
+        var entryDeclaration = entryKeyword
+            .And(identifier)
+            .And(ZeroOrOne(semicolon))
+            .Then(x => x.Item2.ToString());
+
+        // Connection declaration: source -> target; or source.Outcome -> target;
+        // Source can be: identifier or identifier.identifier (with outcome)
+        var optionalOutcome = ZeroOrOne(dot.And(identifier).Then(x => x.Item2.ToString()));
+
+        var connectionSource = identifier
+            .And(optionalOutcome)
+            .Then(x => (
+                SourceLabel: x.Item1.ToString(),
+                Outcome: x.Item2
+            ));
+
+        var connectionTarget = identifier;
+
+        var connectionDeclaration = connectionSource
+            .And(rightArrow)
+            .And(connectionTarget)
+            .And(ZeroOrOne(semicolon))
+            .Then(x => new ConnectionNode
+            {
+                Source = x.Item1.SourceLabel,
+                Outcome = x.Item1.Outcome,
+                Target = x.Item3.ToString()
+            });
+
+        // Flowchart body element type - try each parser in order
+        var flowchartBodyElement = variableDeclaration.Then<object>(v => v)
+            .Or(entryDeclaration.Then<object>(e => e))
+            .Or(nodeDeclaration.Then<object>(n => n))
+            .Or(connectionDeclaration.Then<object>(c => c));
+
+        var flowchartBody = Between(leftBrace, ZeroOrMany(flowchartBodyElement), rightBrace);
+
+        var flowchartStatementParser = flowchartKeyword
+            .And(flowchartBody)
+            .Then<StatementNode>(result =>
+            {
+                var bodyElements = result.Item2;
+
+                var variables = new List<VariableDeclarationNode>();
+                var nodes = new List<LabeledActivityNode>();
+                var connections = new List<ConnectionNode>();
+                string? entryPoint = null;
+
+                foreach (var element in bodyElements)
+                {
+                    if (element is VariableDeclarationNode varDecl)
+                        variables.Add(varDecl);
+                    else if (element is LabeledActivityNode node)
+                        nodes.Add(node);
+                    else if (element is ConnectionNode conn)
+                        connections.Add(conn);
+                    else if (element is string entry)
+                        entryPoint = entry;
+                }
+
+                return new FlowchartNode
+                {
+                    Variables = variables,
+                    Activities = nodes,
+                    Connections = connections,
+                    EntryPoint = entryPoint
+                };
+            });
+
+        flowchartStatement.Parser = flowchartStatementParser;
 
         // Use statement: use Namespace; or use expressions lang;
         var namespaceUse = identifier

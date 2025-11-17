@@ -4,6 +4,7 @@ using Elsa.Dsl.ElsaScript.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 
@@ -368,7 +369,56 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
 
     private IActivity CompileFlowchart(FlowchartNode flowchart)
     {
-        throw new NotImplementedException("Flowchart support is not yet implemented");
+        // Register flowchart-scoped variables
+        foreach (var varDecl in flowchart.Variables)
+        {
+            CompileVariableDeclaration(varDecl);
+        }
+
+        // Compile all labeled activities and build a label-to-activity map
+        var labelToActivity = new Dictionary<string, IActivity>();
+        foreach (var labeledNode in flowchart.Activities)
+        {
+            // Use synchronous version since we're in a non-async method
+            var activity = CompileStatementAsync(labeledNode.Activity).GetAwaiter().GetResult();
+            if (activity != null)
+            {
+                labelToActivity[labeledNode.Label] = activity;
+            }
+        }
+
+        // Create connections
+        var connections = new List<Connection>();
+        foreach (var connNode in flowchart.Connections)
+        {
+            if (!labelToActivity.TryGetValue(connNode.Source, out var sourceActivity))
+                throw new InvalidOperationException($"Source label '{connNode.Source}' not found in flowchart");
+
+            if (!labelToActivity.TryGetValue(connNode.Target, out var targetActivity))
+                throw new InvalidOperationException($"Target label '{connNode.Target}' not found in flowchart");
+
+            var source = new Endpoint(sourceActivity, connNode.Outcome);
+            var target = new Endpoint(targetActivity);
+            connections.Add(new Connection(source, target));
+        }
+
+        // Create flowchart activity
+        var flowchartActivity = new Workflows.Activities.Flowchart.Activities.Flowchart
+        {
+            Activities = labelToActivity.Values.ToList(),
+            Connections = connections
+        };
+
+        // Set entry point if specified
+        if (!string.IsNullOrEmpty(flowchart.EntryPoint))
+        {
+            if (!labelToActivity.TryGetValue(flowchart.EntryPoint, out var startActivity))
+                throw new InvalidOperationException($"Entry point label '{flowchart.EntryPoint}' not found in flowchart");
+
+            flowchartActivity.Start = startActivity;
+        }
+
+        return flowchartActivity;
     }
 
     private async Task<IActivity> CompileListenAsync(ListenNode listen, CancellationToken cancellationToken = default)

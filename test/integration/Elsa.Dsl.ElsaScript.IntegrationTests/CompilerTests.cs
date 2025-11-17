@@ -146,8 +146,8 @@ workflow HelloWorldHttpDsl {
         var expression = textInput!.Expression;
         Assert.NotNull(expression);
         Assert.Equal("JavaScript", expression!.Type);
-        Assert.Contains("Message:", expression.Value.ToString()!);
-        Assert.Contains("message", expression.Value.ToString()!);
+        Assert.Contains("Message:", expression.Value?.ToString());
+        Assert.Contains("message", expression.Value?.ToString());
 
         // Verify WriteHttpResponse activity with variable reference
         var writeHttpResponse = sequence.Activities.ElementAt(2);
@@ -199,7 +199,7 @@ workflow ForLoopTest {
         var outerBoundInput = forActivity.OuterBoundInclusive;
         var outerBoundExpr = outerBoundInput.Expression;
         Assert.NotNull(outerBoundExpr);
-        Assert.False((bool)outerBoundExpr!.Value);
+        Assert.False((bool?)outerBoundExpr.Value);
 
         // Verify loop variable exists
         Assert.Single(workflow.Variables);
@@ -240,7 +240,7 @@ workflow ForLoopInclusiveTest {
         var outerBoundInput = forActivity.OuterBoundInclusive;
         var outerBoundExpr = outerBoundInput.Expression;
         Assert.NotNull(outerBoundExpr);
-        Assert.True((bool)outerBoundExpr!.Value);
+        Assert.True((bool?)outerBoundExpr.Value);
 
         // Verify loop variable exists
         Assert.Single(workflow.Variables);
@@ -288,6 +288,27 @@ workflow HelloWorldDsl(
 
         // Check root activity
         Assert.NotNull(workflow.Root);
+    }
+
+    [Fact(DisplayName = "Compiler can compile empty flowchart")]
+    public async Task CompileAsync_WithEmptyFlowchart_ShouldCreateFlowchartActivity()
+    {
+        // Arrange
+        var source = @"
+workflow FlowchartTest {
+  flowchart {
+  }
+}";
+
+        // Act
+        var workflow = await _compiler.CompileAsync(source);
+
+        // Assert
+        Assert.NotNull(workflow);
+        Assert.NotNull(workflow.Root);
+
+        var flowchart = workflow.Root as Workflows.Activities.Flowchart.Activities.Flowchart;
+        Assert.NotNull(flowchart);
     }
 }
 
