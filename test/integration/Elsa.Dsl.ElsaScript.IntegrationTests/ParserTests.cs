@@ -32,7 +32,7 @@ public class ParserTests
 use Elsa.Activities.Console;
 use expressions js;
 
-workflow ""HelloWorld"" {
+workflow HelloWorld {
   WriteLine(""Hello World"");
   WriteLine(""Great to meet you!"");
 }";
@@ -63,7 +63,7 @@ workflow ""HelloWorld"" {
         var source = @"
 use expressions js;
 
-workflow ""VariableTest"" {
+workflow VariableTest {
   var greeting = ""Hello"";
   var count = 42;
   const pi = 3.14;
@@ -93,7 +93,7 @@ workflow ""VariableTest"" {
         var source = @"
 use expressions js;
 
-workflow ""ActivityTest"" {
+workflow ActivityTest {
   WriteLine(Text: ""Hello World"");
 }";
 
@@ -121,7 +121,7 @@ workflow ""ActivityTest"" {
         var source = @"
 use expressions js;
 
-workflow ""ListenTest"" {
+workflow ListenTest {
   listen HttpEndpoint(""/test"");
   WriteLine(""Triggered!"");
 }";
@@ -165,7 +165,7 @@ workflow ""ListenTest"" {
         var source = @"
 use expressions js;
 
-workflow ""HelloWorldHttpDsl"" {
+workflow HelloWorldHttpDsl {
     var message = ""Hello World from DSL via Expressions!"";
     listen HttpEndpoint(""/hello-world-dsl"");
     WriteLine(js => `Message: ${message}`);
@@ -232,7 +232,7 @@ workflow ""HelloWorldHttpDsl"" {
         var source = @"
 use expressions js;
 
-workflow ""ForLoopTest"" {
+workflow ForLoopTest {
   for (var i = 0 to 10 step 1)
   {
     WriteLine(js => `Step: ${i}`)
@@ -277,7 +277,7 @@ workflow ""ForLoopTest"" {
         var source = @"
 use expressions js;
 
-workflow ""ForLoopInclusiveTest"" {
+workflow ForLoopInclusiveTest {
   for (var i = 0 through 10 step 1)
   {
     WriteLine(js => `Step: ${i}`)
@@ -309,7 +309,7 @@ workflow ""ForLoopInclusiveTest"" {
         var source = @"
 use Elsa.Activities.Console;
 
-workflow ""HelloWorldDsl""(
+workflow HelloWorldDsl(
   DisplayName: ""Hello World DSL"",
   Description: ""Demonstrates ElsaScript with metadata"",
   DefinitionId: ""hello-world-dsl"",

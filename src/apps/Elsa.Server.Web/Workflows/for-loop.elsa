@@ -1,7 +1,7 @@
 use expressions js;
 
-workflow "ForLoopInclusiveTest" {
-  for i = 0 through 10 step 1
+workflow ForLoopInclusiveTest {
+  for (var i = 0 through 10 step 2)
   {
     WriteLine(js => `Step: ${variables.i}`)
   }

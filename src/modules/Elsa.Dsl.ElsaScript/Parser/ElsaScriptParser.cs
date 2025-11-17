@@ -326,7 +326,7 @@ public class ElsaScriptParser : IElsaScriptParser
         var commaSeparatedMetadata = metadataEntry.And(ZeroOrOne(comma)).Then(x => x.Item1);
         var metadataList = ZeroOrMany(commaSeparatedMetadata);
 
-        // Workflow declaration: workflow "id" [(metadata)] { [use statements] [statements] }
+        // Workflow declaration: workflow Identifier [(metadata)] { [use statements] [statements] }
         var workflowMetadata = Between(leftParen, metadataList, rightParen);
 
         // Workflow body can contain use statements and regular statements
@@ -340,12 +340,12 @@ public class ElsaScriptParser : IElsaScriptParser
         var workflowBody = Between(leftBrace, ZeroOrMany(workflowBodyElement), rightBrace);
 
         var workflowWithMetadata = workflowKeyword
-            .And(stringLiteral)
+            .And(identifier)
             .And(workflowMetadata)
             .Then(x => (WorkflowId: x.Item2.ToString(), Metadata: x.Item3));
 
         var workflowWithoutMetadata = workflowKeyword
-            .And(stringLiteral)
+            .And(identifier)
             .Then(x => (WorkflowId: x.Item2.ToString(), Metadata: (IReadOnlyList<(string Name, object Value)>?)null));
 
         var workflowHeader = workflowWithMetadata.Or(workflowWithoutMetadata);

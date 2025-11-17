@@ -1,6 +1,6 @@
 use expressions js;
 
-workflow "HelloWorldHttpDsl" {
+workflow HelloWorldHttpDsl {
     var message = "Hello World from DSL via Expressions!";
     listen HttpEndpoint("/hello-world-dsl");
     WriteHttpResponse(js => `Message: ${getMessage()}`);

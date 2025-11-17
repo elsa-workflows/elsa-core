@@ -1,6 +1,6 @@
 use Elsa.Activities.Console;
 
-workflow "HelloWorldDsl"(
+workflow HelloWorldDsl(
   DisplayName: "Hello World DSL",
   Description: "Demonstrates a simple ElsaScript workflow with metadata.",
   DefinitionId: "hello-world-dsl",
@@ -13,7 +13,7 @@ workflow "HelloWorldDsl"(
   WriteLine("Hello World from Elsa DSL!");
 }
 
-workflow "HelloWorldAsActivity"(
+workflow HelloWorldAsActivity(
   DisplayName: "Hello World as Activity",
   Description: "Can be embedded as an activity in other workflows.",
   DefinitionId: "hello-world-activity",
