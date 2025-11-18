@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     
     <PropertyGroup>
-        <ProjectGuid>{4b5a9d32-58f2-47a9-8a1b-8a9e2d76c3f5}</ProjectGuid>
+        <Include>[Elsa.Dsl.ElsaScript]*</Include>
     </PropertyGroup>
 
     <ItemGroup>
