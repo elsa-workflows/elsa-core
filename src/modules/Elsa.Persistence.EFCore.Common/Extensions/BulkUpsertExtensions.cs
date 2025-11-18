@@ -113,7 +113,7 @@ public static class BulkUpsertExtensions
                 var paramName = $"{{{parameterCount++}}}";
 
                 // If it's a shadow property, retrieve value via Entry(..).Property(..)
-                object? value = property.IsShadowProperty()
+                var value = property.IsShadowProperty()
                     ? dbContext.Entry(entity).Property(property.Name).CurrentValue
                     : property.PropertyInfo?.GetValue(entity);
 
@@ -176,7 +176,7 @@ public static class BulkUpsertExtensions
             {
                 var paramName = $"{{{parameterCount++}}}";
 
-                object? value = property.IsShadowProperty()
+                var value = property.IsShadowProperty()
                     ? dbContext.Entry(entity).Property(property.Name).CurrentValue
                     : property.PropertyInfo?.GetValue(entity);
 
@@ -185,7 +185,7 @@ public static class BulkUpsertExtensions
                     value = converter.ConvertToProvider(value);
 
                 placeholders.Add(paramName);
-                parameters.Add(value);
+                parameters.Add(value!);
             }
 
             sb.Append($"({string.Join(", ", placeholders)})");
@@ -238,7 +238,7 @@ public static class BulkUpsertExtensions
             {
                 var paramName = $"{{{parameterCount++}}}";
 
-                object? value = property.IsShadowProperty()
+                var value = property.IsShadowProperty()
                     ? dbContext.Entry(entity).Property(property.Name).CurrentValue
                     : property.PropertyInfo?.GetValue(entity);
 
@@ -255,7 +255,7 @@ public static class BulkUpsertExtensions
                 else
                     placeholders.Add(paramName);
                 
-                parameters.Add(value);
+                parameters.Add(value!);
             }
 
             sb.Append($"({string.Join(", ", placeholders)})");
@@ -308,7 +308,7 @@ public static class BulkUpsertExtensions
             {
                 var paramName = $"{{{parameterCount++}}}";
 
-                object? value = property.IsShadowProperty()
+                var value = property.IsShadowProperty()
                     ? dbContext.Entry(entity).Property(property.Name).CurrentValue
                     : property.PropertyInfo?.GetValue(entity);
 
@@ -317,7 +317,7 @@ public static class BulkUpsertExtensions
                     value = converter.ConvertToProvider(value);
 
                 placeholders.Add(paramName);
-                parameters.Add(value);
+                parameters.Add(value!);
             }
 
             sb.Append($"({string.Join(", ", placeholders)})");
@@ -374,7 +374,7 @@ public static class BulkUpsertExtensions
             {
                 var paramName = $"{{{parameterCount++}}}";
 
-                object? value = property.IsShadowProperty()
+                var value = property.IsShadowProperty()
                     ? dbContext.Entry(entity).Property(property.Name).CurrentValue
                     : property.PropertyInfo?.GetValue(entity);
 
@@ -382,7 +382,7 @@ public static class BulkUpsertExtensions
                 if (converter != null)
                     value = converter.ConvertToProvider(value);
 
-                parameters.Add(value);
+                parameters.Add(value!);
 
                 // Oracle aliases must match the column name
                 var alias = property.GetColumnName(storeObject);

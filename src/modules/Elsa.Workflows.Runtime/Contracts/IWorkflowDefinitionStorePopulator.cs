@@ -15,7 +15,7 @@ public interface IWorkflowDefinitionStorePopulator
     Task<IEnumerable<WorkflowDefinition>> PopulateStoreAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Populates the <see cref="IWorkflowDefinitionStore"/> with workflow definitions provided from <see cref="IWorkflowProvider"/> implementations.
+    /// Populates the <see cref="IWorkflowDefinitionStore"/> with workflow definitions provided from <see cref="IWorkflowsProvider"/> implementations.
     /// </summary>
     /// <param name="indexTriggers">Whether to index triggers.</param>
     /// <param name="cancellationToken">The cancellation token.</param>

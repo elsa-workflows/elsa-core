@@ -59,7 +59,7 @@ public class DispatchWorkflow : Activity<object>
     /// Indicates whether a new trace context should be started for the workflow execution.
     /// </summary>
     [Input(Description = "Start a new trace context when using Open Telemetry.", Category = "Open Telemetry")]
-    public Input<bool> StartNewTrace { get; set; }
+    public Input<bool> StartNewTrace { get; set; } = null!;
 
     /// <summary>
     /// The channel to dispatch the workflow to.

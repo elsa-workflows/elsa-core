@@ -21,7 +21,7 @@ public class ConsoleActivitiesBenchmark
         _serviceProvider = services.BuildServiceProvider();
         _workflowRunner = _serviceProvider.GetRequiredService<IWorkflowRunner>();
         
-        _writeLineWorkflow = new WriteLine("Hello, World!");
+        _writeLineWorkflow = new("Hello, World!");
     }
     
     [Benchmark]

@@ -1,8 +1,6 @@
 using Elsa.Common;
 using Elsa.Mediator.Contracts;
-using Elsa.Scheduling;
 using Elsa.Scheduling.ScheduledTasks;
-using Elsa.Scheduling.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -16,8 +14,7 @@ public class ScheduledCronTaskTests : IDisposable
 {
     private const string DefaultCronExpression = "0 */5 * * * *";
     private static readonly DateTimeOffset DefaultNow = new(2025, 11, 06, 22, 50, 00, 0, TimeSpan.Zero);
-    
-    private readonly ServiceCollection _services;
+
     private readonly ServiceProvider _serviceProvider;
     private readonly ISystemClock _systemClock;
     private readonly ICronParser _cronParser;
@@ -26,13 +23,13 @@ public class ScheduledCronTaskTests : IDisposable
 
     public ScheduledCronTaskTests()
     {
-        _services = new ServiceCollection();
+        var services = new ServiceCollection();
         _systemClock = Substitute.For<ISystemClock>();
         _cronParser = Substitute.For<ICronParser>();
         _logger = Substitute.For<ILogger<ScheduledCronTask>>();
         
-        _services.AddSingleton<ICommandSender>(Substitute.For<ICommandSender>());
-        _serviceProvider = _services.BuildServiceProvider();
+        services.AddSingleton(Substitute.For<ICommandSender>());
+        _serviceProvider = services.BuildServiceProvider();
     }
 
     private ScheduledCronTask CreateScheduledTask(
@@ -142,7 +139,7 @@ public class ScheduledCronTaskTests : IDisposable
         _tasksToDispose.Remove(task);
         ((IDisposable)task).Dispose();
 
-        // Assert - Should call GetNextOccurrence twice (initial + retry) and log warning
+        // Assert - Should call GetNextOccurrence twice (initial + retry) and log warning once (on final attempt)
         _cronParser.Received(2).GetNextOccurrence(DefaultCronExpression);
         AssertWarningLogged();
     }
@@ -190,10 +187,13 @@ public class ScheduledCronTaskTests : IDisposable
 
     public void Dispose()
     {
+        // Dispose tasks first to stop timers before disposing ServiceProvider
         foreach (var task in _tasksToDispose)
         {
             ((IDisposable)task).Dispose();
         }
+        // Small delay to ensure any timer callbacks have completed
+        Thread.Sleep(10);
         _serviceProvider.Dispose();
     }
 }

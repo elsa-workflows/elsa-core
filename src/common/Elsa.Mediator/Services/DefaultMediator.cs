@@ -28,6 +28,7 @@ public class DefaultMediator : IMediator
     /// <param name="commandPipeline">The command pipeline.</param>
     /// <param name="notificationPipeline">The notification pipeline.</param>
     /// <param name="options">The mediator options.</param>
+    /// <param name="serviceProvider">The service provider.</param>
     public DefaultMediator(
         IRequestPipeline requestPipeline,
         ICommandPipeline commandPipeline,
@@ -53,9 +54,10 @@ public class DefaultMediator : IMediator
         return (T)context.Response;
     }
 
-    public async Task<T> SendAsync<T>(ICommand<T> command, ICommandStrategy strategy, IDictionary<object, object> headers, CancellationToken cancellationToken = default)
+    public async Task<T> SendAsync<T>(ICommand<T> command, ICommandStrategy? strategy, IDictionary<object, object> headers, CancellationToken cancellationToken = default)
     {
         var resultType = typeof(T);
+        strategy ??= _defaultCommandStrategy;
         var context = new CommandContext(command, strategy, resultType, headers, _serviceProvider, cancellationToken);
         await _commandPipeline.InvokeAsync(context);
 
@@ -91,7 +93,7 @@ public class DefaultMediator : IMediator
     }
 
     /// <inheritdoc />
-    public Task<T> SendAsync<T>(ICommand<T> command, ICommandStrategy strategy, CancellationToken cancellationToken = default)
+    public Task<T> SendAsync<T>(ICommand<T> command, ICommandStrategy? strategy, CancellationToken cancellationToken = default)
     {
         return SendAsync(command, strategy, new Dictionary<object, object>(), cancellationToken);
     }

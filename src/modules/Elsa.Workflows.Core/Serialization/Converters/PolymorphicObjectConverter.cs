@@ -76,7 +76,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         {
             var parsedModel = JsonElement.ParseValue(ref reader);
             var systemTextJson = parsedModel.GetProperty(IslandPropertyName).GetString();
-            return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonObject.Parse(systemTextJson) : new JsonObject();
+            return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonNode.Parse(systemTextJson)! : new JsonObject();
         }
 
         var isJsonArray = targetType == typeof(JsonArray);
@@ -85,7 +85,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         {
             var parsedModel = JsonElement.ParseValue(ref reader);
             var systemTextJson = parsedModel.GetProperty(IslandPropertyName).GetString();
-            return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonArray.Parse(systemTextJson) : new JsonArray();
+            return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonNode.Parse(systemTextJson)! : new JsonArray();
         }
 
         var isDictionary = typeof(IDictionary).IsAssignableFrom(targetType);

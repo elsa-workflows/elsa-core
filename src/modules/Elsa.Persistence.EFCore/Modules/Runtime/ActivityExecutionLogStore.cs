@@ -6,7 +6,6 @@ using Elsa.Common.Codecs;
 using Elsa.Common.Entities;
 using Elsa.Extensions;
 using Elsa.Workflows;
-using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Extensions;
@@ -15,7 +14,6 @@ using Elsa.Workflows.Runtime.OrderDefinitions;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Persistence.EFCore.Modules.Runtime;
@@ -26,10 +24,8 @@ namespace Elsa.Persistence.EFCore.Modules.Runtime;
 [UsedImplicitly]
 public class EFCoreActivityExecutionStore(
     EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> store,
-    ISafeSerializer safeSerializer,
     IPayloadSerializer payloadSerializer,
-    ICompressionCodecResolver compressionCodecResolver,
-    IOptions<ManagementOptions> options) : IActivityExecutionStore
+    ICompressionCodecResolver compressionCodecResolver) : IActivityExecutionStore
 {
     /// <inheritdoc />
     public async Task SaveAsync(ActivityExecutionRecord record, CancellationToken cancellationToken = default) => await store.SaveAsync(record, OnSaveAsync, cancellationToken);

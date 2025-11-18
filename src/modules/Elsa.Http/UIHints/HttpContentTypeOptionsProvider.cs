@@ -5,7 +5,7 @@ using Elsa.Workflows.UIHints.Dropdown;
 namespace Elsa.Http.UIHints;
 
 /// <summary>
-/// Provides options for the <see cref="SendHttpRequest"/> activity's <see cref="SendHttpRequest.ContentType"/> property.
+/// Provides options for the <see cref="SendHttpRequest"/> activity's <see cref="SendHttpRequestBase.ContentType"/> property.
 /// </summary>
 public class HttpContentTypeOptionsProvider : DropDownOptionsProviderBase
 {

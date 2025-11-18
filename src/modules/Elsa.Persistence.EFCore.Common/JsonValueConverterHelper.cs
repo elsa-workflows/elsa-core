@@ -15,7 +15,7 @@ internal static class JsonValueConverterHelper
 
     public static string Serialize<T>(T obj) where T : class
     {
-        return (obj == null ? null : JsonSerializer.Serialize(obj, JsonSerializerOptions))!;
+        return (obj == null! ? null : JsonSerializer.Serialize(obj, JsonSerializerOptions))!;
     }
     
     private static JsonSerializerOptions CreateJsonSerializerOptions()

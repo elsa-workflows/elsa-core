@@ -1,8 +1,6 @@
-﻿using Elsa.Http.Options;
-using Elsa.Mediator.Contracts;
+﻿using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Http.Handlers;
 
@@ -10,7 +8,7 @@ namespace Elsa.Http.Handlers;
 /// A handler that updates the route table when workflow triggers and bookmarks are indexed.
 /// </summary>
 [UsedImplicitly]
-public class UpdateRouteTable(IRouteTableUpdater routeTableUpdater, IOptions<HttpActivityOptions> options) :
+public class UpdateRouteTable(IRouteTableUpdater routeTableUpdater) :
     INotificationHandler<WorkflowTriggersIndexed>,
     INotificationHandler<WorkflowBookmarksIndexed>
 {

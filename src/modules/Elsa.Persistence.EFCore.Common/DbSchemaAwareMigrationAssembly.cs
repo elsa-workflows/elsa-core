@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -10,6 +11,7 @@ namespace Elsa.Persistence.EFCore;
 /// <summary>
 /// Class That enable Schema change for Migration
 /// </summary>
+[SuppressMessage("Usage", "EF1001:Internal EF Core API usage.", Justification = "Required to customize migration assembly behavior for schema-aware migrations.")]
 public class DbSchemaAwareMigrationAssembly(
     ICurrentDbContext currentContext,
     IDbContextOptions options,

@@ -1,4 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.Scheduling]*</Include>
+        <Threshold>1</Threshold>
+    </PropertyGroup>
+
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj"/>
         <ProjectReference Include="..\..\..\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj"/>

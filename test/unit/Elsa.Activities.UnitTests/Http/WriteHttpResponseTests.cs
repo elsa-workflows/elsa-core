@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text;
 using Elsa.Http;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Options;

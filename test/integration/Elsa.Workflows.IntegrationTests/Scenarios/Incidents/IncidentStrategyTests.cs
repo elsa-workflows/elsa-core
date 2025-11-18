@@ -30,6 +30,6 @@ public class IncidentStrategyTests
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(expectedOutput, lines);
         Assert.Equal(expectedSubStatus, workflowState.SubStatus);
-        Assert.Equal(1, workflowState.Incidents.Count);
+        Assert.Single(workflowState.Incidents);
     }
 }

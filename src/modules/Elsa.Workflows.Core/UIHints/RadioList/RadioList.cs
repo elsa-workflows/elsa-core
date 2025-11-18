@@ -8,7 +8,7 @@ public class RadioList
     /// <summary>
      /// The radio list.
      /// </summary>
-    public IEnumerable<RadioListItem> Items { get; set; }
+    public IEnumerable<RadioListItem> Items { get; set; } = null!;
 
     /// <summary>
     /// The name of the provider that will provide the select list.
