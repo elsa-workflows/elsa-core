@@ -374,4 +374,75 @@ workflow FlowchartTest {
         Assert.NotNull(flowchart);
     }
 
+    [Fact(DisplayName = "Parser can parse flowchart with node and connection")]
+    public void Parse_WithFlowchartNodeAndConnection_ShouldReturnCorrectStructure()
+    {
+        // Arrange
+        var source = @"
+workflow FlowchartTest {
+  flowchart {
+    entry Start;
+    Start: WriteLine();
+    End: WriteLine();
+    Start -> End;
+  }
+}";
+
+        // Act
+        var program = _parser.Parse(source);
+
+        // Assert
+        Assert.NotNull(program);
+        Assert.Single(program.Workflows);
+
+        var workflow = program.Workflows[0];
+        var flowchart = workflow.Body[0] as Ast.FlowchartNode;
+        Assert.NotNull(flowchart);
+
+        // Check entry point
+        Assert.Equal("Start", flowchart.EntryPoint);
+
+        // Check nodes
+        Assert.Equal(2, flowchart.Activities.Count);
+
+        // Check connections
+        Assert.Single(flowchart.Connections);
+        Assert.Equal("Start", flowchart.Connections[0].Source);
+        Assert.Equal("End", flowchart.Connections[0].Target);
+    }
+
+    [Fact(DisplayName = "Parser can parse flowchart with block node")]
+    public void Parse_WithFlowchartBlockNode_ShouldReturnBlockStatement()
+    {
+        // Arrange
+        var source = @"
+workflow FlowchartWithBlock {
+  flowchart {
+    entry Start;
+
+    Start: {
+      WriteLine(""First"");
+      WriteLine(""Second"");
+    }
+  }
+}";
+
+        // Act
+        var program = _parser.Parse(source);
+
+        // Assert
+        Assert.NotNull(program);
+        var workflow = program.Workflows[0];
+        var flowchart = workflow.Body[0] as Ast.FlowchartNode;
+        Assert.NotNull(flowchart);
+
+        Assert.Single(flowchart.Activities);
+        Assert.Equal("Start", flowchart.Activities[0].Label);
+
+        // The block should be a BlockNode with 2 statements
+        var blockNode = flowchart.Activities[0].Activity as Ast.BlockNode;
+        Assert.NotNull(blockNode);
+        Assert.Equal(2, blockNode.Statements.Count);
+    }
+
 }

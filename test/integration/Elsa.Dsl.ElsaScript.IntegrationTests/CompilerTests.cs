@@ -310,5 +310,76 @@ workflow FlowchartTest {
         var flowchart = workflow.Root as Workflows.Activities.Flowchart.Activities.Flowchart;
         Assert.NotNull(flowchart);
     }
+
+    [Fact(DisplayName = "Compiler can compile flowchart with node and connection")]
+    public async Task CompileAsync_WithFlowchartNodeAndConnection_ShouldCreateFlowchartWithCorrectStructure()
+    {
+        // Arrange
+        var source = @"
+workflow FlowchartTest {
+  flowchart {
+    entry Start;
+    Start: WriteLine();
+    End: WriteLine();
+    Start -> End;
+  }
+}";
+
+        // Act
+        var workflow = await _compiler.CompileAsync(source);
+
+        // Assert
+        Assert.NotNull(workflow);
+        Assert.NotNull(workflow.Root);
+
+        var flowchart = workflow.Root as Workflows.Activities.Flowchart.Activities.Flowchart;
+        Assert.NotNull(flowchart);
+
+        // Check that flowchart has 2 activities
+        Assert.Equal(2, flowchart.Activities.Count);
+
+        // Check connections
+        Assert.Single(flowchart.Connections);
+
+        // Check entry point is set
+        Assert.NotNull(flowchart.Start);
+    }
+
+    [Fact(DisplayName = "Compiler can compile flowchart with block node")]
+    public async Task CompileAsync_WithFlowchartBlockNode_ShouldCreateSequenceActivity()
+    {
+        // Arrange
+        var source = @"
+workflow FlowchartWithBlock {
+  flowchart {
+    entry Start;
+
+    Start: {
+      WriteLine(""First"");
+      WriteLine(""Second"");
+    }
+  }
+}";
+
+        // Act
+        var workflow = await _compiler.CompileAsync(source);
+
+        // Assert
+        Assert.NotNull(workflow);
+        Assert.NotNull(workflow.Root);
+
+        var flowchart = workflow.Root as Workflows.Activities.Flowchart.Activities.Flowchart;
+        Assert.NotNull(flowchart);
+
+        // Should have one activity
+        Assert.Single(flowchart.Activities);
+
+        // The activity should be a Sequence (from the block)
+        var sequenceActivity = flowchart.Activities.First() as Workflows.Activities.Sequence;
+        Assert.NotNull(sequenceActivity);
+
+        // Sequence should have 2 activities
+        Assert.Equal(2, sequenceActivity.Activities.Count);
+    }
 }
 

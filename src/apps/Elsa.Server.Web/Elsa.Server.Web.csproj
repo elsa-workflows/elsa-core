@@ -37,6 +37,9 @@
 	  <None Update="Workflows\for-loop.elsa">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
+	  <None Update="Workflows\flowchart-test.elsa">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>
