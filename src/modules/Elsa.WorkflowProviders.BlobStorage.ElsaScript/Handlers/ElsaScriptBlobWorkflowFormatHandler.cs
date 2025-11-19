@@ -45,7 +45,10 @@ public class ElsaScriptBlobWorkflowFormatHandler(IElsaScriptCompiler compiler, I
         }
         catch (Exception ex)
         {
-            // Log the error for troubleshooting
+            // Intentionally catching all exceptions here to gracefully handle any failure during workflow parsing.
+            // This includes ParseException, IOException, compiler errors, or any unexpected exceptions.
+            // Since this is a format handler for user-provided files, we want to log and skip invalid files
+            // rather than crashing the workflow loading process.
             logger.LogWarning(ex, "Failed to parse ElsaScript workflow from blob '{BlobPath}'. The file will be skipped.", blob.FullPath);
 
             // Return null to indicate this handler can't process the content

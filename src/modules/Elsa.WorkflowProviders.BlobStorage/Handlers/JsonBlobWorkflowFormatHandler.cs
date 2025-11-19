@@ -63,7 +63,10 @@ public class JsonBlobWorkflowFormatHandler : IBlobWorkflowFormatHandler
         }
         catch (Exception ex)
         {
-            // Log the error for troubleshooting
+            // Intentionally catching all exceptions here to gracefully handle any failure during workflow parsing.
+            // This includes JsonException, IOException, deserialization errors, or any unexpected exceptions.
+            // Since this is a format handler for user-provided files, we want to log and skip invalid files
+            // rather than crashing the workflow loading process.
             _logger.LogWarning(ex, "Failed to parse JSON workflow from blob '{BlobPath}'. The file will be skipped.", blob.FullPath);
 
             // Return null to indicate this handler can't process the content
