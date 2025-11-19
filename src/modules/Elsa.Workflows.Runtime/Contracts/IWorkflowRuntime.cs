@@ -96,6 +96,14 @@ public interface IWorkflowRuntime
     Task<CancellationResult> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Deletes a workflow instance, marking it as deleted and removing associated bookmarks.
+    /// </summary>
+    /// <param name="workflowInstanceId">The ID of the workflow instance to delete.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Obsolete("Use the client API instead, retrieved from CreateClientAsync")]
+    Task DeleteWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Finds all the workflows that can be started or resumed based on a query model.
     /// </summary>
     /// <param name="filter"></param>

@@ -34,6 +34,11 @@ public interface IWorkflowClient
     Task CancelAsync(CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Deletes the workflow instance, marking it as deleted and removing associated bookmarks.
+    /// </summary>
+    Task DeleteAsync(CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Exports the <see cref="WorkflowState"/> of the specified workflow instance.
     /// </summary>
     Task<WorkflowState> ExportStateAsync(CancellationToken cancellationToken = default);

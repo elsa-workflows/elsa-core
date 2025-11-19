@@ -60,6 +60,16 @@ public class DistributedWorkflowClient(
         await _localWorkflowClient.CancelAsync(cancellationToken);
     }
 
+    public async Task DeleteAsync(CancellationToken cancellationToken = default)
+    {
+        // Use the same distributed lock as execution to prevent race conditions
+        await WithLockAsync(async () =>
+        {
+            await _localWorkflowClient.DeleteAsync(cancellationToken);
+            return true;
+        });
+    }
+
     public async Task<WorkflowState> ExportStateAsync(CancellationToken cancellationToken = default)
     {
         return await _localWorkflowClient.ExportStateAsync(cancellationToken);

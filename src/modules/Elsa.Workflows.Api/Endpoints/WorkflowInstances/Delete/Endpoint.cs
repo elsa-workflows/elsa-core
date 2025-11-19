@@ -1,12 +1,12 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Delete;
 
 [PublicAPI]
-internal class Delete(IWorkflowInstanceManager store) : ElsaEndpoint<Request>
+internal class Delete(IWorkflowRuntime workflowRuntime, IWorkflowInstanceManager workflowInstanceManager) : ElsaEndpoint<Request>
 {
     public override void Configure()
     {
@@ -16,12 +16,20 @@ internal class Delete(IWorkflowInstanceManager store) : ElsaEndpoint<Request>
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var filter = new WorkflowInstanceFilter { Id = request.Id };
-        var deleted = await store.DeleteAsync(filter, cancellationToken);
-
-        if (deleted)
-            await Send.NoContentAsync(cancellationToken);
-        else
+        // Check if the instance exists
+        var exists = await workflowInstanceManager.ExistsAsync(request.Id, cancellationToken);
+        
+        if (!exists)
+        {
             await Send.NotFoundAsync(cancellationToken);
+            return;
+        }
+
+        // Use runtime deletion to handle in-memory instances and cleanup
+#pragma warning disable CS0618 // Type or member is obsolete
+        await workflowRuntime.DeleteWorkflowInstanceAsync(request.Id, cancellationToken);
+#pragma warning restore CS0618 // Type or member is obsolete
+        
+        await Send.NoContentAsync(cancellationToken);
     }
 }

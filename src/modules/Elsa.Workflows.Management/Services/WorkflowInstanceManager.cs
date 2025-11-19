@@ -46,6 +46,10 @@ public class WorkflowInstanceManager(
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
     {
+        // Don't persist instances that have been marked as deleted
+        if (workflowInstance.SubStatus == WorkflowSubStatus.Deleted)
+            return;
+            
         await store.SaveAsync(workflowInstance, cancellationToken);
         await notificationSender.SendAsync(new WorkflowInstanceSaved(workflowInstance), cancellationToken);
     }
@@ -53,9 +57,16 @@ public class WorkflowInstanceManager(
     /// <inheritdoc />
     public async Task<WorkflowInstance> SaveAsync(WorkflowState workflowState, CancellationToken cancellationToken)
     {
-        var workflowInstance = workflowStateMapper.Map(workflowState)!;
-        await SaveAsync(workflowInstance, cancellationToken);
-        return workflowInstance;
+        // Don't persist instances that have been marked as deleted
+        if (workflowState.SubStatus == WorkflowSubStatus.Deleted)
+        {
+            var workflowInstance = workflowStateMapper.Map(workflowState)!;
+            return workflowInstance;
+        }
+        
+        var instance = workflowStateMapper.Map(workflowState)!;
+        await SaveAsync(instance, cancellationToken);
+        return instance;
     }
 
     /// <inheritdoc />
@@ -87,6 +98,11 @@ public class WorkflowInstanceManager(
     /// <inheritdoc />
     public async Task UpdateAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
     {
+        // Allow updating to Deleted status, but don't update from Deleted status
+        var existingInstance = await store.FindAsync(workflowInstance.Id, cancellationToken);
+        if (existingInstance?.SubStatus == WorkflowSubStatus.Deleted && workflowInstance.SubStatus != WorkflowSubStatus.Deleted)
+            return;
+            
         await store.UpdateAsync(workflowInstance, cancellationToken);
         await notificationSender.SendAsync(new WorkflowInstanceSaved(workflowInstance), cancellationToken);
     }

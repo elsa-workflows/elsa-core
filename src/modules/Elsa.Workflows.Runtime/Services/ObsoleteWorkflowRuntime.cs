@@ -187,6 +187,12 @@ public class ObsoleteWorkflowRuntime(
         return new(true);
     }
 
+    public async Task DeleteWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+    {
+        var client = await createClientAsync(workflowInstanceId, cancellationToken);
+        await client.DeleteAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<WorkflowMatch>> FindWorkflowsAsync(WorkflowsFilter filter, CancellationToken cancellationToken = default)
     {
         var startableWorkflows = await FindStartableWorkflowsAsync(filter, cancellationToken);

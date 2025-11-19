@@ -34,4 +34,9 @@ public enum WorkflowSubStatus
     /// The workflow has faulted.
     /// </summary>
     Faulted,
+    
+    /// <summary>
+    /// The workflow has been deleted.
+    /// </summary>
+    Deleted,
 }
