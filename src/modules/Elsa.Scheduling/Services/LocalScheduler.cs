@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Elsa.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Scheduling.Services;
 
@@ -10,15 +11,17 @@ namespace Elsa.Scheduling.Services;
 public class LocalScheduler : IScheduler
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly ConcurrentDictionary<string, IScheduledTask> _scheduledTasks = new ConcurrentDictionary<string, IScheduledTask>();
-    private readonly ConcurrentDictionary<IScheduledTask, ICollection<string>> _scheduledTaskKeys = new ConcurrentDictionary<IScheduledTask, ICollection<string>>();
+    private readonly ILogger<LocalScheduler> _logger;
+    private readonly ConcurrentDictionary<string, IScheduledTask> _scheduledTasks = new();
+    private readonly ConcurrentDictionary<IScheduledTask, ICollection<string>> _scheduledTaskKeys = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LocalScheduler"/> class.
     /// </summary>
-    public LocalScheduler(IServiceProvider serviceProvider)
+    public LocalScheduler(IServiceProvider serviceProvider, ILogger<LocalScheduler> logger)
     {
         _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -61,9 +64,9 @@ public class LocalScheduler : IScheduler
             updateValueFactory: (_, existingScheduledTask) =>
             {
                 existingScheduledTask.Cancel();
-                var removed = _scheduledTaskKeys.TryRemove(existingScheduledTask, out ICollection<string>? _);
+                var removed = _scheduledTaskKeys.TryRemove(existingScheduledTask, out var _);
                 if (!removed)
-                    System.Diagnostics.Debug.WriteLine($"[LocalScheduler] Warning: Tried to remove scheduled task keys for an existing scheduled task, but it was not present in _scheduledTaskKeys.");
+                    _logger.LogWarning("Tried to remove scheduled task keys for an existing scheduled task, but it was not present in _scheduledTaskKeys");
                 return scheduledTask;
             });
 
@@ -96,7 +99,7 @@ public class LocalScheduler : IScheduler
                 {
                     var removed = _scheduledTasks.TryRemove(taskKey, out _);
                     if (!removed)
-                        System.Diagnostics.Debug.WriteLine($"[LocalScheduler] Warning: Failed to remove scheduled task with key '{taskKey}' for '{key}' from _scheduledTasks.");
+                        _logger.LogWarning("Failed to remove scheduled task with key '{TaskKey}' for '{Key}' from _scheduledTasks", taskKey, key);
                 }
 
                 _scheduledTaskKeys.Remove(scheduledTask, out _);
