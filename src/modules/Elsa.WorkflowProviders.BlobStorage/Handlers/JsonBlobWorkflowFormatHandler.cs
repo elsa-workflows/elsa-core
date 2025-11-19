@@ -12,35 +12,27 @@ namespace Elsa.WorkflowProviders.BlobStorage.Handlers;
 /// <summary>
 /// Handles JSON-formatted workflow definitions from blob storage.
 /// </summary>
-public class JsonBlobWorkflowFormatHandler : IBlobWorkflowFormatHandler
+public class JsonBlobWorkflowFormatHandler(
+    IActivitySerializer activitySerializer,
+    WorkflowDefinitionMapper workflowDefinitionMapper,
+    ILogger<JsonBlobWorkflowFormatHandler> logger) : IBlobWorkflowFormatHandler
 {
-    private readonly IActivitySerializer _activitySerializer;
-    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
-    private readonly ILogger<JsonBlobWorkflowFormatHandler> _logger;
-
-    public JsonBlobWorkflowFormatHandler(
-        IActivitySerializer activitySerializer,
-        WorkflowDefinitionMapper workflowDefinitionMapper,
-        ILogger<JsonBlobWorkflowFormatHandler> logger)
-    {
-        _activitySerializer = activitySerializer;
-        _workflowDefinitionMapper = workflowDefinitionMapper;
-        _logger = logger;
-    }
-
     /// <inheritdoc />
     public string Name => "Json";
 
     /// <inheritdoc />
-    public bool CanHandle(Blob blob, string? contentType, string? extension)
-    {
-        if (!string.IsNullOrEmpty(extension) && extension.Equals("json", StringComparison.OrdinalIgnoreCase))
-            return true;
+    public IEnumerable<string> SupportedExtensions => ["json"];
 
+    /// <inheritdoc />
+    public bool CanHandle(Blob blob, string? contentType)
+    {
+        // Extension filtering is already handled by the provider via SupportedExtensions.
+        // Here we can optionally check content type for additional validation.
         if (!string.IsNullOrEmpty(contentType) && contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
             return true;
 
-        return false;
+        // If no content type is available, assume we can handle it (since extension was already validated)
+        return true;
     }
 
     /// <inheritdoc />
@@ -48,8 +40,8 @@ public class JsonBlobWorkflowFormatHandler : IBlobWorkflowFormatHandler
     {
         try
         {
-            var workflowDefinitionModel = _activitySerializer.Deserialize<WorkflowDefinitionModel>(content);
-            var workflow = _workflowDefinitionMapper.Map(workflowDefinitionModel);
+            var workflowDefinitionModel = activitySerializer.Deserialize<WorkflowDefinitionModel>(content);
+            var workflow = workflowDefinitionMapper.Map(workflowDefinitionModel);
 
             var materialized = new MaterializedWorkflow(
                 workflow,
@@ -67,7 +59,7 @@ public class JsonBlobWorkflowFormatHandler : IBlobWorkflowFormatHandler
             // This includes JsonException, IOException, deserialization errors, or any unexpected exceptions.
             // Since this is a format handler for user-provided files, we want to log and skip invalid files
             // rather than crashing the workflow loading process.
-            _logger.LogWarning(ex, "Failed to parse JSON workflow from blob '{BlobPath}'. The file will be skipped.", blob.FullPath);
+            logger.LogWarning(ex, "Failed to parse JSON workflow from blob '{BlobPath}'. The file will be skipped.", blob.FullPath);
 
             // Return null to indicate this handler can't process the content
             return new((MaterializedWorkflow?)null);

@@ -14,12 +14,20 @@ public interface IBlobWorkflowFormatHandler
     string Name { get; }
 
     /// <summary>
+    /// Gets the file extensions that this handler supports (without the leading dot, e.g., "json", "elsa").
+    /// This is used to optimize blob storage browsing by filtering files before reading their contents.
+    /// Return an empty collection if the handler can process any file type.
+    /// </summary>
+    IEnumerable<string> SupportedExtensions { get; }
+
+    /// <summary>
     /// Returns true if this handler can interpret the given blob based on metadata.
+    /// Note: The provider will already have filtered by SupportedExtensions, so this is only
+    /// needed for additional validation based on content type or other blob properties.
     /// </summary>
     /// <param name="blob">The blob to check.</param>
     /// <param name="contentType">The content type from blob metadata, if available.</param>
-    /// <param name="extension">The file extension without the dot (e.g., "json", "elsa").</param>
-    bool CanHandle(Blob blob, string? contentType, string? extension);
+    bool CanHandle(Blob blob, string? contentType);
 
     /// <summary>
     /// Attempts to parse the blob content into a MaterializedWorkflow.

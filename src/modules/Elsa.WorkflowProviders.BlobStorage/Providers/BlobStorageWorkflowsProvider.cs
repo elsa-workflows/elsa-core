@@ -31,10 +31,26 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
     /// <inheritdoc />
     public async ValueTask<IEnumerable<MaterializedWorkflow>> GetWorkflowsAsync(CancellationToken cancellationToken = default)
     {
+        // Aggregate supported extensions from all handlers
+        var supportedExtensions = _handlers
+            .SelectMany(h => h.SupportedExtensions)
+            .Where(ext => !string.IsNullOrEmpty(ext))
+            .Select(ext => ext.ToLowerInvariant())
+            .ToHashSet();
+
         var options = new ListOptions
         {
             Recurse = true,
-            BrowseFilter = _ => true // Let handlers decide what they can process
+            BrowseFilter = blob =>
+            {
+                // If no handlers declare extensions, accept all files
+                if (supportedExtensions.Count == 0)
+                    return true;
+
+                // Only accept files with supported extensions
+                var extension = Path.GetExtension(blob.Name).TrimStart('.').ToLowerInvariant();
+                return supportedExtensions.Contains(extension);
+            }
         };
 
         var blobStorage = _blobStorageProvider.GetBlobStorage();
@@ -56,12 +72,11 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
         var blobStorage = _blobStorageProvider.GetBlobStorage();
         var content = await blobStorage.ReadTextAsync(blob.FullPath, cancellationToken: cancellationToken);
 
-        var extension = Path.GetExtension(blob.FullPath).TrimStart('.');
         var contentType = blob.Properties.TryGetValue("ContentType", out var ct) ? ct?.ToString() : null;
 
         foreach (var handler in _handlers)
         {
-            if (!handler.CanHandle(blob, contentType, extension))
+            if (!handler.CanHandle(blob, contentType))
                 continue;
 
             var result = await handler.TryParseAsync(blob, content, cancellationToken);
