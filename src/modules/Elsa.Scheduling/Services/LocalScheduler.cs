@@ -1,6 +1,4 @@
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using Elsa.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Scheduling.Services;
@@ -73,8 +71,7 @@ public class LocalScheduler : IScheduler
         if (keys != null)
             _scheduledTaskKeys[scheduledTask] = keys.ToList();
     }
- 
-
+    
     private void RemoveScheduledTask(string name)
     {
         if (_scheduledTasks.TryGetValue(name, out var existingScheduledTask))
