@@ -9,7 +9,7 @@ internal static class ActivityActivator
         // Try parameterless ctor first (fast path)
         var parameterless = type.GetConstructor(Type.EmptyTypes);
         if (parameterless != null)
-            return (IActivity)parameterless.Invoke(Array.Empty<object?>());
+            return (IActivity)parameterless.Invoke([]);
 
         // Fall back: pick a public ctor and provide default values for args
         var ctor = type

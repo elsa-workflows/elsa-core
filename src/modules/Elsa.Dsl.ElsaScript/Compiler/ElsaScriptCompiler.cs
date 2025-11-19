@@ -15,6 +15,14 @@ namespace Elsa.Dsl.ElsaScript.Compiler;
 /// </summary>
 public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryLookupService, IElsaScriptParser parser) : IElsaScriptCompiler
 {
+    private static readonly Dictionary<string, string> LanguageMappings = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["js"] = "JavaScript",
+        ["cs"] = "CSharp",
+        ["py"] = "Python",
+        ["liquid"] = "Liquid"
+    };
+
     private string _defaultExpressionLanguage = "JavaScript";
     private readonly Dictionary<string, Variable> _variables = new();
 
@@ -32,16 +40,12 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
         var workflowNode = programNode.Workflows.First();
 
         // Merge global use statements with workflow-level ones
-        var allUseStatements = new List<UseNode>();
-        allUseStatements.AddRange(programNode.GlobalUseStatements);
-        allUseStatements.AddRange(workflowNode.UseStatements);
-
         // Create a temporary workflow node with merged use statements
         var mergedWorkflowNode = new WorkflowNode
         {
             Id = workflowNode.Id,
             Metadata = workflowNode.Metadata,
-            UseStatements = allUseStatements,
+            UseStatements = [..programNode.GlobalUseStatements, ..workflowNode.UseStatements],
             Body = workflowNode.Body
         };
 
@@ -105,43 +109,27 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
         return workflow;
     }
 
-    private T? GetMetadataValue<T>(Dictionary<string, object> metadata, string key)
-    {
-        if (!metadata.TryGetValue(key, out var value))
-            return default;
+    private T? GetMetadataValue<T>(Dictionary<string, object> metadata, string key) =>
+        metadata.TryGetValue(key, out var value) ? ConvertValue<T>(value, default) : default;
 
-        // Handle type conversion
+    private T GetMetadataValueOrDefault<T>(Dictionary<string, object> metadata, string key, T defaultValue) =>
+        metadata.TryGetValue(key, out var value) ? ConvertValue(value, defaultValue) : defaultValue;
+
+    private static T? ConvertValue<T>(object value, T? defaultValue)
+    {
+        // Handle direct type match
         if (value is T typedValue)
             return typedValue;
 
         // Try to convert
         try
         {
-            var underlyingType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
-            return (T)Convert.ChangeType(value, underlyingType);
+            var targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+            return (T)Convert.ChangeType(value, targetType);
         }
-        catch
+        catch (Exception)
         {
-            return default;
-        }
-    }
-
-    private T GetMetadataValueOrDefault<T>(Dictionary<string, object> metadata, string key, T defaultValue)
-    {
-        if (!metadata.TryGetValue(key, out var value))
-            return defaultValue;
-
-        // Handle type conversion
-        if (value is T typedValue)
-            return typedValue;
-
-        // Try to convert
-        try
-        {
-            return (T)Convert.ChangeType(value, typeof(T));
-        }
-        catch
-        {
+            // Return default value if conversion fails
             return defaultValue;
         }
     }
@@ -158,7 +146,7 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
             ForNode forNode => await CompileForAsync(forNode, cancellationToken),
             WhileNode whileNode => await CompileWhileAsync(whileNode, cancellationToken),
             SwitchNode switchNode => await CompileSwitchAsync(switchNode, cancellationToken),
-            FlowchartNode flowchart => CompileFlowchart(flowchart),
+            FlowchartNode flowchart => await CompileFlowchartAsync(flowchart, cancellationToken),
             ListenNode listen => await CompileListenAsync(listen, cancellationToken),
             _ => throw new NotSupportedException($"Statement type {statement.GetType().Name} is not supported")
         };
@@ -367,7 +355,7 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
         };
     }
 
-    private IActivity CompileFlowchart(FlowchartNode flowchart)
+    private async Task<IActivity> CompileFlowchartAsync(FlowchartNode flowchart, CancellationToken cancellationToken = default)
     {
         // Register flowchart-scoped variables
         foreach (var varDecl in flowchart.Variables)
@@ -379,8 +367,7 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
         var labelToActivity = new Dictionary<string, IActivity>();
         foreach (var labeledNode in flowchart.Activities)
         {
-            // Use synchronous version since we're in a non-async method
-            var activity = CompileStatementAsync(labeledNode.Activity).GetAwaiter().GetResult();
+            var activity = await CompileStatementAsync(labeledNode.Activity, cancellationToken);
             if (activity != null)
             {
                 labelToActivity[labeledNode.Label] = activity;
@@ -607,16 +594,6 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
         return activity;
     }
 
-    private string MapLanguageName(string dslLanguage)
-    {
-        // TODO: Replace hardcoded mappings with a configuration-based approach.
-        return dslLanguage.ToLowerInvariant() switch
-        {
-            "js" => "JavaScript",
-            "cs" => "CSharp",
-            "py" => "Python",
-            "liquid" => "Liquid",
-            _ => dslLanguage
-        };
-    }
+    private static string MapLanguageName(string dslLanguage) =>
+        LanguageMappings.TryGetValue(dslLanguage, out var mapped) ? mapped : dslLanguage;
 }

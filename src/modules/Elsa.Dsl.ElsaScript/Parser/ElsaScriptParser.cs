@@ -141,7 +141,7 @@ public class ElsaScriptParser : IElsaScriptParser
             .Then(x => new ActivityInvocationNode
             {
                 ActivityName = x.Item1.ToString(),
-                Arguments = new List<ArgumentNode>()
+                Arguments = []
             });
 
         var activityInvocation = activityInvocationWithArgs.Or(activityInvocationNoArgs);
