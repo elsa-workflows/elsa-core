@@ -122,22 +122,16 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
         // Determine StringData and OriginalSource based on what's provided
         string? stringData;
-        string? originalSource = materializedWorkflow.OriginalSource;
+        var originalSource = materializedWorkflow.OriginalSource;
 
         if (originalSource != null)
         {
             // NEW WAY: OriginalSource is provided
             // For JSON workflows, we still need to populate StringData with the serialized root for backwards compatibility
-            if (materializedWorkflow.MaterializerName == "Json")
-            {
-                stringData = _activitySerializer.Serialize(workflow.Root);
-            }
-            else
-            {
+            stringData = materializedWorkflow.MaterializerName == "Json" ? _activitySerializer.Serialize(workflow.Root) :
                 // For new formats (ElsaScript, YAML, etc.), only OriginalSource is needed
                 // StringData can be null as these materializers only use OriginalSource
-                stringData = null;
-            }
+                null;
         }
         else
         {
