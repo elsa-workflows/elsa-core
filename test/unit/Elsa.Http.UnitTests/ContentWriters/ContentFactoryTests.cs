@@ -64,4 +64,28 @@ public class ContentFactoryTests
         Assert.Equal(contentType, httpContent.Headers.ContentType?.MediaType);
         Assert.Null(httpContent.Headers.ContentType?.CharSet);
     }
+    
+    /// <summary>
+    /// Tests that <see cref="JsonContentFactory"/> produces correct content length without BOM.
+    /// </summary>
+    [Fact]
+    public async Task JsonContentFactory_ShouldProduceCorrectContentLength()
+    {
+        // Arrange
+        const string contentType = "application/json";
+        const string content = "{\"test\": \"value\"}";
+        var factory = new JsonContentFactory();
+        
+        // Act
+        var httpContent = factory.CreateHttpContent(content, contentType);
+        var bytes = await httpContent.ReadAsByteArrayAsync();
+        
+        // Assert
+        // Content length should match the actual bytes (no BOM)
+        Assert.Equal(content.Length, bytes.Length);
+        Assert.Equal(httpContent.Headers.ContentLength, bytes.Length);
+        
+        // Verify no BOM is present (BOM would be EF-BB-BF at start)
+        Assert.False(bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF);
+    }
 }
