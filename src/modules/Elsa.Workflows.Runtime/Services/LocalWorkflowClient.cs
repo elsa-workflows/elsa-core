@@ -149,6 +149,18 @@ public class LocalWorkflowClient(
     {
         var workflowState = workflowInstance.WorkflowState;
 
+        // Don't execute deleted workflows
+        if (workflowInstance.SubStatus == WorkflowSubStatus.Deleted)
+        {
+            logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that has been deleted", workflowState.Id);
+            return new()
+            {
+                WorkflowInstanceId = WorkflowInstanceId,
+                Status = workflowInstance.Status,
+                SubStatus = workflowInstance.SubStatus
+            };
+        }
+
         if (workflowInstance.Status != WorkflowStatus.Running)
         {
             logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that is not in the Running state. The actual state is {ActualWorkflowStatus}", workflowState.Id, workflowState.Status);
