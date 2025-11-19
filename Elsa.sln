@@ -97,7 +97,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pipelines", "pipelines", "{B789B743-0FBE-4BBC-9F45-84C20C8D4814}"
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\bounty.yml = .github\workflows\bounty.yml
-		.github\workflows\elsa-server-and-studio.yml = .github\workflows\elsa-server-and-studio.yml
 		.github\workflows\elsa-server.yml = .github\workflows\elsa-server.yml
 		.github\workflows\elsa-studio.yml = .github\workflows\elsa-studio.yml
 		.github\workflows\packages.yml = .github\workflows\packages.yml
