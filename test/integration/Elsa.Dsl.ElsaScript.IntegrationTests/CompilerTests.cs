@@ -11,8 +11,6 @@ namespace Elsa.Dsl.ElsaScript.IntegrationTests;
 
 /// <summary>
 /// Integration tests for the ElsaScript compiler.
-/// Note: These tests demonstrate the DSL concept but some tests are skipped
-/// due to challenges with dynamic activity instantiation that need further work.
 /// </summary>
 public class CompilerTests
 {
