@@ -80,9 +80,8 @@ workflow VariableTest {
         Assert.Equal("VariableTest", workflow.Id);
         Assert.Equal(3, workflow.Body.Count);
 
-        var varDecl = workflow.Body[0] as Ast.VariableDeclarationNode;
-        Assert.NotNull(varDecl);
-        Assert.Equal(Ast.VariableKind.Var, varDecl!.Kind);
+        var varDecl = Assert.IsType<Ast.VariableDeclarationNode>(workflow.Body[0]);
+        Assert.Equal(Ast.VariableKind.Var, varDecl.Kind);
         Assert.Equal("greeting", varDecl.Name);
     }
 
@@ -107,9 +106,8 @@ workflow ActivityTest {
         var workflow = program.Workflows[0];
         Assert.Single(workflow.Body);
 
-        var activity = workflow.Body[0] as Ast.ActivityInvocationNode;
-        Assert.NotNull(activity);
-        Assert.Equal("WriteLine", activity!.ActivityName);
+        var activity = Assert.IsType<Ast.ActivityInvocationNode>(workflow.Body[0]);
+        Assert.Equal("WriteLine", activity.ActivityName);
         Assert.Single(activity.Arguments);
         Assert.Equal("Text", activity.Arguments[0].Name);
     }
@@ -136,9 +134,8 @@ workflow ListenTest {
         var workflow = program.Workflows[0];
         Assert.Equal(2, workflow.Body.Count);
 
-        var listen = workflow.Body[0] as Ast.ListenNode;
-        Assert.NotNull(listen);
-        Assert.Equal("HttpEndpoint", listen!.Activity.ActivityName);
+        var listen = Assert.IsType<Ast.ListenNode>(workflow.Body[0]);
+        Assert.Equal("HttpEndpoint", listen.Activity.ActivityName);
     }
 
     [Fact(DisplayName = "Parser can parse workflow without workflow keyword")]
@@ -195,34 +192,28 @@ workflow HelloWorldHttpDsl {
         Assert.Equal(4, workflow.Body.Count);
 
         // Verify variable declaration
-        var varDecl = workflow.Body[0] as Ast.VariableDeclarationNode;
-        Assert.NotNull(varDecl);
-        Assert.Equal("message", varDecl!.Name);
+        var varDecl = Assert.IsType<Ast.VariableDeclarationNode>(workflow.Body[0]);
+        Assert.Equal("message", varDecl.Name);
         Assert.Equal(Ast.VariableKind.Var, varDecl.Kind);
 
         // Verify listen statement
-        var listenNode = workflow.Body[1] as Ast.ListenNode;
-        Assert.NotNull(listenNode);
-        Assert.Equal("HttpEndpoint", listenNode!.Activity.ActivityName);
+        var listenNode = Assert.IsType<Ast.ListenNode>(workflow.Body[1]);
+        Assert.Equal("HttpEndpoint", listenNode.Activity.ActivityName);
         Assert.Single(listenNode.Activity.Arguments);
 
         // Verify WriteLine with ElsaScript expression
-        var writeLineNode = workflow.Body[2] as Ast.ActivityInvocationNode;
-        Assert.NotNull(writeLineNode);
-        Assert.Equal("WriteLine", writeLineNode!.ActivityName);
+        var writeLineNode = Assert.IsType<Ast.ActivityInvocationNode>(workflow.Body[2]);
+        Assert.Equal("WriteLine", writeLineNode.ActivityName);
         Assert.Single(writeLineNode.Arguments);
-        var writeLineExpr = writeLineNode.Arguments[0].Value as Ast.ElsaExpressionNode;
-        Assert.NotNull(writeLineExpr);
-        Assert.Equal("js", writeLineExpr!.Language);
+        var writeLineExpr = Assert.IsType<Ast.ElsaExpressionNode>(writeLineNode.Arguments[0].Value);
+        Assert.Equal("js", writeLineExpr.Language);
 
         // Verify WriteHttpResponse with variable reference
-        var writeHttpNode = workflow.Body[3] as Ast.ActivityInvocationNode;
-        Assert.NotNull(writeHttpNode);
-        Assert.Equal("WriteHttpResponse", writeHttpNode!.ActivityName);
+        var writeHttpNode = Assert.IsType<Ast.ActivityInvocationNode>(workflow.Body[3]);
+        Assert.Equal("WriteHttpResponse", writeHttpNode.ActivityName);
         Assert.Single(writeHttpNode.Arguments);
-        var writeHttpArg = writeHttpNode.Arguments[0].Value as Ast.IdentifierNode;
-        Assert.NotNull(writeHttpArg);
-        Assert.Equal("message", writeHttpArg!.Name);
+        var writeHttpArg = Assert.IsType<Ast.IdentifierNode>(writeHttpNode.Arguments[0].Value);
+        Assert.Equal("message", writeHttpArg.Name);
     }
 
     [Fact(DisplayName = "Parser can parse for loop with 'to' keyword (exclusive)")]
@@ -250,24 +241,20 @@ workflow ForLoopTest {
         Assert.Equal("ForLoopTest", workflow.Id);
         Assert.Single(workflow.Body);
 
-        var forNode = workflow.Body[0] as Ast.ForNode;
-        Assert.NotNull(forNode);
-        Assert.True(forNode!.DeclaresVariable); // var i
+        var forNode = Assert.IsType<Ast.ForNode>(workflow.Body[0]);
+        Assert.True(forNode.DeclaresVariable); // var i
         Assert.Equal("i", forNode.VariableName);
         Assert.False(forNode.IsInclusive);
 
-        var startLiteral = forNode.Start as Ast.LiteralNode;
-        Assert.NotNull(startLiteral);
+        var startLiteral = Assert.IsType<Ast.LiteralNode>(forNode.Start);
         // Numbers are parsed as decimals by the parser
-        Assert.Equal(0m, Convert.ToDecimal(startLiteral!.Value!));
+        Assert.Equal(0m, Convert.ToDecimal(startLiteral.Value!));
 
-        var endLiteral = forNode.End as Ast.LiteralNode;
-        Assert.NotNull(endLiteral);
-        Assert.Equal(10m, Convert.ToDecimal(endLiteral!.Value!));
+        var endLiteral = Assert.IsType<Ast.LiteralNode>(forNode.End);
+        Assert.Equal(10m, Convert.ToDecimal(endLiteral.Value!));
 
-        var stepLiteral = forNode.Step as Ast.LiteralNode;
-        Assert.NotNull(stepLiteral);
-        Assert.Equal(1m, Convert.ToDecimal(stepLiteral!.Value!));
+        var stepLiteral = Assert.IsType<Ast.LiteralNode>(forNode.Step);
+        Assert.Equal(1m, Convert.ToDecimal(stepLiteral.Value!));
     }
 
     [Fact(DisplayName = "Parser can parse for loop with 'through' keyword (inclusive)")]
@@ -295,9 +282,8 @@ workflow ForLoopInclusiveTest {
         Assert.Equal("ForLoopInclusiveTest", workflow.Id);
         Assert.Single(workflow.Body);
 
-        var forNode = workflow.Body[0] as Ast.ForNode;
-        Assert.NotNull(forNode);
-        Assert.True(forNode!.DeclaresVariable); // var i
+        var forNode = Assert.IsType<Ast.ForNode>(workflow.Body[0]);
+        Assert.True(forNode.DeclaresVariable); // var i
         Assert.Equal("i", forNode.VariableName);
         Assert.True(forNode.IsInclusive);
     }
@@ -370,8 +356,7 @@ workflow FlowchartTest {
         Assert.Equal("FlowchartTest", workflow.Id);
         Assert.Single(workflow.Body);
 
-        var flowchart = workflow.Body[0] as Ast.FlowchartNode;
-        Assert.NotNull(flowchart);
+        Assert.IsType<Ast.FlowchartNode>(workflow.Body[0]);
     }
 
     [Fact(DisplayName = "Parser can parse flowchart with node and connection")]
@@ -396,8 +381,7 @@ workflow FlowchartTest {
         Assert.Single(program.Workflows);
 
         var workflow = program.Workflows[0];
-        var flowchart = workflow.Body[0] as Ast.FlowchartNode;
-        Assert.NotNull(flowchart);
+        var flowchart = Assert.IsType<Ast.FlowchartNode>(workflow.Body[0]);
 
         // Check entry point
         Assert.Equal("Start", flowchart.EntryPoint);
@@ -433,15 +417,13 @@ workflow FlowchartWithBlock {
         // Assert
         Assert.NotNull(program);
         var workflow = program.Workflows[0];
-        var flowchart = workflow.Body[0] as Ast.FlowchartNode;
-        Assert.NotNull(flowchart);
+        var flowchart = Assert.IsType<Ast.FlowchartNode>(workflow.Body[0]);
 
         Assert.Single(flowchart.Activities);
         Assert.Equal("Start", flowchart.Activities[0].Label);
 
         // The block should be a BlockNode with 2 statements
-        var blockNode = flowchart.Activities[0].Activity as Ast.BlockNode;
-        Assert.NotNull(blockNode);
+        var blockNode = Assert.IsType<Ast.BlockNode>(flowchart.Activities[0].Activity);
         Assert.Equal(2, blockNode.Statements.Count);
     }
 

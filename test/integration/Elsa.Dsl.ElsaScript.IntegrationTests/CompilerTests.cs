@@ -128,7 +128,7 @@ workflow HelloWorldHttpDsl {
         // Verify HttpEndpoint can start workflow (CanStartWorkflow property should be true)
         var canStartWorkflowProp = httpEndpoint.GetType().GetProperty("CanStartWorkflow");
         Assert.NotNull(canStartWorkflowProp);
-        var canStartWorkflow = (bool)canStartWorkflowProp!.GetValue(httpEndpoint)!;
+        var canStartWorkflow = (bool)canStartWorkflowProp.GetValue(httpEndpoint)!;
         Assert.True(canStartWorkflow);
 
         // Verify WriteLine activity with JavaScript expression
@@ -137,13 +137,12 @@ workflow HelloWorldHttpDsl {
 
         var textProp = writeLine.GetType().GetProperty("Text");
         Assert.NotNull(textProp);
-        var textInput = textProp!.GetValue(writeLine) as Input<string>;
-        Assert.NotNull(textInput);
+        var textInput = Assert.IsType<Input<string>>(textProp.GetValue(writeLine));
 
         // Verify it's a JavaScript expression
-        var expression = textInput!.Expression;
+        var expression = textInput.Expression;
         Assert.NotNull(expression);
-        Assert.Equal("JavaScript", expression!.Type);
+        Assert.Equal("JavaScript", expression.Type);
         Assert.Contains("Message:", expression.Value?.ToString());
         Assert.Contains("message", expression.Value?.ToString());
 
@@ -153,13 +152,12 @@ workflow HelloWorldHttpDsl {
 
         var contentProp = writeHttpResponse.GetType().GetProperty("Content");
         Assert.NotNull(contentProp);
-        var contentInput = contentProp!.GetValue(writeHttpResponse) as Input<object>;
-        Assert.NotNull(contentInput);
+        var contentInput = Assert.IsType<Input<object>>(contentProp.GetValue(writeHttpResponse));
 
         // Verify it references the message variable
-        var memoryBlockReference = contentInput!.MemoryBlockReference();
+        var memoryBlockReference = contentInput.MemoryBlockReference();
         Assert.NotNull(memoryBlockReference);
-        Assert.Equal(messageVar.Id, memoryBlockReference!.Id);
+        Assert.Equal(messageVar.Id, memoryBlockReference.Id);
     }
 
     [Fact(DisplayName = "Compiler can compile for loop with 'to' keyword (exclusive)")]
@@ -305,8 +303,7 @@ workflow FlowchartTest {
         Assert.NotNull(workflow);
         Assert.NotNull(workflow.Root);
 
-        var flowchart = workflow.Root as Workflows.Activities.Flowchart.Activities.Flowchart;
-        Assert.NotNull(flowchart);
+        Assert.IsType<Workflows.Activities.Flowchart.Activities.Flowchart>(workflow.Root);
     }
 
     [Fact(DisplayName = "Compiler can compile flowchart with node and connection")]
@@ -330,8 +327,7 @@ workflow FlowchartTest {
         Assert.NotNull(workflow);
         Assert.NotNull(workflow.Root);
 
-        var flowchart = workflow.Root as Workflows.Activities.Flowchart.Activities.Flowchart;
-        Assert.NotNull(flowchart);
+        var flowchart = Assert.IsType<Workflows.Activities.Flowchart.Activities.Flowchart>(workflow.Root);
 
         // Check that flowchart has 2 activities
         Assert.Equal(2, flowchart.Activities.Count);
@@ -366,15 +362,13 @@ workflow FlowchartWithBlock {
         Assert.NotNull(workflow);
         Assert.NotNull(workflow.Root);
 
-        var flowchart = workflow.Root as Workflows.Activities.Flowchart.Activities.Flowchart;
-        Assert.NotNull(flowchart);
+        var flowchart = Assert.IsType<Workflows.Activities.Flowchart.Activities.Flowchart>(workflow.Root);
 
         // Should have one activity
         Assert.Single(flowchart.Activities);
 
         // The activity should be a Sequence (from the block)
-        var sequenceActivity = flowchart.Activities.First() as Workflows.Activities.Sequence;
-        Assert.NotNull(sequenceActivity);
+        var sequenceActivity = Assert.IsType<Workflows.Activities.Sequence>(flowchart.Activities.First());
 
         // Sequence should have 2 activities
         Assert.Equal(2, sequenceActivity.Activities.Count);
