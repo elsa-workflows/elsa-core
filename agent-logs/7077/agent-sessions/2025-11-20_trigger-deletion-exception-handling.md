@@ -1,4 +1,4 @@
-# Trigger Deletion Exception Handling
+# Exception Handling Improvements for Trigger Deletion and Scheduled Workflows
 
 **Date**: November 20, 2025
 **Issue**: #7077
@@ -118,14 +118,67 @@ Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration:
 ✓ DeleteTriggersAsync processes all workflows even when one fails [49 ms]
 ```
 
+## 3. Resume Workflow Task Exception Handling (`src/modules/Elsa.Scheduling/Tasks/ResumeWorkflowTask.cs`)
+
+### Problem
+
+When a scheduled workflow instance is deleted before its scheduled resume time, the `ResumeWorkflowTask` would throw an unhandled exception:
+
+```
+Elsa.Workflows.Runtime.Exceptions.WorkflowInstanceNotFoundException: Workflow instance not found.
+   at Elsa.Workflows.Runtime.LocalWorkflowClient.GetWorkflowInstanceAsync
+```
+
+This would cause the scheduled task to fail, even though the workflow instance no longer exists and should simply be skipped.
+
+### Solution
+
+Added exception handling to gracefully handle missing workflow instances:
+
+```csharp
+public async ValueTask ExecuteAsync(TaskExecutionContext context)
+{
+    var cancellationToken = context.CancellationToken;
+    var workflowRuntime = context.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
+    var logger = context.ServiceProvider.GetRequiredService<ILogger<ResumeWorkflowTask>>();
+
+    try
+    {
+        var workflowClient = await workflowRuntime.CreateClientAsync(_request.WorkflowInstanceId, cancellationToken);
+        var request = new RunWorkflowInstanceRequest
+        {
+            Input = _request.Input,
+            Properties = _request.Properties,
+            ActivityHandle = _request.ActivityHandle,
+            BookmarkId = _request.BookmarkId
+        };
+        await workflowClient.RunInstanceAsync(request, cancellationToken);
+    }
+    catch (WorkflowInstanceNotFoundException ex)
+    {
+        logger.LogWarning(
+            "Scheduled workflow instance {WorkflowInstanceId} no longer exists and was likely deleted. Skipping execution.",
+            ex.InstanceId);
+    }
+}
+```
+
+**Benefits**:
+- Scheduled tasks no longer fail when workflow instances are deleted
+- Clear logging explains why the task was skipped
+- System continues operating normally
+- No unnecessary error noise in logs
+
 ## Files Changed
 
 - `src/modules/Elsa.Workflows.Runtime/Services/TriggerIndexer.cs` - Added exception handling
 - `test/integration/Elsa.Workflows.IntegrationTests/Scenarios/TriggerIndexing/Tests.cs` - New integration tests
+- `src/modules/Elsa.Scheduling/Tasks/ResumeWorkflowTask.cs` - Added exception handling for missing workflow instances
 
 ## Impact
 
-- **Stability**: System no longer fails completely when individual workflows have issues
-- **Observability**: Warnings are logged for failed workflows with full context
-- **Reliability**: Other workflows continue to be processed correctly
-- **Coverage**: Comprehensive tests ensure behavior is maintained
+- **Stability**: System no longer fails when workflows or instances have issues
+- **Observability**: Warnings are logged with clear explanations for both scenarios
+- **Reliability**: Other workflows and scheduled tasks continue to be processed correctly
+- **Coverage**: Comprehensive tests ensure trigger deletion behavior is maintained
+- **Resilience**: Scheduled tasks handle deleted workflow instances gracefully
