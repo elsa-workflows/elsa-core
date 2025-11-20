@@ -169,16 +169,126 @@ public async ValueTask ExecuteAsync(TaskExecutionContext context)
 - System continues operating normally
 - No unnecessary error noise in logs
 
+## 4. LocalScheduler Thread Safety (`src/modules/Elsa.Scheduling/Services/LocalScheduler.cs`)
+
+### Problem
+
+The `LocalScheduler` was experiencing race conditions during concurrent access, particularly during application startup when multiple workflows are being scheduled simultaneously:
+
+```
+System.IndexOutOfRangeException: Index was outside the bounds of the array.
+   at System.Collections.Generic.Dictionary`2.TryInsert(TKey key, TValue value, InsertionBehavior behavior)
+   at System.Collections.Generic.Dictionary`2.set_Item(TKey key, TValue value)
+   at Elsa.Scheduling.Services.LocalScheduler.RegisterScheduledTask
+```
+
+This exception occurs when multiple threads modify the internal `Dictionary` instances concurrently without synchronization.
+
+### Root Cause
+
+Two dictionaries were being accessed concurrently without any thread safety:
+- `_scheduledTasks`: Maps task names to scheduled tasks
+- `_scheduledTaskKeys`: Maps scheduled tasks to their keys
+
+Methods like `ScheduleAsync`, `ClearScheduleAsync`, and internal helper methods all modified these dictionaries without locks.
+
+### Solution
+
+Added thread synchronization using a lock object:
+
+```csharp
+public class LocalScheduler : IScheduler
+{
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IDictionary<string, IScheduledTask> _scheduledTasks = new Dictionary<string, IScheduledTask>();
+    private readonly IDictionary<IScheduledTask, ICollection<string>> _scheduledTaskKeys = new Dictionary<IScheduledTask, ICollection<string>>();
+    private readonly object _lock = new();  // Added lock object
+
+    public ValueTask ScheduleAsync(string name, ITask task, ISchedule schedule, IEnumerable<string>? keys = null, CancellationToken cancellationToken = default)
+    {
+        var scheduleContext = new ScheduleContext(_serviceProvider, task);
+        var scheduledTask = schedule.Schedule(scheduleContext);
+
+        lock (_lock)  // Protected dictionary access
+        {
+            RegisterScheduledTask(name, scheduledTask, keys);
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask ClearScheduleAsync(string name, CancellationToken cancellationToken = default)
+    {
+        lock (_lock)  // Protected dictionary access
+        {
+            RemoveScheduledTask(name);
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask ClearScheduleAsync(IEnumerable<string> keys, CancellationToken cancellationToken = default)
+    {
+        lock (_lock)  // Protected dictionary access
+        {
+            RemoveScheduledTasks(keys);
+        }
+
+        return ValueTask.CompletedTask;
+    }
+}
+```
+
+**Benefits**:
+- Eliminates race conditions during concurrent scheduling
+- Prevents `IndexOutOfRangeException` during dictionary modifications
+- Ensures thread-safe access to internal collections
+- Simple and efficient locking strategy
+
+**Implementation Notes**:
+- Lock is only held during dictionary operations (minimal lock duration)
+- Schedule creation happens outside the lock to minimize contention
+- Private methods (`RegisterScheduledTask`, `RemoveScheduledTask`, `RemoveScheduledTasks`) are called within locks, so they don't need additional synchronization
+
+**Why `lock` instead of `SemaphoreSlim`?**
+
+The implementation uses a simple `lock` rather than `SemaphoreSlim` for optimal performance:
+
+| Aspect | lock | SemaphoreSlim |
+|--------|------|---------------|
+| **Overhead** | Zero allocation | Heap allocations |
+| **Complexity** | Automatic release | Manual try/finally |
+| **Use Case** | Perfect for synchronous ops | Better for async ops |
+| **Performance** | Compiler optimized | Additional overhead |
+| **Async Support** | Cannot cross await | Can use WaitAsync |
+
+**Decision Rationale**:
+1. ✅ **All critical sections are synchronous** - Only dictionary operations (add/remove/lookup)
+2. ✅ **Methods return `ValueTask.CompletedTask`** - Not truly async, just implementing interface signature
+3. ✅ **No await inside critical sections** - Schedule creation happens outside the lock
+4. ✅ **Zero allocation overhead** - `lock` is ideal for fast synchronous operations
+
+`SemaphoreSlim` would be appropriate if:
+- Critical sections contained `await` statements
+- Methods were truly asynchronous with I/O operations
+- Cancellation support was needed during lock acquisition
+
+For this use case, `lock` is the optimal choice for simplicity, performance, and correctness.
+
 ## Files Changed
 
-- `src/modules/Elsa.Workflows.Runtime/Services/TriggerIndexer.cs` - Added exception handling
+- `src/modules/Elsa.Workflows.Runtime/Services/TriggerIndexer.cs` - Added exception handling for workflow loading failures
 - `test/integration/Elsa.Workflows.IntegrationTests/Scenarios/TriggerIndexing/Tests.cs` - New integration tests
 - `src/modules/Elsa.Scheduling/Tasks/ResumeWorkflowTask.cs` - Added exception handling for missing workflow instances
+- `src/modules/Elsa.Scheduling/Services/LocalScheduler.cs` - Added thread synchronization for concurrent access
 
 ## Impact
 
 - **Stability**: System no longer fails when workflows or instances have issues
-- **Observability**: Warnings are logged with clear explanations for both scenarios
+- **Thread Safety**: LocalScheduler now handles concurrent scheduling operations safely
+- **Observability**: Warnings are logged with clear explanations for workflow and instance issues
 - **Reliability**: Other workflows and scheduled tasks continue to be processed correctly
 - **Coverage**: Comprehensive tests ensure trigger deletion behavior is maintained
-- **Resilience**: Scheduled tasks handle deleted workflow instances gracefully
+- **Resilience**:
+  - Scheduled tasks handle deleted workflow instances gracefully
+  - Scheduler handles concurrent access during startup and runtime

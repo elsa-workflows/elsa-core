@@ -11,6 +11,13 @@ public class LocalScheduler : IScheduler
     private readonly IDictionary<string, IScheduledTask> _scheduledTasks = new Dictionary<string, IScheduledTask>();
     private readonly IDictionary<IScheduledTask, ICollection<string>> _scheduledTaskKeys = new Dictionary<IScheduledTask, ICollection<string>>();
 
+    // Note: Using lock instead of SemaphoreSlim because:
+    // 1. All critical sections are synchronous (dictionary operations only)
+    // 2. Methods return ValueTask.CompletedTask (not truly async)
+    // 3. No await inside critical sections
+    // 4. lock has zero allocation overhead, perfect for fast synchronous operations
+    private readonly object _lock = new();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="LocalScheduler"/> class.
     /// </summary>
@@ -31,21 +38,32 @@ public class LocalScheduler : IScheduler
         var scheduleContext = new ScheduleContext(_serviceProvider, task);
         var scheduledTask = schedule.Schedule(scheduleContext);
 
-        RegisterScheduledTask(name, scheduledTask, keys);
+        lock (_lock)
+        {
+            RegisterScheduledTask(name, scheduledTask, keys);
+        }
+
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
     public ValueTask ClearScheduleAsync(string name, CancellationToken cancellationToken = default)
     {
-        RemoveScheduledTask(name);
+        lock (_lock)
+        {
+            RemoveScheduledTask(name);
+        }
+
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
     public ValueTask ClearScheduleAsync(IEnumerable<string> keys, CancellationToken cancellationToken = default)
     {
-        RemoveScheduledTasks(keys);
+        lock (_lock)
+        {
+            RemoveScheduledTasks(keys);
+        }
 
         return ValueTask.CompletedTask;
     }
