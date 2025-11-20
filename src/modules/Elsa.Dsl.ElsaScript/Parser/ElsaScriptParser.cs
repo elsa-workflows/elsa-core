@@ -544,7 +544,10 @@ public class ElsaScriptParser : IElsaScriptParser
     {
         if (!ProgramParser.TryParse(source, out var result, out var error))
         {
-            throw new ParseException($"Failed to parse ElsaScript: {error}");
+            var errorMessage = error != null 
+                ? $"{error.Message} at {error.Position}" 
+                : "Unknown parse error";
+            throw new ParseException($"Failed to parse ElsaScript: {errorMessage}");
         }
         return result;
     }
