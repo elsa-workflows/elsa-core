@@ -62,14 +62,21 @@ public class TriggerIndexer : ITriggerIndexer
         var triggers = (await _triggerStore.FindManyAsync(filter, cancellationToken)).ToList();
         var workflowDefinitionVersionIds = triggers.Select(x => x.WorkflowDefinitionVersionId).Distinct().ToList();
 
-        foreach (string workflowDefinitionVersionId in workflowDefinitionVersionIds)
+        foreach (var workflowDefinitionVersionId in workflowDefinitionVersionIds)
         {
-            var workflowGraph = await _workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionVersionId, cancellationToken);
+            try
+            {
+                var workflowGraph = await _workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionVersionId, cancellationToken);
 
-            if (workflowGraph == null)
-                continue;
-            
-            await DeleteTriggersAsync(workflowGraph.Workflow, cancellationToken);
+                if (workflowGraph == null)
+                    continue;
+
+                await DeleteTriggersAsync(workflowGraph.Workflow, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load workflow graph for workflow definition version {WorkflowDefinitionVersionId}. Skipping trigger deletion for this workflow.", workflowDefinitionVersionId);
+            }
         }
     }
 
