@@ -6,7 +6,7 @@ using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Stimuli;
 
-namespace Elsa.Activities.UnitTests.Event;
+namespace Elsa.Activities.UnitTests.Primitives;
 
 public class EventBaseTests
 {
@@ -64,7 +64,7 @@ public class EventBaseTests
 
         // Act
         var context = await ExecuteAsync(activity);
-        context.WorkflowExecutionContext.Input[Elsa.Workflows.Runtime.Activities.Event.EventInputWorkflowInputKey] = expectedInput;
+        context.WorkflowExecutionContext.Input[Event.EventInputWorkflowInputKey] = expectedInput;
         await activity.InvokeCallbackAsync(context);
 
         // Assert
@@ -97,7 +97,7 @@ public class EventBaseTests
 
         // Act
         var context = await ExecuteAsync(activity);
-        context.WorkflowExecutionContext.Input[Elsa.Workflows.Runtime.Activities.Event.EventInputWorkflowInputKey] = testPayload;
+        context.WorkflowExecutionContext.Input[Event.EventInputWorkflowInputKey] = testPayload;
         await activity.InvokeCallbackAsync(context);
 
         // Assert
