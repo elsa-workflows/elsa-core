@@ -10,14 +10,14 @@ namespace Elsa.Activities.UnitTests.Primitives;
 public class PublishEventTests
 {
     [Theory]
-    [InlineData("OrderCreated", null, null)]
-    [InlineData("OrderCreated", "correlation-123", null)]
-    [InlineData("OrderEvent", "", null)]
-    public async Task ExecuteAsync_PublishesEvent_WithParameters(string eventName, string? correlationId, string? expectedCorrelationId)
+    [InlineData("OrderCreated", null, null, false)]
+    [InlineData("OrderCreated", "correlation-123", "correlation-123", false)]
+    [InlineData("OrderEvent", "", null, true)]
+    [InlineData("OrderEvent", "   ", null, true)]
+    public async Task ExecuteAsync_PublishesEvent_WithParameters(string eventName, string? correlationId, string? expectedCorrelationId, bool expectNullCorrelation)
     {
         // Arrange
         var publisher = Substitute.For<IEventPublisher>();
-        var expectNullCorrelation = correlationId == "" && expectedCorrelationId == null;
 
         // Act
         await ExecuteAsync(CreateActivity(eventName, correlationId), publisher);
@@ -26,7 +26,7 @@ public class PublishEventTests
         await AssertPublishedAsync(
             publisher,
             eventName,
-            correlationId: expectedCorrelationId ?? correlationId,
+            correlationId: expectedCorrelationId,
             expectNullCorrelationId: expectNullCorrelation);
     }
 
