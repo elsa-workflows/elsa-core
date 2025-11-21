@@ -10,23 +10,26 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class BookmarkExtensions
 {
-    /// <summary>
-    /// Filters the specified set of bookmarks by the specified activity type.
-    /// </summary>
     /// <param name="bookmarks">The set of bookmarks to filter.</param>
-    /// <typeparam name="T">The activity type to filter by.</typeparam>
-    /// <returns>The filtered set of bookmarks.</returns>
-    public static IEnumerable<Bookmark> Filter<T>(this IEnumerable<Bookmark> bookmarks) where T : IActivity
+    extension(IEnumerable<Bookmark> bookmarks)
     {
-        var bookmarkName = ActivityTypeNameHelper.GenerateTypeName<T>();
-        return bookmarks.Filter(bookmarkName);
+        /// <summary>
+        /// Filters the specified set of bookmarks by the specified activity type.
+        /// </summary>
+        /// <typeparam name="T">The activity type to filter by.</typeparam>
+        /// <returns>The filtered set of bookmarks.</returns>
+        public IEnumerable<Bookmark> Filter<T>() where T : IActivity
+        {
+            var bookmarkName = ActivityTypeNameHelper.GenerateTypeName<T>();
+            return bookmarks.Filter(bookmarkName);
+        }
+
+        public IEnumerable<Bookmark> Filter(string name)
+        {
+            return bookmarks.Where(x => x.Name == name);
+        }
     }
-    
-    public static IEnumerable<Bookmark> Filter(this IEnumerable<Bookmark> bookmarks, string name)
-    {
-        return bookmarks.Where(x => x.Name == name);
-    }
-    
+
     /// <summary>
     /// Returns the Data property of the bookmark as a strongly-typed object.
     /// </summary>
