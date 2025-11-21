@@ -47,7 +47,13 @@ services
                 identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
                 identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
             })
-            .UseDefaultAuthentication()
+            .UseDefaultAuthentication(auth =>
+            {
+                // Use AdminApiKey provider in development for easier testing
+                // In production, use the default provider with configured applications
+                if (builder.Environment.IsDevelopment())
+                    auth.UseAdminApiKey();
+            })
             .UseWorkflows(workflows =>
             {
                 workflows.UseCommitStrategies(strategies =>
