@@ -4,8 +4,7 @@
 mods=("Management")
 
 # Define the list of providers
-# providers=("MySql" "SqlServer" "Sqlite" "PostgreSql" "Oracle")
-providers=("Oracle")
+providers=("MySql" "SqlServer" "Sqlite" "PostgreSql" "Oracle")
 
 # Loop through each module
 for module in "${mods[@]}"; do

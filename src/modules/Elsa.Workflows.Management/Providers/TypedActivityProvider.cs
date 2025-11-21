@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Management.Providers;
@@ -8,6 +9,7 @@ namespace Elsa.Workflows.Management.Providers;
 /// <summary>
 /// Provides activity descriptors based on a list of activity types registered in the <see cref="ManagementOptions"/>.
 /// </summary>
+[UsedImplicitly]
 public class TypedActivityProvider : IActivityProvider
 {
     private readonly IActivityDescriber _activityDescriber;

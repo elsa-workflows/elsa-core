@@ -29,6 +29,19 @@ public class HttpEndpoint : Trigger<HttpRequest>
     public HttpEndpoint([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
+    
+    /// <inheritdoc />
+    public HttpEndpoint(Input<string> path, Input<string> method, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
+    {
+        Path = path;
+        SupportedMethods = new(ObjectLiteral.From(new[] { method }));
+    }
+    
+    /// <inheritdoc />
+    public HttpEndpoint(Input<string> path, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
+    {
+        Path = path;
+    }
 
     /// <summary>
     /// The path to associate with the workflow.

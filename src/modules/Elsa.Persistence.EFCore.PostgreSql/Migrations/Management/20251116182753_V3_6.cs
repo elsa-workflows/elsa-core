@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -18,6 +18,13 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Management
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AddColumn<string>(
+                name: "OriginalSource",
+                schema: _schema.Schema,
+                table: "WorkflowDefinitions",
+                type: "text",
+                nullable: true);
+
             var schema = _schema.Schema;
             migrationBuilder.Sql($@"
                 ALTER TABLE ""{schema}"".""WorkflowDefinitions""
@@ -37,6 +44,11 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Management
                 TYPE text
                 USING ""StringData""::text;
             ");
+
+            migrationBuilder.DropColumn(
+                name: "OriginalSource",
+                schema: _schema.Schema,
+                table: "WorkflowDefinitions");
         }
     }
 }

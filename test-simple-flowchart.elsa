@@ -1,0 +1,10 @@
+use Elsa.Activities.Console;
+
+workflow SimpleFlowchart {
+  flowchart {
+    entry A;
+    A: WriteLine("Test");
+    A -> B;
+    B: WriteLine("Done");
+  }
+}

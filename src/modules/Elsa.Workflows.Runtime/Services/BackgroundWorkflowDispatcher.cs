@@ -22,7 +22,8 @@ public class BackgroundWorkflowDispatcher(ICommandSender commandSender, ITenantA
             Properties = request.Properties,
             CorrelationId = request.CorrelationId,
             InstanceId = request.InstanceId,
-            TriggerActivityId = request.TriggerActivityId
+            TriggerActivityId = request.TriggerActivityId,
+            ParentWorkflowInstanceId = request.ParentWorkflowInstanceId,
         };
         
         await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), cancellationToken);

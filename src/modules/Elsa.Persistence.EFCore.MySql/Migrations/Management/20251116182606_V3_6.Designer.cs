@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EFCore.MySql.Migrations.Management
 {
     [DbContext(typeof(ManagementElsaDbContext))]
-    [Migration("20250711172853_V3_6")]
+    [Migration("20251116182606_V3_6")]
     partial class V3_6
     {
         /// <inheritdoc />
@@ -21,7 +21,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Management
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.6")
+                .HasAnnotation("ProductVersion", "9.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -68,6 +68,9 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Management
 
                     b.Property<string>("Name")
                         .HasColumnType("varchar(255)");
+
+                    b.Property<string>("OriginalSource")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("ProviderName")
                         .HasColumnType("longtext");

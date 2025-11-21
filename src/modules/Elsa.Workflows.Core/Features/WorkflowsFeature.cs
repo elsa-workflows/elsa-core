@@ -182,7 +182,6 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IActivityRegistryLookupService, ActivityRegistryLookupService>()
             .AddSingleton<IPropertyDefaultValueResolver, PropertyDefaultValueResolver>()
             .AddSingleton<IPropertyUIHandlerResolver, PropertyUIHandlerResolver>()
-            .AddSingleton<IActivityFactory, ActivityFactory>()
             .AddTransient<WorkflowBuilder>()
             .AddScoped(typeof(Func<IWorkflowBuilder>), sp => () => sp.GetRequiredService<WorkflowBuilder>())
             .AddScoped<IWorkflowBuilderFactory, WorkflowBuilderFactory>()

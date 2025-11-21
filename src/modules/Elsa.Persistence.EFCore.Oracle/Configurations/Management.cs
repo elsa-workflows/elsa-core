@@ -14,6 +14,7 @@ internal class Management : IEntityTypeConfiguration<WorkflowDefinition>, IEntit
         builder.Property<string>("Data").HasColumnType("NCLOB");
         builder.Property(x => x.Description).HasColumnType("NCLOB");
         builder.Property(x => x.MaterializerContext).HasColumnType("NCLOB");
+        builder.Property(x => x.OriginalSource).HasColumnType("NCLOB");
         builder.Property(x => x.BinaryData).HasColumnType("BLOB");
     }
         

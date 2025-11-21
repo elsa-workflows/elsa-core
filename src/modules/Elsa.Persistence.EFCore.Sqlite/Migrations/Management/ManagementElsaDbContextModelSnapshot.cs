@@ -17,7 +17,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Management
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "8.0.12");
+                .HasAnnotation("ProductVersion", "9.0.10");
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowDefinition", b =>
                 {
@@ -60,6 +60,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Management
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OriginalSource")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ProviderName")

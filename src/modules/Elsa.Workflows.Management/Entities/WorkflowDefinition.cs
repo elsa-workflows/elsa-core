@@ -78,7 +78,14 @@ public class WorkflowDefinition : VersionedEntity
     /// A textual representation of the workflow. The data is to be interpreted by the configured materializer.
     /// </summary>
     public string? StringData { get; set; }
-    
+
+    /// <summary>
+    /// The original source representation of the workflow (JSON, ElsaScript, YAML, etc.).
+    /// When present, materializers should prefer this over StringData for full round-trip fidelity.
+    /// This field enables symmetric materialization without requiring serialization round-trips.
+    /// </summary>
+    public string? OriginalSource { get; set; }
+
     /// <summary>
     /// A binary representation of the workflow. The data is to be interpreted by the configured materializer.
     /// </summary>

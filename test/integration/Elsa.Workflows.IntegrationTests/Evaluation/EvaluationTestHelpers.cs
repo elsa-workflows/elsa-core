@@ -1,6 +1,4 @@
 using Elsa.Testing.Shared;
-using Elsa.Workflows;
-using Elsa.Workflows.Activities;
 
 namespace Elsa.Workflows.IntegrationTests.Evaluation;
 

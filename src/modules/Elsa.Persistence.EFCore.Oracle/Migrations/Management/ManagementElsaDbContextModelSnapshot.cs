@@ -18,7 +18,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Management
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.6")
+                .HasAnnotation("ProductVersion", "9.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -29,20 +29,20 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Management
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<byte[]>("BinaryData")
-                        .HasColumnType("RAW(2000)");
+                        .HasColumnType("BLOB");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<string>("Data")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("DefinitionId")
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Description")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<bool>("IsLatest")
                         .HasColumnType("BOOLEAN");
@@ -57,7 +57,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Management
                         .HasColumnType("BOOLEAN");
 
                     b.Property<string>("MaterializerContext")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("MaterializerName")
                         .IsRequired()
@@ -66,11 +66,14 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Management
                     b.Property<string>("Name")
                         .HasColumnType("NVARCHAR2(450)");
 
+                    b.Property<string>("OriginalSource")
+                        .HasColumnType("NCLOB");
+
                     b.Property<string>("ProviderName")
                         .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("StringData")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("JSON");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("NVARCHAR2(450)");

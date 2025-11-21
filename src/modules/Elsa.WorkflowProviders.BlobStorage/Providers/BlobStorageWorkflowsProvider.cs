@@ -1,9 +1,4 @@
-﻿using Elsa.Common;
-using Elsa.WorkflowProviders.BlobStorage.Contracts;
-using Elsa.Workflows;
-using Elsa.Workflows.Management.Mappers;
-using Elsa.Workflows.Management.Materializers;
-using Elsa.Workflows.Management.Models;
+﻿using Elsa.WorkflowProviders.BlobStorage.Contracts;
 using Elsa.Workflows.Runtime;
 using FluentStorage.Blobs;
 using JetBrains.Annotations;
@@ -17,29 +12,17 @@ namespace Elsa.WorkflowProviders.BlobStorage.Providers;
 public class BlobStorageWorkflowsProvider : IWorkflowsProvider
 {
     private readonly IBlobStorageProvider _blobStorageProvider;
-    private readonly IActivitySerializer _activitySerializer;
-    private readonly ISystemClock _systemClock;
-    private readonly IHasher _hasher;
-    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
-    private readonly VariableDefinitionMapper _variableDefinitionMapper;
+    private readonly IEnumerable<IBlobWorkflowFormatHandler> _handlers;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BlobStorageWorkflowsProvider"/> class.
     /// </summary>
     public BlobStorageWorkflowsProvider(
         IBlobStorageProvider blobStorageProvider,
-        IActivitySerializer activitySerializer,
-        ISystemClock systemClock,
-        IHasher hasher,
-        WorkflowDefinitionMapper workflowDefinitionMapper,
-        VariableDefinitionMapper variableDefinitionMapper)
+        IEnumerable<IBlobWorkflowFormatHandler> handlers)
     {
         _blobStorageProvider = blobStorageProvider;
-        _activitySerializer = activitySerializer;
-        _systemClock = systemClock;
-        _hasher = hasher;
-        _workflowDefinitionMapper = workflowDefinitionMapper;
-        _variableDefinitionMapper = variableDefinitionMapper;
+        _handlers = handlers;
     }
 
     /// <inheritdoc />
@@ -48,10 +31,26 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
     /// <inheritdoc />
     public async ValueTask<IEnumerable<MaterializedWorkflow>> GetWorkflowsAsync(CancellationToken cancellationToken = default)
     {
+        // Aggregate supported extensions from all handlers
+        var supportedExtensions = _handlers
+            .SelectMany(h => h.SupportedExtensions)
+            .Where(ext => !string.IsNullOrEmpty(ext))
+            .Select(ext => ext.ToLowerInvariant())
+            .ToHashSet();
+
         var options = new ListOptions
         {
             Recurse = true,
-            BrowseFilter = x => x.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || x.Name.EndsWith(".elsa", StringComparison.OrdinalIgnoreCase)
+            BrowseFilter = blob =>
+            {
+                // If no handlers declare extensions, accept all files
+                if (supportedExtensions.Count == 0)
+                    return true;
+
+                // Only accept files with supported extensions
+                var extension = Path.GetExtension(blob.Name).TrimStart('.').ToLowerInvariant();
+                return supportedExtensions.Contains(extension);
+            }
         };
 
         var blobStorage = _blobStorageProvider.GetBlobStorage();
@@ -60,30 +59,32 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
 
         foreach (var blob in blobs)
         {
-            var result = await ReadWorkflowAsync(blob, cancellationToken);
-            results.Add(result);
+            var workflow = await TryReadWorkflowAsync(blob, cancellationToken);
+            if (workflow != null)
+                results.Add(workflow);
         }
 
         return results;
     }
 
-    private async Task<MaterializedWorkflow> ReadWorkflowAsync(Blob blob, CancellationToken cancellationToken)
+    private async Task<MaterializedWorkflow?> TryReadWorkflowAsync(Blob blob, CancellationToken cancellationToken)
     {
         var blobStorage = _blobStorageProvider.GetBlobStorage();
-        var fileExtension = blob.FullPath.Split('.').Last();
-        var data = await blobStorage.ReadTextAsync(blob.FullPath, cancellationToken: cancellationToken);
+        var content = await blobStorage.ReadTextAsync(blob.FullPath, cancellationToken: cancellationToken);
 
-        if (string.Equals("json", fileExtension, StringComparison.OrdinalIgnoreCase))
-            return ReadJsonWorkflowDefinition(data);
+        var contentType = blob.Properties.TryGetValue("ContentType", out var ct) ? ct?.ToString() : null;
 
-        throw new NotSupportedException($"The file extension '{fileExtension}' is not supported.");
-    }
+        foreach (var handler in _handlers)
+        {
+            if (!handler.CanHandle(blob, contentType))
+                continue;
 
-    private MaterializedWorkflow ReadJsonWorkflowDefinition(string json)
-    {
-        var workflowDefinitionModel = _activitySerializer.Deserialize<WorkflowDefinitionModel>(json);
-        var workflow = _workflowDefinitionMapper.Map(workflowDefinitionModel);
+            var result = await handler.TryParseAsync(blob, content, cancellationToken);
+            if (result != null)
+                return result;
+        }
 
-        return new (workflow, Name, JsonWorkflowMaterializer.MaterializerName);
+        // No handler accepted this blob; ignore it
+        return null;
     }
 }
