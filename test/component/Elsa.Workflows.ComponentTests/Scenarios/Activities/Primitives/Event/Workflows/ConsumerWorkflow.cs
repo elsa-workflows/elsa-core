@@ -1,4 +1,3 @@
-using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Primitives.Event.Workflows;
