@@ -1,5 +1,7 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.IntegrationTests.Scenarios.TriggerIndexing.Fakes;
+using Elsa.Workflows.IntegrationTests.Scenarios.TriggerIndexing.TestData;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime;
@@ -19,113 +21,83 @@ public class Tests
 
     public Tests(ITestOutputHelper testOutputHelper)
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
-            .ConfigureServices(services =>
-            {
-                services.AddSingleton<IWorkflowMaterializer, FailingMaterializer>();
-                services.AddSingleton<IWorkflowMaterializer>(sp => new WorkingMaterializer(_workflowRegistry));
-            })
-            .Build();
+        _services = new TestApplicationBuilder(testOutputHelper).ConfigureServices(services =>
+        {
+            services.AddSingleton<IWorkflowMaterializer, FailingMaterializer>();
+            services.AddSingleton<IWorkflowMaterializer>(_ => new WorkingMaterializer(_workflowRegistry));
+        })
+        .Build();
 
         _triggerIndexer = _services.GetRequiredService<ITriggerIndexer>();
         _triggerStore = _services.GetRequiredService<ITriggerStore>();
         _workflowDefinitionStore = _services.GetRequiredService<IWorkflowDefinitionStore>();
     }
 
-    [Fact(DisplayName = "DeleteTriggersAsync should continue deleting triggers even when workflow fails to load")]
-    public async Task DeleteTriggersAsync_WorkflowFailsToLoad_ContinuesWithOtherTriggers()
+    [Theory(DisplayName = "DeleteTriggersAsync handles workflow materialization failures correctly")]
+    [MemberData(nameof(GetTriggerDeletionTestData))]
+    public async Task DeleteTriggersAsync_HandlesWorkflowFailures(TriggerDeletionTestScenario scenario)
     {
-        await _services.PopulateRegistriesAsync();
+        // Arrange
+        var builder = new TriggerTestDataBuilder();
 
-        // Arrange - Create workflow definitions that will all fail to load
-        var workflows = new[]
+        foreach (var workflow in scenario.Workflows)
         {
-            CreateWorkflowDefinition("workflow1", "def1", "Json"),
-            CreateWorkflowDefinition("workflow2", "def2", FailingMaterializer.MaterializerName),
-            CreateWorkflowDefinition("workflow3", "def3", "Json")
-        };
+            builder.AddWorkflow(workflow.Id, workflow.DefinitionId, workflow.MaterializerName);
 
-        var triggers = new[]
-        {
-            CreateTrigger("trigger1", "def1", "workflow1", "act1"),
-            CreateTrigger("trigger2", "def2", "workflow2", "act2"),
-            CreateTrigger("trigger3", "def3", "workflow3", "act3")
-        };
+            // Register working workflows in the registry
+            if (workflow.ShouldSucceed)
+                RegisterWorkflowInRegistry(workflow.Id, workflow.DefinitionId);
+        }
 
-        await SaveWorkflowsAndTriggersAsync(workflows, triggers);
+        var testData = builder.Build();
+        await SetupTestScenarioAsync(testData);
 
-        // Act - Delete triggers (all workflows will fail to load)
-        await _triggerIndexer.DeleteTriggersAsync(new());
+        // Act
+        await DeleteTriggersAsync();
 
-        // Assert - All triggers remain because all workflows failed to load
-        var remainingTriggers = await _triggerStore.FindManyAsync(new());
-        var triggerIds = remainingTriggers.Select(t => t.Id).OrderBy(id => id).ToList();
-
-        Assert.Equal(3, remainingTriggers.Count());
-        Assert.Equal(new[] { "trigger1", "trigger2", "trigger3" }, triggerIds);
+        // Assert
+        await AssertRemainingTriggers(scenario.ExpectedRemainingTriggerIds);
     }
 
-    [Fact(DisplayName = "DeleteTriggersAsync processes all workflows even when one fails")]
-    public async Task DeleteTriggersAsync_OneWorkflowFails_ProcessesAllWorkflows()
+    public static IEnumerable<object[]> GetTriggerDeletionTestData()
     {
-        await _services.PopulateRegistriesAsync();
+        // Scenario 1: All workflows fail to load - all triggers should remain
+        yield return
+        [
+            new TriggerDeletionTestScenario
+            {
+                DisplayName = "All workflows fail to load",
+                Workflows =
+                [
+                    new("workflow1", "def1", "Json", ShouldSucceed: false),
+                    new("workflow2", "def2", FailingMaterializer.MaterializerName, ShouldSucceed: false),
+                    new("workflow3", "def3", "Json", ShouldSucceed: false)
+                ],
+                ExpectedRemainingTriggerIds = ["trigger1", "trigger2", "trigger3"]
+            }
+        ];
 
-        // Arrange - Register valid workflows in the registry
-        _workflowRegistry["workflow1"] = new()
-            { Identity = new("def1", 1, "workflow1") };
-        _workflowRegistry["workflow3"] = new()
-            { Identity = new("def3", 1, "workflow3") };
-
-        var workflows = new[]
-        {
-            CreateWorkflowDefinition("workflow1", "def1", WorkingMaterializer.MaterializerName),
-            CreateWorkflowDefinition("workflow2", "def2", FailingMaterializer.MaterializerName),
-            CreateWorkflowDefinition("workflow3", "def3", WorkingMaterializer.MaterializerName)
-        };
-
-        var triggers = new[]
-        {
-            CreateTrigger("trigger1", "def1", "workflow1", "act1"),
-            CreateTrigger("trigger2", "def2", "workflow2", "act2"),
-            CreateTrigger("trigger3", "def3", "workflow3", "act3")
-        };
-
-        await SaveWorkflowsAndTriggersAsync(workflows, triggers);
-
-        // Act - Delete triggers (workflow2 will fail, but workflow1 and workflow3 should succeed)
-        await _triggerIndexer.DeleteTriggersAsync(new());
-
-        // Assert - Only trigger2 remains since workflow2 failed to load
-        var remainingTriggers = await _triggerStore.FindManyAsync(new());
-
-        Assert.Single(remainingTriggers);
-        Assert.Equal("trigger2", remainingTriggers.First().Id);
+        // Scenario 2: One workflow fails, others succeed - only the failing workflow's trigger remains
+        yield return
+        [
+            new TriggerDeletionTestScenario
+            {
+                DisplayName = "One workflow fails, others succeed",
+                Workflows =
+                [
+                    new("workflow1", "def1", WorkingMaterializer.MaterializerName, ShouldSucceed: true),
+                    new("workflow2", "def2", FailingMaterializer.MaterializerName, ShouldSucceed: false),
+                    new("workflow3", "def3", WorkingMaterializer.MaterializerName, ShouldSucceed: true)
+                ],
+                ExpectedRemainingTriggerIds = ["trigger2"]
+            }
+        ];
     }
 
-    private static WorkflowDefinition CreateWorkflowDefinition(string id, string definitionId, string materializerName)
+    private async Task AssertRemainingTriggers(string[] expectedTriggerIds)
     {
-        return new()
-        {
-            Id = id,
-            DefinitionId = definitionId,
-            Version = 1,
-            IsPublished = true,
-            IsLatest = true,
-            MaterializerName = materializerName,
-            StringData = "{\"root\":{\"type\":\"Elsa.Sequence\",\"id\":\"seq1\",\"version\":1,\"activities\":[]}}"
-        };
-    }
-
-    private static StoredTrigger CreateTrigger(string id, string definitionId, string versionId, string activityId)
-    {
-        return new()
-        {
-            Id = id,
-            WorkflowDefinitionId = definitionId,
-            WorkflowDefinitionVersionId = versionId,
-            Name = "TestTrigger",
-            ActivityId = activityId
-        };
+        var remainingTriggerIds = await GetRemainingTriggerIdsAsync();
+        Assert.Equal(expectedTriggerIds.OrderBy(id => id), remainingTriggerIds);
     }
 
     private async Task SaveWorkflowsAndTriggersAsync(WorkflowDefinition[] workflows, StoredTrigger[] triggers)
@@ -139,34 +111,30 @@ public class Tests
         var allTriggers = await _triggerStore.FindManyAsync(new());
         Assert.Equal(triggers.Length, allTriggers.Count());
     }
-}
 
-/// <summary>
-/// A custom materializer that throws an exception when materialization is attempted.
-/// This simulates the "Provider not found" scenario.
-/// </summary>
-file class FailingMaterializer : IWorkflowMaterializer
-{
-    public const string MaterializerName = "FailingMaterializer";
-    public string Name => MaterializerName;
 
-    public ValueTask<Workflow> MaterializeAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default) =>
-        ValueTask.FromException<Workflow>(new("Provider not found"));
-}
-
-/// <summary>
-/// A custom materializer that successfully materializes workflows from a registry.
-/// </summary>
-file class WorkingMaterializer(Dictionary<string, Workflow> workflowRegistry) : IWorkflowMaterializer
-{
-    public const string MaterializerName = "WorkingMaterializer";
-    public string Name => MaterializerName;
-
-    public ValueTask<Workflow> MaterializeAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    private void RegisterWorkflowInRegistry(string workflowId, string definitionId)
     {
-        if (workflowRegistry.TryGetValue(definition.Id, out var workflow))
-            return ValueTask.FromResult(workflow);
+        _workflowRegistry[workflowId] = new()
+        {
+            Identity = new(definitionId, 1, workflowId)
+        };
+    }
 
-        throw new InvalidOperationException($"Workflow {definition.Id} not found in registry");
+    private async Task SetupTestScenarioAsync((WorkflowDefinition[] Workflows, StoredTrigger[] Triggers) testData)
+    {
+        await _services.PopulateRegistriesAsync();
+        await SaveWorkflowsAndTriggersAsync(testData.Workflows, testData.Triggers);
+    }
+
+    private async Task DeleteTriggersAsync()
+    {
+        await _triggerIndexer.DeleteTriggersAsync(new());
+    }
+
+    private async Task<string[]> GetRemainingTriggerIdsAsync()
+    {
+        var remainingTriggers = await _triggerStore.FindManyAsync(new());
+        return remainingTriggers.Select(t => t.Id).OrderBy(id => id).ToArray();
     }
 }
