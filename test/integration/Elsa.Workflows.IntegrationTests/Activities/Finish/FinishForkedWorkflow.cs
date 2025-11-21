@@ -17,7 +17,7 @@ public class FinishForkedWorkflow : WorkflowBase
                     Activities =
                     {
                         new WriteLine("Branch 1"),
-                        new Event("Event 1")
+                        new Runtime.Activities.Event("Event 1")
                     }
                 },
                 new Sequence

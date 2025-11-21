@@ -3,15 +3,8 @@ using Elsa.Workflows.Memory;
 
 namespace Elsa.Workflows.IntegrationTests.Activities;
 
-class ForEachWorkflow : WorkflowBase
+class ForEachWorkflow(ICollection<string> items) : WorkflowBase
 {
-    private readonly ICollection<string> _items;
-
-    public ForEachWorkflow(ICollection<string> items)
-    {
-        _items = items;
-    }
-
     protected override void Build(IWorkflowBuilder workflow)
     {
         var currentItem = new Variable<string>("CurrentItem", "");
@@ -23,7 +16,7 @@ class ForEachWorkflow : WorkflowBase
             {
                 new ForEach<string>
                 {
-                    Items = new(_items),
+                    Items = new(items),
                     CurrentValue = new(currentItem),
                     Body = new WriteLine(currentItem)
                 },
