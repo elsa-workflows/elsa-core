@@ -165,6 +165,7 @@ foreach (var instanceId in runningInstanceIds)
 **Phase 2: Bulk Delete Finished Instances**
 ```csharp
 // Step 2: Bulk delete finished instances (no coordination needed).
+// Use IWorkflowInstanceManager to ensure related records are also deleted.
 var finishedFilter = new WorkflowInstanceFilter
 {
     Ids = baseFilter.Ids,
@@ -173,13 +174,14 @@ var finishedFilter = new WorkflowInstanceFilter
     WorkflowStatus = WorkflowStatus.Finished
 };
 
-var finishedDeletedCount = await workflowInstanceStore.DeleteAsync(finishedFilter, cancellationToken);
+var finishedDeletedCount = await workflowInstanceManager.BulkDeleteAsync(finishedFilter, cancellationToken);
 count += finishedDeletedCount;
 ```
 
 **Rationale**:
 - **Running instances**: Need individual coordination through the runtime (cancellation, locks, cleanup)
 - **Finished instances**: Can be safely bulk-deleted as they have no active runtime state
+- **IWorkflowInstanceManager vs IWorkflowInstanceStore**: Using `IWorkflowInstanceManager.BulkDeleteAsync()` ensures that related records (execution logs, bookmarks, activity execution records, etc.) are also deleted, not just the workflow instance record
 - **Performance**: Avoids unnecessary overhead for finished workflows while ensuring safety for running ones
 - **Correctness**: Each running workflow gets proper cancellation and distributed locking
 
@@ -215,6 +217,61 @@ count += finishedDeletedCount;
 - Proper error handling and return values
 
 ## Testing Verification
+
+### Automated Component Tests
+
+Created comprehensive component tests in `test/component/Elsa.Workflows.ComponentTests/Scenarios/WorkflowInstanceDeletion/`:
+
+**Test Infrastructure:**
+1. **Custom Activity**: `LongRunningActivity`
+   - Simulates a long-running workflow operation (3 seconds)
+   - Uses `SignalManager` to notify tests when execution starts
+   - Keeps workflow in memory without hitting a bookmark (crucial for testing the race condition)
+
+2. **Test Workflows**:
+   - `SuspendingWorkflow`: Uses `LongRunningActivity` to create running workflow instances
+   - `CompletingWorkflow`: Completes immediately for testing finished workflow deletion
+
+3. **Helper Methods** (following DRY principle):
+   - `StartRunningWorkflowAsync()`: Starts a workflow and waits for it to begin executing
+   - `AssertWorkflowInstanceDeletedAsync()`: Verifies a workflow instance is deleted
+   - Property accessors for common services (`WorkflowRuntime`, `SignalManager`, `WorkflowInstanceStore`)
+
+**Test Cases:**
+1. ✅ `DeleteRunningWorkflowInstance_ShouldCancelAndRemove`
+   - Tests deletion of a workflow actively executing in memory
+   - Verifies the instance is deleted and not found afterward
+
+2. ✅ `DeleteFinishedWorkflowInstance_ShouldRemove`
+   - Tests deletion of a completed workflow instance
+   - Verifies proper cleanup of finished workflows
+
+3. ✅ `DeleteNonExistentWorkflowInstance_ShouldThrowException`
+   - Tests error handling for non-existent instances
+   - Expects `Refit.ApiException` (404 Not Found)
+
+4. ✅ `BulkDeleteMixedInstances_ShouldDeleteAll`
+   - Tests bulk deletion of 2 running + 2 finished instances
+   - Verifies all instances are properly deleted
+
+5. ✅ `DeleteWorkflowInstance_ShouldNotBeResurrectedByPersistence` **(Core #7077 test)**
+   - **Critical test** that validates the distributed locking fix
+   - Starts a workflow with `LongRunningActivity` (stays in memory)
+   - Attempts deletion while workflow is still executing
+   - **Without the fix**: Workflow would be deleted but then resurrected when it completes
+   - **With the fix**: Deletion blocks until workflow completes (distributed lock), preventing resurrection
+   - Verifies the instance remains deleted after workflow completion
+
+**Key Testing Patterns:**
+- **SignalManager pattern**: Elegant coordination between workflow execution and test assertions
+  - Handles race conditions gracefully (signal can fire before or after wait)
+  - Uses `ConcurrentDictionary` with `TaskCompletionSource` for thread-safe signaling
+  - No static state to clean up between tests
+- **WorkflowEvents pattern**: Used to wait for workflow state commits when needed
+- **DRY principle**: Extracted common patterns into reusable helper methods
+- **Readable tests**: Focus on "what" not "how" - test intent is clear and concise
+
+All tests pass successfully, validating the fix works correctly.
 
 ### Manual Testing
 - ✅ Delete single running workflow instance
@@ -270,6 +327,8 @@ No action required - changes are fully backward compatible.
 
 ## Files Modified
 
+### Core Implementation
+
 1. `src/modules/Elsa.Workflows.Runtime/Contracts/IWorkflowClient.cs`
    - Added `DeleteAsync()` method
 
@@ -288,7 +347,27 @@ No action required - changes are fully backward compatible.
 5. `src/modules/Elsa.Workflows.Api/Endpoints/WorkflowInstances/BulkDelete/Endpoint.cs`
    - Refactored to handle running and finished instances separately
    - Changed to use `IWorkflowRuntime` for running instances
-   - Maintains bulk delete for finished instances
+   - Changed to use `IWorkflowInstanceManager.BulkDeleteAsync()` for finished instances (ensures related records are deleted)
+
+### Test Files
+
+6. `test/component/Elsa.Workflows.ComponentTests/Scenarios/WorkflowInstanceDeletion/Activities/LongRunningActivity.cs` **(NEW)**
+   - Custom activity that simulates long-running operation with 3-second delay
+   - Uses `SignalManager` to notify tests when execution starts
+   - Keeps workflow in memory for testing race conditions
+
+7. `test/component/Elsa.Workflows.ComponentTests/Scenarios/WorkflowInstanceDeletion/Workflows/SuspendingWorkflow.cs` **(NEW)**
+   - Test workflow using `LongRunningActivity`
+   - Used to create running workflow instances for testing
+
+8. `test/component/Elsa.Workflows.ComponentTests/Scenarios/WorkflowInstanceDeletion/Workflows/CompletingWorkflow.cs` **(NEW)**
+   - Test workflow that completes immediately
+   - Used for testing finished workflow deletion
+
+9. `test/component/Elsa.Workflows.ComponentTests/Scenarios/WorkflowInstanceDeletion/WorkflowInstanceDeletionTests.cs` **(NEW)**
+   - 5 comprehensive component tests covering all deletion scenarios
+   - Tests the core #7077 fix (workflow resurrection prevention)
+   - Uses DRY principles with helper methods for maintainability
 
 ## Related Issues
 

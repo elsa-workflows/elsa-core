@@ -7,7 +7,6 @@ using Elsa.Workflows.ComponentTests.Scenarios.WorkflowInstanceDeletion.Workflows
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Messages;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowInstanceDeletion;
@@ -27,7 +26,7 @@ public class WorkflowInstanceDeletionTests(App app) : AppComponentTest(app)
     private async Task<string> StartRunningWorkflowAsync()
     {
         var workflowClient = await WorkflowRuntime.CreateClientAsync();
-        var runTask = workflowClient.CreateAndRunInstanceAsync(new()
+        await workflowClient.CreateAndRunInstanceAsync(new()
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(SuspendingWorkflow.DefinitionId, VersionOptions.Published)
         });

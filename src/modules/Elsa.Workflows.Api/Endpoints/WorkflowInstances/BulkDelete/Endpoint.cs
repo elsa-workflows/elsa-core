@@ -7,7 +7,7 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.BulkDelete;
 
 [PublicAPI]
-internal class BulkDelete(IWorkflowInstanceStore workflowInstanceStore, IWorkflowRuntime workflowRuntime) : ElsaEndpoint<Request, Response>
+internal class BulkDelete(IWorkflowInstanceStore workflowInstanceStore, IWorkflowInstanceManager workflowInstanceManager, IWorkflowRuntime workflowRuntime) : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
     {
@@ -27,7 +27,7 @@ internal class BulkDelete(IWorkflowInstanceStore workflowInstanceStore, IWorkflo
             DefinitionIds = request.WorkflowDefinitionIds,
         };
 
-        // Step 1: Delete running instances individually (requires coordination by te workflow runtime).
+        // Step 1: Delete running instances individually (requires coordination by the workflow runtime).
         var runningFilter = new WorkflowInstanceFilter
         {
             Ids = baseFilter.Ids,
@@ -48,6 +48,7 @@ internal class BulkDelete(IWorkflowInstanceStore workflowInstanceStore, IWorkflo
         }
 
         // Step 2: Bulk delete finished instances (no coordination needed).
+        // Use IWorkflowInstanceManager to ensure related records are also deleted.
         var finishedFilter = new WorkflowInstanceFilter
         {
             Ids = baseFilter.Ids,
@@ -56,7 +57,7 @@ internal class BulkDelete(IWorkflowInstanceStore workflowInstanceStore, IWorkflo
             WorkflowStatus = WorkflowStatus.Finished
         };
 
-        var finishedDeletedCount = await workflowInstanceStore.DeleteAsync(finishedFilter, cancellationToken);
+        var finishedDeletedCount = await workflowInstanceManager.BulkDeleteAsync(finishedFilter, cancellationToken);
         count += finishedDeletedCount;
 
         return new(count);
