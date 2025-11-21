@@ -40,6 +40,7 @@ public class DefaultAuthenticationFeature : FeatureBase
     public DefaultAuthenticationFeature UseApiKeyAuthorization<T>() where T : class, IApiKeyProvider
     {
         _configureApiKeyAuthorization = builder => builder.AddApiKeyInAuthorizationHeader<T>();
+        ApiKeyProviderType = typeof(T);
         return this;
     }
 
