@@ -221,7 +221,9 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         if (filter.IsSystem != null)
             queryable = filter.IsSystem == true
                 ? queryable.Where(x => x.IsSystem == true)
+#pragma warning disable CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
                 : queryable.Where(x => x.IsSystem == false || x.IsSystem == null!);
+#pragma warning restore CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
 
         if (filter.IsReadonly != null) queryable = queryable.Where(x => x.IsReadonly == filter.IsReadonly);
         return queryable;

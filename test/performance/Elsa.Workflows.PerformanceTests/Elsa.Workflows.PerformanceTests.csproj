@@ -1,14 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-
-        <IsPackable>false</IsPackable>
-        <OutputType>Exe</OutputType>
-        <CollectCoverage>false</CollectCoverage>
-    </PropertyGroup>
+    
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\src\modules\Elsa\Elsa.csproj" />
