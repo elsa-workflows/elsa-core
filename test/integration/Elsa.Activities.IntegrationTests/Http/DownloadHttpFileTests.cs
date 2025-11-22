@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
@@ -16,24 +17,17 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
         // Arrange
         var fileContent = "Test file content"u8.ToArray();
         var handler = CreateFileResponseHandler(fileContent, "document.pdf", "application/pdf");
-        var fixture = CreateFixture(handler);
-        var activity = new DownloadHttpFile
-        {
-            Url = new(new Uri("https://example.com/file.pdf")),
-            Method = new("GET"),
-            ExpectedStatusCodes = new([200])
-        };
 
         // Act
-        var result = await fixture.RunActivityAsync(activity);
+        var (workflowResult, activity) = await RunActivityAsync("https://example.com/file.pdf", handler);
 
         // Assert
-        var file = result.GetActivityOutput<HttpFile>(activity);
+        var file = workflowResult.GetActivityOutput<HttpFile>(activity);
         Assert.NotNull(file);
         Assert.Equal("document.pdf", file.Filename);
         Assert.Equal("application/pdf", file.ContentType);
 
-        var stream = result.GetActivityOutput<Stream>(activity, nameof(DownloadHttpFile.ResponseContentStream));
+        var stream = workflowResult.GetActivityOutput<Stream>(activity, nameof(DownloadHttpFile.ResponseContentStream));
         Assert.NotNull(stream);
         using var reader = new StreamReader(stream);
         var content = await reader.ReadToEndAsync();
@@ -46,24 +40,20 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
         // Arrange
         var fileContent = "Response content"u8.ToArray();
         var handler = CreateFileResponseHandler(fileContent);
-        var fixture = CreateFixture(handler);
-        var activity = new DownloadHttpFile
-        {
-            Url = new(new Uri("https://api.example.com/download")),
-            Method = new("POST"),
-            RequestContent = new(new { id = 123 }),
-            RequestContentType = new("application/json"),
-            ExpectedStatusCodes = new([200])
-        };
 
         // Act
-        var result = await fixture.RunActivityAsync(activity);
+        var (workflowResult, activity) = await RunActivityAsync(
+            "https://api.example.com/download",
+            handler,
+            method: "POST",
+            requestContent: new { id = 123 },
+            requestContentType: "application/json");
 
         // Assert
-        var statusCode = result.GetActivityOutput<int>(activity, nameof(DownloadHttpFile.StatusCode));
+        var statusCode = workflowResult.GetActivityOutput<int>(activity, nameof(DownloadHttpFile.StatusCode));
         Assert.Equal(200, statusCode);
 
-        var file = result.GetActivityOutput<HttpFile>(activity);
+        var file = workflowResult.GetActivityOutput<HttpFile>(activity);
         Assert.NotNull(file);
     }
 
@@ -74,17 +64,12 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
         var requestCapture = new HttpRequestMessage?[1];
         var fileContent = "Authorized content"u8.ToArray();
         var handler = CreateCapturingHandler(fileContent, requestCapture);
-        var fixture = CreateFixture(handler);
-        var activity = new DownloadHttpFile
-        {
-            Url = new(new Uri("https://example.com/secure/file.pdf")),
-            Method = new("GET"),
-            Authorization = new("Bearer test-token"),
-            ExpectedStatusCodes = new([200])
-        };
 
         // Act
-        await fixture.RunActivityAsync(activity);
+        await RunActivityAsync(
+            "https://example.com/secure/file.pdf",
+            handler,
+            authorization: "Bearer test-token");
 
         // Assert
         var capturedRequest = requestCapture[0];
@@ -93,50 +78,22 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
         Assert.Equal("Bearer test-token", capturedRequest.Headers.Authorization.ToString());
     }
 
-    [Fact(DisplayName = "DownloadHttpFile extracts filename from Content-Disposition")]
-    public async Task ExtractsFilename_FromContentDisposition()
-    {
-        // Arrange
-        var fileContent = "Report data"u8.ToArray();
-        var handler = CreateFileResponseHandler(fileContent, "annual-report.xlsx");
-        var fixture = CreateFixture(handler);
-        var activity = new DownloadHttpFile
-        {
-            Url = new(new Uri("https://example.com/generate-report")),
-            Method = new("GET"),
-            ExpectedStatusCodes = new([200])
-        };
-
-        // Act
-        var result = await fixture.RunActivityAsync(activity);
-
-        // Assert
-        var file = result.GetActivityOutput<HttpFile>(activity);
-        Assert.NotNull(file);
-        Assert.Equal("annual-report.xlsx", file.Filename);
-    }
-
-    [Fact(DisplayName = "DownloadHttpFile extracts filename from URL when no Content-Disposition")]
-    public async Task ExtractsFilename_FromUrl()
+    [Theory(DisplayName = "DownloadHttpFile extracts filename correctly")]
+    [InlineData("https://example.com/generate-report", "annual-report.xlsx", "annual-report.xlsx")] // From Content-Disposition
+    [InlineData("https://example.com/downloads/image.png", null, "image.png")] // From URL
+    public async Task ExtractsFilename(string url, string? contentDispositionFilename, string expectedFilename)
     {
         // Arrange
         var fileContent = "File data"u8.ToArray();
-        var handler = CreateFileResponseHandler(fileContent, filename: null);
-        var fixture = CreateFixture(handler);
-        var activity = new DownloadHttpFile
-        {
-            Url = new(new Uri("https://example.com/downloads/image.png")),
-            Method = new("GET"),
-            ExpectedStatusCodes = new([200])
-        };
+        var handler = CreateFileResponseHandler(fileContent, contentDispositionFilename);
 
         // Act
-        var result = await fixture.RunActivityAsync(activity);
+        var (workflowResult, activity) = await RunActivityAsync(url, handler);
 
         // Assert
-        var file = result.GetActivityOutput<HttpFile>(activity);
+        var file = workflowResult.GetActivityOutput<HttpFile>(activity);
         Assert.NotNull(file);
-        Assert.Equal("image.png", file.Filename);
+        Assert.Equal(expectedFilename, file.Filename);
     }
 
     [Theory(DisplayName = "DownloadHttpFile handles various status codes")]
@@ -147,19 +104,15 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
     {
         // Arrange
         var handler = CreateFileResponseHandler(statusCode: (HttpStatusCode)statusCode);
-        var fixture = CreateFixture(handler);
-        var activity = new DownloadHttpFile
-        {
-            Url = new(new Uri("https://example.com/file.pdf")),
-            Method = new("GET"),
-            ExpectedStatusCodes = new([statusCode])
-        };
 
         // Act
-        var result = await fixture.RunActivityAsync(activity);
+        var (workflowResult, activity) = await RunActivityAsync(
+            "https://example.com/file.pdf",
+            handler,
+            expectedStatusCodes: [statusCode]);
 
         // Assert
-        var actualStatusCode = result.GetActivityOutput<int>(activity, nameof(DownloadHttpFile.StatusCode));
+        var actualStatusCode = workflowResult.GetActivityOutput<int>(activity, nameof(DownloadHttpFile.StatusCode));
         Assert.Equal(statusCode, actualStatusCode);
     }
 
@@ -173,41 +126,61 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
             { "X-Request-Id", "abc123" }
         };
         var handler = CreateFileResponseHandler(additionalHeaders: additionalHeaders);
-        var fixture = CreateFixture(handler);
-        var activity = new DownloadHttpFile
-        {
-            Url = new(new Uri("https://api.example.com/download")),
-            Method = new("GET"),
-            ExpectedStatusCodes = new([200])
-        };
 
         // Act
-        var result = await fixture.RunActivityAsync(activity);
+        var (workflowResult, activity) = await RunActivityAsync("https://api.example.com/download", handler);
 
         // Assert
-        var responseHeaders = result.GetActivityOutput<HttpHeaders>(activity, nameof(DownloadHttpFile.ResponseHeaders));
+        var responseHeaders = workflowResult.GetActivityOutput<HttpHeaders>(activity, nameof(DownloadHttpFile.ResponseHeaders));
         Assert.NotNull(responseHeaders);
         Assert.Contains(responseHeaders.Keys, k => k.Equals("X-Rate-Limit", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(responseHeaders.Keys, k => k.Equals("X-Request-Id", StringComparison.OrdinalIgnoreCase));
     }
 
-    private WorkflowTestFixture CreateFixture(HttpMessageHandler handler)
+    private async Task<(RunWorkflowResult Result, DownloadHttpFile Activity)> RunActivityAsync(
+        string url,
+        HttpMessageHandler handler,
+        string method = "GET",
+        object? requestContent = null,
+        string? requestContentType = null,
+        string? authorization = null,
+        int[]? expectedStatusCodes = null)
     {
-        return new WorkflowTestFixture(testOutputHelper)
+        var fixture = CreateFixture(handler);
+        var activity = new DownloadHttpFile
+        {
+            Url = new(new Uri(url)),
+            Method = new(method),
+            ExpectedStatusCodes = new(expectedStatusCodes ?? [200])
+        };
+
+        if (requestContent != null)
+            activity.RequestContent = new(requestContent);
+
+        if (requestContentType != null)
+            activity.RequestContentType = new(requestContentType);
+
+        if (authorization != null)
+            activity.Authorization = new(authorization);
+
+        var result = await fixture.RunActivityAsync(activity);
+        return (result, activity);
+    }
+
+    private WorkflowTestFixture CreateFixture(HttpMessageHandler handler) =>
+        new WorkflowTestFixture(testOutputHelper)
             .ConfigureElsa(elsa => elsa.UseHttp(http =>
             {
                 http.HttpClientBuilder = builder => builder.ConfigurePrimaryHttpMessageHandler(() => handler);
             }));
-    }
 
     private static HttpMessageHandler CreateFileResponseHandler(
         byte[]? content = null,
         string? filename = null,
         string? contentType = null,
         HttpStatusCode statusCode = HttpStatusCode.OK,
-        Dictionary<string, string>? additionalHeaders = null)
-    {
-        return new TestHttpMessageHandler((_, _) =>
+        Dictionary<string, string>? additionalHeaders = null) =>
+        new TestHttpMessageHandler((_, _) =>
         {
             var response = new HttpResponseMessage(statusCode);
 
@@ -228,20 +201,14 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
             }
 
             if (additionalHeaders != null)
-            {
                 foreach (var header in additionalHeaders)
-                {
                     response.Headers.Add(header.Key, header.Value);
-                }
-            }
 
             return Task.FromResult(response);
         });
-    }
 
-    private static HttpMessageHandler CreateCapturingHandler(byte[] content, HttpRequestMessage?[] capture)
-    {
-        return new TestHttpMessageHandler((request, _) =>
+    private static HttpMessageHandler CreateCapturingHandler(byte[] content, HttpRequestMessage?[] capture) =>
+        new TestHttpMessageHandler((request, _) =>
         {
             capture[0] = request;
 
@@ -253,13 +220,10 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
 
             return Task.FromResult(response);
         });
-    }
 
     private sealed class TestHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler) : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            return handler(request, cancellationToken);
-        }
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            handler(request, cancellationToken);
     }
 }
