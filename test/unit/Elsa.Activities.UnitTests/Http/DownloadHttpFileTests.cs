@@ -326,7 +326,7 @@ public class DownloadHttpFileTests
         return (_, _) =>
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
-            // Don't set Content at all, leaving it null
+            // Set empty content (ContentLength = 0) to test HasContent returning false
             response.Content = new ByteArrayContent(Array.Empty<byte>());
             response.Content.Headers.ContentLength = 0;
             return Task.FromResult(response);
