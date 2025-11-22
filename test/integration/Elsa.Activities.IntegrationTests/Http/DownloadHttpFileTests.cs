@@ -182,6 +182,7 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
         Dictionary<string, string>? additionalHeaders = null) =>
         new TestHttpMessageHandler((_, _) =>
         {
+            // Response ownership is transferred to the caller (HttpClient), which will dispose it
             var response = new HttpResponseMessage(statusCode);
 
             if (content != null || statusCode == HttpStatusCode.OK)
@@ -212,6 +213,7 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
         {
             capture[0] = request;
 
+            // Response ownership is transferred to the caller (HttpClient), which will dispose it
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new ByteArrayContent(content)
