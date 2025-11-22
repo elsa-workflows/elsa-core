@@ -185,20 +185,18 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
             // Response ownership is transferred to the caller (HttpClient), which will dispose it
             var response = new HttpResponseMessage(statusCode);
 
-            if (content != null || statusCode == HttpStatusCode.OK)
-            {
-                var actualContent = content ?? "Default file content"u8.ToArray();
-                var actualContentType = contentType ?? "application/octet-stream";
-                response.Content = new ByteArrayContent(actualContent);
-                response.Content.Headers.ContentType = new(actualContentType);
+            // Always set Content (even if empty) because DownloadHttpFile accesses Content.Headers
+            var actualContent = content ?? (statusCode == HttpStatusCode.OK ? "Default file content"u8.ToArray() : []);
+            var actualContentType = contentType ?? "application/octet-stream";
+            response.Content = new ByteArrayContent(actualContent);
+            response.Content.Headers.ContentType = new(actualContentType);
 
-                if (filename != null)
+            if (filename != null)
+            {
+                response.Content.Headers.ContentDisposition = new("attachment")
                 {
-                    response.Content.Headers.ContentDisposition = new("attachment")
-                    {
-                        FileName = filename
-                    };
-                }
+                    FileName = filename
+                };
             }
 
             if (additionalHeaders != null)
