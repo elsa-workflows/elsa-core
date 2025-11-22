@@ -50,37 +50,40 @@ public static class VariableExtensions
     /// </summary>
     public static Variable<T> WithMemoryStorage<T>(this Variable<T> variable) => (Variable<T>)variable.WithStorage<MemoryStorageDriver>();
 
-    /// <summary>
-    /// Configures the variable to use the specified <see cref="IStorageDriver"/> type.
-    /// </summary>
-    public static Variable WithStorage<T>(this Variable variable) => variable.WithStorage(typeof(T));
+    extension(Variable variable)
+    {
+        /// <summary>
+        /// Configures the variable to use the specified <see cref="IStorageDriver"/> type.
+        /// </summary>
+        public Variable WithStorage<T>() => variable.WithStorage(typeof(T));
 
-    /// <summary>
-    /// Configures the variable to use the specified <see cref="IStorageDriver"/> type.
-    /// </summary>
-    public static Variable WithStorage(this Variable variable, Type storageDriverType)
-    {
-        variable.StorageDriverType = storageDriverType;
-        return variable;
-    }
-    
-    public static void Set(this Variable variable, ActivityExecutionContext context, object? value)
-    {
-        var parsedValue = variable.ParseValue(value);
-        // Set the value.
-        ((MemoryBlockReference)variable).Set(context, parsedValue);
+        /// <summary>
+        /// Configures the variable to use the specified <see cref="IStorageDriver"/> type.
+        /// </summary>
+        public Variable WithStorage(Type storageDriverType)
+        {
+            variable.StorageDriverType = storageDriverType;
+            return variable;
+        }
+
+        public void Set(ActivityExecutionContext context, object? value)
+        {
+            var parsedValue = variable.ParseValue(value);
+            // Set the value.
+            ((MemoryBlockReference)variable).Set(context, parsedValue);
+        }
+
+        /// <summary>
+        /// Converts the specified value into a type that is compatible with the variable.
+        /// </summary>
+        [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
+        public object? ParseValue(object? value)
+        {
+            var genericType = variable.GetType();
+            return ParseValue(genericType, value);
+        }
     }
 
-    /// <summary>
-    /// Converts the specified value into a type that is compatible with the variable.
-    /// </summary>
-    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
-    public static object? ParseValue(this Variable variable, object? value)
-    {
-        var genericType = variable.GetType();
-        return ParseValue(genericType, value);
-    }
-    
     public static object? ParseValue(Type type, object? value)
     {
         var genericType = type.GenericTypeArguments.FirstOrDefault();
@@ -88,30 +91,33 @@ public static class VariableExtensions
         return genericType == null ? value : value?.ConvertTo(genericType, converterOptions);
     }
     
-    /// <summary>
-    /// Converts the specified value into a type that is compatible with the variable.
-    /// </summary>
-    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
-    public static bool TryParseValue(this Variable variable, object? value, out object? parsedValue)
+    extension(Variable variable)
     {
-        try
+        /// <summary>
+        /// Converts the specified value into a type that is compatible with the variable.
+        /// </summary>
+        [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
+        public bool TryParseValue(object? value, out object? parsedValue)
         {
-            parsedValue = variable.ParseValue(value);
-            return true;
+            try
+            {
+                parsedValue = variable.ParseValue(value);
+                return true;
+            }
+            catch
+            {
+                parsedValue = null;
+                return false;
+            }
         }
-        catch
-        {
-            parsedValue = null;
-            return false;
-        }
-    }
 
-    /// <summary>
-    /// Return the type of the variable.
-    /// </summary>
-    public static Type GetVariableType(this Variable variable)
-    {
-        var variableType = variable.GetType();
-        return variableType.GenericTypeArguments.Any() ? variableType.GetGenericArguments().First() : typeof(object);
+        /// <summary>
+        /// Return the type of the variable.
+        /// </summary>
+        public Type GetVariableType()
+        {
+            var variableType = variable.GetType();
+            return variableType.GenericTypeArguments.Any() ? variableType.GetGenericArguments().First() : typeof(object);
+        }
     }
 }

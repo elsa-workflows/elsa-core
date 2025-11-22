@@ -5,34 +5,37 @@ namespace Elsa.Workflows;
 
 public static class ActivityExecutionContextExtensions
 {
-    public static IDictionary<string, object> GetInputs(this ActivityExecutionContext context)
+    extension(ActivityExecutionContext context)
     {
-        return context.ActivityState!;
-    }
-    
-    public static IDictionary<string, object> GetOutputs(this ActivityExecutionContext context)
-    {
-        var activity = context.Activity;
-        var expressionExecutionContext = context.ExpressionExecutionContext;
-        var activityDescriptor = context.ActivityDescriptor;
-        var outputDescriptors = activityDescriptor.Outputs;
-
-        var outputs = outputDescriptors.ToDictionary(x => x.Name, x =>
+        public IDictionary<string, object> GetInputs()
         {
-            if (x.IsSerializable == false)
-                return "(not serializable)";
+            return context.ActivityState!;
+        }
 
-            var cachedValue = activity.GetOutput(expressionExecutionContext, x.Name);
+        public IDictionary<string, object> GetOutputs()
+        {
+            var activity = context.Activity;
+            var expressionExecutionContext = context.ExpressionExecutionContext;
+            var activityDescriptor = context.ActivityDescriptor;
+            var outputDescriptors = activityDescriptor.Outputs;
 
-            if (cachedValue != null)
-                return cachedValue;
+            var outputs = outputDescriptors.ToDictionary(x => x.Name, x =>
+            {
+                if (x.IsSerializable == false)
+                    return "(not serializable)";
 
-            if (x.ValueGetter(activity) is Output output && context.TryGet(output.MemoryBlockReference(), out var outputValue))
-                return outputValue!;
+                var cachedValue = activity.GetOutput(expressionExecutionContext, x.Name);
 
-            return null!;
-        });
+                if (cachedValue != null)
+                    return cachedValue;
 
-        return outputs;
+                if (x.ValueGetter(activity) is Output output && context.TryGet(output.MemoryBlockReference(), out var outputValue))
+                    return outputValue!;
+
+                return null!;
+            });
+
+            return outputs;
+        }
     }
 }

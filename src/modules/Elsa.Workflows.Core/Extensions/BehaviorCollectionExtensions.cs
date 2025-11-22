@@ -5,12 +5,15 @@ namespace Elsa.Extensions;
 
 public static class BehaviorCollectionExtensions
 {
-    public static void Add<T>(this ICollection<IBehavior> behaviors, IActivity owner) where T : IBehavior => behaviors.Add((T)Activator.CreateInstance(typeof(T), owner)!);
-
-    public static void Remove<T>(this ICollection<IBehavior> behaviors) where T : IBehavior
+    extension(ICollection<IBehavior> behaviors)
     {
-        var behaviorsToRemove = behaviors.Where(x => x is T).ToList();
+        public void Add<T>(IActivity owner) where T : IBehavior => behaviors.Add((T)Activator.CreateInstance(typeof(T), owner)!);
 
-        foreach (var behavior in behaviorsToRemove) behaviors.Remove(behavior);
+        public void Remove<T>() where T : IBehavior
+        {
+            var behaviorsToRemove = behaviors.Where(x => x is T).ToList();
+
+            foreach (var behavior in behaviorsToRemove) behaviors.Remove(behavior);
+        }
     }
 }

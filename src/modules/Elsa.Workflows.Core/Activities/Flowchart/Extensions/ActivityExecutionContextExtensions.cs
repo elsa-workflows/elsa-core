@@ -43,64 +43,67 @@ public static class ActivityExecutionContextExtensions
         return activities.FirstOrDefault();
     }
 
-    /// <summary>
-    /// Checks if there is any pending work for the flowchart.
-    /// </summary>
-    internal static bool HasPendingWork(this ActivityExecutionContext context)
+    extension(ActivityExecutionContext context)
     {
-        var flowchart = (Activities.Flowchart)context.Activity;
-        var workflowExecutionContext = context.WorkflowExecutionContext;
-        var activityIds = flowchart.Activities.Select(x => x.Id).ToList();
-        var children = context.Children;
-        var hasRunningActivityInstances = children.Where(x => activityIds.Contains(x.Activity.Id)).Any(x => x.Status == ActivityStatus.Running);
-        var hasUnconsumedTokens = flowchart.GetTokenList(context).Any(x => x is { Consumed: false, Blocked: false });
-        var hasFaulted = context.HasFaultedChildren();
-
-        var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(workItem =>
+        /// <summary>
+        /// Checks if there is any pending work for the flowchart.
+        /// </summary>
+        internal bool HasPendingWork()
         {
-            var ownerInstanceId = workItem.Owner?.Id;
+            var flowchart = (Activities.Flowchart)context.Activity;
+            var workflowExecutionContext = context.WorkflowExecutionContext;
+            var activityIds = flowchart.Activities.Select(x => x.Id).ToList();
+            var children = context.Children;
+            var hasRunningActivityInstances = children.Where(x => activityIds.Contains(x.Activity.Id)).Any(x => x.Status == ActivityStatus.Running);
+            var hasUnconsumedTokens = flowchart.GetTokenList(context).Any(x => x is { Consumed: false, Blocked: false });
+            var hasFaulted = context.HasFaultedChildren();
 
-            if (ownerInstanceId == null)
-                return false;
+            var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(workItem =>
+            {
+                var ownerInstanceId = workItem.Owner?.Id;
 
-            if (ownerInstanceId == context.Id)
-                return true;
+                if (ownerInstanceId == null)
+                    return false;
 
-            var ownerContext = context.WorkflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
-            var ancestors = ownerContext.GetAncestors().ToList();
+                if (ownerInstanceId == context.Id)
+                    return true;
 
-            return ancestors.Any(x => x == context);
-        });
+                var ownerContext = context.WorkflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
+                var ancestors = ownerContext.GetAncestors().ToList();
 
-        return hasRunningActivityInstances || hasPendingWork || hasUnconsumedTokens || hasFaulted;
-    }
+                return ancestors.Any(x => x == context);
+            });
 
-    internal static bool HasFaultedChildren(this ActivityExecutionContext context)
-    {
-        return context.Children.Any(x => x.Status == ActivityStatus.Faulted);
-    }
+            return hasRunningActivityInstances || hasPendingWork || hasUnconsumedTokens || hasFaulted;
+        }
 
-    internal static FlowGraph GetFlowGraph(this ActivityExecutionContext context)
-    {
-        // Store in TransientProperties so FlowChart is not persisted in WorkflowState
-        var flowchart = (Activities.Flowchart)context.Activity;
-        var startActivity = flowchart.GetStartActivity(context.WorkflowExecutionContext.TriggerActivityId);
-        return context.TransientProperties.GetOrAdd(GraphTransientProperty, () => new FlowGraph(flowchart.Connections, startActivity));
-    }
-    
-    internal static async Task CancelInboundAncestorsAsync(this ActivityExecutionContext flowchartContext, IActivity activity)
-    {
-        if(flowchartContext.Activity is not Activities.Flowchart)
-            throw new InvalidOperationException("Activity context is not a flowchart.");
+        internal bool HasFaultedChildren()
+        {
+            return context.Children.Any(x => x.Status == ActivityStatus.Faulted);
+        }
+
+        internal FlowGraph GetFlowGraph()
+        {
+            // Store in TransientProperties so FlowChart is not persisted in WorkflowState
+            var flowchart = (Activities.Flowchart)context.Activity;
+            var startActivity = flowchart.GetStartActivity(context.WorkflowExecutionContext.TriggerActivityId);
+            return context.TransientProperties.GetOrAdd(GraphTransientProperty, () => new FlowGraph(flowchart.Connections, startActivity));
+        }
+
+        internal async Task CancelInboundAncestorsAsync(IActivity activity)
+        {
+            if(context.Activity is not Activities.Flowchart)
+                throw new InvalidOperationException("Activity context is not a flowchart.");
         
-        var flowGraph = flowchartContext.GetFlowGraph();
-        var ancestorActivities = flowGraph.GetAncestorActivities(activity);
-        var inboundActivityExecutionContexts = flowchartContext.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => ancestorActivities.Contains(x.Activity) && x.ParentActivityExecutionContext == flowchartContext).ToList();
+            var flowGraph = context.GetFlowGraph();
+            var ancestorActivities = flowGraph.GetAncestorActivities(activity);
+            var inboundActivityExecutionContexts = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => ancestorActivities.Contains(x.Activity) && x.ParentActivityExecutionContext == context).ToList();
 
-        // Cancel each ancestor activity.
-        foreach (var activityExecutionContext in inboundActivityExecutionContexts)
-        {
-            await activityExecutionContext.CancelActivityAsync();
+            // Cancel each ancestor activity.
+            foreach (var activityExecutionContext in inboundActivityExecutionContexts)
+            {
+                await activityExecutionContext.CancelActivityAsync();
+            }
         }
     }
 }

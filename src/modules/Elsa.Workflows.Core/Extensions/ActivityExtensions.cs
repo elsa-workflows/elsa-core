@@ -15,175 +15,177 @@ namespace Elsa.Extensions;
 [PublicAPI]
 public static class ActivityExtensions
 {
-    /// <summary>
-    /// Gets the input properties of the specified activity.
-    /// </summary>
-    public static IDictionary<string, Input> GetNamedInputs(this IActivity activity)
-    {
-        var inputProps = activity.GetInputProperties().ToList();
-
-        var query =
-            from inputProp in inputProps
-            let inputValue = (Input?)inputProp.GetValue(activity)
-            where inputValue != null
-            select (inputProp, inputValue);
-
-        return query.DistinctBy(x => x.inputProp.Name).ToDictionary(x => x.inputProp.Name, x => x.inputValue);
-    }
-
-    /// <summary>
-    /// Gets the input properties of the specified activity.
-    /// </summary>
-    public static IEnumerable<Input> GetInputs(this IActivity activity) => GetNamedInputs(activity).Values;
-
-    /// <summary>
-    /// Gets the input with the specified name.
-    /// </summary>
-    public static Input? GetInput(this IActivity activity, string inputName) => GetNamedInputs(activity).TryGetValue(inputName, out var input) ? input : null;
-
-    /// <summary>
-    /// Gets the output properties of the specified activity.
-    /// </summary>
-    public static IEnumerable<NamedOutput> GetOutputs(this IActivity activity)
-    {
-        var outputProps = activity.GetType().GetProperties().Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).ToList();
-
-        var query =
-            from outputProp in outputProps
-            let output = (Output?)outputProp.GetValue(activity)
-            where output != null
-            select new NamedOutput(outputProp.Name, output);
-
-        return query.Select(x => x!).ToList();
-    }
-    
-    /// <summary>
-    /// Gets the output with the specified name.
-    /// </summary>
     /// <param name="activity">The activity to get the output from.</param>
-    /// <param name="context">The activity execution context.</param>
-    /// <param name="outputName">Name of the output.</param>
-    /// <returns>The output value.</returns>
-    public static object? GetOutput(this IActivity activity, ActivityExecutionContext context, string? outputName = null)
+    extension(IActivity activity)
     {
-        var workflowExecutionContext = context.WorkflowExecutionContext;
-        var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
-        
-        // If the provided activity execution context is the same as the current activity's execution context, we return the exact output value of the current activity execution context.
-        if(context.Activity.NodeId == activity.NodeId)
-            return outputRegister.FindOutputByActivityInstanceId(context.Id, outputName);
-        
-        // If the provided activity execution context is different from the current activity's execution context, we look for the last output value of the activity.
-        return outputRegister.FindOutputByActivityId(activity.Id, outputName);
-    }
-    
-    /// <summary>
-    /// Gets the output with the specified name.
-    /// </summary>
-    /// <param name="activity">The activity to get the output from.</param>
-    /// <param name="context">The expression execution context.</param>
-    /// <param name="outputName">Name of the output.</param>
-    /// <returns>The output value.</returns>
-    public static object? GetOutput(this IActivity activity, ExpressionExecutionContext context, string? outputName = null)
-    {
-        var activityExecutionContext = context.GetActivityExecutionContext();
+        /// <summary>
+        /// Gets the input properties of the specified activity.
+        /// </summary>
+        public IDictionary<string, Input> GetNamedInputs()
+        {
+            var inputProps = activity.GetInputProperties().ToList();
 
-        if (activityExecutionContext == null)
-            return null;
+            var query =
+                from inputProp in inputProps
+                let inputValue = (Input?)inputProp.GetValue(activity)
+                where inputValue != null
+                select (inputProp, inputValue);
+
+            return query.DistinctBy(x => x.inputProp.Name).ToDictionary(x => x.inputProp.Name, x => x.inputValue);
+        }
+
+        /// <summary>
+        /// Gets the input properties of the specified activity.
+        /// </summary>
+        public IEnumerable<Input> GetInputs() => GetNamedInputs(activity).Values;
+
+        /// <summary>
+        /// Gets the input with the specified name.
+        /// </summary>
+        public Input? GetInput(string inputName) => GetNamedInputs(activity).TryGetValue(inputName, out var input) ? input : null;
+
+        /// <summary>
+        /// Gets the output properties of the specified activity.
+        /// </summary>
+        public IEnumerable<NamedOutput> GetOutputs()
+        {
+            var outputProps = activity.GetType().GetProperties().Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).ToList();
+
+            var query =
+                from outputProp in outputProps
+                let output = (Output?)outputProp.GetValue(activity)
+                where output != null
+                select new NamedOutput(outputProp.Name, output);
+
+            return query.Select(x => x!).ToList();
+        }
+
+        /// <summary>
+        /// Gets the output with the specified name.
+        /// </summary>
+        /// <param name="context">The activity execution context.</param>
+        /// <param name="outputName">Name of the output.</param>
+        /// <returns>The output value.</returns>
+        public object? GetOutput(ActivityExecutionContext context, string? outputName = null)
+        {
+            var workflowExecutionContext = context.WorkflowExecutionContext;
+            var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
         
-        return activity.GetOutput(activityExecutionContext, outputName);
+            // If the provided activity execution context is the same as the current activity's execution context, we return the exact output value of the current activity execution context.
+            if(context.Activity.NodeId == activity.NodeId)
+                return outputRegister.FindOutputByActivityInstanceId(context.Id, outputName);
+        
+            // If the provided activity execution context is different from the current activity's execution context, we look for the last output value of the activity.
+            return outputRegister.FindOutputByActivityId(activity.Id, outputName);
+        }
+
+        /// <summary>
+        /// Gets the output with the specified name.
+        /// </summary>
+        /// <param name="context">The expression execution context.</param>
+        /// <param name="outputName">Name of the output.</param>
+        /// <returns>The output value.</returns>
+        public object? GetOutput(ExpressionExecutionContext context, string? outputName = null)
+        {
+            var activityExecutionContext = context.GetActivityExecutionContext();
+
+            if (activityExecutionContext == null)
+                return null;
+        
+            return activity.GetOutput(activityExecutionContext, outputName);
+        }
+
+        /// <summary>
+        /// Gets the output with the specified name.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="outputName">Name of the output.</param>
+        /// <typeparam name="T">The type of the output.</typeparam>
+        /// <returns>The output value.</returns>
+        public T? GetOutput<T>(ActivityExecutionContext context, string outputName)
+        {
+            var outputValue = activity.GetOutput(context, outputName);
+            return outputValue == null ? default! : outputValue.ConvertTo<T>();
+        }
+
+        /// <summary>
+        /// Gets the output with the specified name.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="outputName">Name of the output.</param>
+        /// <typeparam name="T">The type of the output.</typeparam>
+        /// <returns>The output value.</returns>
+        public T? GetOutput<T>(ExpressionExecutionContext context, string outputName)
+        {
+            return activity.GetOutput<T>(context.GetActivityExecutionContext(), outputName);
+        }
     }
 
-    /// <summary>
-    /// Gets the output with the specified name.
-    /// </summary>
     /// <param name="activity">The activity.</param>
-    /// <param name="context">The context.</param>
-    /// <param name="outputName">Name of the output.</param>
-    /// <typeparam name="T">The type of the output.</typeparam>
-    /// <returns>The output value.</returns>
-    public static T? GetOutput<T>(this IActivity activity, ActivityExecutionContext context, string outputName)
-    {
-        var outputValue = activity.GetOutput(context, outputName);
-        return outputValue == null ? default! : outputValue.ConvertTo<T>();
-    }
-    
-    /// <summary>
-    /// Gets the output with the specified name.
-    /// </summary>
-    /// <param name="activity">The activity.</param>
-    /// <param name="context">The context.</param>
-    /// <param name="outputName">Name of the output.</param>
-    /// <typeparam name="T">The type of the output.</typeparam>
-    /// <returns>The output value.</returns>
-    public static T? GetOutput<T>(this IActivity activity, ExpressionExecutionContext context, string outputName)
-    {
-        return activity.GetOutput<T>(context.GetActivityExecutionContext(), outputName);
-    }
-
-    /// <summary>
-    /// Gets the output with the specified name.
-    /// </summary>
-    /// <param name="activity">The activity.</param>
-    /// <param name="context">The context.</param>
-    /// <param name="outputExpression">The output expression.</param>
     /// <typeparam name="TActivity">The type of the activity.</typeparam>
-    /// <typeparam name="T">The type of the output.</typeparam>
-    /// <returns>The output value.</returns>
-    public static T? GetOutput<TActivity, T>(this TActivity activity, ActivityExecutionContext context, Expression<Func<TActivity, object?>> outputExpression)
+    extension<TActivity>(TActivity activity)
     {
-        var outputName = outputExpression.GetPropertyName();
-        return ((IActivity)activity!).GetOutput<T>(context, outputName);
-    }
-    
-    /// <summary>
-    /// Gets the output with the specified name.
-    /// </summary>
-    /// <param name="activity">The activity.</param>
-    /// <param name="context">The context.</param>
-    /// <param name="outputExpression">The output expression.</param>
-    /// <typeparam name="TActivity">The type of the activity.</typeparam>
-    /// <typeparam name="T">The type of the output.</typeparam>
-    /// <returns>The output value.</returns>
-    public static T? GetOutput<TActivity, T>(this TActivity activity, ExpressionExecutionContext context, Expression<Func<TActivity, object?>> outputExpression)
-    {
-        var outputName = outputExpression.GetPropertyName();
-        return ((IActivity)activity!).GetOutput<T>(context, outputName);
+        /// <summary>
+        /// Gets the output with the specified name.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="outputExpression">The output expression.</param>
+        /// <typeparam name="T">The type of the output.</typeparam>
+        /// <returns>The output value.</returns>
+        public T? GetOutput<T>(ActivityExecutionContext context, Expression<Func<TActivity, object?>> outputExpression)
+        {
+            var outputName = outputExpression.GetPropertyName();
+            return ((IActivity)activity!).GetOutput<T>(context, outputName);
+        }
+
+        /// <summary>
+        /// Gets the output with the specified name.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="outputExpression">The output expression.</param>
+        /// <typeparam name="T">The type of the output.</typeparam>
+        /// <returns>The output value.</returns>
+        public T? GetOutput<T>(ExpressionExecutionContext context, Expression<Func<TActivity, object?>> outputExpression)
+        {
+            var outputName = outputExpression.GetPropertyName();
+            return ((IActivity)activity!).GetOutput<T>(context, outputName);
+        }
     }
 
-    /// <summary>
-    /// Gets the Result output of the specified activity.
-    /// </summary>
     /// <param name="activity">The activity.</param>
-    /// <param name="context">The context.</param>
-    /// <typeparam name="T">The type as which to return the output.</typeparam>
-    /// <returns>The output value.</returns>
-    public static T? GetResult<T>(this IActivity activity, ExpressionExecutionContext context)
+    extension(IActivity activity)
     {
-        var value = GetResult(activity, context);
-        return value == null ? default! : value.ConvertTo<T>();
-    }
-    
-    /// <summary>
-    /// Gets the Result output of the specified activity.
-    /// </summary>
-    /// <param name="activity">The activity.</param>
-    /// <param name="context">The context.</param>
-    /// <returns>The output value.</returns>
-    public static object? GetResult(this IActivity activity, ExpressionExecutionContext context)
-    {
-        return activity.GetResult(context.GetActivityExecutionContext());
-    }
+        /// <summary>
+        /// Gets the Result output of the specified activity.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <typeparam name="T">The type as which to return the output.</typeparam>
+        /// <returns>The output value.</returns>
+        public T? GetResult<T>(ExpressionExecutionContext context)
+        {
+            var value = GetResult(activity, context);
+            return value == null ? default! : value.ConvertTo<T>();
+        }
 
-    /// <summary>
-    /// Gets the Result output of the specified activity.
-    /// </summary>
-    /// <param name="activity">The activity.</param>
-    /// <param name="context">The context.</param>
-    /// <returns>The output value.</returns>
-    public static object? GetResult(this IActivity activity, ActivityExecutionContext context)
-    {
-        return activity.GetOutput(context, ActivityOutputRegister.DefaultOutputName);
+        /// <summary>
+        /// Gets the Result output of the specified activity.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <returns>The output value.</returns>
+        public object? GetResult(ExpressionExecutionContext context)
+        {
+            return activity.GetResult(context.GetActivityExecutionContext());
+        }
+
+        /// <summary>
+        /// Gets the Result output of the specified activity.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <returns>The output value.</returns>
+        public object? GetResult(ActivityExecutionContext context)
+        {
+            return activity.GetOutput(context, ActivityOutputRegister.DefaultOutputName);
+        }
     }
 
     /// <summary>
@@ -225,40 +227,43 @@ public static class ActivityExtensions
         return context.GetLastActivityResult();
     }
 
-    /// <summary>
-    /// Gets the input properties of the specified activity.
-    /// </summary>
-    public static IEnumerable<PropertyInfo> GetInputProperties(this IActivity activity) => activity.GetType().GetProperties().Where(x => typeof(Input).IsAssignableFrom(x.PropertyType)).ToList();
-
-    /// <summary>
-    /// Gets the method for the specified method name on the specified activity.
-    /// </summary>
-    public static TDelegate GetDelegate<TDelegate>(this IActivity activity, string methodName) where TDelegate : Delegate
+    extension(IActivity activity)
     {
-        var activityType = activity.GetType();
-        const BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
-        var resumeMethodInfo = default(MethodInfo?);
-        var currentType = activityType;
+        /// <summary>
+        /// Gets the input properties of the specified activity.
+        /// </summary>
+        public IEnumerable<PropertyInfo> GetInputProperties() => activity.GetType().GetProperties().Where(x => typeof(Input).IsAssignableFrom(x.PropertyType)).ToList();
 
-        while (currentType != null && resumeMethodInfo == null)
+        /// <summary>
+        /// Gets the method for the specified method name on the specified activity.
+        /// </summary>
+        public TDelegate GetDelegate<TDelegate>(string methodName) where TDelegate : Delegate
         {
-            resumeMethodInfo = currentType.GetMethod(methodName, bindingFlags);
-            currentType = currentType.BaseType;
+            var activityType = activity.GetType();
+            const BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
+            var resumeMethodInfo = default(MethodInfo?);
+            var currentType = activityType;
+
+            while (currentType != null && resumeMethodInfo == null)
+            {
+                resumeMethodInfo = currentType.GetMethod(methodName, bindingFlags);
+                currentType = currentType.BaseType;
+            }
+
+            if (resumeMethodInfo == null)
+                throw new Exception($"Can't find method name {methodName} on type {activityType} or its base type {activityType.BaseType}");
+
+            return resumeMethodInfo.IsStatic ? (TDelegate)Delegate.CreateDelegate(typeof(TDelegate), resumeMethodInfo) : (TDelegate)Delegate.CreateDelegate(typeof(TDelegate), activity, resumeMethodInfo);
         }
 
-        if (resumeMethodInfo == null)
-            throw new Exception($"Can't find method name {methodName} on type {activityType} or its base type {activityType.BaseType}");
+        /// <summary>
+        /// Gets the Resume method for the specified activity.
+        /// </summary>
+        public ExecuteActivityDelegate GetResumeActivityDelegate(string resumeMethodName) => activity.GetDelegate<ExecuteActivityDelegate>(resumeMethodName);
 
-        return resumeMethodInfo.IsStatic ? (TDelegate)Delegate.CreateDelegate(typeof(TDelegate), resumeMethodInfo) : (TDelegate)Delegate.CreateDelegate(typeof(TDelegate), activity, resumeMethodInfo);
+        /// <summary>
+        /// Gets the Child Activity Completed method for the specified activity.
+        /// </summary>
+        public ActivityCompletionCallback GetActivityCompletionCallback(string completionMethodName) => activity.GetDelegate<ActivityCompletionCallback>(completionMethodName);
     }
-
-    /// <summary>
-    /// Gets the Resume method for the specified activity.
-    /// </summary>
-    public static ExecuteActivityDelegate GetResumeActivityDelegate(this IActivity driver, string resumeMethodName) => driver.GetDelegate<ExecuteActivityDelegate>(resumeMethodName);
-
-    /// <summary>
-    /// Gets the Child Activity Completed method for the specified activity.
-    /// </summary>
-    public static ActivityCompletionCallback GetActivityCompletionCallback(this IActivity driver, string completionMethodName) => driver.GetDelegate<ActivityCompletionCallback>(completionMethodName);
 }
