@@ -287,26 +287,22 @@ public class DownloadHttpFileTests
     {
         return (request, _) =>
         {
-            if (requestCapture != null)
-                requestCapture.CapturedRequest = request;
+            requestCapture?.CapturedRequest = request;
 
             var response = new HttpResponseMessage(statusCode);
 
-            // Only add content if provided (null means no content)
-            if (content != null || content == null && statusCode == HttpStatusCode.OK)
-            {
-                var actualContent = content ?? "Default file content"u8.ToArray();
-                var actualContentType = contentType ?? "application/octet-stream";
-                response.Content = new ByteArrayContent(actualContent);
-                response.Content.Headers.ContentType = new(actualContentType);
+            // Always set Content (even if empty) because DownloadHttpFile accesses Content.Headers
+            var actualContent = content ?? (statusCode == HttpStatusCode.OK ? "Default file content"u8.ToArray() : []);
+            var actualContentType = contentType ?? "application/octet-stream";
+            response.Content = new ByteArrayContent(actualContent);
+            response.Content.Headers.ContentType = new(actualContentType);
 
-                if (filename != null)
+            if (filename != null)
+            {
+                response.Content.Headers.ContentDisposition = new("attachment")
                 {
-                    response.Content.Headers.ContentDisposition = new("attachment")
-                    {
-                        FileName = filename
-                    };
-                }
+                    FileName = filename
+                };
             }
 
             if (additionalHeaders != null)
