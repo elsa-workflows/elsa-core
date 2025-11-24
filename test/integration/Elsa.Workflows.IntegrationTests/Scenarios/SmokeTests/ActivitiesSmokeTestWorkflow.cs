@@ -7,7 +7,7 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.SmokeTests;
 
 /// <summary>
 /// Comprehensive smoke test workflow that exercises basic control flow and data manipulation activities.
-/// Tests: Start, Finish, End, Sequence, Break, Complete, If, Switch, While, For, ForEach,
+/// Tests: Start, Sequence, Break, Complete, If, Switch, While, For, ForEach,
 /// WriteLine, SetName, SetVariable&lt;T&gt;, SetVariable (untyped), SetOutput
 /// </summary>
 public class ActivitiesSmokeTestWorkflow : WorkflowBase
