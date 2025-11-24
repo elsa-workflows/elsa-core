@@ -1,7 +1,7 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 
-namespace Elsa.Workflows.IntegrationTests.Activities.SequenceActivity;
+namespace Elsa.Workflows.IntegrationTests.Activities;
 
 /// <summary>
 /// Workflow with Sequence that executes all activities.
