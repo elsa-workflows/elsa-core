@@ -126,13 +126,13 @@ public class WorkflowInstanceManager(
     {
         var batchSize = managementOptions.Value.BulkDeleteBatchSize;
         var totalDeleted = 0L;
-        var allDeletedIds = new List<string>();
         
         logger.LogInformation("Starting bulk delete operation with batch size {BatchSize}", batchSize);
 
         while (true)
         {
             // Get IDs of records to delete in this batch
+            // Note: We always use Offset=0 because after each deletion, remaining records shift up
             var batchIds = await store.FindManyIdsAsync(filter, new PageArgs { Offset = 0, Limit = batchSize }, cancellationToken);
             var batchIdsList = batchIds.Items.ToList();
             
@@ -149,7 +149,6 @@ public class WorkflowInstanceManager(
             var deletedCount = await store.DeleteAsync(batchFilter, cancellationToken);
             
             totalDeleted += deletedCount;
-            allDeletedIds.AddRange(batchIdsList);
 
             // Send notification after deleting this batch
             await notificationSender.SendAsync(new WorkflowInstancesDeleted(batchIdsList), cancellationToken);
