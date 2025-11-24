@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
@@ -8,6 +9,8 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.State;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Management.Services;
 
@@ -18,7 +21,9 @@ public class WorkflowInstanceManager(
     INotificationSender notificationSender,
     WorkflowStateMapper workflowStateMapper,
     IWorkflowStateExtractor workflowStateExtractor,
-    IWorkflowStateSerializer workflowStateSerializer)
+    IWorkflowStateSerializer workflowStateSerializer,
+    IOptions<ManagementOptions> managementOptions,
+    ILogger<WorkflowInstanceManager> logger)
     : IWorkflowInstanceManager
 {
     /// <inheritdoc />
@@ -119,12 +124,45 @@ public class WorkflowInstanceManager(
     /// <inheritdoc />
     public async Task<long> BulkDeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var summaries = (await store.SummarizeManyAsync(filter, cancellationToken)).ToList();
-        var ids = summaries.Select(x => x.Id).ToList();
-        await notificationSender.SendAsync(new WorkflowInstancesDeleting(ids), cancellationToken);
-        var count = await store.DeleteAsync(filter, cancellationToken);
-        await notificationSender.SendAsync(new WorkflowInstancesDeleted(ids), cancellationToken);
-        return count;
+        var batchSize = managementOptions.Value.BulkDeleteBatchSize;
+        var totalDeleted = 0L;
+        var allDeletedIds = new List<string>();
+        
+        logger.LogInformation("Starting bulk delete operation with batch size {BatchSize}", batchSize);
+
+        while (true)
+        {
+            // Get IDs of records to delete in this batch
+            var batchIds = await store.FindManyIdsAsync(filter, new PageArgs { Offset = 0, Limit = batchSize }, cancellationToken);
+            var batchIdsList = batchIds.Items.ToList();
+            
+            if (batchIdsList.Count == 0)
+                break;
+
+            logger.LogDebug("Deleting batch of {Count} workflow instances", batchIdsList.Count);
+
+            // Send notification before deleting this batch
+            await notificationSender.SendAsync(new WorkflowInstancesDeleting(batchIdsList), cancellationToken);
+
+            // Delete this batch
+            var batchFilter = new WorkflowInstanceFilter { Ids = batchIdsList };
+            var deletedCount = await store.DeleteAsync(batchFilter, cancellationToken);
+            
+            totalDeleted += deletedCount;
+            allDeletedIds.AddRange(batchIdsList);
+
+            // Send notification after deleting this batch
+            await notificationSender.SendAsync(new WorkflowInstancesDeleted(batchIdsList), cancellationToken);
+
+            logger.LogDebug("Deleted {DeletedCount} workflow instances in batch, total deleted: {TotalDeleted}", deletedCount, totalDeleted);
+
+            // If we deleted fewer items than the batch size, we're done
+            if (batchIdsList.Count < batchSize)
+                break;
+        }
+
+        logger.LogInformation("Bulk delete operation completed. Total deleted: {TotalDeleted}", totalDeleted);
+        return totalDeleted;
     }
 
     /// <inheritdoc />
