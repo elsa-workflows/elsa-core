@@ -12,13 +12,6 @@ public class ContainerTests(ITestOutputHelper testOutputHelper)
 {
     private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
 
-    private async Task<(RunWorkflowResult Result, List<string> Lines)> RunWorkflowAndCaptureOutput(IWorkflow workflow)
-    {
-        var result = await _fixture.RunWorkflowAsync(workflow);
-        var lines = _fixture.CapturingTextWriter.Lines.ToList();
-        return (result, lines);
-    }
-
     [Fact(DisplayName = "Container executes child activities in order")]
     public async Task Container_ExecutesChildActivitiesInOrder()
     {
@@ -107,5 +100,12 @@ public class ContainerTests(ITestOutputHelper testOutputHelper)
         {
             Assert.Equal($"Activity {i + 1}", lines[i]);
         }
+    }
+    
+    private async Task<(RunWorkflowResult Result, List<string> Lines)> RunWorkflowAndCaptureOutput(IWorkflow workflow)
+    {
+        var result = await _fixture.RunWorkflowAsync(workflow);
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
+        return (result, lines);
     }
 }
