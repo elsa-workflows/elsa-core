@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using static Elsa.Activities.UnitTests.Http.Helpers.SendHttpRequestTestHelpers;
 
 namespace Elsa.Activities.UnitTests.Http;
 
@@ -317,10 +318,6 @@ public class DownloadHttpFileTests
         };
     }
 
-    private static Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> CreateExceptionHandler<TException>(string message)
-        where TException : Exception =>
-        (_, _) => throw (TException)Activator.CreateInstance(typeof(TException), message)!;
-
     private static Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> CreateEmptyResponseHandler()
     {
         return (_, _) =>
@@ -331,10 +328,5 @@ public class DownloadHttpFileTests
             response.Content.Headers.ContentLength = 0;
             return Task.FromResult(response);
         };
-    }
-
-    private sealed class RequestCapture
-    {
-        public HttpRequestMessage? CapturedRequest { get; set; }
     }
 }

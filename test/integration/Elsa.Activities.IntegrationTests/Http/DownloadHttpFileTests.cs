@@ -1,4 +1,5 @@
 using System.Net;
+using Elsa.Activities.UnitTests.Http.Helpers;
 using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Testing.Shared;
@@ -220,10 +221,4 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
 
             return Task.FromResult(response);
         });
-
-    private sealed class TestHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler) : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            handler(request, cancellationToken);
-    }
 }
