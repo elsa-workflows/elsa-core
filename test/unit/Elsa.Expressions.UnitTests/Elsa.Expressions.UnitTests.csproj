@@ -10,4 +10,11 @@
         <ProjectReference Include="..\..\..\src\modules\Elsa.Expressions\Elsa.Expressions.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Update="GitHubActionsTestLogger">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
 </Project>

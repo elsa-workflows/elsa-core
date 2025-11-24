@@ -19,4 +19,11 @@
       </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Update="GitHubActionsTestLogger">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
 </Project>
