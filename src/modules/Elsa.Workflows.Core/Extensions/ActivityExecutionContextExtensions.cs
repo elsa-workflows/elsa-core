@@ -330,8 +330,6 @@ public static partial class ActivityExecutionContextExtensions
 
             foreach (var ancestor in ancestors)
                 ancestor.AggregateFaultCount++;
-
-            activityExecutionContext.TransitionTo(ActivityStatus.Faulted);
         }
 
         /// <summary>

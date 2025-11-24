@@ -7,40 +7,43 @@ public static class ActivityExecutionContextExtensions
 {
     private const string GraphTransientProperty = "FlowGraph";
 
-    public static IActivity? GetStartActivity(this Activities.Flowchart flowchart, string? triggerActivityId)
+    extension(Activities.Flowchart flowchart)
     {
-        var activities = flowchart.Activities;
+        public IActivity? GetStartActivity(string? triggerActivityId)
+        {
+            return flowchart.GetTriggerActivity(triggerActivityId)
+                   ?? flowchart.Start
+                   ?? flowchart.GetExplicitStartActivity()
+                   ?? flowchart.GetCanStartWorkflowActivity()
+                   ?? flowchart.GetRootActivity()
+                   ?? flowchart.Activities.FirstOrDefault();
+        }
 
-        // If there's a trigger that triggered this workflow, use that.
-        var triggerActivity = triggerActivityId != null ? activities.FirstOrDefault(x => x.Id == triggerActivityId) : null;
+        /// <summary>
+        /// Gets the activity that was triggered by the specified trigger activity ID.
+        /// </summary>
+        private IActivity? GetTriggerActivity(string? triggerActivityId)
+        {
+            return triggerActivityId == null 
+                ? null : 
+                flowchart.Activities.FirstOrDefault(x => x.Id == triggerActivityId);
+        }
 
-        if (triggerActivity != null)
-            return triggerActivity;
+        /// <summary>
+        /// Gets the explicit Start activity from the flowchart.
+        /// </summary>
+        private IActivity? GetExplicitStartActivity()
+        {
+            return flowchart.Activities.FirstOrDefault(x => x is Start);
+        }
 
-        // If an explicit Start activity was provided, use that.
-        if (flowchart.Start != null)
-            return flowchart.Start;
-
-        // If there is a Start activity on the flowchart, use that.
-        var startActivity = activities.FirstOrDefault(x => x is Start);
-
-        if (startActivity != null)
-            return startActivity;
-
-        // If there's an activity marked as "Can Start Workflow", use that.
-        var canStartWorkflowActivity = activities.FirstOrDefault(x => x.GetCanStartWorkflow());
-
-        if (canStartWorkflowActivity != null)
-            return canStartWorkflowActivity;
-
-        // If there is a single activity that has no inbound connections, use that.
-        var root = flowchart.GetRootActivity();
-
-        if (root != null)
-            return root;
-
-        // If no start activity found, return the first activity.
-        return activities.FirstOrDefault();
+        /// <summary>
+        /// Gets the first activity marked as "Can Start Workflow".
+        /// </summary>
+        private IActivity? GetCanStartWorkflowActivity()
+        {
+            return flowchart.Activities.FirstOrDefault(x => x.GetCanStartWorkflow());
+        }
     }
 
     extension(ActivityExecutionContext context)
@@ -50,36 +53,10 @@ public static class ActivityExecutionContextExtensions
         /// </summary>
         internal bool HasPendingWork()
         {
-            var flowchart = (Activities.Flowchart)context.Activity;
-            var workflowExecutionContext = context.WorkflowExecutionContext;
-            var activityIds = flowchart.Activities.Select(x => x.Id).ToList();
-            var children = context.Children;
-            var hasRunningActivityInstances = children.Where(x => activityIds.Contains(x.Activity.Id)).Any(x => x.Status == ActivityStatus.Running);
-            var hasUnconsumedTokens = flowchart.GetTokenList(context).Any(x => x is { Consumed: false, Blocked: false });
-            var hasFaulted = context.HasFaultedChildren();
-
-            var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(workItem =>
-            {
-                var ownerInstanceId = workItem.Owner?.Id;
-
-                if (ownerInstanceId == null)
-                    return false;
-
-                if (ownerInstanceId == context.Id)
-                    return true;
-
-                var ownerContext = context.WorkflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
-                var ancestors = ownerContext.GetAncestors().ToList();
-
-                return ancestors.Any(x => x == context);
-            });
-
-            return hasRunningActivityInstances || hasPendingWork || hasUnconsumedTokens || hasFaulted;
-        }
-
-        internal bool HasFaultedChildren()
-        {
-            return context.Children.Any(x => x.Status == ActivityStatus.Faulted);
+            return context.HasRunningActivityInstances()
+                   || context.HasScheduledWork()
+                   || context.HasUnconsumedTokens()
+                   || context.HasFaultedChildren();
         }
 
         internal FlowGraph GetFlowGraph()
@@ -104,6 +81,55 @@ public static class ActivityExecutionContextExtensions
             {
                 await activityExecutionContext.CancelActivityAsync();
             }
+        }
+        
+        /// <summary>
+        /// Checks if the flowchart has any unconsumed tokens.
+        /// </summary>
+        private bool HasUnconsumedTokens()
+        {
+            var flowchart = (Activities.Flowchart)context.Activity;
+            return flowchart.GetTokenList(context).Any(x => x is { Consumed: false, Blocked: false });
+        }
+
+        /// <summary>
+        /// Checks if the flowchart has any running activity instances.
+        /// </summary>
+        private bool HasRunningActivityInstances()
+        {
+            var flowchart = (Activities.Flowchart)context.Activity;
+            var activityIds = flowchart.Activities.Select(x => x.Id).ToList();
+            var children = context.Children;
+            return children.Where(x => activityIds.Contains(x.Activity.Id)).Any(x => x.Status == ActivityStatus.Running);
+        }
+
+        /// <summary>
+        /// Checks if the flowchart has any scheduled work items.
+        /// </summary>
+        private bool HasScheduledWork()
+        {
+            var workflowExecutionContext = context.WorkflowExecutionContext;
+
+            return workflowExecutionContext.Scheduler.List().Any(workItem =>
+            {
+                var ownerInstanceId = workItem.Owner?.Id;
+
+                if (ownerInstanceId == null)
+                    return false;
+
+                if (ownerInstanceId == context.Id)
+                    return true;
+
+                var ownerContext = context.WorkflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
+                var ancestors = ownerContext.GetAncestors().ToList();
+
+                return ancestors.Any(x => x == context);
+            });
+        }
+
+        private bool HasFaultedChildren()
+        {
+            return context.Children.Any(x => x.Status == ActivityStatus.Faulted);
         }
     }
 }
