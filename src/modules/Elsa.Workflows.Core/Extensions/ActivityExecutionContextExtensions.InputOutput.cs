@@ -21,7 +21,7 @@ public static class ActivityExecutionContextExtensions
 
             var outputs = outputDescriptors.ToDictionary(x => x.Name, x =>
             {
-                if (x.IsSerializable == false)
+                if (!x.IsSerializable)
                     return "(not serializable)";
 
                 var cachedValue = activity.GetOutput(expressionExecutionContext, x.Name);
