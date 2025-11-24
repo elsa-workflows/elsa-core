@@ -24,9 +24,9 @@ public class ActivitiesSmokeTests(ITestOutputHelper testOutputHelper)
         // Verify outputs were set correctly
         var outputs = result.WorkflowState.Output;
         Assert.NotNull(outputs);
-        Assert.True(outputs.ContainsKey("FinalResult"));
+        Assert.True(outputs.TryGetValue("FinalResult", out var finalResultObj));
 
-        var finalResult = outputs["FinalResult"]?.ToString();
+        var finalResult = finalResultObj?.ToString();
         Assert.NotNull(finalResult);
         Assert.Contains("Counter=10", finalResult);
         Assert.Contains("Name=Updated Name", finalResult);
