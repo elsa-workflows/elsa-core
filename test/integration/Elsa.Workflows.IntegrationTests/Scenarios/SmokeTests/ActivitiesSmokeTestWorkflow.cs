@@ -194,15 +194,15 @@ public class ActivitiesSmokeTestWorkflow : WorkflowBase
                     OutputValue = new(context => $"Counter={counter.Get(context)}, Name={name.Get(context)}, Result={result.Get(context)}")
                 },
 
-                // Test Complete activity (ends workflow gracefully)
+                // Test Finish and End activities
+                new Finish(),
+                new End(),
+
+                // Test Complete activity (ends workflow immediately)
                 new Complete(),
 
                 // This should not execute due to Complete
-                new WriteLine("After Complete (should not execute)"),
-
-                // Test Finish and End activities (won't be reached due to Complete)
-                new Finish(),
-                new End()
+                new WriteLine("After Complete (should not execute)")
             }
         };
     }
