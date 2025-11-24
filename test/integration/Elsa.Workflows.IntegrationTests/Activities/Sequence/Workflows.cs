@@ -151,3 +151,21 @@ public class EmptySequenceWorkflow : WorkflowBase
         workflow.Root = new Sequence();
     }
 }
+
+/// <summary>
+/// Workflow with dynamic number of activities in sequence.
+/// </summary>
+public class DynamicSequenceWorkflow(int activityCount) : WorkflowBase
+{
+    protected override void Build(IWorkflowBuilder workflow)
+    {
+        var sequence = new Sequence();
+
+        for (var i = 1; i <= activityCount; i++)
+        {
+            sequence.Activities.Add(new WriteLine($"Activity {i}"));
+        }
+
+        workflow.Root = sequence;
+    }
+}

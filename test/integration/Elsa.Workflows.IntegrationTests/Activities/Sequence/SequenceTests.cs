@@ -12,13 +12,6 @@ public class SequenceTests(ITestOutputHelper testOutputHelper)
 {
     private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
 
-    private async Task<(RunWorkflowResult Result, List<string> Lines)> RunWorkflowAndCaptureOutput(IWorkflow workflow)
-    {
-        var result = await _fixture.RunWorkflowAsync(workflow);
-        var lines = _fixture.CapturingTextWriter.Lines.ToList();
-        return (result, lines);
-    }
-
     [Fact(DisplayName = "Sequence executes all activities in order")]
     public async Task Sequence_ExecutesAllActivitiesInOrder()
     {
@@ -128,22 +121,11 @@ public class SequenceTests(ITestOutputHelper testOutputHelper)
             Assert.Equal($"Activity {i + 1}", lines[i]);
         }
     }
-}
-
-/// <summary>
-/// Workflow with dynamic number of activities in sequence.
-/// </summary>
-public class DynamicSequenceWorkflow(int activityCount) : WorkflowBase
-{
-    protected override void Build(IWorkflowBuilder workflow)
+    
+    private async Task<(RunWorkflowResult Result, List<string> Lines)> RunWorkflowAndCaptureOutput(IWorkflow workflow)
     {
-        var sequence = new Sequence();
-
-        for (var i = 1; i <= activityCount; i++)
-        {
-            sequence.Activities.Add(new WriteLine($"Activity {i}"));
-        }
-
-        workflow.Root = sequence;
+        var result = await _fixture.RunWorkflowAsync(workflow);
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
+        return (result, lines);
     }
 }
