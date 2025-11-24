@@ -22,7 +22,7 @@ public static class ActivityExecutionContextExtensions
         /// <summary>
         /// Gets the activity that was triggered by the specified trigger activity ID.
         /// </summary>
-        private IActivity? GetTriggerActivity(string? triggerActivityId)
+        public IActivity? GetTriggerActivity(string? triggerActivityId)
         {
             return triggerActivityId == null 
                 ? null : 
@@ -32,7 +32,7 @@ public static class ActivityExecutionContextExtensions
         /// <summary>
         /// Gets the explicit Start activity from the flowchart.
         /// </summary>
-        private IActivity? GetExplicitStartActivity()
+        public IActivity? GetExplicitStartActivity()
         {
             return flowchart.Activities.FirstOrDefault(x => x is Start);
         }
@@ -40,7 +40,7 @@ public static class ActivityExecutionContextExtensions
         /// <summary>
         /// Gets the first activity marked as "Can Start Workflow".
         /// </summary>
-        private IActivity? GetCanStartWorkflowActivity()
+        public IActivity? GetCanStartWorkflowActivity()
         {
             return flowchart.Activities.FirstOrDefault(x => x.GetCanStartWorkflow());
         }
@@ -51,7 +51,7 @@ public static class ActivityExecutionContextExtensions
         /// <summary>
         /// Checks if there is any pending work for the flowchart.
         /// </summary>
-        internal bool HasPendingWork()
+        public bool HasPendingWork()
         {
             return context.HasRunningActivityInstances()
                    || context.HasScheduledWork()
@@ -59,7 +59,7 @@ public static class ActivityExecutionContextExtensions
                    || context.HasFaultedChildren();
         }
 
-        internal FlowGraph GetFlowGraph()
+        public FlowGraph GetFlowGraph()
         {
             // Store in TransientProperties so FlowChart is not persisted in WorkflowState
             var flowchart = (Activities.Flowchart)context.Activity;
@@ -67,7 +67,7 @@ public static class ActivityExecutionContextExtensions
             return context.TransientProperties.GetOrAdd(GraphTransientProperty, () => new FlowGraph(flowchart.Connections, startActivity));
         }
 
-        internal async Task CancelInboundAncestorsAsync(IActivity activity)
+        public async Task CancelInboundAncestorsAsync(IActivity activity)
         {
             if(context.Activity is not Activities.Flowchart)
                 throw new InvalidOperationException("Activity context is not a flowchart.");
@@ -86,7 +86,7 @@ public static class ActivityExecutionContextExtensions
         /// <summary>
         /// Checks if the flowchart has any unconsumed tokens.
         /// </summary>
-        private bool HasUnconsumedTokens()
+        public bool HasUnconsumedTokens()
         {
             var flowchart = (Activities.Flowchart)context.Activity;
             return flowchart.GetTokenList(context).Any(x => x is { Consumed: false, Blocked: false });
@@ -95,7 +95,7 @@ public static class ActivityExecutionContextExtensions
         /// <summary>
         /// Checks if the flowchart has any running activity instances.
         /// </summary>
-        private bool HasRunningActivityInstances()
+        public bool HasRunningActivityInstances()
         {
             var flowchart = (Activities.Flowchart)context.Activity;
             var activityIds = flowchart.Activities.Select(x => x.Id).ToList();
@@ -106,7 +106,7 @@ public static class ActivityExecutionContextExtensions
         /// <summary>
         /// Checks if the flowchart has any scheduled work items.
         /// </summary>
-        private bool HasScheduledWork()
+        public bool HasScheduledWork()
         {
             var workflowExecutionContext = context.WorkflowExecutionContext;
 
@@ -127,7 +127,7 @@ public static class ActivityExecutionContextExtensions
             });
         }
 
-        private bool HasFaultedChildren()
+        public bool HasFaultedChildren()
         {
             return context.Children.Any(x => x.Status == ActivityStatus.Faulted);
         }
