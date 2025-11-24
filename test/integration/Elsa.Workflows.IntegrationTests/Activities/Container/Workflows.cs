@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared.Activities;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 
