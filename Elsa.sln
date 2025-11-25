@@ -94,17 +94,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Core.UnitTes
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Tenants", "src\modules\Elsa.Tenants\Elsa.Tenants.csproj", "{29638A67-E79F-44FE-AC05-DA499EBA929E}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pipelines", "pipelines", "{B789B743-0FBE-4BBC-9F45-84C20C8D4814}"
-	ProjectSection(SolutionItems) = preProject
-		.github\workflows\bounty.yml = .github\workflows\bounty.yml
-		.github\workflows\elsa-server-and-studio.yml = .github\workflows\elsa-server-and-studio.yml
-		.github\workflows\elsa-server.yml = .github\workflows\elsa-server.yml
-		.github\workflows\elsa-studio.yml = .github\workflows\elsa-studio.yml
-		.github\workflows\packages.yml = .github\workflows\packages.yml
-		.github\workflows\pr.yml = .github\workflows\pr.yml
-		.github\workflows\stale.yml = .github\workflows\stale.yml
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{C80C8231-D35C-4ACC-9ED6-9F3DB221535E}"
@@ -312,6 +301,34 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scheduling.UnitTests", "test\unit\Elsa.Scheduling.UnitTests\Elsa.Scheduling.UnitTests.csproj", "{9AEE941A-3F23-4E4B-9B59-1A2F57FC762D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Common.IntegrationTests", "test\integration\Elsa.Common.IntegrationTests\Elsa.Common.IntegrationTests.csproj", "{6C451CC5-280E-475E-B95E-23ADCF0CCBFD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github", "github", "{06DC6553-AAEF-4FC8-B16F-039F292E86A3}"
+	ProjectSection(SolutionItems) = preProject
+		.github\copilot-instructions.md = .github\copilot-instructions.md
+		.github\dependabot.yml = .github\dependabot.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{2158FC82-6253-47F2-9216-B266710D50F1}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\stale.yml = .github\workflows\stale.yml
+		.github\workflows\pr.yml = .github\workflows\pr.yml
+		.github\workflows\packages.yml = .github\workflows\packages.yml
+		.github\workflows\elsa-studio.yml = .github\workflows\elsa-studio.yml
+		.github\workflows\elsa-server.yml = .github\workflows\elsa-server.yml
+		.github\workflows\docker-ca.yml = .github\workflows\docker-ca.yml
+		.github\workflows\bounty.yml = .github\workflows\bounty.yml
+		.github\workflows\copilot-setup-steps.yml = .github\workflows\copilot-setup-steps.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "issue_templates", "issue_templates", "{36556068-64BF-4D4B-827E-EC8CDC23D516}"
+	ProjectSection(SolutionItems) = preProject
+		.github\ISSUE_TEMPLATE\bug_report.md = .github\ISSUE_TEMPLATE\bug_report.md
+		.github\ISSUE_TEMPLATE\feature_request.md = .github\ISSUE_TEMPLATE\feature_request.md
+		.github\ISSUE_TEMPLATE\improvement.md = .github\ISSUE_TEMPLATE\improvement.md
+		.github\ISSUE_TEMPLATE\performance.md = .github\ISSUE_TEMPLATE\performance.md
+		.github\ISSUE_TEMPLATE\task.md = .github\ISSUE_TEMPLATE\task.md
+		.github\ISSUE_TEMPLATE\documentation.md = .github\ISSUE_TEMPLATE\documentation.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -721,6 +738,8 @@ Global
 		{67E1F0CC-C436-4D71-AD2C-AE42E3AA8A0B} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{9AEE941A-3F23-4E4B-9B59-1A2F57FC762D} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{6C451CC5-280E-475E-B95E-23ADCF0CCBFD} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
+		{2158FC82-6253-47F2-9216-B266710D50F1} = {06DC6553-AAEF-4FC8-B16F-039F292E86A3}
+		{36556068-64BF-4D4B-827E-EC8CDC23D516} = {06DC6553-AAEF-4FC8-B16F-039F292E86A3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

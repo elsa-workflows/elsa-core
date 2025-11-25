@@ -1,6 +1,6 @@
 using Elsa.Workflows.Activities;
 
-namespace Elsa.Workflows.IntegrationTests.Activities;
+namespace Elsa.Workflows.IntegrationTests.Activities.Workflows;
 
 public class BasicForkWorkflow : WorkflowBase
 {
