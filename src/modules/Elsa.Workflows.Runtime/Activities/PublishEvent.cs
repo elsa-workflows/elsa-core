@@ -41,7 +41,7 @@ public class PublishEvent([CallerFilePath] string? source = null, [CallerLineNum
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var eventName = EventName.Get(context);
-        var correlationId = CorrelationId.GetOrDefault(context).NullIfEmpty();
+        var correlationId = CorrelationId.GetOrDefault(context).NullIfWhiteSpace();
         var isLocalEvent = IsLocalEvent.GetOrDefault(context);
         var workflowInstanceId = isLocalEvent ? context.WorkflowExecutionContext.Id : null;
         var payload = Payload.GetOrDefault(context);
