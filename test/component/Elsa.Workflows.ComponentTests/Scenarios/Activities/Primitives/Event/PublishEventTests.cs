@@ -69,8 +69,7 @@ public class PublishEventTests : AppComponentTest
         Assert.Equal(WorkflowSubStatus.Finished, consumerInstance.SubStatus);
 
         // Verify the payload was captured in the output
-        Assert.True(consumerInstance.WorkflowState.Output.ContainsKey("ReceivedPayload"), "Consumer workflow should have ReceivedPayload output");
-        var receivedPayload = consumerInstance.WorkflowState.Output["ReceivedPayload"];
+        Assert.True(consumerInstance.WorkflowState.Output.TryGetValue("ReceivedPayload", out var receivedPayload), "Consumer workflow should have ReceivedPayload output");
         Assert.NotNull(receivedPayload);
 
         // Verify the payload structure and content
