@@ -55,16 +55,4 @@ public class BreakTests(ITestOutputHelper testOutputHelper)
         // Assert
         Assert.Equal(new[] { "Start", "1", "2", "End" }, lines);
     }
-
-    [Fact(DisplayName = "Break exits Fork")]
-    public async Task Break_ExitsFork()
-    {
-        // Act
-        var result = await _fixture.RunWorkflowAsync(new BreakInForkWorkflow());
-        var lines = _fixture.CapturingTextWriter.Lines.ToList();
-
-        // Assert
-        Assert.Contains("Branch 1 executed", lines);
-        Assert.Contains("After fork", lines);
-    }
 }

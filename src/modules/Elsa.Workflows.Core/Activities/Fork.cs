@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Signals;
 using Elsa.Workflows.UIHints;
@@ -20,7 +21,7 @@ public class Fork : Activity
     public Fork([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         // Handle break signals directly instead of using the BreakBehavior. The behavior stops propagation of the signal, which is not what we want.
-        OnSignalReceived<BreakSignal>(OnBreakSignalReceivedAsync);
+        OnSignalReceived<BreakSignal>(OnBreakSignalReceived);
     }
 
     /// <summary>
@@ -38,7 +39,17 @@ public class Fork : Activity
     public ICollection<IActivity> Branches { get; set; } = new List<IActivity>();
 
     /// <inheritdoc />
-    protected override ValueTask ExecuteAsync(ActivityExecutionContext context) => context.ScheduleActivities(Branches, CompleteChildAsync);
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    {
+        // If there are no branches, complete immediately
+        if (Branches.Count == 0)
+        {
+            await context.CompleteActivityAsync();
+            return;
+        }
+
+        await context.ScheduleActivities(Branches, CompleteChildAsync);
+    }
 
     private async ValueTask CompleteChildAsync(ActivityCompletedContext context)
     {
@@ -77,9 +88,8 @@ public class Fork : Activity
         }
     }
 
-    private async ValueTask OnBreakSignalReceivedAsync(BreakSignal signal, SignalContext signalContext)
+    private void OnBreakSignalReceived(BreakSignal signal, SignalContext signalContext)
     {
         signalContext.ReceiverActivityExecutionContext.SetIsBreaking();
-        await CompleteAsync(signalContext.ReceiverActivityExecutionContext);
     }
 }

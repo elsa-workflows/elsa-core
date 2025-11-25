@@ -1,7 +1,7 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Runtime.Activities;
 
-namespace Elsa.Workflows.IntegrationTests.Activities;
+namespace Elsa.Workflows.IntegrationTests.Activities.Workflows;
 
 public class JoinAnyForkWorkflow : WorkflowBase
 {
