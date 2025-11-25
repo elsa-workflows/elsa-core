@@ -14,17 +14,21 @@ public static class ActivityExtensions
                 return null;
 
             // Handle both string and enum values for backwards compatibility
-            return value switch
+            var result = value switch
             {
                 MergeMode mode => mode,
                 string str when Enum.TryParse<MergeMode>(str, true, out var mode) => mode,
-                _ => null
+                _ => (MergeMode?)null
             };
+
+            // Treat MergeMode.None as equivalent to null (no merge mode set)
+            return result == MergeMode.None ? null : result;
         }
 
         public void SetMergeMode(MergeMode? value)
         {
-            if (value == null)
+            // Treat MergeMode.None as equivalent to null (no merge mode set)
+            if (value == null || value == MergeMode.None)
                 activity.CustomProperties.Remove("mergeMode");
             else
                 activity.CustomProperties["mergeMode"] = value.ToString()!;
@@ -36,7 +40,7 @@ public static class ActivityExtensions
             {
                 return activity.GetMergeMode();
             }
-        
+
             // Handle deprecated FlowJoin activity by evaluating its JoinMode property and mapping it to the appropriate MergeMode equivalent.
             var joinActivityExecutionContext = await context.WorkflowExecutionContext.CreateActivityExecutionContextAsync(activity);
             var joinMode = await joinActivityExecutionContext.EvaluateInputPropertyAsync<FlowJoin, FlowJoinMode>(x => x.Mode);
@@ -44,7 +48,7 @@ public static class ActivityExtensions
             return joinMode switch
             {
                 FlowJoinMode.WaitAny => MergeMode.Race,
-                _ => MergeMode.Converge
+                _ => MergeMode.Merge // WaitAll maps to Merge (wait for all activated branches)
             };
         }
     }

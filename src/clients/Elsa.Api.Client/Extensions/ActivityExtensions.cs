@@ -121,11 +121,16 @@ public static class ActivityExtensions
     
     public static MergeMode GetMergeMode(this JsonObject activity)
     {
-        return activity.GetProperty<MergeMode?>("customProperties", "mergeMode") ?? MergeMode.None;
+        var value = activity.GetProperty<MergeMode?>("customProperties", "mergeMode");
+        // Treat MergeMode.None as equivalent to null (no merge mode set), defaulting to Stream
+        return value == null || value == MergeMode.None ? MergeMode.Stream : value.Value;
     }
 
     public static void SetMergeMode(this JsonObject activity, MergeMode? value)
     {
+        // Treat MergeMode.None as equivalent to null (no merge mode set)
+        if (value == MergeMode.None)
+            value = null;
         activity.SetProperty(JsonValue.Create(value), "customProperties", "mergeMode");
     }
 

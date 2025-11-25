@@ -1,5 +1,4 @@
 using Elsa.Testing.Shared;
-using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Extensions;
@@ -239,7 +238,7 @@ public class FlowchartTokenBasedTests : IDisposable
         var branch1 = new WriteLine("Branch1");
         var branch2 = new WriteLine("Branch2");
         var noneMode = new WriteLine("NoneMode");
-        noneMode.SetMergeMode(MergeMode.None);
+        noneMode.SetMergeMode(null);
 
         var flowchart = new Flowchart
         {
