@@ -20,7 +20,7 @@ public class Fork : Activity
     public Fork([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         // Handle break signals directly instead of using the BreakBehavior. The behavior stops propagation of the signal, which is not what we want.
-        OnSignalReceived<BreakSignal>(OnBreakSignalReceived);
+        OnSignalReceived<BreakSignal>(OnBreakSignalReceivedAsync);
     }
 
     /// <summary>
@@ -57,7 +57,7 @@ public class Fork : Activity
         // Append activity to the set of completed activities.
         var completedActivityIds = targetContext.UpdateProperty<HashSet<string>>("Completed", set =>
         {
-            set ??= new HashSet<string>();
+            set ??= new();
             set.Add(completedChildActivityId);
             return set;
         });
@@ -77,8 +77,9 @@ public class Fork : Activity
         }
     }
 
-    private void OnBreakSignalReceived(BreakSignal signal, SignalContext signalContext)
+    private async ValueTask OnBreakSignalReceivedAsync(BreakSignal signal, SignalContext signalContext)
     {
         signalContext.ReceiverActivityExecutionContext.SetIsBreaking();
+        await CompleteAsync(signalContext.ReceiverActivityExecutionContext);
     }
 }
