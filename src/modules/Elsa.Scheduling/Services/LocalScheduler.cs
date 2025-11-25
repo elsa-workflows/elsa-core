@@ -1,4 +1,5 @@
-using Elsa.Extensions;
+using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Scheduling.Services;
 
@@ -8,8 +9,9 @@ namespace Elsa.Scheduling.Services;
 public class LocalScheduler : IScheduler
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly IDictionary<string, IScheduledTask> _scheduledTasks = new Dictionary<string, IScheduledTask>();
-    private readonly IDictionary<IScheduledTask, ICollection<string>> _scheduledTaskKeys = new Dictionary<IScheduledTask, ICollection<string>>();
+    private readonly ILogger<LocalScheduler> _logger;
+    private readonly ConcurrentDictionary<string, IScheduledTask> _scheduledTasks = new();
+    private readonly ConcurrentDictionary<IScheduledTask, ICollection<string>> _scheduledTaskKeys = new();
 
     // Note: Using lock instead of SemaphoreSlim because:
     // 1. All critical sections are synchronous (dictionary operations only)
@@ -21,9 +23,10 @@ public class LocalScheduler : IScheduler
     /// <summary>
     /// Initializes a new instance of the <see cref="LocalScheduler"/> class.
     /// </summary>
-    public LocalScheduler(IServiceProvider serviceProvider)
+    public LocalScheduler(IServiceProvider serviceProvider, ILogger<LocalScheduler> logger)
     {
         _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -70,13 +73,17 @@ public class LocalScheduler : IScheduler
 
     private void RegisterScheduledTask(string name, IScheduledTask scheduledTask, IEnumerable<string>? keys = null)
     {
-        if (_scheduledTasks.TryGetValue(name, out var existingScheduledTask))
-        {
-            existingScheduledTask.Cancel();
-            _scheduledTaskKeys.Remove(existingScheduledTask);
-        }
-
-        _scheduledTasks[name] = scheduledTask;
+        _scheduledTasks.AddOrUpdate(
+            name,
+            addValueFactory: _ => scheduledTask,
+            updateValueFactory: (_, existingScheduledTask) =>
+            {
+                existingScheduledTask.Cancel();
+                var removed = _scheduledTaskKeys.TryRemove(existingScheduledTask, out var _);
+                if (!removed)
+                    _logger.LogWarning("Tried to remove scheduled task keys for an existing scheduled task, but it was not present in _scheduledTaskKeys");
+                return scheduledTask;
+            });
 
         if (keys != null)
             _scheduledTaskKeys[scheduledTask] = keys.ToList();
@@ -86,8 +93,8 @@ public class LocalScheduler : IScheduler
     {
         if (_scheduledTasks.TryGetValue(name, out var existingScheduledTask))
         {
-            _scheduledTaskKeys.Remove(existingScheduledTask);
-            _scheduledTasks.Remove(name);
+            _scheduledTaskKeys.Remove(existingScheduledTask, out _);
+            _scheduledTasks.Remove(name, out _);
             existingScheduledTask.Cancel();
         }
     }
@@ -100,8 +107,16 @@ public class LocalScheduler : IScheduler
 
             foreach (var scheduledTask in scheduledTasks)
             {
-                _scheduledTasks.RemoveWhere(x => x.Value == scheduledTask);
-                _scheduledTaskKeys.Remove(scheduledTask);
+                // Collect all keys in _scheduledTasks that map to this scheduledTask
+                var matchingTaskKeys = _scheduledTasks.Where(x => x.Value == scheduledTask).Select(x => x.Key).ToList();
+                foreach (var taskKey in matchingTaskKeys)
+                {
+                    var removed = _scheduledTasks.TryRemove(taskKey, out _);
+                    if (!removed)
+                        _logger.LogWarning("Failed to remove scheduled task with key '{TaskKey}' for '{Key}' from _scheduledTasks", taskKey, key);
+                }
+
+                _scheduledTaskKeys.Remove(scheduledTask, out _);
                 scheduledTask.Cancel();
             }
         }

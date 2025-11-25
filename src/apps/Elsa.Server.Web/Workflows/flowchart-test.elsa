@@ -1,0 +1,16 @@
+use Elsa.Activities.Console;
+
+workflow FlowchartTest {
+  flowchart {
+    var counter = 0;
+
+    entry Start;
+
+    Start: WriteLine("Starting flowchart");
+    CheckCondition: WriteLine("Checking condition");
+    EndNode: WriteLine("Done!");
+
+    Start -> CheckCondition;
+    CheckCondition.Done -> EndNode;
+  }
+}

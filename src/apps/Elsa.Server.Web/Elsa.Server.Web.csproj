@@ -3,9 +3,12 @@
     <ItemGroup>
 		<ProjectReference Include="..\..\modules\Elsa.Caching\Elsa.Caching.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Common\Elsa.Common.csproj" />
+		<ProjectReference Include="..\..\modules\Elsa.Dsl.ElsaScript\Elsa.Dsl.ElsaScript.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Expressions\Elsa.Expressions.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
+		<ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage.ElsaScript\Elsa.WorkflowProviders.BlobStorage.ElsaScript.csproj" />
+		<ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
@@ -23,5 +26,20 @@
 	<ItemGroup>
       <Folder Include="App_Data\" />
     </ItemGroup>
+
+	<ItemGroup>
+	  <None Update="Workflows\hello-world.elsa">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Workflows\hello-world-http.elsa">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Workflows\for-loop.elsa">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Workflows\flowchart-test.elsa">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
 
 </Project>

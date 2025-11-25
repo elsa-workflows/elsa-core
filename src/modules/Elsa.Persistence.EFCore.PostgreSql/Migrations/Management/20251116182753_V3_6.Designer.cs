@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Management
 {
     [DbContext(typeof(ManagementElsaDbContext))]
-    [Migration("20250711092046_V3_6")]
+    [Migration("20251116182753_V3_6")]
     partial class V3_6
     {
         /// <inheritdoc />
@@ -21,7 +21,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Management
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.6")
+                .HasAnnotation("ProductVersion", "9.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -67,6 +67,9 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Management
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OriginalSource")
                         .HasColumnType("text");
 
                     b.Property<string>("ProviderName")

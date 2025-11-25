@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.Persistence.EFCore.MySql.Migrations.Management
+namespace Elsa.Persistence.EFCore.Oracle.Migrations.Management
 {
     /// <inheritdoc />
     public partial class V3_6 : Migration
@@ -18,6 +18,13 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Management
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AddColumn<string>(
+                name: "OriginalSource",
+                schema: _schema.Schema,
+                table: "WorkflowDefinitions",
+                type: "NCLOB",
+                nullable: true);
+
             migrationBuilder.AlterColumn<string>(
                 name: "StringData",
                 schema: _schema.Schema,
@@ -25,10 +32,8 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Management
                 type: "JSON",
                 nullable: true,
                 oldClrType: typeof(string),
-                oldType: "longtext",
-                oldNullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
+                oldType: "NCLOB",
+                oldNullable: true);
         }
 
         /// <inheritdoc />
@@ -38,13 +43,16 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Management
                 name: "StringData",
                 schema: _schema.Schema,
                 table: "WorkflowDefinitions",
-                type: "longtext",
+                type: "NCLOB",
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "JSON",
-                oldNullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
+                oldNullable: true);
+
+            migrationBuilder.DropColumn(
+                name: "OriginalSource",
+                schema: _schema.Schema,
+                table: "WorkflowDefinitions");
         }
     }
 }

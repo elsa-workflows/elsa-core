@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides ElsaScript support for BlobStorage workflows provider.
+        </Description>
+        <PackageTags>elsa extension module elsascript blob storage</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
+      <ProjectReference Include="..\Elsa.Dsl.ElsaScript\Elsa.Dsl.ElsaScript.csproj" />
+    </ItemGroup>
+
+</Project>

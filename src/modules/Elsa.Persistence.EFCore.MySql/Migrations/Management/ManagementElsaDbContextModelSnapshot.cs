@@ -18,7 +18,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Management
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.6")
+                .HasAnnotation("ProductVersion", "9.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -65,6 +65,9 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Management
 
                     b.Property<string>("Name")
                         .HasColumnType("varchar(255)");
+
+                    b.Property<string>("OriginalSource")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("ProviderName")
                         .HasColumnType("longtext");

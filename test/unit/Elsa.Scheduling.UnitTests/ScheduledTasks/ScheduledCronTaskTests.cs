@@ -140,15 +140,16 @@ public class ScheduledCronTaskTests : IDisposable
     {
         // Arrange - simulate the bug scenario: both attempts return zero/negative delay
         // This can happen if the system clock doesn't advance or if there's clock drift
+        // After the initial attempts, return a proper future time to prevent timer from firing during test
         SetupSystemClock(DefaultNow);
-        SetupCronParser(DefaultNow); // Both calls return exactly now (delay = 0)
+        SetupCronParser(DefaultNow, DefaultNow, DefaultNow.AddMinutes(5)); // First two return now, third returns future
 
         // Act - This should not crash and should set up a timer with minimum delay
         var task = CreateScheduledTask();
 
         // Dispose immediately to prevent timer from firing and recursing
+        _tasksToDispose.Remove(task);
         ((IDisposable)task).Dispose();
-        Thread.Sleep(5); // Brief wait to ensure disposal completes
 
         // Assert - Should call GetNextOccurrence at least twice (initial + retry)
         // May be called more if timer fires before disposal and triggers Schedule() again
@@ -163,13 +164,15 @@ public class ScheduledCronTaskTests : IDisposable
     {
         // Arrange - simulate a case where even after retry, delay is negative
         // This could happen due to system clock adjustments
+        // After the initial attempts, return a proper future time to prevent timer from firing during test
         SetupSystemClock(DefaultNow, DefaultNow);
-        SetupCronParser(DefaultNow.AddMilliseconds(-100), DefaultNow.AddMilliseconds(-50));
+        SetupCronParser(DefaultNow.AddMilliseconds(-100), DefaultNow.AddMilliseconds(-50), DefaultNow.AddMinutes(5));
 
         // Act - Should handle negative delay gracefully
         var task = CreateScheduledTask();
 
         // Dispose immediately to prevent timer from firing
+        _tasksToDispose.Remove(task);
         ((IDisposable)task).Dispose();
 
         // Assert - Should log a warning and still set up timer

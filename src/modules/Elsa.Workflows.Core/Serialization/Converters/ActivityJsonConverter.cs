@@ -15,7 +15,6 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class ActivityJsonConverter(
     IActivityRegistry activityRegistry,
-    IActivityFactory activityFactory,
     IExpressionDescriptorRegistry expressionDescriptorRegistry,
     ActivityWriter activityWriter,
     IServiceProvider serviceProvider)
@@ -44,8 +43,7 @@ public class ActivityJsonConverter(
         if (activityDescriptor == null)
         {
             var notFoundActivityDescriptor = activityRegistry.Find<NotFoundActivity>()!;
-            var notFoundContext = new ActivityConstructorContext(notFoundActivityDescriptor, activityRoot, clonedOptions);
-            var notFoundActivity = (NotFoundActivity)activityFactory.Create(typeof(NotFoundActivity), notFoundContext);
+            var notFoundActivity = JsonActivityConstructorContextHelper.CreateActivity<NotFoundActivity>(notFoundActivityDescriptor, activityRoot, clonedOptions);
 
             notFoundActivity.Type = notFoundActivityTypeName;
             notFoundActivity.Version = 1;
@@ -57,7 +55,7 @@ public class ActivityJsonConverter(
             return notFoundActivity;
         }
 
-        var context = new ActivityConstructorContext(activityDescriptor, activityRoot, clonedOptions);
+        var context = JsonActivityConstructorContextHelper.Create(activityDescriptor, activityRoot, clonedOptions);
         var activity = activityDescriptor.Constructor(context);
         return activity;
     }
