@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Abstractions;
@@ -51,14 +52,28 @@ public class PublishEventTests : AppComponentTest
     }
 
     [Fact]
-    public async Task PublishEvent_WithPayload_CompletesSuccessfully()
+    public async Task PublishEvent_WithPayload_TransmitsPayloadToConsumer()
     {
-        // Act
-        var result = await _workflowRunner.RunAndAwaitWorkflowCompletionAsync(
-            WorkflowDefinitionHandle.ByDefinitionId(PublishGlobalEventWorkflow.DefinitionId, VersionOptions.Published));
+        // Arrange
+        var correlationId = Guid.NewGuid().ToString();
 
-        // Assert
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowExecutionContext.SubStatus);
+        // Act - Publish global event with payload and wait for consumer to complete
+        await RunWorkflowAsync(PublishGlobalEventWorkflow.DefinitionId, correlationId);
+
+        // Assert - Consumer workflow received the payload
+        var consumerInstance = await GetSingleWorkflowInstanceAsync(ConsumerWorkflow.DefinitionId, correlationId);
+        Assert.Equal(WorkflowStatus.Finished, consumerInstance.Status);
+        Assert.Equal(WorkflowSubStatus.Finished, consumerInstance.SubStatus);
+
+        // Verify the payload was captured in the output
+        Assert.True(consumerInstance.WorkflowState.Output.ContainsKey("ReceivedPayload"), "Consumer workflow should have ReceivedPayload output");
+        var receivedPayload = consumerInstance.WorkflowState.Output["ReceivedPayload"];
+        Assert.NotNull(receivedPayload);
+
+        // Verify the payload structure and content
+        var payloadJson = JsonSerializer.Serialize(receivedPayload);
+        Assert.Contains("\"Status\"", payloadJson);
+        Assert.Contains("\"Shipped\"", payloadJson);
     }
 
     private async Task RunWorkflowAsync(string definitionId, string? correlationId = null)
