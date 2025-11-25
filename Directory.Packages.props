@@ -133,6 +133,7 @@
         <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.14.0-beta.1"/>
         <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.14.0-beta.1"/>
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="9.23.26000"/>
+        <PackageVersion Include="Parlot" Version="1.5.6"/>
         <PackageVersion Include="Polly" Version="8.6.5"/>
         <PackageVersion Include="Polly.Extensions" Version="8.6.5"/>
         <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0"/>

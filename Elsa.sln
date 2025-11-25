@@ -94,15 +94,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Core.UnitTes
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Tenants", "src\modules\Elsa.Tenants\Elsa.Tenants.csproj", "{29638A67-E79F-44FE-AC05-DA499EBA929E}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pipelines", "pipelines", "{B789B743-0FBE-4BBC-9F45-84C20C8D4814}"
-	ProjectSection(SolutionItems) = preProject
-		.github\workflows\bounty.yml = .github\workflows\bounty.yml
-		.github\workflows\elsa-server.yml = .github\workflows\elsa-server.yml
-		.github\workflows\packages.yml = .github\workflows\packages.yml
-		.github\workflows\pr.yml = .github\workflows\pr.yml
-		.github\workflows\stale.yml = .github\workflows\stale.yml
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{C80C8231-D35C-4ACC-9ED6-9F3DB221535E}"
@@ -328,7 +319,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\stale.yml = .github\workflows\stale.yml
 		.github\workflows\pr.yml = .github\workflows\pr.yml
 		.github\workflows\packages.yml = .github\workflows\packages.yml
-		.github\workflows\elsa-studio.yml = .github\workflows\elsa-studio.yml
 		.github\workflows\elsa-server.yml = .github\workflows\elsa-server.yml
 		.github\workflows\docker-ca.yml = .github\workflows\docker-ca.yml
 		.github\workflows\bounty.yml = .github\workflows\bounty.yml
@@ -344,6 +334,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "issue_templates", "issue_te
 		.github\ISSUE_TEMPLATE\task.md = .github\ISSUE_TEMPLATE\task.md
 		.github\ISSUE_TEMPLATE\documentation.md = .github\ISSUE_TEMPLATE\documentation.md
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dsl", "dsl", "{477C2416-312D-46AE-BCD6-8FA1FAB43624}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -699,9 +691,10 @@ Global
 		{6C451CC5-280E-475E-B95E-23ADCF0CCBFD} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
 		{2158FC82-6253-47F2-9216-B266710D50F1} = {06DC6553-AAEF-4FC8-B16F-039F292E86A3}
 		{36556068-64BF-4D4B-827E-EC8CDC23D516} = {06DC6553-AAEF-4FC8-B16F-039F292E86A3}
-		{874F5A44-DB06-47AB-A18C-2D13942E0147} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{4B5A9D32-58F2-47A9-8A1B-8A9E2D76C3F5} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
 		{2B7FB49D-E4B6-4AD5-981B-3D85B94F6F48} = {B08B4E00-C2AB-48F3-8389-449F42AEF179}
+		{477C2416-312D-46AE-BCD6-8FA1FAB43624} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{874F5A44-DB06-47AB-A18C-2D13942E0147} = {477C2416-312D-46AE-BCD6-8FA1FAB43624}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
