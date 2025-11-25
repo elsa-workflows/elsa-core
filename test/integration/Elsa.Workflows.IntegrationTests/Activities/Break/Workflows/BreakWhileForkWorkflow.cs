@@ -39,7 +39,7 @@ public class BreakWhileForkWorkflow : WorkflowBase
                             Activities =
                             {
                                 new WriteLine("Waiting for event..."),
-                                new Event("Some event") { Id = "SomeEvent" },
+                                new Runtime.Activities.Event("Some event") { Id = "SomeEvent" },
                                 new WriteLine("Resuming"),
                             }
                         }
