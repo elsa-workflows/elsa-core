@@ -368,10 +368,48 @@ workflow FlowchartWithBlock {
         Assert.Single(flowchart.Activities);
 
         // The activity should be a Sequence (from the block)
-        var sequenceActivity = Assert.IsType<Workflows.Activities.Sequence>(flowchart.Activities.First());
+        var sequenceActivity = Assert.IsType<Sequence>(flowchart.Activities.First());
 
         // Sequence should have 2 activities
         Assert.Equal(2, sequenceActivity.Activities.Count);
+    }
+
+    [Fact(DisplayName = "Compiler resets default expression language between compilations")]
+    public async Task CompileAsync_WithSecondWorkflowAfterLiquid_ShouldResetToJavaScript()
+    {
+        // Arrange - First workflow sets Liquid as default
+        var firstSource = @"
+use expressions liquid;
+
+workflow FirstWorkflow {
+  WriteLine(liquid => ""{{ 'test' }}"");
+}";
+
+        // Second workflow with no 'use expressions' directive
+        var secondSource = @"
+workflow SecondWorkflow {
+  WriteLine(js => ""test"");
+}";
+
+        // Act - Compile first workflow (sets default to Liquid)
+        var firstWorkflow = await _compiler.CompileAsync(firstSource);
+
+        // Act - Compile second workflow (should reset to JavaScript)
+        var secondWorkflow = await _compiler.CompileAsync(secondSource);
+
+        // Assert - Verify first workflow used Liquid
+        Assert.NotNull(firstWorkflow);
+        var firstWriteLine = firstWorkflow.Root;
+        var firstTextProp = firstWriteLine.GetType().GetProperty("Text");
+        var firstTextInput = Assert.IsType<Input<string>>(firstTextProp!.GetValue(firstWriteLine));
+        Assert.Equal("Liquid", firstTextInput.Expression?.Type);
+
+        // Assert - Verify second workflow uses JavaScript (not leaked Liquid)
+        Assert.NotNull(secondWorkflow);
+        var secondWriteLine = secondWorkflow.Root;
+        var secondTextProp = secondWriteLine.GetType().GetProperty("Text");
+        var secondTextInput = Assert.IsType<Input<string>>(secondTextProp!.GetValue(secondWriteLine));
+        Assert.Equal("JavaScript", secondTextInput.Expression?.Type);
     }
 }
 
