@@ -14,12 +14,20 @@ public partial class Flowchart
         var flowContext = ctx.TargetContext;
         var completedActivity = ctx.ChildContext.Activity;
         var flowGraph = flowContext.GetFlowGraph();
+        var tokens = GetTokenList(flowContext);
+
+        // If the completed activity is a terminal node, complete the flowchart immediately.
+        if (completedActivity is ITerminalNode)
+        {
+            tokens.Clear();
+            await flowContext.CompleteActivityAsync();
+            return;
+        }
 
         // Emit tokens for active outcomes.
         var outcomes = (ctx.Result as Outcomes ?? Outcomes.Default).Names;
         var outboundConnections = flowGraph.GetOutboundConnections(completedActivity);
         var activeOutboundConnections = outboundConnections.Where(x => outcomes.Contains(x.Source.Port)).Distinct().ToList();
-        var tokens = GetTokenList(flowContext);
 
         foreach (var connection in activeOutboundConnections)
             tokens.Add(Token.Create(connection.Source.Activity, connection.Target.Activity, connection.Source.Port));
