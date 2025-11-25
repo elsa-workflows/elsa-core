@@ -36,15 +36,16 @@ public static class ActivityExtensions
             {
                 return activity.GetMergeMode();
             }
-        
+
             // Handle deprecated FlowJoin activity by evaluating its JoinMode property and mapping it to the appropriate MergeMode equivalent.
             var joinActivityExecutionContext = await context.WorkflowExecutionContext.CreateActivityExecutionContextAsync(activity);
             var joinMode = await joinActivityExecutionContext.EvaluateInputPropertyAsync<FlowJoin, FlowJoinMode>(x => x.Mode);
 
-        return joinMode switch
-        {
-            FlowJoinMode.WaitAny => MergeMode.Race,
-            _ => MergeMode.Merge  // WaitAll maps to Merge (wait for all activated branches)
-        };
+            return joinMode switch
+            {
+                FlowJoinMode.WaitAny => MergeMode.Race,
+                _ => MergeMode.Merge // WaitAll maps to Merge (wait for all activated branches)
+            };
+        }
     }
 }
