@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace />
     <NoWarn>CS0649;CS0169;CA1050;CA1822;CA2211;IDE1006</NoWarn>
     <NukeRootDirectory>..</NukeRootDirectory>
@@ -19,12 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nuke.Components" Version="9.0.4" />
-  </ItemGroup>
-
-  <!--Overridden for vulnerability reasons with dependencies referencing older versions.-->
-  <ItemGroup>
-    <PackageReference Include="System.Formats.Asn1" Version="9.0.8" />
+    <PackageReference Include="Nuke.Components" Version="10.0.0" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
         <Include>[Elsa.Workflows.Core]*</Include>
         <Threshold>25</Threshold>
     </PropertyGroup>
@@ -9,7 +8,9 @@
     <ItemGroup>
       <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Integration\Elsa.Testing.Shared.Integration.csproj" />
       <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+      <ProjectReference Include="..\..\unit\Elsa.Activities.UnitTests\Elsa.Activities.UnitTests.csproj" />
     </ItemGroup>
-
+    
 </Project>

@@ -59,7 +59,7 @@ public static class WorkflowExecutionMiddlewareExtensions
                 var ctorParams = new[]
                 {
                     next
-                }.Concat(args).Select(x => x).ToArray();
+                }.Concat(args).ToArray();
                 var instance = ActivatorUtilities.CreateInstance(pipelineBuilder.ServiceProvider, middleware, ctorParams);
                 return (WorkflowMiddlewareDelegate)invokeMethod.CreateDelegate(typeof(WorkflowMiddlewareDelegate), instance);
             };

@@ -32,7 +32,7 @@ public static class ActivityExecutionMiddlewareExtensions
                 var ctorArgs = new[]
                 {
                     next
-                }.Concat(args).Select(x => x).ToArray();
+                }.Concat(args).ToArray();
                 var instance = ActivatorUtilities.CreateInstance(pipelineBuilder.ServiceProvider, middleware, ctorArgs);
                 return (ActivityMiddlewareDelegate)invokeMethod.CreateDelegate(typeof(ActivityMiddlewareDelegate), instance);
             };
