@@ -16,7 +16,7 @@ public class BreakTests(ITestOutputHelper testOutputHelper)
     public async Task Break_ExitsForEachLoop()
     {
         // Act
-        var result = await _fixture.RunWorkflowAsync(new BreakForEachWorkflow());
+        await _fixture.RunWorkflowAsync(new BreakForEachWorkflow());
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert
