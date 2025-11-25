@@ -19,7 +19,7 @@ public class ForkTests(ITestOutputHelper testOutputHelper)
     public async Task Fork_ExecutesAllBranchesWithWaitAll()
     {
         // Act
-        var result = await _fixture.RunWorkflowAsync(new BasicForkWorkflow());
+        await _fixture.RunWorkflowAsync(new BasicForkWorkflow());
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert
@@ -55,7 +55,7 @@ public class ForkTests(ITestOutputHelper testOutputHelper)
     public async Task Fork_WithNoBranchesCompletesSuccessfully()
     {
         // Act
-        var result = await _fixture.RunWorkflowAsync(new EmptyForkWorkflow());
+        await _fixture.RunWorkflowAsync(new EmptyForkWorkflow());
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert

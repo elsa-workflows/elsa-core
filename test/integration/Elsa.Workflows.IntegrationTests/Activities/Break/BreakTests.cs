@@ -16,7 +16,7 @@ public class BreakTests(ITestOutputHelper testOutputHelper)
     public async Task Break_ExitsForEachLoop()
     {
         // Act
-        var result = await _fixture.RunWorkflowAsync(new BreakForEachWorkflow());
+        await _fixture.RunWorkflowAsync(new BreakForEachWorkflow());
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert
@@ -27,7 +27,7 @@ public class BreakTests(ITestOutputHelper testOutputHelper)
     public async Task Break_ExitsOnlyImmediateLoopInNestedForEach()
     {
         // Act
-        var result = await _fixture.RunWorkflowAsync(new NestedForEachWithBreakWorkflow());
+        await _fixture.RunWorkflowAsync(new NestedForEachWithBreakWorkflow());
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert
@@ -38,7 +38,7 @@ public class BreakTests(ITestOutputHelper testOutputHelper)
     public async Task Break_ExitsForLoop()
     {
         // Act
-        var result = await _fixture.RunWorkflowAsync(new BreakForWorkflow());
+        await _fixture.RunWorkflowAsync(new BreakForWorkflow());
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert
@@ -49,7 +49,7 @@ public class BreakTests(ITestOutputHelper testOutputHelper)
     public async Task Break_ExitsWhileLoop()
     {
         // Act
-        var result = await _fixture.RunWorkflowAsync(new BreakWhileWorkflow());
+        await _fixture.RunWorkflowAsync(new BreakWhileWorkflow());
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert
