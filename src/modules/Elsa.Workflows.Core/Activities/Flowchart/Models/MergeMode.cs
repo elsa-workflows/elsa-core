@@ -15,9 +15,10 @@ public enum MergeMode
     Stream,
 
     /// <summary>
-    /// Merges only the activated/flowing inbound branches.
-    /// Waits for all branches that received tokens, ignoring unactivated ones.
-    /// Use for synchronization points where only taken paths matter (e.g., fork-joins with conditions).
+    /// Waits for all forward (acyclic) inbound connections before proceeding.
+    /// Unlike Converge, this ignores backward connections (loops).
+    /// Will block on dead/untaken paths if they are forward connections.
+    /// Use for synchronization points in structured fork-join patterns.
     /// </summary>
     Merge,
 
