@@ -74,7 +74,8 @@ public partial class Flowchart
                     break;
 
                 case MergeMode.Merge:
-                    // Wait for tokens from all forward inbound connections (activated branches only).
+                    // Wait for tokens from all forward inbound connections.
+                    // Unlike Converge, this ignores backward connections (loops).
                     // Schedule on arrival for <=1 forward inbound (e.g., loops, sequential).
                     var inboundConnectionsMerge = flowGraph.GetForwardInboundConnections(targetActivity);
 
