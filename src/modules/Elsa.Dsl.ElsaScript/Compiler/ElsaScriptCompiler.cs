@@ -55,6 +55,7 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
     private async Task<Workflow> CompileWorkflowNodeAsync(WorkflowNode workflowNode, CancellationToken cancellationToken = default)
     {
         _variables.Clear();
+        _defaultExpressionLanguage = "JavaScript";
 
         // Process use statements (workflow-level overrides global)
         foreach (var useNode in workflowNode.UseStatements)
