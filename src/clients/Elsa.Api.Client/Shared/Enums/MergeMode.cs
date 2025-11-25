@@ -7,6 +7,13 @@ namespace Elsa.Api.Client.Shared.Enums;
 public enum MergeMode
 {
     /// <summary>
+    /// No merge mode set. Treated as if merge mode was not specified (null).
+    /// Provides backward compatibility for existing workflows.
+    /// Defaults to Stream behavior at runtime.
+    /// </summary>
+    None,
+
+    /// <summary>
     /// Flows freely when possible, ignoring dead/untaken paths.
     /// Opportunistic execution based on upstream completion.
     /// Uses approximation that proceeds after all upstream sources complete.
