@@ -42,6 +42,11 @@ public interface IWorkflowClient
     /// Imports the specified <see cref="WorkflowState"/>.
     /// </summary>
     Task ImportStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
-    
+
     Task<bool> InstanceExistsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes the workflow instance. This method ensures that the instance is properly stopped before deletion.
+    /// </summary>
+    Task<bool> DeleteAsync(CancellationToken cancellationToken = default);
 }

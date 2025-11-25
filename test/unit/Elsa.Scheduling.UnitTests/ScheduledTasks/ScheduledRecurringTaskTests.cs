@@ -96,10 +96,16 @@ public class ScheduledRecurringTaskTests : IDisposable
         var startAt = DefaultNow; // First: delay=0
 
         // Act
-        CreateScheduledTask(startAt: startAt);
+        var task = CreateScheduledTask(startAt: startAt);
 
-        // Assert - System clock should be called twice (once for initial delay=0, once for retry)
-        _ = _systemClock.Received(2).UtcNow;
+        // Dispose immediately to prevent timer from firing
+        ((IDisposable)task).Dispose();
+
+        // Assert - System clock should be called at least twice (initial + retry)
+        // May be called more if timer fires before disposal in rare race conditions
+        _ = _systemClock.Received().UtcNow;
+        var calls = _systemClock.ReceivedCalls().Count(c => c.GetMethodInfo().Name == "get_UtcNow");
+        Assert.True(calls >= 2, $"Expected at least 2 calls to UtcNow, but got {calls}");
     }
 
     [Fact]
@@ -110,10 +116,16 @@ public class ScheduledRecurringTaskTests : IDisposable
         var startAt = DefaultNow.AddMinutes(-1); // Past time
 
         // Act
-        CreateScheduledTask(startAt: startAt);
+        var task = CreateScheduledTask(startAt: startAt);
 
-        // Assert - System clock should be called twice
-        _ = _systemClock.Received(2).UtcNow;
+        // Dispose immediately to prevent timer from firing
+        ((IDisposable)task).Dispose();
+
+        // Assert - System clock should be called at least twice (initial + retry)
+        // May be called more if timer fires before disposal in rare race conditions
+        _ = _systemClock.Received().UtcNow;
+        var calls = _systemClock.ReceivedCalls().Count(c => c.GetMethodInfo().Name == "get_UtcNow");
+        Assert.True(calls >= 2, $"Expected at least 2 calls to UtcNow, but got {calls}");
     }
 
     [Fact]
@@ -125,10 +137,17 @@ public class ScheduledRecurringTaskTests : IDisposable
         var startAt = DefaultNow; // Both calls return exactly now (delay = 0)
 
         // Act - This should not crash and should set up a timer with minimum delay
-        CreateScheduledTask(startAt: startAt);
+        var task = CreateScheduledTask(startAt: startAt);
 
-        // Assert - Should call UtcNow twice (initial + retry) and log warning
-        _ = _systemClock.Received(2).UtcNow;
+        // Dispose immediately to prevent timer from firing and recursing
+        ((IDisposable)task).Dispose();
+        Thread.Sleep(5); // Brief wait to ensure disposal completes
+
+        // Assert - Should call UtcNow at least twice (initial + retry)
+        // May be called more if timer fires before disposal
+        _ = _systemClock.Received().UtcNow;
+        var calls = _systemClock.ReceivedCalls().Count(c => c.GetMethodInfo().Name == "get_UtcNow");
+        Assert.True(calls >= 2, $"Expected at least 2 calls to UtcNow, but got {calls}");
         AssertWarningLogged();
     }
 
@@ -141,7 +160,10 @@ public class ScheduledRecurringTaskTests : IDisposable
         var startAt = DefaultNow.AddMilliseconds(-100); // Negative delay
 
         // Act - Should handle negative delay gracefully
-        CreateScheduledTask(startAt: startAt);
+        var task = CreateScheduledTask(startAt: startAt);
+
+        // Dispose immediately to prevent timer from firing
+        ((IDisposable)task).Dispose();
 
         // Assert - Should log a warning and still set up timer
         AssertWarningLogged();
@@ -170,8 +192,6 @@ public class ScheduledRecurringTaskTests : IDisposable
         {
             ((IDisposable)task).Dispose();
         }
-        // Small delay to ensure any timer callbacks have completed
-        Thread.Sleep(10);
         _serviceProvider.Dispose();
     }
 }

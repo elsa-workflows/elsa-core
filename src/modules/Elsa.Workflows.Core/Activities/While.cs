@@ -21,7 +21,7 @@ public class While : Activity
     /// </summary>
     public static While True(IActivity body) => new(body)
     {
-        Condition = new Input<bool>(true)
+        Condition = new(true)
     };
 
     /// <inheritdoc />

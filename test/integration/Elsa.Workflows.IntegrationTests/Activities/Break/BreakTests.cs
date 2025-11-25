@@ -1,64 +1,58 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows.IntegrationTests.Activities.Workflows;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Activities;
 
-public class BreakTests
+/// <summary>
+/// Integration tests for the <see cref="Workflows.Activities.Break"/> activity.
+/// Tests Break behavior across different looping constructs (ForEach, For, While, Fork).
+/// </summary>
+public class BreakTests(ITestOutputHelper testOutputHelper)
 {
-    private readonly IWorkflowRunner _workflowRunner;
-    private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly IServiceProvider _services;
+    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
 
-    public BreakTests(ITestOutputHelper testOutputHelper)
+    [Fact(DisplayName = "Break exits ForEach loop")]
+    public async Task Break_ExitsForEachLoop()
     {
-        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
-    }
+        // Act
+        await _fixture.RunWorkflowAsync(new BreakForEachWorkflow());
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
-    [Fact(DisplayName = "Break exits out of ForEach")]
-    public async Task Test1()
-    {
-        await _services.PopulateRegistriesAsync();
-        await _workflowRunner.RunAsync<BreakForEachWorkflow>();
-        var lines = _capturingTextWriter.Lines.ToList();
+        // Assert
         Assert.Equal(new[] { "Start", "C#", "End" }, lines);
     }
 
-    [Fact(DisplayName = "Break exits out of immediate ForEach only")]
-    public async Task Test2()
+    [Fact(DisplayName = "Break exits only immediate loop in nested ForEach")]
+    public async Task Break_ExitsOnlyImmediateLoopInNestedForEach()
     {
-        await _services.PopulateRegistriesAsync();
-        await _workflowRunner.RunAsync<NestedForEachWithBreakWorkflow>();
-        var lines = _capturingTextWriter.Lines.ToList();
+        // Act
+        await _fixture.RunWorkflowAsync(new NestedForEachWithBreakWorkflow());
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
+
+        // Assert
         Assert.Equal(new[] { "C#", "Classes", "Rust", "Classes", "Go", "Classes" }, lines);
     }
 
-    [Fact(DisplayName = "Break exits out of For")]
-    public async Task Test3()
+    [Fact(DisplayName = "Break exits For loop")]
+    public async Task Break_ExitsForLoop()
     {
-        await _services.PopulateRegistriesAsync();
-        await _workflowRunner.RunAsync<BreakForWorkflow>();
-        var lines = _capturingTextWriter.Lines.ToList();
+        // Act
+        await _fixture.RunWorkflowAsync(new BreakForWorkflow());
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
+
+        // Assert
         Assert.Equal(new[] { "Start", "0", "1", "End" }, lines);
     }
-    
-    [Fact(DisplayName = "Break exits out of While")]
-    public async Task Test4()
+
+    [Fact(DisplayName = "Break exits While loop")]
+    public async Task Break_ExitsWhileLoop()
     {
-        await _services.PopulateRegistriesAsync();
-        await _workflowRunner.RunAsync<BreakWhileWorkflow>();
-        var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[] { "Start", "1", "2", "End" }, lines);
-    }
-    
-    [Fact(DisplayName = "Break removes the right bookmarks")]
-    public async Task Test5()
-    {
-        await _services.PopulateRegistriesAsync();
-        await _workflowRunner.RunAsync<BreakWhileWorkflow>();
-        var lines = _capturingTextWriter.Lines.ToList();
+        // Act
+        await _fixture.RunWorkflowAsync(new BreakWhileWorkflow());
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
+
+        // Assert
         Assert.Equal(new[] { "Start", "1", "2", "End" }, lines);
     }
 }

@@ -1,7 +1,7 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Runtime.Activities;
 
-namespace Elsa.Workflows.IntegrationTests.Activities;
+namespace Elsa.Workflows.IntegrationTests.Activities.Workflows;
 
 public class JoinAnyForkWorkflow : WorkflowBase
 {
@@ -20,7 +20,7 @@ public class JoinAnyForkWorkflow : WorkflowBase
                         {
                             Activities =
                             {
-                                new Event("Event 1")
+                                new Runtime.Activities.Event("Event 1")
                                 {
                                     Id = "Event1"
                                 },
@@ -31,7 +31,7 @@ public class JoinAnyForkWorkflow : WorkflowBase
                         {
                             Activities =
                             {
-                                new Event("Event 2")
+                                new Runtime.Activities.Event("Event 2")
                                 {
                                     Id = "Event2"
                                 },
@@ -42,7 +42,7 @@ public class JoinAnyForkWorkflow : WorkflowBase
                         {
                             Activities =
                             {
-                                new Event("Event 3")
+                                new Runtime.Activities.Event("Event 3")
                                 {
                                     Id = "Event3"
                                 },

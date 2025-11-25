@@ -18,52 +18,58 @@ public static class OutputExtensions
     /// </summary>
     public static Input<T> CreateInput<T>(this Output output) => new(output);
     
-    /// <summary>
-    /// Sets the output to the specified value.
-    /// </summary>
-    public static void Set<T>(this Output<T>? output, ActivityExecutionContext context, T? value, [CallerArgumentExpression("output")] string? outputName = null) => context.Set(output, value, outputName);
-    
-    /// <summary>
-    /// Sets the output to the specified value.
-    /// </summary>
-    public static void Set<T>(this Output<T>? output, ExpressionExecutionContext context, T? value) => context.Set(output, value);
-    
-    /// <summary>
-    /// Sets the output to the specified value.
-    /// </summary>
-    public static void Set<T>(this Output<T>? output, ActivityExecutionContext context, Variable<T> value) => context.Set(output, value.Get(context));
-    
-    /// <summary>
-    /// Sets the output to the specified value.
-    /// </summary>
-    public static void Set<T>(this Output<T>? output, ExpressionExecutionContext context, Variable<T> value) => context.Set(output, value.Get(context));
-    
-    /// <summary>
-    /// Gets the target type of the specified variable type, if any, linked to the output.
-    /// </summary>
-    public static Type? GetTargetType(this Output? output, ActivityExecutionContext context)
+    extension<T>(Output<T>? output)
     {
-        var memoryBlockReference = output?.MemoryBlockReference();
-        
-        if (memoryBlockReference is null)
-            return null;
+        /// <summary>
+        /// Sets the output to the specified value.
+        /// </summary>
+        public void Set(ActivityExecutionContext context, T? value, [CallerArgumentExpression("output")] string? outputName = null) => context.Set(output, value, outputName);
 
-        if(!context.ExpressionExecutionContext.TryGetBlock(memoryBlockReference, out var memoryBlock))
-            return null;
-        
-        var parsedContentVariableType = (memoryBlock.Metadata as VariableBlockMetadata)?.Variable.GetType();
-        return parsedContentVariableType?.GenericTypeArguments.FirstOrDefault();
+        /// <summary>
+        /// Sets the output to the specified value.
+        /// </summary>
+        public void Set(ExpressionExecutionContext context, T? value) => context.Set(output, value);
+
+        /// <summary>
+        /// Sets the output to the specified value.
+        /// </summary>
+        public void Set(ActivityExecutionContext context, Variable<T> value) => context.Set(output, value.Get(context));
+
+        /// <summary>
+        /// Sets the output to the specified value.
+        /// </summary>
+        public void Set(ExpressionExecutionContext context, Variable<T> value) => context.Set(output, value.Get(context));
     }
 
-    /// <summary>
-    /// Returns a value indicating whether the output has a target.
-    /// </summary>
-    public static bool HasTarget(this Output? output, ActivityExecutionContext context)
+    extension(Output? output)
     {
-        var memoryBlockReference = output?.MemoryBlockReference();
-        return memoryBlockReference is not null && context.ExpressionExecutionContext.TryGetBlock(memoryBlockReference, out _);
+        /// <summary>
+        /// Gets the target type of the specified variable type, if any, linked to the output.
+        /// </summary>
+        public Type? GetTargetType(ActivityExecutionContext context)
+        {
+            var memoryBlockReference = output?.MemoryBlockReference();
+        
+            if (memoryBlockReference is null)
+                return null;
+
+            if(!context.ExpressionExecutionContext.TryGetBlock(memoryBlockReference, out var memoryBlock))
+                return null;
+        
+            var parsedContentVariableType = (memoryBlock.Metadata as VariableBlockMetadata)?.Variable.GetType();
+            return parsedContentVariableType?.GenericTypeArguments.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Returns a value indicating whether the output has a target.
+        /// </summary>
+        public bool HasTarget(ActivityExecutionContext context)
+        {
+            var memoryBlockReference = output?.MemoryBlockReference();
+            return memoryBlockReference is not null && context.ExpressionExecutionContext.TryGetBlock(memoryBlockReference, out _);
+        }
     }
-    
+
     public static object? ParseValue(this Output output, object? value)
     {
         var genericType = output.GetType();
