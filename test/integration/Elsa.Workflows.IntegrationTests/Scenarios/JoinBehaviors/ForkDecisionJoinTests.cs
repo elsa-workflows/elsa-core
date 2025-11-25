@@ -16,13 +16,13 @@ public class ForkDecisionJoinTests
     [Fact(DisplayName = "The implicit join configured with Stream merge mode should execute.")]
     public async Task ImplicitJoinStreamShouldExecute()
     {
-        await RunAndAssert("fork-decision-join-stream.json", ["A", "C"]);
+        await RunAndAssert("fork-decision-join-none.json", ["A", "C"]);
     }
 
     [Fact(DisplayName = "The implicit join configured with Merge mode should not execute (waits for activated branches only).")]
     public async Task ImplicitJoinMergeShouldNotExecute()
     {
-        await RunAndAssert("fork-decision-join-merge.json", ["A"]);
+        await RunAndAssert("fork-decision-join-converge.json", ["A"]);
     }
 
     [Fact(DisplayName = "The implicit join configured with Converge mode should block (strictest - requires ALL inbound connections).")]
