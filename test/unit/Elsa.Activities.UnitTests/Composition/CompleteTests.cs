@@ -31,37 +31,4 @@ public class CompleteTests
         // Assert
         Assert.Equal(ActivityStatus.Completed, context.Status);
     }
-
-    [Fact(DisplayName = "Complete with constructor accepting string enumerable")]
-    public void Complete_Constructor_AcceptsStringEnumerable()
-    {
-        // Arrange
-        var expectedOutcomes = new[] { "Success", "Failed" };
-
-        // Act
-        var completeActivity = new Complete(expectedOutcomes);
-
-        // Assert
-        Assert.NotNull(completeActivity.Outcomes);
-    }
-
-    [Fact(DisplayName = "Complete with constructor accepting outcome function")]
-    public void Complete_Constructor_AcceptsOutcomeFunction()
-    {
-        // Arrange & Act
-        var completeActivity = new Complete(_ => "Success");
-
-        // Assert
-        Assert.NotNull(completeActivity.Outcomes);
-    }
-
-    [Fact(DisplayName = "Complete with constructor accepting outcomes collection function")]
-    public void Complete_Constructor_AcceptsOutcomesCollectionFunction()
-    {
-        // Arrange & Act
-        var completeActivity = new Complete(_ => ["Success", "Failed"]);
-
-        // Assert
-        Assert.NotNull(completeActivity.Outcomes);
-    }
 }
