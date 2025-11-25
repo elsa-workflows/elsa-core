@@ -27,7 +27,7 @@ public class BreakTests(ITestOutputHelper testOutputHelper)
     public async Task Break_ExitsOnlyImmediateLoopInNestedForEach()
     {
         // Act
-        var result = await _fixture.RunWorkflowAsync(new NestedForEachWithBreakWorkflow());
+        await _fixture.RunWorkflowAsync(new NestedForEachWithBreakWorkflow());
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert
