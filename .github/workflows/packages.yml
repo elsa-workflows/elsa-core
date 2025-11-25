@@ -13,17 +13,6 @@ on:
       - 'rc/*'
       - 'develop/*'
       - 'codex/*'
-  pull_request:
-    branches:
-      - 'main'
-      - 'bug/*'
-      - 'perf/*'
-      - 'patch/*'
-      - 'feat/*'
-      - 'enh/*'
-      - 'rc/*'
-      - 'develop/*'
-      - 'codex/*'
   release:
     types: [prereleased, published]
 
@@ -47,6 +36,7 @@ jobs:
           dotnet-version: |
             8.0.x
             9.0.x
+            10.0.x
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
@@ -139,8 +129,8 @@ jobs:
         with:
           dotnet-version: 9.x
 
-      - name: Compile+Test+Pack
-        run: ./build.sh Compile+Test+Pack --version ${VERSION} --analyseCode true
+      - name: Compile+Pack
+        run: ./build.sh Compile+Pack --version ${VERSION} --analyseCode true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

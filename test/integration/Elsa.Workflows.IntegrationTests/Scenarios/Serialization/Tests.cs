@@ -24,8 +24,8 @@ public class Tests
     public async Task Test1()
     {
         await _services.PopulateRegistriesAsync();
-        var workflowDefinition = _publisher.New();
-        var root = _serializer.Deserialize(workflowDefinition.StringData);
+        var workflowDefinition = await _publisher.NewAsync();
+        var root = _serializer.Deserialize(workflowDefinition.StringData!);
         Assert.NotNull(root);
     }
 }

@@ -27,9 +27,16 @@ public class Parallel : Container
     /// <inheritdoc />
     protected override async ValueTask ScheduleChildrenAsync(ActivityExecutionContext context)
     {
+        // If there are no activities, complete immediately
+        if (Activities.Count == 0)
+        {
+            await context.CompleteActivityAsync();
+            return;
+        }
+
         context.SetProperty(ScheduledChildrenProperty, Activities.Count);
-        
-        foreach (var activity in Activities) 
+
+        foreach (var activity in Activities)
             await context.ScheduleActivityAsync(activity, OnChildCompleted);
     }
     

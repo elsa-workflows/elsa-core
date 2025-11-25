@@ -24,6 +24,19 @@ public class WriteHttpResponse : Activity
     public WriteHttpResponse([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
+    
+    /// <inheritdoc />
+    public WriteHttpResponse(Input<object?> content, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
+    {
+        Content = content;
+    }
+    
+    /// <inheritdoc />
+    public WriteHttpResponse(Input<object?> content, Input<string?> contentType, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
+    {
+        Content = content;
+        ContentType = contentType;
+    }
 
     /// <summary>
     /// The status code to return.
@@ -101,7 +114,7 @@ public class WriteHttpResponse : Activity
         // Add headers.
         var headers = context.GetHeaders(ResponseHeaders);
         foreach (var header in headers)
-            response.Headers.Add(header.Key, header.Value);
+            response.Headers[header.Key] = header.Value;
 
         // Get content and content type.
         var content = context.Get(Content);

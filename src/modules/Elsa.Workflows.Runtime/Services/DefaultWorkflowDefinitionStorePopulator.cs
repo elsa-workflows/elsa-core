@@ -83,8 +83,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         await AssignIdentities(materializedWorkflow.Workflow, cancellationToken);
         var workflowDefinition = await AddOrUpdateAsync(materializedWorkflow, cancellationToken);
 
-        if (indexTriggers)
-            await IndexTriggersAsync(workflowDefinition, cancellationToken);
+        if (indexTriggers && workflowDefinition.IsPublished)
+            await _triggerIndexer.IndexTriggersAsync(workflowDefinition, cancellationToken);
 
         return workflowDefinition;
     }
@@ -120,8 +120,25 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         var materializerContext = materializedWorkflow.MaterializerContext;
         var materializerContextJson = materializerContext != null ? _payloadSerializer.Serialize(materializerContext) : null;
 
-        // Serialize the workflow root.
-        var workflowJson = _activitySerializer.Serialize(workflow.Root);
+        // Determine StringData and OriginalSource based on what's provided
+        string? stringData;
+        var originalSource = materializedWorkflow.OriginalSource;
+
+        if (originalSource != null)
+        {
+            // NEW WAY: OriginalSource is provided
+            // For JSON workflows, we still need to populate StringData with the serialized root for backwards compatibility
+            stringData = materializedWorkflow.MaterializerName == "Json" ? _activitySerializer.Serialize(workflow.Root) :
+                // For new formats (ElsaScript, YAML, etc.), only OriginalSource is needed
+                // StringData can be null as these materializers only use OriginalSource
+                null;
+        }
+        else
+        {
+            // OLD WAY: No OriginalSource provided (backwards compatibility for existing workflows)
+            // Serialize the workflow root as before
+            stringData = _activitySerializer.Serialize(workflow.Root);
+        }
 
         // Check if there's already a workflow definition stored with this definition ID and version.
         var specificVersionFilter = new WorkflowDefinitionFilter
@@ -171,7 +188,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         workflowDefinition.Inputs = workflow.Inputs;
         workflowDefinition.Outputs = workflow.Outputs;
         workflowDefinition.Outcomes = workflow.Outcomes;
-        workflowDefinition.StringData = workflowJson;
+        workflowDefinition.StringData = stringData;
+        workflowDefinition.OriginalSource = originalSource;
         workflowDefinition.CreatedAt = workflow.WorkflowMetadata.CreatedAt == default ? _systemClock.UtcNow : workflow.WorkflowMetadata.CreatedAt;
         workflowDefinition.Options = workflow.Options;
         workflowDefinition.ProviderName = materializedWorkflow.ProviderName;
@@ -259,8 +277,6 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             }
         }
     }
-
-    private async Task IndexTriggersAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken) => await _triggerIndexer.IndexTriggersAsync(workflowDefinition, cancellationToken);
 
     /// <summary>
     /// Syncs the items in the primary list with existing items in the secondary list, even when the object instances are not the same (but their IDs are).

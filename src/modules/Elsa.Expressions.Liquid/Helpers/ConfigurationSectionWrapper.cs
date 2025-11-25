@@ -2,16 +2,9 @@
 
 namespace Elsa.Expressions.Liquid.Helpers;
 
-public class ConfigurationSectionWrapper
+public class ConfigurationSectionWrapper(IConfigurationSection section)
 {
-    private readonly IConfigurationSection _section;
+    public override string ToString() => section.Value!;
 
-    public ConfigurationSectionWrapper(IConfigurationSection section)
-    {
-        _section = section;
-    }
-
-    public override string ToString() => _section.Value;
-
-    public ConfigurationSectionWrapper GetSection(string name) => new(_section.GetSection(name));
+    public ConfigurationSectionWrapper GetSection(string name) => new(section.GetSection(name));
 }

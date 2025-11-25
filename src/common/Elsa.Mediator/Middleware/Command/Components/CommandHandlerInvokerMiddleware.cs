@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Mediator.Contexts;
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Middleware.Command.Contracts;
@@ -13,6 +14,7 @@ namespace Elsa.Mediator.Middleware.Command.Components;
 public class CommandHandlerInvokerMiddleware(CommandMiddlewareDelegate next) : ICommandMiddleware
 {
     /// <inheritdoc />
+    [UnconditionalSuppressMessage("Trimming", "IL2060:Call to MakeGenericMethod can not be statically analyzed", Justification = "The result type is determined at runtime from command types and handlers are registered in DI.")]
     public async ValueTask InvokeAsync(CommandContext context)
     {
         // Find all handlers for the specified command.

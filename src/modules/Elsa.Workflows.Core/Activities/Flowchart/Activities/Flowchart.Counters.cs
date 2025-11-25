@@ -63,7 +63,6 @@ public partial class Flowchart
     /// This method determines whether an activity should be scheduled based on visited connections,
     /// forward traversal rules, and backward connections.
     /// </summary>
-    /// <param name="flowchart">The flowchart containing the activities.</param>
     /// <param name="flowGraph">The graph representation of the flowchart.</param>
     /// <param name="flowScope">Tracks activity and connection visits.</param>
     /// <param name="flowchartContext">The execution context of the flowchart.</param>

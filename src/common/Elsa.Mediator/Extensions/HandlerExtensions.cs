@@ -42,8 +42,7 @@ public static class HandlerExtensions
     /// </summary>
     /// <param name="handler">The handler to invoke.</param>
     /// <param name="handleMethod">The handle method.</param>
-    /// <param name="notificationContext">The notification to handle.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="notificationContext">The notification context containing the notification and cancellation token.</param>
     public static Task InvokeAsync(this INotificationHandler handler, MethodBase handleMethod, NotificationContext notificationContext)
     {
         var notification = notificationContext.Notification;

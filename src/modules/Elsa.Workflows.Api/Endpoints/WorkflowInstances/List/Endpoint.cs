@@ -151,7 +151,7 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
                 {
                     var o = new WorkflowInstanceOrder<string>
                     {
-                        KeySelector = p => p.Name,
+                        KeySelector = p => p.Name!,
                         Direction = direction
                     };
 

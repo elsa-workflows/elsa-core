@@ -26,21 +26,28 @@ public static class RunWorkflowExtensions
     /// <param name="services">The services.</param>
     /// <param name="workflowDefinitionId">The ID of the workflow definition.</param>
     /// <param name="input">An optional dictionary of input values.</param>
+    /// <param name="correlationId">An optional correlation id of the workflow.</param>
     /// <param name="versionOptions">An optional set of options to specify the version of the workflow definition to retrieve.</param>
     /// <returns>The workflow state.</returns>
     public static async Task<WorkflowState> RunWorkflowUntilEndAsync(this IServiceProvider services,
         string workflowDefinitionId,
         IDictionary<string, object>? input = null,
+        string? correlationId = null,
         VersionOptions? versionOptions = null)
     {
         var workflowDefinitionService = services.GetRequiredService<IWorkflowDefinitionService>();
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, versionOptions ?? VersionOptions.Published);
+        
+        if (workflowGraph == null)
+            throw new InvalidOperationException($"Workflow definition with ID '{workflowDefinitionId}' not found.");
+        
         var workflowRuntime = services.GetRequiredService<IWorkflowRuntime>();
         var workflowClient = await workflowRuntime.CreateClientAsync();
         var response = await workflowClient.CreateAndRunInstanceAsync(new()
         {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph!.Workflow.Identity.Id),
-            Input = input
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph.Workflow.Identity.Id),
+            Input = input,
+            CorrelationId = correlationId
         });
         
         var bookmarkStore = services.GetRequiredService<IBookmarkStore>();
@@ -60,7 +67,8 @@ public static class RunWorkflowExtensions
             {
                 var runRequest = new RunWorkflowInstanceRequest
                 {
-                    BookmarkId = bookmark.Id
+                    BookmarkId = bookmark.Id,
+                    Input = input
                 };
                 response = await workflowClient.RunInstanceAsync(runRequest);
             }

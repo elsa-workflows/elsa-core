@@ -33,7 +33,7 @@ public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer,
             try
             {
                 var node = JsonSerializer.SerializeToNode(value);
-                dictionary[id] = node;
+                dictionary[id] = node!;
             }
             catch (Exception ex) when (ex is JsonException or NotSupportedException or ObjectDisposedException)
             {

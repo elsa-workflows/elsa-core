@@ -79,8 +79,8 @@ public class Tests
                 new(start, writeLine),
                 new(writeLine, end),
             },
+            RunAsynchronously = false
         };
-        container.RunAsynchronously = false;
 
         // Act
 
@@ -93,12 +93,11 @@ public class Tests
     }
 
     [Fact]
-    public async void SerializeSequenceContainerTest()
+    public async Task SerializeSequenceContainerTest()
     {
         await _services.PopulateRegistriesAsync();
 
         // Arrange
-
         var container = new Sequence
         {
             Id = "sequence",
@@ -127,9 +126,9 @@ public class Tests
                 { "int", 10 },
                 { "bool", false },
                 { "string", "str"},
-            }
+            },
+            RunAsynchronously = false
         };
-        container.RunAsynchronously = false;
 
         // Act
 
@@ -142,12 +141,11 @@ public class Tests
     }
 
     [Fact]
-    public async void SerializeParallelContainerTest()
+    public async Task SerializeParallelContainerTest()
     {
         await _services.PopulateRegistriesAsync();
 
         // Arrange
-
         var container = new Workflows.Activities.Parallel
         {
             Id = "parallel",
@@ -177,9 +175,9 @@ public class Tests
                 { "int", 10 },
                 { "bool", false },
                 { "string", "str"},
-            }
+            },
+            RunAsynchronously = false
         };
-        container.RunAsynchronously = false;
 
         // Act
 
@@ -199,10 +197,16 @@ public class Tests
         // Assert.Equivalent has trouble with the Behavior.Owner reference - since these aren't serialzied anyway, ignore them
         deserializedContainer.Behaviors.Clear();
         container.Behaviors.Clear();
-        foreach (Activity activity in deserializedContainer.Activities)
+        foreach (var activity1 in deserializedContainer.Activities)
+        {
+            var activity = (Activity)activity1;
             activity.Behaviors.Clear();
-        foreach (Activity activity in container.Activities)
+        }
+
+        foreach (var activity in container.Activities.Cast<Activity>())
+        {
             activity.Behaviors.Clear();
+        }
 
         // strict:false here allows "actual" to have extra public members that aren't part of "expected", and collection
         // comparison allows "actual" to have more data in it than is present in "expected".

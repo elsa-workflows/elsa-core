@@ -90,7 +90,7 @@ public class ParallelForEach<T> : Activity
     private ICollection<Guid> GetTagList(ActivityExecutionContext context, string propertyName)
     {
         // Read the list of tags from the context using the specified property name. The value is stored as JsonArray, so we need to deserialize it.
-        var jsonArray = context.GetProperty<JsonArray>(propertyName);
+        var jsonArray = context.GetProperty<JsonArray>(propertyName)!;
         return jsonArray.Select(x => x.ConvertTo<Guid>()).ToList();
     }
     

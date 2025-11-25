@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Signals;
 using Elsa.Workflows.UIHints;
@@ -38,7 +39,17 @@ public class Fork : Activity
     public ICollection<IActivity> Branches { get; set; } = new List<IActivity>();
 
     /// <inheritdoc />
-    protected override ValueTask ExecuteAsync(ActivityExecutionContext context) => context.ScheduleActivities(Branches, CompleteChildAsync);
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    {
+        // If there are no branches, complete immediately
+        if (Branches.Count == 0)
+        {
+            await context.CompleteActivityAsync();
+            return;
+        }
+
+        await context.ScheduleActivities(Branches, CompleteChildAsync);
+    }
 
     private async ValueTask CompleteChildAsync(ActivityCompletedContext context)
     {
@@ -57,7 +68,7 @@ public class Fork : Activity
         // Append activity to the set of completed activities.
         var completedActivityIds = targetContext.UpdateProperty<HashSet<string>>("Completed", set =>
         {
-            set ??= new HashSet<string>();
+            set ??= new();
             set.Add(completedChildActivityId);
             return set;
         });

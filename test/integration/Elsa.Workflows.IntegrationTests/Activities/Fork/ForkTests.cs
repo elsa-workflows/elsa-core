@@ -1,54 +1,64 @@
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
+using Elsa.Workflows.IntegrationTests.Activities.Workflows;
 using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Activities;
 
-public class ForkTests
+/// <summary>
+/// Integration tests for the <see cref="Workflows.Activities.Fork"/> activity.
+/// Tests Fork behavior with different join modes and branch configurations.
+/// </summary>
+public class ForkTests(ITestOutputHelper testOutputHelper)
 {
-    private readonly IWorkflowRunner _workflowRunner;
-    private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
-    private IServiceProvider _services;
+    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
 
-    public ForkTests(ITestOutputHelper testOutputHelper)
+    [Fact(DisplayName = "Fork executes all branches with WaitAll")]
+    public async Task Fork_ExecutesAllBranchesWithWaitAll()
     {
-        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        _workflowBuilderFactory = _services.GetRequiredService<IWorkflowBuilderFactory>();
-        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
-    }
+        // Act
+        await _fixture.RunWorkflowAsync(new BasicForkWorkflow());
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
-    [Fact(DisplayName = "Each branch executes")]
-    public async Task Test1()
-    {
-        await _services.PopulateRegistriesAsync();
-        var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<BasicForkWorkflow>();
-        await _workflowRunner.RunAsync(workflow);
-        var lines = _capturingTextWriter.Lines.ToList();
+        // Assert
         Assert.Equal(new[] { "Branch 1", "Branch 2", "Branch 3" }, lines);
     }
 
-    [Fact(DisplayName = "Wait AnyAsync causes workflow to continue")]
-    public async Task Test2()
+    [Fact(DisplayName = "Fork with WaitAny continues after first branch completes")]
+    public async Task Fork_WaitAnyContinuesAfterFirstBranch()
     {
-        await _services.PopulateRegistriesAsync();
-        var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<JoinAnyForkWorkflow>();
+        // Arrange & build services
+        await _fixture.BuildAsync();
+        var workflowBuilderFactory = _fixture.Services.GetRequiredService<IWorkflowBuilderFactory>();
+        var workflow = await workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<JoinAnyForkWorkflow>();
 
-        // First run.
-        var result = await _workflowRunner.RunAsync(workflow);
+        // Act - First run
+        var workflowRunner = _fixture.Services.GetRequiredService<IWorkflowRunner>();
+        var result = await workflowRunner.RunAsync(workflow);
 
-        // Collect one of the bookmarks to resume the workflow.
+        // Collect one of the bookmarks to resume the workflow
         var bookmark = result.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Event2");
         Assert.NotNull(bookmark);
 
-        // Resume the workflow.
+        // Resume the workflow
         var runOptions = new RunWorkflowOptions { BookmarkId = bookmark.Id };
-        await _workflowRunner.RunAsync(workflow, result.WorkflowState, runOptions);
+        await workflowRunner.RunAsync(workflow, result.WorkflowState, runOptions);
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
-        // Verify output.
-        var lines = _capturingTextWriter.Lines.ToList();
+        // Assert
         Assert.Equal(new[] { "Start", "Branch 2", "End" }, lines);
+    }
+
+    [Fact(DisplayName = "Fork with no branches completes successfully")]
+    public async Task Fork_WithNoBranchesCompletesSuccessfully()
+    {
+        // Act
+        await _fixture.RunWorkflowAsync(new EmptyForkWorkflow());
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
+
+        // Assert
+        Assert.Equal(new[] { "Before fork", "After fork" }, lines);
     }
 }

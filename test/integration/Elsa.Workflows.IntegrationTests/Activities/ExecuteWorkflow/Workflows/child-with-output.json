@@ -1,0 +1,100 @@
+{
+  "id": "child-with-output-v1",
+  "definitionId": "child-with-output",
+  "name": "Child With Output",
+  "createdAt": "2025-01-15T00:00:00.000000+00:00",
+  "version": 1,
+  "variables": [],
+  "inputs": [],
+  "outputs": [
+    {
+      "type": "Object",
+      "name": "Result",
+      "displayName": "Result",
+      "description": "",
+      "isArray": false
+    }
+  ],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "Flowchart1",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "start": "WriteLine1",
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Child output: 42"
+          },
+          "memoryReference": {
+            "id": "WriteLine1:input-1"
+          }
+        },
+        "id": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {}
+      },
+      {
+        "outputName": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Result"
+          },
+          "memoryReference": {
+            "id": "SetOutput1:outputName"
+          }
+        },
+        "outputValue": {
+          "typeName": "Object",
+          "expression": {
+            "type": "Literal",
+            "value": 42
+          },
+          "memoryReference": {
+            "id": "SetOutput1:outputValue"
+          }
+        },
+        "id": "SetOutput1",
+        "type": "Elsa.SetOutput",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {}
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "WriteLine1",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "SetOutput1",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

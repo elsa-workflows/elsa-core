@@ -4,19 +4,20 @@ using Elsa.Common.RecurringTasks;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Features.Services;
-using Elsa.Identity.Multitenancy;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
 using Elsa.Server.Web.Filters;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
+using Elsa.WorkflowProviders.BlobStorage.ElsaScript.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Api;
 using Elsa.Workflows.CommitStates.Strategies;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Options;
+using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
 using JetBrains.Annotations;
@@ -45,7 +46,7 @@ services
             .AddWorkflowsFrom<Program>()
             .UseIdentity(identity =>
             {
-                identity.TokenOptions = options => identityTokenSection.Bind(options);
+                identity.TokenOptions += options => identityTokenSection.Bind(options);
                 identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
                 identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
                 identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
@@ -70,8 +71,11 @@ services
             {
                 runtime.UseEntityFrameworkCore(ef => ef.UseSqlite());
                 runtime.UseCache();
+                runtime.UseDistributedRuntime();
             })
             .UseWorkflowsApi()
+            .UseFluentStorageProvider()
+            .UseElsaScriptBlobStorage()
             .UseScheduling()
             .UseCSharp(options =>
             {
@@ -124,7 +128,7 @@ services.Configure<RecurringTaskOptions>(options =>
 });
 
 services.Configure<RuntimeOptions>(options => { options.InactivityThreshold = TimeSpan.FromSeconds(15); });
-services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(10));
+services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(3600));
 services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.Configure<IncidentOptions>(options => options.DefaultIncidentStrategy = typeof(ContinueWithIncidentsStrategy));
 services.AddHealthChecks();
@@ -133,6 +137,7 @@ services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader()
 
 // Build the web application.
 var app = builder.Build();
+
 
 // Configure the pipeline.
 if (app.Environment.IsDevelopment())

@@ -62,14 +62,21 @@ public class TriggerIndexer : ITriggerIndexer
         var triggers = (await _triggerStore.FindManyAsync(filter, cancellationToken)).ToList();
         var workflowDefinitionVersionIds = triggers.Select(x => x.WorkflowDefinitionVersionId).Distinct().ToList();
 
-        foreach (string workflowDefinitionVersionId in workflowDefinitionVersionIds)
+        foreach (var workflowDefinitionVersionId in workflowDefinitionVersionIds)
         {
-            var workflowGraph = await _workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionVersionId, cancellationToken);
+            try
+            {
+                var workflowGraph = await _workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionVersionId, cancellationToken);
 
-            if (workflowGraph == null)
-                continue;
-            
-            await DeleteTriggersAsync(workflowGraph.Workflow, cancellationToken);
+                if (workflowGraph == null)
+                    continue;
+
+                await DeleteTriggersAsync(workflowGraph.Workflow, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load workflow graph for workflow definition version {WorkflowDefinitionVersionId}. Skipping trigger deletion for this workflow.", workflowDefinitionVersionId);
+            }
         }
     }
 
@@ -89,7 +96,7 @@ public class TriggerIndexer : ITriggerIndexer
         // Collect new triggers **if the workflow is published**.
         var newTriggers = workflow.Publication.IsPublished
             ? await GetTriggersInternalAsync(workflow, cancellationToken).ToListAsync(cancellationToken)
-            : new List<StoredTrigger>(0);
+            : new(0);
 
         // Diff triggers.
         var diff = Diff.For(currentTriggers, newTriggers, new WorkflowTriggerEqualityComparer());

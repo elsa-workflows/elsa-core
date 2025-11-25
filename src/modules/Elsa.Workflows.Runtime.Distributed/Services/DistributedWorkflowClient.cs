@@ -75,6 +75,12 @@ public class DistributedWorkflowClient(
         return await _localWorkflowClient.InstanceExistsAsync(cancellationToken);
     }
 
+    public async Task<bool> DeleteAsync(CancellationToken cancellationToken = default)
+    {
+        // Use the same distributed lock as for execution to prevent concurrent DB writes
+        return await WithLockAsync(async () => await _localWorkflowClient.DeleteAsync(cancellationToken));
+    }
+
     private async Task<R> WithLockAsync<R>(Func<Task<R>> func)
     {
         var lockKey = $"workflow-instance:{WorkflowInstanceId}";

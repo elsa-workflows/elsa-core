@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
 using Newtonsoft.Json.Linq;
@@ -14,7 +13,7 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// <summary>
 /// Reads objects as primitive types rather than <see cref="JsonElement"/> values while also maintaining the .NET type name for reconstructing the actual type.
 /// </summary>
-public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegistry) : JsonConverter<object>
+public class PolymorphicObjectConverter : JsonConverter<object>
 {
     private const string TypePropertyName = "_type";
     private const string ItemsPropertyName = "_items";
@@ -77,7 +76,7 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
         {
             var parsedModel = JsonElement.ParseValue(ref reader);
             var systemTextJson = parsedModel.GetProperty(IslandPropertyName).GetString();
-            return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonObject.Parse(systemTextJson) : new JsonObject();
+            return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonNode.Parse(systemTextJson)! : new JsonObject();
         }
 
         var isJsonArray = targetType == typeof(JsonArray);
@@ -86,7 +85,7 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
         {
             var parsedModel = JsonElement.ParseValue(ref reader);
             var systemTextJson = parsedModel.GetProperty(IslandPropertyName).GetString();
-            return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonArray.Parse(systemTextJson) : new JsonArray();
+            return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonNode.Parse(systemTextJson)! : new JsonArray();
         }
 
         var isDictionary = typeof(IDictionary).IsAssignableFrom(targetType);

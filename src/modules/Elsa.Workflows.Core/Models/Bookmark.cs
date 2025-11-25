@@ -15,6 +15,7 @@ namespace Elsa.Workflows.Models;
 /// <param name="CreatedAt">The date and time the bookmark was created.</param>
 /// <param name="AutoBurn">Whether or not the bookmark should be automatically burned.</param>
 /// <param name="CallbackMethodName">The name of the method on the activity class to invoke when the bookmark is resumed.</param>
+/// <param name="AutoComplete">Whether or not the activity should be automatically completed when the bookmark is resumed.</param>
 /// <param name="Metadata">Custom properties associated with the bookmark.</param>
 public record Bookmark(
     string Id,

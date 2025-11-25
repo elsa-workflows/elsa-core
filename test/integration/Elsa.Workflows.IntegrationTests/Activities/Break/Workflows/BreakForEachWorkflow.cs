@@ -3,7 +3,7 @@ using Elsa.Workflows.Memory;
 
 namespace Elsa.Workflows.IntegrationTests.Activities.Workflows;
 
-class BreakForEachWorkflow : WorkflowBase
+public class BreakForEachWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {

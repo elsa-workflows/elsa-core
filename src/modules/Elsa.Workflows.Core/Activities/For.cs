@@ -26,9 +26,9 @@ public class For : Activity
     /// <inheritdoc />
     public For(int start, int end, int step, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
     {
-        Start = new Input<int>(start);
-        End = new Input<int>(end);
-        Step = new Input<int>(step);
+        Start = new(start);
+        End = new(end);
+        Step = new(step);
     }
 
     /// <summary>

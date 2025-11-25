@@ -1,0 +1,105 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "3b42d3276206e00f",
+  "definitionId": "fb27085e78433f79",
+  "name": "Triggers",
+  "createdAt": "2025-10-09T07:37:31.521686\u002B00:00",
+  "version": 3,
+  "toolVersion": "3.5.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": false,
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "83f95a4ca749c950",
+    "nodeId": "Workflow1:83f95a4ca749c950",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "path": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "triggers"
+          }
+        },
+        "supportedMethods": {
+          "typeName": "List\u003CString\u003E",
+          "expression": {
+            "type": "Object",
+            "value": "[\u0022GET\u0022]"
+          }
+        },
+        "authorize": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "Literal",
+            "value": false
+          }
+        },
+        "policy": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal"
+          }
+        },
+        "requestTimeout": null,
+        "requestSizeLimit": null,
+        "fileSizeLimit": null,
+        "allowedFileExtensions": null,
+        "blockedFileExtensions": null,
+        "allowedMimeTypes": null,
+        "exposeRequestTooLargeOutcome": false,
+        "exposeFileTooLargeOutcome": false,
+        "exposeInvalidFileExtensionOutcome": false,
+        "exposeInvalidFileMimeTypeOutcome": false,
+        "parsedContent": null,
+        "files": null,
+        "routeData": null,
+        "queryStringData": null,
+        "headers": null,
+        "result": null,
+        "id": "607c2042a187fe5a",
+        "nodeId": "Workflow1:83f95a4ca749c950:607c2042a187fe5a",
+        "name": "HttpEndpoint1",
+        "type": "Elsa.HttpEndpoint",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": true,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -316.431640625,
+              "y": -470.017578125
+            },
+            "size": {
+              "width": 195.1328125,
+              "height": 67.9765625
+            }
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": []
+  }
+}

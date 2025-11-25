@@ -22,6 +22,7 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
     private Timer? _timer;
     private bool _executing;
     private bool _cancellationRequested;
+    private bool _disposed;
 
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledSpecificInstantTask"/>.
@@ -57,8 +58,13 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
         var now = _systemClock.UtcNow;
         var delay = _startAt - now;
 
+        // Handle edge cases where delay is zero or negative (e.g., due to clock drift, fast execution, or time alignment)
+        // Instead of silently returning, use a minimum delay to ensure the timer fires and workflow continues scheduling
         if (delay <= TimeSpan.Zero)
+        {
+            _logger.LogWarning("Calculated delay is {Delay} which is not positive. Using minimum delay of 1ms to ensure timer fires", delay);
             delay = TimeSpan.FromMilliseconds(1);
+        }
 
         _timer = new(delay.TotalMilliseconds)
         {
@@ -70,14 +76,22 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
             _timer?.Dispose();
             _timer = null;
 
+            // Check if disposed before proceeding
+            if (_disposed) return;
+
             using var scope = _scopeFactory.CreateScope();
             var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
+
+            // Check disposed again before accessing CancellationTokenSource
+            if (_disposed) return;
+
             var cancellationToken = _cancellationTokenSource.Token;
             if (!cancellationToken.IsCancellationRequested)
             {
+                var acquired = false;
                 try
                 {
-                    var acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
+                    acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
                     if (!acquired) return;
                     _executing = true;
                     await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
@@ -95,7 +109,8 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
                 finally
                 {
                     _executing = false;
-                    _executionSemaphore.Release();
+                    if (acquired && !_disposed)
+                        _executionSemaphore.Release();
                 }
             }
         };
@@ -103,8 +118,9 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
 
     void IDisposable.Dispose()
     {
-        _cancellationTokenSource.Dispose();
+        _disposed = true;
         _timer?.Dispose();
+        _cancellationTokenSource.Dispose();
         _executionSemaphore.Dispose();
     }
 }

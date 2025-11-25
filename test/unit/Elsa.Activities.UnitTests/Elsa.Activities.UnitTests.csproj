@@ -1,12 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <ItemGroup>
-        <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-        <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
-    </ItemGroup>
+    <PropertyGroup>
+        <Include>[Elsa.Scheduling]*,[Elsa.Workflows.Core]*,[Elsa.Workflows.Management]*,[Elsa.Http]*</Include>
+        <Threshold>6</Threshold>
+    </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="NSubstitute" Version="5.1.0" />
+        <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />
     </ItemGroup>
 
 </Project>
