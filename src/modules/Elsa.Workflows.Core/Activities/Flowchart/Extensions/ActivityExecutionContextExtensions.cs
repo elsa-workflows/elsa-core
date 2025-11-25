@@ -131,21 +131,5 @@ public static class ActivityExecutionContextExtensions
         {
             return context.Children.Any(x => x.Status == ActivityStatus.Faulted);
         }
-
-        internal async Task CancelInboundAncestorsAsync(IActivity activity)
-        {
-            if(context.Activity is not Activities.Flowchart)
-                throw new InvalidOperationException("Activity context is not a flowchart.");
-        
-            var flowGraph = context.GetFlowGraph();
-            var ancestorActivities = flowGraph.GetAncestorActivities(activity);
-            var inboundActivityExecutionContexts = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => ancestorActivities.Contains(x.Activity) && x.ParentActivityExecutionContext == context).ToList();
-
-            // Cancel each ancestor activity.
-            foreach (var activityExecutionContext in inboundActivityExecutionContexts)
-            {
-                await activityExecutionContext.CancelActivityAsync();
-            }
-        }
     }
 }

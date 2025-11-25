@@ -97,7 +97,7 @@ public class EventBaseTests
 
         // Act
         var context = await ExecuteAsync(activity);
-        context.WorkflowExecutionContext.Input[Event.EventInputWorkflowInputKey] = testPayload;
+        context.WorkflowExecutionContext.Input[Elsa.Workflows.Runtime.Activities.Event.EventInputWorkflowInputKey] = testPayload;
         await activity.InvokeCallbackAsync(context);
 
         // Assert
