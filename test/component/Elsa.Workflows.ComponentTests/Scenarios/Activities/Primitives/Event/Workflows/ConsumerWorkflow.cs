@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Activities.SetOutput;
 using Elsa.Workflows.Memory;
@@ -18,6 +17,7 @@ public class ConsumerWorkflow : WorkflowBase
 
         workflow.WithDefinitionId(DefinitionId);
         workflow.WithVariable(eventPayload);
+        workflow.WithOutput<object>("ReceivedPayload"); // Declare the output
 
         var eventActivity = new Runtime.Activities.Event("GlobalOrderEvent")
         {
