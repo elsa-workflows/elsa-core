@@ -119,11 +119,11 @@ public static class ActivityExtensions
     /// </summary>
     public static void SetCanStartWorkflow(this JsonObject activity, bool value) => activity.SetProperty(JsonValue.Create(value), "customProperties", "canStartWorkflow");
     
-    public static MergeMode? GetMergeMode(this JsonObject activity)
+    public static MergeMode GetMergeMode(this JsonObject activity)
     {
         var value = activity.GetProperty<MergeMode?>("customProperties", "mergeMode");
-        // Treat MergeMode.None as equivalent to null (no merge mode set)
-        return value == MergeMode.None ? null : value;
+        // Treat MergeMode.None as equivalent to null (no merge mode set), defaulting to Stream
+        return value == null || value == MergeMode.None ? MergeMode.Stream : value.Value;
     }
 
     public static void SetMergeMode(this JsonObject activity, MergeMode? value)
