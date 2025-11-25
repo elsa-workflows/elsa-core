@@ -16,7 +16,7 @@ public class ForkDecisionJoinTests
     [Fact(DisplayName = "The implicit join configured with Stream merge mode should execute.")]
     public async Task ImplicitJoinStreamShouldExecute()
     {
-        await RunAndAssert("fork-decision-join-none.json", ["A", "C"]);
+        await RunAndAssert("fork-decision-join-stream.json", ["A", "C"]);
     }
 
     [Fact(DisplayName = "The implicit join configured with Merge mode should not execute (waits for activated branches only).")]
