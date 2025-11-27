@@ -79,7 +79,15 @@ public class ActivityTestFixture
     public async Task<ActivityExecutionContext> ExecuteAsync()
     {
         var context = await BuildAsync();
-
+        return await ExecuteAsync(context);
+    }
+    
+    /// <summary>
+    /// Executes the execution context.
+    /// </summary>
+    /// <returns>The ActivityExecutionContext after execution</returns>
+    public async Task<ActivityExecutionContext> ExecuteAsync(ActivityExecutionContext context)
+    {
         // Set up variables and inputs, then execute the activity
         await SetupExistingVariablesAsync(Activity, context);
         await context.EvaluateInputPropertiesAsync();
