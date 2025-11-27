@@ -1,6 +1,5 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
-using Elsa.Workflows.Activities;
 
 namespace Elsa.Activities.UnitTests.Primitives;
 
@@ -9,6 +8,16 @@ namespace Elsa.Activities.UnitTests.Primitives;
 /// </summary>
 public class FinishTests
 {
+    [Fact(DisplayName = "Finish implements ITerminalNode interface")]
+    public void Finish_ImplementsITerminalNode()
+    {
+        // Arrange
+        var finish = new Finish();
+
+        // Assert
+        Assert.IsAssignableFrom<ITerminalNode>(finish);
+    }
+
     [Fact(DisplayName = "Finish completes successfully")]
     public async Task Should_Complete_Successfully()
     {
