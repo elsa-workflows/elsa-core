@@ -10,7 +10,7 @@ public class FinishInSequenceWorkflow : WorkflowBase
 
     protected override void Build(IWorkflowBuilder workflow)
     {
-        workflow.DefinitionId = DefinitionId;
+        workflow.WithDefinitionId(DefinitionId);
         workflow.Root = new Sequence
         {
             Activities =
