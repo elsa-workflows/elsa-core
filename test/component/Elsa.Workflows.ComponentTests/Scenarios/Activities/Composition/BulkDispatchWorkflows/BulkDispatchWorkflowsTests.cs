@@ -127,7 +127,7 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowExecutionContext.SubStatus);
     }
 
-    private async Task<T> GetWorkflowVariableAsync<T>(TestWorkflowExecutionResult result, string variableName)
+    private async Task<T?> GetWorkflowVariableAsync<T>(TestWorkflowExecutionResult result, string variableName)
     {
         var variableManager = Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceVariableManager>();
         var variables = await variableManager.GetVariablesAsync(result.WorkflowExecutionContext);

@@ -26,18 +26,19 @@ public class NotReadOnlyRequirementHandler : AuthorizationHandler<NotReadOnlyReq
     }
 
     /// <inheritdoc />
-    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, NotReadOnlyRequirement requirement, NotReadOnlyResource resource)
+    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, NotReadOnlyRequirement requirement, NotReadOnlyResource resource)
     {
         if (_managementOptions.Value.IsReadOnlyMode)
         {
-            context.Fail(new AuthorizationFailureReason(this, "Workflow edit is not allowed when the read-only mode is enabled."));
+            context.Fail(new(this, "Workflow edit is not allowed when the read-only mode is enabled."));
         }
 
         if (resource.WorkflowDefinition != null && (resource.WorkflowDefinition.IsReadonly || resource.WorkflowDefinition.IsSystem))
         {
-            context.Fail(new AuthorizationFailureReason(this, "Workflow edit is not allowed for a readonly or system workflow."));
+            context.Fail(new(this, "Workflow edit is not allowed for a readonly or system workflow."));
         }
 
         context.Succeed(requirement);
+        return Task.CompletedTask;
     }
 }

@@ -5,6 +5,7 @@
             Provides common Entity Framework Core types for implementing EF Core persistence of varipus ELsa modules.
         </Description>
         <PackageTags>elsa extension module persistence efcore</PackageTags>
+        <RootNamespace>Elsa.Persistence.EFCore</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

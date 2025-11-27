@@ -63,7 +63,7 @@ public static class DispatchWorkflowExtensions
             var workflowDispatcher = serviceProvider.GetRequiredService<IWorkflowDispatcher>();
             var dispatchWorkflowResponse = await workflowDispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest
             {
-                DefinitionVersionId = workflow.DefinitionHandle.DefinitionVersionId,
+                DefinitionVersionId = workflow.DefinitionHandle.DefinitionVersionId!,
                 InstanceId = instanceId ?? Guid.NewGuid().ToString(),
             });
             dispatchWorkflowResponse.ThrowIfFailed();

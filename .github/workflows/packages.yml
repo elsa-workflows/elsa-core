@@ -13,17 +13,6 @@ on:
       - 'rc/*'
       - 'develop/*'
       - 'codex/*'
-  pull_request:
-    branches:
-      - 'main'
-      - 'bug/*'
-      - 'perf/*'
-      - 'patch/*'
-      - 'feat/*'
-      - 'enh/*'
-      - 'rc/*'
-      - 'develop/*'
-      - 'codex/*'
   release:
     types: [prereleased, published]
 
@@ -47,6 +36,7 @@ jobs:
           dotnet-version: |
             8.0.x
             9.0.x
+            10.0.x
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
@@ -80,12 +70,29 @@ jobs:
             dotnet test "$project" --configuration Release --no-build --logger "GitHubActions;report-warnings=false" /p:CollectCoverage=true
           done
 
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: Generate HTML coverage report
+        run: |
+          reportgenerator \
+            "-reports:./artifacts/coverage/**/coverage.cobertura.xml" \
+            "-targetdir:./artifacts/coverage-report" \
+            "-reporttypes:Html;Cobertura;TextSummary" \
+            "-verbosity:Info"
+
       - name: Upload coverage reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-reports
           path: artifacts/coverage
+
+      - name: Upload Pages artifact
+        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop/3.6.0')
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './artifacts/coverage-report'
 
   build:
     name: Build packages
@@ -178,3 +185,19 @@ jobs:
 
       - name: Publish to nuget.org
         run: dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s ${{ env.nuget_feed_source }} --skip-duplicate
+
+  deploy_coverage:
+    name: Deploy coverage to GitHub Pages
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop/3.6.0'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

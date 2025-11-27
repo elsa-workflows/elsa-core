@@ -4,13 +4,13 @@ using Elsa.Common.RecurringTasks;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Features.Services;
-using Elsa.Identity.Multitenancy;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
 using Elsa.Server.Web.Filters;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
+using Elsa.WorkflowProviders.BlobStorage.ElsaScript.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Api;
 using Elsa.Workflows.CommitStates.Strategies;
@@ -46,7 +46,7 @@ services
             .AddWorkflowsFrom<Program>()
             .UseIdentity(identity =>
             {
-                identity.TokenOptions = options => identityTokenSection.Bind(options);
+                identity.TokenOptions += options => identityTokenSection.Bind(options);
                 identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
                 identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
                 identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
@@ -74,6 +74,8 @@ services
                 runtime.UseDistributedRuntime();
             })
             .UseWorkflowsApi()
+            .UseFluentStorageProvider()
+            .UseElsaScriptBlobStorage()
             .UseScheduling()
             .UseCSharp(options =>
             {
@@ -135,6 +137,7 @@ services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader()
 
 // Build the web application.
 var app = builder.Build();
+
 
 // Configure the pipeline.
 if (app.Environment.IsDevelopment())

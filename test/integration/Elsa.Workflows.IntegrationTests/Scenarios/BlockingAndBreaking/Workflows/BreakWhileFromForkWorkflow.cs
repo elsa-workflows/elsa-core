@@ -36,7 +36,7 @@ public class BreakWhileFromForkWorkflow : WorkflowBase
                                             new Event("Branch 1") { Id = "Branch 1" },
                                             new WriteLine("Branch 1 - Resumed"),
 
-                                            // This should break the while loop, not matter how high up in the tree it is.
+                                            // This should break the while loop, no matter how high up in the tree it is.
                                             new Break()
                                         }
                                     },

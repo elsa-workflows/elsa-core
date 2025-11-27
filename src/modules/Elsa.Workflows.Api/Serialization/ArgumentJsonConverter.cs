@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -32,7 +33,7 @@ public class ArgumentJsonConverter : JsonConverter<ArgumentDefinition>
         var typeAlias = _wellKnownTypeRegistry.TryGetAlias(typeName, out var alias) ? alias : null;
         var isArray = typeName.IsArray;
         var isCollection = typeName.IsCollectionType();
-        var elementTypeName = isArray ? typeName.GetElementType() : isCollection ? typeName.GenericTypeArguments[0] : typeName;
+        var elementTypeName = isArray ? typeName.GetElementType()! : isCollection ? typeName.GenericTypeArguments[0] : typeName;
         var elementTypeAlias = _wellKnownTypeRegistry.GetAliasOrDefault(elementTypeName);
         var isAliasedArray = (isArray || isCollection) && typeAlias != null;
         var finalTypeAlias = isArray || isCollection ? typeAlias ?? elementTypeAlias : elementTypeAlias;
@@ -45,6 +46,7 @@ public class ArgumentJsonConverter : JsonConverter<ArgumentDefinition>
     }
 
     /// <inheritdoc />
+    [UnconditionalSuppressMessage("Trimming", "IL2055:Call to MakeGenericType can not be statically analyzed", Justification = "Types are dynamically resolved from workflow definitions and registered in the well-known type registry.")]
     public override ArgumentDefinition Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var jsonObject = (JsonObject)JsonNode.Parse(ref reader)!;

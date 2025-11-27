@@ -158,7 +158,7 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
                 "StatusCode", "Created"
             },
             {
-                "Content", isArray ? (type == typeof(JArray) ? JArray.Parse(jsonContent) : JsonArray.Parse(jsonContent)) : (type == typeof(JObject) ? JObject.Parse(jsonContent) : JsonObject.Parse(jsonContent))
+                "Content", (isArray ? type == typeof(JArray) ? JArray.Parse(jsonContent) : JsonNode.Parse(jsonContent) : type == typeof(JObject) ? JObject.Parse(jsonContent) : JsonNode.Parse(jsonContent))!
             }
         };
         return dict;

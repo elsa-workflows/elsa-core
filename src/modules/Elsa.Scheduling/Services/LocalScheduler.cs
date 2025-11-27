@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Elsa.Extensions;
 
 namespace Elsa.Scheduling.Services;
@@ -10,15 +11,24 @@ namespace Elsa.Scheduling.Services;
 public class LocalScheduler : IScheduler
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly ConcurrentDictionary<string, IScheduledTask> _scheduledTasks = new ConcurrentDictionary<string, IScheduledTask>();
-    private readonly ConcurrentDictionary<IScheduledTask, ICollection<string>> _scheduledTaskKeys = new ConcurrentDictionary<IScheduledTask, ICollection<string>>();
+    private readonly ILogger<LocalScheduler> _logger;
+    private readonly ConcurrentDictionary<string, IScheduledTask> _scheduledTasks = new();
+    private readonly ConcurrentDictionary<IScheduledTask, ICollection<string>> _scheduledTaskKeys = new();
+
+    // Note: Using lock instead of SemaphoreSlim because:
+    // 1. All critical sections are synchronous (dictionary operations only)
+    // 2. Methods return ValueTask.CompletedTask (not truly async)
+    // 3. No await inside critical sections
+    // 4. lock has zero allocation overhead, perfect for fast synchronous operations
+    private readonly object _lock = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LocalScheduler"/> class.
     /// </summary>
-    public LocalScheduler(IServiceProvider serviceProvider)
+    public LocalScheduler(IServiceProvider serviceProvider, ILogger<LocalScheduler> logger)
     {
         _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -33,21 +43,32 @@ public class LocalScheduler : IScheduler
         var scheduleContext = new ScheduleContext(_serviceProvider, task);
         var scheduledTask = schedule.Schedule(scheduleContext);
 
-        RegisterScheduledTask(name, scheduledTask, keys);
+        lock (_lock)
+        {
+            RegisterScheduledTask(name, scheduledTask, keys);
+        }
+
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
     public ValueTask ClearScheduleAsync(string name, CancellationToken cancellationToken = default)
     {
-        RemoveScheduledTask(name);
+        lock (_lock)
+        {
+            RemoveScheduledTask(name);
+        }
+
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
     public ValueTask ClearScheduleAsync(IEnumerable<string> keys, CancellationToken cancellationToken = default)
     {
-        RemoveScheduledTasks(keys);
+        lock (_lock)
+        {
+            RemoveScheduledTasks(keys);
+        }
 
         return ValueTask.CompletedTask;
     }
@@ -61,9 +82,9 @@ public class LocalScheduler : IScheduler
             updateValueFactory: (_, existingScheduledTask) =>
             {
                 existingScheduledTask.Cancel();
-                var removed = _scheduledTaskKeys.TryRemove(existingScheduledTask, out ICollection<string>? _);
+                var removed = _scheduledTaskKeys.TryRemove(existingScheduledTask, out var _);
                 if (!removed)
-                    System.Diagnostics.Debug.WriteLine($"[LocalScheduler] Warning: Tried to remove scheduled task keys for an existing scheduled task, but it was not present in _scheduledTaskKeys.");
+                    _logger.LogWarning("Tried to remove scheduled task keys for an existing scheduled task, but it was not present in _scheduledTaskKeys");
                 return scheduledTask;
             });
 
@@ -96,7 +117,7 @@ public class LocalScheduler : IScheduler
                 {
                     var removed = _scheduledTasks.TryRemove(taskKey, out _);
                     if (!removed)
-                        System.Diagnostics.Debug.WriteLine($"[LocalScheduler] Warning: Failed to remove scheduled task with key '{taskKey}' for '{key}' from _scheduledTasks.");
+                        _logger.LogWarning("Failed to remove scheduled task with key '{TaskKey}' for '{Key}' from _scheduledTasks", taskKey, key);
                 }
 
                 _scheduledTaskKeys.Remove(scheduledTask, out _);

@@ -8,7 +8,7 @@ public class CheckList
     /// <summary>
     /// The radio list.
     /// </summary>
-    public IEnumerable<CheckListItem> Items { get; set; }
+    public IEnumerable<CheckListItem> Items { get; set; } = null!;
 
     /// <summary>
     /// The name of the provider that will provide the select list.

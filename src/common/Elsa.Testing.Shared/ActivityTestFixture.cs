@@ -79,7 +79,17 @@ public class ActivityTestFixture
     public async Task<ActivityExecutionContext> ExecuteAsync()
     {
         var context = await BuildAsync();
-
+        return await ExecuteAsync(context);
+    }
+    
+    /// <summary>
+    /// Executes the activity using a pre-built <see cref="ActivityExecutionContext"/>.
+    /// Useful when you need to customize the context before execution, such as setting initial workflow state or overriding correlation IDs.
+    /// </summary>
+    /// <param name="context">The pre-built context to execute</param>
+    /// <returns>The <see cref="ActivityExecutionContext"/> after execution</returns>
+    public async Task<ActivityExecutionContext> ExecuteAsync(ActivityExecutionContext context)
+    {
         // Set up variables and inputs, then execute the activity
         await SetupExistingVariablesAsync(Activity, context);
         await context.EvaluateInputPropertiesAsync();
@@ -153,7 +163,6 @@ public class ActivityTestFixture
         services.AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>();
         services.AddSingleton<IActivityDescriber, ActivityDescriber>();
         services.AddSingleton<IPropertyDefaultValueResolver, PropertyDefaultValueResolver>();
-        services.AddSingleton<IActivityFactory, ActivityFactory>();
         services.AddSingleton<IPropertyUIHandlerResolver, PropertyUIHandlerResolver>();
         services.AddSingleton<IActivityRegistry, ActivityRegistry>();
         services.AddScoped<IActivityRegistryLookupService, ActivityRegistryLookupService>();

@@ -1,5 +1,6 @@
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
@@ -81,6 +82,11 @@ public class LocalWorkflowClient(
     public async Task CancelAsync(CancellationToken cancellationToken = default)
     {
         var workflowInstance = await GetWorkflowInstanceAsync(cancellationToken);
+        await CancelAsync(workflowInstance, cancellationToken);
+    }
+
+    private async Task CancelAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
+    {
         if (workflowInstance.Status != WorkflowStatus.Running) return;
         var workflowGraph = await GetWorkflowGraphAsync(workflowInstance, cancellationToken);
         var workflowState = await workflowCanceler.CancelWorkflowAsync(workflowGraph, workflowInstance.WorkflowState, cancellationToken);
@@ -104,6 +110,22 @@ public class LocalWorkflowClient(
     public Task<bool> InstanceExistsAsync(CancellationToken cancellationToken = default)
     {
         return workflowInstanceManager.ExistsAsync(workflowInstanceId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> DeleteAsync(CancellationToken cancellationToken = default)
+    {
+        // Load the workflow instance (single DB call)
+        var workflowInstance = await TryGetWorkflowInstanceAsync(cancellationToken);
+        if (workflowInstance == null)
+            return false;
+
+        await CancelAsync(workflowInstance, cancellationToken);
+        
+        // Delete the workflow instance
+        var filter = new WorkflowInstanceFilter { Id = workflowInstanceId };
+        await workflowInstanceManager.DeleteAsync(filter, cancellationToken);
+        return true;
     }
 
     public async Task<RunWorkflowInstanceResponse> RunInstanceAsync(WorkflowInstance workflowInstance, RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
@@ -167,9 +189,14 @@ public class LocalWorkflowClient(
 
     private async Task<WorkflowInstance> GetWorkflowInstanceAsync(CancellationToken cancellationToken)
     {
-        var workflowInstance = await workflowInstanceManager.FindByIdAsync(WorkflowInstanceId, cancellationToken);
-        if (workflowInstance == null) throw new WorkflowInstanceNotFoundException($"Workflow instance not found.", WorkflowInstanceId);
+        var workflowInstance = await TryGetWorkflowInstanceAsync(cancellationToken);
+        if (workflowInstance == null) throw new WorkflowInstanceNotFoundException("Workflow instance not found.", WorkflowInstanceId);
         return workflowInstance;
+    }
+
+    private Task<WorkflowInstance?> TryGetWorkflowInstanceAsync(CancellationToken cancellationToken)
+    {
+        return workflowInstanceManager.FindByIdAsync(WorkflowInstanceId, cancellationToken);
     }
 
     private async Task<WorkflowGraph> GetWorkflowGraphAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
@@ -181,7 +208,7 @@ public class LocalWorkflowClient(
     private async Task<WorkflowGraph> GetWorkflowGraphAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken)
     {
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(definitionHandle, cancellationToken);
-        if (workflowGraph == null) throw new WorkflowGraphNotFoundException($"Workflow graph not found.", definitionHandle);
+        if (workflowGraph == null) throw new WorkflowGraphNotFoundException("Workflow graph not found.", definitionHandle);
         return workflowGraph;
     }
 }

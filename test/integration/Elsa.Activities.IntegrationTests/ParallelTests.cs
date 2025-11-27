@@ -1,7 +1,6 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Models;
 using Xunit.Abstractions;
 using Parallel = Elsa.Workflows.Activities.Parallel;
 

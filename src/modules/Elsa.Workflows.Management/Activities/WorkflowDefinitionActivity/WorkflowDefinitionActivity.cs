@@ -125,6 +125,13 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         var serviceProvider = context.GetRequiredService<IServiceProvider>();
         var activityDescriptor = await FindActivityDescriptorAsync(serviceProvider);
 
+        if (activityDescriptor == null)
+        {
+            var logger = serviceProvider.GetRequiredService<ILogger<WorkflowDefinitionActivity>>();
+            logger.LogWarning("Could not find activity descriptor for activity type {ActivityType}", Type);
+            return;
+        }
+
         DeclareInputAsVariables(activityDescriptor, (descriptor, variable) =>
         {
             var inputName = descriptor.Name;

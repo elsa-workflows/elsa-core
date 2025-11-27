@@ -60,8 +60,8 @@ public class WorkflowDefinitionModel
         Root = root;
     }
 
-    public string Id { get; set; }
-    public string DefinitionId { get; set; }
+    public string Id { get; set; } = null!;
+    public string DefinitionId { get; set; } = null!;
     public string? TenantId { get; set; }
     public string? Name { get; set; }
     public string? Description { get; set; }

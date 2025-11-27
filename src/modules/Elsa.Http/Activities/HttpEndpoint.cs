@@ -29,6 +29,19 @@ public class HttpEndpoint : Trigger<HttpRequest>
     public HttpEndpoint([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
     }
+    
+    /// <inheritdoc />
+    public HttpEndpoint(Input<string> path, Input<string> method, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
+    {
+        Path = path;
+        SupportedMethods = new(ObjectLiteral.From(new[] { method }));
+    }
+    
+    /// <inheritdoc />
+    public HttpEndpoint(Input<string> path, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
+    {
+        Path = path;
+    }
 
     /// <summary>
     /// The path to associate with the workflow.
@@ -461,7 +474,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var contentType = httpRequest.ContentType!;
         var headers = httpRequest.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray());
 
-        return await context.ParseContentAsync(contentStream, contentType, targetType, headers, cancellationToken);
+        return await context.ParseContentAsync(contentStream, contentType, targetType, headers!, cancellationToken);
     }
 
     private static bool HasContent(HttpRequest httpRequest) => httpRequest.Headers.ContentLength > 0;

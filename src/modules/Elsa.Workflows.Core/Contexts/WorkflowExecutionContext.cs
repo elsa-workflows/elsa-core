@@ -402,7 +402,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// The expression execution context for the current workflow execution.
     /// </summary>
-    public ExpressionExecutionContext? ExpressionExecutionContext { get; private set; }
+    public ExpressionExecutionContext ExpressionExecutionContext { get; private set; } = null!;
 
     /// <inheritdoc />
     public IEnumerable<Variable> Variables => Workflow.Variables;

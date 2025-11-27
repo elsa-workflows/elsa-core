@@ -16,11 +16,6 @@ public interface IWorkflowExecutionLogStore : ILogRecordStore<WorkflowExecutionL
     Task AddAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Adds the specified set of <see cref="WorkflowExecutionLogRecord"/> objects to te persistence store.
-    /// </summary>
-    Task AddManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Adds or updates the specified <see cref="WorkflowExecutionLogRecord"/> in the persistence store.
     /// </summary>
     /// <remarks>

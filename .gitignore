@@ -80,3 +80,7 @@ unlist.sh
 /docker/data/
 /docker/azurite-data/
 docker/docker-compose-datadog.yml
+
+# Test results
+TestResults/
+artifacts/

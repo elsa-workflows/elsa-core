@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Parsing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,13 +15,13 @@ public abstract class DesignTimeDbContextFactoryBase<TDbContext> : IDesignTimeDb
     {
         var builder = new DbContextOptionsBuilder<TDbContext>();
         var connectionStringOption = new Option<string>("--connectionString", "Specifies the connection string.");
-        var command = new RootCommand();
+        var command = new RootCommand
+        {
+            connectionStringOption
+        };
 
-        command.AddOption(connectionStringOption);
-
-        var parser = new Parser(command);
-        var parseResult = parser.Parse(args);
-        var connectionString = parseResult.GetValueForOption(connectionStringOption) ?? "Data Source=local";
+        var parseResult = command.Parse(args);
+        var connectionString = parseResult.GetValue(connectionStringOption) ?? "Data Source=local";
         var services = new ServiceCollection();
 
         ConfigureServices(services);

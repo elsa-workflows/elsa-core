@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.IO.Compression;
 using Elsa.Common;
@@ -29,9 +30,9 @@ public class WriteFileHttpResponseTests
         var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
         var testContent = "Hello World"u8.ToArray();
         
-        activity.Content = new Input<object>(testContent);
-        activity.ContentType = new Input<string?>(contentType);
-        activity.Filename = new Input<string?>(filename);
+        activity.Content = new(testContent);
+        activity.ContentType = new(contentType);
+        activity.Filename = new(filename);
 
         // Act
         var context = await ExecuteActivityAsync(activity, httpContext);
@@ -49,8 +50,8 @@ public class WriteFileHttpResponseTests
     {
         // Arrange
         var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
-        activity.Content = new Input<object>(content);
-        activity.Filename = new Input<string?>("test.txt");
+        activity.Content = new(content);
+        activity.Filename = new("test.txt");
 
         // Act
         var context = await ExecuteActivityAsync(activity, httpContext);
@@ -68,8 +69,8 @@ public class WriteFileHttpResponseTests
         var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
         var testBytes = "Hello World"u8.ToArray();
         
-        activity.Content = new Input<object>(testBytes);
-        activity.Filename = new Input<string?>("test.bin");
+        activity.Content = new(testBytes);
+        activity.Filename = new("test.bin");
 
         // Act
         var context = await ExecuteActivityAsync(activity, httpContext);
@@ -88,8 +89,8 @@ public class WriteFileHttpResponseTests
         var testContent = "Stream content";
         var stream = new MemoryStream(Encoding.UTF8.GetBytes(testContent));
         
-        activity.Content = new Input<object>(stream);
-        activity.Filename = new Input<string?>("stream.txt");
+        activity.Content = new(stream);
+        activity.Filename = new("stream.txt");
 
         // Act
         var context = await ExecuteActivityAsync(activity, httpContext);
@@ -107,8 +108,8 @@ public class WriteFileHttpResponseTests
         var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
         var testUri = new Uri("https://example.com/file.txt");
         
-        activity.Content = new Input<object>(testUri);
-        activity.Filename = new Input<string?>("downloaded.txt");
+        activity.Content = new(testUri);
+        activity.Filename = new("downloaded.txt");
 
         // Act
         var context = await ExecuteActivityAsync(activity, httpContext);
@@ -129,8 +130,8 @@ public class WriteFileHttpResponseTests
             "File 2 content"u8.ToArray()
         };
         
-        activity.Content = new Input<object>(files);
-        activity.Filename = new Input<string?>("archive.zip");
+        activity.Content = new(files);
+        activity.Filename = new("archive.zip");
 
         // Act
         var context = await ExecuteActivityAsync(activity, httpContext);
@@ -146,7 +147,7 @@ public class WriteFileHttpResponseTests
     {
         // Arrange
         var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
-        activity.Content = new Input<object>((object?)null!, string.Empty);
+        activity.Content = new((object?)null!, string.Empty);
 
         // Act
         var context = await ExecuteActivityAsync(activity, httpContext);
@@ -161,7 +162,7 @@ public class WriteFileHttpResponseTests
     {
         // Arrange
         var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
-        activity.Content = new Input<object>(Array.Empty<object>());
+        activity.Content = new(Array.Empty<object>());
 
         // Act
         var context = await ExecuteActivityAsync(activity, httpContext);
@@ -181,9 +182,9 @@ public class WriteFileHttpResponseTests
         var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
         var testContent = "Hello World"u8.ToArray();
         
-        activity.Content = new Input<object>(testContent);
-        activity.EntityTag = new Input<string?>(entityTag);
-        activity.EnableResumableDownloads = new Input<bool>(true);
+        activity.Content = new(testContent);
+        activity.EntityTag = new(entityTag);
+        activity.EnableResumableDownloads = new(true);
 
         // Act
         var context = await ExecuteActivityAsync(activity, httpContext);
@@ -202,9 +203,9 @@ public class WriteFileHttpResponseTests
         var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
         var testContent = "Hello World"u8.ToArray();
         
-        activity.Content = new Input<object>(testContent);
-        activity.EnableResumableDownloads = new Input<bool>(true);
-        activity.EntityTag = new Input<string?>("\"test-etag\"");
+        activity.Content = new(testContent);
+        activity.EnableResumableDownloads = new(true);
+        activity.EntityTag = new("\"test-etag\"");
 
         // Act
         var context = await ExecuteActivityAsync(activity, httpContext);
@@ -223,9 +224,9 @@ public class WriteFileHttpResponseTests
         var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
         var testContent = "Hello World"u8.ToArray();
         
-        activity.Content = new Input<object>(testContent);
-        activity.EnableResumableDownloads = new Input<bool>(false);
-        activity.EntityTag = new Input<string?>("\"test-etag\"");
+        activity.Content = new(testContent);
+        activity.EnableResumableDownloads = new(false);
+        activity.EntityTag = new("\"test-etag\"");
 
         // Act
         var context = await ExecuteActivityAsync(activity, httpContext);
@@ -247,8 +248,8 @@ public class WriteFileHttpResponseTests
         var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
         var testContent = "Hello World"u8.ToArray();
         
-        activity.Content = new Input<object>(testContent);
-        activity.Filename = new Input<string?>(filename);
+        activity.Content = new(testContent);
+        activity.Filename = new(filename);
         // ContentType not set, should be determined from filename
 
         // Act
@@ -266,7 +267,7 @@ public class WriteFileHttpResponseTests
         var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
         var testContent = "Hello World"u8.ToArray();
         
-        activity.Content = new Input<object>(testContent);
+        activity.Content = new(testContent);
         // Filename not set, should default to "file.bin"
 
         // Act
@@ -306,7 +307,7 @@ public class WriteFileHttpResponseTests
         // Arrange
         var activity = new WriteFileHttpResponse();
         var testContent = "Hello World"u8.ToArray();
-        activity.Content = new Input<object>(testContent);
+        activity.Content = new(testContent);
         
         var fixture = new ActivityTestFixture(activity);
         var httpContext = CreateMockHttpContext();
@@ -361,7 +362,7 @@ public class WriteFileHttpResponseTests
             ETag = "\"metadata-etag\""
         };
         
-        activity.Content = new Input<object>(downloadable);
+        activity.Content = new(downloadable);
 
         // Act  
         var context = await ExecuteActivityAsync(activity, httpContext);
@@ -379,9 +380,9 @@ public class WriteFileHttpResponseTests
         var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
         var testContent = "Hello World"u8.ToArray();
         
-        activity.Content = new Input<object>(testContent);
-        activity.EntityTag = new Input<string?>("W/\"weak-etag\""); // Malformed weak ETag format
-        activity.EnableResumableDownloads = new Input<bool>(true);
+        activity.Content = new(testContent);
+        activity.EntityTag = new("W/\"weak-etag\""); // Malformed weak ETag format
+        activity.EnableResumableDownloads = new(true);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<FormatException>(async () =>
@@ -548,14 +549,14 @@ public class WriteFileHttpResponseTests
         }
         else
         {
-            services.AddSingleton<object>(_ => new object());
+            services.AddSingleton<object>(_ => new());
         }
     }
 
     private static object CreateZipManagerInstance(IServiceProvider serviceProvider)
     {
         var zipManagerType = typeof(WriteFileHttpResponse).Assembly.GetType("Elsa.Http.Services.ZipManager");
-        if (zipManagerType == null) return new object();
+        if (zipManagerType == null) return new();
 
         try
         {
@@ -591,13 +592,14 @@ public class WriteFileHttpResponseTests
         };
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2060:Call to MakeGenericMethod can not be statically analyzed", Justification = "Test helper method that creates mocks dynamically for any logger type.")]
     private static object CreateLoggerMock(Type loggerType)
     {
         try
         {
             var mockLoggerMethod = typeof(Substitute).GetMethods()
                 .FirstOrDefault(m => m is { Name: "For", IsGenericMethodDefinition: true } && m.GetParameters().Length == 0);
-            
+
             if (mockLoggerMethod != null)
             {
                 var genericMethod = mockLoggerMethod.MakeGenericMethod(loggerType);
@@ -634,7 +636,7 @@ public class WriteFileHttpResponseTests
         {
             // Simplified mock creation for different content types
             case byte[] byteArray:
-                yield return new Downloadable
+                yield return new()
                 {
                     Stream = new MemoryStream(byteArray),
                     ContentType = null,
@@ -642,7 +644,7 @@ public class WriteFileHttpResponseTests
                 };
                 break;
             case string text:
-                yield return new Downloadable
+                yield return new()
                 {
                     Stream = new MemoryStream(Encoding.UTF8.GetBytes(text)),
                     ContentType = null,
@@ -651,7 +653,7 @@ public class WriteFileHttpResponseTests
                 break;
             case Stream stream:
                 // For Stream objects, return them as-is
-                yield return new Downloadable
+                yield return new()
                 {
                     Stream = stream,
                     ContentType = null,
@@ -662,7 +664,7 @@ public class WriteFileHttpResponseTests
                 {
                     // For Uri objects, simulate downloaded content
                     var mockContent = $"Downloaded content from {uri}";
-                    yield return new Downloadable
+                    yield return new()
                     {
                         Stream = new MemoryStream(Encoding.UTF8.GetBytes(mockContent)),
                         ContentType = null,
@@ -710,7 +712,7 @@ public class WriteFileHttpResponseTests
             }
 
             memoryStream.Position = 0;
-            return new Downloadable
+            return new()
             {
                 Stream = memoryStream,
                 ContentType = "application/zip",

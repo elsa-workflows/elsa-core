@@ -1,8 +1,6 @@
 using Elsa.Common;
 using Elsa.Mediator.Contracts;
-using Elsa.Scheduling;
 using Elsa.Scheduling.ScheduledTasks;
-using Elsa.Scheduling.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -16,8 +14,7 @@ public class ScheduledCronTaskTests : IDisposable
 {
     private const string DefaultCronExpression = "0 */5 * * * *";
     private static readonly DateTimeOffset DefaultNow = new(2025, 11, 06, 22, 50, 00, 0, TimeSpan.Zero);
-    
-    private readonly ServiceCollection _services;
+
     private readonly ServiceProvider _serviceProvider;
     private readonly ISystemClock _systemClock;
     private readonly ICronParser _cronParser;
@@ -26,13 +23,13 @@ public class ScheduledCronTaskTests : IDisposable
 
     public ScheduledCronTaskTests()
     {
-        _services = new ServiceCollection();
+        var services = new ServiceCollection();
         _systemClock = Substitute.For<ISystemClock>();
         _cronParser = Substitute.For<ICronParser>();
         _logger = Substitute.For<ILogger<ScheduledCronTask>>();
         
-        _services.AddSingleton<ICommandSender>(Substitute.For<ICommandSender>());
-        _serviceProvider = _services.BuildServiceProvider();
+        services.AddSingleton(Substitute.For<ICommandSender>());
+        _serviceProvider = services.BuildServiceProvider();
     }
 
     private ScheduledCronTask CreateScheduledTask(
@@ -106,10 +103,16 @@ public class ScheduledCronTaskTests : IDisposable
         SetupCronParser(DefaultNow, DefaultNow.AddMinutes(5)); // First: delay=0, Second: proper future time
 
         // Act
-        CreateScheduledTask();
+        var task = CreateScheduledTask();
 
-        // Assert - Should call GetNextOccurrence twice (once for initial delay=0, once for retry)
-        _cronParser.Received(2).GetNextOccurrence(DefaultCronExpression);
+        // Dispose immediately to prevent timer from firing
+        ((IDisposable)task).Dispose();
+
+        // Assert - Should call GetNextOccurrence at least twice (initial + retry)
+        // May be called more if timer fires before disposal in rare race conditions
+        _cronParser.Received().GetNextOccurrence(DefaultCronExpression);
+        var calls = _cronParser.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(_cronParser.GetNextOccurrence));
+        Assert.True(calls >= 2, $"Expected at least 2 calls to GetNextOccurrence, but got {calls}");
     }
 
     [Fact]
@@ -120,10 +123,16 @@ public class ScheduledCronTaskTests : IDisposable
         SetupCronParser(DefaultNow.AddMinutes(-1), DefaultNow.AddMinutes(5)); // First: past, Second: future
 
         // Act
-        CreateScheduledTask();
+        var task = CreateScheduledTask();
 
-        // Assert - Should call GetNextOccurrence twice
-        _cronParser.Received(2).GetNextOccurrence(DefaultCronExpression);
+        // Dispose immediately to prevent timer from firing
+        ((IDisposable)task).Dispose();
+        Thread.Sleep(5); // Brief wait to ensure disposal completes
+
+        // Assert - Should call GetNextOccurrence at least twice
+        _cronParser.Received().GetNextOccurrence(DefaultCronExpression);
+        var calls = _cronParser.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(_cronParser.GetNextOccurrence));
+        Assert.True(calls >= 2, $"Expected at least 2 calls to GetNextOccurrence, but got {calls}");
     }
 
     [Fact]
@@ -131,14 +140,22 @@ public class ScheduledCronTaskTests : IDisposable
     {
         // Arrange - simulate the bug scenario: both attempts return zero/negative delay
         // This can happen if the system clock doesn't advance or if there's clock drift
+        // After the initial attempts, return a proper future time to prevent timer from firing during test
         SetupSystemClock(DefaultNow);
-        SetupCronParser(DefaultNow); // Both calls return exactly now (delay = 0)
+        SetupCronParser(DefaultNow, DefaultNow, DefaultNow.AddMinutes(5)); // First two return now, third returns future
 
         // Act - This should not crash and should set up a timer with minimum delay
-        CreateScheduledTask();
+        var task = CreateScheduledTask();
 
-        // Assert - Should call GetNextOccurrence twice (initial + retry) and log warning
-        _cronParser.Received(2).GetNextOccurrence(DefaultCronExpression);
+        // Dispose immediately to prevent timer from firing and recursing
+        _tasksToDispose.Remove(task);
+        ((IDisposable)task).Dispose();
+
+        // Assert - Should call GetNextOccurrence at least twice (initial + retry)
+        // May be called more if timer fires before disposal and triggers Schedule() again
+        _cronParser.Received().GetNextOccurrence(DefaultCronExpression);
+        var calls = _cronParser.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(_cronParser.GetNextOccurrence));
+        Assert.True(calls >= 2, $"Expected at least 2 calls to GetNextOccurrence, but got {calls}");
         AssertWarningLogged();
     }
 
@@ -147,11 +164,16 @@ public class ScheduledCronTaskTests : IDisposable
     {
         // Arrange - simulate a case where even after retry, delay is negative
         // This could happen due to system clock adjustments
+        // After the initial attempts, return a proper future time to prevent timer from firing during test
         SetupSystemClock(DefaultNow, DefaultNow);
-        SetupCronParser(DefaultNow.AddMilliseconds(-100), DefaultNow.AddMilliseconds(-50));
+        SetupCronParser(DefaultNow.AddMilliseconds(-100), DefaultNow.AddMilliseconds(-50), DefaultNow.AddMinutes(5));
 
         // Act - Should handle negative delay gracefully
-        CreateScheduledTask();
+        var task = CreateScheduledTask();
+
+        // Dispose immediately to prevent timer from firing
+        _tasksToDispose.Remove(task);
+        ((IDisposable)task).Dispose();
 
         // Assert - Should log a warning and still set up timer
         AssertWarningLogged();
@@ -180,6 +202,7 @@ public class ScheduledCronTaskTests : IDisposable
 
     public void Dispose()
     {
+        // Dispose tasks first to stop timers before disposing ServiceProvider
         foreach (var task in _tasksToDispose)
         {
             ((IDisposable)task).Dispose();

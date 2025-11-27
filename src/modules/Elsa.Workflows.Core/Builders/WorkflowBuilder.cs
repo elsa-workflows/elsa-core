@@ -6,7 +6,7 @@ using Elsa.Workflows.Models;
 namespace Elsa.Workflows.Builders;
 
 /// <inheritdoc />
-public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphService identityGraphService, IActivityRegistry activityRegistry, IIdentityGenerator identityGenerator)
+public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphService identityGraphService, IActivityRegistry activityRegistry)
     : IWorkflowBuilder
 {
     /// <inheritdoc />

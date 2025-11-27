@@ -9,8 +9,9 @@ namespace Elsa.Expressions.JavaScript.Extensions;
 public static class TypeAliasRegistryExtensions
 {
     /// <summary>
-    /// Register type <see cref="T"/> with the specified alias.
+    /// Register type <typeparamref name="T"/> with the specified alias.
     /// </summary>
+    /// <typeparam name="T">The type to register.</typeparam>
     public static void RegisterType<T>(this ITypeAliasRegistry registry, string alias) => registry.RegisterType(typeof(T), alias);
 
     /// <summary>

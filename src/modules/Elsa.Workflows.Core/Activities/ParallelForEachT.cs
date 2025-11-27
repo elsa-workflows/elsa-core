@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Expressions.Helpers;
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Memory;
@@ -18,6 +19,27 @@ public class ParallelForEach<T> : Activity
 {
     private const string ScheduledTagsProperty = nameof(ScheduledTagsProperty);
     private const string CompletedTagsProperty = nameof(CompletedTagsProperty);
+
+    /// <inheritdoc />
+    public ParallelForEach(Func<ExpressionExecutionContext, ICollection<T>> @delegate, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(new Input<object>(@delegate), source, line)
+    {
+    }
+
+    /// <inheritdoc />
+    public ParallelForEach(Func<ICollection<T>> @delegate, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(new Input<object>(@delegate), source, line)
+    {
+    }
+
+    /// <inheritdoc />
+    public ParallelForEach(ICollection<T> items, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(new Input<object>(items), source, line)
+    {
+    }
+
+    /// <inheritdoc />
+    public ParallelForEach(Input<object> items, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : this(source, line)
+    {
+        Items = items;
+    }
 
     /// <inheritdoc />
     public ParallelForEach([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
@@ -42,7 +64,7 @@ public class ParallelForEach<T> : Activity
         var items = context.GetItemSource<T>(Items);
         var tags = new List<Guid>();
         var currentIndex = 0;
-        
+
         await foreach (var item in items)
         {
             // For each item, declare a new variable for the work to be scheduled.
@@ -90,7 +112,7 @@ public class ParallelForEach<T> : Activity
     private ICollection<Guid> GetTagList(ActivityExecutionContext context, string propertyName)
     {
         // Read the list of tags from the context using the specified property name. The value is stored as JsonArray, so we need to deserialize it.
-        var jsonArray = context.GetProperty<JsonArray>(propertyName);
+        var jsonArray = context.GetProperty<JsonArray>(propertyName)!;
         return jsonArray.Select(x => x.ConvertTo<Guid>()).ToList();
     }
     

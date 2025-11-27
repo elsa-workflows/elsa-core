@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    
+    <PropertyGroup>
+        <Include>[Elsa.Dsl.ElsaScript]*</Include>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Integration\Elsa.Testing.Shared.Integration.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Dsl.ElsaScript\Elsa.Dsl.ElsaScript.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />
+    </ItemGroup>
+
+</Project>

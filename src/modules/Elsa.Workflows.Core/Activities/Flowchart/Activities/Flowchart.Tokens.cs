@@ -14,12 +14,20 @@ public partial class Flowchart
         var flowContext = ctx.TargetContext;
         var completedActivity = ctx.ChildContext.Activity;
         var flowGraph = flowContext.GetFlowGraph();
+        var tokens = GetTokenList(flowContext);
+
+        // If the completed activity is a terminal node, complete the flowchart immediately.
+        if (completedActivity is ITerminalNode)
+        {
+            tokens.Clear();
+            await flowContext.CompleteActivityAsync();
+            return;
+        }
 
         // Emit tokens for active outcomes.
         var outcomes = (ctx.Result as Outcomes ?? Outcomes.Default).Names;
         var outboundConnections = flowGraph.GetOutboundConnections(completedActivity);
         var activeOutboundConnections = outboundConnections.Where(x => outcomes.Contains(x.Source.Port)).Distinct().ToList();
-        var tokens = GetTokenList(flowContext);
 
         foreach (var connection in activeOutboundConnections)
             tokens.Add(Token.Create(connection.Source.Activity, connection.Target.Activity, connection.Source.Port));
@@ -37,7 +45,7 @@ public partial class Flowchart
 
             switch (mergeMode)
             {
-                case MergeMode.Stream:
+                case MergeMode.Cascade:
                 case MergeMode.Race:
                     if (mergeMode == MergeMode.Race)
                         await flowContext.CancelInboundAncestorsAsync(targetActivity);
@@ -73,13 +81,15 @@ public partial class Flowchart
 
                     break;
 
-                case MergeMode.Converge:
-                    // Strict WaitAll for multiple forwards; schedule on arrival for <=1 (e.g., loops).
-                    var inboundConnectionsConverge = flowGraph.GetForwardInboundConnections(targetActivity);
+                case MergeMode.Merge:
+                    // Wait for tokens from all forward inbound connections.
+                    // Unlike Converge, this ignores backward connections (loops).
+                    // Schedule on arrival for <=1 forward inbound (e.g., loops, sequential).
+                    var inboundConnectionsMerge = flowGraph.GetForwardInboundConnections(targetActivity);
 
-                    if (inboundConnectionsConverge.Count > 1)
+                    if (inboundConnectionsMerge.Count > 1)
                     {
-                        var hasAllTokens = inboundConnectionsConverge.All(inbound =>
+                        var hasAllTokens = inboundConnectionsMerge.All(inbound =>
                             tokens.Any(t =>
                                 t is { Consumed: false, Blocked: false } &&
                                 t.FromActivityId == inbound.Source.Activity.Id &&
@@ -98,11 +108,37 @@ public partial class Flowchart
 
                     break;
 
-                case MergeMode.None:
+                case MergeMode.Converge:
+                    // Strictest mode: Wait for tokens from ALL inbound connections (forward + backward).
+                    // Requires every possible inbound path to execute before proceeding.
+                    var allInboundConnectionsConverge = flowGraph.GetInboundConnections(targetActivity);
+
+                    if (allInboundConnectionsConverge.Count > 1)
+                    {
+                        var hasAllTokens = allInboundConnectionsConverge.All(inbound =>
+                            tokens.Any(t =>
+                                t is { Consumed: false, Blocked: false } &&
+                                t.FromActivityId == inbound.Source.Activity.Id &&
+                                t.ToActivityId == targetActivity.Id &&
+                                t.Outcome == inbound.Source.Port
+                            )
+                        );
+
+                        if (hasAllTokens)
+                            await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
+                    }
+                    else
+                    {
+                        await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
+                    }
+
+                    break;
+
+                case MergeMode.Stream:
                 default:
-                    // Approximation that proceeds on dead paths.
-                    var inboundConnectionsNone = flowGraph.GetForwardInboundConnections(targetActivity);
-                    var hasUnconsumed = inboundConnectionsNone.Any(inbound =>
+                    // Flows freely - approximation that proceeds when upstream completes, ignoring dead paths.
+                    var inboundConnectionsStream = flowGraph.GetForwardInboundConnections(targetActivity);
+                    var hasUnconsumed = inboundConnectionsStream.Any(inbound =>
                         tokens.Any(t => !t.Consumed && !t.Blocked && t.ToActivityId == inbound.Source.Activity.Id)
                     );
 

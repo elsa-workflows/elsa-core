@@ -81,7 +81,7 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
 
         var isArray = valueType.IsArray;
         var isCollection = valueType.IsCollectionType();
-        var elementValueType = isArray ? valueType.GetElementType() : isCollection ? valueType.GenericTypeArguments[0] : valueType;
+        var elementValueType = isArray ? valueType.GetElementType()! : isCollection ? valueType.GenericTypeArguments[0] : valueType;
         var elementTypeAlias = wellKnownTypeRegistry.GetAliasOrDefault(elementValueType);
 
         return new(source.Id, source.Name, elementTypeAlias, isArray, serializedValue, storageDriverTypeName);

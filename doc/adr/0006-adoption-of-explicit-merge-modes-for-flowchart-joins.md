@@ -24,27 +24,38 @@ We refine the Flowchart's token-based execution logic (`OnChildCompletedTokenBas
   ```csharp
   namespace Elsa.Workflows.Activities.Flowchart.Models;
 
+  /// <summary>
+  /// Specifies the strategy for handling multiple inbound execution paths in a workflow.
+  /// Uses flow-based terminology to describe merge behavior.
+  /// </summary>
   public enum MergeMode
   {
       /// <summary>
-      /// No special merging; use approximation that proceeds after all upstream sources complete, ignoring dead paths.
-      /// Suitable for flexible, unstructured merges where optional branches shouldn't block.
-      /// </summary>
-      None,
-
-      /// <summary>
-      /// Strict wait for tokens from all forward inbound connections. Blocks on dead/untaken paths.
-      /// Use for required synchronization points.
-      /// </summary>
-      Converge,
-
-      /// <summary>
-      /// Schedule on each arriving token, allowing multiple executions if supported.
+      /// Flows freely when possible, ignoring dead/untaken paths.
+      /// Opportunistic execution based on upstream completion.
       /// </summary>
       Stream,
 
       /// <summary>
-      /// Schedule on the first arriving token, block or cancel others.
+      /// Merges only the activated/flowing inbound branches.
+      /// Waits for all branches that received tokens, ignoring unactivated ones.
+      /// </summary>
+      Merge,
+
+      /// <summary>
+      /// Converges all inbound paths, requiring every connection to execute.
+      /// Strictest mode - will block on dead/untaken paths.
+      /// </summary>
+      Converge,
+
+      /// <summary>
+      /// Cascades execution for each arriving token independently.
+      /// Allows multiple concurrent executions (one per arriving token).
+      /// </summary>
+      Cascade,
+
+      /// <summary>
+      /// Races inbound branches, executing on first arrival and blocking others.
       /// </summary>
       Race
   }
@@ -62,14 +73,14 @@ We refine the Flowchart's token-based execution logic (`OnChildCompletedTokenBas
   ```csharp
   switch (mergeMode)
   {
-      case MergeMode.Stream:
+      case MergeMode.Cascade:
       case MergeMode.Race:
-          // Existing logic: Schedule on arrival, block others for Race.
+          // Schedule on arrival; for Race, block/cancel others.
           // ...
           break;
 
-      case MergeMode.Converge:
-          // Strict check: Wait for all forward inbounds if >1; else schedule immediately.
+      case MergeMode.Merge:
+          // Wait for tokens from all forward inbound connections (activated branches only).
           var inboundConnections = flowGraph.GetForwardInboundConnections(targetActivity);
           if (inboundConnections.Count > 1)
           {
@@ -82,9 +93,23 @@ We refine the Flowchart's token-based execution logic (`OnChildCompletedTokenBas
           }
           break;
 
-      case MergeMode.None:
+      case MergeMode.Converge:
+          // Strictest mode: Wait for tokens from ALL inbound connections (forward + backward).
+          var allInboundConnections = flowGraph.GetInboundConnections(targetActivity);
+          if (allInboundConnections.Count > 1)
+          {
+              var hasAllTokens = allInboundConnections.All(inbound => /* token check */);
+              if (hasAllTokens) await flowContext.ScheduleActivityAsync(...);
+          }
+          else
+          {
+              await flowContext.ScheduleActivityAsync(...);
+          }
+          break;
+
+      case MergeMode.Stream:
       default:
-          // Approximation: Schedule if no unconsumed tokens to inbound sources.
+          // Flows freely - approximation that proceeds when upstream completes.
           var inboundConnections = flowGraph.GetForwardInboundConnections(targetActivity);
           var hasUnconsumed = inboundConnections.Any(inbound => /* source token check */);
           if (!hasUnconsumed) await flowContext.ScheduleActivityAsync(...);
@@ -104,10 +129,10 @@ Flowchart execution starts with scheduling the root/start activity. As activitie
 This ensures acyclic forward flow with support for backward loops, using tokens to track control without global state beyond the list.
 
 ### Merge Modes Explained
-Each mode defines how tokens from multiple inbounds are synchronized:
+Each mode defines how tokens from multiple inbounds are synchronized using flow-based terminology:
 
-- **None (Default/Flexible Merge)**:
-    - **Behavior**: Schedules if there are no unconsumed tokens *to the sources* of inbounds (i.e., all upstream activities have completed, treating dead paths as "done").
+- **Stream (Flexible/Opportunistic Flow)**:
+    - **Behavior**: Flows freely when possible, ignoring dead/untaken paths. Schedules if there are no unconsumed tokens *to the sources* of inbounds (i.e., all upstream activities have completed, treating dead paths as "done").
     - **When to Use**: Flexible merges in unstructured flows; optional/exclusive branches (e.g., switch defaults) shouldn't block.
     - **Scenarios**:
         - **Forks with Untaken Paths**: Proceeds after active branches (e.g., in complex switch with dangling default).
@@ -115,18 +140,26 @@ Each mode defines how tokens from multiple inbounds are synchronized:
         - **Dead Paths**: Ignores untaken outcomes; no blocking.
         - **Example**: In a switch with MatchAny, untaken default doesn't hang the merge.
 
-- **Converge (Strict Synchronization)**:
-    - **Behavior**: Requires unconsumed, non-blocked tokens from *all* forward inbounds. For <=1 forward, schedules immediately (loop/sequential friendly).
-    - **When to Use**: Required "all must happen" joins; block if any branch untaken.
+- **Merge (Activated Branches Synchronization)**:
+    - **Behavior**: Merges only activated/flowing inbound branches. Requires unconsumed, non-blocked tokens from *all* forward inbounds that received tokens. For <=1 forward, schedules immediately (loop/sequential friendly).
+    - **When to Use**: Synchronization points where only activated paths matter; block if any activated branch hasn't completed.
     - **Scenarios**:
-        - **Conditional Forks**: Blocks downstream if e.g., decision returns false and subsequent activities are connected to the true branch.
+        - **Conditional Forks**: Blocks downstream if decision returns false and subsequent activities are connected to the true branch, but only waits for activated branches.
         - **Loops**: Works if forward inbounds <=1; reschedules on backward tokens.
-        - **Dead Paths**: Blocks (desired for safety).
-        - **Example**: Converge after parallel approvals—only proceed if all complete.
+        - **Dead Paths**: Ignores untaken branches; waits only for activated ones.
+        - **Example**: Merge after parallel approvals—only proceed if all activated approval branches complete.
 
-- **Stream (Per-Token Execution)**:
-    - **Behavior**: Schedules on each arriving token; may allow multiple concurrent executions of the target.
-    - **When to Use**: Streaming merges where each branch triggers independently (e.g., event streams).
+- **Converge (Strictest - All Paths Required)**:
+    - **Behavior**: Converges ALL inbound paths, requiring every connection to execute (forward AND backward). Most strict mode.
+    - **When to Use**: When every single inbound path must execute before proceeding, regardless of activation status.
+    - **Scenarios**:
+        - **Strict Barriers**: Forces all possible paths to complete before proceeding.
+        - **Dead Paths**: Blocks on dead/untaken paths (desired for maximum safety).
+        - **Example**: Critical synchronization point requiring absolute completion of all defined paths.
+
+- **Cascade (Per-Token Execution)**:
+    - **Behavior**: Cascades execution for each arriving token independently; may allow multiple concurrent executions of the target.
+    - **When to Use**: Streaming scenarios where each branch should trigger separate processing (e.g., event streams).
     - **Scenarios**:
         - **Forks**: Executes target per branch.
         - **Loops**: Executes per iteration.
@@ -134,8 +167,8 @@ Each mode defines how tokens from multiple inbounds are synchronized:
         - **Example**: Logging each branch outcome separately.
 
 - **Race (First-Wins)**:
-    - **Behavior**: Schedules on first token; blocks/cancels others (e.g., via blocked tokens and ancestor cancellation).
-    - **When to Use**: Racing conditions (e.g., first response wins).
+    - **Behavior**: Races inbound branches; schedules on first token, blocks/cancels others (e.g., via blocked tokens and ancestor cancellation).
+    - **When to Use**: Racing conditions where first result wins (e.g., first response).
     - **Scenarios**:
         - **Forks**: Only first branch proceeds.
         - **Loops**: May race iterations if concurrent.
@@ -143,12 +176,12 @@ Each mode defines how tokens from multiple inbounds are synchronized:
         - **Example**: Waiting for fastest API response; cancel slower ones.
 
 ### Handling Common Scenarios
- 
+
 - **Simple Sequential**: Any mode schedules on token arrival (single inbound).
-- **Fork-Join with Condition**: Converge blocks on false; None proceeds.
-- **Looping Construct**: All modes work; Converge uses count check to avoid strictness.
-- **Switch with Dangling Branches**: None ignores untaken; Converge blocks if required.
-- **BPMN Alignment**: None ≈ XOR/OR-join (flexible); Converge ≈ AND-join (strict); Race ≈ Event-based; Stream ≈ partial OR.
+- **Fork-Join with Condition**: Merge waits for activated branches; Converge blocks on all paths; Stream proceeds opportunistically.
+- **Looping Construct**: All modes work; Merge and Converge use count check to avoid strictness on single inbound.
+- **Switch with Dangling Branches**: Stream ignores untaken; Merge waits for activated; Converge blocks on all.
+- **BPMN Alignment**: Stream ≈ XOR/OR-join (flexible); Merge ≈ AND-join for active paths; Converge ≈ strict AND-join; Race ≈ Event-based; Cascade ≈ parallel multi-instance.
 
 ## Consequences
 

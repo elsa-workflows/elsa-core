@@ -1,4 +1,3 @@
-using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using Microsoft.Extensions.Logging;
@@ -19,7 +18,7 @@ public static class ExceptionHandlingMiddlewareExtensions
 /// <summary>
 /// Catches any exceptions thrown by downstream components and transitions the workflow into the faulted state.
 /// </summary>
-public class ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncidentStrategyResolver incidentStrategyResolver, ISystemClock systemClock, ILogger<ExceptionHandlingMiddleware> logger)
+public class ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncidentStrategyResolver incidentStrategyResolver, ILogger<ExceptionHandlingMiddleware> logger)
     : IActivityExecutionMiddleware
 {
     /// <inheritdoc />
