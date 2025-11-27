@@ -89,7 +89,7 @@ jobs:
           path: artifacts/coverage
 
       - name: Upload Pages artifact
-        if: always() && github.ref == 'refs/heads/main'
+        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop/3.6.0')
         uses: actions/upload-pages-artifact@v3
         with:
           path: './artifacts/coverage-report'
@@ -190,7 +190,7 @@ jobs:
     name: Deploy coverage to GitHub Pages
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop/3.6.0'
     permissions:
       pages: write
       id-token: write
