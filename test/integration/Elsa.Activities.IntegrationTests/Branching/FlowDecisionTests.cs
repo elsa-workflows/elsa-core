@@ -2,25 +2,16 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Xunit.Abstractions;
-using static Elsa.Activities.IntegrationTests.Flow.FlowchartTestHelpers;
 
 namespace Elsa.Activities.IntegrationTests.Branching;
 
 /// <summary>
 /// Integration tests for FlowDecision activity in flowchart scenarios.
 /// </summary>
-public class FlowDecisionTests : IDisposable
+public class FlowDecisionTests(ITestOutputHelper testOutputHelper) : IDisposable
 {
-    private readonly IServiceProvider _services;
-    private readonly CapturingTextWriter _output;
-    private readonly bool _originalFlowMode;
-
-    public FlowDecisionTests(ITestOutputHelper testOutputHelper)
-    {
-        _output = new();
-        _services = CreateServiceProvider(testOutputHelper, _output);
-        _originalFlowMode = Flowchart.UseTokenFlow;
-    }
+    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly bool _originalFlowMode = Flowchart.UseTokenFlow;
 
     public void Dispose()
     {
@@ -28,11 +19,8 @@ public class FlowDecisionTests : IDisposable
     }
 
     [Theory(DisplayName = "FlowDecision follows correct path based on condition")]
-    [InlineData(true, true)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    [InlineData(false, false)]
-    public async Task Should_Follow_Correct_Path_Based_On_Condition(bool useTokenFlow, bool condition)
+    [MemberData(nameof(BasicPathTestCases))]
+    public async Task Should_Follow_Correct_Path_Based_On_Condition(bool useTokenFlow, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
         Flowchart.UseTokenFlow = useTokenFlow;
@@ -55,33 +43,24 @@ public class FlowDecisionTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await _fixture.RunActivityAsync(flowchart);
 
         // Assert
-        Assert.Contains("Start", _output.Lines);
+        AssertOutputs(expectedOutputs, unexpectedOutputs);
+    }
 
-        if (condition)
-        {
-            Assert.Contains("TruePath", _output.Lines);
-            Assert.DoesNotContain("FalsePath", _output.Lines);
-        }
-        else
-        {
-            Assert.DoesNotContain("TruePath", _output.Lines);
-            Assert.Contains("FalsePath", _output.Lines);
-        }
+    public static IEnumerable<object[]> BasicPathTestCases()
+    {
+        // useTokenFlow, condition, expectedOutputs, unexpectedOutputs
+        yield return [true, true, new[] { "Start", "TruePath" }, new[] { "FalsePath" }];
+        yield return [true, false, new[] { "Start", "FalsePath" }, new[] { "TruePath" }];
+        yield return [false, true, new[] { "Start", "TruePath" }, new[] { "FalsePath" }];
+        yield return [false, false, new[] { "Start", "FalsePath" }, new[] { "TruePath" }];
     }
 
     [Theory(DisplayName = "FlowDecision handles nested decisions")]
-    [InlineData(true, true, true)]
-    [InlineData(true, true, false)]
-    [InlineData(true, false, true)]
-    [InlineData(true, false, false)]
-    [InlineData(false, true, true)]
-    [InlineData(false, true, false)]
-    [InlineData(false, false, true)]
-    [InlineData(false, false, false)]
-    public async Task Should_Handle_Nested_Decisions(bool useTokenFlow, bool outerCondition, bool innerCondition)
+    [MemberData(nameof(NestedDecisionTestCases))]
+    public async Task Should_Handle_Nested_Decisions(bool useTokenFlow, bool outerCondition, bool innerCondition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
         Flowchart.UseTokenFlow = useTokenFlow;
@@ -108,42 +87,28 @@ public class FlowDecisionTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await _fixture.RunActivityAsync(flowchart);
 
         // Assert
-        Assert.Contains("Start", _output.Lines);
+        AssertOutputs(expectedOutputs, unexpectedOutputs);
+    }
 
-        if (outerCondition)
-        {
-            // Outer decision was true, should follow inner decision path
-            Assert.DoesNotContain("OuterFalse", _output.Lines);
-
-            if (innerCondition)
-            {
-                Assert.Contains("InnerTrue", _output.Lines);
-                Assert.DoesNotContain("InnerFalse", _output.Lines);
-            }
-            else
-            {
-                Assert.DoesNotContain("InnerTrue", _output.Lines);
-                Assert.Contains("InnerFalse", _output.Lines);
-            }
-        }
-        else
-        {
-            // Outer decision was false
-            Assert.Contains("OuterFalse", _output.Lines);
-            Assert.DoesNotContain("InnerTrue", _output.Lines);
-            Assert.DoesNotContain("InnerFalse", _output.Lines);
-        }
+    public static IEnumerable<object[]> NestedDecisionTestCases()
+    {
+        // useTokenFlow, outerCondition, innerCondition, expectedOutputs, unexpectedOutputs
+        yield return [true, true, true, new[] { "Start", "InnerTrue" }, new[] { "InnerFalse", "OuterFalse" }];
+        yield return [true, true, false, new[] { "Start", "InnerFalse" }, new[] { "InnerTrue", "OuterFalse" }];
+        yield return [true, false, true, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
+        yield return [true, false, false, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
+        yield return [false, true, true, new[] { "Start", "InnerTrue" }, new[] { "InnerFalse", "OuterFalse" }];
+        yield return [false, true, false, new[] { "Start", "InnerFalse" }, new[] { "InnerTrue", "OuterFalse" }];
+        yield return [false, false, true, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
+        yield return [false, false, false, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
     }
 
     [Theory(DisplayName = "FlowDecision works with only one path connected")]
-    [InlineData(true, true)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    [InlineData(false, false)]
-    public async Task Should_Work_With_Only_One_Path_Connected(bool useTokenFlow, bool condition)
+    [MemberData(nameof(OnePathConnectedTestCases))]
+    public async Task Should_Work_With_Only_One_Path_Connected(bool useTokenFlow, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
         Flowchart.UseTokenFlow = useTokenFlow;
@@ -167,30 +132,24 @@ public class FlowDecisionTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await _fixture.RunActivityAsync(flowchart);
 
         // Assert
-        Assert.Contains("Start", _output.Lines);
+        AssertOutputs(expectedOutputs, unexpectedOutputs);
+    }
 
-        if (condition)
-        {
-            Assert.Contains("TruePath", _output.Lines);
-            Assert.Contains("End", _output.Lines);
-        }
-        else
-        {
-            // False path not connected, workflow should end gracefully
-            Assert.DoesNotContain("TruePath", _output.Lines);
-            Assert.DoesNotContain("End", _output.Lines);
-        }
+    public static IEnumerable<object[]> OnePathConnectedTestCases()
+    {
+        // useTokenFlow, condition, expectedOutputs, unexpectedOutputs
+        yield return [true, true, new[] { "Start", "TruePath", "End" }, Array.Empty<string>()];
+        yield return [true, false, new[] { "Start" }, new[] { "TruePath", "End" }];
+        yield return [false, true, new[] { "Start", "TruePath", "End" }, Array.Empty<string>()];
+        yield return [false, false, new[] { "Start" }, new[] { "TruePath", "End" }];
     }
 
     [Theory(DisplayName = "FlowDecision converges paths correctly")]
-    [InlineData(true, true)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    [InlineData(false, false)]
-    public async Task Should_Converge_Paths_Correctly(bool useTokenFlow, bool condition)
+    [MemberData(nameof(ConvergePathsTestCases))]
+    public async Task Should_Converge_Paths_Correctly(bool useTokenFlow, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
         Flowchart.UseTokenFlow = useTokenFlow;
@@ -216,21 +175,31 @@ public class FlowDecisionTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await _fixture.RunActivityAsync(flowchart);
 
         // Assert
-        Assert.Contains("Start", _output.Lines);
-        Assert.Contains("Converge", _output.Lines);
+        AssertOutputs(expectedOutputs, unexpectedOutputs);
+    }
 
-        if (condition)
+    public static IEnumerable<object[]> ConvergePathsTestCases()
+    {
+        // useTokenFlow, condition, expectedOutputs, unexpectedOutputs
+        yield return [true, true, new[] { "Start", "TruePath", "Converge" }, new[] { "FalsePath" }];
+        yield return [true, false, new[] { "Start", "FalsePath", "Converge" }, new[] { "TruePath" }];
+        yield return [false, true, new[] { "Start", "TruePath", "Converge" }, new[] { "FalsePath" }];
+        yield return [false, false, new[] { "Start", "FalsePath", "Converge" }, new[] { "TruePath" }];
+    }
+
+    private void AssertOutputs(string[] expectedOutputs, string[] unexpectedOutputs)
+    {
+        foreach (var expected in expectedOutputs)
         {
-            Assert.Contains("TruePath", _output.Lines);
-            Assert.DoesNotContain("FalsePath", _output.Lines);
+            Assert.Contains(expected, _fixture.CapturingTextWriter.Lines);
         }
-        else
+
+        foreach (var unexpected in unexpectedOutputs)
         {
-            Assert.DoesNotContain("TruePath", _output.Lines);
-            Assert.Contains("FalsePath", _output.Lines);
+            Assert.DoesNotContain(unexpected, _fixture.CapturingTextWriter.Lines);
         }
     }
 }
