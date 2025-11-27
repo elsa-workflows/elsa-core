@@ -25,7 +25,7 @@ public class ParallelForEachTests(ITestOutputHelper testOutputHelper)
     [Fact(DisplayName = "ParallelForEach completes when collection is empty")]
     public async Task ParallelForEach_Completes_WhenCollectionEmpty()
     {
-        await ExecuteAndAssertStatus(Array.Empty<string>(), ActivityStatus.Completed);
+        await ExecuteAndAssertStatus([], ActivityStatus.Completed);
         Assert.Empty(CapturingTextWriter.Lines);
     }
 
