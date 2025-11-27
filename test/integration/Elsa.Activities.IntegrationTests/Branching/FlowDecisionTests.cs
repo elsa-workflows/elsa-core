@@ -8,6 +8,7 @@ namespace Elsa.Activities.IntegrationTests.Branching;
 /// <summary>
 /// Integration tests for FlowDecision activity in flowchart scenarios.
 /// </summary>
+[Collection("FlowchartTests")]
 public class FlowDecisionTests(ITestOutputHelper testOutputHelper) : IDisposable
 {
     private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
