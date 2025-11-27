@@ -1,15 +1,16 @@
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using System;
 
 namespace Elsa.Activities.IntegrationTests.Primitives.Workflows;
 
 public class FinishInSequenceWorkflow : WorkflowBase
 {
-    public static readonly string DefinitionId = nameof(FinishInSequenceWorkflow);
+    public static readonly string DefinitionId = Guid.NewGuid().ToString();
 
     protected override void Build(IWorkflowBuilder workflow)
     {
-        workflow.DefinitionId = DefinitionId;
+        workflow.WithDefinitionId(DefinitionId);
         workflow.Root = new Sequence
         {
             Activities =
