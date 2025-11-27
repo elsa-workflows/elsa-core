@@ -83,9 +83,11 @@ public class ActivityTestFixture
     }
     
     /// <summary>
-    /// Executes the execution context.
+    /// Executes the activity using a pre-built <see cref="ActivityExecutionContext"/>.
+    /// Useful when you need to customize the context before execution, such as setting initial workflow state or overriding correlation IDs.
     /// </summary>
-    /// <returns>The ActivityExecutionContext after execution</returns>
+    /// <param name="context">The pre-built context to execute</param>
+    /// <returns>The <see cref="ActivityExecutionContext"/> after execution</returns>
     public async Task<ActivityExecutionContext> ExecuteAsync(ActivityExecutionContext context)
     {
         // Set up variables and inputs, then execute the activity
