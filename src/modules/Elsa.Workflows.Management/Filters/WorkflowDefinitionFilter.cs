@@ -83,6 +83,11 @@ public class WorkflowDefinitionFilter
     public bool TenantAgnostic { get; set; }
 
     /// <summary>
+    /// Filter by the name of the workflow definition.
+    /// </summary>
+    public string? TenantId { get; set; }
+
+    /// <summary>
     /// Applies the filter to the specified queryable.
     /// </summary>
     /// <param name="queryable">The queryable to apply the filter to.</param>
@@ -105,6 +110,7 @@ public class WorkflowDefinitionFilter
         if (!string.IsNullOrWhiteSpace(SearchTerm)) queryable = queryable.Where(x => x.Name!.ToLower().Contains(SearchTerm.ToLower()) || x.Description!.ToLower().Contains(SearchTerm.ToLower()) || x.Id.Contains(SearchTerm) || x.DefinitionId.Contains(SearchTerm));
         if (IsSystem != null) queryable = queryable.Where(x => x.IsSystem == IsSystem);
         if (IsReadonly != null) queryable = queryable.Where(x => x.IsReadonly == IsReadonly);
+        if (!TenantAgnostic && TenantId != null) queryable = queryable.Where(x => x.TenantId == TenantId);
 
         return queryable;
     }
