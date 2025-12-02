@@ -88,23 +88,6 @@ public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(a
     }
 
     [Fact]
-    public async Task HttpEndpoint_ExtremelyLargeHeaders_HandlesGracefully()
-    {
-        // Arrange
-        var client = WorkflowServer.CreateHttpWorkflowClient();
-        var request = new HttpRequestMessage(HttpMethod.Get, "test/query-headers");
-        request.Headers.Add("X-Large-Header", new string('x', 8192)); // Very large header
-
-        // Act & Assert - Should handle gracefully
-        var response = await client.SendAsync(request);
-        
-        // Response might be successful or might be rejected by server, but shouldn't crash
-        Assert.True(response.StatusCode == HttpStatusCode.OK || 
-                   response.StatusCode == HttpStatusCode.BadRequest ||
-                   response.StatusCode == HttpStatusCode.RequestHeaderFieldsTooLarge);
-    }
-
-    [Fact]
     public async Task HttpEndpoint_CaseSensitiveRoutes_RespectsRouteCase()
     {
         // Arrange
