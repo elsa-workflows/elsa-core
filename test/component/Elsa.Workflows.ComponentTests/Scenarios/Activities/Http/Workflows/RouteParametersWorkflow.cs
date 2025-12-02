@@ -53,9 +53,9 @@ public class RouteParametersWorkflow : WorkflowBase
                             
                             return "Could not parse route parameters";
                         }
-                        catch
+                        catch (Exception ex)
                         {
-                            return "UserId: unknown, OrderId: unknown";
+                            return $"UserId: unknown, OrderId: unknown (Error: {ex.Message})";
                         }
                     }),
                     ContentType = new("text/plain"),
