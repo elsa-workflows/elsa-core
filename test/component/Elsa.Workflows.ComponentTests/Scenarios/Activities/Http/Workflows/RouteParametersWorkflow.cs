@@ -28,7 +28,7 @@ public class RouteParametersWorkflow : WorkflowBase
                 },
                 new WriteHttpResponse
                 {
-                    Content = new(context => 
+                    Content = new(context =>
                     {
                         var routeData = routeDataVariable.Get(context);
                         

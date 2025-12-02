@@ -33,7 +33,6 @@ public class FileUploadWorkflow : WorkflowBase
                     Content = new(context => 
                     {
                         var files = filesVariable.Get(context);
-                        var firstFile = fileVariable.Get(context);
                         
                         if (files?.Length > 0)
                         {
