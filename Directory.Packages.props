@@ -12,6 +12,7 @@
         <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.11"/>
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
         <PackageVersion Include="Npgsql" Version="9.0.4"/>
+        <PackageVersion Include="Oracle.EntityFrameworkCore" Version="9.23.26000"/>
     </ItemGroup>
     <!-- .NET 10 specific package versions -->
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
@@ -22,63 +23,46 @@
         <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0"/>
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0"/>
         <PackageVersion Include="Npgsql" Version="10.0.0"/>
+        <PackageVersion Include="Oracle.EntityFrameworkCore" Version="10.23.26000"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageVersion Include="Antlr4.Runtime.Standard" Version="4.13.1" PrivateAssets="All"/>
-        <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations" Version="0.5.1"/>
-        <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.MySql" Version="0.5.1"/>
-        <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL" Version="0.5.1"/>
-        <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SqlServer" Version="0.5.1"/>
-        <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite" Version="0.5.1"/>
         <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="9.0.0"/>
         <PackageVersion Include="AutoMapper" Version="15.1.0" PrivateAssets="All"/>
         <PackageVersion Include="Azure.Identity" Version="1.17.1"/>
         <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.20.1"/>
         <PackageVersion Include="Azure.ResourceManager" Version="1.13.2"/>
         <PackageVersion Include="Azure.ResourceManager.AppContainers" Version="1.5.0"/>
-        <PackageVersion Include="Azure.ResourceManager.Resources" Version="1.11.1"/>
+        <PackageVersion Include="Azure.ResourceManager.Resources" Version="1.11.2"/>
         <PackageVersion Include="Azure.ResourceManager.ServiceBus" Version="1.1.0"/>
-        <PackageVersion Include="BenchmarkDotNet" Version="0.15.6"/>
+        <PackageVersion Include="BenchmarkDotNet" Version="0.15.8"/>
         <PackageVersion Include="Bogus" Version="35.6.5"/>
         <PackageVersion Include="ConfigureAwait.Fody" Version="3.3.2" PrivateAssets="All"/>
         <PackageVersion Include="coverlet.collector" Version="6.0.4" PrivateAssets="All"/>
         <PackageVersion Include="coverlet.msbuild" Version="6.0.4" PrivateAssets="All"/>
         <PackageVersion Include="Cronos" Version="0.11.1"/>
-        <PackageVersion Include="Dapper" Version="2.1.66"/>
-        <PackageVersion Include="Datadog.Trace.Bundle" Version="3.31.0"/>
+        <PackageVersion Include="Datadog.Trace.Bundle" Version="3.32.0"/>
         <PackageVersion Include="DistributedLock" Version="2.7.1"/>
         <PackageVersion Include="DistributedLock.Core" Version="1.0.8"/>
         <PackageVersion Include="DistributedLock.FileSystem" Version="1.0.3"/>
-        <PackageVersion Include="DistributedLock.Postgres" Version="1.3.0"/>
-        <PackageVersion Include="DistributedLock.Redis" Version="1.1.1"/>
-        <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="9.2.1"/>
+        <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="9.2.2"/>
         <PackageVersion Include="FastEndpoints" Version="7.1.1"/>
         <PackageVersion Include="FastEndpoints.Security" Version="7.1.1"/>
         <PackageVersion Include="FastEndpoints.Swagger" Version="7.1.1"/>
-        <PackageVersion Include="FluentMigrator" Version="7.1.0"/>
-        <PackageVersion Include="FluentMigrator.Runner" Version="7.1.0"/>
         <PackageVersion Include="FluentStorage" Version="6.0.0"/>
         <PackageVersion Include="FluentStorage.Azure.Blobs" Version="6.0.0"/>
         <PackageVersion Include="Fluid.Core" Version="2.31.0"/>
         <PackageVersion Include="Fody" Version="6.9.3" PrivateAssets="All"/>
-        <PackageVersion Include="GitHubActionsTestLogger" Version="3.0.0" PrivateAssets="All"/>
-        <PackageVersion Include="Google.Protobuf" Version="3.31.1"/>
-        <PackageVersion Include="Grpc.Net.Client" Version="2.71.0"/>
-        <PackageVersion Include="Grpc.Tools" Version="2.76.0" PrivateAssets="All"/>
-        <PackageVersion Include="Hangfire" Version="1.8.22"/>
-        <PackageVersion Include="Hangfire.MemoryStorage" Version="1.8.1.2"/>
-        <PackageVersion Include="Hangfire.PostgreSql" Version="1.20.12"/>
-        <PackageVersion Include="Hangfire.Storage.SQLite" Version="0.4.2"/>
+        <PackageVersion Include="GitHubActionsTestLogger" Version="3.0.1" PrivateAssets="All"/>
         <PackageVersion Include="Humanizer.Core" Version="3.0.1"/>
         <PackageVersion Include="IronCompress" Version="1.7.0"/>
-        <PackageVersion Include="JetBrains.Annotations" Version="2025.2.2"/>
+        <PackageVersion Include="JetBrains.Annotations" Version="2025.2.4"/>
         <PackageVersion Include="Jint" Version="4.4.2"/>
         <PackageVersion Include="LinqKit.Core" Version="1.2.9"/>
         <PackageVersion Include="MailKit" Version="4.14.1"/>
-        <PackageVersion Include="MassTransit" Version="8.5.5"/>
-        <PackageVersion Include="MassTransit.Azure.ServiceBus.Core" Version="8.5.5"/>
+        <PackageVersion Include="MassTransit" Version="8.5.7"/>
+        <PackageVersion Include="MassTransit.Azure.ServiceBus.Core" Version="8.5.7"/>
         <PackageVersion Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1"/>
-        <PackageVersion Include="MassTransit.RabbitMQ" Version="8.5.5"/>
+        <PackageVersion Include="MassTransit.RabbitMQ" Version="8.5.7"/>
         <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="10.0.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components" Version="10.0.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0"/>
@@ -113,18 +97,15 @@
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1"/>
         <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
         <PackageVersion Include="Moq" Version="4.20.72"/>
-        <PackageVersion Include="MongoDB.Driver" Version="3.5.1"/>
-        <PackageVersion Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="2.1.0"/>
-        <PackageVersion Include="MongoDB.Driver.Extensions" Version="2.0.2"/>
         <PackageVersion Include="MySql.Data" Version="9.5.0"/>
         <PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>
         <PackageVersion Include="NSubstitute" Version="5.3.0"/>
-        <PackageVersion Include="NuGet.Packaging" Version="7.0.0"/>
-        <PackageVersion Include="NuGet.Protocol" Version="7.0.0"/>
-        <PackageVersion Include="Nuke.Components" Version="10.0.0"/>
+        <PackageVersion Include="NuGet.Packaging" Version="7.0.1"/>
+        <PackageVersion Include="NuGet.Protocol" Version="7.0.1"/>
+        <PackageVersion Include="Nuke.Components" Version="10.1.0"/>
         <PackageVersion Include="Open.Linq.AsyncExtensions" Version="1.2.0"/>
         <PackageVersion Include="OpenTelemetry" Version="1.14.0"/>
-        <PackageVersion Include="OpenTelemetry.AutoInstrumentation" Version="1.12.0"/>
+        <PackageVersion Include="OpenTelemetry.AutoInstrumentation" Version="1.13.0"/>
         <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.14.0"/>
         <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0"/>
         <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0"/>
@@ -132,7 +113,6 @@
         <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.14.0"/>
         <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.14.0-beta.1"/>
         <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.14.0-beta.1"/>
-        <PackageVersion Include="Oracle.EntityFrameworkCore" Version="9.23.26000"/>
         <PackageVersion Include="Parlot" Version="1.5.6"/>
         <PackageVersion Include="Polly" Version="8.6.5"/>
         <PackageVersion Include="Polly.Extensions" Version="8.6.5"/>
@@ -140,11 +120,9 @@
         <PackageVersion Include="PolySharp" Version="1.15.0" PrivateAssets="All"/>
         <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0"/>
         <PackageVersion Include="pythonnet" Version="3.1.0-preview2024-09-06"/>
-        <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.15.1"/>
-        <PackageVersion Include="Quartz.Serialization.Json" Version="3.15.1"/>
-        <PackageVersion Include="Refit" Version="8.0.0"/>
-        <PackageVersion Include="Refit.HttpClientFactory" Version="8.0.0"/>
-        <PackageVersion Include="Scrutor" Version="6.1.0"/>
+        <PackageVersion Include="Refit" Version="9.0.2"/>
+        <PackageVersion Include="Refit.HttpClientFactory" Version="9.0.2"/>
+        <PackageVersion Include="Scrutor" Version="7.0.0"/>
         <PackageVersion Include="Serilog" Version="4.3.0"/>
         <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0"/>
         <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0"/>
@@ -154,7 +132,7 @@
         <PackageVersion Include="System.CommandLine" Version="2.0.0"/>
         <PackageVersion Include="System.Data.SqlClient" Version="4.9.0"/>
         <PackageVersion Include="System.Linq.Async" Version="7.0.0"/>
-        <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.7.0"/>
+        <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.7.1"/>
         <PackageVersion Include="System.Net.Http" Version="4.3.4"/>
         <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1"/>
         <PackageVersion Include="System.Formats.Asn1" Version="10.0.0"/>
