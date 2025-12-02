@@ -99,7 +99,7 @@ public class HttpEndpointTests(App app) : AppComponentTest(app)
         var tasks = new List<Task<string>>();
 
         // Act - Send 10 concurrent requests
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             var index = i;
             tasks.Add(client.GetStringAsync($"test/users/user-{index}/orders/order-{index}"));

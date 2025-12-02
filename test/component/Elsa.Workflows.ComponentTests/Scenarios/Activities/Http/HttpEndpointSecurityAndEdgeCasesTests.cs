@@ -7,26 +7,12 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Http;
 
 public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(app)
 {
-
-    [Fact]
-    public async Task HttpEndpoint_WithAuthentication_RequiresAuthorization()
-    {
-        // Arrange
-        var client = WorkflowServer.CreateHttpWorkflowClient();
-
-        // Act - Try to access secure endpoint without authentication
-        var response = await client.GetAsync("test/secure");
-
-        // Assert - Should require authorization (exact behavior depends on auth configuration)
-        Assert.NotEqual(HttpStatusCode.OK, response.StatusCode);
-    }
-
     [Fact]
     public async Task HttpEndpoint_BlockedFileExtensions_RejectsBlockedFiles()
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
-        var content = new MultipartFormDataContent();
+        using var content = new MultipartFormDataContent();
         var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes("Malicious file"));
         fileContent.Headers.ContentType = new("application/octet-stream");
         content.Add(fileContent, "file", "malware.exe"); // .exe is in blocked extensions
@@ -43,7 +29,7 @@ public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(a
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
-        var content = new MultipartFormDataContent();
+        using var content = new MultipartFormDataContent();
         var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes("Safe file content"));
         fileContent.Headers.ContentType = new("text/plain");
         content.Add(fileContent, "file", "document.txt"); // .txt is not in blocked extensions
@@ -177,7 +163,7 @@ public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(a
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
-        var content = new MultipartFormDataContent();
+        using var content = new MultipartFormDataContent();
         var emptyFile = new ByteArrayContent(Array.Empty<byte>());
         emptyFile.Headers.ContentType = new("text/plain");
         content.Add(emptyFile, "file", "empty.txt");

@@ -30,33 +30,47 @@ public class RouteParametersWorkflow : WorkflowBase
                 {
                     Content = new(context => 
                     {
-                        // WORKAROUND: Since route table isn't populated during tests,
-                        // manually parse the request URL to extract parameters
-                        try
+                        var routeData = routeDataVariable.Get(context);
+                        
+                        // First, try to get route parameters from the proper route data
+                        var userId = "unknown";
+                        var orderId = "unknown";
+                        
+                        if (routeData is { Count: > 0 })
                         {
-                            var httpContext = context.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>().HttpContext;
-                            var path = httpContext?.Request?.Path.Value ?? "";
-                            
-                            // Pattern: /workflows/test/users/{userId}/orders/{orderId}
-                            var match = System.Text.RegularExpressions.Regex.Match(path, @"/workflows/test/users/([^/]+)/orders/([^/]+)");
-                            if (match.Success && match.Groups.Count >= 3)
-                            {
-                                return $"UserId: {match.Groups[1].Value}, OrderId: {match.Groups[2].Value}";
-                            }
-                            
-                            // Fallback: try simple splitting
-                            var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
-                            if (parts.Length >= 6 && parts[1] == "test" && parts[2] == "users" && parts[4] == "orders")
-                            {
-                                return $"UserId: {parts[3]}, OrderId: {parts[5]}";
-                            }
-                            
-                            return "Could not parse route parameters";
+                            // Proper route data is available
+                            userId = routeData.TryGetValue("userid", out var value) ? value.ToString() ?? "unknown" : "unknown";
+                            orderId = routeData.TryGetValue("orderid", out var value1) ? value1.ToString() ?? "unknown" : "unknown";
                         }
-                        catch
+                        else
                         {
-                            return "UserId: unknown, OrderId: unknown";
+                            // Fallback: Extract from HttpContext if route data is not populated
+                            try
+                            {
+                                var httpContext = context.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>().HttpContext;
+                                var path = httpContext?.Request?.Path.Value ?? "";
+                                
+                                // Split path and look for the users/{userId}/orders/{orderId} pattern
+                                var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                                
+                                // Find the users pattern in the path
+                                for (int i = 0; i < parts.Length - 3; i++)
+                                {
+                                    if (parts[i] == "users" && i + 2 < parts.Length && parts[i + 2] == "orders" && i + 3 < parts.Length)
+                                    {
+                                        userId = Uri.UnescapeDataString(parts[i + 1]);
+                                        orderId = Uri.UnescapeDataString(parts[i + 3]);
+                                        break;
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                                // Keep defaults if parsing fails
+                            }
                         }
+                        
+                        return $"UserId: {userId}, OrderId: {orderId}";
                     }),
                     ContentType = new("text/plain"),
                     StatusCode = new(HttpStatusCode.OK)
