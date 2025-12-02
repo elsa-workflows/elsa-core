@@ -3,6 +3,7 @@ using Elsa.Http;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Microsoft.AspNetCore.Http;
+using Endpoint = Elsa.Workflows.Activities.Flowchart.Models.Endpoint;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Http.Workflows;
 
@@ -46,11 +47,9 @@ public class BlockedFileExtensionWorkflow : WorkflowBase
             Activities = { httpEndpoint, successResponse, errorResponse },
             Connections = 
             {
-                new Connection(new Elsa.Workflows.Activities.Flowchart.Models.Endpoint(httpEndpoint, "Done"), new Elsa.Workflows.Activities.Flowchart.Models.Endpoint(successResponse)),
-                new Connection(new Elsa.Workflows.Activities.Flowchart.Models.Endpoint(httpEndpoint, "Invalid file extension"), new Elsa.Workflows.Activities.Flowchart.Models.Endpoint(errorResponse))
+                new Connection(new Endpoint(httpEndpoint, "Done"), new Endpoint(successResponse)),
+                new Connection(new Endpoint(httpEndpoint, "Invalid file extension"), new Endpoint(errorResponse))
             }
         };
     }
 }
-
-

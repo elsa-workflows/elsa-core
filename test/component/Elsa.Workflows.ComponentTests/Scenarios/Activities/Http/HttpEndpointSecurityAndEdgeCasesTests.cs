@@ -110,19 +110,31 @@ public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(a
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
 
-        // Act - Test different case variations
-        var response1 = await client.GetAsync("test/basic");
-        var response2 = await client.GetAsync("TEST/BASIC");
-        var response3 = await client.GetAsync("Test/Basic");
-
-        // Assert - Behavior depends on server configuration, but should be consistent
-        // Most web servers are case-insensitive by default
-        if (response1.StatusCode == HttpStatusCode.OK)
+        // Act - Test the original route first to establish baseline
+        var originalResponse = await client.GetAsync("test/basic");
+        
+        // Only proceed with case testing if the original route works
+        if (originalResponse.StatusCode != HttpStatusCode.OK)
         {
-            // If the original works, case variations should also work (typical behavior)
-            Assert.True(response2.StatusCode == HttpStatusCode.OK || response2.StatusCode == HttpStatusCode.NotFound);
-            Assert.True(response3.StatusCode == HttpStatusCode.OK || response3.StatusCode == HttpStatusCode.NotFound);
+            Assert.Fail("Original route 'test/basic' should work before testing case variations");
         }
+
+        // Test case variations
+        var uppercaseResponse = await client.GetAsync("TEST/BASIC");
+        var mixedCaseResponse = await client.GetAsync("Test/Basic");
+
+        // Assert - ASP.NET Core routing is case-insensitive by default
+        // Both case variations should work the same as the original
+        Assert.Equal(HttpStatusCode.OK, uppercaseResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, mixedCaseResponse.StatusCode);
+        
+        // Verify all responses return the same content
+        var originalContent = await originalResponse.Content.ReadAsStringAsync();
+        var uppercaseContent = await uppercaseResponse.Content.ReadAsStringAsync();
+        var mixedCaseContent = await mixedCaseResponse.Content.ReadAsStringAsync();
+        
+        Assert.Equal(originalContent, uppercaseContent);
+        Assert.Equal(originalContent, mixedCaseContent);
     }
 
     [Fact]
