@@ -73,20 +73,6 @@ public class HttpEndpointQueryStringAndHeadersTests(App app) : AppComponentTest(
     {
         var client = WorkflowServer.CreateHttpWorkflowClient();
 
-        // Add headers
-        if (!string.IsNullOrEmpty(userAgent))
-        {
-            client.DefaultRequestHeaders.Add("User-Agent", userAgent);
-        }
-
-        if (customHeaders != null)
-        {
-            foreach (var header in customHeaders)
-            {
-                client.DefaultRequestHeaders.Add(header.Key, header.Value);
-            }
-        }
-
         // Build URL
         var url = "test/query-headers";
         if (!string.IsNullOrEmpty(queryString))
@@ -94,6 +80,25 @@ public class HttpEndpointQueryStringAndHeadersTests(App app) : AppComponentTest(
             url += $"?{queryString}";
         }
 
-        return await client.GetStringAsync(url);
+        // Create request
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+        // Add headers to request
+        if (!string.IsNullOrEmpty(userAgent))
+        {
+            request.Headers.Add("User-Agent", userAgent);
+        }
+
+        if (customHeaders != null)
+        {
+            foreach (var header in customHeaders)
+            {
+                request.Headers.Add(header.Key, header.Value);
+            }
+        }
+
+        var responseMessage = await client.SendAsync(request);
+        responseMessage.EnsureSuccessStatusCode();
+        return await responseMessage.Content.ReadAsStringAsync();
     }
 }
