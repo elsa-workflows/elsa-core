@@ -92,18 +92,11 @@ public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(a
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
-        try
-        {
-            client.DefaultRequestHeaders.Add("X-Large-Header", new string('x', 8192)); // Very large header
-        }
-        catch
-        {
-            // Some HTTP clients may reject extremely large headers
-            return; // Test passes if we can't even create the request
-        }
+        var request = new HttpRequestMessage(HttpMethod.Get, "test/query-headers");
+        request.Headers.Add("X-Large-Header", new string('x', 8192)); // Very large header
 
         // Act & Assert - Should handle gracefully
-        var response = await client.GetAsync("test/query-headers");
+        var response = await client.SendAsync(request);
         
         // Response might be successful or might be rejected by server, but shouldn't crash
         Assert.True(response.StatusCode == HttpStatusCode.OK || 
