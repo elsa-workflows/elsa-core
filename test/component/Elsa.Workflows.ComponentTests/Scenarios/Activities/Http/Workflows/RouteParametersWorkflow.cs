@@ -28,29 +28,43 @@ public class RouteParametersWorkflow : WorkflowBase
                 },
                 new WriteHttpResponse
                 {
-                    Content = new(context => 
+                    Content = new(context =>
                     {
-                        // WORKAROUND: Since route table isn't populated during tests,
-                        // manually parse the request URL to extract parameters
+                        // Try to use RouteData variable first for robustness.
+                        // If unavailable (test infra limitation), fallback to manual parsing.
+                        const string BasePathPrefix = "/workflows/"; // Extracted as constant for flexibility.
                         try
                         {
+                            // Attempt to get route parameters from RouteData variable.
+                            var routeData = context.GetVariable<IDictionary<string, object>>();
+                            if (routeData != null && routeData.TryGetValue("userId", out var userIdObj) && routeData.TryGetValue("orderId", out var orderIdObj))
+                            {
+                                var userId = userIdObj?.ToString() ?? "unknown";
+                                var orderId = orderIdObj?.ToString() ?? "unknown";
+                                return $"UserId: {userId}, OrderId: {orderId}";
+                            }
+
+                            // WORKAROUND: Since route table isn't populated during tests,
+                            // manually parse the request URL to extract parameters.
                             var httpContext = context.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>().HttpContext;
                             var path = httpContext?.Request?.Path.Value ?? "";
-                            
-                            // Pattern: /workflows/test/users/{userId}/orders/{orderId}
-                            var match = System.Text.RegularExpressions.Regex.Match(path, @"/workflows/test/users/([^/]+)/orders/([^/]+)");
+
+                            // More flexible pattern: allow any base path before /test/users/{userId}/orders/{orderId}
+                            var pattern = $"{BasePathPrefix}?test/users/([^/]+)/orders/([^/]+)";
+                            var match = System.Text.RegularExpressions.Regex.Match(path, pattern);
                             if (match.Success && match.Groups.Count >= 3)
                             {
                                 return $"UserId: {match.Groups[1].Value}, OrderId: {match.Groups[2].Value}";
                             }
-                            
-                            // Fallback: try simple splitting
+
+                            // Fallback: try simple splitting, accounting for base path
                             var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
-                            if (parts.Length >= 6 && parts[1] == "test" && parts[2] == "users" && parts[4] == "orders")
+                            // Find "test" segment and extract parameters relative to it
+                            var testIdx = Array.IndexOf(parts, "test");
+                            if (testIdx >= 0 && parts.Length > testIdx + 5 && parts[testIdx + 1] == "users" && parts[testIdx + 3] == "orders")
                             {
-                                return $"UserId: {parts[3]}, OrderId: {parts[5]}";
+                                return $"UserId: {parts[testIdx + 2]}, OrderId: {parts[testIdx + 4]}";
                             }
-                            
                             return "Could not parse route parameters";
                         }
                         catch (Exception ex)
