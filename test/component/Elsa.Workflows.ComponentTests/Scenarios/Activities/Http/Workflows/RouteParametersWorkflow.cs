@@ -32,7 +32,7 @@ public class RouteParametersWorkflow : WorkflowBase
                     {
                         var routeData = routeDataVariable.Get(context);
                         
-                        // First, try to get route parameters from the proper route data
+                        // Get route parameters from route data
                         var userId = "unknown";
                         var orderId = "unknown";
                         
