@@ -11,7 +11,6 @@ This directory contains comprehensive component tests for the `HttpEndpoint` act
    - HTTP method validation
    - Simple request/response handling
    - Concurrent request processing
-   - Large payload handling
    - Special character route handling
    - Synchronous workflow completion validation
 
