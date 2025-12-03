@@ -11,7 +11,6 @@ This directory contains comprehensive component tests for the `HttpEndpoint` act
    - HTTP method validation
    - Simple request/response handling
    - Concurrent request processing
-   - Large payload handling
    - Special character route handling
    - Synchronous workflow completion validation
 
@@ -39,14 +38,8 @@ This directory contains comprehensive component tests for the `HttpEndpoint` act
    - Empty file handling
 
 6. **Security and Edge Cases Tests** (`HttpEndpointSecurityAndEdgeCasesTests.cs`)
-   - Authentication/authorization
    - Blocked file extensions
-   - Request size limits
-   - File size validation
    - File extension validation
-   - MIME type validation
-   - Malformed request handling
-   - Extreme input validation
    - Case sensitivity
    - Security constraints
 
@@ -91,7 +84,6 @@ The `Workflows/` directory contains test workflow implementations:
 - ✅ Empty and null value handling
 - ✅ Case sensitivity scenarios
 - ✅ Malformed multipart data
-- ✅ Extremely long paths and headers
 
 ### Error Handling
 - ✅ Invalid JSON processing
@@ -99,7 +91,6 @@ The `Workflows/` directory contains test workflow implementations:
 - ✅ File validation failures
 - ✅ Request size limit exceeded
 - ✅ Missing route parameters
-- ✅ Authentication failures
 
 ## Test Execution
 
