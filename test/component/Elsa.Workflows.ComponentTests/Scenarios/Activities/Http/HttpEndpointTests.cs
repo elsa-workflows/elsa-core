@@ -45,7 +45,7 @@ public class HttpEndpointTests(App app) : AppComponentTest(app)
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
-        var request = new HttpRequestMessage(new HttpMethod(method), "test/multi-method");
+        using var request = new HttpRequestMessage(new HttpMethod(method), "test/multi-method");
 
         // Act
         var response = await client.SendAsync(request);
