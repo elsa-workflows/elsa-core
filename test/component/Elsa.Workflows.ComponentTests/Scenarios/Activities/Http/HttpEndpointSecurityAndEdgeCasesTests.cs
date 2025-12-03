@@ -92,7 +92,7 @@ public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(a
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
-        var request = new HttpRequestMessage(HttpMethod.Get, "test/query-headers");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "test/query-headers");
         request.Headers.Add("X-Large-Header", new string('x', 8192)); // Very large header
 
         // Act & Assert - Should handle gracefully
