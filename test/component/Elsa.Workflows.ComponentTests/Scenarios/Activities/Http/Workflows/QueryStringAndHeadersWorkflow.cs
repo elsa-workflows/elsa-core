@@ -7,7 +7,7 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Http.Workflows;
 
 public class QueryStringAndHeadersWorkflow : WorkflowBase
 {
-    private static readonly string DefinitionId = Guid.NewGuid().ToString();
+    public static readonly string DefinitionId = Guid.NewGuid().ToString();
 
     protected override void Build(IWorkflowBuilder builder)
     {
