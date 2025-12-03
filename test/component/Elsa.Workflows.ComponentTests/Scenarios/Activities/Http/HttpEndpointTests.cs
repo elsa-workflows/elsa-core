@@ -28,11 +28,14 @@ public class HttpEndpointTests(App app) : AppComponentTest(app)
         var client = WorkflowServer.CreateHttpWorkflowClient();
 
         // Act
-        var response = await client.PostAsync("test/basic", new StringContent("", Encoding.UTF8, "text/plain"));
+        using (var content = new StringContent("", Encoding.UTF8, "text/plain"))
+        {
+            var response = await client.PostAsync("test/basic", content);
 
-        // Assert
-        // In this test environment, unsupported methods on unregistered endpoints return NotFound
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            // Assert
+            // In this test environment, unsupported methods on unregistered endpoints return NotFound
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
     }
 
     [Theory]
