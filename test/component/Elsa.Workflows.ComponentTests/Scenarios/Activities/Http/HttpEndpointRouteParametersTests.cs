@@ -1,8 +1,6 @@
 using System.Net;
 using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
-using Elsa.Workflows.ComponentTests.Scenarios.Activities.Http.Workflows;
-
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Http;
 
 public class HttpEndpointRouteParametersTests(App app) : AppComponentTest(app)
