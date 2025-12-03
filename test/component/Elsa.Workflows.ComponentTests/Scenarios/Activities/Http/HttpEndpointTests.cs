@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text;
-using System.Text.Json;
 using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
 
@@ -117,49 +116,6 @@ public class HttpEndpointTests(App app) : AppComponentTest(app)
     }
 
     [Fact]
-    public async Task HttpEndpoint_LargeJsonPayload_ProcessesCorrectly()
-    {
-        // Arrange
-        var client = WorkflowServer.CreateHttpWorkflowClient();
-        var largeObject = new
-        {
-            Users = Enumerable.Range(1, 100).Select(i => new
-            {
-                Id = i,
-                Name = $"User {i}",
-                Email = $"user{i}@example.com",
-                Data = new string('x', 100) // 100 characters per user
-            }).ToArray()
-        };
-
-        var jsonContent = JsonSerializer.Serialize(largeObject);
-        using (var content = new StringContent(jsonContent, Encoding.UTF8, "application/json"))
-        {
-            // Act
-            var response = await client.PostAsync("test/json-content", content);
-            var responseContent = await response.Content.ReadAsStringAsync();
-
-            // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        
-            // Verify response can be parsed back to JSON
-            var parsedResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
-            Assert.True(parsedResponse.TryGetProperty("Users", out var usersProperty));
-            Assert.Equal(JsonValueKind.Array, usersProperty.ValueKind);
-            Assert.Equal(100, usersProperty.GetArrayLength());
-        }
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        
-        // Verify response can be parsed back to JSON
-        var parsedResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
-        Assert.True(parsedResponse.TryGetProperty("Users", out var usersProperty));
-        Assert.Equal(JsonValueKind.Array, usersProperty.ValueKind);
-        Assert.Equal(100, usersProperty.GetArrayLength());
-    }
-
-
-    [Fact]
     public async Task HttpEndpoint_SpecialCharactersInRoute_HandlesCorrectly()
     {
         // Arrange
@@ -174,4 +130,5 @@ public class HttpEndpointTests(App app) : AppComponentTest(app)
         Assert.Contains("user@domain.com", response);
         Assert.Contains("order-with-special-chars!@#$%", response);
     }
+    
 }

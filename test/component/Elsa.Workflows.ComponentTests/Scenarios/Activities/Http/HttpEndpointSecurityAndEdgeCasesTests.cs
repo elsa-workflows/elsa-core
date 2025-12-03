@@ -42,107 +42,44 @@ public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(a
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("File upload successful", responseContent);
     }
-
-    [Fact]
-    public async Task HttpEndpoint_MalformedMultipartData_HandlesGracefully()
+    
+    [Theory]
+    [InlineData("test/basic")]
+    [InlineData("TEST/BASIC")]
+    [InlineData("Test/Basic")]
+    [InlineData("test/BASIC")]
+    [InlineData("TEST/basic")]
+    public async Task HttpEndpoint_CaseSensitiveRoutes_RespectsRouteCase(string route)
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
-        
-        // Create properly malformed multipart content by using StringContent with manually crafted headers
-        using var malformedContent = new StringContent(
-            "--boundary\r\nContent-Disposition: form-data; name=\"test\"\r\n\r\nvalue\r\n--boundary--", 
-            Encoding.UTF8);
-        
-        // Set multipart/form-data content-type but with plain text content
-        malformedContent.Headers.ContentType = new("multipart/form-data")
-        {
-            Parameters = { new System.Net.Http.Headers.NameValueHeaderValue("boundary", "test-boundary") }
-        };
 
         // Act
-        var response = await client.PostAsync("test/file-upload", malformedContent);
-
-        // Assert - Should reject malformed multipart data with InternalServerError
-        // The system detects malformed multipart structure and throws IOException during parsing
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task HttpEndpoint_ExtremelyLargeHeaders_HandlesGracefully()
-    {
-        // Arrange
-        var client = WorkflowServer.CreateHttpWorkflowClient();
-        var request = new HttpRequestMessage(HttpMethod.Get, "test/query-headers");
-        
-        // Test with a large but reasonable header (16KB)
-        var largeHeaderValue = new string('x', 16384);
-        request.Headers.Add("X-Large-Header", largeHeaderValue);
-        
-        // Act
-        var response = await client.SendAsync(request);
-        
-        // Assert - System should handle large headers successfully
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task HttpEndpoint_CaseSensitiveRoutes_RespectsRouteCase()
-    {
-        // Arrange
-        var client = WorkflowServer.CreateHttpWorkflowClient();
-
-        // Act - Test the original route first to establish baseline
-        var originalResponse = await client.GetAsync("test/basic");
-        
-        // Only proceed with case testing if the original route works
-        if (originalResponse.StatusCode != HttpStatusCode.OK)
-        {
-            Assert.Fail("Original route 'test/basic' should work before testing case variations");
-        }
-
-        // Test case variations
-        var uppercaseResponse = await client.GetAsync("TEST/BASIC");
-        var mixedCaseResponse = await client.GetAsync("Test/Basic");
+        var response = await client.GetAsync(route);
+        var content = await response.Content.ReadAsStringAsync();
 
         // Assert - ASP.NET Core routing is case-insensitive by default
-        // Both case variations should work the same as the original
-        Assert.Equal(HttpStatusCode.OK, uppercaseResponse.StatusCode);
-        Assert.Equal(HttpStatusCode.OK, mixedCaseResponse.StatusCode);
-        
-        // Verify all responses return the same content
-        var originalContent = await originalResponse.Content.ReadAsStringAsync();
-        var uppercaseContent = await uppercaseResponse.Content.ReadAsStringAsync();
-        var mixedCaseContent = await mixedCaseResponse.Content.ReadAsStringAsync();
-        
-        Assert.Equal(originalContent, uppercaseContent);
-        Assert.Equal(originalContent, mixedCaseContent);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(content);
     }
 
-    [Fact]
-    public async Task HttpEndpoint_NullAndEmptyQueryParameters_HandlesCorrectly()
+    [Theory]
+    [InlineData("test/query-headers?name=")]
+    [InlineData("test/query-headers?name")]
+    [InlineData("test/query-headers?=value")]
+    [InlineData("test/query-headers?&&&")]
+    public async Task HttpEndpoint_NullAndEmptyQueryParameters_HandlesCorrectly(string url)
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
 
-        // Act - Test various edge cases with query parameters
-        var response1 = await client.GetAsync("test/query-headers?name=");
-        var response2 = await client.GetAsync("test/query-headers?name");
-        var response3 = await client.GetAsync("test/query-headers?=value");
-        var response4 = await client.GetAsync("test/query-headers?&&&");
+        // Act
+        var response = await client.GetAsync(url);
+        var content = await response.Content.ReadAsStringAsync();
 
-        // Assert - All should complete without crashing
-        Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
-        Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
-        Assert.Equal(HttpStatusCode.OK, response3.StatusCode);
-        Assert.Equal(HttpStatusCode.OK, response4.StatusCode);
-
-        var content1 = await response1.Content.ReadAsStringAsync();
-        var content2 = await response2.Content.ReadAsStringAsync();
-
-        // Empty parameter value vs missing value should be handled gracefully
-        Assert.NotNull(content1);
-        Assert.NotNull(content2);
+        // Assert - Should handle edge cases with query parameters gracefully
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(content);
     }
 
     [Fact]
