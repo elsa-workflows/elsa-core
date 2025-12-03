@@ -66,6 +66,7 @@ public class HttpEndpointTests
         Assert.Equal(exposeOutcomes, endpoint.ExposeInvalidFileMimeTypeOutcome);
     }
 
+    // TODO: Once `HttpEndpoint` is updated to produce a fault, update this test accordingly.
     [Fact]
     public async Task Should_Create_Bookmark_When_No_Http_Context()
     {
