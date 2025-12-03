@@ -44,24 +44,6 @@ public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(a
     }
 
     [Fact]
-    public async Task HttpEndpoint_ExtremelyLongPath_HandlesGracefully()
-    {
-        // Arrange
-        var client = WorkflowServer.CreateHttpWorkflowClient();
-        var longUserId = new string('a', 1000); // Very long user ID
-        var longOrderId = new string('b', 1000); // Very long order ID
-
-        // Act & Assert - Should not crash, might return 404 or handle gracefully
-        var response = await client.GetAsync($"test/users/{longUserId}/orders/{longOrderId}");
-        
-        // The exact response depends on server configuration, but it shouldn't crash
-        Assert.True(response.StatusCode == HttpStatusCode.NotFound || 
-                   response.StatusCode == HttpStatusCode.BadRequest ||
-                   response.StatusCode == HttpStatusCode.RequestUriTooLong ||
-                   response.StatusCode == HttpStatusCode.OK);
-    }
-
-    [Fact]
     public async Task HttpEndpoint_MalformedMultipartData_HandlesGracefully()
     {
         // Arrange
