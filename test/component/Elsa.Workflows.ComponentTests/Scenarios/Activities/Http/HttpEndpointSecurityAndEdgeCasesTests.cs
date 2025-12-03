@@ -68,7 +68,7 @@ public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(a
         var client = WorkflowServer.CreateHttpWorkflowClient();
         
         // Create properly malformed multipart content by using StringContent with manually crafted headers
-        var malformedContent = new StringContent(
+        using var malformedContent = new StringContent(
             "--boundary\r\nContent-Disposition: form-data; name=\"test\"\r\n\r\nvalue\r\n--boundary--", 
             Encoding.UTF8);
         
