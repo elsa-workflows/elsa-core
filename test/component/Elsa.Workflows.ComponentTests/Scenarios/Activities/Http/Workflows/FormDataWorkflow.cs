@@ -33,16 +33,8 @@ public class FormDataWorkflow : WorkflowBase
                         var content = parsedContentVariable.Get(context);
                         if (content is IDictionary<string, object> formData)
                         {
-                            string name;
-                            if (formData.TryGetValue("name", out var nameObj) && nameObj != null)
-                                name = nameObj.ToString();
-                            else
-                                name = "unknown";
-                            string email;
-                            if (formData.TryGetValue("email", out var emailObj) && emailObj != null)
-                                email = emailObj.ToString();
-                            else
-                                email = "unknown";
+                            var name = formData.TryGetValue("name", out var nameObj) ? nameObj?.ToString() ?? "unknown" : "unknown";
+                            var email = formData.TryGetValue("email", out var emailObj) ? emailObj?.ToString() ?? "unknown" : "unknown";
                             return $"Name: {name}, Email: {email}";
                         }
                         return "No form data received";

@@ -64,9 +64,9 @@ public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(a
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
         
-        // Create malformed multipart content that violates RFC 7578 - incomplete boundary structure
-        var malformedContent = new StringContent(
-            "not-multipart-at-all-just-plain-text", 
+        // Create properly malformed multipart content by using StringContent with manually crafted headers
+        using var malformedContent = new StringContent(
+            "--boundary\r\nContent-Disposition: form-data; name=\"test\"\r\n\r\nvalue\r\n--boundary--", 
             Encoding.UTF8);
         
         // Set multipart/form-data content-type but with plain text content
