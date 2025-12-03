@@ -39,14 +39,8 @@ This directory contains comprehensive component tests for the `HttpEndpoint` act
    - Empty file handling
 
 6. **Security and Edge Cases Tests** (`HttpEndpointSecurityAndEdgeCasesTests.cs`)
-   - Authentication/authorization
    - Blocked file extensions
-   - Request size limits
-   - File size validation
    - File extension validation
-   - MIME type validation
-   - Malformed request handling
-   - Extreme input validation
    - Case sensitivity
    - Security constraints
 
