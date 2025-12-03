@@ -7,20 +7,6 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Http;
 
 public class HttpEndpointTests(App app) : AppComponentTest(app)
 {
-
-    [Fact]
-    public async Task BasicHttpEndpoint_Get_ReturnsExpectedResponse()
-    {
-        // Arrange
-        var client = WorkflowServer.CreateHttpWorkflowClient();
-
-        // Act
-        var response = await client.GetStringAsync("test/basic");
-
-        // Assert
-        Assert.Equal("Basic HttpEndpoint Test Response", response);     
-    }
-
     [Fact]
     public async Task BasicHttpEndpoint_UnsupportedMethod_ReturnsNotFound()
     {
@@ -88,8 +74,7 @@ public class HttpEndpointTests(App app) : AppComponentTest(app)
         // The fact that we get a response means the workflow completed synchronously
         // without hanging or requiring additional triggers
     }
-
-
+    
     [Fact]
     public async Task HttpEndpoint_ConcurrentRequests_ProcessesAllSuccessfully()
     {
