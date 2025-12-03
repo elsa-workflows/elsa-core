@@ -133,12 +133,21 @@ public class HttpEndpointTests(App app) : AppComponentTest(app)
         };
 
         var jsonContent = JsonSerializer.Serialize(largeObject);
-        var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+        using (var content = new StringContent(jsonContent, Encoding.UTF8, "application/json"))
+        {
+            // Act
+            var response = await client.PostAsync("test/json-content", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
 
-        // Act
-        var response = await client.PostAsync("test/json-content", content);
-        var responseContent = await response.Content.ReadAsStringAsync();
-
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        
+            // Verify response can be parsed back to JSON
+            var parsedResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
+            Assert.True(parsedResponse.TryGetProperty("Users", out var usersProperty));
+            Assert.Equal(JsonValueKind.Array, usersProperty.ValueKind);
+            Assert.Equal(100, usersProperty.GetArrayLength());
+        }
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         
