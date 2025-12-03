@@ -99,7 +99,6 @@ The `Workflows/` directory contains test workflow implementations:
 - ✅ File validation failures
 - ✅ Request size limit exceeded
 - ✅ Missing route parameters
-- ✅ Authentication failures
 
 ## Test Execution
 
