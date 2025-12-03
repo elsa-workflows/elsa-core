@@ -91,7 +91,6 @@ The `Workflows/` directory contains test workflow implementations:
 - ✅ Empty and null value handling
 - ✅ Case sensitivity scenarios
 - ✅ Malformed multipart data
-- ✅ Extremely long paths and headers
 
 ### Error Handling
 - ✅ Invalid JSON processing
