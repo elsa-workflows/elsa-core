@@ -61,7 +61,7 @@ The `Workflows/` directory contains test workflow implementations:
 - `JsonContentWorkflow.cs` - JSON content parsing
 - `FormDataWorkflow.cs` - Form data handling
 - `FileUploadWorkflow.cs` - File upload processing
-- `SecurityTestWorkflows.cs` - Security-focused workflows including authentication and blocked extensions
+- `BlockedFileExtensionWorkflow.cs` - Security-focused workflows including authentication and blocked extensions
 
 ## Key Features Tested
 
