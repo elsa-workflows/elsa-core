@@ -18,9 +18,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // SQLite does not support schemas, so we omit the schema parameter
             migrationBuilder.AlterColumn<string>(
                 name: "Name",
-                schema: _schema.Schema,
                 table: "Triggers",
                 type: "TEXT",
                 nullable: true,
@@ -29,14 +29,12 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
 
             migrationBuilder.AddColumn<string>(
                 name: "Name",
-                schema: _schema.Schema,
                 table: "Bookmarks",
                 type: "TEXT",
                 nullable: true);
 
             migrationBuilder.AddColumn<int>(
                 name: "AggregateFaultCount",
-                schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
                 type: "INTEGER",
                 nullable: false,
@@ -44,26 +42,22 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
 
             migrationBuilder.AddColumn<string>(
                 name: "SerializedMetadata",
-                schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
                 type: "TEXT",
                 nullable: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_Name",
-                schema: _schema.Schema,
                 table: "Bookmarks",
                 column: "Name");
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_Name_Hash",
-                schema: _schema.Schema,
                 table: "Bookmarks",
                 columns: new[] { "Name", "Hash" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_Name_Hash_WorkflowInstanceId",
-                schema: _schema.Schema,
                 table: "Bookmarks",
                 columns: new[] { "Name", "Hash", "WorkflowInstanceId" });
         }
@@ -73,37 +67,30 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
         {
             migrationBuilder.DropIndex(
                 name: "IX_StoredBookmark_Name",
-                schema: _schema.Schema,
                 table: "Bookmarks");
 
             migrationBuilder.DropIndex(
                 name: "IX_StoredBookmark_Name_Hash",
-                schema: _schema.Schema,
                 table: "Bookmarks");
 
             migrationBuilder.DropIndex(
                 name: "IX_StoredBookmark_Name_Hash_WorkflowInstanceId",
-                schema: _schema.Schema,
                 table: "Bookmarks");
 
             migrationBuilder.DropColumn(
                 name: "Name",
-                schema: _schema.Schema,
                 table: "Bookmarks");
 
             migrationBuilder.DropColumn(
                 name: "AggregateFaultCount",
-                schema: _schema.Schema,
                 table: "ActivityExecutionRecords");
 
             migrationBuilder.DropColumn(
                 name: "SerializedMetadata",
-                schema: _schema.Schema,
                 table: "ActivityExecutionRecords");
 
             migrationBuilder.AlterColumn<string>(
                 name: "Name",
-                schema: _schema.Schema,
                 table: "Triggers",
                 type: "TEXT",
                 nullable: false,
