@@ -81,7 +81,7 @@ public class HttpEndpointQueryStringAndHeadersTests(App app) : AppComponentTest(
         }
 
         // Create request
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
         // Add headers to request
         if (!string.IsNullOrEmpty(userAgent))
