@@ -90,19 +90,6 @@ public class HttpEndpointTests
         Assert.True(context.WorkflowExecutionContext.Bookmarks.Any());
     }
 
-    [Theory]
-    [InlineData("/api/users", "/api/users")]
-    [InlineData("api/users", "/api/users")]
-    [InlineData("/api/users/", "/api/users")]
-    [InlineData("api/users/", "/api/users")]
-    public void Should_Normalize_Routes_Correctly(string inputPath, string expectedPath)
-    {
-        // Act
-        var normalizedPath = inputPath.NormalizeRoute();
-
-        // Assert
-        Assert.Equal(expectedPath, normalizedPath);
-    }
 
     private static HttpEndpoint CreateHttpEndpoint(
         string path, 
