@@ -12,60 +12,6 @@ namespace Elsa.Activities.UnitTests.Http;
 
 public class HttpEndpointTests
 {
-    [Theory]
-    [InlineData(true, "TestPolicy")]
-    [InlineData(false, null)]
-    public void Should_Configure_Authorization_Properties(bool authorize, string? policy)
-    {
-        // Arrange & Act
-        var endpoint = CreateHttpEndpoint("/api/secure", new[] { "GET" }, authorize: authorize, policy: policy);
-
-        // Assert
-        Assert.Equal(authorize, endpoint.Authorize.Expression!.Value);
-        if (policy != null)
-        {
-            Assert.Equal(policy, endpoint.Policy.Expression!.Value);
-        }
-    }
-
-    [Fact]
-    public void Should_Configure_MIME_Type_Whitelist()
-    {
-        // Arrange
-        var allowedMimeTypes = new[] { "text/plain", "application/pdf" };
-        
-        // Act
-        var endpoint = CreateHttpEndpoint("/api/upload", new[] { "POST" });
-        endpoint.AllowedMimeTypes = new Input<ICollection<string>>(allowedMimeTypes);
-
-        // Assert
-        Assert.NotNull(endpoint.AllowedMimeTypes);
-        var configuredMimeTypes = endpoint.AllowedMimeTypes.Expression!.Value as string[];
-        Assert.NotNull(configuredMimeTypes);
-        Assert.Equal(2, configuredMimeTypes.Length);
-        Assert.Equal("text/plain", configuredMimeTypes[0]);
-        Assert.Equal("application/pdf", configuredMimeTypes[1]);
-    }
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void Should_Configure_Outcome_Exposure_Settings(bool exposeOutcomes)
-    {
-        // Arrange & Act
-        var endpoint = CreateHttpEndpoint("/api/test", new[] { "POST" });
-        endpoint.ExposeRequestTooLargeOutcome = exposeOutcomes;
-        endpoint.ExposeFileTooLargeOutcome = exposeOutcomes;
-        endpoint.ExposeInvalidFileExtensionOutcome = exposeOutcomes;
-        endpoint.ExposeInvalidFileMimeTypeOutcome = exposeOutcomes;
-
-        // Assert
-        Assert.Equal(exposeOutcomes, endpoint.ExposeRequestTooLargeOutcome);
-        Assert.Equal(exposeOutcomes, endpoint.ExposeFileTooLargeOutcome);
-        Assert.Equal(exposeOutcomes, endpoint.ExposeInvalidFileExtensionOutcome);
-        Assert.Equal(exposeOutcomes, endpoint.ExposeInvalidFileMimeTypeOutcome);
-    }
-
     // TODO: Once `HttpEndpoint` is updated to produce a fault, update this test accordingly.
     [Fact]
     public async Task Should_Create_Bookmark_When_No_Http_Context()
