@@ -63,11 +63,15 @@ public class HttpEndpointTests(App app) : AppComponentTest(app)
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
-        var request = new HttpRequestMessage(HttpMethod.Patch, "test/multi-method");
+        using (var request = new HttpRequestMessage(HttpMethod.Patch, "test/multi-method"))
+        {
+            // Act
+            var response = await client.SendAsync(request);
 
-        // Act
-        var response = await client.SendAsync(request);
-
+            // Assert
+            // In this test environment, unsupported methods on unregistered endpoints return NotFound
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
         // Assert
         // In this test environment, unsupported methods on unregistered endpoints return NotFound
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
