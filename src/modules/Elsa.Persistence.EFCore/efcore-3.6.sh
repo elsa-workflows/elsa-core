@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 # Define the modules to update
-mods=("Management")
+#mods=("Management", "Runtime")
+mods=("Runtime")
 
 # Define the list of providers
 providers=("MySql" "SqlServer" "Sqlite" "PostgreSql" "Oracle")

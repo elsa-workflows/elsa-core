@@ -14,7 +14,10 @@ public abstract class DesignTimeDbContextFactoryBase<TDbContext> : IDesignTimeDb
     public TDbContext CreateDbContext(string[] args)
     {
         var builder = new DbContextOptionsBuilder<TDbContext>();
-        var connectionStringOption = new Option<string>("--connectionString", "Specifies the connection string.");
+        var connectionStringOption = new Option<string>("--connectionString")
+        {
+            Description = "Specifies the connection string."
+        };
         var command = new RootCommand
         {
             connectionStringOption
