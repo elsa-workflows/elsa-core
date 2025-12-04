@@ -3,7 +3,7 @@
   "isRoot": true,
   "tools": {
     "dotnet-ef": {
-      "version": "9.0.11", // Pinned to this version due to ef core tools bug causing "No Migration File Found" error.
+      "version": "9.0.11",
       "commands": [
         "dotnet-ef"
       ],

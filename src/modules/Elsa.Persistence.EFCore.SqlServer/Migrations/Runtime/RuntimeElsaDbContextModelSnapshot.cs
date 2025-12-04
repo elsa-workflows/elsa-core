@@ -18,7 +18,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.5")
+                .HasAnnotation("ProductVersion", "9.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -275,7 +275,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Hash")
                         .HasColumnType("nvarchar(450)");
@@ -313,6 +313,11 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
 
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
+
+                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId")
+                        .HasFilter("[Hash] IS NOT NULL");
 
                     b.ToTable("Triggers", "Elsa");
                 });
