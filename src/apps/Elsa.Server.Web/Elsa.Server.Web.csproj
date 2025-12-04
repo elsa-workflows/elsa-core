@@ -22,6 +22,10 @@
 		<ProjectReference Include="..\..\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
     </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="CShells.AspNetCore" />
+    </ItemGroup>
 
 	<ItemGroup>
       <Folder Include="App_Data\" />

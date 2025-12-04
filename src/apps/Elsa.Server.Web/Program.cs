@@ -1,4 +1,6 @@
 using System.Text.Encodings.Web;
+using CShells.AspNetCore.Extensions;
+using CShells.DependencyInjection;
 using Elsa.Caching.Options;
 using Elsa.Common.RecurringTasks;
 using Elsa.Expressions.Helpers;
@@ -37,84 +39,8 @@ var configuration = builder.Configuration;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 
-// Add Elsa services.
-services
-    .AddElsa(elsa =>
-    {
-        elsa
-            .AddActivitiesFrom<Program>()
-            .AddWorkflowsFrom<Program>()
-            .UseIdentity(identity =>
-            {
-                identity.TokenOptions += options => identityTokenSection.Bind(options);
-                identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
-                identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
-                identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
-            })
-            .UseDefaultAuthentication()
-            .UseWorkflows(workflows =>
-            {
-                workflows.UseCommitStrategies(strategies =>
-                {
-                    strategies.AddStandardStrategies();
-                    strategies.Add("Every 10 seconds", new PeriodicWorkflowStrategy(TimeSpan.FromSeconds(10)));
-                });
-            })
-            .UseWorkflowManagement(management =>
-            {
-                management.UseEntityFrameworkCore(ef => ef.UseSqlite());
-                management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
-                management.UseCache();
-                management.UseReadOnlyMode(useReadOnlyMode);
-            })
-            .UseWorkflowRuntime(runtime =>
-            {
-                runtime.UseEntityFrameworkCore(ef => ef.UseSqlite());
-                runtime.UseCache();
-                runtime.UseDistributedRuntime();
-            })
-            .UseWorkflowsApi()
-            .UseFluentStorageProvider()
-            .UseElsaScriptBlobStorage()
-            .UseScheduling()
-            .UseCSharp(options =>
-            {
-                options.DisableWrappers = disableVariableWrappers;
-                options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
-                options.AppendScript("string SayHelloWorld() => Greet(\"World\");");
-            })
-            .UseJavaScript(options =>
-            {
-                options.AllowClrAccess = true;
-                options.ConfigureEngine(engine =>
-                {
-                    engine.Execute("function greet(name) { return `Hello ${name}!`; }");
-                    engine.Execute("function sayHelloWorld() { return greet('World'); }");
-                });
-            })
-            .UsePython(python =>
-            {
-                python.PythonOptions += options =>
-                {
-                    // Make sure to configure the path to the python DLL. E.g. /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
-                    // alternatively, you can set the PYTHONNET_PYDLL environment variable.
-                    configuration.GetSection("Scripting:Python").Bind(options);
+builder.AddShells();
 
-                    options.AddScript(sb =>
-                    {
-                        sb.AppendLine("def greet():");
-                        sb.AppendLine("    return \"Hello, welcome to Python!\"");
-                    });
-                };
-            })
-            .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
-            .UseHttp(http =>
-            {
-                http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
-                http.UseCache();
-            });
-        ConfigureForTest?.Invoke(elsa);
-    });
 
 // Obfuscate HTTP request headers.
 services.AddActivityStateFilter<HttpRequestAuthenticationHeaderFilter>();
