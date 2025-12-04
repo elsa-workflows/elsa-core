@@ -134,7 +134,9 @@ public class EFCoreTriggerStore(
                message.Contains("unique constraint", StringComparison.OrdinalIgnoreCase) ||
                message.Contains("cannot insert duplicate", StringComparison.OrdinalIgnoreCase) ||
                message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase) ||
-               message.Contains("23505", StringComparison.OrdinalIgnoreCase); // PostgreSQL unique violation code
+               message.Contains("23505", StringComparison.OrdinalIgnoreCase) || // PostgreSQL unique violation code
+               message.Contains("ORA-00001", StringComparison.OrdinalIgnoreCase) || // Oracle unique constraint violation
+               message.Contains("1062", StringComparison.OrdinalIgnoreCase); // MySQL duplicate entry error code
     }
 
     /// <inheritdoc />
