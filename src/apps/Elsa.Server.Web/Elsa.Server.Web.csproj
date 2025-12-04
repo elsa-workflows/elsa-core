@@ -25,6 +25,7 @@
 
 	<ItemGroup>
       <Folder Include="App_Data\" />
+      <Folder Include="App_Data\locks\" />
     </ItemGroup>
 
 	<ItemGroup>
