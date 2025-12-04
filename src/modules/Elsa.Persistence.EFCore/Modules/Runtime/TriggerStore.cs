@@ -109,12 +109,21 @@ public class EFCoreTriggerStore(
         if (!triggers.Any())
             return new List<StoredTrigger>();
 
-        // Query for existing triggers that match the unique key (WorkflowDefinitionId + Hash + ActivityId)
+        // Build set of unique keys from input triggers
+        var triggerKeys = new HashSet<(string WorkflowDefinitionId, string Hash, string ActivityId)>(
+            triggers.Select(t => (t.WorkflowDefinitionId, t.Hash, t.ActivityId)));
+
+        // Query for existing triggers with relevant workflow definition IDs
         var workflowDefinitionIds = triggers.Select(t => t.WorkflowDefinitionId).Distinct().ToList();
         var filter = new TriggerFilter { WorkflowDefinitionIds = workflowDefinitionIds };
         var existingTriggers = (await FindManyAsync(filter, cancellationToken)).ToList();
 
-        return existingTriggers;
+        // Filter to only those that match the unique key
+        var duplicates = existingTriggers
+            .Where(t => triggerKeys.Contains((t.WorkflowDefinitionId, t.Hash, t.ActivityId)))
+            .ToList();
+
+        return duplicates;
     }
 
     private static bool IsDuplicateKeyException(DbUpdateException ex)
