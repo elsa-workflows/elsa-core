@@ -6,6 +6,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.ConcurrentTriggerIndexing;
@@ -64,10 +65,10 @@ public class ConcurrentTriggerIndexingTests(App app) : AppComponentTest(app)
         await AssertSingleTriggerExistsAsync(workflow.Identity.DefinitionId);
     }
 
-    [Fact(DisplayName = "Manually created duplicate triggers should have same hash")]
-    public async Task ManuallyCreatedDuplicates_ShouldHaveSameHash()
+    [Fact(DisplayName = "Attempting to create duplicate triggers should fail with unique constraint violation")]
+    public async Task ManuallyCreatedDuplicates_ShouldViolateUniqueConstraint()
     {
-        // Arrange: This test documents the symptom of the bug
+        // Arrange: This test verifies the database unique constraint protection layer
         var (workflow, workflowDefinition) = await CreateAndSaveTestWorkflowAsync();
         var triggerStore = GetTriggerStore();
 
@@ -75,18 +76,20 @@ public class ConcurrentTriggerIndexingTests(App app) : AppComponentTest(app)
         var indexer = Scope.ServiceProvider.GetRequiredService<ITriggerIndexer>();
         await indexer.IndexTriggersAsync(workflowDefinition);
 
-        // Act: Manually create a duplicate trigger (bypassing protections to simulate the original bug)
+        // Act & Assert: Attempting to create a duplicate should throw DbUpdateException
         var existingTriggers = await GetTriggersAsync(workflow.Identity.DefinitionId);
-        if (existingTriggers.Count > 0)
-        {
-            var duplicateTrigger = CreateDuplicateTrigger(existingTriggers[0]);
-            await triggerStore.SaveAsync(duplicateTrigger);
-        }
+        var duplicateTrigger = CreateDuplicateTrigger(existingTriggers[0]);
 
-        // Assert: Verify duplicates exist (demonstrating the symptom)
-        var allTriggers = await GetTriggersAsync(workflow.Identity.DefinitionId);
-        Assert.Equal(2, allTriggers.Count);
-        Assert.Equal(allTriggers[0].Hash, allTriggers[1].Hash);
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(async () =>
+            await triggerStore.SaveAsync(duplicateTrigger));
+
+        // Verify it's specifically a unique constraint violation
+        var message = exception.InnerException?.Message ?? exception.Message;
+        Assert.True(
+            message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("unique constraint", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("23505", StringComparison.OrdinalIgnoreCase),
+            $"Expected unique constraint violation, but got: {message}");
     }
 
     private async Task<(Workflow workflow, WorkflowDefinition definition)> CreateAndSaveTestWorkflowAsync()
