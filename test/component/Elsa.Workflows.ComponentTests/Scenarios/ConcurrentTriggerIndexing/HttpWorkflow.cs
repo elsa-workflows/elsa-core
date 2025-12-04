@@ -16,7 +16,7 @@ public class HttpWorkflow : WorkflowBase
             [
                 new HttpEndpoint
                 {
-                    Path = new("my-workflow"),
+                    Path = new($"my-workflow-{Guid.NewGuid()}"),
                     SupportedMethods = new([HttpMethods.Get]),
                     CanStartWorkflow = true
                 }
