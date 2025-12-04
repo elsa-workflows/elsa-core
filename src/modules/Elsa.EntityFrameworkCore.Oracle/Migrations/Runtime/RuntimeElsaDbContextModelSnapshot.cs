@@ -84,7 +84,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                         .HasColumnType("NCLOB");
 
                     b.Property<string>("SerializedMetadata")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("SerializedOutputs")
                         .HasColumnType("NCLOB");
