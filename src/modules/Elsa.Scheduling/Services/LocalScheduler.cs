@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Elsa.Extensions;
 
 namespace Elsa.Scheduling.Services;
 
@@ -71,6 +73,7 @@ public class LocalScheduler : IScheduler
         return ValueTask.CompletedTask;
     }
 
+
     private void RegisterScheduledTask(string name, IScheduledTask scheduledTask, IEnumerable<string>? keys = null)
     {
         _scheduledTasks.AddOrUpdate(
@@ -88,6 +91,7 @@ public class LocalScheduler : IScheduler
         if (keys != null)
             _scheduledTaskKeys[scheduledTask] = keys.ToList();
     }
+ 
 
     private void RemoveScheduledTask(string name)
     {
