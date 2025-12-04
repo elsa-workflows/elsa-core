@@ -7,8 +7,6 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Persistence.EFCore.Modules.Runtime;
@@ -17,8 +15,7 @@ namespace Elsa.Persistence.EFCore.Modules.Runtime;
 [UsedImplicitly]
 public class EFCoreTriggerStore(
     EntityStore<RuntimeElsaDbContext, StoredTrigger> store,
-    IPayloadSerializer serializer,
-    ILogger<EFCoreTriggerStore> logger) : ITriggerStore
+    IPayloadSerializer serializer) : ITriggerStore
 {
     /// <inheritdoc />
     public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
@@ -67,76 +64,7 @@ public class EFCoreTriggerStore(
             await DeleteManyAsync(filter, cancellationToken);
         }
 
-        // Retry logic to handle duplicate key violations from race conditions
-        const int maxRetries = 3;
-        var attempt = 0;
-
-        while (attempt < maxRetries)
-        {
-            try
-            {
-                await store.SaveManyAsync(added, OnSaveAsync, cancellationToken);
-                return; // Success
-            }
-            catch (DbUpdateException ex) when (IsDuplicateKeyException(ex) && attempt < maxRetries - 1)
-            {
-                attempt++;
-                logger.LogWarning(ex,
-                    "Duplicate key violation detected while saving triggers (attempt {Attempt}/{MaxRetries}). " +
-                    "This indicates a race condition in trigger registration. Retrying after removing duplicates.",
-                    attempt, maxRetries);
-
-                // Filter out triggers that already exist to avoid duplicate insertion
-                var addedList = added.ToList();
-                var existingTriggers = await FindManyDuplicatesAsync(addedList, cancellationToken);
-                var existingHashes = new HashSet<(string WorkflowDefinitionId, string Hash, string ActivityId)>(
-                    existingTriggers.Select(t => (t.WorkflowDefinitionId, t.Hash, t.ActivityId)));
-
-                // Remove duplicates from the list to add
-                added = addedList.Where(t => !existingHashes.Contains((t.WorkflowDefinitionId, t.Hash, t.ActivityId)));
-
-                if (!added.Any())
-                {
-                    logger.LogInformation("All triggers already exist in the database. No duplicates to add.");
-                    return; // All triggers already exist, nothing to do
-                }
-            }
-        }
-    }
-
-    private async ValueTask<List<StoredTrigger>> FindManyDuplicatesAsync(List<StoredTrigger> triggers, CancellationToken cancellationToken)
-    {
-        if (!triggers.Any())
-            return new List<StoredTrigger>();
-
-        // Build set of unique keys from input triggers
-        var triggerKeys = new HashSet<(string WorkflowDefinitionId, string Hash, string ActivityId)>(
-            triggers.Select(t => (t.WorkflowDefinitionId, t.Hash, t.ActivityId)));
-
-        // Query for existing triggers with relevant workflow definition IDs
-        var workflowDefinitionIds = triggers.Select(t => t.WorkflowDefinitionId).Distinct().ToList();
-        var filter = new TriggerFilter { WorkflowDefinitionIds = workflowDefinitionIds };
-        var existingTriggers = (await FindManyAsync(filter, cancellationToken)).ToList();
-
-        // Filter to only those that match the unique key
-        var duplicates = existingTriggers
-            .Where(t => triggerKeys.Contains((t.WorkflowDefinitionId, t.Hash, t.ActivityId)))
-            .ToList();
-
-        return duplicates;
-    }
-
-    private static bool IsDuplicateKeyException(DbUpdateException ex)
-    {
-        // Check for duplicate key violation error messages across different database providers
-        var message = ex.InnerException?.Message ?? ex.Message;
-        return message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) ||
-               message.Contains("unique constraint", StringComparison.OrdinalIgnoreCase) ||
-               message.Contains("cannot insert duplicate", StringComparison.OrdinalIgnoreCase) ||
-               message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase) ||
-               message.Contains("23505", StringComparison.OrdinalIgnoreCase) || // PostgreSQL unique violation code
-               message.Contains("ORA-00001", StringComparison.OrdinalIgnoreCase) || // Oracle unique constraint violation
-               message.Contains("1062", StringComparison.OrdinalIgnoreCase); // MySQL duplicate entry error code
+        await store.SaveManyAsync(added, OnSaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />
