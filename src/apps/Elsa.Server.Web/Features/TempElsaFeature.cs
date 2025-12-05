@@ -11,7 +11,6 @@ using Elsa.Workflows.Runtime.Distributed.Extensions;
 
 namespace Elsa.Server.Web.Features;
 
-[ShellFeature("Elsa")]
 public class TempElsaFeature(IConfiguration configuration) : IShellFeature
 {
     public void ConfigureServices(IServiceCollection services)
@@ -24,9 +23,11 @@ public class TempElsaFeature(IConfiguration configuration) : IShellFeature
         var identityTokenSection = identitySection.GetSection("Tokens");
 
         services
-            .ConfigureElsa(elsa =>
+            .AddElsa(elsa =>
             {
                 elsa
+                    .AddActivitiesFrom<Program>()
+                    .AddWorkflowsFrom<Program>()
                     .UseIdentity(identity =>
                     {
                         identity.TokenOptions += options => identityTokenSection.Bind(options);

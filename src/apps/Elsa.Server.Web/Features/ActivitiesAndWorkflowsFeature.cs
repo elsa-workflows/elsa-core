@@ -3,7 +3,6 @@ using Elsa.Extensions;
 
 namespace Elsa.Server.Web.Features;
 
-[ShellFeature("ActivitiesAndWorkflows", DependsOn = ["Elsa"])]
 public class ActivitiesAndWorkflowsFeature : IShellFeature
 {
     public void ConfigureServices(IServiceCollection services)
