@@ -18,7 +18,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.5")
+                .HasAnnotation("ProductVersion", "9.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -275,7 +275,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Hash")
                         .HasColumnType("varchar(255)");
@@ -313,6 +313,10 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
 
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
+
+                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId");
 
                     b.ToTable("Triggers", "Elsa");
                 });
