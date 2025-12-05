@@ -32,4 +32,10 @@ public class ManagementOptions
     /// A mode that does not allow editing workflows.
     /// </summary>
     public bool IsReadOnlyMode { get; set; }
+
+    /// <summary>
+    /// The batch size for bulk delete operations to prevent timeouts with large datasets.
+    /// Default is 1000 records per batch.
+    /// </summary>
+    public int BulkDeleteBatchSize { get; set; } = 1000;
 }
