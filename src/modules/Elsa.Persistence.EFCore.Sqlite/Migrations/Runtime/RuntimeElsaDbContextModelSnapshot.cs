@@ -17,7 +17,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.5");
+                .HasAnnotation("ProductVersion", "9.0.11");
 
             modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
                 {
@@ -309,6 +309,10 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
+
+                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId");
 
                     b.ToTable("Triggers", "Elsa");
                 });
