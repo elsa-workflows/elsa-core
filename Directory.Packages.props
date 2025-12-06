@@ -33,13 +33,13 @@
         <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.11"/>
         <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.11"/>
         <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="9.0.11"/>
-        <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.0.11"/>
+        <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.10.0"/>
         <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.11"/>
         <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.11"/>
         <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.11"/>
         <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.11"/>
         <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.11"/>
-        <PackageVersion Include="Microsoft.Extensions.Resilience" Version="9.0.11"/>
+        <PackageVersion Include="Microsoft.Extensions.Resilience" Version="9.10.0"/>
         <PackageVersion Include="Scrutor" Version="6.1.0"/>
         <PackageVersion Include="System.Formats.Asn1" Version="9.0.11"/>
         <PackageVersion Include="System.Text.Json" Version="9.0.11"/>
@@ -100,8 +100,10 @@
         <PackageVersion Include="coverlet.collector" Version="6.0.4" PrivateAssets="All"/>
         <PackageVersion Include="coverlet.msbuild" Version="6.0.4" PrivateAssets="All"/>
         <PackageVersion Include="Cronos" Version="0.11.1"/>
-        <PackageVersion Include="CShells" Version="0.0.3"/>
-        <PackageVersion Include="CShells.AspNetCore" Version="0.0.3"/>
+        <PackageVersion Include="CShells" Version="0.0.5-preview.25"/>
+        <PackageVersion Include="CShells.Abstractions" Version="0.0.5-preview.25"/>
+        <PackageVersion Include="CShells.AspNetCore" Version="0.0.5-preview.25"/>
+        <PackageVersion Include="CShells.AspNetCore.Abstractions" Version="0.0.5-preview.25"/>
         <PackageVersion Include="Datadog.Trace.Bundle" Version="3.32.0"/>
         <PackageVersion Include="DistributedLock" Version="2.7.1"/>
         <PackageVersion Include="DistributedLock.Core" Version="1.0.8"/>

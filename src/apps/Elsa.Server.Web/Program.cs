@@ -1,6 +1,4 @@
 using System.Text.Encodings.Web;
-using CShells.AspNetCore.Extensions;
-using CShells.DependencyInjection;
 using Elsa.Caching.Options;
 using Elsa.Common.RecurringTasks;
 using Elsa.Expressions.Helpers;

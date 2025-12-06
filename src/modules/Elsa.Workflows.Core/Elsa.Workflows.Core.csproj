@@ -12,6 +12,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="CShells.Abstractions" />
         <PackageReference Include="Humanizer.Core" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
