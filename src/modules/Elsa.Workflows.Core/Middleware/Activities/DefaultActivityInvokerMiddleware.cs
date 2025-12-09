@@ -130,17 +130,10 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
     private bool ShouldCommit(ActivityExecutionContext context, ActivityLifetimeEvent lifetimeEvent)
     {
         var strategyName = context.Activity.GetCommitStrategy();
-        IActivityCommitStrategy? strategy;
 
-        if (!string.IsNullOrWhiteSpace(strategyName))
-        {
-            strategy = commitStrategyRegistry.FindActivityStrategy(strategyName);
-        }
-        else
-        {
-            // Fall back to the default strategy if configured
-            strategy = commitStateOptions.Value.DefaultActivityCommitStrategy;
-        }
+        IActivityCommitStrategy? strategy = !string.IsNullOrWhiteSpace(strategyName)
+            ? commitStrategyRegistry.FindActivityStrategy(strategyName)
+            : commitStateOptions.Value.DefaultActivityCommitStrategy;
 
         var commitAction = CommitAction.Default;
 
@@ -160,17 +153,9 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
                 {
                     var workflowStrategyName = context.WorkflowExecutionContext.Workflow.Options.CommitStrategyName;
 
-                    IWorkflowCommitStrategy? workflowStrategy;
-
-                    if (!string.IsNullOrWhiteSpace(workflowStrategyName))
-                    {
-                        workflowStrategy = commitStrategyRegistry.FindWorkflowStrategy(workflowStrategyName);
-                    }
-                    else
-                    {
-                        // Fall back to the default strategy if configured
-                        workflowStrategy = commitStateOptions.Value.DefaultWorkflowCommitStrategy;
-                    }
+                    IWorkflowCommitStrategy? workflowStrategy = !string.IsNullOrWhiteSpace(workflowStrategyName)
+                        ? commitStrategyRegistry.FindWorkflowStrategy(workflowStrategyName)
+                        : commitStateOptions.Value.DefaultWorkflowCommitStrategy;
 
                     if (workflowStrategy == null)
                         return false;
