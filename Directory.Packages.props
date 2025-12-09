@@ -69,7 +69,7 @@
         <PackageVersion Include="GitHubActionsTestLogger" Version="3.0.1" PrivateAssets="All"/>
         <PackageVersion Include="Humanizer.Core" Version="3.0.1"/>
         <PackageVersion Include="IronCompress" Version="1.7.0"/>
-        <PackageVersion Include="JetBrains.Annotations" Version="2025.2.4"/>
+        <PackageVersion Include="JetBrains.Annotations" Version="2024.3.0"/>
         <PackageVersion Include="Jint" Version="4.4.2"/>
         <PackageVersion Include="LinqKit.Core" Version="1.2.9"/>
         <PackageVersion Include="MailKit" Version="4.14.1"/>
