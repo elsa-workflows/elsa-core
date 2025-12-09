@@ -107,7 +107,42 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
 
     /// <inheritdoc />
     public IEnumerable<PropertyInfo> GetInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) =>
-        activityType.GetProperties().Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null).DistinctBy(x => x.Name);
+        activityType.GetProperties().Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null || IsCollectionOfType(x, typeof(Input)) || IsDictionaryTypeWithValueOfType(x, typeof(Input))).DistinctBy(x => x.Name);
+
+    private bool IsCollectionOfType(PropertyInfo propertyInfo, Type type)
+    {
+        if (!propertyInfo.PropertyType.IsGenericType)
+        {
+            return false;
+        }
+
+        Type[] genericTypes = propertyInfo.PropertyType.GenericTypeArguments;
+        if (genericTypes.Length != 1 || !type.IsAssignableFrom(genericTypes[0]))
+        {
+            return false;
+        }
+
+        Type? collectionType = typeof(ICollection<>).MakeGenericType(genericTypes);
+        return collectionType?.IsAssignableFrom(propertyInfo.PropertyType) ?? false;
+    }
+
+    private bool IsDictionaryTypeWithValueOfType(PropertyInfo propertyInfo, Type type)
+    {
+        if (!propertyInfo.PropertyType.IsGenericType)
+        {
+            return false;
+        }
+
+        Type[] genericTypes = propertyInfo.PropertyType.GenericTypeArguments;
+        if (genericTypes.Length != 2 || genericTypes[0] != typeof(string)|| !type.IsAssignableFrom(genericTypes[1]))
+        {
+            return false;
+        }
+
+        Type? dictionaryType = typeof(IDictionary<,>).MakeGenericType(genericTypes);
+        return dictionaryType?.IsAssignableFrom(propertyInfo.PropertyType) ?? false;
+    }
+
 
     /// <inheritdoc />
     public IEnumerable<PropertyInfo> GetOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) =>
@@ -144,6 +179,8 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
         var isWrappedProperty = typeof(Input).IsAssignableFrom(propertyType);
         var autoEvaluate = inputAttribute?.AutoEvaluate ?? true;
         var wrappedPropertyType = !isWrappedProperty ? propertyType : propertyInfo.PropertyType.GenericTypeArguments[0];
+        var isCollectionOfInput = IsCollectionOfType(propertyInfo, typeof(Input));
+        var isDictionaryWithValueOfInput = IsDictionaryTypeWithValueOfType(propertyInfo, typeof(Input));
 
         if (wrappedPropertyType.IsNullableType())
             wrappedPropertyType = wrappedPropertyType.GetTypeOfNullable();
@@ -156,6 +193,8 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
             propertyInfo.GetValue,
             propertyInfo.SetValue,
             isWrappedProperty,
+            isCollectionOfInput,
+            isDictionaryWithValueOfInput,
             GetUIHint(wrappedPropertyType, inputAttribute),
             inputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
             descriptionAttribute?.Description ?? inputAttribute?.Description,

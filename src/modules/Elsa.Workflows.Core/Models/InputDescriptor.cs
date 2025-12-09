@@ -19,6 +19,8 @@ public class InputDescriptor : PropertyDescriptor
         Func<IActivity, object?> valueGetter,
         Action<IActivity, object?> valueSetter,
         bool isWrapped,
+        bool isCollectionOfInput,
+        bool isDictionaryWithValueOfInput,
         string uiHint,
         string displayName,
         string? description = null,
@@ -42,6 +44,8 @@ public class InputDescriptor : PropertyDescriptor
         ValueGetter = valueGetter;
         ValueSetter = valueSetter;
         IsWrapped = isWrapped;
+        IsCollectionOfInput = isCollectionOfInput;
+        IsDictionaryWithValueOfInput = isDictionaryWithValueOfInput;
         UIHint = uiHint;
         DisplayName = displayName;
         Description = description;
@@ -64,6 +68,16 @@ public class InputDescriptor : PropertyDescriptor
     /// True if the property is wrapped with an <see cref="Input{T}"/> type, false otherwise.
     /// </summary>
     public bool IsWrapped { get; set; }
+
+    /// <summary>
+    /// True if the property is a collection of <see cref="Input{T}"/>, false otherwise.
+    /// </summary>
+    public bool IsCollectionOfInput { get; set; }
+
+    /// <summary>
+    /// True if the property is a dictionary with <see cref="Input{T}"/> values, false otherwise.
+    /// </summary>
+    public bool IsDictionaryWithValueOfInput { get; set; }
 
     /// <summary>
     /// A string value that hints at what UI control might be used to render in a UI tool.  
