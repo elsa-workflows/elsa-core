@@ -64,17 +64,9 @@ public class DefaultActivitySchedulerMiddleware(WorkflowMiddlewareDelegate next,
     private async Task ConditionallyCommitStateAsync(WorkflowExecutionContext context, WorkflowLifetimeEvent lifetimeEvent)
     {
         var strategyName = context.Workflow.Options.CommitStrategyName;
-        IWorkflowCommitStrategy? strategy;
-
-        if (!string.IsNullOrWhiteSpace(strategyName))
-        {
-            strategy = commitStrategyRegistry.FindWorkflowStrategy(strategyName);
-        }
-        else
-        {
-            // Fall back to the default strategy if configured
-            strategy = commitStateOptions.Value.DefaultWorkflowCommitStrategy;
-        }
+        IWorkflowCommitStrategy? strategy = !string.IsNullOrWhiteSpace(strategyName)
+            ? commitStrategyRegistry.FindWorkflowStrategy(strategyName)
+            : commitStateOptions.Value.DefaultWorkflowCommitStrategy;
 
         if (strategy == null)
             return;

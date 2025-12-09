@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.CommitStates.Strategies;
+using Elsa.Workflows.IntegrationTests.SharedHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Xunit.Abstractions;

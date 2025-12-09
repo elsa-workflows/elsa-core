@@ -3,15 +3,21 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.CommitStates.Strategies;
 using Elsa.Workflows.CommitStates.Tasks;
+using Elsa.Workflows.IntegrationTests.SharedHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.DefaultActivityCommitStrategy;
 
-public class Tests(ITestOutputHelper testOutputHelper)
+public class Tests
 {
-    private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public Tests(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
 
     [Fact(DisplayName = "Activity without explicit strategy uses default commit strategy")]
     public async Task ActivityUsesDefaultCommitStrategy()
@@ -106,7 +112,7 @@ public class Tests(ITestOutputHelper testOutputHelper)
     }
 
     [Fact(DisplayName = "Default activity strategy is not visible in commit strategy registry")]
-    public async Task DefaultStrategyNotInRegistry()
+    public void DefaultStrategyNotInRegistry()
     {
         // Arrange
         var defaultStrategy = new ExecutedActivityStrategy();
@@ -128,7 +134,6 @@ public class Tests(ITestOutputHelper testOutputHelper)
         Assert.Empty(activityStrategies);
         Assert.NotNull(options.Value.DefaultActivityCommitStrategy);
         Assert.Same(defaultStrategy, options.Value.DefaultActivityCommitStrategy);
-        await Task.CompletedTask;
     }
 
     [Fact(DisplayName = "Default activity strategy with standard strategies does not duplicate")]
