@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Models;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management;
@@ -11,7 +12,7 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;
 
 [PublicAPI]
-internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker linker) : ElsaEndpoint<Request, PagedListResponse<LinkedWorkflowDefinitionSummary>>
+internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker linker, ITenantAccessor tenantAccessor) : ElsaEndpoint<Request, PagedListResponse<LinkedWorkflowDefinitionSummary>>
 {
     public override void Configure()
     {
@@ -40,7 +41,8 @@ internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker li
             SearchTerm = request.SearchTerm?.Trim(),
             MaterializerName = request.MaterializerName,
             DefinitionIds = request.DefinitionIds,
-            Ids = request.Ids
+            Ids = request.Ids,
+            TenantId = tenantAccessor.Tenant?.Id
         };
     }
 
