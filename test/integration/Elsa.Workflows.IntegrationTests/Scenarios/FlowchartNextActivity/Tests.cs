@@ -369,6 +369,7 @@ public class FlowchartNextActivityTests
     //         F
     public async Task JoinBehavesCorrectly(bool decisionResult, FlowJoinMode joinMode, string[] expectedLines)
     {
+        Flowchart.UseTokenFlow = false;
         var workflow = new TestWorkflow(workflowBuilder =>
         {
             var start = new Start() { Id = "Start" };
@@ -423,5 +424,6 @@ public class FlowchartNextActivityTests
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
         Assert.Equal(expectedLines, lines);
+        Flowchart.UseTokenFlow = true;
     }
 }

@@ -72,40 +72,30 @@ public static class ExpressionExecutionContextExtensions
         /// </summary>
         public bool TryGetWorkflowExecutionContext(out WorkflowExecutionContext workflowExecutionContext) => context.TransientProperties.TryGetValue(WorkflowExecutionContextKey, out workflowExecutionContext!);
 
-    /// <summary>
-    /// Returns the <see cref="WorkflowExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
-    /// </summary>
-    public static WorkflowExecutionContext GetWorkflowExecutionContext(this ExpressionExecutionContext context)
-    {
-        return context.TransientProperties.TryGetValue(WorkflowExecutionContextKey, out var value)
-            ? (WorkflowExecutionContext)value
-            : throw new InvalidOperationException("WorkflowExecutionContext not found. This value exists only on activity execution contexts.");
-    }
+        /// <summary>
+        /// Returns the <see cref="WorkflowExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
+        /// </summary>
+        public WorkflowExecutionContext GetWorkflowExecutionContext()
+        {
+            return context.TransientProperties.TryGetValue(WorkflowExecutionContextKey, out var value)
+                ? (WorkflowExecutionContext)value
+                : throw new InvalidOperationException("WorkflowExecutionContext not found. This value exists only on activity execution contexts.");
+        }
 
-    /// <summary>
-    /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
-    /// </summary>
-    public static ActivityExecutionContext GetActivityExecutionContext(this ExpressionExecutionContext context)
-    {
-        return context.TransientProperties.TryGetValue(ActivityExecutionContextKey, out var value)
-            ? (ActivityExecutionContext)value
-            : throw new InvalidOperationException("ActivityExecutionContext not found. This value exists only on activity execution contexts.");
-    }
+        /// <summary>
+        /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
+        /// </summary>
+        public ActivityExecutionContext GetActivityExecutionContext()
+        {
+            return context.TransientProperties.TryGetValue(ActivityExecutionContextKey, out var value)
+                ? (ActivityExecutionContext)value
+                : throw new InvalidOperationException("ActivityExecutionContext not found. This value exists only on activity execution contexts.");
+        }
 
-    /// <summary>
-    /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/> 
-    /// </summary>
-    public static bool TryGetActivityExecutionContext(this ExpressionExecutionContext context, out ActivityExecutionContext activityExecutionContext) => context.TransientProperties.TryGetValue(ActivityExecutionContextKey, out activityExecutionContext!);
-    
-    /// <summary>
-    /// Returns the <see cref="Activity"/> of the specified <see cref="ExpressionExecutionContext"/>
-    /// </summary>
-    public static IActivity GetActivity(this ExpressionExecutionContext context)
-    {
-        return context.TransientProperties.TryGetValue(ActivityKey, out var value)
-            ? (IActivity)value
-            : throw new InvalidOperationException("Activity not found. This value exists only on activity execution contexts.");
-    }
+        /// <summary>
+        /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
+        /// </summary>
+        public bool TryGetActivityExecutionContext(out ActivityExecutionContext activityExecutionContext) => context.TransientProperties.TryGetValue(ActivityExecutionContextKey, out activityExecutionContext!);
 
         /// <summary>
         /// Returns the <see cref="Activity"/> of the specified <see cref="ExpressionExecutionContext"/>
@@ -202,7 +192,7 @@ public static class ExpressionExecutionContextExtensions
             var variable = context.GetVariable(name);
 
             if (variable == null)
-                return CreateVariable(context, name, value, configure: configure);
+                return context.CreateVariable(name, value, configure: configure);
 
             // Get the context where the variable is defined.
             var contextWithVariable = context.FindContextContainingBlock(variable.Id) ?? context;
@@ -307,7 +297,7 @@ public static class ExpressionExecutionContextExtensions
         /// Gets all variables names in scope.
         /// </summary>
         public IEnumerable<string> GetVariableNamesInScope() =>
-            EnumerateVariablesInScope(context)
+            context.EnumerateVariablesInScope()
                 .Select(x => x.Name)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct();
@@ -316,7 +306,7 @@ public static class ExpressionExecutionContextExtensions
         /// Gets all variables in scope.
         /// </summary>
         public IEnumerable<Variable> GetVariablesInScope() =>
-            EnumerateVariablesInScope(context)
+            context.EnumerateVariablesInScope()
                 .Where(x => !string.IsNullOrWhiteSpace(x.Name))
                 .DistinctBy(x => x.Name);
 
@@ -325,7 +315,7 @@ public static class ExpressionExecutionContextExtensions
         /// </summary>
         public void SetVariableInScope(string variableName, object? value)
         {
-            var q = from v in EnumerateVariablesInScope(context)
+            var q = from v in context.EnumerateVariablesInScope()
                 where v.Name == variableName
                 where v.TryGet(context, out _)
                 select v;
@@ -336,7 +326,7 @@ public static class ExpressionExecutionContextExtensions
                 variable.Set(context, value);
 
             if (variable == null)
-                CreateVariable(context, variableName, value);
+                context.CreateVariable(variableName, value);
         }
 
         /// <summary>
@@ -402,7 +392,6 @@ public static class ExpressionExecutionContextExtensions
         return serializerOptions;
     }
 
-    /// <param name="context"></param>
     extension(ExpressionExecutionContext context)
     {
         /// <summary>

@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Elsa.Workflows.Activities.Flowchart.Contracts;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;

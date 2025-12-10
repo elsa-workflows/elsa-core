@@ -10,8 +10,10 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 public partial class Flowchart
 {
     private const string ScopeProperty = "FlowScope";
+    private const string GraphTransientProperty = "FlowGraph";
     private const string BackwardConnectionActivityInput = "BackwardConnection";
-
+    
+    
     private async ValueTask OnChildCompletedCounterBasedLogicAsync(ActivityCompletedContext context)
     {
         var flowchartContext = context.TargetContext;
@@ -19,9 +21,108 @@ public partial class Flowchart
         var completedActivity = completedActivityContext.Activity;
         var result = context.Result;
 
+        // Determine the outcomes from the completed activity
+        var outcomes = result is Outcomes o ? o : Outcomes.Default;
+
+        await ProcessChildCompletedAsync(flowchartContext, completedActivity, completedActivityContext, outcomes);
+    }
+
+    private IActivity? GetStartActivity(ActivityExecutionContext context)
+    {
+        // If there's a trigger that triggered this workflow, use that.
+        var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
+        var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : null;
+
+        if (triggerActivity != null)
+            return triggerActivity;
+
+        // If an explicit Start activity was provided, use that.
+        if (Start != null)
+            return Start;
+
+        // If there is a Start activity on the flowchart, use that.
+        var startActivity = Activities.FirstOrDefault(x => x is Start);
+
+        if (startActivity != null)
+            return startActivity;
+
+        // If there's an activity marked as "Can Start Workflow", use that.
+        var canStartWorkflowActivity = Activities.FirstOrDefault(x => x.GetCanStartWorkflow());
+
+        if (canStartWorkflowActivity != null)
+            return canStartWorkflowActivity;
+
+        // If there is a single activity that has no inbound connections, use that.
+        var root = GetRootActivity();
+
+        if (root != null)
+            return root;
+
+        // If no start activity found, return the first activity.
+        return Activities.FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Checks if there is any pending work for the flowchart.
+    /// </summary>
+    private bool HasPendingWork(ActivityExecutionContext context)
+    {
+        var workflowExecutionContext = context.WorkflowExecutionContext;
+
+        // Use HashSet for O(1) lookups
+        var activityIds = new HashSet<string>(Activities.Select(x => x.Id));
+
+        // Short circuit evaluation - check running instances first before more expensive scheduler check
+        if (context.Children.Any(x => activityIds.Contains(x.Activity.Id) && x.Status == ActivityStatus.Running))
+            return true;
+
+        // Scheduler check - optimize to avoid repeated LINQ evaluations
+        var scheduledItems = workflowExecutionContext.Scheduler.List().ToList();
+
+        return scheduledItems.Any(workItem =>
+        {
+            var ownerInstanceId = workItem.Owner?.Id;
+
+            if (ownerInstanceId == null)
+                return false;
+
+            if (ownerInstanceId == context.Id)
+                return true;
+
+            var ownerContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
+            return ownerContext.GetAncestors().Any(x => x == context);
+        });
+    }
+
+    private IActivity? GetRootActivity()
+    {
+        // Get the first activity that has no inbound connections.
+        var query =
+            from activity in Activities
+            let inboundConnections = Connections.Any(x => x.Target.Activity == activity)
+            where !inboundConnections
+            select activity;
+
+        var rootActivity = query.FirstOrDefault();
+        return rootActivity;
+    }
+
+    private FlowGraph GetFlowGraph(ActivityExecutionContext context)
+    {
+        // Store in TransientProperties so FlowChart is not persisted in WorkflowState 
+        return context.TransientProperties.GetOrAdd(GraphTransientProperty, () => new FlowGraph(Connections, GetStartActivity(context)));
+    }
+
+    private FlowScope GetFlowScope(ActivityExecutionContext context)
+    {
+        return context.GetProperty(ScopeProperty, () => new FlowScope());
+    }
+
+    private async ValueTask ProcessChildCompletedAsync(ActivityExecutionContext flowchartContext, IActivity completedActivity, ActivityExecutionContext completedActivityContext, Outcomes outcomes)
+    {
         if (flowchartContext.Activity != this)
         {
-            throw new Exception("Target context activity must be this flowchart");
+            throw new("Target context activity must be this flowchart");
         }
 
         // If the completed activity's status is anything but "Completed", do not schedule its outbound activities.
@@ -37,14 +138,11 @@ public partial class Flowchart
             return;
         }
 
-        // Determine the outcomes from the completed activity
-        var outcomes = result is Outcomes o ? o : Outcomes.Default;
-
         // Schedule the outbound activities
-        var flowGraph = flowchartContext.GetFlowGraph();
+        var flowGraph = GetFlowGraph(flowchartContext);
         var flowScope = GetFlowScope(flowchartContext);
-        var completedActivityExecutedByBackwardConnection = completedActivityContext.ActivityInput.GetValueOrDefault<bool>(BackwardConnectionActivityInput);
-        bool hasScheduledActivity = await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, completedActivity, outcomes, completedActivityExecutedByBackwardConnection);
+        var completedActivityExcecutedByBackwardConnection = completedActivityContext.ActivityInput.GetValueOrDefault<bool>(BackwardConnectionActivityInput);
+        bool hasScheduledActivity = await MaybeScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, completedActivity, outcomes, OnChildCompletedAsync, completedActivityExcecutedByBackwardConnection);
 
         // If there are not any outbound connections, complete the flowchart activity if there is no other pending work
         if (!hasScheduledActivity)
@@ -53,31 +151,30 @@ public partial class Flowchart
         }
     }
 
-    private FlowScope GetFlowScope(ActivityExecutionContext context)
-    {
-        return context.GetProperty(ScopeProperty, () => new FlowScope());
-    }
-
     /// <summary>
     /// Schedules outbound activities based on the flowchart's structure and execution state.
     /// This method determines whether an activity should be scheduled based on visited connections,
-    /// forward traversal rules, and backward connections.
+    /// forward traversal rules, and backward connections. If outcomes is Outcomes.Empty, it indicates 
+    /// that the activity should be skipped - all outbound connections will be visited and treated as 
+    /// not followed.
     /// </summary>
     /// <param name="flowGraph">The graph representation of the flowchart.</param>
     /// <param name="flowScope">Tracks activity and connection visits.</param>
     /// <param name="flowchartContext">The execution context of the flowchart.</param>
     /// <param name="activity">The current activity being processed.</param>
     /// <param name="outcomes">The outcomes that determine which connections were followed.</param>
-    /// <param name="completedActivityExecutedByBackwardConnection">Indicates if the completed activity was executed due to a backward connection.</param>
+    /// <param name="completionCallback">The callback to invoke upon activity completion.</param>
+    /// <param name="completedActivityExecutedByBackwardConnection">Indicates if the completed activity 
+    /// was executed due to a backward connection.</param>
     /// <returns>True if at least one activity was scheduled; otherwise, false.</returns>
-    private async ValueTask<bool> ScheduleOutboundActivitiesAsync(FlowGraph flowGraph, FlowScope flowScope, ActivityExecutionContext flowchartContext, IActivity activity, Outcomes outcomes, bool completedActivityExecutedByBackwardConnection = false)
+    private static async ValueTask<bool> MaybeScheduleOutboundActivitiesAsync(FlowGraph flowGraph, FlowScope flowScope, ActivityExecutionContext flowchartContext, IActivity activity, Outcomes outcomes, ActivityCompletionCallback completionCallback, bool completedActivityExecutedByBackwardConnection = false)
     {
-        var hasScheduledActivity = false;
+        bool hasScheduledActivity = false;
 
         // Check if the activity is dangling (i.e., it is not reachable from the flowchart graph)
         if (flowGraph.IsDanglingActivity(activity))
         {
-            throw new Exception($"Activity {activity.Id} is not reachable from the flowchart graph. Unable to schedule it's outbound activities.");
+            throw new($"Activity {activity.Id} is not reachable from the flowchart graph. Unable to schedule it's outbound activities.");
         }
 
         // Register the activity as visited unless it was executed due to a backward connection
@@ -93,19 +190,12 @@ public partial class Flowchart
             flowScope.RegisterConnectionVisit(outboundConnection, connectionFollowed);
             var outboundActivity = outboundConnection.Target.Activity;
 
-            // Determine scheduling strategy based on connection type
+            // Determine the scheduling strategy based on connection-type.
             if (flowGraph.IsBackwardConnection(outboundConnection, out var backwardConnectionIsValid))
-            {
-                hasScheduledActivity |= await ScheduleBackwardConnectionActivityAsync(flowGraph, flowchartContext, outboundConnection, outboundActivity, connectionFollowed, backwardConnectionIsValid);
-            }
-            else if (outboundActivity is not IJoinNode)
-            {
-                hasScheduledActivity |= await ScheduleNonJoinActivityAsync(flowGraph, flowScope, flowchartContext, outboundActivity);
-            }
+                // Backward connections are scheduled differently
+                hasScheduledActivity |= await MaybeScheduleBackwardConnectionActivityAsync(flowGraph, flowchartContext, outboundConnection, outboundActivity, connectionFollowed, backwardConnectionIsValid, completionCallback);
             else
-            {
-                hasScheduledActivity |= await ScheduleJoinActivityAsync(flowGraph, flowScope, flowchartContext, outboundConnection, outboundActivity);
-            }
+                hasScheduledActivity |= await MaybeScheduleOutboundActivityAsync(flowGraph, flowScope, flowchartContext, outboundConnection, outboundActivity, completionCallback);
         }
 
         return hasScheduledActivity;
@@ -114,7 +204,7 @@ public partial class Flowchart
     /// <summary>
     /// Schedules an outbound activity that originates from a backward connection.
     /// </summary>
-    private async ValueTask<bool> ScheduleBackwardConnectionActivityAsync(FlowGraph flowGraph, ActivityExecutionContext flowchartContext, Connection outboundConnection, IActivity outboundActivity, bool connectionFollowed, bool backwardConnectionIsValid)
+    private static async ValueTask<bool> MaybeScheduleBackwardConnectionActivityAsync(FlowGraph flowGraph, ActivityExecutionContext flowchartContext, Connection outboundConnection, IActivity outboundActivity, bool connectionFollowed, bool backwardConnectionIsValid, ActivityCompletionCallback completionCallback)
     {
         if (!connectionFollowed)
         {
@@ -123,18 +213,13 @@ public partial class Flowchart
 
         if (!backwardConnectionIsValid)
         {
-            throw new Exception($"Invalid backward connection: Every path from the source ('{outboundConnection.Source.Activity.Id}') must go through the target ('{outboundConnection.Target.Activity.Id}') when tracing back to the start.");
+            throw new($"Invalid backward connection: Every path from the source ('{outboundConnection.Source.Activity.Id}') must go through the target ('{outboundConnection.Target.Activity.Id}') when tracing back to the start.");
         }
 
         var scheduleWorkOptions = new ScheduleWorkOptions
         {
-            CompletionCallback = OnChildCompletedCounterBasedLogicAsync,
-            Input = new Dictionary<string, object>()
-            {
-                {
-                    BackwardConnectionActivityInput, true
-                }
-            }
+            CompletionCallback = completionCallback,
+            Input = new Dictionary<string, object>() { { BackwardConnectionActivityInput, true } }
         };
 
         await flowchartContext.ScheduleActivityAsync(outboundActivity, scheduleWorkOptions);
@@ -142,91 +227,136 @@ public partial class Flowchart
     }
 
     /// <summary>
-    /// Schedules a non-join activity if all its forward inbound connections have been visited.
+    /// Determines the merge mode for a given outbound activity. If the outbound activity is a FlowJoin, it retrieves its configured 
+    /// mode. Otherwise, it defaults to FlowJoinMode.WaitAllActive for implicit joins.
     /// </summary>
-    private async ValueTask<bool> ScheduleNonJoinActivityAsync(FlowGraph flowGraph, FlowScope flowScope, ActivityExecutionContext flowchartContext, IActivity outboundActivity)
+    private static async ValueTask<FlowJoinMode> GetMergeModeAsync(ActivityExecutionContext flowchartContext, IActivity outboundActivity)
     {
-        if (!flowScope.AllInboundConnectionsVisited(flowGraph, outboundActivity))
+        if (outboundActivity is FlowJoin)
         {
-            return false;
-        }
-
-        if (flowScope.HasFollowedInboundConnection(flowGraph, outboundActivity))
-        {
-            await flowchartContext.ScheduleActivityAsync(outboundActivity, OnChildCompletedCounterBasedLogicAsync);
-            return true;
+            var outboundActivityExecutionContext = await flowchartContext.WorkflowExecutionContext.CreateActivityExecutionContextAsync(outboundActivity);
+            return await outboundActivityExecutionContext.EvaluateInputPropertyAsync<FlowJoin, FlowJoinMode>(x => x.Mode);
         }
         else
         {
-            // Propagate skipped connections by scheduling with Outcomes.Empty
-            return await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, outboundActivity, Outcomes.Empty);
+            // Implicit join case - treat as WaitAllActive
+            return FlowJoinMode.WaitAllActive;
         }
     }
 
     /// <summary>
     /// Schedules a join activity based on inbound connection statuses.
     /// </summary>
-    private async ValueTask<bool> ScheduleJoinActivityAsync(FlowGraph flowGraph, FlowScope flowScope, ActivityExecutionContext flowchartContext, Connection outboundConnection, IActivity outboundActivity)
+    private static async ValueTask<bool> MaybeScheduleOutboundActivityAsync(FlowGraph flowGraph, FlowScope flowScope, ActivityExecutionContext flowchartContext, Connection outboundConnection, IActivity outboundActivity, ActivityCompletionCallback completionCallback)
     {
-        // Ignore the connection if the join activity has already completed (JoinAny scenario)
-        if (flowScope.ShouldIgnoreConnection(outboundConnection, outboundActivity))
-        {
-            return false;
-        }
+        FlowJoinMode mode = await GetMergeModeAsync(flowchartContext, outboundActivity);
 
-        // Schedule the join activity only if at least one inbound connection was followed
-        if (!flowScope.HasFollowedInboundConnection(flowGraph, outboundActivity))
+        return mode switch
         {
-            if (flowScope.AllInboundConnectionsVisited(flowGraph, outboundActivity))
-            {
-                // Propagate skipped connections by scheduling with Outcomes.Empty
-                return await ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, outboundActivity, Outcomes.Empty);
-            }
-
-            return false;
-        }
-
-        // Check for an existing execution context for the join activity
-        var joinContext = flowchartContext.WorkflowExecutionContext.ActivityExecutionContexts.LastOrDefault(x =>
-            x.ParentActivityExecutionContext == flowchartContext &&
-            x.Activity == outboundActivity &&
-            x.Status is ActivityStatus.Pending or ActivityStatus.Running);
-
-        // If the join activity was already scheduled, do not schedule it again
-        if (joinContext == null)
-        {
-            var activityScheduled = flowchartContext.WorkflowExecutionContext.Scheduler.List().Any(workItem => workItem.Owner == flowchartContext && workItem.Activity == outboundActivity);
-            if (activityScheduled)
-            {
-                return true;
-            }
-        }
-
-        if (joinContext is not { Status: ActivityStatus.Running })
-        {
-            var scheduleWorkOptions = new ScheduleWorkOptions
-            {
-                CompletionCallback = OnChildCompletedCounterBasedLogicAsync,
-                ExistingActivityExecutionContext = joinContext
-            };
-            await flowchartContext.ScheduleActivityAsync(outboundActivity, scheduleWorkOptions);
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+            FlowJoinMode.WaitAll => await MaybeScheduleWaitAllActivityAsync(flowGraph, flowScope, flowchartContext, outboundActivity, completionCallback),
+            FlowJoinMode.WaitAllActive => await MaybeScheduleWaitAllActiveActivityAsync(flowGraph, flowScope, flowchartContext, outboundActivity, completionCallback),
+            FlowJoinMode.WaitAny => await MaybeScheduleWaitAnyActivityAsync(flowGraph, flowScope, flowchartContext, outboundConnection, outboundActivity, completionCallback),
+            _ => throw new($"Unsupported FlowJoinMode: {mode}"),
+        };
     }
 
-    public static bool CanWaitAllProceed(ActivityExecutionContext context)
+    /// <summary>
+    /// Determines whether to schedule an activity based on the FlowJoinMode.WaitAll behavior.
+    /// If all inbound connections were visited, it checks if they were all followed to decide whether to schedule or skip the activity.
+    /// </summary>
+    private static async ValueTask<bool> MaybeScheduleWaitAllActivityAsync(FlowGraph flowGraph, FlowScope flowScope, ActivityExecutionContext flowchartContext, IActivity outboundActivity, ActivityCompletionCallback completionCallback)
     {
-        var flowchartContext = context.ParentActivityExecutionContext!;
-        var flowchart = (Flowchart)flowchartContext.Activity;
-        var flowGraph = flowchartContext.GetFlowGraph();
-        var flowScope = flowchart.GetFlowScope(flowchartContext);
-        var activity = context.Activity;
+        if (!flowScope.AllInboundConnectionsVisited(flowGraph, outboundActivity))
+            // Not all inbound connections have been visited yet; do not schedule anything yet.
+            return false;
 
-        return flowScope.AllInboundConnectionsVisited(flowGraph, activity);
+        if (flowScope.AllInboundConnectionsFollowed(flowGraph, outboundActivity))
+            // All inbound connections were followed; schedule the outbound activity.
+            return await ScheduleOutboundActivityAsync(flowchartContext, outboundActivity, completionCallback);
+        else
+            // No inbound connections were followed; skip the outbound activity.
+            return await SkipOutboundActivityAsync(flowGraph, flowScope, flowchartContext, outboundActivity, completionCallback);
+    }
+
+    /// <summary>
+    /// Determines whether to schedule an activity based on the FlowJoinMode.WaitAllActive behavior.
+    /// If all inbound connections have been visited, it checks if any were followed to decide whether to schedule or skip the activity.
+    /// </summary>
+    private static async ValueTask<bool> MaybeScheduleWaitAllActiveActivityAsync(FlowGraph flowGraph, FlowScope flowScope, ActivityExecutionContext flowchartContext, IActivity outboundActivity, ActivityCompletionCallback completionCallback)
+    {
+        if (!flowScope.AllInboundConnectionsVisited(flowGraph, outboundActivity))
+            // Not all inbound connections have been visited yet; do not schedule anything yet.
+            return false;
+
+        if (flowScope.AnyInboundConnectionsFollowed(flowGraph, outboundActivity))
+            // At least one inbound connection was followed; schedule the outbound activity.
+            return await ScheduleOutboundActivityAsync(flowchartContext, outboundActivity, completionCallback);
+        else
+            // No inbound connections were followed; skip the outbound activity.
+            return await SkipOutboundActivityAsync(flowGraph, flowScope, flowchartContext, outboundActivity, completionCallback);
+    }
+
+    /// <summary>
+    /// Determines whether to schedule an activity based on the FlowJoinMode.WaitAny behavior.
+    /// If any inbound connection has been followed, it schedules the activity and cancels remaining inbound activities.
+    /// If a subsequent inbound connection is followed after the activity has been scheduled, it ignores it.
+    /// </summary>
+    private static async ValueTask<bool> MaybeScheduleWaitAnyActivityAsync(FlowGraph flowGraph, FlowScope flowScope, ActivityExecutionContext flowchartContext, Connection outboundConnection, IActivity outboundActivity, ActivityCompletionCallback completionCallback)
+    {
+        if (flowScope.ShouldIgnoreConnection(outboundConnection, outboundActivity))
+            // Ignore the connection if the outbound activity has already completed (JoinAny scenario)
+            return false;
+
+        if (flowchartContext.WorkflowExecutionContext.Scheduler.List().Any(workItem => workItem.Owner == flowchartContext && workItem.Activity == outboundActivity))
+            // Ignore the connection if the outbound activity is already scheduled
+            return false;
+
+        if (flowScope.AnyInboundConnectionsFollowed(flowGraph, outboundActivity))
+        {
+            // An inbound connection has been followed; cancel remaining inbound activities
+            await CancelRemainingInboundActivitiesAsync(flowchartContext, outboundActivity);
+
+            // This is the first inbound connection followed; schedule the outbound activity
+            return await ScheduleOutboundActivityAsync(flowchartContext, outboundActivity, completionCallback);
+        }
+
+        if (flowScope.AllInboundConnectionsVisited(flowGraph, outboundActivity))
+            // All inbound connections have been visited without any being followed; skip the outbound activity
+            return await SkipOutboundActivityAsync(flowGraph, flowScope, flowchartContext, outboundActivity, completionCallback);
+
+        // No inbound connections have been followed yet; do not schedule anything yet.
+        return false;
+    }
+
+    /// <summary>
+    /// Schedules the outbound activity.
+    /// </summary>
+    private static async ValueTask<bool> ScheduleOutboundActivityAsync(ActivityExecutionContext flowchartContext, IActivity outboundActivity, ActivityCompletionCallback completionCallback)
+    {
+        await flowchartContext.ScheduleActivityAsync(outboundActivity, completionCallback);
+        return true;
+    }
+
+    /// <summary>
+    /// Skips the outbound activity by propagating skipped connections.
+    /// </summary>
+    private static async ValueTask<bool> SkipOutboundActivityAsync(FlowGraph flowGraph, FlowScope flowScope, ActivityExecutionContext flowchartContext, IActivity outboundActivity, ActivityCompletionCallback completionCallback)
+    {
+        return await MaybeScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, outboundActivity, Outcomes.Empty, completionCallback);
+    }
+
+    private static async ValueTask CancelRemainingInboundActivitiesAsync(ActivityExecutionContext flowchartContext, IActivity outboundActivity)
+    {
+        var flowchart = (Flowchart)flowchartContext.Activity;
+        var flowGraph = flowchart.GetFlowGraph(flowchartContext);
+        var ancestorActivities = flowGraph.GetAncestorActivities(outboundActivity);
+        var inboundActivityExecutionContexts = flowchartContext.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => ancestorActivities.Contains(x.Activity) && x.ParentActivityExecutionContext == flowchartContext).ToList();
+
+        // Cancel each ancestor activity.
+        foreach (var activityExecutionContext in inboundActivityExecutionContexts)
+        {
+            await activityExecutionContext.CancelActivityAsync();
+        }
     }
 
     private async ValueTask OnScheduleOutcomesAsync(ScheduleActivityOutcomes signal, SignalContext context)
@@ -234,15 +364,7 @@ public partial class Flowchart
         var flowchartContext = context.ReceiverActivityExecutionContext;
         var schedulingActivityContext = context.SenderActivityExecutionContext;
         var schedulingActivity = schedulingActivityContext.Activity;
-        var outcomes = signal.Outcomes;
-        var outboundConnections = Connections.Where(connection => connection.Source.Activity == schedulingActivity && outcomes.Contains(connection.Source.Port!)).ToList();
-        var outboundActivities = outboundConnections.Select(x => x.Target.Activity).ToList();
-
-        if (outboundActivities.Any())
-        {
-            foreach (var activity in outboundActivities)
-                await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedCounterBasedLogicAsync);
-        }
+        var outcomes = new Outcomes(signal.Outcomes);
     }
 
     private async ValueTask OnCounterFlowActivityCanceledAsync(CancelSignal signal, SignalContext context)
@@ -254,6 +376,6 @@ public partial class Flowchart
         var flowScope = flowchart.GetFlowScope(flowchartContext);
 
         // Propagate canceled connections visited count by scheduling with Outcomes.Empty
-        await flowchart.ScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, context.SenderActivityExecutionContext.Activity, Outcomes.Empty);
+        await MaybeScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, context.SenderActivityExecutionContext.Activity, Outcomes.Empty, OnChildCompletedAsync);
     }
 }
