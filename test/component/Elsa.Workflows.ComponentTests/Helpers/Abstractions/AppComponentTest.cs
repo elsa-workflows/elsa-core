@@ -15,7 +15,7 @@ public abstract class AppComponentTest(App app) : IDisposable
     {
         // Disposing the Scope here and in other places where it is created somehow seems to cause the test runner to hang when running other test projects.
         // Let's comment it out for the time being.
-        //Scope.Dispose();
+        Scope.Dispose();
         OnDispose();
     }
 
