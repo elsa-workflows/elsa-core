@@ -1,7 +1,7 @@
 # Version: 1
 # Description: Dockerfile for building and running Elsa Server with Datadog and OpenTelemetry auto-instrumentation
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-bookworm-slim AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /source
 
 # Copy sources.
@@ -18,7 +18,7 @@ RUN dotnet build "Elsa.Server.Web.csproj" -c Release -o /app/build
 RUN dotnet publish "Elsa.Server.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net10.0
 
 # Move binaries into smaller base image.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-bookworm-slim AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 COPY --from=build /app/publish ./
 
