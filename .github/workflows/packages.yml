@@ -70,6 +70,17 @@ jobs:
             dotnet test "$project" --configuration Release --no-build --logger "GitHubActions;report-warnings=false" /p:CollectCoverage=true
           done
 
+      - name: Dump docker logs on failure
+        if: failure()
+        run: |
+          echo "=== Docker containers ==="
+          docker ps -a || true
+          echo "=== Docker logs ==="
+          for container in $(docker ps -aq); do
+            echo "--- Logs for container $container ---"
+            docker logs "$container" 2>&1 | tail -100 || true
+          done
+
       - name: Install ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 

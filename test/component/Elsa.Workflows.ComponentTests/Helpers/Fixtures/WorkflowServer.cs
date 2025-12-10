@@ -55,7 +55,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        var dbConnectionString = infrastructure.DbContainer.GetConnectionString();
+        var dbConnectionString = infrastructure.DbContainer.GetConnectionString() + ";Max Pool Size=20;";
         var rabbitMqConnectionString = infrastructure.RabbitMqContainer.GetConnectionString();
 
         builder.UseUrls(url);
