@@ -198,8 +198,9 @@ public class FlowchartNextActivityTests
 
     [Theory(DisplayName = "Flowchart with a Join activity executed multiple times")]
     [InlineData(FlowJoinMode.WaitAll)]
+    [InlineData(FlowJoinMode.WaitAllActive)]
     [InlineData(FlowJoinMode.WaitAny)]
-    public async Task WaitAnyLoopTest(FlowJoinMode joinMode)
+    public async Task JoinLoopTest(FlowJoinMode joinMode)
     {
         var workflow = new TestWorkflow(workflowBuilder =>
         {
@@ -272,8 +273,9 @@ public class FlowchartNextActivityTests
 
     [Theory(DisplayName = "Flowchart with a Join activity executed multiple times, bug 6479")]
     [InlineData(FlowJoinMode.WaitAll)]
+    [InlineData(FlowJoinMode.WaitAllActive)]
     [InlineData(FlowJoinMode.WaitAny)]
-    public async Task WaitLoopBug6479Test(FlowJoinMode joinMode)
+    public async Task JoinLoopBug6479Test(FlowJoinMode joinMode)
     {
         var workflow = new TestWorkflow(workflowBuilder =>
         {
@@ -338,5 +340,88 @@ public class FlowchartNextActivityTests
         {
             "A", "A", "A", "B"
         }, lines);
+    }
+
+    [Theory(DisplayName = "Flowchart Join behaves correctly")]
+    [InlineData(false, FlowJoinMode.WaitAll, new[] { "A", "B", "C", "D", "F" })] // "E" is not scheduled because join has an unfollowed inbound connection
+    [InlineData(false, FlowJoinMode.WaitAllActive, new[] { "A", "B", "C", "D", "E", "F" })] // "E" gets scheduled by join with an unfollowed inbound connection
+    [InlineData(false, FlowJoinMode.WaitAny, new[] { "A", "B", "C", "D", "E", "F" })] // "E" only scheduled once
+    [InlineData(true, FlowJoinMode.WaitAll, new[] { "A", "B", "C", "E", "F" })] // all Join inbound connections followed, "E" gets scheduled
+    [InlineData(true, FlowJoinMode.WaitAllActive, new[] { "A", "B", "C", "E", "F" })] // all Join inbound connections followed, "E" gets scheduled
+    [InlineData(true, FlowJoinMode.WaitAny, new[] { "A", "B", "C", "E", "F" })] // "E" only scheduled once
+    //           Start
+    //          /  |  \
+    //         /   |   \
+    //        A    B    C
+    //       /     |    |
+    //      |      |    |
+    //   Decision  |    |
+    //     /  \    |    |
+    //    | (true) |   /
+    //    |     \  |  /
+    // (false)   \ | /
+    //    |      Join
+    //    D        |
+    //     \       E 
+    //      \     /
+    //       \   /
+    //        \ / 
+    //         F
+    public async Task JoinBehavesCorrectly(bool decisionResult, FlowJoinMode joinMode, string[] expectedLines)
+    {
+        var workflow = new TestWorkflow(workflowBuilder =>
+        {
+            var start = new Start() { Id = "Start" };
+            var a = new WriteLine("A") { Id = "WriteLineA" };
+            var b = new WriteLine("B") { Id = "WriteLineB" };
+            var c = new WriteLine("C") { Id = "WriteLineC" };
+            var decision = new FlowDecision()
+            {
+                Condition = new(new Literal<bool>(decisionResult))
+            };
+            var d = new WriteLine("D") { Id = "WriteLineD" };
+            var join = new FlowJoin()
+            {
+                Mode = new(joinMode)
+            };
+            var e = new WriteLine("E") { Id = "WriteLineE" };
+            var f = new WriteLine("F") { Id = "WriteLineF" };
+
+            workflowBuilder.Root = new Flowchart
+            {
+                Activities =
+                    {
+                        start,
+                        a,
+                        b,
+                        c,
+                        decision,
+                        d,
+                        join,
+                        e,
+                        f,
+                    },
+                Connections =
+                {
+                    new(start, a),
+                    new(start, b),
+                    new(start, c),
+                    new(a, decision),
+                    new(new Endpoint(decision, "True"), new Endpoint(join)),
+                    new(new Endpoint(decision, "False"), new Endpoint(d)),
+                    new(b, join),
+                    new(c, join),
+                    new(d, f),
+                    new(join, e),
+                    new(e, f),
+                }
+            };
+        });
+
+        await _services.PopulateRegistriesAsync();
+        var result = await _workflowRunner.RunAsync(workflow);
+        var lines = _capturingTextWriter.Lines.ToList();
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        Assert.Equal(expectedLines, lines);
     }
 }

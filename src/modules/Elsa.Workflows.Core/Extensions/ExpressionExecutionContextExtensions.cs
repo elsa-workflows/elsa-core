@@ -8,9 +8,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Options;
 using Humanizer;
-using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -74,20 +72,40 @@ public static class ExpressionExecutionContextExtensions
         /// </summary>
         public bool TryGetWorkflowExecutionContext(out WorkflowExecutionContext workflowExecutionContext) => context.TransientProperties.TryGetValue(WorkflowExecutionContextKey, out workflowExecutionContext!);
 
-        /// <summary>
-        /// Returns the <see cref="WorkflowExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
-        /// </summary>
-        public WorkflowExecutionContext GetWorkflowExecutionContext() => (WorkflowExecutionContext)context.TransientProperties[WorkflowExecutionContextKey];
+    /// <summary>
+    /// Returns the <see cref="WorkflowExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
+    /// </summary>
+    public static WorkflowExecutionContext GetWorkflowExecutionContext(this ExpressionExecutionContext context)
+    {
+        return context.TransientProperties.TryGetValue(WorkflowExecutionContextKey, out var value)
+            ? (WorkflowExecutionContext)value
+            : throw new InvalidOperationException("WorkflowExecutionContext not found. This value exists only on activity execution contexts.");
+    }
 
-        /// <summary>
-        /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
-        /// </summary>
-        public ActivityExecutionContext GetActivityExecutionContext() => (ActivityExecutionContext)context.TransientProperties[ActivityExecutionContextKey];
+    /// <summary>
+    /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
+    /// </summary>
+    public static ActivityExecutionContext GetActivityExecutionContext(this ExpressionExecutionContext context)
+    {
+        return context.TransientProperties.TryGetValue(ActivityExecutionContextKey, out var value)
+            ? (ActivityExecutionContext)value
+            : throw new InvalidOperationException("ActivityExecutionContext not found. This value exists only on activity execution contexts.");
+    }
 
-        /// <summary>
-        /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/> 
-        /// </summary>
-        public bool TryGetActivityExecutionContext(out ActivityExecutionContext activityExecutionContext) => context.TransientProperties.TryGetValue(ActivityExecutionContextKey, out activityExecutionContext!);
+    /// <summary>
+    /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/> 
+    /// </summary>
+    public static bool TryGetActivityExecutionContext(this ExpressionExecutionContext context, out ActivityExecutionContext activityExecutionContext) => context.TransientProperties.TryGetValue(ActivityExecutionContextKey, out activityExecutionContext!);
+    
+    /// <summary>
+    /// Returns the <see cref="Activity"/> of the specified <see cref="ExpressionExecutionContext"/>
+    /// </summary>
+    public static IActivity GetActivity(this ExpressionExecutionContext context)
+    {
+        return context.TransientProperties.TryGetValue(ActivityKey, out var value)
+            ? (IActivity)value
+            : throw new InvalidOperationException("Activity not found. This value exists only on activity execution contexts.");
+    }
 
         /// <summary>
         /// Returns the <see cref="Activity"/> of the specified <see cref="ExpressionExecutionContext"/>
