@@ -11,7 +11,7 @@ public class Infrastructure : IAsyncLifetime
         .WithUsername("postgres")
         .WithPassword("postgres")
         .WithCommand(
-            "-c", "max_connections=25",
+            "-c", "max_connections=100",
             "-c", "shared_buffers=128MB",
             "-c", "work_mem=4MB",
             "-c", "effective_cache_size=256MB"
