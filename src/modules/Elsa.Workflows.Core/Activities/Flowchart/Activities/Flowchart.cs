@@ -26,7 +26,8 @@ public partial class Flowchart : Container
     /// This static field is used as a final fallback when no execution mode is specified via options or workflow execution context properties.
     /// Note: Prefer using <see cref="FlowchartOptions"/> configured via DI for application-wide settings.
     /// </summary>
-    public static bool UseTokenFlow = false; // Default to false in order to maintain the same behavior with 3.5.2 out of the box.
+    // ReSharper disable once GrammarMistakeInComment
+    public static bool UseTokenFlow = false; // Default to false to maintain the same behavior with 3.5.2 out of the box.
 
     /// <inheritdoc />
     public Flowchart([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
@@ -88,66 +89,20 @@ public partial class Flowchart : Container
 
     private ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
     {
-        var mode = GetEffectiveExecutionMode(context.TargetContext);
-
-        switch (mode)
-        {
-            case FlowchartExecutionMode.TokenBased:
-                return OnChildCompletedTokenBasedLogicAsync(context);
-            case FlowchartExecutionMode.CounterBased:
-            case FlowchartExecutionMode.Default:
-            default:
-                return OnChildCompletedCounterBasedLogicAsync(context);
-        }
+        return ExecuteBasedOnMode(
+            context.TargetContext,
+            () => OnChildCompletedTokenBasedLogicAsync(context),
+            () => OnChildCompletedCounterBasedLogicAsync(context));
     }
 
     private ValueTask OnActivityCanceledAsync(CancelSignal signal, SignalContext context)
     {
-        var mode = GetEffectiveExecutionMode(context.ReceiverActivityExecutionContext);
-
-        switch (mode)
-        {
-            case FlowchartExecutionMode.TokenBased:
-                return OnTokenFlowActivityCanceledAsync(signal, context);
-            case FlowchartExecutionMode.CounterBased:
-            case FlowchartExecutionMode.Default:
-            default:
-                return OnCounterFlowActivityCanceledAsync(signal, context);
-        }
+        return ExecuteBasedOnMode(
+            context.ReceiverActivityExecutionContext,
+            () => OnTokenFlowActivityCanceledAsync(signal, context),
+            () => OnCounterFlowActivityCanceledAsync(signal, context));
     }
-
-    /// <summary>
-    /// Gets the effective execution mode for this flowchart execution.
-    /// Priority: WorkflowExecutionContext.Properties > FlowchartOptions (DI) > Static UseTokenFlow flag
-    /// </summary>
-    private FlowchartExecutionMode GetEffectiveExecutionMode(ActivityExecutionContext context)
-    {
-        var workflowExecutionContext = context.WorkflowExecutionContext;
-
-        if (!workflowExecutionContext.Properties.TryGetValue(ExecutionModePropertyKey, out var modeValue))
-            return GetDefaultModeFromOptionsAsEnum(context);
-
-        var mode = ParseExecutionMode(modeValue);
-        return mode != FlowchartExecutionMode.Default ? mode : GetDefaultModeFromOptionsAsEnum(context);
-    }
-
-    private FlowchartExecutionMode ParseExecutionMode(object modeValue)
-    {
-        return modeValue switch
-        {
-            FlowchartExecutionMode executionMode => executionMode,
-            string str when Enum.TryParse<FlowchartExecutionMode>(str, true, out var parsed) => parsed,
-            int intValue when Enum.IsDefined(typeof(FlowchartExecutionMode), intValue) => (FlowchartExecutionMode)intValue,
-            _ => FlowchartExecutionMode.Default
-        };
-    }
-
-    private FlowchartExecutionMode GetDefaultModeFromOptionsAsEnum(ActivityExecutionContext context)
-    {
-        var options = context.WorkflowExecutionContext.ServiceProvider.GetService<IOptions<FlowchartOptions>>();
-        return options?.Value.DefaultExecutionMode ?? FlowchartExecutionMode.Default;
-    }
-
+    
     private async Task CompleteIfNoPendingWorkAsync(ActivityExecutionContext context)
     {
         var hasPendingWork = HasPendingWork(context);
@@ -161,5 +116,48 @@ public partial class Flowchart : Container
                 await context.CompleteActivityAsync();
             }
         }
+    }
+
+    private static ValueTask ExecuteBasedOnMode(ActivityExecutionContext context, Func<ValueTask> tokenBasedAction, Func<ValueTask> counterBasedAction)
+    {
+        var mode = GetEffectiveExecutionMode(context);
+
+        return mode switch
+        {
+            FlowchartExecutionMode.TokenBased => tokenBasedAction(),
+            FlowchartExecutionMode.CounterBased or FlowchartExecutionMode.Default or _ => counterBasedAction()
+        };
+    }
+
+    /// <summary>
+    /// Gets the effective execution mode for this flowchart execution.
+    /// Priority: WorkflowExecutionContext.Properties > FlowchartOptions (DI) > Static UseTokenFlow flag
+    /// </summary>
+    private static FlowchartExecutionMode GetEffectiveExecutionMode(ActivityExecutionContext context)
+    {
+        var workflowExecutionContext = context.WorkflowExecutionContext;
+
+        if (!workflowExecutionContext.Properties.TryGetValue(ExecutionModePropertyKey, out var modeValue))
+            return GetDefaultModeFromOptions(context);
+
+        var mode = ParseExecutionMode(modeValue);
+        return mode != FlowchartExecutionMode.Default ? mode : GetDefaultModeFromOptions(context);
+    }
+
+    private static FlowchartExecutionMode ParseExecutionMode(object modeValue)
+    {
+        return modeValue switch
+        {
+            FlowchartExecutionMode executionMode => executionMode,
+            string str when Enum.TryParse<FlowchartExecutionMode>(str, true, out var parsed) => parsed,
+            int intValue when Enum.IsDefined(typeof(FlowchartExecutionMode), intValue) => (FlowchartExecutionMode)intValue,
+            _ => FlowchartExecutionMode.Default
+        };
+    }
+
+    private static FlowchartExecutionMode GetDefaultModeFromOptions(ActivityExecutionContext context)
+    {
+        var options = context.WorkflowExecutionContext.ServiceProvider.GetService<IOptions<FlowchartOptions>>();
+        return options?.Value.DefaultExecutionMode ?? FlowchartExecutionMode.Default;
     }
 }
