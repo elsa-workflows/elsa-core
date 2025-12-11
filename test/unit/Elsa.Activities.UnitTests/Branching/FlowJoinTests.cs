@@ -92,7 +92,7 @@ public class FlowJoinTests
         var context = await ExecuteFlowchartAsync(flowchart, executionMode);
         return (context, flowJoin);
     }
-    
+
     /// <summary>
     /// Executes a flowchart using the ActivityTestFixture with the specified execution mode.
     /// </summary>
