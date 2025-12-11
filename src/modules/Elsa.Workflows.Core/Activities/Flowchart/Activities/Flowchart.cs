@@ -102,7 +102,7 @@ public partial class Flowchart : Container
             () => OnTokenFlowActivityCanceledAsync(signal, context),
             () => OnCounterFlowActivityCanceledAsync(signal, context));
     }
-    
+
     private async Task CompleteIfNoPendingWorkAsync(ActivityExecutionContext context)
     {
         var hasPendingWork = HasPendingWork(context);
