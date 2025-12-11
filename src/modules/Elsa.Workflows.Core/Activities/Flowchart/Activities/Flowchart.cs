@@ -88,16 +88,32 @@ public partial class Flowchart : Container
 
     private ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
     {
-        return GetEffectiveExecutionMode(context.TargetContext)
-            ? OnChildCompletedTokenBasedLogicAsync(context)
-            : OnChildCompletedCounterBasedLogicAsync(context);
+        var mode = GetEffectiveExecutionMode(context.TargetContext);
+
+        switch (mode)
+        {
+            case FlowchartExecutionMode.TokenBased:
+                return OnChildCompletedTokenBasedLogicAsync(context);
+            case FlowchartExecutionMode.CounterBased:
+            case FlowchartExecutionMode.Default:
+            default:
+                return OnChildCompletedCounterBasedLogicAsync(context);
+        }
     }
 
     private ValueTask OnActivityCanceledAsync(CancelSignal signal, SignalContext context)
     {
-        return GetEffectiveExecutionMode(context.ReceiverActivityExecutionContext)
-            ? OnTokenFlowActivityCanceledAsync(signal, context)
-            : OnCounterFlowActivityCanceledAsync(signal, context);
+        var mode = GetEffectiveExecutionMode(context.ReceiverActivityExecutionContext);
+
+        switch (mode)
+        {
+            case FlowchartExecutionMode.TokenBased:
+                return OnTokenFlowActivityCanceledAsync(signal, context);
+            case FlowchartExecutionMode.CounterBased:
+            case FlowchartExecutionMode.Default:
+            default:
+                return OnCounterFlowActivityCanceledAsync(signal, context);
+        }
     }
 
     /// <summary>
@@ -105,20 +121,15 @@ public partial class Flowchart : Container
     /// Returns true for token-based mode, false for counter-based mode.
     /// Priority: WorkflowExecutionContext.Properties > FlowchartOptions (DI) > Static UseTokenFlow flag
     /// </summary>
-    private bool GetEffectiveExecutionMode(ActivityExecutionContext context)
+    private FlowchartExecutionMode GetEffectiveExecutionMode(ActivityExecutionContext context)
     {
         var workflowExecutionContext = context.WorkflowExecutionContext;
 
-        if (workflowExecutionContext.Properties.TryGetValue(ExecutionModePropertyKey, out var modeValue))
-        {
-            var mode = ParseExecutionMode(modeValue);
+        if (!workflowExecutionContext.Properties.TryGetValue(ExecutionModePropertyKey, out var modeValue))
+            return GetDefaultModeFromOptionsAsEnum(context);
 
-            if (mode != FlowchartExecutionMode.Default)
-                return ConvertModeToBoolean(mode);
-        }
-
-        var defaultMode = GetDefaultModeFromOptionsAsEnum(context);
-        return ConvertModeToBoolean(defaultMode);
+        var mode = ParseExecutionMode(modeValue);
+        return mode != FlowchartExecutionMode.Default ? mode : GetDefaultModeFromOptionsAsEnum(context);
     }
 
     private FlowchartExecutionMode ParseExecutionMode(object modeValue)
@@ -129,16 +140,6 @@ public partial class Flowchart : Container
             string str when Enum.TryParse<FlowchartExecutionMode>(str, true, out var parsed) => parsed,
             int intValue when Enum.IsDefined(typeof(FlowchartExecutionMode), intValue) => (FlowchartExecutionMode)intValue,
             _ => FlowchartExecutionMode.Default
-        };
-    }
-
-    private bool ConvertModeToBoolean(FlowchartExecutionMode mode)
-    {
-        return mode switch
-        {
-            FlowchartExecutionMode.TokenBased => true,
-            FlowchartExecutionMode.CounterBased => false,
-            _ => UseTokenFlow
         };
     }
 
