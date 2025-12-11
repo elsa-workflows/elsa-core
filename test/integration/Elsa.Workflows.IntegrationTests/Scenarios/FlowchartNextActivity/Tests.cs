@@ -13,19 +13,14 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.FlowchartNextActivity;
 
 public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
 {
-    private readonly WorkflowTestFixture _fixture = new WorkflowTestFixture(testOutputHelper)
-        .AddActivitiesFrom<FlowchartNextActivityTests>();
-    private static readonly string[] expected = new[]
-        {
-            "Line 1"
-        };
+    private readonly WorkflowTestFixture _fixture = new WorkflowTestFixture(testOutputHelper).AddActivitiesFrom<FlowchartNextActivityTests>();
 
     [Fact(DisplayName = "Flowchart only schedules next activity connected to outcome of previous activity.")]
     public async Task Test1()
     {
         await _fixture.RunWorkflowAsync<FlowchartWorkflow>();
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
-        Assert.Equal(expected, lines);
+        Assert.Equal(["Line 1"], lines);
     }
 
     [Fact(DisplayName = "Flowchart with backward connections and a dangling activity")]
@@ -209,13 +204,14 @@ public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
             };
             var loopbackDecision = new FlowSwitch
             {
-                Cases = {
+                Cases =
+                {
                     new("LessThanThree", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
                 },
                 Mode = new(SwitchMode.MatchFirst)
             };
             var end = new End();
-            
+
             workflowBuilder.Root = new Flowchart
             {
                 Variables =
@@ -244,7 +240,7 @@ public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
                     new(c, join),
                     new(d, join),
                     new(join, incrementLoop),
-                    new(incrementLoop,loopbackDecision),
+                    new(incrementLoop, loopbackDecision),
                     new(new(loopbackDecision, "LessThanThree"), new Endpoint(a)),
                     new(new(loopbackDecision, "Default"), new Endpoint(end)),
                 }
@@ -254,7 +250,10 @@ public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
         var result = await _fixture.RunWorkflowAsync(workflow);
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
-        Assert.Equal(new[] { "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D"}, lines);
+        Assert.Equal(new[]
+        {
+            "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D"
+        }, lines);
     }
 
     [Theory(DisplayName = "Flowchart with a Join activity executed multiple times, bug 6479")]
@@ -270,7 +269,8 @@ public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
             var start = new Start();
             var loopbackSwitch = new FlowSwitch
             {
-                Cases = {
+                Cases =
+                {
                     new("DoLoopback", new Expression("JavaScript", "getVariable('LoopCount') < 3")),
                 },
                 Mode = new(SwitchMode.MatchFirst)
@@ -287,7 +287,7 @@ public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
             };
             var b = new WriteLine("B");
             var end = new End();
-            
+
             workflowBuilder.Root = new Flowchart
             {
                 Variables =
@@ -328,12 +328,30 @@ public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
     }
 
     [Theory(DisplayName = "Flowchart Join behaves correctly (counter-based mode)")]
-    [InlineData(false, FlowJoinMode.WaitAll, new[] { "A", "B", "C", "D", "F" })] // "E" is not scheduled because join has an unfollowed inbound connection
-    [InlineData(false, FlowJoinMode.WaitAllActive, new[] { "A", "B", "C", "D", "E", "F" })] // "E" gets scheduled by join with an unfollowed inbound connection
-    [InlineData(false, FlowJoinMode.WaitAny, new[] { "A", "B", "C", "D", "E", "F" })] // "E" only scheduled once
-    [InlineData(true, FlowJoinMode.WaitAll, new[] { "A", "B", "C", "E", "F" })] // all Join inbound connections followed, "E" gets scheduled
-    [InlineData(true, FlowJoinMode.WaitAllActive, new[] { "A", "B", "C", "E", "F" })] // all Join inbound connections followed, "E" gets scheduled
-    [InlineData(true, FlowJoinMode.WaitAny, new[] { "A", "B", "C", "E", "F" })] // "E" only scheduled once
+    [InlineData(false, FlowJoinMode.WaitAll, new[]
+    {
+        "A", "B", "C", "D", "F"
+    })] // "E" is not scheduled because join has an unfollowed inbound connection
+    [InlineData(false, FlowJoinMode.WaitAllActive, new[]
+    {
+        "A", "B", "C", "D", "E", "F"
+    })] // "E" gets scheduled by join with an unfollowed inbound connection
+    [InlineData(false, FlowJoinMode.WaitAny, new[]
+    {
+        "A", "B", "C", "D", "E", "F"
+    })] // "E" only scheduled once
+    [InlineData(true, FlowJoinMode.WaitAll, new[]
+    {
+        "A", "B", "C", "E", "F"
+    })] // all Join inbound connections followed, "E" gets scheduled
+    [InlineData(true, FlowJoinMode.WaitAllActive, new[]
+    {
+        "A", "B", "C", "E", "F"
+    })] // all Join inbound connections followed, "E" gets scheduled
+    [InlineData(true, FlowJoinMode.WaitAny, new[]
+    {
+        "A", "B", "C", "E", "F"
+    })] // "E" only scheduled once
     //           Start
     //          /  |  \
     //         /   |   \
@@ -357,36 +375,57 @@ public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
         // This test validates counter-based mode behavior
         var workflow = new TestWorkflow(workflowBuilder =>
         {
-            var start = new Start() { Id = "Start" };
-            var a = new WriteLine("A") { Id = "WriteLineA" };
-            var b = new WriteLine("B") { Id = "WriteLineB" };
-            var c = new WriteLine("C") { Id = "WriteLineC" };
+            var start = new Start()
+            {
+                Id = "Start"
+            };
+            var a = new WriteLine("A")
+            {
+                Id = "WriteLineA"
+            };
+            var b = new WriteLine("B")
+            {
+                Id = "WriteLineB"
+            };
+            var c = new WriteLine("C")
+            {
+                Id = "WriteLineC"
+            };
             var decision = new FlowDecision()
             {
                 Condition = new(new Literal<bool>(decisionResult))
             };
-            var d = new WriteLine("D") { Id = "WriteLineD" };
+            var d = new WriteLine("D")
+            {
+                Id = "WriteLineD"
+            };
             var join = new FlowJoin()
             {
                 Mode = new(joinMode)
             };
-            var e = new WriteLine("E") { Id = "WriteLineE" };
-            var f = new WriteLine("F") { Id = "WriteLineF" };
+            var e = new WriteLine("E")
+            {
+                Id = "WriteLineE"
+            };
+            var f = new WriteLine("F")
+            {
+                Id = "WriteLineF"
+            };
 
             workflowBuilder.Root = new Flowchart
             {
                 Activities =
-                    {
-                        start,
-                        a,
-                        b,
-                        c,
-                        decision,
-                        d,
-                        join,
-                        e,
-                        f,
-                    },
+                {
+                    start,
+                    a,
+                    b,
+                    c,
+                    decision,
+                    d,
+                    join,
+                    e,
+                    f,
+                },
                 Connections =
                 {
                     new(start, a),
