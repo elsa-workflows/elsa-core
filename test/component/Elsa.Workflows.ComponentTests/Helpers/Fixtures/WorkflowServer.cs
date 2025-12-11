@@ -55,7 +55,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        var dbConnectionString = infrastructure.DbContainer.GetConnectionString() + ";Minimum Pool Size=0;Maximum Pool Size=10";
+        var dbConnectionString = infrastructure.DbContainer.GetConnectionString();
         var rabbitMqConnectionString = infrastructure.RabbitMqContainer.GetConnectionString();
 
         builder.UseUrls(url);
@@ -78,15 +78,27 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     var workflowsDirectory = Path.Join(workflowsDirectorySegments);
                     return StorageFactory.Blobs.DirectoryFiles(workflowsDirectory);
                 });
-                elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));
+                elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef =>
+                {
+                    //ef.UsePostgreSql(dbConnectionString);
+                    ef.UseSqlServer(dbConnectionString);
+                }));
                 elsa.UseWorkflowManagement(management =>
                 {
-                    management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                    management.UseEntityFrameworkCore(ef =>
+                    {
+                        //ef.UsePostgreSql(dbConnectionString);
+                        ef.UseSqlServer(dbConnectionString);
+                    });
                     management.UseCache();
                 });
                 elsa.UseWorkflowRuntime(runtime =>
                 {
-                    runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                    runtime.UseEntityFrameworkCore(ef =>
+                    {
+                        //ef.UsePostgreSql(dbConnectionString);
+                        ef.UseSqlServer(dbConnectionString);
+                    });
                     runtime.UseCache();
                     runtime.UseDistributedRuntime();
                 });
@@ -100,7 +112,11 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 });
                 elsa.UseAlterations(alterations =>
                 {
-                    alterations.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                    alterations.UseEntityFrameworkCore(ef =>
+                    {
+                        //ef.UsePostgreSql(dbConnectionString);
+                        ef.UseSqlServer(dbConnectionString);
+                    });
                 });
                 elsa.UseHttp(http =>
                 {

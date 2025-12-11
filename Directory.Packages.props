@@ -165,6 +165,7 @@
 		<PackageVersion Include="System.Text.Json" Version="10.0.1"/>
         <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1"/>
         <PackageVersion Include="Testcontainers" Version="4.9.0"/>
+        <PackageVersion Include="Testcontainers.MsSql" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.PostgreSql" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.RabbitMq" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.Redis" Version="4.9.0"/>
