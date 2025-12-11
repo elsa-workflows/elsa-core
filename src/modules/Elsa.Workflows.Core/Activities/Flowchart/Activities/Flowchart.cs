@@ -118,7 +118,6 @@ public partial class Flowchart : Container
 
     /// <summary>
     /// Gets the effective execution mode for this flowchart execution.
-    /// Returns true for token-based mode, false for counter-based mode.
     /// Priority: WorkflowExecutionContext.Properties > FlowchartOptions (DI) > Static UseTokenFlow flag
     /// </summary>
     private FlowchartExecutionMode GetEffectiveExecutionMode(ActivityExecutionContext context)

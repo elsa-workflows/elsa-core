@@ -18,11 +18,9 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper)
 
     [Theory(DisplayName = "FlowDecision follows correct path based on condition")]
     [MemberData(nameof(BasicPathTestCases))]
-    public async Task Should_Follow_Correct_Path_Based_On_Condition(bool useTokenFlow, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
+    public async Task Should_Follow_Correct_Path_Based_On_Condition(FlowchartExecutionMode executionMode, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
-        var executionMode = useTokenFlow ? FlowchartExecutionMode.TokenBased : FlowchartExecutionMode.CounterBased;
-
         var start = new WriteLine("Start");
         var decision = new FlowDecision(ctx => condition);
         var truePath = new WriteLine("TruePath");
@@ -52,19 +50,17 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper)
     public static IEnumerable<object[]> BasicPathTestCases()
     {
         // useTokenFlow, condition, expectedOutputs, unexpectedOutputs
-        yield return [true, true, new[] { "Start", "TruePath" }, new[] { "FalsePath" }];
-        yield return [true, false, new[] { "Start", "FalsePath" }, new[] { "TruePath" }];
-        yield return [false, true, new[] { "Start", "TruePath" }, new[] { "FalsePath" }];
-        yield return [false, false, new[] { "Start", "FalsePath" }, new[] { "TruePath" }];
+        yield return [FlowchartExecutionMode.TokenBased, true, new[] { "Start", "TruePath" }, new[] { "FalsePath" }];
+        yield return [FlowchartExecutionMode.TokenBased, false, new[] { "Start", "FalsePath" }, new[] { "TruePath" }];
+        yield return [FlowchartExecutionMode.CounterBased, true, new[] { "Start", "TruePath" }, new[] { "FalsePath" }];
+        yield return [FlowchartExecutionMode.CounterBased, false, new[] { "Start", "FalsePath" }, new[] { "TruePath" }];
     }
 
     [Theory(DisplayName = "FlowDecision handles nested decisions")]
     [MemberData(nameof(NestedDecisionTestCases))]
-    public async Task Should_Handle_Nested_Decisions(bool useTokenFlow, bool outerCondition, bool innerCondition, string[] expectedOutputs, string[] unexpectedOutputs)
+    public async Task Should_Handle_Nested_Decisions(FlowchartExecutionMode executionMode, bool outerCondition, bool innerCondition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
-        var executionMode = useTokenFlow ? FlowchartExecutionMode.TokenBased : FlowchartExecutionMode.CounterBased;
-
         var start = new WriteLine("Start");
         var outerDecision = new FlowDecision(ctx => outerCondition);
         var innerDecision = new FlowDecision(ctx => innerCondition);
@@ -98,23 +94,21 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper)
     public static IEnumerable<object[]> NestedDecisionTestCases()
     {
         // useTokenFlow, outerCondition, innerCondition, expectedOutputs, unexpectedOutputs
-        yield return [true, true, true, new[] { "Start", "InnerTrue" }, new[] { "InnerFalse", "OuterFalse" }];
-        yield return [true, true, false, new[] { "Start", "InnerFalse" }, new[] { "InnerTrue", "OuterFalse" }];
-        yield return [true, false, true, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
-        yield return [true, false, false, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
-        yield return [false, true, true, new[] { "Start", "InnerTrue" }, new[] { "InnerFalse", "OuterFalse" }];
-        yield return [false, true, false, new[] { "Start", "InnerFalse" }, new[] { "InnerTrue", "OuterFalse" }];
-        yield return [false, false, true, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
-        yield return [false, false, false, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
+        yield return [FlowchartExecutionMode.TokenBased, true, true, new[] { "Start", "InnerTrue" }, new[] { "InnerFalse", "OuterFalse" }];
+        yield return [FlowchartExecutionMode.TokenBased, true, false, new[] { "Start", "InnerFalse" }, new[] { "InnerTrue", "OuterFalse" }];
+        yield return [FlowchartExecutionMode.TokenBased, false, true, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
+        yield return [FlowchartExecutionMode.TokenBased, false, false, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
+        yield return [FlowchartExecutionMode.CounterBased, true, true, new[] { "Start", "InnerTrue" }, new[] { "InnerFalse", "OuterFalse" }];
+        yield return [FlowchartExecutionMode.CounterBased, true, false, new[] { "Start", "InnerFalse" }, new[] { "InnerTrue", "OuterFalse" }];
+        yield return [FlowchartExecutionMode.CounterBased, false, true, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
+        yield return [FlowchartExecutionMode.CounterBased, false, false, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
     }
 
     [Theory(DisplayName = "FlowDecision works with only one path connected")]
     [MemberData(nameof(OnePathConnectedTestCases))]
-    public async Task Should_Work_With_Only_One_Path_Connected(bool useTokenFlow, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
+    public async Task Should_Work_With_Only_One_Path_Connected(FlowchartExecutionMode executionMode, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
-        var executionMode = useTokenFlow ? FlowchartExecutionMode.TokenBased : FlowchartExecutionMode.CounterBased;
-
         var start = new WriteLine("Start");
         var decision = new FlowDecision(ctx => condition);
         var truePath = new WriteLine("TruePath");
@@ -145,19 +139,17 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper)
     public static IEnumerable<object[]> OnePathConnectedTestCases()
     {
         // useTokenFlow, condition, expectedOutputs, unexpectedOutputs
-        yield return [true, true, new[] { "Start", "TruePath", "End" }, Array.Empty<string>()];
-        yield return [true, false, new[] { "Start" }, new[] { "TruePath", "End" }];
-        yield return [false, true, new[] { "Start", "TruePath", "End" }, Array.Empty<string>()];
-        yield return [false, false, new[] { "Start" }, new[] { "TruePath", "End" }];
+        yield return [FlowchartExecutionMode.TokenBased, true, new[] { "Start", "TruePath", "End" }, Array.Empty<string>()];
+        yield return [FlowchartExecutionMode.TokenBased, false, new[] { "Start" }, new[] { "TruePath", "End" }];
+        yield return [FlowchartExecutionMode.CounterBased, true, new[] { "Start", "TruePath", "End" }, Array.Empty<string>()];
+        yield return [FlowchartExecutionMode.CounterBased, false, new[] { "Start" }, new[] { "TruePath", "End" }];
     }
 
     [Theory(DisplayName = "FlowDecision converges paths correctly")]
     [MemberData(nameof(ConvergePathsTestCases))]
-    public async Task Should_Converge_Paths_Correctly(bool useTokenFlow, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
+    public async Task Should_Converge_Paths_Correctly(FlowchartExecutionMode executionMode, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
-        var executionMode = useTokenFlow ? FlowchartExecutionMode.TokenBased : FlowchartExecutionMode.CounterBased;
-
         var start = new WriteLine("Start");
         var decision = new FlowDecision(ctx => condition);
         var truePath = new WriteLine("TruePath");
@@ -190,22 +182,15 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper)
     public static IEnumerable<object[]> ConvergePathsTestCases()
     {
         // useTokenFlow, condition, expectedOutputs, unexpectedOutputs
-        yield return [true, true, new[] { "Start", "TruePath", "Converge" }, new[] { "FalsePath" }];
-        yield return [true, false, new[] { "Start", "FalsePath", "Converge" }, new[] { "TruePath" }];
-        yield return [false, true, new[] { "Start", "TruePath", "Converge" }, new[] { "FalsePath" }];
-        yield return [false, false, new[] { "Start", "FalsePath", "Converge" }, new[] { "TruePath" }];
+        yield return [FlowchartExecutionMode.TokenBased, true, new[] { "Start", "TruePath", "Converge" }, new[] { "FalsePath" }];
+        yield return [FlowchartExecutionMode.TokenBased, false, new[] { "Start", "FalsePath", "Converge" }, new[] { "TruePath" }];
+        yield return [FlowchartExecutionMode.CounterBased, true, new[] { "Start", "TruePath", "Converge" }, new[] { "FalsePath" }];
+        yield return [FlowchartExecutionMode.CounterBased, false, new[] { "Start", "FalsePath", "Converge" }, new[] { "TruePath" }];
     }
 
     private void AssertOutputs(string[] expectedOutputs, string[] unexpectedOutputs)
     {
-        foreach (var expected in expectedOutputs)
-        {
-            Assert.Contains(expected, _fixture.CapturingTextWriter.Lines);
-        }
-
-        foreach (var unexpected in unexpectedOutputs)
-        {
-            Assert.DoesNotContain(unexpected, _fixture.CapturingTextWriter.Lines);
-        }
+        foreach (var expected in expectedOutputs) Assert.Contains(expected, _fixture.CapturingTextWriter.Lines);
+        foreach (var unexpected in unexpectedOutputs) Assert.DoesNotContain(unexpected, _fixture.CapturingTextWriter.Lines);
     }
 }

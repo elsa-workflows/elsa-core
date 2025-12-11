@@ -32,7 +32,7 @@ public static class RunWorkflowOptionsExtensions
         public RunWorkflowOptions WithFlowchartExecutionMode(FlowchartExecutionMode mode)
         {
             options.Properties ??= new Dictionary<string, object>();
-            options.Properties[Elsa.Workflows.Activities.Flowchart.Activities.Flowchart.ExecutionModePropertyKey] = mode;
+            options.Properties[Activities.Flowchart.ExecutionModePropertyKey] = mode;
             return options;
         }
     }
