@@ -26,7 +26,7 @@ public partial class Flowchart : Container
     /// This static field is used as a final fallback when no execution mode is specified via options or workflow execution context properties.
     /// Note: Prefer using <see cref="FlowchartOptions"/> configured via DI for application-wide settings.
     /// </summary>
-    public static bool UseTokenFlow = true;
+    public static bool UseTokenFlow = false; // Default to false in order to maintain the same behavior with 3.5.2 out of the box.
 
     /// <inheritdoc />
     public Flowchart([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)

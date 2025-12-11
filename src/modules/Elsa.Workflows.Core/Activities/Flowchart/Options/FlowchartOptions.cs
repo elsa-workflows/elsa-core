@@ -11,5 +11,5 @@ public class FlowchartOptions
     /// Gets or sets the default execution mode for flowcharts when not explicitly specified.
     /// Defaults to <see cref="FlowchartExecutionMode.TokenBased"/>.
     /// </summary>
-    public FlowchartExecutionMode DefaultExecutionMode { get; set; } = FlowchartExecutionMode.TokenBased;
+    public FlowchartExecutionMode DefaultExecutionMode { get; set; } = FlowchartExecutionMode.CounterBased; // Default to counter-based in order to maintain the same behavior with 3.5.2 out of the box.
 }
