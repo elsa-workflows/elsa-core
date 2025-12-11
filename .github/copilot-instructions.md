@@ -2,15 +2,15 @@
 
 ## Repository Overview
 
-**Elsa Workflows** is a powerful .NET workflow library that enables workflow execution within any .NET application. This is version 3.0, supporting .NET 9.0 and providing both a visual designer and programmatic workflow definition capabilities.
+**Elsa Workflows** is a powerful .NET workflow library that enables workflow execution within any .NET application. This is version 3.0, supporting .NET 8.0, .NET 9.0 and .NET 10.0 and providing both a visual designer (from a different repository, elsa-studio) and programmatic workflow definition capabilities.
 
 ### Key Statistics
-- **Language**: C# (.NET 9.0)
+- **Language**: C# (.NET 10.0)
 - **Architecture**: Modular library with 104+ projects
 - **Code Size**: ~3,500 C# files across modules
 - **License**: MIT
 - **Build System**: NUKE build automation
-- **Target Frameworks**: .NET 9.0 (primary)
+- **Target Frameworks**: .NET 10.0 (primary)
 
 ## High-Level Architecture
 
@@ -19,9 +19,6 @@
 src/
 ├── apps/               # Reference applications (5 projects)
 │   ├── Elsa.Server.Web            # Workflow server only
-│   ├── Elsa.ServerAndStudio.Web    # Combined server + studio  
-│   ├── Elsa.Studio.Web             # Studio web interface
-│   ├── ElsaStudioWebAssembly       # Studio WebAssembly app
 │   └── Elsa.Server.LoadBalancer    # Load balancer
 ├── common/             # Shared libraries (8 projects)
 ├── modules/            # Core functionality modules (70+ projects)
@@ -46,27 +43,13 @@ docker/                 # Docker configurations
 - **Elsa.Workflows.Runtime**: Workflow execution runtime
 - **Elsa.Workflows.Api**: RESTful API for workflow management
 - **Elsa.Workflows.Management**: Workflow definition management
-- **Elsa modules**: Specialized functionality (HTTP, email, scheduling, etc.)
+- **Elsa modules**: Specialized functionality (HTTP, persistence, scheduling, etc.)
 
 ## Build Instructions
 
 ### Prerequisites
 - **.NET 10.0 SDK**
 - **Build time**: Initial restore ~1-2 minutes, full compile ~5-10 minutes
-
-### Critical Build Information
-
-⚠️ **IMPORTANT**: The repository has external dependencies that may cause build failures:
-
-1. **External NuGet Feeds**: Some projects depend on packages from:
-   - `https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json` (Elsa Studio packages)
-   - `https://f.feedz.io/sfmskywalker/webhooks-core/nuget/index.json` (Webhooks packages)
-
-2. **Build Failure Workarounds**:
-   - Studio apps (`Elsa.Studio.Web`, `ElsaStudioWebAssembly`, `Elsa.ServerAndStudio.Web`) depend on prebuilt studio packages that may not be accessible
-   - Server app (`Elsa.Server.Web`) depends on WebhooksCore package that may not be accessible  
-   - Core workflow functionality can be built independently
-   - Some test projects may fail due to missing external packages
 
 ### Build Commands
 
