@@ -6,11 +6,11 @@ namespace Elsa.Workflows.ComponentTests.Fixtures;
 
 public class Infrastructure : IAsyncLifetime
 {
-    public readonly PostgreSqlContainer DbContainer = new PostgreSqlBuilder().Build();
+    //public readonly PostgreSqlContainer DbContainer = new PostgreSqlBuilder().Build();
 
-    // public readonly MsSqlContainer DbContainer = new MsSqlBuilder()
-    //     .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
-    //     .Build();
+    public readonly MsSqlContainer DbContainer = new MsSqlBuilder()
+        .WithImage("mcr.microsoft.com/mssql/server:2022-CU13-ubuntu-22.04")
+        .Build();
 
     public readonly RabbitMqContainer RabbitMqContainer = new RabbitMqBuilder()
         .WithImage("rabbitmq:4-management")

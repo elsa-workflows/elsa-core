@@ -80,15 +80,15 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 });
                 elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef =>
                 {
-                    ef.UsePostgreSql(dbConnectionString);
-                    //ef.UseSqlServer(dbConnectionString);
+                    //ef.UsePostgreSql(dbConnectionString);
+                    ef.UseSqlServer(dbConnectionString);
                 }));
                 elsa.UseWorkflowManagement(management =>
                 {
                     management.UseEntityFrameworkCore(ef =>
                     {
-                        ef.UsePostgreSql(dbConnectionString);
-                        //ef.UseSqlServer(dbConnectionString);
+                        //ef.UsePostgreSql(dbConnectionString);
+                        ef.UseSqlServer(dbConnectionString);
                     });
                     management.UseCache();
                 });
@@ -96,8 +96,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     runtime.UseEntityFrameworkCore(ef =>
                     {
-                        ef.UsePostgreSql(dbConnectionString);
-                        //ef.UseSqlServer(dbConnectionString);
+                        //ef.UsePostgreSql(dbConnectionString);
+                        ef.UseSqlServer(dbConnectionString);
                     });
                     runtime.UseCache();
                     runtime.UseDistributedRuntime();
@@ -114,8 +114,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     alterations.UseEntityFrameworkCore(ef =>
                     {
-                        ef.UsePostgreSql(dbConnectionString);
-                        //ef.UseSqlServer(dbConnectionString);
+                        //ef.UsePostgreSql(dbConnectionString);
+                        ef.UseSqlServer(dbConnectionString);
                     });
                 });
                 elsa.UseHttp(http =>
