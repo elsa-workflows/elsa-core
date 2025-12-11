@@ -12,23 +12,15 @@ namespace Elsa.Activities.IntegrationTests.Flow;
 /// Integration tests for token-based flowchart execution strategy.
 /// </summary>
 [Collection("FlowchartTests")]
-public class FlowchartTokenBasedTests : IDisposable
+public class FlowchartTokenBasedTests
 {
     private readonly IServiceProvider _services;
     private readonly CapturingTextWriter _output;
-    private readonly bool _originalFlowMode;
 
     public FlowchartTokenBasedTests(ITestOutputHelper testOutputHelper)
     {
         _output = new();
         _services = CreateServiceProvider(testOutputHelper, _output);
-        _originalFlowMode = Flowchart.UseTokenFlow;
-        Flowchart.UseTokenFlow = true;
-    }
-
-    public void Dispose()
-    {
-        Flowchart.UseTokenFlow = _originalFlowMode;
     }
 
     [Fact(DisplayName = "Executes simple linear flowchart")]
@@ -42,7 +34,7 @@ public class FlowchartTokenBasedTests : IDisposable
         );
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.Equal(3, _output.Lines.Count);
@@ -61,7 +53,7 @@ public class FlowchartTokenBasedTests : IDisposable
         var flowchart = CreateBranchingFlowchart(start, branch1, branch2);
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.Equal(3, _output.Lines.Count);
@@ -82,7 +74,7 @@ public class FlowchartTokenBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.Single(_output.Lines);
@@ -99,7 +91,7 @@ public class FlowchartTokenBasedTests : IDisposable
         };
 
         // Act
-        var result = await RunFlowchartAsync(_services, flowchart);
+        var result = await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.NotNull(result);
@@ -123,7 +115,7 @@ public class FlowchartTokenBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.Single(_output.Lines);
@@ -154,7 +146,7 @@ public class FlowchartTokenBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.Contains("Start", _output.Lines);
@@ -186,7 +178,7 @@ public class FlowchartTokenBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.Contains("Start", _output.Lines);
@@ -220,7 +212,7 @@ public class FlowchartTokenBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.Contains("Start", _output.Lines);
@@ -254,7 +246,7 @@ public class FlowchartTokenBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.Contains("Start", _output.Lines);
@@ -274,7 +266,7 @@ public class FlowchartTokenBasedTests : IDisposable
         var flowchart = CreateSimpleLinearFlowchart(start, middle, end);
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         // Tokens should be consumed after each activity completes
@@ -318,7 +310,7 @@ public class FlowchartTokenBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.Contains("Start", _output.Lines);
@@ -361,7 +353,7 @@ public class FlowchartTokenBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.Contains("Start", _output.Lines);
@@ -385,7 +377,7 @@ public class FlowchartTokenBasedTests : IDisposable
         );
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.Equal(4, _output.Lines.Count);
@@ -435,7 +427,7 @@ public class FlowchartTokenBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.Single(_output.Lines);
@@ -477,7 +469,7 @@ public class FlowchartTokenBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.Contains("Start", _output.Lines);
@@ -498,7 +490,7 @@ public class FlowchartTokenBasedTests : IDisposable
         var flowchart = CreateSimpleLinearFlowchart(start, single, end);
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         Assert.Contains("Start", _output.Lines);
@@ -532,7 +524,7 @@ public class FlowchartTokenBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.TokenBased);
 
         // Assert
         // Verify all activities executed in a valid order

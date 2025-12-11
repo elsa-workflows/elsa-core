@@ -74,15 +74,13 @@ public class FlowJoinTests
     };
 
     /// <summary>
-    /// Executes a FlowJoin activity with the specified flow mode, handling the UseTokenFlow setup and teardown.
+    /// Executes a FlowJoin activity with the specified flow mode.
     /// </summary>
     private static async Task<ActivityExecutionContext> ExecuteWithFlowModeAsync(bool useTokenFlow, FlowJoinMode joinMode)
     {
-        return await WithFlowModeAsync(useTokenFlow, async () =>
-        {
-            var flowJoin = CreateFlowJoin(joinMode);
-            return await ExecuteAsync(flowJoin);
-        });
+        var executionMode = useTokenFlow ? FlowchartExecutionMode.TokenBased : FlowchartExecutionMode.CounterBased;
+        var flowJoin = CreateFlowJoin(joinMode);
+        return await ExecuteAsync(flowJoin, executionMode);
     }
 
     /// <summary>
@@ -90,46 +88,46 @@ public class FlowJoinTests
     /// </summary>
     private static async Task<(ActivityExecutionContext context, FlowJoin flowJoin)> ExecuteInFlowchartWithFlowModeAsync(bool useTokenFlow, FlowJoinMode joinMode)
     {
-        return await WithFlowModeAsync(useTokenFlow, async () =>
-        {
-            var flowJoin = CreateFlowJoin(joinMode);
-            var flowchart = CreateSimpleFlowchart(flowJoin);
-            var context = await ExecuteFlowchartAsync(flowchart);
-            return (context, flowJoin);
-        });
+        var executionMode = useTokenFlow ? FlowchartExecutionMode.TokenBased : FlowchartExecutionMode.CounterBased;
+        var flowJoin = CreateFlowJoin(joinMode);
+        var flowchart = CreateSimpleFlowchart(flowJoin);
+        var context = await ExecuteFlowchartAsync(flowchart, executionMode);
+        return (context, flowJoin);
     }
 
     /// <summary>
-    /// Executes an action with the specified flow mode, ensuring proper setup and teardown of UseTokenFlow.
+    /// Executes an activity using the ActivityTestFixture with the specified execution mode.
     /// </summary>
-    private static async Task<T> WithFlowModeAsync<T>(bool useTokenFlow, Func<Task<T>> action)
+    private static async Task<ActivityExecutionContext> ExecuteAsync(IActivity activity, FlowchartExecutionMode? executionMode = null)
     {
-        var originalValue = Flowchart.UseTokenFlow;
-        Flowchart.UseTokenFlow = useTokenFlow;
+        var fixture = new ActivityTestFixture(activity);
 
-        try
+        if (executionMode.HasValue)
         {
-            return await action();
+            fixture.ConfigureContext(context =>
+            {
+                context.WorkflowExecutionContext.Properties[Flowchart.ExecutionModePropertyKey] = executionMode.Value;
+            });
         }
-        finally
+
+        return await fixture.ExecuteAsync();
+    }
+
+    /// <summary>
+    /// Executes a flowchart using the ActivityTestFixture with the specified execution mode.
+    /// </summary>
+    private static async Task<ActivityExecutionContext> ExecuteFlowchartAsync(Flowchart flowchart, FlowchartExecutionMode? executionMode = null)
+    {
+        var fixture = new ActivityTestFixture(flowchart);
+
+        if (executionMode.HasValue)
         {
-            Flowchart.UseTokenFlow = originalValue;
+            fixture.ConfigureContext(context =>
+            {
+                context.WorkflowExecutionContext.Properties[Flowchart.ExecutionModePropertyKey] = executionMode.Value;
+            });
         }
-    }
 
-    /// <summary>
-    /// Executes an activity using the ActivityTestFixture.
-    /// </summary>
-    private static async Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)
-    {
-        return await new ActivityTestFixture(activity).ExecuteAsync();
-    }
-
-    /// <summary>
-    /// Executes a flowchart using the ActivityTestFixture.
-    /// </summary>
-    private static async Task<ActivityExecutionContext> ExecuteFlowchartAsync(Flowchart flowchart)
-    {
-        return await new ActivityTestFixture(flowchart).ExecuteAsync();
+        return await fixture.ExecuteAsync();
     }
 }

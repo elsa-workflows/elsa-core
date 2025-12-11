@@ -14,7 +14,13 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 public partial class Flowchart : Container
 {
     /// <summary>
+    /// The property key used to store the flowchart execution mode in <see cref="WorkflowExecutionContext.Properties"/>.
+    /// </summary>
+    public const string ExecutionModePropertyKey = "Flowchart:ExecutionMode";
+
+    /// <summary>
     /// Set this to <c>false</c> from your program file in case you wish to use the old counter based model.
+    /// This static field is used as a fallback when no execution mode is specified in the workflow execution context properties.
     /// </summary>
     public static bool UseTokenFlow = true;
 
@@ -78,16 +84,48 @@ public partial class Flowchart : Container
 
     private ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
     {
-        return UseTokenFlow
+        return GetEffectiveExecutionMode(context.TargetContext)
             ? OnChildCompletedTokenBasedLogicAsync(context)
             : OnChildCompletedCounterBasedLogicAsync(context);
     }
 
     private ValueTask OnActivityCanceledAsync(CancelSignal signal, SignalContext context)
     {
-        return UseTokenFlow
+        return GetEffectiveExecutionMode(context.ReceiverActivityExecutionContext)
             ? OnTokenFlowActivityCanceledAsync(signal, context)
             : OnCounterFlowActivityCanceledAsync(signal, context);
+    }
+
+    /// <summary>
+    /// Gets the effective execution mode for this flowchart execution.
+    /// Returns true for token-based mode, false for counter-based mode.
+    /// </summary>
+    private bool GetEffectiveExecutionMode(ActivityExecutionContext context)
+    {
+        var workflowExecutionContext = context.WorkflowExecutionContext;
+
+        // Check if mode is explicitly set in workflow execution context properties
+        if (workflowExecutionContext.Properties.TryGetValue(ExecutionModePropertyKey, out var modeValue))
+        {
+            var mode = modeValue switch
+            {
+                FlowchartExecutionMode executionMode => executionMode,
+                string str when Enum.TryParse<FlowchartExecutionMode>(str, true, out var parsed) => parsed,
+                int intValue when Enum.IsDefined(typeof(FlowchartExecutionMode), intValue) => (FlowchartExecutionMode)intValue,
+                _ => FlowchartExecutionMode.Default
+            };
+
+            return mode switch
+            {
+                FlowchartExecutionMode.TokenBased => true,
+                FlowchartExecutionMode.CounterBased => false,
+                FlowchartExecutionMode.Default => UseTokenFlow,
+                _ => UseTokenFlow
+            };
+        }
+
+        // Fall back to static flag
+        return UseTokenFlow;
     }
 
     private async Task CompleteIfNoPendingWorkAsync(ActivityExecutionContext context)

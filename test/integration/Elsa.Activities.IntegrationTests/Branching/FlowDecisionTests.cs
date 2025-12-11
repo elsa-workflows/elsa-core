@@ -1,6 +1,9 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
+using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Options;
 using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests.Branching;
@@ -9,22 +12,16 @@ namespace Elsa.Activities.IntegrationTests.Branching;
 /// Integration tests for FlowDecision activity in flowchart scenarios.
 /// </summary>
 [Collection("FlowchartTests")]
-public class FlowDecisionTests(ITestOutputHelper testOutputHelper) : IDisposable
+public class FlowDecisionTests(ITestOutputHelper testOutputHelper)
 {
     private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
-    private readonly bool _originalFlowMode = Flowchart.UseTokenFlow;
-
-    public void Dispose()
-    {
-        Flowchart.UseTokenFlow = _originalFlowMode;
-    }
 
     [Theory(DisplayName = "FlowDecision follows correct path based on condition")]
     [MemberData(nameof(BasicPathTestCases))]
     public async Task Should_Follow_Correct_Path_Based_On_Condition(bool useTokenFlow, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
-        Flowchart.UseTokenFlow = useTokenFlow;
+        var executionMode = useTokenFlow ? FlowchartExecutionMode.TokenBased : FlowchartExecutionMode.CounterBased;
 
         var start = new WriteLine("Start");
         var decision = new FlowDecision(ctx => condition);
@@ -43,8 +40,10 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper) : IDisposable
             }
         };
 
+        var options = new RunWorkflowOptions().WithFlowchartExecutionMode(executionMode);
+
         // Act
-        await _fixture.RunActivityAsync(flowchart);
+        await _fixture.RunActivityAsync(flowchart, options);
 
         // Assert
         AssertOutputs(expectedOutputs, unexpectedOutputs);
@@ -64,7 +63,7 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper) : IDisposable
     public async Task Should_Handle_Nested_Decisions(bool useTokenFlow, bool outerCondition, bool innerCondition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
-        Flowchart.UseTokenFlow = useTokenFlow;
+        var executionMode = useTokenFlow ? FlowchartExecutionMode.TokenBased : FlowchartExecutionMode.CounterBased;
 
         var start = new WriteLine("Start");
         var outerDecision = new FlowDecision(ctx => outerCondition);
@@ -87,8 +86,10 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper) : IDisposable
             }
         };
 
+        var options = new RunWorkflowOptions().WithFlowchartExecutionMode(executionMode);
+
         // Act
-        await _fixture.RunActivityAsync(flowchart);
+        await _fixture.RunActivityAsync(flowchart, options);
 
         // Assert
         AssertOutputs(expectedOutputs, unexpectedOutputs);
@@ -112,7 +113,7 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper) : IDisposable
     public async Task Should_Work_With_Only_One_Path_Connected(bool useTokenFlow, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
-        Flowchart.UseTokenFlow = useTokenFlow;
+        var executionMode = useTokenFlow ? FlowchartExecutionMode.TokenBased : FlowchartExecutionMode.CounterBased;
 
         var start = new WriteLine("Start");
         var decision = new FlowDecision(ctx => condition);
@@ -132,8 +133,10 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper) : IDisposable
             }
         };
 
+        var options = new RunWorkflowOptions().WithFlowchartExecutionMode(executionMode);
+
         // Act
-        await _fixture.RunActivityAsync(flowchart);
+        await _fixture.RunActivityAsync(flowchart, options);
 
         // Assert
         AssertOutputs(expectedOutputs, unexpectedOutputs);
@@ -153,7 +156,7 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper) : IDisposable
     public async Task Should_Converge_Paths_Correctly(bool useTokenFlow, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
-        Flowchart.UseTokenFlow = useTokenFlow;
+        var executionMode = useTokenFlow ? FlowchartExecutionMode.TokenBased : FlowchartExecutionMode.CounterBased;
 
         var start = new WriteLine("Start");
         var decision = new FlowDecision(ctx => condition);
@@ -175,8 +178,10 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper) : IDisposable
             }
         };
 
+        var options = new RunWorkflowOptions().WithFlowchartExecutionMode(executionMode);
+
         // Act
-        await _fixture.RunActivityAsync(flowchart);
+        await _fixture.RunActivityAsync(flowchart, options);
 
         // Assert
         AssertOutputs(expectedOutputs, unexpectedOutputs);

@@ -4,6 +4,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -122,6 +123,54 @@ public class WorkflowTestFixture
         var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
         return await workflowRunner.RunAsync(workflow, cancellationToken: cancellationToken);
     }
+    
+    /// <summary>
+    /// Runs the specified workflow and returns the workflow result.
+    /// Automatically builds the fixture if not already built.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The workflow result after execution</returns>
+    public async Task<RunWorkflowResult> RunWorkflowAsync<TWorkflow>(CancellationToken cancellationToken = default) where TWorkflow : IWorkflow, new()
+    {
+        if (_services == null)
+            await BuildAsync();
+
+        var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
+        return await workflowRunner.RunAsync<TWorkflow>(cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// Runs a workflow with the specified options and returns the workflow result.
+    /// Automatically builds the fixture if not already built.
+    /// </summary>
+    /// <param name="workflow">The workflow to run</param>
+    /// <param name="options">Workflow execution options</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The workflow result after execution</returns>
+    public async Task<RunWorkflowResult> RunWorkflowAsync(IWorkflow workflow, RunWorkflowOptions options, CancellationToken cancellationToken = default)
+    {
+        if (_services == null)
+            await BuildAsync();
+
+        var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
+        return await workflowRunner.RunAsync(workflow, options, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Runs the specified workflow with the specified options and returns the workflow result.
+    /// Automatically builds the fixture if not already built.
+    /// </summary>
+    /// <param name="options">Workflow execution options</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The workflow result after execution</returns>
+    public async Task<RunWorkflowResult> RunWorkflowAsync<TWorkflow>(RunWorkflowOptions options, CancellationToken cancellationToken = default) where TWorkflow : IWorkflow, new()
+    {
+        if (_services == null)
+            await BuildAsync();
+
+        var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
+        return await workflowRunner.RunAsync<TWorkflow>(options, cancellationToken);
+    }
 
     /// <summary>
     /// Runs an activity wrapped in a workflow and returns the workflow result.
@@ -137,6 +186,23 @@ public class WorkflowTestFixture
 
         var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
         return await workflowRunner.RunAsync(activity, cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// Runs an activity wrapped in a workflow with the specified options and returns the workflow result.
+    /// Automatically builds the fixture if not already built.
+    /// </summary>
+    /// <param name="activity">The activity to run</param>
+    /// <param name="options">Workflow execution options</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The workflow result after execution</returns>
+    public async Task<RunWorkflowResult> RunActivityAsync(IActivity activity, RunWorkflowOptions options, CancellationToken cancellationToken = default)
+    {
+        if (_services == null)
+            await BuildAsync();
+
+        var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
+        return await workflowRunner.RunAsync(activity, options, cancellationToken);
     }
 
     /// <summary>

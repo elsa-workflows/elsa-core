@@ -2,40 +2,30 @@ using Elsa.Expressions.Models;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.IntegrationTests.Scenarios.FlowchartNextActivity.Workflows;
 using Elsa.Workflows.Memory;
-using Microsoft.Extensions.DependencyInjection;
+using Elsa.Workflows.Options;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.FlowchartNextActivity;
 
-public class FlowchartNextActivityTests
+public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
 {
-    private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly IServiceProvider _services;
-    private readonly IWorkflowRunner _workflowRunner;
-
-    public FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
-    {
-        _services = new TestApplicationBuilder(testOutputHelper)
-            .WithCapturingTextWriter(_capturingTextWriter)
-            .AddActivitiesFrom<FlowchartNextActivityTests>()
-            .Build();
-
-        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
-    }
+    private readonly WorkflowTestFixture _fixture = new WorkflowTestFixture(testOutputHelper)
+        .AddActivitiesFrom<FlowchartNextActivityTests>();
+    private static readonly string[] expected = new[]
+        {
+            "Line 1"
+        };
 
     [Fact(DisplayName = "Flowchart only schedules next activity connected to outcome of previous activity.")]
     public async Task Test1()
     {
-        await _services.PopulateRegistriesAsync();
-        await _workflowRunner.RunAsync<FlowchartWorkflow>();
-        var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[]
-        {
-            "Line 1"
-        }, lines);
+        await _fixture.RunWorkflowAsync<FlowchartWorkflow>();
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
+        Assert.Equal(expected, lines);
     }
 
     [Fact(DisplayName = "Flowchart with backward connections and a dangling activity")]
@@ -117,9 +107,8 @@ public class FlowchartNextActivityTests
             };
         });
 
-        await _services.PopulateRegistriesAsync();
-        var result = await _workflowRunner.RunAsync(workflow);
-        var lines = _capturingTextWriter.Lines.ToList();
+        var result = await _fixture.RunWorkflowAsync(workflow);
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
         Assert.Equal(new[]
         {
@@ -127,12 +116,10 @@ public class FlowchartNextActivityTests
         }, lines);
     }
 
-    [Fact(DisplayName = "Flowchart with an invalid backward connection")]
+    [Fact(DisplayName = "Flowchart with an invalid backward connection (counter-based mode only)")]
     public async Task InvalidBackwardConnectionTest()
     {
-        if(Flowchart.UseTokenFlow)
-            return;
-        
+        // This test is only valid for counter-based mode
         var workflow = new TestWorkflow(workflowBuilder =>
         {
             var start = new Start
@@ -184,9 +171,9 @@ public class FlowchartNextActivityTests
             };
         });
 
-        await _services.PopulateRegistriesAsync();
-        var result = await _workflowRunner.RunAsync(workflow);
-        var lines = _capturingTextWriter.Lines.ToList();
+        var options = new RunWorkflowOptions().WithCounterBasedFlowchart();
+        var result = await _fixture.RunWorkflowAsync(workflow, options);
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
         Assert.Single(result.WorkflowState.Incidents);
         Assert.Equal("Invalid backward connection: Every path from the source ('WriteLineE') must go through the target ('WriteLineC') when tracing back to the start.", result.WorkflowState.Incidents.First().Message);
@@ -264,9 +251,8 @@ public class FlowchartNextActivityTests
             };
         });
 
-        await _services.PopulateRegistriesAsync();
-        var result = await _workflowRunner.RunAsync(workflow);
-        var lines = _capturingTextWriter.Lines.ToList();
+        var result = await _fixture.RunWorkflowAsync(workflow);
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
         Assert.Equal(new[] { "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D"}, lines);
     }
@@ -332,9 +318,8 @@ public class FlowchartNextActivityTests
             };
         });
 
-        await _services.PopulateRegistriesAsync();
-        var result = await _workflowRunner.RunAsync(workflow);
-        var lines = _capturingTextWriter.Lines.ToList();
+        var result = await _fixture.RunWorkflowAsync(workflow);
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
         Assert.Equal(new[]
         {
@@ -342,7 +327,7 @@ public class FlowchartNextActivityTests
         }, lines);
     }
 
-    [Theory(DisplayName = "Flowchart Join behaves correctly")]
+    [Theory(DisplayName = "Flowchart Join behaves correctly (counter-based mode)")]
     [InlineData(false, FlowJoinMode.WaitAll, new[] { "A", "B", "C", "D", "F" })] // "E" is not scheduled because join has an unfollowed inbound connection
     [InlineData(false, FlowJoinMode.WaitAllActive, new[] { "A", "B", "C", "D", "E", "F" })] // "E" gets scheduled by join with an unfollowed inbound connection
     [InlineData(false, FlowJoinMode.WaitAny, new[] { "A", "B", "C", "D", "E", "F" })] // "E" only scheduled once
@@ -362,14 +347,14 @@ public class FlowchartNextActivityTests
     // (false)   \ | /
     //    |      Join
     //    D        |
-    //     \       E 
+    //     \       E
     //      \     /
     //       \   /
-    //        \ / 
+    //        \ /
     //         F
     public async Task JoinBehavesCorrectly(bool decisionResult, FlowJoinMode joinMode, string[] expectedLines)
     {
-        Flowchart.UseTokenFlow = false;
+        // This test validates counter-based mode behavior
         var workflow = new TestWorkflow(workflowBuilder =>
         {
             var start = new Start() { Id = "Start" };
@@ -408,8 +393,8 @@ public class FlowchartNextActivityTests
                     new(start, b),
                     new(start, c),
                     new(a, decision),
-                    new(new Endpoint(decision, "True"), new Endpoint(join)),
-                    new(new Endpoint(decision, "False"), new Endpoint(d)),
+                    new(new(decision, "True"), new Endpoint(join)),
+                    new(new(decision, "False"), new Endpoint(d)),
                     new(b, join),
                     new(c, join),
                     new(d, f),
@@ -419,11 +404,10 @@ public class FlowchartNextActivityTests
             };
         });
 
-        await _services.PopulateRegistriesAsync();
-        var result = await _workflowRunner.RunAsync(workflow);
-        var lines = _capturingTextWriter.Lines.ToList();
+        var options = new RunWorkflowOptions().WithCounterBasedFlowchart();
+        var result = await _fixture.RunWorkflowAsync(workflow, options);
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
         Assert.Equal(expectedLines, lines);
-        Flowchart.UseTokenFlow = true;
     }
 }
