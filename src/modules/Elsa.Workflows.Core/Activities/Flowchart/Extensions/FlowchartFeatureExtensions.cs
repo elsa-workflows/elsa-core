@@ -37,7 +37,7 @@ public static class FlowchartFeatureExtensions
         }
         
         /// <summary>
-        /// Sets the default execution mode for flowcharts to token-based.
+        /// Sets the default execution mode for flowcharts to the specified mode.
         /// </summary>
         public FlowchartFeature UseExecution(FlowchartExecutionMode mode)
         {
