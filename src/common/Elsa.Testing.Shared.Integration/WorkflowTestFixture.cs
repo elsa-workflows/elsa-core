@@ -2,6 +2,7 @@ using Elsa.Expressions.Models;
 using Elsa.Features.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -103,6 +104,9 @@ public class WorkflowTestFixture
     /// </summary>
     public async Task<WorkflowTestFixture> BuildAsync()
     {
+        if(_services != null)
+            return this;
+        
         _services = _testApplicationBuilder.Build();
         await Services.PopulateRegistriesAsync();
         return this;
@@ -117,9 +121,7 @@ public class WorkflowTestFixture
     /// <returns>The workflow result after execution</returns>
     public async Task<RunWorkflowResult> RunWorkflowAsync(IWorkflow workflow, CancellationToken cancellationToken = default)
     {
-        if (_services == null)
-            await BuildAsync();
-
+        await BuildAsync();
         var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
         return await workflowRunner.RunAsync(workflow, cancellationToken: cancellationToken);
     }
@@ -132,9 +134,7 @@ public class WorkflowTestFixture
     /// <returns>The workflow result after execution</returns>
     public async Task<RunWorkflowResult> RunWorkflowAsync<TWorkflow>(CancellationToken cancellationToken = default) where TWorkflow : IWorkflow, new()
     {
-        if (_services == null)
-            await BuildAsync();
-
+        await BuildAsync();
         var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
         return await workflowRunner.RunAsync<TWorkflow>(cancellationToken: cancellationToken);
     }
@@ -149,9 +149,7 @@ public class WorkflowTestFixture
     /// <returns>The workflow result after execution</returns>
     public async Task<RunWorkflowResult> RunWorkflowAsync(IWorkflow workflow, RunWorkflowOptions options, CancellationToken cancellationToken = default)
     {
-        if (_services == null)
-            await BuildAsync();
-
+        await BuildAsync();
         var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
         return await workflowRunner.RunAsync(workflow, options, cancellationToken);
     }
@@ -165,9 +163,7 @@ public class WorkflowTestFixture
     /// <returns>The workflow result after execution</returns>
     public async Task<RunWorkflowResult> RunWorkflowAsync<TWorkflow>(RunWorkflowOptions options, CancellationToken cancellationToken = default) where TWorkflow : IWorkflow, new()
     {
-        if (_services == null)
-            await BuildAsync();
-
+        await BuildAsync();
         var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
         return await workflowRunner.RunAsync<TWorkflow>(options, cancellationToken);
     }
@@ -181,9 +177,7 @@ public class WorkflowTestFixture
     /// <returns>The workflow result after execution</returns>
     public async Task<RunWorkflowResult> RunActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
-        if (_services == null)
-            await BuildAsync();
-
+        await BuildAsync();
         var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
         return await workflowRunner.RunAsync(activity, cancellationToken: cancellationToken);
     }
@@ -198,9 +192,7 @@ public class WorkflowTestFixture
     /// <returns>The workflow result after execution</returns>
     public async Task<RunWorkflowResult> RunActivityAsync(IActivity activity, RunWorkflowOptions options, CancellationToken cancellationToken = default)
     {
-        if (_services == null)
-            await BuildAsync();
-
+        await BuildAsync();
         var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
         return await workflowRunner.RunAsync(activity, options, cancellationToken);
     }
@@ -211,13 +203,19 @@ public class WorkflowTestFixture
     /// </summary>
     /// <param name="definitionId">The workflow definition ID</param>
     /// <param name="input">Optional input dictionary</param>
+    /// <param name="options">Optional workflow execution options</param>
     /// <returns>The workflow state after execution</returns>
-    public async Task<WorkflowState> RunWorkflowAsync(string definitionId, IDictionary<string, object>? input = null)
+    public async Task<WorkflowState> RunWorkflowAsync(string definitionId, IDictionary<string, object>? input = null, RunWorkflowOptions? options = null)
     {
-        if (_services == null)
-            await BuildAsync();
+        
+        await BuildAsync();
+        return await Services.RunWorkflowUntilEndAsync(definitionId, input, runWorkflowOptions: options);
+    }
 
-        return await Services.RunWorkflowUntilEndAsync(definitionId, input);
+    public async Task<WorkflowDefinition> ImportWorkflowDefinitionAsync(string fileName)
+    {
+        await BuildAsync();
+        return await Services.ImportWorkflowDefinitionAsync(fileName);
     }
 
     /// <summary>

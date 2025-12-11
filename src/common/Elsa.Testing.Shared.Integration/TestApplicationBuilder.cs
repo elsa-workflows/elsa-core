@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
 using FluentStorage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

@@ -61,7 +61,7 @@ services
                     strategies.Add("Every 10 seconds", new PeriodicWorkflowStrategy(TimeSpan.FromSeconds(10)));
                 });
             })
-            .UseFlowchart(flowchart => flowchart.UseTokenBasedExecution())
+            .UseFlowchart(flowchart => flowchart.UseCounterBasedExecution())
             .UseWorkflowManagement(management =>
             {
                 management.UseEntityFrameworkCore(ef => ef.UseSqlite());
