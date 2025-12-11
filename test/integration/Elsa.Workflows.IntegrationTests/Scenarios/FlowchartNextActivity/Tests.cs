@@ -21,7 +21,7 @@ public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
         };
 
     [Fact(DisplayName = "Flowchart only schedules next activity connected to outcome of previous activity.")]
-    public async Task Test1()
+    public async Task FlowchartOnlySchedulesNextConnectedActivity()
     {
         await _fixture.RunWorkflowAsync<FlowchartWorkflow>();
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
