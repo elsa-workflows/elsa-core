@@ -9,7 +9,7 @@ public class Infrastructure : IAsyncLifetime
     //public readonly PostgreSqlContainer DbContainer = new PostgreSqlBuilder().Build();
 
     public readonly MsSqlContainer DbContainer = new MsSqlBuilder()
-        .WithImage("mcr.microsoft.com/mssql/server:2022-CU13-ubuntu-22.04")
+        //.WithImage("mcr.microsoft.com/mssql/server:2025-GA-ubuntu")
         .Build();
 
     public readonly RabbitMqContainer RabbitMqContainer = new RabbitMqBuilder()
