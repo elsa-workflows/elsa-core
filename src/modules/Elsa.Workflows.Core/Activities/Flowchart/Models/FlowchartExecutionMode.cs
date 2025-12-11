@@ -6,7 +6,7 @@ namespace Elsa.Workflows.Activities.Flowchart.Models;
 public enum FlowchartExecutionMode
 {
     /// <summary>
-    /// Use the default mode as specified by <see cref="Activities.Flowchart.UseTokenFlow"/>.
+    /// Use the default mode as specified by <see cref="Elsa.Workflows.Activities.Flowchart.Flowchart.UseTokenFlow"/>.
     /// </summary>
     Default = 0,
 
