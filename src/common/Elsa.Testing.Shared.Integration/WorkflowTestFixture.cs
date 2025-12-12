@@ -104,7 +104,7 @@ public class WorkflowTestFixture
     /// </summary>
     public async Task<WorkflowTestFixture> BuildAsync()
     {
-        if(_services != null)
+        if (_services != null)
             return this;
         
         _services = _testApplicationBuilder.Build();
