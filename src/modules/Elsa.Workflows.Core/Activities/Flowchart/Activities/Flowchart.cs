@@ -158,6 +158,9 @@ public partial class Flowchart : Container
     private static FlowchartExecutionMode GetDefaultModeFromOptions(ActivityExecutionContext context)
     {
         var options = context.WorkflowExecutionContext.ServiceProvider.GetService<IOptions<FlowchartOptions>>();
-        return options?.Value.DefaultExecutionMode ?? FlowchartExecutionMode.Default;
+        var mode = options?.Value.DefaultExecutionMode ?? FlowchartExecutionMode.Default;
+        if (mode == FlowchartExecutionMode.Default)
+            return UseTokenFlow ? FlowchartExecutionMode.TokenBased : FlowchartExecutionMode.CounterBased;
+        return mode;
     }
 }
