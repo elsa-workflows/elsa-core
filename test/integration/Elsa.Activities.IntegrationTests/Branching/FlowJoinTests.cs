@@ -10,22 +10,15 @@ namespace Elsa.Activities.IntegrationTests.Branching;
 /// <summary>
 /// Integration tests for FlowJoin activity in complex flowchart scenarios.
 /// </summary>
-public class FlowJoinTests : IDisposable
+public class FlowJoinTests
 {
     private readonly IServiceProvider _services;
     private readonly CapturingTextWriter _output;
-    private readonly bool _originalFlowMode;
 
     public FlowJoinTests(ITestOutputHelper testOutputHelper)
     {
         _output = new();
         _services = CreateServiceProvider(testOutputHelper, _output);
-        _originalFlowMode = Flowchart.UseTokenFlow;
-    }
-
-    public void Dispose()
-    {
-        Flowchart.UseTokenFlow = _originalFlowMode;
     }
 
     [Theory]
@@ -37,17 +30,17 @@ public class FlowJoinTests : IDisposable
     {
         // Test with a more complex flowchart that has multiple activities
         // Arrange
-        Flowchart.UseTokenFlow = useTokenFlow;
+        var executionMode = useTokenFlow ? FlowchartExecutionMode.TokenBased : FlowchartExecutionMode.CounterBased;
 
         var startActivity = new WriteLine("Start");
         var flowJoin = new FlowJoin { Mode = new(joinMode) };
         var afterJoin = new WriteLine("AfterJoin");
-        
+
         var flowchart = new Flowchart
         {
             Start = startActivity,
             Activities = { startActivity, flowJoin, afterJoin },
-            Connections = 
+            Connections =
             {
                 new() { Source = new(startActivity, "Done"), Target = new(flowJoin) },
                 new() { Source = new(flowJoin, "Done"), Target = new(afterJoin) }
@@ -55,7 +48,7 @@ public class FlowJoinTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, executionMode);
 
         // Assert
         Assert.Contains("Start", _output.Lines);
@@ -82,7 +75,7 @@ public class FlowJoinTests : IDisposable
     {
         // Test FlowJoin with a Fork-Join pattern
         // Arrange
-        Flowchart.UseTokenFlow = useTokenFlow;
+        var executionMode = useTokenFlow ? FlowchartExecutionMode.TokenBased : FlowchartExecutionMode.CounterBased;
 
         var start = new WriteLine("Start");
         var fork = new FlowFork { Branches = new(["Branch1", "Branch2"]) };
@@ -107,7 +100,7 @@ public class FlowJoinTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, executionMode);
 
         // Assert
         Assert.Contains("Start", _output.Lines);
@@ -149,7 +142,7 @@ public class FlowJoinTests : IDisposable
     {
         // Test multiple FlowJoin activities in a complex flowchart
         // Arrange
-        Flowchart.UseTokenFlow = useTokenFlow;
+        var executionMode = useTokenFlow ? FlowchartExecutionMode.TokenBased : FlowchartExecutionMode.CounterBased;
 
         var start = new WriteLine("Start");
         var fork1 = new FlowFork { Branches = new(["A", "B"]) };
@@ -185,7 +178,7 @@ public class FlowJoinTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, executionMode);
 
         // Assert
         Assert.Contains("Start", _output.Lines);

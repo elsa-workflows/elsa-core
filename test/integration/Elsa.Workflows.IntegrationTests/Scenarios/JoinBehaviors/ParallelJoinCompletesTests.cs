@@ -1,35 +1,29 @@
 using Elsa.Common.Models;
 using Elsa.Testing.Shared;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.JoinBehaviors;
 
-public class ParallelJoinCompletesTests
+public class ParallelJoinCompletesTests(ITestOutputHelper testOutputHelper)
 {
-    private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly IServiceProvider _services;
-
-    public ParallelJoinCompletesTests(ITestOutputHelper testOutputHelper)
-    {
-        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-    }
+    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
 
     [Fact(DisplayName = "The ParallelForEach activity completes when its Body contains a Join activity")]
     public async Task Test1()
     {
-        // Populate registries.
-        await _services.PopulateRegistriesAsync();
-
         // Import workflow.
-        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync("Scenarios/JoinBehaviors/Workflows/parallel-join.json");
+        var workflowDefinition = await _fixture.ImportWorkflowDefinitionAsync("Scenarios/JoinBehaviors/Workflows/parallel-join.json");
 
-        // Execute.
-        var state = await _services.RunWorkflowUntilEndAsync(workflowDefinition.DefinitionId);
-        
+        // Execute with token-based mode.
+        var options = new RunWorkflowOptions().WithTokenBasedFlowchart();
+        var state = await _fixture.RunWorkflowAsync(workflowDefinition.DefinitionId, options: options);
+
         // Assert.
-        var journal = await _services.GetRequiredService<IWorkflowExecutionLogStore>().FindManyAsync(new()
+        var journal = await _fixture.Services.GetRequiredService<IWorkflowExecutionLogStore>().FindManyAsync(new()
         {
             WorkflowInstanceId = state.Id,
             ActivityId = "70fc1183cd5800f2",

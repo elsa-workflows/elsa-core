@@ -2,8 +2,10 @@ using Elsa.Expressions.Models;
 using Elsa.Features.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -102,6 +104,9 @@ public class WorkflowTestFixture
     /// </summary>
     public async Task<WorkflowTestFixture> BuildAsync()
     {
+        if (_services != null)
+            return this;
+        
         _services = _testApplicationBuilder.Build();
         await Services.PopulateRegistriesAsync();
         return this;
@@ -116,11 +121,51 @@ public class WorkflowTestFixture
     /// <returns>The workflow result after execution</returns>
     public async Task<RunWorkflowResult> RunWorkflowAsync(IWorkflow workflow, CancellationToken cancellationToken = default)
     {
-        if (_services == null)
-            await BuildAsync();
-
+        await BuildAsync();
         var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
         return await workflowRunner.RunAsync(workflow, cancellationToken: cancellationToken);
+    }
+    
+    /// <summary>
+    /// Runs the specified workflow and returns the workflow result.
+    /// Automatically builds the fixture if not already built.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The workflow result after execution</returns>
+    public async Task<RunWorkflowResult> RunWorkflowAsync<TWorkflow>(CancellationToken cancellationToken = default) where TWorkflow : IWorkflow, new()
+    {
+        await BuildAsync();
+        var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
+        return await workflowRunner.RunAsync<TWorkflow>(cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// Runs a workflow with the specified options and returns the workflow result.
+    /// Automatically builds the fixture if not already built.
+    /// </summary>
+    /// <param name="workflow">The workflow to run</param>
+    /// <param name="options">Workflow execution options</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The workflow result after execution</returns>
+    public async Task<RunWorkflowResult> RunWorkflowAsync(IWorkflow workflow, RunWorkflowOptions options, CancellationToken cancellationToken = default)
+    {
+        await BuildAsync();
+        var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
+        return await workflowRunner.RunAsync(workflow, options, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Runs the specified workflow with the specified options and returns the workflow result.
+    /// Automatically builds the fixture if not already built.
+    /// </summary>
+    /// <param name="options">Workflow execution options</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The workflow result after execution</returns>
+    public async Task<RunWorkflowResult> RunWorkflowAsync<TWorkflow>(RunWorkflowOptions options, CancellationToken cancellationToken = default) where TWorkflow : IWorkflow, new()
+    {
+        await BuildAsync();
+        var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
+        return await workflowRunner.RunAsync<TWorkflow>(options, cancellationToken);
     }
 
     /// <summary>
@@ -132,11 +177,24 @@ public class WorkflowTestFixture
     /// <returns>The workflow result after execution</returns>
     public async Task<RunWorkflowResult> RunActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
-        if (_services == null)
-            await BuildAsync();
-
+        await BuildAsync();
         var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
         return await workflowRunner.RunAsync(activity, cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// Runs an activity wrapped in a workflow with the specified options and returns the workflow result.
+    /// Automatically builds the fixture if not already built.
+    /// </summary>
+    /// <param name="activity">The activity to run</param>
+    /// <param name="options">Workflow execution options</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The workflow result after execution</returns>
+    public async Task<RunWorkflowResult> RunActivityAsync(IActivity activity, RunWorkflowOptions options, CancellationToken cancellationToken = default)
+    {
+        await BuildAsync();
+        var workflowRunner = Services.GetRequiredService<IWorkflowRunner>();
+        return await workflowRunner.RunAsync(activity, options, cancellationToken);
     }
 
     /// <summary>
@@ -145,13 +203,19 @@ public class WorkflowTestFixture
     /// </summary>
     /// <param name="definitionId">The workflow definition ID</param>
     /// <param name="input">Optional input dictionary</param>
+    /// <param name="options">Optional workflow execution options</param>
     /// <returns>The workflow state after execution</returns>
-    public async Task<WorkflowState> RunWorkflowAsync(string definitionId, IDictionary<string, object>? input = null)
+    public async Task<WorkflowState> RunWorkflowAsync(string definitionId, IDictionary<string, object>? input = null, RunWorkflowOptions? options = null)
     {
-        if (_services == null)
-            await BuildAsync();
+        
+        await BuildAsync();
+        return await Services.RunWorkflowUntilEndAsync(definitionId, input, runWorkflowOptions: options);
+    }
 
-        return await Services.RunWorkflowUntilEndAsync(definitionId, input);
+    public async Task<WorkflowDefinition> ImportWorkflowDefinitionAsync(string fileName)
+    {
+        await BuildAsync();
+        return await Services.ImportWorkflowDefinitionAsync(fileName);
     }
 
     /// <summary>

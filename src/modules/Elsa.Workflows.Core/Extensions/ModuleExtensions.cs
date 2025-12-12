@@ -6,9 +6,18 @@ namespace Elsa.Extensions;
 
 public static class ModuleExtensions
 {
-    public static IModule UseWorkflows(this IModule configuration, Action<WorkflowsFeature>? configure = default)
+    extension(IModule configuration)
     {
-        configuration.Configure(configure);
-        return configuration;
+        public IModule UseWorkflows(Action<WorkflowsFeature>? configure = null)
+        {
+            configuration.Configure(configure);
+            return configuration;
+        }
+
+        public IModule UseFlowchart(Action<FlowchartFeature>? configure = null)
+        {
+            configuration.Configure(configure);
+            return configuration;
+        }
     }
 }

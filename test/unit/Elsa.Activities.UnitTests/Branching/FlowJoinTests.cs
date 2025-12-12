@@ -11,33 +11,33 @@ namespace Elsa.Activities.UnitTests.Branching;
 public class FlowJoinTests
 {
     [Theory]
-    [InlineData(true, FlowJoinMode.WaitAny)]
-    [InlineData(true, FlowJoinMode.WaitAll)]
-    [InlineData(false, FlowJoinMode.WaitAny)]
-    [InlineData(false, FlowJoinMode.WaitAll)]
-    public async Task Should_Complete_In_All_Flow_Mode_Combinations(bool useTokenFlow, FlowJoinMode joinMode)
+    [InlineData(FlowchartExecutionMode.TokenBased, FlowJoinMode.WaitAny)]
+    [InlineData(FlowchartExecutionMode.TokenBased, FlowJoinMode.WaitAll)]
+    [InlineData(FlowchartExecutionMode.CounterBased, FlowJoinMode.WaitAny)]
+    [InlineData(FlowchartExecutionMode.CounterBased, FlowJoinMode.WaitAll)]
+    public async Task Should_Complete_In_All_Flow_Mode_Combinations(FlowchartExecutionMode executionMode, FlowJoinMode joinMode)
     {
         // Arrange & Act
-        var context = await ExecuteWithFlowModeAsync(useTokenFlow, joinMode);
+        var context = await ExecuteWithFlowModeAsync(executionMode, joinMode);
 
         // Assert
         Assert.True(context.IsCompleted);
     }
 
     [Theory]
-    [InlineData(true, FlowJoinMode.WaitAny)]
-    [InlineData(true, FlowJoinMode.WaitAll)]
-    [InlineData(false, FlowJoinMode.WaitAny)]
-    [InlineData(false, FlowJoinMode.WaitAll)]
-    public async Task Should_Execute_In_Flowchart_Context_For_All_Combinations(bool useTokenFlow, FlowJoinMode joinMode)
+    [InlineData(FlowchartExecutionMode.TokenBased, FlowJoinMode.WaitAny)]
+    [InlineData(FlowchartExecutionMode.TokenBased, FlowJoinMode.WaitAll)]
+    [InlineData(FlowchartExecutionMode.CounterBased, FlowJoinMode.WaitAny)]
+    [InlineData(FlowchartExecutionMode.CounterBased, FlowJoinMode.WaitAll)]
+    public async Task Should_Execute_In_Flowchart_Context_For_All_Combinations(FlowchartExecutionMode executionMode, FlowJoinMode joinMode)
     {
         // Arrange & Act
-        var (context, flowJoin) = await ExecuteInFlowchartWithFlowModeAsync(useTokenFlow, joinMode);
+        var (context, flowJoin) = await ExecuteInFlowchartWithFlowModeAsync(executionMode, joinMode);
 
         // Assert
         Assert.NotNull(context);
         
-        var expectedMessage = useTokenFlow
+        var expectedMessage = executionMode == FlowchartExecutionMode.TokenBased
             ? $"Token flow mode with {joinMode} should schedule the join activity"
             : $"Counter flow mode with {joinMode} should schedule the join activity as start";
 
@@ -51,8 +51,8 @@ public class FlowJoinTests
         var joinMode = FlowJoinMode.WaitAll; // Use WaitAll to highlight differences
         
         // Act
-        var tokenContext = await ExecuteWithFlowModeAsync(true, joinMode);
-        var counterContext = await ExecuteWithFlowModeAsync(false, joinMode);
+        var tokenContext = await ExecuteWithFlowModeAsync(FlowchartExecutionMode.TokenBased, joinMode);
+        var counterContext = await ExecuteWithFlowModeAsync(FlowchartExecutionMode.CounterBased, joinMode);
         
         // Assert
         Assert.True(tokenContext.IsCompleted, "Token flow should always complete");
@@ -74,62 +74,48 @@ public class FlowJoinTests
     };
 
     /// <summary>
-    /// Executes a FlowJoin activity with the specified flow mode, handling the UseTokenFlow setup and teardown.
+    /// Executes a FlowJoin activity with the specified flow mode.
     /// </summary>
-    private static async Task<ActivityExecutionContext> ExecuteWithFlowModeAsync(bool useTokenFlow, FlowJoinMode joinMode)
+    private static async Task<ActivityExecutionContext> ExecuteWithFlowModeAsync(FlowchartExecutionMode executionMode, FlowJoinMode joinMode)
     {
-        return await WithFlowModeAsync(useTokenFlow, async () =>
-        {
-            var flowJoin = CreateFlowJoin(joinMode);
-            return await ExecuteAsync(flowJoin);
-        });
+        var flowJoin = CreateFlowJoin(joinMode);
+        return await ExecuteAsync(flowJoin, executionMode);
     }
 
     /// <summary>
     /// Executes a FlowJoin activity within a flowchart context with the specified flow mode.
     /// </summary>
-    private static async Task<(ActivityExecutionContext context, FlowJoin flowJoin)> ExecuteInFlowchartWithFlowModeAsync(bool useTokenFlow, FlowJoinMode joinMode)
+    private static async Task<(ActivityExecutionContext context, FlowJoin flowJoin)> ExecuteInFlowchartWithFlowModeAsync(FlowchartExecutionMode executionMode, FlowJoinMode joinMode)
     {
-        return await WithFlowModeAsync(useTokenFlow, async () =>
-        {
-            var flowJoin = CreateFlowJoin(joinMode);
-            var flowchart = CreateSimpleFlowchart(flowJoin);
-            var context = await ExecuteFlowchartAsync(flowchart);
-            return (context, flowJoin);
-        });
+        var flowJoin = CreateFlowJoin(joinMode);
+        var flowchart = CreateSimpleFlowchart(flowJoin);
+        var context = await ExecuteFlowchartAsync(flowchart, executionMode);
+        return (context, flowJoin);
     }
 
     /// <summary>
-    /// Executes an action with the specified flow mode, ensuring proper setup and teardown of UseTokenFlow.
+    /// Executes a flowchart using the ActivityTestFixture with the specified execution mode.
     /// </summary>
-    private static async Task<T> WithFlowModeAsync<T>(bool useTokenFlow, Func<Task<T>> action)
+    private static Task<ActivityExecutionContext> ExecuteFlowchartAsync(Flowchart flowchart, FlowchartExecutionMode? executionMode = null)
     {
-        var originalValue = Flowchart.UseTokenFlow;
-        Flowchart.UseTokenFlow = useTokenFlow;
+        return ExecuteAsync(flowchart, executionMode);
+    }
 
-        try
+    /// <summary>
+    /// Executes an activity using the ActivityTestFixture with the specified execution mode.
+    /// </summary>
+    private static async Task<ActivityExecutionContext> ExecuteAsync(IActivity activity, FlowchartExecutionMode? executionMode = null)
+    {
+        var fixture = new ActivityTestFixture(activity);
+
+        if (executionMode.HasValue)
         {
-            return await action();
+            fixture.ConfigureContext(context =>
+            {
+                context.WorkflowExecutionContext.Properties[Flowchart.ExecutionModePropertyKey] = executionMode.Value;
+            });
         }
-        finally
-        {
-            Flowchart.UseTokenFlow = originalValue;
-        }
-    }
 
-    /// <summary>
-    /// Executes an activity using the ActivityTestFixture.
-    /// </summary>
-    private static async Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)
-    {
-        return await new ActivityTestFixture(activity).ExecuteAsync();
-    }
-
-    /// <summary>
-    /// Executes a flowchart using the ActivityTestFixture.
-    /// </summary>
-    private static async Task<ActivityExecutionContext> ExecuteFlowchartAsync(Flowchart flowchart)
-    {
-        return await new ActivityTestFixture(flowchart).ExecuteAsync();
+        return await fixture.ExecuteAsync();
     }
 }
