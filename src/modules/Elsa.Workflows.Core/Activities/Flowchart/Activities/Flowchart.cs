@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Signals;
@@ -40,7 +39,7 @@ public partial class Flowchart : Container
     /// <inheritdoc />
     protected override async ValueTask ScheduleChildrenAsync(ActivityExecutionContext context)
     {
-        var startActivity = this.GetStartActivity(context.WorkflowExecutionContext.TriggerActivityId);
+        var startActivity = GetStartActivity(context);
 
         if (startActivity == null)
         {
@@ -93,9 +92,16 @@ public partial class Flowchart : Container
 
     private async Task CompleteIfNoPendingWorkAsync(ActivityExecutionContext context)
     {
-        var hasPendingWork = context.HasPendingWork();
+        var hasPendingWork = HasPendingWork(context);
 
         if (!hasPendingWork)
-            await context.CompleteActivityAsync();
+        {
+            var hasFaultedActivities = context.Children.Any(x => x.Status == ActivityStatus.Faulted);
+
+            if (!hasFaultedActivities)
+            {
+                await context.CompleteActivityAsync();
+            }
+        }
     }
 }
