@@ -81,7 +81,7 @@
     </ItemGroup>
     <ItemGroup>
         <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="9.0.0"/>
-        <PackageVersion Include="AutoMapper" Version="15.1.0" PrivateAssets="All"/>
+        <PackageVersion Include="AutoMapper" Version="16.0.0" PrivateAssets="All"/>
         <PackageVersion Include="Azure.Identity" Version="1.17.1"/>
         <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.20.1"/>
         <PackageVersion Include="Azure.ResourceManager" Version="1.13.2"/>
