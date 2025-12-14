@@ -77,6 +77,11 @@ public class ActivityDescriptor
     public ActivityKind Kind { get; set; } = ActivityKind.Action;
     
     /// <summary>
+    /// Whether the activity should be executed asynchronously. Applies only when the Kind is set to Task and as a default when not set on the activity itself.
+    /// </summary>
+    public bool RunAsynchronously { get; set; }
+    
+    /// <summary>
     /// The ports of the activity type.
     /// </summary>
     public ICollection<Port> Ports { get; set; } = new List<Port>();
