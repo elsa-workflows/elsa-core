@@ -1,36 +1,29 @@
 using Elsa.Testing.Shared;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.IntegrationTests.Scenarios.JoinBehaviors.Workflows;
-using Microsoft.Extensions.DependencyInjection;
+using Elsa.Workflows.Options;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.JoinBehaviors;
 
-public class ImplicitWorkflowTests
+public class ImplicitWorkflowTests(ITestOutputHelper testOutputHelper)
 {
-    private readonly IWorkflowRunner _workflowRunner;
-    private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly IServiceProvider _services;
-
-    public ImplicitWorkflowTests(ITestOutputHelper testOutputHelper)
-    {
-        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
-    }
+    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
 
     [Fact(DisplayName = "Implicit loop workflows are executed correctly")]
     public async Task Test1()
     {
-        await _services.PopulateRegistriesAsync();
-        await _workflowRunner.RunAsync<ImplicitLoopWorkflow>();
-        var lines = _capturingTextWriter.Lines.ToList();
+        var options = new RunWorkflowOptions().WithTokenBasedFlowchart();
+        await _fixture.RunWorkflowAsync<ImplicitLoopWorkflow>(options);
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Start", "Retry", "End" }, lines);
     }
-    
+
     [Fact(DisplayName = "Implicit loop workflows complete the workflow")]
     public async Task Test2()
     {
-        await _services.PopulateRegistriesAsync();
-        var result = await _workflowRunner.RunAsync<ImplicitLoopWorkflow>();
+        var options = new RunWorkflowOptions().WithTokenBasedFlowchart();
+        var result = await _fixture.RunWorkflowAsync<ImplicitLoopWorkflow>(options);
         Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
     }
 }

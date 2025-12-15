@@ -1,5 +1,6 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities.Flowchart.Activities;
+using Elsa.Workflows.Activities.Flowchart.Models;
 using static Elsa.Activities.UnitTests.Flow.FlowchartTestHelpers;
 
 namespace Elsa.Activities.UnitTests.Flow;
@@ -43,34 +44,24 @@ public class FlowchartTests
         Assert.False(context.HasScheduledActivity(new WriteLine("NonExistent")));
     }
     
-    [Theory(DisplayName = "Respects UseTokenFlow flag")]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task RespectsUseTokenFlowFlag(bool useTokenFlow)
+    [Theory(DisplayName = "Respects execution mode")]
+    [InlineData(FlowchartExecutionMode.TokenBased)]
+    [InlineData(FlowchartExecutionMode.CounterBased)]
+    public async Task RespectsExecutionMode(FlowchartExecutionMode executionMode)
     {
         // Arrange
-        var originalValue = Flowchart.UseTokenFlow;
-        Flowchart.UseTokenFlow = useTokenFlow;
-
-        try
+        var activity = new WriteLine("Test");
+        var flowchart = new Flowchart
         {
-            var activity = new WriteLine("Test");
-            var flowchart = new Flowchart
-            {
-                Start = activity,
-                Activities = { activity }
-            };
+            Start = activity,
+            Activities = { activity }
+        };
 
-            // Act
-            var context = await ExecuteFlowchartAsync(flowchart);
+        // Act
+        var context = await ExecuteFlowchartAsync(flowchart, executionMode);
 
-            // Assert - just verify it executes without error
-            Assert.NotNull(context);
-        }
-        finally
-        {
-            Flowchart.UseTokenFlow = originalValue;
-        }
+        // Assert - just verify it executes without error
+        Assert.NotNull(context);
     }
 
     [Fact(DisplayName = "Accepts empty connections collection")]

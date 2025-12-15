@@ -12,6 +12,7 @@ using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
 using Elsa.WorkflowProviders.BlobStorage.ElsaScript.Extensions;
 using Elsa.Workflows;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Api;
 using Elsa.Workflows.CommitStates.Strategies;
 using Elsa.Workflows.IncidentStrategies;
@@ -60,6 +61,7 @@ services
                     strategies.Add("Every 10 seconds", new PeriodicWorkflowStrategy(TimeSpan.FromSeconds(10)));
                 });
             })
+            .UseFlowchart(flowchart => flowchart.UseCounterBasedExecution())
             .UseWorkflowManagement(management =>
             {
                 management.UseEntityFrameworkCore(ef => ef.UseSqlite());
