@@ -116,7 +116,7 @@ public class Tests
     }
 
     [Fact(DisplayName = "Default workflow strategy is not visible in commit strategy registry")]
-    public async Task DefaultWorkflowStrategyNotInRegistry()
+    public void DefaultWorkflowStrategyNotInRegistry()
     {
         // Arrange
         var services = new TestApplicationBuilder(_testOutputHelper)

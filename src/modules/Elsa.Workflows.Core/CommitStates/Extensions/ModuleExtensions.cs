@@ -23,7 +23,7 @@ public static class WorkflowsFeatureCommitStateExtensions
 
     /// <summary>
     /// Sets the specified workflow commit strategy as the global default for all workflows that do not specify their own strategy.
-    /// The strategy will be automatically registered if not already present.
+    /// The strategy will not be added to the registry and serves only as a fallback.
     /// </summary>
     /// <param name="workflowsFeature">The workflows feature.</param>
     /// <param name="strategy">The workflow commit strategy instance to use as the default.</param>
@@ -36,7 +36,7 @@ public static class WorkflowsFeatureCommitStateExtensions
 
     /// <summary>
     /// Sets the specified activity commit strategy as the global default for all activities that do not specify their own strategy.
-    /// The strategy will be automatically registered if not already present.
+    /// The strategy will not be added to the registry and serves only as a fallback.
     /// </summary>
     /// <param name="workflowsFeature">The workflows feature.</param>
     /// <param name="strategy">The activity commit strategy instance to use as the default.</param>
