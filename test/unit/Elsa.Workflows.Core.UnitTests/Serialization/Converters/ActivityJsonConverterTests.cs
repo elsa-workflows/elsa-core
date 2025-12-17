@@ -145,6 +145,11 @@ public sealed class ActivityJsonConverterTests
         };
 
         var activityRegistry = Substitute.For<IActivityRegistry>();
+
+        // Mock type name lookups to return null, ensuring the custom property lookup path is tested
+        activityRegistry.Find(Arg.Any<string>()).Returns((ActivityDescriptor?)null);
+        activityRegistry.Find(Arg.Any<string>(), Arg.Any<int>()).Returns((ActivityDescriptor?)null);
+
         activityRegistry
             .Find(Arg.Any<Func<ActivityDescriptor, bool>>())
             .Returns(callInfo => callInfo.Arg<Func<ActivityDescriptor, bool>>()(descriptor) ? descriptor : null);
