@@ -14,5 +14,5 @@ public interface IWorkflowInstanceExportNameProvider
     /// <param name="model">The export model representing the instance (optional).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A filename safe for saving to disk.</returns>
-    Task<string> GetFileNameAsync(WorkflowInstance instance, object model, CancellationToken cancellationToken = default);
+    Task<string> GetFileNameAsync(WorkflowInstance instance, object? model, CancellationToken cancellationToken = default);
 }

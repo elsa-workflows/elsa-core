@@ -31,7 +31,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly IPayloadSerializer _payloadSerializer;
     private readonly ISafeSerializer _safeSerializer;
-    private readonly IWorkflowInstanceExportNameProvider _workFlowInstanceExportNameProvider;
+    private readonly IWorkflowInstanceExportNameProvider _workflowInstanceExportNameProvider;
 
     /// <inheritdoc />
     public Export(
@@ -51,7 +51,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
         _workflowStateSerializer = workflowStateSerializer;
         _payloadSerializer = payloadSerializer;
         _safeSerializer = safeSerializer;
-        _workFlowInstanceExportNameProvider = workFlowInstanceExportNameProvider;
+        _workflowInstanceExportNameProvider = workFlowInstanceExportNameProvider;
     }
 
     /// <inheritdoc />
@@ -89,7 +89,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
                 var model = await CreateExportModelAsync(request, instance, cancellationToken);
                 var binaryJson = SerializeWorkflowInstance(model);
 
-                var fileName = await _workFlowInstanceExportNameProvider.GetFileNameAsync(instance, model, cancellationToken);
+                var fileName = await _workflowInstanceExportNameProvider.GetFileNameAsync(instance, model, cancellationToken);
 
                 var entry = zipArchive.CreateEntry(fileName, CompressionLevel.Optimal);
                 await using var entryStream = entry.Open();
@@ -114,7 +114,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
 
         var model = await CreateExportModelAsync(request, instance, cancellationToken);
         var binaryJson = SerializeWorkflowInstance(model);
-        var fileName = await _workFlowInstanceExportNameProvider.GetFileNameAsync(instance, model, cancellationToken);
+        var fileName = await _workflowInstanceExportNameProvider.GetFileNameAsync(instance, model, cancellationToken);
 
         await Send.BytesAsync(binaryJson, fileName, cancellation: cancellationToken);
     }

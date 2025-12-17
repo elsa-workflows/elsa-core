@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Api;
 /// </summary>
 public class DefaultWorkflowInstanceExportNameProvider : IWorkflowInstanceExportNameProvider
 {
-    public Task<string> GetFileNameAsync(WorkflowInstance instance, object model, CancellationToken cancellationToken = default)
+    public Task<string> GetFileNameAsync(WorkflowInstance instance, object? model, CancellationToken cancellationToken = default)
     {
         var fileName = $"workflow-instance-{instance.Id.ToLowerInvariant()}.json";
         return Task.FromResult(fileName);
