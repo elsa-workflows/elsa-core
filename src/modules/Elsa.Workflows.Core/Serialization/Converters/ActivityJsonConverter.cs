@@ -103,8 +103,8 @@ public class ActivityJsonConverter(
             var activityDescriptorOverride = FindActivityDescriptorByCustomProperty("WorkflowDefinitionVersionId", workflowDefinitionVersionIdElement);
             if (activityDescriptorOverride is not null)
             {
-                activityDescriptor = FindActivityDescriptorByCustomProperty("WorkflowDefinitionVersionId", workflowDefinitionVersionIdElement);            
-                activityTypeVersion = activityDescriptor?.Version ?? 0;
+                activityDescriptor = activityDescriptorOverride;
+                activityTypeVersion = activityDescriptor.Version;
             }
         }
         // This is also a special case when working with the WorkflowDefinitionActivity: if no 'well-known' activity could be found, it might be a workflow-as-activity with a workflowDefinitionId
