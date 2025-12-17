@@ -1,4 +1,5 @@
-﻿using Elsa.WorkflowProviders.BlobStorage.Contracts;
+﻿using Elsa.Extensions;
+using Elsa.WorkflowProviders.BlobStorage.Contracts;
 using Elsa.Workflows.Runtime;
 using FluentStorage.Blobs;
 using JetBrains.Annotations;
@@ -71,11 +72,13 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
     {
         var blobStorage = _blobStorageProvider.GetBlobStorage();
         var content = await blobStorage.ReadTextAsync(blob.FullPath, cancellationToken: cancellationToken);
-
         var contentType = blob.Properties.TryGetValue("ContentType", out var ct) ? ct?.ToString() : null;
 
         foreach (var handler in _handlers)
         {
+            if (!handler.SupportsExtension(blob.GetExtension()))
+                continue;
+            
             if (!handler.CanHandle(blob, contentType))
                 continue;
 
