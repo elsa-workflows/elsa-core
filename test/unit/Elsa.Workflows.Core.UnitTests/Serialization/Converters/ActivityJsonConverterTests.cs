@@ -20,11 +20,7 @@ public sealed class ActivityJsonConverterTests
     public void When_DeserializeKnownActivity_And_TypeNameSpecified_Then_FindsAndInstantiatesActivity()
     {
         // Arrange
-        var activityRegistry = Substitute.For<IActivityRegistry>();
-        activityRegistry
-            .Find(WriteLineActivityTypeName)
-            .Returns(new ActivityDescriptor { Constructor = (ctx) => WriteLineActivity });
-
+        var activityRegistry = CreateActivityRegistry(WriteLineActivityTypeName, WriteLineActivity);
         var sut = CreateSut(activityRegistry);
 
         // Act
@@ -38,11 +34,7 @@ public sealed class ActivityJsonConverterTests
     public void When_DeserializeKnownActivity_And_TypeNameSpecified_And_VersionSpecified_Then_FindsAndInstantiatesActivity()
     {
         // Arrange
-        var activityRegistry = Substitute.For<IActivityRegistry>();
-        activityRegistry
-            .Find(WriteLineActivityTypeName, 1)
-            .Returns(new ActivityDescriptor { Constructor = (ctx) => WriteLineActivity });
-
+        var activityRegistry = CreateActivityRegistry(WriteLineActivityTypeName, WriteLineActivity, version: 1);
         var sut = CreateSut(activityRegistry);
 
         // Act
@@ -86,7 +78,7 @@ public sealed class ActivityJsonConverterTests
         var activityRegistry = CreateActivityRegistry_FindByCustomProperty(
             WorkflowDefinitionIdCustomPropertyName,
             WorkflowAsActivityDefinitionId
-        );        
+        );
 
         var sut = CreateSut(activityRegistry);
 
@@ -102,7 +94,7 @@ public sealed class ActivityJsonConverterTests
     {
         // Arrange
         var activityRegistry = CreateActivityRegistry_FindByCustomProperty(
-            WorkflowDefinitionVersionIdCustomPropertyName, 
+            WorkflowDefinitionVersionIdCustomPropertyName,
             WorkflowAsActivityDefinitionVersionId
         );
         var sut = CreateSut(activityRegistry);
@@ -118,13 +110,7 @@ public sealed class ActivityJsonConverterTests
     public void When_DeserializeWorkflowAsActivity_And_TypeNameSpecified_Then_FindsAndInstantiatesActivity()
     {
         // Arrange
-        var activityRegistry = CreateActivityRegistry(
-            WorkflowAsActivityTypeName,
-            new ActivityDescriptor
-            {
-                Constructor = (ctx) => WorkflowAsActivity
-            }
-        );
+        var activityRegistry = CreateActivityRegistry(WorkflowAsActivityTypeName, WorkflowAsActivity);
         var sut = CreateSut(activityRegistry);
 
         // Act
@@ -134,62 +120,48 @@ public sealed class ActivityJsonConverterTests
         Assert.Same(WorkflowAsActivity, result);
     }
 
-    static IActivity? Execute(ActivityJsonConverter sut, string json)
-    {
-        return JsonSerializer.Deserialize<IActivity>(
-            json,
-            GetSerializerOptions(sut)
-        );
-    }
+    static IActivity? Execute(ActivityJsonConverter sut, string json) =>
+        JsonSerializer.Deserialize<IActivity>(json, GetSerializerOptions(sut));
 
-    static IActivityRegistry CreateActivityRegistry(string typeName, ActivityDescriptor? returnDescriptor)
+    static IActivityRegistry CreateActivityRegistry(string typeName, IActivity activity, int? version = null)
     {
+        var descriptor = new ActivityDescriptor { Constructor = _ => activity };
         var activityRegistry = Substitute.For<IActivityRegistry>();
-        activityRegistry
-            .Find(typeName)
-            .Returns(returnDescriptor);
+
+        if (version.HasValue)
+            activityRegistry.Find(typeName, version.Value).Returns(descriptor);
+        else
+            activityRegistry.Find(typeName).Returns(descriptor);
 
         return activityRegistry;
     }
 
     static IActivityRegistry CreateActivityRegistry_FindByCustomProperty(string customPropertyName, string customPropertyValue)
     {
+        var descriptor = new ActivityDescriptor
+        {
+            Constructor = _ => WorkflowAsActivity,
+            CustomProperties = { [customPropertyName] = customPropertyValue }
+        };
+
         var activityRegistry = Substitute.For<IActivityRegistry>();
         activityRegistry
             .Find(Arg.Any<Func<ActivityDescriptor, bool>>())
-            .Returns(callInfo =>
-            {
-                var activityDescriptor = new ActivityDescriptor
-                {
-                    Constructor = (ctx) => WorkflowAsActivity,
-                    CustomProperties =
-                    {
-                        [customPropertyName] = customPropertyValue
-                    }
-                };
-                var predicate = callInfo.Arg<Func<ActivityDescriptor, bool>>();
-                if (predicate(activityDescriptor))
-                {
-                    return activityDescriptor;
-                }
+            .Returns(callInfo => callInfo.Arg<Func<ActivityDescriptor, bool>>()(descriptor) ? descriptor : null);
 
-                return null;
-            });
         return activityRegistry;
     }
 
-    static JsonSerializerOptions GetSerializerOptions(ActivityJsonConverter sut)
+    static JsonSerializerOptions GetSerializerOptions(ActivityJsonConverter sut) => new()
     {
-        var options = new JsonSerializerOptions();
-        options.Converters.Add(sut);
-        options.Converters.Add(new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()));
-        options.Converters.Add(new PolymorphicObjectConverterFactory());
-
-        var modifiers = new CustomConstructorConfigurator().GetModifiers();
-        options.TypeInfoResolver = new ModifiableJsonTypeInfoResolver(modifiers);
-
-        return options;
-    }
+        Converters =
+        {
+            sut,
+            new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()),
+            new PolymorphicObjectConverterFactory()
+        },
+        TypeInfoResolver = new ModifiableJsonTypeInfoResolver(new CustomConstructorConfigurator().GetModifiers())
+    };
 
     private const string UnknownActivityTypeName = "Some.Unknown.Activity";
     private const string WorkflowAsActivityTypeName = "Test-SubWorkflow";
@@ -201,140 +173,152 @@ public sealed class ActivityJsonConverterTests
     private static readonly string WriteLineActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<WriteLine>();
     private static readonly string NotFoundActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
 
-    private const string WriteLineActivityJson_WithVersion = @"
-        {
-            ""text"": {
-                ""typeName"": ""String"",
-                ""expression"": {
-                    ""type"": ""Literal"",
-                    ""value"": ""Hello world!""
-                }
-            },
-            ""id"": ""b54b024aa7469287"",
-            ""nodeId"": ""Workflow1:51139b0cc83d3b07:b54b024aa7469287"",
-            ""name"": ""WriteLine1"",
-            ""type"": ""Elsa.WriteLine"",
-            ""version"": 1,
-            ""customProperties"": {
-                ""canStartWorkflow"": false,
-                ""runAsynchronously"": false
-            },
-            ""metadata"": {}
-        }
-    ";
-    private const string UnknownActivityJson = @"
-        {
-            ""text"": {
-                ""typeName"": ""String"",
-                ""expression"": {
-                    ""type"": ""Literal"",
-                    ""value"": ""Hello world!""
-                }
-            },
-            ""id"": ""b54b024aa7469287"",
-            ""nodeId"": ""Workflow1:51139b0cc83d3b07:b54b024aa7469287"",
-            ""name"": ""Unknown1"",
-            ""type"": ""Some.Unknown.Activity"",
-            ""customProperties"": {
-                ""canStartWorkflow"": false,
-                ""runAsynchronously"": false
-            },
-            ""metadata"": {}
-        }
-    ";
-    private const string WriteLineActivityJson_WithoutVersion = @"
-        {
-            ""text"": {
-                ""typeName"": ""String"",
-                ""expression"": {
-                    ""type"": ""Literal"",
-                    ""value"": ""Hello world!""
-                }
-            },
-            ""id"": ""b54b024aa7469287"",
-            ""nodeId"": ""Workflow1:51139b0cc83d3b07:b54b024aa7469287"",
-            ""name"": ""WriteLine1"",
-            ""type"": ""Elsa.WriteLine"",
-            ""customProperties"": {
-                ""canStartWorkflow"": false,
-                ""runAsynchronously"": false
-            },
-            ""metadata"": {}
-        }
-    ";
+    private const string WriteLineActivityJson_WithVersion = 
+"""
+ {
+     "text": {
+         "typeName": "String",
+         "expression": {
+             "type": "Literal",
+             "value": "Hello world!"
+         }
+     },
+     "id": "b54b024aa7469287",
+     "nodeId": "Workflow1:51139b0cc83d3b07:b54b024aa7469287",
+     "name": "WriteLine1",
+     "type": "Elsa.WriteLine",
+     "version": 1,
+     "customProperties": {
+         "canStartWorkflow": false,
+         "runAsynchronously": false
+     },
+     "metadata": {}
+ }
+ """;
 
-    private const string WorkflowAsActivityJson_WithVersionId = @"
-    {
-        ""workflowDefinitionVersionId"": ""aaa1112fff2443"",
-        ""id"": ""5fc551ed366fe9fd"",
-        ""nodeId"": ""Workflow2:cad9d2186550a8d7:5fc551ed366fe9fd"",
-        ""name"": ""Test-SubWorkflow1"",
-        ""type"": ""Test-SubWorkflow"",
-        ""customProperties"": {
-            ""canStartWorkflow"": false,
-            ""runAsynchronously"": false,
-            ""logPersistenceMode"": {
-                ""default"": ""Inherit"",
-                ""inputs"": {},
-                ""outputs"": {}
-            },
-            ""logPersistenceConfig"": {
-                ""default"": null,
-                ""internalState"": null,
-                ""inputs"": {},
-                ""outputs"": {}
-            }
-        },
-        ""metadata"": {}
-    }";
-    private const string WorkflowAsActivityJson_WithDefinitionId = @"
-    {
-        ""workflowDefinitionId"": ""bd94124913202141"",
-        ""id"": ""5fc551ed366fe9fd"",
-        ""nodeId"": ""Workflow2:cad9d2186550a8d7:5fc551ed366fe9fd"",
-        ""name"": ""Test-SubWorkflow1"",
-        ""type"": ""Test-SubWorkflow"",
-        ""customProperties"": {
-            ""canStartWorkflow"": false,
-            ""runAsynchronously"": false,
-            ""logPersistenceMode"": {
-                ""default"": ""Inherit"",
-                ""inputs"": {},
-                ""outputs"": {}
-            },
-            ""logPersistenceConfig"": {
-                ""default"": null,
-                ""internalState"": null,
-                ""inputs"": {},
-                ""outputs"": {}
-            }
-        },
-        ""metadata"": {}
-    }";
+    private const string UnknownActivityJson = 
+"""
+{
+   "text": {
+       "typeName": "String",
+       "expression": {
+           "type": "Literal",
+           "value": "Hello world!"
+       }
+   },
+   "id": "b54b024aa7469287",
+   "nodeId": "Workflow1:51139b0cc83d3b07:b54b024aa7469287",
+   "name": "Unknown1",
+   "type": "Some.Unknown.Activity",
+   "customProperties": {
+       "canStartWorkflow": false,
+       "runAsynchronously": false
+   },
+   "metadata": {}
+}
+""";
 
-    private const string WorkflowAsActivityJson_WithTypeNameOnly = @"
-    {
-        ""id"": ""5fc551ed366fe9fd"",
-        ""nodeId"": ""Workflow2:cad9d2186550a8d7:5fc551ed366fe9fd"",
-        ""name"": ""Test-SubWorkflow1"",
-        ""type"": ""Test-SubWorkflow"",
-        ""customProperties"": {
-            ""canStartWorkflow"": false,
-            ""runAsynchronously"": false,
-            ""logPersistenceMode"": {
-                ""default"": ""Inherit"",
-                ""inputs"": {},
-                ""outputs"": {}
-            },
-            ""logPersistenceConfig"": {
-                ""default"": null,
-                ""internalState"": null,
-                ""inputs"": {},
-                ""outputs"": {}
-            }
+    private const string WriteLineActivityJson_WithoutVersion = 
+"""
+{
+    "text": {
+        "typeName": "String",
+        "expression": {
+            "type": "Literal",
+            "value": "Hello world!"
+        }
+    },
+    "id": "b54b024aa7469287",
+    "nodeId": "Workflow1:51139b0cc83d3b07:b54b024aa7469287",
+    "name": "WriteLine1",
+    "type": "Elsa.WriteLine",
+    "customProperties": {
+        "canStartWorkflow": false,
+        "runAsynchronously": false
+    },
+    "metadata": {}
+}
+""";
+
+    private const string WorkflowAsActivityJson_WithVersionId = 
+"""
+{
+    "workflowDefinitionVersionId": "aaa1112fff2443",
+    "id": "5fc551ed366fe9fd",
+    "nodeId": "Workflow2:cad9d2186550a8d7:5fc551ed366fe9fd",
+    "name": "Test-SubWorkflow1",
+    "type": "Test-SubWorkflow",
+    "customProperties": {
+        "canStartWorkflow": false,
+        "runAsynchronously": false,
+        "logPersistenceMode": {
+            "default": "Inherit",
+            "inputs": {},
+            "outputs": {}
         },
-        ""metadata"": {}
-    }";
+        "logPersistenceConfig": {
+            "default": null,
+            "internalState": null,
+            "inputs": {},
+            "outputs": {}
+        }
+    },
+    "metadata": {}
+}
+""";
+
+    private const string WorkflowAsActivityJson_WithDefinitionId = 
+"""
+{
+   "workflowDefinitionId": "bd94124913202141",
+   "id": "5fc551ed366fe9fd",
+   "nodeId": "Workflow2:cad9d2186550a8d7:5fc551ed366fe9fd",
+   "name": "Test-SubWorkflow1",
+   "type": "Test-SubWorkflow",
+   "customProperties": {
+       "canStartWorkflow": false,
+       "runAsynchronously": false,
+       "logPersistenceMode": {
+           "default": "Inherit",
+           "inputs": {},
+           "outputs": {}
+       },
+       "logPersistenceConfig": {
+           "default": null,
+           "internalState": null,
+           "inputs": {},
+           "outputs": {}
+       }
+   },
+   "metadata": {}
+}
+""";
+
+    private const string WorkflowAsActivityJson_WithTypeNameOnly = 
+"""
+{
+   "id": "5fc551ed366fe9fd",
+   "nodeId": "Workflow2:cad9d2186550a8d7:5fc551ed366fe9fd",
+   "name": "Test-SubWorkflow1",
+   "type": "Test-SubWorkflow",
+   "customProperties": {
+       "canStartWorkflow": false,
+       "runAsynchronously": false,
+       "logPersistenceMode": {
+           "default": "Inherit",
+           "inputs": {},
+           "outputs": {}
+       },
+       "logPersistenceConfig": {
+           "default": null,
+           "internalState": null,
+           "inputs": {},
+           "outputs": {}
+       }
+   },
+   "metadata": {}
+}
+""";
 
     private static readonly IActivity WorkflowAsActivity = new WorkflowDefinitionActivity
     {
@@ -345,20 +329,17 @@ public sealed class ActivityJsonConverterTests
     private static ActivityJsonConverter CreateSut(IActivityRegistry activityRegistry)
     {
         var expressionDescriptorRegistry = new ExpressionDescriptorRegistry([]);
-        return new ActivityJsonConverter(
+        return new(
             activityRegistry,
             expressionDescriptorRegistry,
-            new ActivityWriter(
+            new(
                 activityRegistry,
-                new SyntheticPropertiesWriter(expressionDescriptorRegistry),
+                new(expressionDescriptorRegistry),
                 CreateLogger<ActivityWriter>()
             ),
             Substitute.For<IServiceProvider>()
         );
     }
 
-    private static ILogger<T> CreateLogger<T>()
-    {
-        return LoggerFactory.Create(x => { }).CreateLogger<T>();
-    }
+    private static ILogger<T> CreateLogger<T>() => LoggerFactory.Create(_ => { }).CreateLogger<T>();
 }
