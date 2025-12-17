@@ -84,14 +84,17 @@ public class ActivityJsonConverter(
         // First try and find the activity by its workflow definition version id. This is a special case when working with the WorkflowDefinitionActivity.
         if (activityRoot.TryGetProperty("workflowDefinitionVersionId", out var workflowDefinitionVersionIdElement))
         {
-            var workflowDefinitionVersionId = workflowDefinitionVersionIdElement.GetString();
-            activityDescriptor = activityRegistry.Find(x =>
-                x.CustomProperties.TryGetValue("WorkflowDefinitionVersionId", out var value) && (string?)value == workflowDefinitionVersionId);
+            activityDescriptor = FindActivityDescriptorByCustomProperty("WorkflowDefinitionVersionId", workflowDefinitionVersionIdElement);            
             activityTypeVersion = activityDescriptor?.Version ?? 0;
         }
-
+        // Or, when working with the WorkflowDefinitionActivity, we should try and find the activity by its workflow definition id.
+        else if (activityRoot.TryGetProperty("workflowDefinitionId", out var workflowDefinitionIdElement))
+        {
+            activityDescriptor = FindActivityDescriptorByCustomProperty("WorkflowDefinitionId", workflowDefinitionIdElement);
+            activityTypeVersion = activityDescriptor?.Version ?? 0;
+        }
         // If the activity type version is specified, use that to find the activity descriptor.
-        if (activityDescriptor == null && activityRoot.TryGetProperty("version", out var activityVersionElement))
+        else if (activityDescriptor == null && activityRoot.TryGetProperty("version", out var activityVersionElement))
         {
             activityTypeVersion = activityVersionElement.GetInt32();
             activityDescriptor = activityRegistry.Find(activityTypeName, activityTypeVersion);
@@ -105,6 +108,16 @@ public class ActivityJsonConverter(
         }
 
         return activityTypeName;
+    }
+
+    private ActivityDescriptor? FindActivityDescriptorByCustomProperty(string customPropertyName, JsonElement valueElement)
+    {
+        var searchValue = valueElement.GetString();
+        return activityRegistry.Find(x =>
+        {
+            return x.CustomProperties.TryGetValue(customPropertyName, out var value) 
+                && (string?)value == searchValue;
+        });
     }
 
     private JsonSerializerOptions GetClonedOptions(JsonSerializerOptions options)
