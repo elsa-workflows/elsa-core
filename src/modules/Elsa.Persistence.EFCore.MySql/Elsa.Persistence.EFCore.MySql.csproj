@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
+        <!-- Pomelo targets EF Core up to 9.x, so exclude MySQL provider for net10.0. -->
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
         <Description>
             Provides MySQL EF Core migrations for various modules.
         </Description>
@@ -8,12 +9,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
-        <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all"/>
+        <PackageReference Include="Pomelo.EntityFrameworkCore.MySql"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Persistence.EFCore\Elsa.Persistence.EFCore.csproj" />
+        <ProjectReference Include="..\Elsa.Persistence.EFCore\Elsa.Persistence.EFCore.csproj"/>
     </ItemGroup>
 
 </Project>
