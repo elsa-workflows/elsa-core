@@ -121,6 +121,9 @@ public class ActivityJsonConverter(
 
     private ActivityDescriptor? FindActivityDescriptorByCustomProperty(string customPropertyName, JsonElement valueElement)
     {
+        if (valueElement.ValueKind != JsonValueKind.String)
+            return null;
+        
         var searchValue = valueElement.GetString();
         return activityRegistry.Find(x =>
         {
