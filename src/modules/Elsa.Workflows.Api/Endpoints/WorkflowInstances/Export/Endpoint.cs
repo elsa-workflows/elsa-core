@@ -31,6 +31,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly IPayloadSerializer _payloadSerializer;
     private readonly ISafeSerializer _safeSerializer;
+    private readonly IWorkflowInstanceExportNameProvider _workflowInstanceExportNameProvider;
 
     /// <inheritdoc />
     public Export(
@@ -40,7 +41,8 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
         IBookmarkStore bookmarkStore,
         IWorkflowStateSerializer workflowStateSerializer,
         IPayloadSerializer payloadSerializer,
-        ISafeSerializer safeSerializer)
+        ISafeSerializer safeSerializer,
+        IWorkflowInstanceExportNameProvider workFlowInstanceExportNameProvider)
     {
         _workflowInstanceStore = workflowInstanceStore;
         _activityExecutionStore = activityExecutionStore;
@@ -49,6 +51,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
         _workflowStateSerializer = workflowStateSerializer;
         _payloadSerializer = payloadSerializer;
         _safeSerializer = safeSerializer;
+        _workflowInstanceExportNameProvider = workFlowInstanceExportNameProvider;
     }
 
     /// <inheritdoc />
@@ -85,7 +88,9 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
             {
                 var model = await CreateExportModelAsync(request, instance, cancellationToken);
                 var binaryJson = SerializeWorkflowInstance(model);
-                var fileName = GetFileName(instance.WorkflowState);
+
+                var fileName = await _workflowInstanceExportNameProvider.GetFileNameAsync(instance, model, cancellationToken);
+
                 var entry = zipArchive.CreateEntry(fileName, CompressionLevel.Optimal);
                 await using var entryStream = entry.Open();
                 await entryStream.WriteAsync(binaryJson, cancellationToken);
@@ -109,7 +114,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
 
         var model = await CreateExportModelAsync(request, instance, cancellationToken);
         var binaryJson = SerializeWorkflowInstance(model);
-        var fileName = GetFileName(instance.WorkflowState);
+        var fileName = await _workflowInstanceExportNameProvider.GetFileNameAsync(instance, model, cancellationToken);
 
         await Send.BytesAsync(binaryJson, fileName, cancellation: cancellationToken);
     }
@@ -166,12 +171,6 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
         var order = new WorkflowExecutionLogRecordOrder<DateTimeOffset>(x => x.Timestamp, OrderDirection.Ascending);
         var page = await _workflowExecutionLogStore.FindManyAsync(filter, PageArgs.All, order, cancellationToken);
         return page.Items;
-    }
-
-    private static string GetFileName(WorkflowState instance)
-    {
-        var fileName = $"workflow-instance-{instance.Id.ToLowerInvariant()}.json";
-        return fileName;
     }
 
     private static byte[] SerializeWorkflowInstance(ExportedWorkflowState model)
