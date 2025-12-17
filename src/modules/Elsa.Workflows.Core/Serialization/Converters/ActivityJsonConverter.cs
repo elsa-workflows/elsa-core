@@ -81,7 +81,7 @@ public class ActivityJsonConverter(
         activityDescriptor = null;
         activityTypeVersion = 0;
 
-        // First we check whether the activity type name is a 'well-known' activity; not a workflow-as-activity
+        // First, we check whether the activity type name is a 'well-known' activity; not a workflow-as-activity
 
         // If the activity type version is specified, use that to find the activity descriptor.
         if (activityRoot.TryGetProperty("version", out var activityVersionElement))
@@ -101,16 +101,16 @@ public class ActivityJsonConverter(
         if (activityRoot.TryGetProperty("workflowDefinitionVersionId", out var workflowDefinitionVersionIdElement))
         {
             var activityDescriptorOverride = FindActivityDescriptorByCustomProperty("WorkflowDefinitionVersionId", workflowDefinitionVersionIdElement);
-            if (activityDescriptorOverride is not null)
-            {
-                activityDescriptor = activityDescriptorOverride;
-                activityTypeVersion = activityDescriptor.Version;
-            }
+            if (activityDescriptorOverride is null)
+                return activityTypeName;
+
+            activityDescriptor = activityDescriptorOverride;
+            activityTypeVersion = activityDescriptor.Version;
         }
         // This is also a special case when working with the WorkflowDefinitionActivity: if no 'well-known' activity could be found, it might be a workflow-as-activity with a workflowDefinitionId
         else if (activityDescriptor is null
-            && activityRoot.TryGetProperty("workflowDefinitionId", out var workflowDefinitionIdElement)
-            && workflowDefinitionIdElement.ValueKind == JsonValueKind.String)
+                 && activityRoot.TryGetProperty("workflowDefinitionId", out var workflowDefinitionIdElement)
+                 && workflowDefinitionIdElement.ValueKind == JsonValueKind.String)
         {
             activityDescriptor = FindActivityDescriptorByCustomProperty("WorkflowDefinitionId", workflowDefinitionIdElement);
             activityTypeVersion = activityDescriptor?.Version ?? 0;
@@ -123,13 +123,9 @@ public class ActivityJsonConverter(
     {
         if (valueElement.ValueKind != JsonValueKind.String)
             return null;
-        
+
         var searchValue = valueElement.GetString();
-        return activityRegistry.Find(x =>
-        {
-            return x.CustomProperties.TryGetValue(customPropertyName, out var value) 
-                && (string?)value == searchValue;
-        });
+        return activityRegistry.Find(x => x.CustomProperties.TryGetValue(customPropertyName, out var value) && (string?)value == searchValue);
     }
 
     private JsonSerializerOptions GetClonedOptions(JsonSerializerOptions options)
@@ -140,7 +136,7 @@ public class ActivityJsonConverter(
         clonedOptions.Converters.Add(new ExpressionJsonConverterFactory(expressionDescriptorRegistry));
         return clonedOptions;
     }
-    
+
     private JsonSerializerOptions GetClonedWriterOptions(JsonSerializerOptions options)
     {
         var clonedOptions = GetClonedOptions(options);
