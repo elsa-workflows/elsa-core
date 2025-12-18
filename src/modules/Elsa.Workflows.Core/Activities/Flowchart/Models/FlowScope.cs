@@ -86,13 +86,28 @@ public class FlowScope
     /// <param name="flowGraph">The flow graph containing connections.</param>
     /// <param name="activity">The activity to check.</param>
     /// <returns>True if any inbound connection has been followed, otherwise false.</returns>
-    public bool HasFollowedInboundConnection(FlowGraph flowGraph, IActivity activity)
+    public bool AnyInboundConnectionsFollowed(FlowGraph flowGraph, IActivity activity)
     {
         var forwardInboundConnections = flowGraph.GetForwardInboundConnections(activity);
         var outboundActivityVisitCount = GetActivityVisitCount(activity);
         var maxConnectionVisitCount = forwardInboundConnections.Max(GetConnectionVisitCount);
         return maxConnectionVisitCount > outboundActivityVisitCount 
             && forwardInboundConnections.Any(c => GetConnectionVisitCount(c) == maxConnectionVisitCount && GetConnectionLastVisitFollowed(c));
+    }
+
+    /// <summary>
+    /// Determines whether all inbound connection to the specified activity has been followed.
+    /// </summary>
+    /// <param name="flowGraph">The flow graph containing connections.</param>
+    /// <param name="activity">The activity to check.</param>
+    /// <returns>True if all inbound connection has been followed, otherwise false.</returns>
+    public bool AllInboundConnectionsFollowed(FlowGraph flowGraph, IActivity activity)
+    {
+        var forwardInboundConnections = flowGraph.GetForwardInboundConnections(activity);
+        var outboundActivityVisitCount = GetActivityVisitCount(activity);
+        var maxConnectionVisitCount = forwardInboundConnections.Max(GetConnectionVisitCount);
+        return maxConnectionVisitCount > outboundActivityVisitCount
+            && forwardInboundConnections.All(c => GetConnectionVisitCount(c) == maxConnectionVisitCount && GetConnectionLastVisitFollowed(c));
     }
 
     /// <summary>

@@ -10,17 +10,17 @@ public record ActivityDescriptor
     /// <summary>
     /// The fully qualified name of the activity type.
     /// </summary>
-    public string TypeName { get; init; } = default!;
+    public string TypeName { get; init; } = null!;
 
     /// <summary>
     /// The namespace of the activity type.
     /// </summary>
-    public string Namespace { get; init; } = default!;
+    public string Namespace { get; init; } = null!;
     
     /// <summary>
     /// The name of the activity type.
     /// </summary>
-    public string Name { get; init; } = default!;
+    public string Name { get; init; } = null!;
     
     /// <summary>
     /// The version of the activity type.
@@ -30,7 +30,7 @@ public record ActivityDescriptor
     /// <summary>
     /// The category of the activity type.
     /// </summary>
-    public string Category { get; init; } = default!;
+    public string Category { get; init; } = null!;
     
     /// <summary>
     /// The display name of the activity type.

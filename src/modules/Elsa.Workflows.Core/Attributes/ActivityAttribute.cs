@@ -8,21 +8,21 @@ public class ActivityAttribute : Attribute
         // Default constructor.
     }
     
-    public ActivityAttribute(string @namespace, string? category, string? description = default)
+    public ActivityAttribute(string @namespace, string? category, string? description = null)
     {
         Namespace = @namespace;
         Description = description;
         Category = category;
     }
 
-    public ActivityAttribute(string @namespace, string? description = default)
+    public ActivityAttribute(string @namespace, string? description = null)
     {
         Namespace = @namespace;
         Description = description;
         Category = @namespace;
     }
 
-    public ActivityAttribute(string @namespace, string? type, int version = 1, string? description = default, string? category = default)
+    public ActivityAttribute(string @namespace, string? type, int version = 1, string? description = null, string? category = null)
     {
         Namespace = @namespace;
         Type = type;
@@ -38,4 +38,5 @@ public class ActivityAttribute : Attribute
     public string? DisplayName { get; set; }
     public string? Category { get; set; }
     public ActivityKind Kind { get; set; } = ActivityKind.Action;
+    public bool RunAsynchronously { get; set; }
 }

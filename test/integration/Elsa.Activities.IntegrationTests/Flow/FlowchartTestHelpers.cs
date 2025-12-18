@@ -1,8 +1,10 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities.Flowchart.Activities;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests.Flow;
@@ -20,9 +22,13 @@ public static class FlowchartTestHelpers
         return builder.Build();
     }
 
-    public static async Task<RunWorkflowResult> RunFlowchartAsync(IServiceProvider services, Flowchart flowchart)
+    public static async Task<RunWorkflowResult> RunFlowchartAsync(IServiceProvider services, Flowchart flowchart, FlowchartExecutionMode? executionMode = null)
     {
-        return await services.RunActivityAsync(flowchart);
+        var options = executionMode.HasValue
+            ? new RunWorkflowOptions().WithFlowchartExecutionMode(executionMode.Value)
+            : null;
+
+        return await services.RunActivityAsync(flowchart, options);
     }
 
     public static Connection CreateConnection(IActivity source, IActivity target, string? outcome = "Done")

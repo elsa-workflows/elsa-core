@@ -27,7 +27,7 @@ public class FlowJoin : Activity, IJoinNode
     /// The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All).
     /// </summary>
     [Input(
-        Description = "The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All).",
+        Description = "The join mode determines whether this activity should continue as soon as one inbound path comes in (WaitAny), or once all inbound paths have executed (WaitAll). To wait for all activated inbound paths, set the mode to WaitAllActive.",
         DefaultValue = FlowJoinMode.WaitAny,
         UIHint = InputUIHints.DropDown
     )]
@@ -40,19 +40,7 @@ public class FlowJoin : Activity, IJoinNode
             if (context.ParentActivityExecutionContext != null)
                 await context.ParentActivityExecutionContext.CancelInboundAncestorsAsync(this);
 
+        // The join behavior is handled by Flowchart, so we can simply complete the activity here.
         await context.CompleteActivityAsync();
-    }
-
-    protected override bool CanExecute(ActivityExecutionContext context)
-    {
-        if(Flowchart.UseTokenFlow)
-            return true;
-        
-        return context.Get(Mode) switch
-        {
-            FlowJoinMode.WaitAny => true,
-            FlowJoinMode.WaitAll => Flowchart.CanWaitAllProceed(context),
-            _ => true
-        };
     }
 }
