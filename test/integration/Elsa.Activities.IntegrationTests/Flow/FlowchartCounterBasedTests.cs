@@ -11,23 +11,15 @@ namespace Elsa.Activities.IntegrationTests.Flow;
 /// Integration tests for counter-based flowchart execution strategy.
 /// </summary>
 [Collection("FlowchartTests")]
-public class FlowchartCounterBasedTests : IDisposable
+public class FlowchartCounterBasedTests
 {
     private readonly IServiceProvider _services;
     private readonly CapturingTextWriter _output;
-    private readonly bool _originalFlowMode;
 
     public FlowchartCounterBasedTests(ITestOutputHelper testOutputHelper)
     {
         _output = new();
         _services = CreateServiceProvider(testOutputHelper, _output);
-        _originalFlowMode = Flowchart.UseTokenFlow;
-        Flowchart.UseTokenFlow = false;
-    }
-
-    public void Dispose()
-    {
-        Flowchart.UseTokenFlow = _originalFlowMode;
     }
 
     [Fact(DisplayName = "Executes simple linear flowchart")]
@@ -41,7 +33,7 @@ public class FlowchartCounterBasedTests : IDisposable
         );
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
         Assert.Equal(3, _output.Lines.Count);
@@ -60,7 +52,7 @@ public class FlowchartCounterBasedTests : IDisposable
         var flowchart = CreateBranchingFlowchart(start, branch1, branch2);
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
         Assert.Equal(3, _output.Lines.Count);
@@ -81,7 +73,7 @@ public class FlowchartCounterBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
         Assert.Single(_output.Lines);
@@ -98,7 +90,7 @@ public class FlowchartCounterBasedTests : IDisposable
         };
 
         // Act
-        var result = await RunFlowchartAsync(_services, flowchart);
+        var result = await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
         Assert.NotNull(result);
@@ -122,7 +114,7 @@ public class FlowchartCounterBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
         Assert.Single(_output.Lines);
@@ -154,7 +146,7 @@ public class FlowchartCounterBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
         Assert.Contains("Start", _output.Lines);
@@ -188,7 +180,7 @@ public class FlowchartCounterBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
         Assert.Contains("Start", _output.Lines);
@@ -229,7 +221,7 @@ public class FlowchartCounterBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
         Assert.Contains("Start", _output.Lines);
@@ -269,7 +261,7 @@ public class FlowchartCounterBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
         Assert.Contains("Start", _output.Lines);
@@ -292,7 +284,7 @@ public class FlowchartCounterBasedTests : IDisposable
         );
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
         Assert.Equal(4, _output.Lines.Count);
@@ -342,7 +334,7 @@ public class FlowchartCounterBasedTests : IDisposable
         };
 
         // Act
-        await RunFlowchartAsync(_services, flowchart);
+        await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
         Assert.Single(_output.Lines);

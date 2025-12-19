@@ -49,24 +49,13 @@ public static class JsonActivityConstructorContextHelper
 
         // 7) Pull out your boolean flags from the cleaned element
         var canStartWorkflow = GetBoolean(cleanedElement, "canStartWorkflow");
-        var runAsynchronously = GetNullableBoolean(cleanedElement, "runAsynchronously");
-        if (runAsynchronously is null)
-        {
-            if (activityDescriptor.Attributes.OfType<TaskActivityAttribute>().FirstOrDefault() is { } taskActivityAttribute)
-            {
-                runAsynchronously = taskActivityAttribute.RunAsynchronously;
-            }
-            else
-            {
-                runAsynchronously = false;
-            }
-        }
+        var runAsynchronously = GetNullableBoolean(cleanedElement, "runAsynchronously") ?? activityDescriptor.RunAsynchronously;
 
         // 8) If composite, setup
         if (activity is IComposite composite)
             composite.Setup();
 
-        // 9) Your existing synthetic inputs/outputs routines, using the cleanedElement
+        // 9) Existing synthetic inputs/outputs routines, using the cleanedElement
         ReadSyntheticInputs(activityDescriptor, activity, cleanedElement, serializerOptions);
         ReadSyntheticOutputs(activityDescriptor, activity, cleanedElement);
 

@@ -117,15 +117,7 @@ public class BackgroundActivityInvokerMiddleware(
             return false;
         
         var runAsynchronously = activity.GetRunAsynchronously();
-
-        if (runAsynchronously is null)
-        {
-            var taskActivityAttribute = activityDescriptor.Attributes.OfType<TaskActivityAttribute>().FirstOrDefault();
-            
-            return taskActivityAttribute is { RunAsynchronously: true };
-        }
-
-        return (bool)runAsynchronously;
+        return runAsynchronously ?? activityDescriptor.RunAsynchronously;
     }
 
     private static bool GetIsBackgroundExecution(ActivityExecutionContext context) => context.TransientProperties.ContainsKey(BackgroundActivityExecutionContextExtensions.IsBackgroundExecution);

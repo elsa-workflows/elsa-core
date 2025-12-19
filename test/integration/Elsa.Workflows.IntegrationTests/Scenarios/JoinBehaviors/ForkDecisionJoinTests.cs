@@ -1,17 +1,13 @@
 using Elsa.Testing.Shared;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
+using Elsa.Workflows.Options;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.JoinBehaviors;
 
-public class ForkDecisionJoinTests
+public class ForkDecisionJoinTests(ITestOutputHelper testOutputHelper)
 {
-    private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly IServiceProvider _services;
-
-    public ForkDecisionJoinTests(ITestOutputHelper testOutputHelper)
-    {
-        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-    }
+    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
 
     [Fact(DisplayName = "The implicit join configured with Stream merge mode should execute.")]
     public async Task ImplicitJoinStreamShouldExecute()
@@ -36,36 +32,32 @@ public class ForkDecisionJoinTests
     {
         await RunAndAssert("fork-decision-join-waitall.json", ["A", "C", "B", "D"]);
     }
-    
+
     [Fact(DisplayName = "An implicit join from the True and False branches should execute because the join mode is Stream and by default, all active branches are joined.")]
     public async Task ImplicitJoinFromBranchesShouldExecute()
     {
-        // Populate registries.
-        await _services.PopulateRegistriesAsync();
-
         // Import workflow.
-        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync($"Scenarios/JoinBehaviors/Workflows/decision-merge-join-none.json");
+        var workflowDefinition = await _fixture.ImportWorkflowDefinitionAsync($"Scenarios/JoinBehaviors/Workflows/decision-merge-join-none.json");
 
-        // Execute.
-        var workflowState = await _services.RunWorkflowUntilEndAsync(workflowDefinition.DefinitionId);
+        // Execute with token-based mode.
+        var options = new RunWorkflowOptions().WithTokenBasedFlowchart();
+        var workflowState = await _fixture.RunWorkflowAsync(workflowDefinition.DefinitionId, options: options);
 
         // Assert.
         Assert.Equal(WorkflowStatus.Finished, workflowState.Status);
     }
-    
+
     private async Task RunAndAssert(string workflowFileName, string[] expectedLines)
     {
-        // Populate registries.
-        await _services.PopulateRegistriesAsync();
-
         // Import workflow.
-        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync($"Scenarios/JoinBehaviors/Workflows/{workflowFileName}");
+        var workflowDefinition = await _fixture.ImportWorkflowDefinitionAsync($"Scenarios/JoinBehaviors/Workflows/{workflowFileName}");
 
-        // Execute.
-        await _services.RunWorkflowUntilEndAsync(workflowDefinition.DefinitionId);
-        
+        // Execute with token-based mode.
+        var options = new RunWorkflowOptions().WithTokenBasedFlowchart();
+        await _fixture.RunWorkflowAsync(workflowDefinition.DefinitionId, options: options);
+
         // Assert.
-        var lines = _capturingTextWriter.Lines.ToList();
+        var lines = _fixture.CapturingTextWriter.Lines.ToList();
         Assert.Equal(expectedLines, lines);
     }
 }

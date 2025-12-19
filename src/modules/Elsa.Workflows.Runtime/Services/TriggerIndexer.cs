@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Elsa.Common.DistributedHosting;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
@@ -10,7 +11,9 @@ using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Notifications;
+using Medallion.Threading;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Runtime;
@@ -27,6 +30,8 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly INotificationSender _notificationSender;
     private readonly IServiceProvider _serviceProvider;
     private readonly IStimulusHasher _hasher;
+    private readonly IDistributedLockProvider _distributedLockProvider;
+    private readonly DistributedLockingOptions _lockingOptions;
     private readonly ILogger _logger;
 
     /// <summary>
@@ -42,6 +47,8 @@ public class TriggerIndexer : ITriggerIndexer
         INotificationSender notificationSender,
         IServiceProvider serviceProvider,
         IStimulusHasher hasher,
+        IDistributedLockProvider distributedLockProvider,
+        IOptions<DistributedLockingOptions> lockingOptions,
         ILogger<TriggerIndexer> logger)
     {
         _activityVisitor = activityVisitor;
@@ -52,6 +59,8 @@ public class TriggerIndexer : ITriggerIndexer
         _notificationSender = notificationSender;
         _serviceProvider = serviceProvider;
         _hasher = hasher;
+        _distributedLockProvider = distributedLockProvider;
+        _lockingOptions = lockingOptions.Value;
         _logger = logger;
         _workflowDefinitionService = workflowDefinitionService;
     }
@@ -89,6 +98,16 @@ public class TriggerIndexer : ITriggerIndexer
 
     /// <inheritdoc />
     public async Task<IndexedWorkflowTriggers> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
+    {
+        // Use distributed lock to prevent concurrent trigger indexing race conditions
+        var lockResource = $"trigger-indexer:{workflow.Identity.DefinitionId}";
+        await using (await _distributedLockProvider.AcquireLockAsync(lockResource, _lockingOptions.LockAcquisitionTimeout, cancellationToken))
+        {
+            return await IndexTriggersInternalAsync(workflow, cancellationToken);
+        }
+    }
+
+    private async Task<IndexedWorkflowTriggers> IndexTriggersInternalAsync(Workflow workflow, CancellationToken cancellationToken)
     {
         // Get current triggers
         var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.DefinitionId, cancellationToken).ToList();

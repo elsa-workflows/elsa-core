@@ -1,7 +1,7 @@
 {
   "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
   "id": "strict-converge-test",
-  "definitionId": "strict-converge-001",
+  "definitionId": "3d3412c458178ff4",
   "name": "Fork-Decision-Converge-Strict",
   "description": "Tests the strictest Converge mode that requires ALL inbound connections to execute",
   "createdAt": "2025-10-20T00:00:00.000000+00:00",

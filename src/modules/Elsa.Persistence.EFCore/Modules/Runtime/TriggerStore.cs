@@ -13,7 +13,9 @@ namespace Elsa.Persistence.EFCore.Modules.Runtime;
 
 /// <inheritdoc />
 [UsedImplicitly]
-public class EFCoreTriggerStore(EntityStore<RuntimeElsaDbContext, StoredTrigger> store, IPayloadSerializer serializer) : ITriggerStore
+public class EFCoreTriggerStore(
+    EntityStore<RuntimeElsaDbContext, StoredTrigger> store,
+    IPayloadSerializer serializer) : ITriggerStore
 {
     /// <inheritdoc />
     public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
@@ -55,13 +57,13 @@ public class EFCoreTriggerStore(EntityStore<RuntimeElsaDbContext, StoredTrigger>
     public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
         var removedList = removed.ToList();
-        
+
         if(removedList.Count > 0)
         {
             var filter = new TriggerFilter { Ids = removedList.Select(r => r.Id).ToList() };
             await DeleteManyAsync(filter, cancellationToken);
         }
-        
+
         await store.SaveManyAsync(added, OnSaveAsync, cancellationToken);
     }
 

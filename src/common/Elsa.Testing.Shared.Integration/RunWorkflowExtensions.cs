@@ -1,12 +1,9 @@
 using Elsa.Common.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
@@ -20,70 +17,76 @@ namespace Elsa.Testing.Shared;
 [PublicAPI]
 public static class RunWorkflowExtensions
 {
-    /// <summary>
-    /// Runs a workflow until its end, automatically resuming any bookmark it encounters.
-    /// </summary>
     /// <param name="services">The services.</param>
-    /// <param name="workflowDefinitionId">The ID of the workflow definition.</param>
-    /// <param name="input">An optional dictionary of input values.</param>
-    /// <param name="correlationId">An optional correlation id of the workflow.</param>
-    /// <param name="versionOptions">An optional set of options to specify the version of the workflow definition to retrieve.</param>
-    /// <returns>The workflow state.</returns>
-    public static async Task<WorkflowState> RunWorkflowUntilEndAsync(this IServiceProvider services,
-        string workflowDefinitionId,
-        IDictionary<string, object>? input = null,
-        string? correlationId = null,
-        VersionOptions? versionOptions = null)
+    extension(IServiceProvider services)
     {
-        var workflowDefinitionService = services.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, versionOptions ?? VersionOptions.Published);
-        
-        if (workflowGraph == null)
-            throw new InvalidOperationException($"Workflow definition with ID '{workflowDefinitionId}' not found.");
-        
-        var workflowRuntime = services.GetRequiredService<IWorkflowRuntime>();
-        var workflowClient = await workflowRuntime.CreateClientAsync();
-        var response = await workflowClient.CreateAndRunInstanceAsync(new()
+        /// <summary>
+        /// Runs a workflow until its end, automatically resuming any bookmark it encounters.
+        /// </summary>
+        /// <param name="workflowDefinitionId">The ID of the workflow definition.</param>
+        /// <param name="input">An optional dictionary of input values.</param>
+        /// <param name="correlationId">An optional correlation id of the workflow.</param>
+        /// <param name="versionOptions">An optional set of options to specify the version of the workflow definition to retrieve.</param>
+        /// <param name="runWorkflowOptions">Optional workflow execution options.</param>
+        /// <returns>The workflow state.</returns>
+        public async Task<WorkflowState> RunWorkflowUntilEndAsync(string workflowDefinitionId,
+            IDictionary<string, object>? input = null,
+            string? correlationId = null,
+            VersionOptions? versionOptions = null,
+            RunWorkflowOptions? runWorkflowOptions = null)
         {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph.Workflow.Identity.Id),
-            Input = input,
-            CorrelationId = correlationId
-        });
-        
-        var bookmarkStore = services.GetRequiredService<IBookmarkStore>();
+            var workflowDefinitionService = services.GetRequiredService<IWorkflowDefinitionService>();
+            var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, versionOptions ?? VersionOptions.Published);
 
-        // Continue resuming the workflow for as long as there are bookmarks to resume and the workflow is not Finished.
-        while (response.Status != WorkflowStatus.Finished)
-        {
-            var bookmarks = (await bookmarkStore.FindManyAsync(new()
+            if (workflowGraph == null)
+                throw new InvalidOperationException($"Workflow definition with ID '{workflowDefinitionId}' not found.");
+
+            var workflowRuntime = services.GetRequiredService<IWorkflowRuntime>();
+            var workflowClient = await workflowRuntime.CreateClientAsync();
+            var response = await workflowClient.CreateAndRunInstanceAsync(new()
             {
-                WorkflowInstanceId = response.WorkflowInstanceId
-            })).ToList();
+                WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph.Workflow.Identity.Id),
+                Input = input,
+                CorrelationId = correlationId,
+                Properties = runWorkflowOptions?.Properties
+            });
 
-            if (!bookmarks.Any())
-                break;
+            var bookmarkStore = services.GetRequiredService<IBookmarkStore>();
 
-            foreach (var bookmark in bookmarks)
+            // Continue resuming the workflow for as long as there are bookmarks to resume and the workflow is not Finished.
+            while (response.Status != WorkflowStatus.Finished)
             {
-                var runRequest = new RunWorkflowInstanceRequest
+                var bookmarks = (await bookmarkStore.FindManyAsync(new()
                 {
-                    BookmarkId = bookmark.Id,
-                    Input = input
-                };
-                response = await workflowClient.RunInstanceAsync(runRequest);
+                    WorkflowInstanceId = response.WorkflowInstanceId
+                })).ToList();
+
+                if (!bookmarks.Any())
+                    break;
+
+                foreach (var bookmark in bookmarks)
+                {
+                    var runRequest = new RunWorkflowInstanceRequest
+                    {
+                        BookmarkId = bookmark.Id,
+                        Input = input,
+                        Properties = runWorkflowOptions?.Properties
+                    };
+                    response = await workflowClient.RunInstanceAsync(runRequest);
+                }
             }
+
+            // Return the workflow state.
+            return await workflowClient.ExportStateAsync();
         }
 
-        // Return the workflow state.
-        return await workflowClient.ExportStateAsync();
-    }
-
-    /// <summary>
-    /// Runs a workflow until its end, automatically resuming any bookmark it encounters.
-    /// </summary>
-    public static async Task<WorkflowState> RunWorkflowUntilEndAsync<TWorkflow>(this IServiceProvider services, IDictionary<string, object>? input = null) where TWorkflow : IWorkflow
-    {
-        var workflowDefinitionId = typeof(TWorkflow).Name;
-        return await services.RunWorkflowUntilEndAsync(workflowDefinitionId, input);
+        /// <summary>
+        /// Runs a workflow until its end, automatically resuming any bookmark it encounters.
+        /// </summary>
+        public async Task<WorkflowState> RunWorkflowUntilEndAsync<TWorkflow>(IDictionary<string, object>? input = null) where TWorkflow : IWorkflow
+        {
+            var workflowDefinitionId = typeof(TWorkflow).Name;
+            return await services.RunWorkflowUntilEndAsync(workflowDefinitionId, input);
+        }
     }
 }
