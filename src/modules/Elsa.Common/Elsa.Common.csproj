@@ -15,6 +15,7 @@
 
     <ItemGroup>
         <PackageReference Include="Cronos" />
+<!--        <PackageReference Include="CShells.Abstractions" />-->
         <PackageReference Include="IronCompress" />
         <PackageReference Include="LinqKit.Core" />
         <PackageReference Include="DistributedLock" />
