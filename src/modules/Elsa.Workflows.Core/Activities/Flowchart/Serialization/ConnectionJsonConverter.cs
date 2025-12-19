@@ -1,27 +1,20 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Activities.Flowchart.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 
 /// <summary>
 /// Converts <see cref="Connection"/> to and from JSON.
 /// </summary>
-public class ConnectionJsonConverter : JsonConverter<Connection>
+public class ConnectionJsonConverter(IDictionary<string, IActivity> activities, ILoggerFactory loggerFactory) : JsonConverter<Connection?>
 {
-    private readonly IDictionary<string, IActivity> _activities;
-
     /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert) => typeToConvert == typeof(Connection);
 
     /// <inheritdoc />
-    public ConnectionJsonConverter(IDictionary<string, IActivity> activities)
-    {
-        _activities = activities;
-    }
-
-    /// <inheritdoc />
-    public override Connection Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override Connection? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             throw new JsonException("Failed to parse JsonDocument");
@@ -66,13 +59,15 @@ public class ConnectionJsonConverter : JsonConverter<Connection>
         var sourcePort = GetPort(sourceElement, "port");
         var targetPort = GetPort(targetElement, "port");
 
-        var sourceAct = _activities.TryGetValue(sourceId, out var s) ? s : throw new JsonException($"Unknown activity ID '{sourceId}'");
-        var targetAct =
-            targetId != null
-                ? _activities.TryGetValue(targetId, out var t)
-                    ? t
-                    : throw new JsonException($"Unknown activity ID '{targetId}'")
-                : null;
+        var sourceAct = activities.TryGetValue(sourceId, out var s) ? s : null;
+        var targetAct = activities.TryGetValue(targetId, out var t) ? t : null;
+
+        if (sourceAct == null || targetAct == null)
+        {
+            var logger = loggerFactory.CreateLogger<ConnectionJsonConverter>();
+            logger.LogWarning("Could not find source or target activity for connection.");
+            return null;
+        }
 
         var source = new Endpoint(sourceAct, sourcePort);
         var target = new Endpoint(targetAct!, targetPort);
@@ -82,13 +77,13 @@ public class ConnectionJsonConverter : JsonConverter<Connection>
         if (doc.RootElement.TryGetProperty("vertices", out var vertsEl) && vertsEl.ValueKind == JsonValueKind.Array)
             vertices = vertsEl.Deserialize<Position[]>(options)!;
 
-        return new Connection(source, target) { Vertices = vertices };
+        return new(source, target) { Vertices = vertices };
     }
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, Connection value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, Connection? value, JsonSerializerOptions options)
     {
-        if (value.Source.Activity == null! || value.Target.Activity == null!)
+        if (value?.Source.Activity == null! || value.Target.Activity == null!)
             return;
 
         var model = new
