@@ -154,7 +154,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
             if (source == null || target == null)
                 continue;
 
-            var connection = new Connection(new(source, missingSource.Port), new Endpoint(target, missingTarget.Port));
+            var connection = new Connection(new Endpoint(source, missingSource.Port), new Endpoint(target, missingTarget.Port));
             connectionsThatCanBeRestored.Add(connection);
         }
 
