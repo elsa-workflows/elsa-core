@@ -25,7 +25,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
     {
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             throw new JsonException("Failed to parse JsonDocument");
-        
+
         var id = doc.RootElement.TryGetProperty("id", out var idAttribute) ? idAttribute.GetString()! : identityGenerator.GenerateId();
         var nodeId = doc.RootElement.TryGetProperty("nodeId", out var nodeIdAttribute) ? nodeIdAttribute.GetString() : null;
         var name = doc.RootElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
