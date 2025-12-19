@@ -58,6 +58,6 @@ public class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManager,
             return;
         }
 
-        await Send.OkAsync(cancellationToken);
+        await Send.OkAsync(cancellation: cancellationToken);
     }
 }

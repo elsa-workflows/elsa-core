@@ -23,6 +23,6 @@ public class Endpoint(ITenantService tenantService, ITenantStore store) : ElsaEn
         }
         
         await tenantService.RefreshAsync(ct);
-        await Send.OkAsync(ct);
+        await Send.OkAsync(cancellation: ct);
     }
 }
