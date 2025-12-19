@@ -10,6 +10,8 @@ namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 /// </summary>
 public class ConnectionJsonConverter(IDictionary<string, IActivity> activities, ILoggerFactory loggerFactory) : JsonConverter<Connection?>
 {
+    private readonly ILogger _logger = loggerFactory.CreateLogger<ConnectionJsonConverter>();
+    
     /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert) => typeToConvert == typeof(Connection);
 
@@ -55,22 +57,21 @@ public class ConnectionJsonConverter(IDictionary<string, IActivity> activities, 
         }
 
         var sourceId = GetId(sourceElement, "activity");
-        var targetId = GetPort(targetElement, "activity"); // Note: this could be null
+        var targetId = GetId(targetElement, "activity"); // Note: this could be null
         var sourcePort = GetPort(sourceElement, "port");
         var targetPort = GetPort(targetElement, "port");
 
-        var sourceAct = activities.TryGetValue(sourceId, out var s) ? s : null;
-        var targetAct = targetId != null && activities.TryGetValue(targetId, out var t) ? t : null;
+        var sourceAct = sourceId != null! && activities.TryGetValue(sourceId, out var s) ? s : null;
+        var targetAct = targetId != null! && activities.TryGetValue(targetId, out var t) ? t : null;
 
         if (sourceAct == null || targetAct == null)
         {
-            var logger = loggerFactory.CreateLogger<ConnectionJsonConverter>();
-            logger.LogWarning("Could not find source or target activity for connection.");
+            _logger.LogWarning("Could not find source or target activity for connection. SourceId: {SourceId}, TargetId: {TargetId}.", sourceId, targetId);
             return null;
         }
 
         var source = new Endpoint(sourceAct, sourcePort);
-        var target = new Endpoint(targetAct!, targetPort);
+        var target = new Endpoint(targetAct, targetPort);
 
         // vertices is already correct:
         var vertices = Array.Empty<Position>();
