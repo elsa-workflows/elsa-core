@@ -55,12 +55,12 @@ public class ConnectionJsonConverter(IDictionary<string, IActivity> activities, 
         }
 
         var sourceId = GetId(sourceElement, "activity");
-        var targetId = GetPort(targetElement, "activity"); // note: this could be null
+        var targetId = GetPort(targetElement, "activity"); // Note: this could be null
         var sourcePort = GetPort(sourceElement, "port");
         var targetPort = GetPort(targetElement, "port");
 
         var sourceAct = activities.TryGetValue(sourceId, out var s) ? s : null;
-        var targetAct = activities.TryGetValue(targetId, out var t) ? t : null;
+        var targetAct = targetId != null && activities.TryGetValue(targetId, out var t) ? t : null;
 
         if (sourceAct == null || targetAct == null)
         {
