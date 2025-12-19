@@ -77,7 +77,10 @@ public class ConnectionJsonConverter(IDictionary<string, IActivity> activities, 
         if (doc.RootElement.TryGetProperty("vertices", out var vertsEl) && vertsEl.ValueKind == JsonValueKind.Array)
             vertices = vertsEl.Deserialize<Position[]>(options)!;
 
-        return new(source, target) { Vertices = vertices };
+        return new(source, target)
+        {
+            Vertices = vertices
+        };
     }
 
     /// <inheritdoc />
@@ -88,8 +91,16 @@ public class ConnectionJsonConverter(IDictionary<string, IActivity> activities, 
 
         var model = new
         {
-            Source = new { Activity = value.Source.Activity.Id, Port = value.Source.Port },
-            Target = new { Activity = value.Target.Activity.Id, Port = value.Target.Port },
+            Source = new
+            {
+                Activity = value.Source.Activity.Id,
+                Port = value.Source.Port
+            },
+            Target = new
+            {
+                Activity = value.Target.Activity.Id,
+                Port = value.Target.Port
+            },
             Vertices = value.Vertices,
         };
 
