@@ -10,36 +10,41 @@ namespace Elsa.Testing.Shared;
 /// Provides extension methods for <see cref="IServiceProvider"/>.
 /// </summary>
 [PublicAPI]
+[Obsolete("Use WorkflowTestFixture instead.")]
 public static class RunActivityExtensions
 {
-    /// <summary>
-    /// Runs the specified activity.
-    /// </summary>
     /// <param name="services">The service provider.</param>
-    /// <param name="activity">The activity to run.</param>
-    /// <param name="cancellationToken">An optional cancellation token.</param>
-    /// <returns>The result of running the activity.</returns>
-    public static async Task<RunWorkflowResult> RunActivityAsync(this IServiceProvider services, IActivity activity, CancellationToken cancellationToken = default)
+    extension(IServiceProvider services)
     {
-        await services.PopulateRegistriesAsync();
-        var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
-        var result = await workflowRunner.RunAsync(activity, cancellationToken: cancellationToken);
-        return result;
-    }
+        /// <summary>
+        /// Runs the specified activity.
+        /// </summary>
+        /// <param name="activity">The activity to run.</param>
+        /// <param name="cancellationToken">An optional cancellation token.</param>
+        /// <returns>The result of running the activity.</returns>
+        [Obsolete("Use WorkflowTestFixture instead.")]
+        public async Task<RunWorkflowResult> RunActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
+        {
+            await services.PopulateRegistriesAsync();
+            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+            var result = await workflowRunner.RunAsync(activity, cancellationToken: cancellationToken);
+            return result;
+        }
 
-    /// <summary>
-    /// Runs the specified activity.
-    /// </summary>
-    /// <param name="services">The service provider.</param>
-    /// <param name="activity">The activity to run.</param>
-    /// <param name="options">An set of options.</param>
-    /// <param name="cancellationToken">An optional cancellation token.</param>
-    /// <returns>The result of running the activity.</returns>
-    public static async Task<RunWorkflowResult> RunActivityAsync(this IServiceProvider services, IActivity activity, RunWorkflowOptions options, CancellationToken cancellationToken = default)
-    {
-        await services.PopulateRegistriesAsync();
-        var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
-        var result = await workflowRunner.RunAsync(activity, options, cancellationToken);
-        return result;
+        /// <summary>
+        /// Runs the specified activity.
+        /// </summary>
+        /// <param name="activity">The activity to run.</param>
+        /// <param name="options">An set of options.</param>
+        /// <param name="cancellationToken">An optional cancellation token.</param>
+        /// <returns>The result of running the activity.</returns>
+        [Obsolete("Use WorkflowTestFixture instead.")]
+        public async Task<RunWorkflowResult> RunActivityAsync(IActivity activity, RunWorkflowOptions options, CancellationToken cancellationToken = default)
+        {
+            await services.PopulateRegistriesAsync();
+            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+            var result = await workflowRunner.RunAsync(activity, options, cancellationToken);
+            return result;
+        }
     }
 }
