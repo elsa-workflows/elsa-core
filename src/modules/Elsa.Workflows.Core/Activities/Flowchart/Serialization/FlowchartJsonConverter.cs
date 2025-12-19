@@ -198,7 +198,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
 
                 var srcAct = activityDictionary[srcId];
                 var tgtAct = activityDictionary[tgtId];
-                list.Add(new(new(srcAct, srcPort), new Endpoint(tgtAct, tgtPort)));
+                list.Add(new(new Endpoint(srcAct, srcPort), new Endpoint(tgtAct, tgtPort)));
             }
 
             return list;
