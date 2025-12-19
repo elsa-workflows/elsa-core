@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 public class ConnectionJsonConverter(IDictionary<string, IActivity> activities, ILoggerFactory loggerFactory) : JsonConverter<Connection?>
 {
     private readonly ILogger _logger = loggerFactory.CreateLogger<ConnectionJsonConverter>();
-    
+
     /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert) => typeToConvert == typeof(Connection);
 
