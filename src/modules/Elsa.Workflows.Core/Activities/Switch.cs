@@ -107,6 +107,9 @@ public class Switch : Activity
         return matchingCases;
     }
 
+    /// <summary>
+    /// Tracks the completion of scheduled child activities and completes the Switch activity only after all scheduled children have finished executing.
+    /// </summary>
     private async ValueTask OnChildActivityCompletedAsync(ActivityCompletedContext context)
     {
         var scheduledActivityIds = context.TargetContext.GetProperty<HashSet<string>>("ScheduledActivityIds");
