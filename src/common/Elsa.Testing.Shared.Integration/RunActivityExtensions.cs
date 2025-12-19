@@ -35,7 +35,7 @@ public static class RunActivityExtensions
         /// Runs the specified activity.
         /// </summary>
         /// <param name="activity">The activity to run.</param>
-        /// <param name="options">An set of options.</param>
+        /// <param name="options">A set of options.</param>
         /// <param name="cancellationToken">An optional cancellation token.</param>
         /// <returns>The result of running the activity.</returns>
         [Obsolete("Use WorkflowTestFixture instead.")]
