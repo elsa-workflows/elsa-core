@@ -319,7 +319,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\stale.yml = .github\workflows\stale.yml
 		.github\workflows\pr.yml = .github\workflows\pr.yml
 		.github\workflows\packages.yml = .github\workflows\packages.yml
-		.github\workflows\elsa-server.yml = .github\workflows\elsa-server.yml
 		.github\workflows\docker-ca.yml = .github\workflows\docker-ca.yml
 		.github\workflows\bounty.yml = .github\workflows\bounty.yml
 		.github\workflows\copilot-setup-steps.yml = .github\workflows\copilot-setup-steps.yml
