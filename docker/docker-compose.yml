@@ -1,4 +1,5 @@
-﻿services:
+﻿# These services are defined here for convenience only so that we can quickly start a given service for local development.
+services:
   postgres:
     image: postgres:latest
     command: -c 'max_connections=2000'
@@ -8,7 +9,6 @@
       POSTGRES_DB: elsa
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh  # This will initialize the 'tracelens' database
     ports:
       - "5432:5432"
         
@@ -33,7 +33,7 @@
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data2:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
         
   oracle:
       image: container-registry.oracle.com/database/free:latest
@@ -53,17 +53,6 @@
     volumes:
       - mongodb_data:/data/db
   
-  cockroachdb:
-    image: cockroachdb/cockroach:v22.1.0
-    command: start-single-node --insecure
-    ports:
-      - "26257:26257" # CockroachDB SQL port
-      - "8080:8080"   # CockroachDB UI port
-    volumes:
-      - cockroachdb-data:/cockroach/cockroach-data
-    environment:
-      - COCKROACH_DATABASE=elsa
-  
   rabbitmq:
     image: "rabbitmq:4-management"
     ports:
@@ -74,26 +63,7 @@
     image: redis:latest
     ports:
       - "127.0.0.1:6379:6379"
-  
-  plantuml-server:
-    image: plantuml/plantuml-server:tomcat
-    container_name: plantuml-server
-    ports:
-      - 7080:8080
 
-  trace-lens:
-    image: docker.io/rogeralsing/tracelens:latest
-    pull_policy: always
-    depends_on:
-      - plantuml-server
-      - postgres
-    ports:
-      - 7001:5001
-      - 4317:4317
-    environment:
-      - PlantUml__RemoteUrl=
-      - ConnectionStrings__DefaultConnection=USER ID=tracelens;PASSWORD=tracelenspass;HOST=postgres;PORT=5432;DATABASE=tracelens;POOLING=true;
-        
   smtp4dev: # Mock SMTP server
     image: rnwood/smtp4dev
     container_name: smtp4dev
@@ -104,59 +74,9 @@
     environment:
       - ASPNETCORE_URLS=http://+:80
       - Logging__LogLevel__Default=Information
-        
-  azurite:
-    image: mcr.microsoft.com/azure-storage/azurite
-    container_name: azurite
-    command: >
-      azurite
-      --blobHost 0.0.0.0 --blobPort 10010
-      --queueHost 0.0.0.0 --queuePort 10011
-      --tableHost 0.0.0.0 --tablePort 10012
-      --location /data
-      --debug /data/debug.log
-      --skipApiVersionCheck
-      --loose
-    ports:
-      - "10010:10010"  # Blob service
-      - "10011:10011"  # Queue service
-      - "10012:10012"  # Table service
-    volumes:
-      - ./azurite-data:/data
-    restart: always
-
-  elsa-server:
-    build:
-      context: ../.
-      dockerfile: ./docker/ElsaServer.Dockerfile
-    depends_on:
-      - postgres
-      - rabbitmq
-      - redis
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      PYTHONNET_PYDLL: /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
-      PYTHONNET_RUNTIME: coreclr
-      CONNECTIONSTRINGS__POSTGRESQL: "Server=postgres;Username=elsa;Database=elsa;Port=5432;Password=elsa;SSLMode=Prefer"
-      CONNECTIONSTRINGS__RABBITMQ: "amqp://guest:guest@rabbitmq:5672/"
-      CONNECTIONSTRINGS__REDIS: "redis:6379"
-      DISTRIBUTEDLOCKPROVIDER: "Postgres"
-    ports:
-      - "13000:8080"
-  
-  elsa-studio:
-    build:
-      context: ../.
-      dockerfile: ./docker/ElsaStudio.Dockerfile
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ELSASERVER__URL: "http://localhost:13000/elsa/api"
-    ports:
-      - "14000:8080"
 
 volumes:
   sqlserver_data:
   postgres-data:
-  mysql_data2:
-  cockroachdb-data:
+  mysql_data:
   mongodb_data:

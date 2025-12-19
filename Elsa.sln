@@ -52,13 +52,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 	ProjectSection(SolutionItems) = preProject
 		docker\.dockerignore = docker\.dockerignore
 		docker\docker-compose.yml = docker\docker-compose.yml
-		docker\ElsaServer-Datadog.Dockerfile = docker\ElsaServer-Datadog.Dockerfile
-		docker\ElsaServer.Dockerfile = docker\ElsaServer.Dockerfile
-		docker\ElsaServerAndStudio.Dockerfile = docker\ElsaServerAndStudio.Dockerfile
-		docker\ElsaStudio.Dockerfile = docker\ElsaStudio.Dockerfile
-		docker\init-db-postgres.sh = docker\init-db-postgres.sh
-		docker\otel-collector-config.yaml = docker\otel-collector-config.yaml
-		docker\entrypoint.sh = docker\entrypoint.sh
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unit", "unit", "{18453B51-25EB-4317-A4B3-B10518252E92}"
@@ -198,11 +191,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "multitenancy", "multitenanc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Tenants.AspNetCore", "src\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj", "{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "oracle-setup", "oracle-setup", "{66E2E2CF-967F-4564-89E8-F46FA973C99B}"
-	ProjectSection(SolutionItems) = preProject
-		docker\oracle-setup\setup.sql = docker\oracle-setup\setup.sql
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{0A04B1FD-06C0-4271-A910-A08C263DBC44}"
 	ProjectSection(SolutionItems) = preProject
 		doc\adr\0001-record-architecture-decisions.md = doc\adr\0001-record-architecture-decisions.md
@@ -319,7 +307,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\stale.yml = .github\workflows\stale.yml
 		.github\workflows\pr.yml = .github\workflows\pr.yml
 		.github\workflows\packages.yml = .github\workflows\packages.yml
-		.github\workflows\docker-ca.yml = .github\workflows\docker-ca.yml
 		.github\workflows\bounty.yml = .github\workflows\bounty.yml
 		.github\workflows\copilot-setup-steps.yml = .github\workflows\copilot-setup-steps.yml
 	EndProjectSection
@@ -646,7 +633,6 @@ Global
 		{DFFE6199-B5A7-4BA8-A5E1-77D0426C6468} = {B32DB9B2-AD6C-48A5-8682-4373CB045185}
 		{2F3E1026-5054-4E1F-899B-F1A7F70F9912} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C} = {2F3E1026-5054-4E1F-899B-F1A7F70F9912}
-		{66E2E2CF-967F-4564-89E8-F46FA973C99B} = {986E5482-0482-448C-B9E4-EC67A9474B85}
 		{0A04B1FD-06C0-4271-A910-A08C263DBC44} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
 		{9B80A705-2E31-4012-964A-83963DCDB384} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
 		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
