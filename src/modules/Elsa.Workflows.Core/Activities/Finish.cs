@@ -19,7 +19,7 @@ public class Finish : CodeActivity, ITerminalNode
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
     {
-        context.ClearCompletionCallbacks();
+        context.WorkflowExecutionContext.ClearCompletionCallbacks();
         context.WorkflowExecutionContext.Scheduler.Clear();
         context.WorkflowExecutionContext.Bookmarks.Clear();
         context.WorkflowExecutionContext.TransitionTo(WorkflowSubStatus.Finished);

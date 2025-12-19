@@ -45,6 +45,6 @@ internal class Trigger : ElsaEndpointWithoutRequest
         await _eventPublisher.PublishAsync(eventName, workflowInstanceId: workflowInstanceId, cancellationToken: cancellationToken);
         
         if (!HttpContext.Response.HasStarted)
-            await Send.OkAsync(cancellationToken);
+            await Send.OkAsync(cancellation: cancellationToken);
     }
 }

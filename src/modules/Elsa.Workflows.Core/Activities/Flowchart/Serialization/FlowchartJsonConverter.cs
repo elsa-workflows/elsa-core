@@ -5,13 +5,16 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Serialization.Converters;
+using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 
 /// <summary>
 /// A JSON converter for <see cref="Activities.Flowchart"/>.
 /// </summary>
-public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellKnownTypeRegistry wellKnownTypeRegistry) : JsonConverter<Activities.Flowchart>
+[UsedImplicitly]
+public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellKnownTypeRegistry wellKnownTypeRegistry, ILoggerFactory loggerFactory) : JsonConverter<Activities.Flowchart>
 {
     private const string AllActivitiesKey = "allActivities";
     private const string AllConnectionsKey = "allConnections";
@@ -43,7 +46,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
         var variablesElement = doc.RootElement.TryGetProperty("variables", out var variablesEl) ? variablesEl : default;
         var variables = variablesElement.ValueKind != JsonValueKind.Undefined ? variablesElement.Deserialize<ICollection<Variable>>(options) ?? new List<Variable>() : new List<Variable>();
 
-        JsonSerializerOptions polymorphicOptions = options.Clone();
+        var polymorphicOptions = options.Clone();
         polymorphicOptions.Converters.Add(new PolymorphicDictionaryConverter(options, wellKnownTypeRegistry));
 
         var metadataElement = doc.RootElement.TryGetProperty("metadata", out var metadataEl) ? metadataEl : default;
@@ -101,13 +104,13 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
         };
 
         var flowchartSerializerOptions = new JsonSerializerOptions(options);
-        flowchartSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary));
+        flowchartSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary, loggerFactory));
         flowchartSerializerOptions.Converters.Add(new PolymorphicDictionaryConverter(options, wellKnownTypeRegistry));
 
         JsonSerializer.Serialize(writer, model, flowchartSerializerOptions);
     }
 
-    private static ICollection<Connection> GetNotFoundConnections(JsonElement rootElement, IDictionary<string, IActivity> activities, IEnumerable<Connection> connections, JsonSerializerOptions connectionSerializerOptions)
+    private ICollection<Connection> GetNotFoundConnections(JsonElement rootElement, IDictionary<string, IActivity> activities, IEnumerable<Connection> connections, JsonSerializerOptions connectionSerializerOptions)
     {
         var customPropertiesElement = rootElement.TryGetProperty("customProperties", out var customPropertiesEl) ? customPropertiesEl : default;
 
@@ -132,7 +135,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
         return notFoundConnections;
     }
 
-    private static List<Connection> FindConnectionsThatCanBeRestored(IEnumerable<Connection> notFoundConnections, IEnumerable<IActivity> activities)
+    private List<Connection> FindConnectionsThatCanBeRestored(IEnumerable<Connection> notFoundConnections, IEnumerable<IActivity> activities)
     {
         var connectionsThatCanBeRestored = new List<Connection>();
         var foundActivities = activities.Where(x => x is not NotFoundActivity).ToList();
@@ -158,7 +161,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
         return connectionsThatCanBeRestored;
     }
 
-    private static ICollection<Connection> DeserializeConnections(JsonElement connectionsElement, IDictionary<string, IActivity> activityDictionary, JsonSerializerOptions options)
+    private ICollection<Connection> DeserializeConnections(JsonElement connectionsElement, IDictionary<string, IActivity> activityDictionary, JsonSerializerOptions options)
     {
         // 1) Nothing → empty
         if (connectionsElement.ValueKind == JsonValueKind.Undefined || connectionsElement.ValueKind == JsonValueKind.Null)
@@ -195,7 +198,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
 
                 var srcAct = activityDictionary[srcId];
                 var tgtAct = activityDictionary[tgtId];
-                list.Add(new Connection(new Endpoint(srcAct, srcPort), new Endpoint(tgtAct, tgtPort)));
+                list.Add(new(new Endpoint(srcAct, srcPort), new Endpoint(tgtAct, tgtPort)));
             }
 
             return list;
@@ -208,11 +211,11 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellK
         if (arr.Length > 0 && arr[0].TryGetProperty("sourcePort", out _))
             serializer.Converters.Add(new ObsoleteConnectionJsonConverter(activityDictionary));
         else
-            serializer.Converters.Add(new ConnectionJsonConverter(activityDictionary));
+            serializer.Converters.Add(new ConnectionJsonConverter(activityDictionary, loggerFactory));
 
-        var raw = connectionsElement.Deserialize<ICollection<Connection>>(serializer) ?? new List<Connection>();
+        var raw = connectionsElement.Deserialize<ICollection<Connection?>>(serializer) ?? new List<Connection?>();
 
         // drop any half‑baked entries
-        return raw.Where(c => c.Source?.Activity != null && c.Target?.Activity != null).ToList();
+        return raw.Where(c => c != null && c.Source.Activity != null! && c.Target.Activity != null!).Cast<Connection>().ToList();
     }
 }
