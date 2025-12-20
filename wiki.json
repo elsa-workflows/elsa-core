@@ -1,0 +1,303 @@
+{
+  "repo_notes": [
+    {
+      "content": "Elsa 3 is a .NET workflow library that lets you build workflows in C#, with a visual designer, or in JSON; the repo also ships reference server and studio apps and Docker images for quick starts." 
+    }
+  ],
+  "pages": [
+    {
+      "title": "Introduction to Elsa Workflows",
+      "purpose": "Introduce the Elsa Workflows system, its purpose as a .NET workflow engine, and high-level architecture overview",
+      "page_notes": [
+        {
+          "content": "Elsa enables running workflows inside any .NET app with definitions authored in C#, visually, or as JSON, pairing a workflow engine with a web-based designer and server/studio reference apps." 
+        }
+      ]
+    },
+    {
+      "title": "Getting Started",
+      "purpose": "Guide users through installation, Docker quick start, and running their first workflow",
+      "parent": "Introduction to Elsa Workflows",
+      "page_notes": [
+        {
+          "content": "Use the published Docker image `elsaworkflows/elsa-server-and-studio-v3:latest` to run the reference server+designer, exposing port 8080 on container to localhost:13000 with admin/password login; images include CA bundles with optional EXTRA_CA_CERT/SSL_CERT_FILE support for custom trust." 
+        }
+      ]
+    },
+    {
+      "title": "Key Concepts",
+      "purpose": "Explain fundamental concepts: workflows, activities, bookmarks, execution contexts, and state management",
+      "parent": "Introduction to Elsa Workflows",
+      "page_notes": [
+        {
+          "content": "Workflows are graphs of activities; execution contexts (workflow and activity) hold runtime data like variables and memory registers, schedule work, and capture bookmarks for resumption and persistence." 
+        }
+      ]
+    },
+    {
+      "title": "Solution Structure",
+      "purpose": "Document the project organization, module hierarchy, and how the solution is structured",
+      "parent": "Introduction to Elsa Workflows",
+      "page_notes": [
+        {
+          "content": "Opening Elsa.sln exposes an apps folder with reference hosts: Elsa.Server.Web (workflow server), Elsa.ServerAndStudio.Web (server plus Blazor Studio), and Elsa.Studio.Web (standalone Studio needing a server)." 
+        }
+      ]
+    },
+    {
+      "title": "Core Execution Engine",
+      "purpose": "Deep dive into the workflow execution engine architecture, contexts, and execution pipeline",
+      "page_notes": [
+        {
+          "content": "WorkflowRunner builds workflow graphs, creates WorkflowExecutionContext instances with identity, correlation, input, and schedules the root workflow before handing execution to the pipeline." 
+        }
+      ]
+    },
+    {
+      "title": "Workflow Execution Context",
+      "purpose": "Explain WorkflowExecutionContext: its role, properties, memory register, scheduler, and lifecycle",
+      "parent": "Core Execution Engine",
+      "page_notes": [
+        {
+          "content": "WorkflowExecutionContext initializes scheduler, memory register, input/properties, incidents, bookmarks, cancellation handling, and exposes creation helpers that hydrate state and wire ExpressionExecutionContext." 
+        }
+      ]
+    },
+    {
+      "title": "Activity Execution Context",
+      "purpose": "Explain ActivityExecutionContext: parent-child relationships, variable scoping, and activity state management",
+      "parent": "Core Execution Engine",
+      "page_notes": [
+        {
+          "content": "ActivityExecutionContext tracks activity instance IDs, parent-child links, execution status, timestamps, dynamic variables, and constructs an ExpressionExecutionContext chain to scope variables and expressions." 
+        }
+      ]
+    },
+    {
+      "title": "Workflow Runner and Pipeline",
+      "purpose": "Document WorkflowRunner orchestration, execution pipeline middleware, and activity invoker",
+      "parent": "Core Execution Engine",
+      "page_notes": [
+        {
+          "content": "WorkflowRunner orchestrates execution by scheduling workflows or bookmarks on a WorkflowExecutionContext then invoking the configured IWorkflowExecutionPipeline, also supporting restoration from WorkflowState and variable injection." 
+        }
+      ]
+    },
+    {
+      "title": "State Persistence and Restoration",
+      "purpose": "Explain WorkflowStateExtractor, WorkflowState serialization, and state hydration mechanisms",
+      "parent": "Core Execution Engine",
+      "page_notes": [
+        {
+          "content": "WorkflowStateExtractor serializes workflow instance fields (IDs, status, bookmarks, input/output, incidents, scheduled work, completion callbacks, activity contexts) and can rehydrate a WorkflowExecutionContext by reconstructing activities, properties, variables, and schedules." 
+        }
+      ]
+    },
+    {
+      "title": "Activity Scheduling and Work Items",
+      "purpose": "Document the activity scheduler, work item queue, and how activities are scheduled for execution",
+      "parent": "Core Execution Engine",
+      "page_notes": [
+        {
+          "content": "The default QueueBasedActivityScheduler is a FIFO queue of ActivityWorkItem entries, supporting enqueue/dequeue, lookup, and clear operations to drive the workflow dispatcher." 
+        }
+      ]
+    },
+    {
+      "title": "Bookmarks and Resumption",
+      "purpose": "Explain the bookmark system for pausing and resuming workflows, including bookmark queue processing",
+      "page_notes": [
+        {
+          "content": "Bookmarks capture pause points with IDs, names, and hashes that can be persisted and resumed; runtime models like NewBookmarkQueueItem carry bookmark IDs, hashes, correlation, and resume options for async resumption." 
+        }
+      ]
+    },
+    {
+      "title": "Bookmark System",
+      "purpose": "Detail bookmark creation, hashing, storage, and how workflows suspend/resume at bookmarks",
+      "parent": "Bookmarks and Resumption",
+      "page_notes": [
+        {
+          "content": "BookmarkInfo stores bookmark ID, name, and computed hash, enabling lookup and comparison when resuming workflows from persisted bookmark payloads." 
+        }
+      ]
+    },
+    {
+      "title": "Trigger System",
+      "purpose": "Explain workflow triggers, trigger stores, and how external events initiate workflow execution",
+      "parent": "Bookmarks and Resumption",
+      "page_notes": [
+        {
+          "content": "Triggers bind external stimuli to workflow bookmarks via runtime metadata (stimulus hashes, activity types, correlation IDs), enabling workflows to start or resume when matching events arrive." 
+        }
+      ]
+    },
+    {
+      "title": "Bookmark Queue",
+      "purpose": "Document bookmark queue processing, purging, and asynchronous workflow resumption",
+      "parent": "Bookmarks and Resumption",
+      "page_notes": [
+        {
+          "content": "NewBookmarkQueueItem entries encapsulate workflow instance IDs, bookmark IDs or stimulus hashes, activity instance references, correlation IDs, and resume options for queue-driven resumption." 
+        }
+      ]
+    },
+    {
+      "title": "Activity System",
+      "purpose": "Overview of the activity system: IActivity interface, activity types, and execution patterns",
+      "page_notes": [
+        {
+          "content": "Activities encapsulate executable steps; WorkflowRunner can start from an activity by building a workflow graph, while activity descriptors surface outputs and metadata used during execution and composition." 
+        }
+      ]
+    },
+    {
+      "title": "Control Flow Activities",
+      "purpose": "Document branching and looping: If, Switch, Sequence, Flowchart, FlowJoin, Break, Complete",
+      "parent": "Activity System",
+      "page_notes": [
+        {
+          "content": "Flowchart is a primary control-flow container with start nodes and connections; it can operate in counter-based or token-based modes configured via FlowchartOptions or execution context properties." 
+        }
+      ]
+    },
+    {
+      "title": "HTTP Activities",
+      "purpose": "Detail HttpEndpoint and SendHttpRequest activities, including configuration and usage patterns",
+      "parent": "Activity System",
+      "page_notes": [
+        {
+          "content": "The README’s coding example shows HttpEndpoint starting a workflow and subsequent activities (like SendEmail) handling the request, illustrating HTTP-triggered workflows." 
+        }
+      ]
+    },
+    {
+      "title": "Workflow Composition Activities",
+      "purpose": "Explain Composite, WorkflowDefinitionActivity, and how workflows can invoke other workflows",
+      "parent": "Activity System",
+      "page_notes": [
+        {
+          "content": "Workflow activities create memory registers, declare result variables, and can schedule child activities, supporting hierarchical composition of workflows." 
+        }
+      ]
+    },
+    {
+      "title": "Activity Outputs and Registry",
+      "purpose": "Document ActivityOutputRegister, output resolution, and how activities expose results",
+      "parent": "Activity System",
+      "page_notes": [
+        {
+          "content": "ActivityOutputRegister records outputs by activity ID and instance, normalizing output names via descriptors and enabling lookup of latest values scoped to parent contexts." 
+        }
+      ]
+    },
+    {
+      "title": "Activity Descriptors and Metadata",
+      "purpose": "Explain ActivityDescriptor, how activities are described, and the activity provider system",
+      "parent": "Activity System",
+      "page_notes": [
+        {
+          "content": "Activity descriptors describe inputs/outputs; registration is resolved via IActivityRegistry and lookup services injected into WorkflowExecutionContext for descriptor-aware execution." 
+        }
+      ]
+    },
+    {
+      "title": "Flowchart Execution Modes",
+      "purpose": "Detail TokenBased vs CounterBased execution modes, FlowScope, and flowchart-specific behavior",
+      "parent": "Activity System",
+      "page_notes": [
+        {
+          "content": "Flowchart exposes a static UseTokenFlow toggle and stores execution mode in workflow properties; scheduling callbacks delegate to token-based or counter-based handlers for completion and cancellation logic." 
+        }
+      ]
+    },
+    {
+      "title": "Variable and Memory System",
+      "purpose": "Overview of variable management, memory registers, and variable persistence",
+      "page_notes": [
+        {
+          "content": "Workflows create MemoryRegister instances that hold declared variables; variables reference memory blocks with optional storage drivers for persistence across executions." 
+        }
+      ]
+    },
+    {
+      "title": "Variable Management",
+      "purpose": "Document Variable class, variable scoping, IVariableContainer, and dynamic variables",
+      "parent": "Variable and Memory System",
+      "page_notes": [
+        {
+          "content": "Variable types derive from MemoryBlockReference, carrying names, default values, storage driver types, and helper methods to bind IDs or values; ActivityExecutionContext merges container and dynamic variables for scope." 
+        }
+      ]
+    },
+    {
+      "title": "Type Conversion",
+      "purpose": "Explain ObjectConverter, type conversion strategies, and handling complex type transformations",
+      "parent": "Variable and Memory System",
+      "page_notes": [
+        {
+          "content": "ExpressionExecutionContext converts variable values when retrieved, enabling typed accessors like Variable<T>.Get that rely on conversion helpers for strongly typed results." 
+        }
+      ]
+    },
+    {
+      "title": "Variable Persistence",
+      "purpose": "Document IVariablePersistenceManager, storage drivers, and how variables are saved/loaded",
+      "parent": "Variable and Memory System",
+      "page_notes": [
+        {
+          "content": "VariablePersistenceManager ensures memory blocks exist for variables and leverages storage drivers (e.g., WorkflowStorageDriver) when persisting workflow state during extraction and hydration." 
+        }
+      ]
+    },
+    {
+      "title": "Memory Register and Memory Blocks",
+      "purpose": "Explain MemoryRegister, MemoryBlock, MemoryBlockReference, and how memory is managed",
+      "parent": "Variable and Memory System",
+      "page_notes": [
+        {
+          "content": "Workflow activities call CreateRegister to allocate a MemoryRegister that stores MemoryBlock references declared by variables and supports scoped memory across workflow execution contexts." 
+        }
+      ]
+    },
+    {
+      "title": "Expression Evaluation",
+      "purpose": "Overview of the expression system, ExpressionExecutionContext, and supported languages",
+      "page_notes": [
+        {
+          "content": "ExpressionExecutionContext is created for workflows and chained for activities, carrying memory registers and properties so expressions can resolve variables and activity data across supported languages." 
+        }
+      ]
+    },
+    {
+      "title": "Expression Execution Context",
+      "purpose": "Detail ExpressionExecutionContext, parent chains, and how expressions access workflow data",
+      "parent": "Expression Evaluation",
+      "page_notes": [
+        {
+          "content": "ActivityExecutionContext builds an ExpressionExecutionContext with the workflow’s input and parent chain, inserting the current activity in context properties for expression access." 
+        }
+      ]
+    },
+    {
+      "title": "C# Expressions",
+      "purpose": "Document C# expression evaluation using Roslyn and available APIs",
+      "parent": "Expression Evaluation",
+      "page_notes": [
+        {
+          "content": "C# expression support plugs into the common ExpressionExecutionContext, benefiting from the same variable/memory access patterns used across languages." 
+        }
+      ]
+    },
+    {
+      "title": "JavaScript Expressions",
+      "purpose": "Explain Jint-based JavaScript evaluation, type definitions, and activity output access",
+      "parent": "Expression Evaluation",
+      "page_notes": [
+        {
+          "content": "JavaScript expressions execute through the shared expression context, enabling access to workflow input, activity outputs, and variables resolved from memory registers." 
+        }
+      ]
+    }
+  ]
+}
