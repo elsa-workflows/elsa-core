@@ -609,6 +609,14 @@ public partial class WorkflowExecutionContext : IExecutionContext
     {
         RemoveActivityExecutionContexts(x => x is { IsCompleted: true, ParentActivityExecutionContext: not null });
     }
+    
+    /// <summary>
+    /// Clears all activity completion callback entries from the workflow execution context.
+    /// </summary>
+    public void ClearCompletionCallbacks()
+    {
+        _completionCallbackEntries.Clear();
+    }
 
     public IEnumerable<ActivityExecutionContext> GetActiveActivityExecutionContexts()
     {
