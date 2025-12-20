@@ -207,7 +207,6 @@ public class WorkflowTestFixture
     /// <returns>The workflow state after execution</returns>
     public async Task<WorkflowState> RunWorkflowAsync(string definitionId, IDictionary<string, object>? input = null, RunWorkflowOptions? options = null)
     {
-        
         await BuildAsync();
         return await Services.RunWorkflowUntilEndAsync(definitionId, input, runWorkflowOptions: options);
     }
