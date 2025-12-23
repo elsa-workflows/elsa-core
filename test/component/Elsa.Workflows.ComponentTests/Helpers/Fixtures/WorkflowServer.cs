@@ -129,8 +129,6 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
         builder.ConfigureTestServices(services =>
         {
-            services.AddSingleton<TestDistributedLockProvider>();
-
             services
                 .AddSingleton<SignalManager>()
                 .AddScoped<AsyncWorkflowRunner>()
@@ -142,6 +140,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 .AddWorkflowsProvider<TestWorkflowProvider>()
                 .AddNotificationHandlersFrom<WorkflowEventHandlers>()
                 .Decorate<IChangeTokenSignaler, EventPublishingChangeTokenSignaler>()
+                .Decorate<IDistributedLockProvider, TestDistributedLockProvider>()
                 ;
         });
     }
