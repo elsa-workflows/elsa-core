@@ -81,6 +81,10 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
             .AddRetry(new()
             {
                 MaxRetryAttempts = MaxRetryAttempts,
+                // NOTE: The test retry policy intentionally differs from the production configuration.
+                // - We use a short, constant delay (10ms) to keep tests fast.
+                // - We disable jitter and exponential backoff to make timing deterministic and assertions stable.
+                //   The production pipeline uses a larger delay with exponential backoff and jitter for robustness.
                 Delay = TimeSpan.FromMilliseconds(10),
                 BackoffType = DelayBackoffType.Constant,
                 UseJitter = false,
