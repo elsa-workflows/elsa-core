@@ -24,11 +24,8 @@ public class TransientExceptionDetector(IEnumerable<ITransientExceptionStrategy>
         // Also check aggregate exceptions
         if (exception is AggregateException aggregateException)
         {
-            foreach (var innerException in aggregateException.InnerExceptions)
-            {
-                if (IsTransient(innerException))
-                    return true;
-            }
+            if (aggregateException.InnerExceptions.Any(IsTransient))
+                return true;
         }
 
         return false;
