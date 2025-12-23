@@ -129,7 +129,11 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
         builder.ConfigureTestServices(services =>
         {
-            services.AddSingleton<TestDistributedLockProvider>();
+            // Decorate IDistributedLockProvider with TestDistributedLockProvider so tests use it
+            services.Decorate<IDistributedLockProvider, TestDistributedLockProvider>();
+            
+            // Also register TestDistributedLockProvider as itself so tests can access it directly for configuration
+            services.AddSingleton(sp => (TestDistributedLockProvider)sp.GetRequiredService<IDistributedLockProvider>());
 
             services
                 .AddSingleton<SignalManager>()
