@@ -5,18 +5,12 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.DistributedLockResilience.Mock
 /// <summary>
 /// Test implementation of IDistributedLockProvider that allows simulating transient failures.
 /// </summary>
-public class TestDistributedLockProvider : IDistributedLockProvider
+public class TestDistributedLockProvider(IDistributedLockProvider innerProvider) : IDistributedLockProvider
 {
-    private readonly IDistributedLockProvider _innerProvider;
     private int _acquisitionFailuresRemaining;
     private int _releaseFailuresRemaining;
     private int _acquisitionAttemptCount;
     private int _releaseAttemptCount;
-
-    public TestDistributedLockProvider(IDistributedLockProvider innerProvider)
-    {
-        _innerProvider = innerProvider;
-    }
 
     public int AcquisitionAttemptCount => _acquisitionAttemptCount;
     public int ReleaseAttemptCount => _releaseAttemptCount;
@@ -24,7 +18,6 @@ public class TestDistributedLockProvider : IDistributedLockProvider
     public void FailAcquisitionOnce() => _acquisitionFailuresRemaining = 1;
     public void FailAcquisitionTimes(int count) => _acquisitionFailuresRemaining = count;
     public void FailReleaseOnce() => _releaseFailuresRemaining = 1;
-    public void FailReleaseTimes(int count) => _releaseFailuresRemaining = count;
 
     public void Reset()
     {
@@ -36,30 +29,26 @@ public class TestDistributedLockProvider : IDistributedLockProvider
 
     public IDistributedLock CreateLock(string name)
     {
-        return new TestDistributedLock(
-            _innerProvider.CreateLock(name),
-            this);
+        return new TestDistributedLock(innerProvider.CreateLock(name), this);
     }
 
     internal bool ShouldFailAcquisition()
     {
         _acquisitionAttemptCount++;
-        if (_acquisitionFailuresRemaining > 0)
-        {
-            _acquisitionFailuresRemaining--;
-            return true;
-        }
-        return false;
+        if (_acquisitionFailuresRemaining <= 0)
+            return false;
+
+        _acquisitionFailuresRemaining--;
+        return true;
     }
 
     internal bool ShouldFailRelease()
     {
         _releaseAttemptCount++;
-        if (_releaseFailuresRemaining > 0)
-        {
-            _releaseFailuresRemaining--;
-            return true;
-        }
-        return false;
+        if (_releaseFailuresRemaining <= 0)
+            return false;
+
+        _releaseFailuresRemaining--;
+        return true;
     }
 }

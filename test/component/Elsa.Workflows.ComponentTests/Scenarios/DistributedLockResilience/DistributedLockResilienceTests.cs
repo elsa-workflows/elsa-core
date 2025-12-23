@@ -13,125 +13,77 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.DistributedLockResilience;
 
 public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
 {
-    [Fact]
-    public async Task AcquireLockWithRetry_TransientFailureOnAcquisition_ShouldRetryAndSucceed()
+    private TestDistributedLockProvider MockProvider => Scope.ServiceProvider.GetRequiredService<TestDistributedLockProvider>();
+    private IDistributedLockProvider LockProvider => Scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
+    private ITransientExceptionDetectionService TransientDetectionService => Scope.ServiceProvider.GetRequiredService<ITransientExceptionDetectionService>();
+    private ILogger<DistributedLockResilienceTests> Logger => Scope.ServiceProvider.GetRequiredService<ILogger<DistributedLockResilienceTests>>();
+    private DistributedLockingOptions LockOptions => Scope.ServiceProvider.GetRequiredService<IOptions<DistributedLockingOptions>>().Value;
+    private ResiliencePipeline RetryPipeline => CreateRetryPipeline(TransientDetectionService, Logger);
+
+    [Theory]
+    [InlineData(1, 2, false)] // Single failure, succeeds on retry
+    [InlineData(2, 3, false)] // Two failures, succeeds on third attempt
+    [InlineData(4, 4, true)]  // Four failures, exhausts retries (MaxRetryAttempts = 3)
+    public async Task AcquireLockWithRetry_AcquisitionFailures_BehavesAsExpected(int failureCount, int expectedAttemptCount, bool shouldThrow)
     {
         // Arrange
-        var mockProvider = Scope.ServiceProvider.GetRequiredService<TestDistributedLockProvider>();
-        mockProvider.Reset();
-        mockProvider.FailAcquisitionOnce();
+        MockProvider.Reset();
+        MockProvider.FailAcquisitionTimes(failureCount);
 
-        var lockProvider = Scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
-        var transientDetectionService = Scope.ServiceProvider.GetRequiredService<ITransientExceptionDetectionService>();
-        var logger = Scope.ServiceProvider.GetRequiredService<ILogger<DistributedLockResilienceTests>>();
-        var lockOptions = Scope.ServiceProvider.GetRequiredService<IOptions<DistributedLockingOptions>>();
+        // Act & Assert
+        if (shouldThrow)
+        {
+            await Assert.ThrowsAsync<TimeoutException>(async () => await AcquireLockWithRetryAsync($"test-lock-{failureCount}"));
+        }
+        else
+        {
+            await using var handle = await AcquireLockWithRetryAsync($"test-lock-{failureCount}");
+            Assert.NotNull(handle);
+        }
 
-        var retryPipeline = CreateRetryPipeline(transientDetectionService, logger);
-
-        // Act - should succeed after retry
-        var handle = await retryPipeline.ExecuteAsync(async ct =>
-            await lockProvider.AcquireLockAsync("test-lock-1", lockOptions.Value.LockAcquisitionTimeout, ct),
-            CancellationToken.None);
-
-        // Assert
-        Assert.NotNull(handle);
-        Assert.Equal(2, mockProvider.AcquisitionAttemptCount); // First attempt fails, second succeeds
-
-        await handle.DisposeAsync();
+        Assert.Equal(expectedAttemptCount, MockProvider.AcquisitionAttemptCount);
     }
 
     [Fact]
     public async Task AcquireLockWithRetry_TransientFailureOnRelease_ShouldLogButNotThrow()
     {
         // Arrange
-        var mockProvider = Scope.ServiceProvider.GetRequiredService<TestDistributedLockProvider>();
-        mockProvider.Reset();
-        mockProvider.FailReleaseOnce();
+        MockProvider.Reset();
+        MockProvider.FailReleaseOnce();
 
-        var lockProvider = Scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
-        var lockOptions = Scope.ServiceProvider.GetRequiredService<IOptions<DistributedLockingOptions>>();
-        var logger = Scope.ServiceProvider.GetRequiredService<ILogger<DistributedLockResilienceTests>>();
+        // Act & Assert - mimics production try-catch behavior where release exceptions are logged but not thrown
+        await using var handle = await LockProvider.AcquireLockAsync("test-lock-release", LockOptions.LockAcquisitionTimeout);
+        await SafeDisposeAsync(handle);
 
-        var handle = await lockProvider.AcquireLockAsync("test-lock-2", lockOptions.Value.LockAcquisitionTimeout);
+        Assert.Equal(1, MockProvider.ReleaseAttemptCount);
+    }
 
-        // Act & Assert - should not throw despite release failure (mimics production try-catch behavior)
+    private async Task<IDistributedSynchronizationHandle?> AcquireLockWithRetryAsync(string lockName) =>
+        await RetryPipeline.ExecuteAsync(async ct =>
+            await LockProvider.AcquireLockAsync(lockName, LockOptions.LockAcquisitionTimeout, ct),
+            CancellationToken.None);
+
+    private async Task SafeDisposeAsync(IDistributedSynchronizationHandle handle)
+    {
         try
         {
             await handle.DisposeAsync();
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to release distributed lock (expected test behavior)");
+            Logger.LogWarning(ex, "Failed to release distributed lock (expected test behavior)");
         }
-
-        Assert.Equal(1, mockProvider.ReleaseAttemptCount);
     }
 
-    [Fact]
-    public async Task AcquireLockWithRetry_MultipleTransientFailures_ShouldRetryAndSucceed()
-    {
-        // Arrange
-        var mockProvider = Scope.ServiceProvider.GetRequiredService<TestDistributedLockProvider>();
-        mockProvider.Reset();
-        mockProvider.FailAcquisitionTimes(2); // Fail twice, succeed on third attempt
-
-        var lockProvider = Scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
-        var transientDetectionService = Scope.ServiceProvider.GetRequiredService<ITransientExceptionDetectionService>();
-        var logger = Scope.ServiceProvider.GetRequiredService<ILogger<DistributedLockResilienceTests>>();
-        var lockOptions = Scope.ServiceProvider.GetRequiredService<IOptions<DistributedLockingOptions>>();
-
-        var retryPipeline = CreateRetryPipeline(transientDetectionService, logger);
-
-        // Act - should succeed after multiple retries
-        var handle = await retryPipeline.ExecuteAsync(async ct =>
-            await lockProvider.AcquireLockAsync("test-lock-3", lockOptions.Value.LockAcquisitionTimeout, ct),
-            CancellationToken.None);
-
-        // Assert
-        Assert.NotNull(handle);
-        Assert.Equal(3, mockProvider.AcquisitionAttemptCount); // Two attempts fail, third succeeds
-
-        await handle.DisposeAsync();
-    }
-
-    [Fact]
-    public async Task AcquireLockWithRetry_ExhaustedRetries_ShouldThrowException()
-    {
-        // Arrange
-        var mockProvider = Scope.ServiceProvider.GetRequiredService<TestDistributedLockProvider>();
-        mockProvider.Reset();
-        mockProvider.FailAcquisitionTimes(4); // Fail 4 times (exceeds max retry attempts of 3)
-
-        var lockProvider = Scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
-        var transientDetectionService = Scope.ServiceProvider.GetRequiredService<ITransientExceptionDetectionService>();
-        var logger = Scope.ServiceProvider.GetRequiredService<ILogger<DistributedLockResilienceTests>>();
-        var lockOptions = Scope.ServiceProvider.GetRequiredService<IOptions<DistributedLockingOptions>>();
-
-        var retryPipeline = CreateRetryPipeline(transientDetectionService, logger);
-
-        // Act & Assert - should throw after exhausting retries
-        await Assert.ThrowsAsync<TimeoutException>(async () =>
-        {
-            await retryPipeline.ExecuteAsync(async ct =>
-                await lockProvider.AcquireLockAsync("test-lock-4", lockOptions.Value.LockAcquisitionTimeout, ct),
-                CancellationToken.None);
-        });
-
-        Assert.Equal(4, mockProvider.AcquisitionAttemptCount);
-    }
-
-    private static ResiliencePipeline CreateRetryPipeline(
-        ITransientExceptionDetectionService transientExceptionDetectionService,
-        ILogger logger)
-    {
-        return new ResiliencePipelineBuilder()
+    private static ResiliencePipeline CreateRetryPipeline(ITransientExceptionDetectionService transientExceptionDetectionService, ILogger logger) =>
+        new ResiliencePipelineBuilder()
             .AddRetry(new()
             {
                 MaxRetryAttempts = 3,
-                Delay = TimeSpan.FromMilliseconds(10), // Shorter delay for tests
+                Delay = TimeSpan.FromMilliseconds(10),
                 BackoffType = DelayBackoffType.Constant,
                 UseJitter = false,
-                ShouldHandle = new PredicateBuilder().Handle<Exception>(ex => transientExceptionDetectionService.IsTransient(ex)),
+                ShouldHandle = new PredicateBuilder().Handle<Exception>(transientExceptionDetectionService.IsTransient),
                 OnRetry = args =>
                 {
                     logger.LogWarning(args.Outcome.Exception, "Transient error acquiring lock. Attempt {AttemptNumber} of {MaxAttempts}.", args.AttemptNumber + 1, 3);
@@ -139,5 +91,4 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
                 }
             })
             .Build();
-    }
 }
