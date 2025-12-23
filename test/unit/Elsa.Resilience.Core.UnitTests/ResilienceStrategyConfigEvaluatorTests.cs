@@ -1,11 +1,9 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
-using Elsa.Resilience;
 using Elsa.Resilience.Core.UnitTests.TestHelpers;
 using Elsa.Resilience.Models;
 using Elsa.Resilience.Options;
 using Elsa.Resilience.Serialization;
-using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace Elsa.Resilience.Core.UnitTests;

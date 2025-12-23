@@ -1,4 +1,3 @@
-using Elsa.Resilience;
 using NSubstitute;
 
 namespace Elsa.Resilience.Core.UnitTests.TestHelpers;
