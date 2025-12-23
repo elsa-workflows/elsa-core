@@ -14,7 +14,6 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.DistributedLockResilience;
 public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
 {
     private TestDistributedLockProvider MockProvider => Scope.ServiceProvider.GetRequiredService<TestDistributedLockProvider>();
-    private IDistributedLockProvider LockProvider => Scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
     private ITransientExceptionDetector TransientExceptionDetector => Scope.ServiceProvider.GetRequiredService<ITransientExceptionDetector>();
     private ILogger<DistributedLockResilienceTests> Logger => Scope.ServiceProvider.GetRequiredService<ILogger<DistributedLockResilienceTests>>();
     private DistributedLockingOptions LockOptions => Scope.ServiceProvider.GetRequiredService<IOptions<DistributedLockingOptions>>().Value;
@@ -52,7 +51,7 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
         MockProvider.FailReleaseOnce();
 
         // Act & Assert - mimics production try-catch behavior where release exceptions are logged but not thrown
-        await using var handle = await LockProvider.AcquireLockAsync("test-lock-release", LockOptions.LockAcquisitionTimeout);
+        await using var handle = await MockProvider.AcquireLockAsync("test-lock-release", LockOptions.LockAcquisitionTimeout);
         await SafeDisposeAsync(handle);
 
         Assert.Equal(1, MockProvider.ReleaseAttemptCount);
@@ -60,7 +59,7 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
 
     private async Task<IDistributedSynchronizationHandle?> AcquireLockWithRetryAsync(string lockName) =>
         await RetryPipeline.ExecuteAsync(async ct =>
-            await LockProvider.AcquireLockAsync(lockName, LockOptions.LockAcquisitionTimeout, ct),
+            await MockProvider.AcquireLockAsync(lockName, LockOptions.LockAcquisitionTimeout, ct),
             CancellationToken.None);
 
     private async Task SafeDisposeAsync(IDistributedSynchronizationHandle handle)
