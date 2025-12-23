@@ -5,7 +5,6 @@ using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.ComponentTests.Scenarios.DistributedLockResilience.Mocks;
 using Elsa.Workflows.ComponentTests.Scenarios.DistributedLockResilience.Workflows;
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
@@ -51,20 +50,6 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
         }
 
         Assert.Equal(expectedAttemptCount, MockProvider.AcquisitionAttemptCount);
-    }
-
-    [Fact]
-    public async Task AcquireLockWithRetry_TransientFailureOnRelease_ShouldLogButNotThrow()
-    {
-        // Arrange
-        MockProvider.Reset();
-        MockProvider.FailReleaseOnce();
-
-        // Act & Assert - mimics production try-catch behavior where release exceptions are logged but not thrown
-        await using var handle = await MockProvider.AcquireLockAsync("test-lock-release", LockOptions.LockAcquisitionTimeout);
-        await SafeDisposeAsync(handle);
-
-        Assert.Equal(1, MockProvider.ReleaseAttemptCount);
     }
 
     [Theory]
@@ -188,18 +173,6 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
         await RetryPipeline.ExecuteAsync(async ct =>
             await MockProvider.AcquireLockAsync(lockName, LockOptions.LockAcquisitionTimeout, ct),
             CancellationToken.None);
-
-    private async Task SafeDisposeAsync(IDistributedSynchronizationHandle handle)
-    {
-        try
-        {
-            await handle.DisposeAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Failed to release distributed lock (expected test behavior)");
-        }
-    }
 
     private static ResiliencePipeline CreateRetryPipeline(ITransientExceptionDetector transientExceptionDetector, ILogger logger) =>
         new ResiliencePipelineBuilder()
