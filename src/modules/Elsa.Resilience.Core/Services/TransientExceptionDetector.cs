@@ -5,10 +5,12 @@ namespace Elsa.Resilience;
 /// </summary>
 public class TransientExceptionDetector(IEnumerable<ITransientExceptionStrategy> detectors) : ITransientExceptionDetector
 {
+    private readonly List<ITransientExceptionStrategy> _detectors = detectors.ToList();
+
     /// <inheritdoc />
     public bool IsTransient(Exception exception)
     {
-        var detectorsList = detectors.ToList();
+        var detectorsList = _detectors;
 
         // Handle aggregate exceptions specially to avoid redundant checks
         if (exception is AggregateException aggregateException)
