@@ -1,5 +1,5 @@
 using Elsa.Common.DistributedHosting;
-using Elsa.Resilience.Contracts;
+using Elsa.Resilience;
 using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.ComponentTests.Scenarios.DistributedLockResilience.Mocks;
@@ -15,10 +15,10 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
 {
     private TestDistributedLockProvider MockProvider => Scope.ServiceProvider.GetRequiredService<TestDistributedLockProvider>();
     private IDistributedLockProvider LockProvider => Scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
-    private ITransientExceptionDetectionService TransientDetectionService => Scope.ServiceProvider.GetRequiredService<ITransientExceptionDetectionService>();
+    private ITransientExceptionDetector TransientExceptionDetector => Scope.ServiceProvider.GetRequiredService<ITransientExceptionDetector>();
     private ILogger<DistributedLockResilienceTests> Logger => Scope.ServiceProvider.GetRequiredService<ILogger<DistributedLockResilienceTests>>();
     private DistributedLockingOptions LockOptions => Scope.ServiceProvider.GetRequiredService<IOptions<DistributedLockingOptions>>().Value;
-    private ResiliencePipeline RetryPipeline => CreateRetryPipeline(TransientDetectionService, Logger);
+    private ResiliencePipeline RetryPipeline => CreateRetryPipeline(TransientExceptionDetector, Logger);
 
     [Theory]
     [InlineData(1, 2, false)] // Single failure, succeeds on retry
@@ -75,7 +75,7 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
         }
     }
 
-    private static ResiliencePipeline CreateRetryPipeline(ITransientExceptionDetectionService transientExceptionDetectionService, ILogger logger) =>
+    private static ResiliencePipeline CreateRetryPipeline(ITransientExceptionDetector transientExceptionDetector, ILogger logger) =>
         new ResiliencePipelineBuilder()
             .AddRetry(new()
             {
@@ -83,7 +83,7 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
                 Delay = TimeSpan.FromMilliseconds(10),
                 BackoffType = DelayBackoffType.Constant,
                 UseJitter = false,
-                ShouldHandle = new PredicateBuilder().Handle<Exception>(transientExceptionDetectionService.IsTransient),
+                ShouldHandle = new PredicateBuilder().Handle<Exception>(transientExceptionDetector.IsTransient),
                 OnRetry = args =>
                 {
                     logger.LogWarning(args.Outcome.Exception, "Transient error acquiring lock. Attempt {AttemptNumber} of {MaxAttempts}.", args.AttemptNumber + 1, 3);

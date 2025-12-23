@@ -1,11 +1,10 @@
 using System.Net.Sockets;
-using Elsa.Resilience.Services;
 
 namespace Elsa.Resilience.Core.UnitTests;
 
-public class DefaultTransientExceptionDetectorTests
+public class DefaultTransientExceptionStrategyTests
 {
-    private readonly DefaultTransientExceptionDetector _detector = new();
+    private readonly DefaultTransientExceptionStrategy _strategy = new();
 
     public static TheoryData<Type> TransientExceptionTypes => new()
     {
@@ -48,7 +47,7 @@ public class DefaultTransientExceptionDetectorTests
     public void IsTransient_KnownTransientExceptionType_ReturnsTrue(Type exceptionType)
     {
         var exception = (Exception)Activator.CreateInstance(exceptionType)!;
-        Assert.True(_detector.IsTransient(exception));
+        Assert.True(_strategy.IsTransient(exception));
     }
 
     [Theory]
@@ -56,7 +55,7 @@ public class DefaultTransientExceptionDetectorTests
     public void IsTransient_ExceptionWithTransientMessagePattern_ReturnsTrue(string message)
     {
         var exception = new Exception(message);
-        Assert.True(_detector.IsTransient(exception));
+        Assert.True(_strategy.IsTransient(exception));
     }
 
     [Theory]
@@ -64,7 +63,7 @@ public class DefaultTransientExceptionDetectorTests
     public void IsTransient_ExceptionWithNonTransientMessage_ReturnsFalse(string message)
     {
         var exception = new Exception(message);
-        Assert.False(_detector.IsTransient(exception));
+        Assert.False(_strategy.IsTransient(exception));
     }
 
     [Theory]
@@ -74,7 +73,7 @@ public class DefaultTransientExceptionDetectorTests
     public void IsTransient_NonTransientExceptionType_ReturnsFalse(Type exceptionType, string message)
     {
         var exception = (Exception)Activator.CreateInstance(exceptionType, message)!;
-        Assert.False(_detector.IsTransient(exception));
+        Assert.False(_strategy.IsTransient(exception));
     }
 
     [Theory]
@@ -83,6 +82,6 @@ public class DefaultTransientExceptionDetectorTests
     public void IsTransient_ExceptionWithEmptyMessage_ChecksTypeOnly(Type exceptionType, bool expectedResult)
     {
         var exception = (Exception)Activator.CreateInstance(exceptionType, "")!;
-        Assert.Equal(expectedResult, _detector.IsTransient(exception));
+        Assert.Equal(expectedResult, _strategy.IsTransient(exception));
     }
 }

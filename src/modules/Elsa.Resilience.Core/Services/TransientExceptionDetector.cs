@@ -1,23 +1,14 @@
-using Elsa.Resilience.Contracts;
-
-namespace Elsa.Resilience.Services;
+namespace Elsa.Resilience;
 
 /// <summary>
-/// Default implementation of <see cref="ITransientExceptionDetectionService"/> that delegates to registered detectors.
+/// Default implementation of <see cref="ITransientExceptionDetector"/> that delegates to registered detectors.
 /// </summary>
-public class TransientExceptionDetectionService : ITransientExceptionDetectionService
+public class TransientExceptionDetector(IEnumerable<ITransientExceptionStrategy> detectors) : ITransientExceptionDetector
 {
-    private readonly IEnumerable<ITransientExceptionDetector> _detectors;
-
-    public TransientExceptionDetectionService(IEnumerable<ITransientExceptionDetector> detectors)
-    {
-        _detectors = detectors;
-    }
-
     /// <inheritdoc />
     public bool IsTransient(Exception exception)
     {
-        var detectorsList = _detectors.ToList();
+        var detectorsList = detectors.ToList();
 
         // Walk the entire exception chain (including inner exceptions)
         var currentException = exception;

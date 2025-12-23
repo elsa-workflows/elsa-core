@@ -1,5 +1,5 @@
 using Elsa.Common.DistributedHosting;
-using Elsa.Resilience.Contracts;
+using Elsa.Resilience;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
 using Medallion.Threading;
@@ -13,14 +13,14 @@ namespace Elsa.Workflows.Runtime.Distributed;
 public class DistributedWorkflowClient(
     string workflowInstanceId,
     IDistributedLockProvider distributedLockProvider,
-    ITransientExceptionDetectionService transientExceptionDetectionService,
+    ITransientExceptionDetector transientExceptionDetector,
     IOptions<DistributedLockingOptions> distributedLockingOptions,
     IServiceProvider serviceProvider,
     ILogger<DistributedWorkflowClient> logger)
     : IWorkflowClient
 {
     private readonly LocalWorkflowClient _localWorkflowClient = ActivatorUtilities.CreateInstance<LocalWorkflowClient>(serviceProvider, workflowInstanceId);
-    private readonly Lazy<ResiliencePipeline> _retryPipeline = new(() => CreateRetryPipeline(transientExceptionDetectionService, logger, workflowInstanceId));
+    private readonly Lazy<ResiliencePipeline> _retryPipeline = new(() => CreateRetryPipeline(transientExceptionDetector, logger, workflowInstanceId));
 
     public string WorkflowInstanceId => workflowInstanceId;
 
@@ -129,7 +129,7 @@ public class DistributedWorkflowClient(
     }
 
     private static ResiliencePipeline CreateRetryPipeline(
-        ITransientExceptionDetectionService transientExceptionDetectionService,
+        ITransientExceptionDetector transientExceptionDetector,
         ILogger<DistributedWorkflowClient> logger,
         string workflowInstanceId)
     {
@@ -140,7 +140,7 @@ public class DistributedWorkflowClient(
                 Delay = TimeSpan.FromMilliseconds(500),
                 BackoffType = DelayBackoffType.Exponential,
                 UseJitter = true,
-                ShouldHandle = new PredicateBuilder().Handle<Exception>(ex => transientExceptionDetectionService.IsTransient(ex)),
+                ShouldHandle = new PredicateBuilder().Handle<Exception>(transientExceptionDetector.IsTransient),
                 OnRetry = args =>
                 {
                     logger.LogWarning(args.Outcome.Exception, "Transient error acquiring lock for workflow instance {WorkflowInstanceId}. Attempt {AttemptNumber} of {MaxAttempts}.", workflowInstanceId, args.AttemptNumber + 1, 3);

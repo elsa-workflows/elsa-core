@@ -1,20 +1,18 @@
-using Elsa.Resilience.Contracts;
-using Elsa.Resilience.Services;
 using NSubstitute;
 
 namespace Elsa.Resilience.Core.UnitTests;
 
-public class TransientExceptionDetectionServiceTests
+public class TransientExceptionDetectorTests
 {
-    private static ITransientExceptionDetector CreateDetector(params (Exception exception, bool isTransient)[] behaviors)
+    private static ITransientExceptionStrategy CreateDetector(params (Exception exception, bool isTransient)[] behaviors)
     {
-        var detector = Substitute.For<ITransientExceptionDetector>();
+        var detector = Substitute.For<ITransientExceptionStrategy>();
         foreach (var (exception, isTransient) in behaviors)
             detector.IsTransient(exception).Returns(isTransient);
         return detector;
     }
 
-    private static TransientExceptionDetectionService CreateService(params ITransientExceptionDetector[] detectors) =>
+    private static TransientExceptionDetector CreateService(params ITransientExceptionStrategy[] detectors) =>
         new(detectors);
 
     [Fact]
@@ -51,8 +49,8 @@ public class TransientExceptionDetectionServiceTests
     public void IsTransient_AllDetectorsReturnFalse_ReturnsFalse()
     {
         var exception = new Exception("test");
-        var detector1 = Substitute.For<ITransientExceptionDetector>();
-        var detector2 = Substitute.For<ITransientExceptionDetector>();
+        var detector1 = Substitute.For<ITransientExceptionStrategy>();
+        var detector2 = Substitute.For<ITransientExceptionStrategy>();
         detector1.IsTransient(Arg.Any<Exception>()).Returns(false);
         detector2.IsTransient(Arg.Any<Exception>()).Returns(false);
         var service = CreateService(detector1, detector2);
@@ -73,7 +71,7 @@ public class TransientExceptionDetectionServiceTests
             _ => throw new ArgumentOutOfRangeException(nameof(depth))
         };
 
-        var detector = Substitute.For<ITransientExceptionDetector>();
+        var detector = Substitute.For<ITransientExceptionStrategy>();
         detector.IsTransient(transientException).Returns(true);
         detector.IsTransient(Arg.Is<Exception>(e => e != transientException)).Returns(false);
         var service = CreateService(detector);
@@ -86,7 +84,7 @@ public class TransientExceptionDetectionServiceTests
     [InlineData(2, false)] // No transient inner exceptions
     public void IsTransient_AggregateException_ChecksInnerExceptions(int scenario, bool expectedResult)
     {
-        var detector = Substitute.For<ITransientExceptionDetector>();
+        var detector = Substitute.For<ITransientExceptionStrategy>();
 
         var aggregateException = scenario switch
         {

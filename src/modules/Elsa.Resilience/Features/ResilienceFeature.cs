@@ -2,13 +2,11 @@ using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Resilience.Contracts;
 using Elsa.Resilience.Entities;
 using Elsa.Resilience.Modifiers;
 using Elsa.Resilience.Options;
 using Elsa.Resilience.Recorders;
 using Elsa.Resilience.Serialization;
-using Elsa.Resilience.Services;
 using Elsa.Resilience.StrategySources;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
@@ -89,7 +87,7 @@ public class ResilienceFeature(IModule module) : FeatureBase(module)
 
         // Register transient exception detection infrastructure
         Services
-            .AddSingleton<ITransientExceptionDetector, DefaultTransientExceptionDetector>()
-            .AddSingleton<ITransientExceptionDetectionService, TransientExceptionDetectionService>();
+            .AddSingleton<ITransientExceptionStrategy, DefaultTransientExceptionStrategy>()
+            .AddSingleton<ITransientExceptionDetector, TransientExceptionDetector>();
     }
 }

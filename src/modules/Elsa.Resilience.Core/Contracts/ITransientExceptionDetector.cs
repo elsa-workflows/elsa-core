@@ -1,7 +1,7 @@
-namespace Elsa.Resilience.Contracts;
+namespace Elsa.Resilience;
 
 /// <summary>
-/// Defines a contract for detecting whether an exception is transient and may be resolved by retrying.
+/// Service for detecting whether exceptions are transient and may be resolved by retrying.
 /// </summary>
 public interface ITransientExceptionDetector
 {

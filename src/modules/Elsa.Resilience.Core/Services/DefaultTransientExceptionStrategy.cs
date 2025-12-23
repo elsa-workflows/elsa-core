@@ -1,11 +1,9 @@
-using Elsa.Resilience.Contracts;
-
-namespace Elsa.Resilience.Services;
+namespace Elsa.Resilience;
 
 /// <summary>
 /// Default implementation that detects common transient exceptions from the .NET framework and common patterns.
 /// </summary>
-public class DefaultTransientExceptionDetector : ITransientExceptionDetector
+public class DefaultTransientExceptionStrategy : ITransientExceptionStrategy
 {
     private static readonly HashSet<string> TransientExceptionTypeNames = new(StringComparer.OrdinalIgnoreCase)
     {
