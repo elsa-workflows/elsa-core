@@ -79,10 +79,8 @@ public class ResilienceStrategyCatalogTests
     [Fact(DisplayName = "Catalog should search all sources to find a strategy")]
     public async Task GetAsync_MultipleProvidersStrategyInSecond_ReturnsStrategy()
     {
-        var provider1 = TestDataFactory.CreateStrategySource(
-            TestDataFactory.CreateStrategy("strategy1", "Strategy 1"));
-        var provider2 = TestDataFactory.CreateStrategySource(
-            TestDataFactory.CreateStrategy("strategy2", "Strategy 2"));
+        var provider1 = TestDataFactory.CreateStrategySource(TestDataFactory.CreateStrategy("strategy1", "Strategy 1"));
+        var provider2 = TestDataFactory.CreateStrategySource(TestDataFactory.CreateStrategy("strategy2", "Strategy 2"));
         var catalog = CreateCatalog(provider1, provider2);
 
         var result = await catalog.GetAsync("strategy2");
