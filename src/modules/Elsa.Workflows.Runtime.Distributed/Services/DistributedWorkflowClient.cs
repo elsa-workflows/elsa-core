@@ -142,7 +142,7 @@ public class DistributedWorkflowClient(
                 Delay = TimeSpan.FromMilliseconds(500),
                 BackoffType = DelayBackoffType.Exponential,
                 UseJitter = true,
-                ShouldHandle = new PredicateBuilder().Handle<Exception>(ex => transientExceptionDetectionService.IsTransient(ex)),
+                ShouldHandle = new PredicateBuilder().Handle<Exception>(ex => transientExceptionDetector.IsTransient(ex)),
                 OnRetry = args =>
                 {
                     logger.LogWarning(args.Outcome.Exception, "Transient error acquiring lock for workflow instance {WorkflowInstanceId}. Attempt {AttemptNumber} of {MaxAttempts}.", workflowInstanceId, args.AttemptNumber + 1, maxRetryAttempts);
