@@ -21,6 +21,8 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
 {
     private const int MaxRetryAttempts = 3;
     
+    // The IDistributedLockProvider is decorated with TestDistributedLockProvider in WorkflowServer.ConfigureTestServices
+    // This cast is safe because the decorator pattern ensures TestDistributedLockProvider wraps the actual provider
     private TestDistributedLockProvider MockProvider => (TestDistributedLockProvider)Scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
     private ITransientExceptionDetector TransientExceptionDetector => Scope.ServiceProvider.GetRequiredService<ITransientExceptionDetector>();
     private ILogger<DistributedLockResilienceTests> Logger => Scope.ServiceProvider.GetRequiredService<ILogger<DistributedLockResilienceTests>>();
@@ -165,7 +167,6 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
         Assert.NotNull(response.WorkflowInstanceId);
         Assert.Equal(1, MockProvider.ReleaseAttemptCount);
     }
-
 
     private async Task<IDistributedSynchronizationHandle?> AcquireLockWithRetryAsync(string lockName) =>
         await RetryPipeline.ExecuteAsync(async ct =>
