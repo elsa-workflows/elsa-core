@@ -12,11 +12,13 @@ using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Decorators;
 using Elsa.Workflows.ComponentTests.Materializers;
+using Elsa.Workflows.ComponentTests.Scenarios.DistributedLockResilience.Mocks;
 using Elsa.Workflows.ComponentTests.WorkflowProviders;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
 using JetBrains.Annotations;
+using Medallion.Threading;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -127,6 +129,23 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
         builder.ConfigureTestServices(services =>
         {
+            // Register TestDistributedLockProvider as a singleton so it can be retrieved for test setup
+            var testProviderDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IDistributedLockProvider));
+            if (testProviderDescriptor != null)
+            {
+                services.Remove(testProviderDescriptor);
+                services.AddSingleton<TestDistributedLockProvider>(sp =>
+                {
+                    var originalProvider = testProviderDescriptor.ImplementationFactory != null
+                        ? (IDistributedLockProvider)testProviderDescriptor.ImplementationFactory(sp)
+                        : testProviderDescriptor.ImplementationType != null
+                            ? (IDistributedLockProvider)ActivatorUtilities.CreateInstance(sp, testProviderDescriptor.ImplementationType)
+                            : (IDistributedLockProvider)testProviderDescriptor.ImplementationInstance!;
+                    return new TestDistributedLockProvider(originalProvider);
+                });
+                services.AddSingleton<IDistributedLockProvider>(sp => sp.GetRequiredService<TestDistributedLockProvider>());
+            }
+
             services
                 .AddSingleton<SignalManager>()
                 .AddScoped<AsyncWorkflowRunner>()
