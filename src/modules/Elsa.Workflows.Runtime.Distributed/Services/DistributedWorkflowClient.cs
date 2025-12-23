@@ -133,17 +133,19 @@ public class DistributedWorkflowClient(
         ILogger<DistributedWorkflowClient> logger,
         string workflowInstanceId)
     {
+        const int maxRetryAttempts = 3;
+
         return new ResiliencePipelineBuilder()
             .AddRetry(new()
             {
-                MaxRetryAttempts = 3,
+                MaxRetryAttempts = maxRetryAttempts,
                 Delay = TimeSpan.FromMilliseconds(500),
                 BackoffType = DelayBackoffType.Exponential,
                 UseJitter = true,
-                ShouldHandle = new PredicateBuilder().Handle<Exception>(transientExceptionDetector.IsTransient),
+                ShouldHandle = new PredicateBuilder().Handle<Exception>(ex => transientExceptionDetectionService.IsTransient(ex)),
                 OnRetry = args =>
                 {
-                    logger.LogWarning(args.Outcome.Exception, "Transient error acquiring lock for workflow instance {WorkflowInstanceId}. Attempt {AttemptNumber} of {MaxAttempts}.", workflowInstanceId, args.AttemptNumber + 1, 3);
+                    logger.LogWarning(args.Outcome.Exception, "Transient error acquiring lock for workflow instance {WorkflowInstanceId}. Attempt {AttemptNumber} of {MaxAttempts}.", workflowInstanceId, args.AttemptNumber + 1, maxRetryAttempts);
                     return ValueTask.CompletedTask;
                 }
             })
