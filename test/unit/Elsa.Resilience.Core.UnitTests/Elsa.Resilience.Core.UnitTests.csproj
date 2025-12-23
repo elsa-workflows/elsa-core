@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Include>[Elsa.Resilience]*</Include>
-        <Threshold>5</Threshold>
+        <Include>[Elsa.Resilience.Core]*</Include>
+        <Threshold>49</Threshold>
     </PropertyGroup>
 
     <ItemGroup>
