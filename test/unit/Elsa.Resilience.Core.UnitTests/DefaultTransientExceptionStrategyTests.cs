@@ -6,18 +6,18 @@ public class DefaultTransientExceptionStrategyTests
 {
     private readonly DefaultTransientExceptionStrategy _strategy = new();
 
-    public static TheoryData<Type> TransientExceptionTypes => new()
-    {
+    public static TheoryData<Type> TransientExceptionTypes =>
+    [
         typeof(HttpRequestException),
         typeof(TimeoutException),
         typeof(TaskCanceledException),
         typeof(IOException),
         typeof(SocketException),
         typeof(EndOfStreamException)
-    };
+    ];
 
-    public static TheoryData<string> TransientMessagePatterns => new()
-    {
+    public static TheoryData<string> TransientMessagePatterns =>
+    [
         "timeout",
         "timed out",
         "connection reset",
@@ -33,14 +33,14 @@ public class DefaultTransientExceptionStrategyTests
         "an existing connection was forcibly closed",
         "TIMEOUT",
         "Connection Reset"
-    };
+    ];
 
-    public static TheoryData<string> NonTransientMessagePatterns => new()
-    {
+    public static TheoryData<string> NonTransientMessagePatterns =>
+    [
         "Some random error",
         "Invalid operation",
         "Null reference"
-    };
+    ];
 
     [Theory]
     [MemberData(nameof(TransientExceptionTypes))]
