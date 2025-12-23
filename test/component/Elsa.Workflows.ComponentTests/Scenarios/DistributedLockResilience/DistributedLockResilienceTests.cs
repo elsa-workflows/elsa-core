@@ -13,6 +13,8 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.DistributedLockResilience;
 
 public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
 {
+    private const int MaxRetryAttempts = 3;
+    
     private TestDistributedLockProvider MockProvider => Scope.ServiceProvider.GetRequiredService<TestDistributedLockProvider>();
     private ITransientExceptionDetector TransientExceptionDetector => Scope.ServiceProvider.GetRequiredService<ITransientExceptionDetector>();
     private ILogger<DistributedLockResilienceTests> Logger => Scope.ServiceProvider.GetRequiredService<ILogger<DistributedLockResilienceTests>>();
@@ -78,14 +80,14 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
         new ResiliencePipelineBuilder()
             .AddRetry(new()
             {
-                MaxRetryAttempts = 3,
+                MaxRetryAttempts = MaxRetryAttempts,
                 Delay = TimeSpan.FromMilliseconds(10),
                 BackoffType = DelayBackoffType.Constant,
                 UseJitter = false,
                 ShouldHandle = new PredicateBuilder().Handle<Exception>(transientExceptionDetector.IsTransient),
                 OnRetry = args =>
                 {
-                    logger.LogWarning(args.Outcome.Exception, "Transient error acquiring lock. Attempt {AttemptNumber} of {MaxAttempts}.", args.AttemptNumber + 1, 3);
+                    logger.LogWarning(args.Outcome.Exception, "Transient error acquiring lock. Attempt {AttemptNumber} of {MaxAttempts}.", args.AttemptNumber + 1, MaxRetryAttempts);
                     return ValueTask.CompletedTask;
                 }
             })
