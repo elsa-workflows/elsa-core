@@ -3,7 +3,10 @@ using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Polly;
+using Polly.Retry;
 
 namespace Elsa.Workflows.Runtime.Distributed;
 
@@ -11,7 +14,8 @@ public class DistributedWorkflowClient(
     string workflowInstanceId,
     IDistributedLockProvider distributedLockProvider,
     IOptions<DistributedLockingOptions> distributedLockingOptions,
-    IServiceProvider serviceProvider)
+    IServiceProvider serviceProvider,
+    ILogger<DistributedWorkflowClient> logger)
     : IWorkflowClient
 {
     private readonly LocalWorkflowClient _localWorkflowClient = ActivatorUtilities.CreateInstance<LocalWorkflowClient>(serviceProvider, workflowInstanceId);
@@ -85,8 +89,74 @@ public class DistributedWorkflowClient(
     {
         var lockKey = $"workflow-instance:{WorkflowInstanceId}";
         var lockTimeout = distributedLockingOptions.Value.LockAcquisitionTimeout;
-        await using var @lock = await distributedLockProvider.AcquireLockAsync(lockKey, lockTimeout);
-        var result = await func();
-        return result;
+
+        // Create a retry pipeline for transient connection failures
+        var retryPipeline = new ResiliencePipelineBuilder()
+            .AddRetry(new RetryStrategyOptions
+            {
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromMilliseconds(500),
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                ShouldHandle = new PredicateBuilder().Handle<Exception>(ex => IsTransientException(ex)),
+                OnRetry = args =>
+                {
+                    logger.LogWarning(args.Outcome.Exception, "Transient error acquiring lock for workflow instance {WorkflowInstanceId}. Attempt {AttemptNumber} of {MaxAttempts}.", WorkflowInstanceId, args.AttemptNumber + 1, 3);
+                    return ValueTask.CompletedTask;
+                }
+            })
+            .Build();
+
+        IDistributedSynchronizationHandle? lockHandle = null;
+
+        try
+        {
+            lockHandle = await retryPipeline.ExecuteAsync(async ct =>
+                await distributedLockProvider.AcquireLockAsync(lockKey, lockTimeout, ct),
+                CancellationToken.None);
+            return await func();
+        }
+        finally
+        {
+            if (lockHandle != null)
+            {
+                try
+                {
+                    await lockHandle.DisposeAsync();
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't throw - the work is already done, and the lock
+                    // will be automatically released when the connection dies
+                    logger.LogWarning(ex, "Failed to release distributed lock for workflow instance {WorkflowInstanceId}. The lock will be automatically released by the database.", WorkflowInstanceId);
+                }
+            }
+        }
+    }
+
+    private static bool IsTransientException(Exception ex)
+    {
+        // Check for common transient database connection errors
+        return ex switch
+        {
+            // Network/connection errors
+            System.Net.Sockets.SocketException => true,
+            System.IO.IOException => true,
+            TimeoutException => true,
+
+            // Check nested exceptions for Npgsql
+            _ when ex.InnerException is System.Net.Sockets.SocketException => true,
+            _ when ex.InnerException is System.IO.IOException => true,
+            _ when ex.InnerException is TimeoutException => true,
+
+            // Npgsql specific transient errors
+            _ when ex.GetType().FullName == "Npgsql.NpgsqlException" &&
+                   (ex.Message.Contains("Connection refused") ||
+                    ex.Message.Contains("Failed to connect") ||
+                    ex.Message.Contains("timed out") ||
+                    ex.Message.Contains("Connection is not open")) => true,
+
+            _ => false
+        };
     }
 }
