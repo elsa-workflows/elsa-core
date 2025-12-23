@@ -6,13 +6,13 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.DistributedLockResilience.Mock
 /// Test implementation of IDistributedLock that delegates to an inner lock
 /// but can simulate transient failures.
 /// </summary>
-public class TestDistributedLock(IDistributedLock innerLock, TestDistributedLockProvider provider) : IDistributedLock
+public class TestDistributedLock(IDistributedLock innerLock, TestDistributedLockProvider provider, string lockName) : IDistributedLock
 {
     public string Name => innerLock.Name;
 
     public IDistributedSynchronizationHandle Acquire(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        if (provider.ShouldFailAcquisition())
+        if (provider.ShouldFailAcquisition(lockName))
         {
             throw new TimeoutException("Simulated transient timeout during lock acquisition");
         }
@@ -23,7 +23,7 @@ public class TestDistributedLock(IDistributedLock innerLock, TestDistributedLock
 
     public async ValueTask<IDistributedSynchronizationHandle> AcquireAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        if (provider.ShouldFailAcquisition())
+        if (provider.ShouldFailAcquisition(lockName))
         {
             throw new TimeoutException("Simulated transient timeout during lock acquisition");
         }
@@ -34,7 +34,7 @@ public class TestDistributedLock(IDistributedLock innerLock, TestDistributedLock
 
     public async ValueTask<IDistributedSynchronizationHandle?> TryAcquireAsync(TimeSpan timeout = default, CancellationToken cancellationToken = default)
     {
-        if (provider.ShouldFailAcquisition())
+        if (provider.ShouldFailAcquisition(lockName))
         {
             throw new TimeoutException("Simulated transient timeout during lock acquisition");
         }
@@ -45,7 +45,7 @@ public class TestDistributedLock(IDistributedLock innerLock, TestDistributedLock
 
     public IDistributedSynchronizationHandle? TryAcquire(TimeSpan timeout = default, CancellationToken cancellationToken = default)
     {
-        if (provider.ShouldFailAcquisition())
+        if (provider.ShouldFailAcquisition(lockName))
         {
             throw new TimeoutException("Simulated transient timeout during lock acquisition");
         }
