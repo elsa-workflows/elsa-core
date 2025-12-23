@@ -8,7 +8,7 @@ public class ResilienceStrategyCatalogTests
 {
     private static ResilienceStrategyCatalog CreateCatalog(params IResilienceStrategySource[] sources) => new(sources);
 
-    [Fact]
+    [Fact(DisplayName = "Catalog with no sources should return empty list")]
     public async Task ListAsync_NoProviders_ReturnsEmptyList()
     {
         var catalog = CreateCatalog();
@@ -17,7 +17,7 @@ public class ResilienceStrategyCatalogTests
         Assert.Empty(result);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Catalog should return all strategies from a single source")]
     public async Task ListAsync_SingleProviderWithStrategies_ReturnsStrategies()
     {
         var strategies = new[]
@@ -35,7 +35,7 @@ public class ResilienceStrategyCatalogTests
             s => Assert.Equal("strategy2", s.Id));
     }
 
-    [Fact]
+    [Fact(DisplayName = "Catalog should combine strategies from multiple sources")]
     public async Task ListAsync_MultipleProviders_CombinesAllStrategies()
     {
         var provider1 = TestDataFactory.CreateStrategySource(
@@ -53,7 +53,7 @@ public class ResilienceStrategyCatalogTests
         Assert.Contains(result, s => s.Id == "strategy3");
     }
 
-    [Theory]
+    [Theory(DisplayName = "Catalog should retrieve strategy by ID or return null if not found")]
     [InlineData("test-id", "Test Strategy", true)]
     [InlineData("non-existent", null, false)]
     public async Task GetAsync_WithStrategyId_ReturnsExpectedResult(string searchId, string? expectedDisplayName, bool shouldExist)
@@ -76,7 +76,7 @@ public class ResilienceStrategyCatalogTests
         }
     }
 
-    [Fact]
+    [Fact(DisplayName = "Catalog should search all sources to find a strategy")]
     public async Task GetAsync_MultipleProvidersStrategyInSecond_ReturnsStrategy()
     {
         var provider1 = TestDataFactory.CreateStrategySource(
@@ -91,7 +91,7 @@ public class ResilienceStrategyCatalogTests
         Assert.Equal("strategy2", result.Id);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Catalog should cache strategy list after first retrieval")]
     public async Task ListAsync_CalledMultipleTimes_CachesResult()
     {
         var strategy = TestDataFactory.CreateStrategy("test", "Test");
@@ -105,7 +105,7 @@ public class ResilienceStrategyCatalogTests
         await provider.Received(1).GetStrategiesAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Fact(DisplayName = "GetAsync should use cached list when available")]
     public async Task GetAsync_CalledAfterList_UsesCachedResult()
     {
         var strategy = TestDataFactory.CreateStrategy("test", "Test");

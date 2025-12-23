@@ -22,14 +22,14 @@ public class ResilienceStrategyConfigEvaluatorTests
         _evaluator = new(_catalog, _expressionEvaluator, serializer);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Evaluator should return null when config is null")]
     public async Task EvaluateAsync_NullConfig_ReturnsNull()
     {
         var result = await _evaluator.EvaluateAsync(null, _context);
         Assert.Null(result);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Evaluator in identifier mode should resolve strategy from catalog")]
     public async Task EvaluateAsync_IdentifierMode_WithValidId_ReturnsStrategyFromCatalog()
     {
         var strategy = TestDataFactory.CreateStrategy("test-strategy", "Test Strategy");
@@ -43,7 +43,7 @@ public class ResilienceStrategyConfigEvaluatorTests
         await _catalog.Received(1).GetAsync("test-strategy", Arg.Any<CancellationToken>());
     }
 
-    [Theory]
+    [Theory(DisplayName = "Evaluator in identifier mode should return null for invalid strategy IDs")]
     [InlineData("")]
     [InlineData("   ")]
     [InlineData(null)]
@@ -57,7 +57,7 @@ public class ResilienceStrategyConfigEvaluatorTests
         await _catalog.DidNotReceive().GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Fact(DisplayName = "Evaluator in expression mode should return null when expression is null")]
     public async Task EvaluateAsync_ExpressionMode_WithNullExpression_ReturnsNull()
     {
         var config = CreateConfig(ResilienceStrategyConfigMode.Expression);
@@ -68,7 +68,7 @@ public class ResilienceStrategyConfigEvaluatorTests
         await _expressionEvaluator.DidNotReceive().EvaluateAsync<object>(Arg.Any<Expression>(), Arg.Any<ExpressionExecutionContext>(), Arg.Any<ExpressionEvaluatorOptions>());
     }
 
-    [Fact]
+    [Fact(DisplayName = "Evaluator in expression mode should resolve string IDs from catalog")]
     public async Task EvaluateAsync_ExpressionMode_ReturnsStringId_ResolvesFromCatalog()
     {
         var expression = new Expression("C#", "\"test-strategy\"");
@@ -84,7 +84,7 @@ public class ResilienceStrategyConfigEvaluatorTests
         await _catalog.Received(1).GetAsync("test-strategy", Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Fact(DisplayName = "Evaluator in expression mode should return strategy objects directly")]
     public async Task EvaluateAsync_ExpressionMode_ReturnsStrategyObject_ReturnsStrategyDirectly()
     {
         var expression = new Expression("C#", "strategy");
@@ -99,7 +99,7 @@ public class ResilienceStrategyConfigEvaluatorTests
         await _catalog.DidNotReceive().GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [Theory]
+    [Theory(DisplayName = "Evaluator in expression mode should return null for unexpected result types")]
     [InlineData("null", null)]
     [InlineData("42", 42)]
     public async Task EvaluateAsync_ExpressionMode_ReturnsUnexpectedType_ReturnsNull(string expressionCode, object? expressionResult)

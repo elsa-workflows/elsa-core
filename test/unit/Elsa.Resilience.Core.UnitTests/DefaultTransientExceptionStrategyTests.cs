@@ -42,7 +42,7 @@ public class DefaultTransientExceptionStrategyTests
         "Null reference"
     ];
 
-    [Theory]
+    [Theory(DisplayName = "Known transient exception types should be detected as transient")]
     [MemberData(nameof(TransientExceptionTypes))]
     public void IsTransient_KnownTransientExceptionType_ReturnsTrue(Type exceptionType)
     {
@@ -50,7 +50,7 @@ public class DefaultTransientExceptionStrategyTests
         Assert.True(_strategy.IsTransient(exception));
     }
 
-    [Theory]
+    [Theory(DisplayName = "Exceptions with transient message patterns should be detected as transient")]
     [MemberData(nameof(TransientMessagePatterns))]
     public void IsTransient_ExceptionWithTransientMessagePattern_ReturnsTrue(string message)
     {
@@ -58,7 +58,7 @@ public class DefaultTransientExceptionStrategyTests
         Assert.True(_strategy.IsTransient(exception));
     }
 
-    [Theory]
+    [Theory(DisplayName = "Exceptions with non-transient messages should not be detected as transient")]
     [MemberData(nameof(NonTransientMessagePatterns))]
     public void IsTransient_ExceptionWithNonTransientMessage_ReturnsFalse(string message)
     {
@@ -66,7 +66,7 @@ public class DefaultTransientExceptionStrategyTests
         Assert.False(_strategy.IsTransient(exception));
     }
 
-    [Theory]
+    [Theory(DisplayName = "Non-transient exception types should not be detected as transient regardless of message")]
     [InlineData(typeof(InvalidOperationException), "Some error")]
     [InlineData(typeof(ArgumentException), "Invalid argument")]
     [InlineData(typeof(NullReferenceException), "Object reference not set")]
@@ -76,7 +76,7 @@ public class DefaultTransientExceptionStrategyTests
         Assert.False(_strategy.IsTransient(exception));
     }
 
-    [Theory]
+    [Theory(DisplayName = "Exceptions with empty messages should be detected based on type only")]
     [InlineData(typeof(TimeoutException), true)]
     [InlineData(typeof(InvalidOperationException), false)]
     public void IsTransient_ExceptionWithEmptyMessage_ChecksTypeOnly(Type exceptionType, bool expectedResult)

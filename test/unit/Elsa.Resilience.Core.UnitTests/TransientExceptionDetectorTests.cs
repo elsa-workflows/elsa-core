@@ -15,7 +15,7 @@ public class TransientExceptionDetectorTests
     private static TransientExceptionDetector CreateService(params ITransientExceptionStrategy[] detectors) =>
         new(detectors);
 
-    [Fact]
+    [Fact(DisplayName = "Service with no registered strategies should return false for any exception")]
     public void IsTransient_NoDetectors_ReturnsFalse()
     {
         var service = CreateService();
@@ -24,7 +24,7 @@ public class TransientExceptionDetectorTests
         Assert.False(service.IsTransient(exception));
     }
 
-    [Fact]
+    [Fact(DisplayName = "Service should return true when any strategy detects the exception as transient")]
     public void IsTransient_DetectorReturnsTrue_ReturnsTrue()
     {
         var exception = new Exception("test");
@@ -34,7 +34,7 @@ public class TransientExceptionDetectorTests
         Assert.True(service.IsTransient(exception));
     }
 
-    [Fact]
+    [Fact(DisplayName = "Service with multiple strategies should return true if any one detects as transient")]
     public void IsTransient_MultipleDetectorsOneReturnsTrue_ReturnsTrue()
     {
         var exception = new Exception("test");
@@ -45,7 +45,7 @@ public class TransientExceptionDetectorTests
         Assert.True(service.IsTransient(exception));
     }
 
-    [Fact]
+    [Fact(DisplayName = "Service should return false when all strategies detect the exception as non-transient")]
     public void IsTransient_AllDetectorsReturnFalse_ReturnsFalse()
     {
         var exception = new Exception("test");
@@ -58,7 +58,7 @@ public class TransientExceptionDetectorTests
         Assert.False(service.IsTransient(exception));
     }
 
-    [Theory]
+    [Theory(DisplayName = "Service should walk the inner exception chain to find transient exceptions")]
     [InlineData(1)] // Inner exception is transient
     [InlineData(2)] // Deep inner exception is transient
     public void IsTransient_InnerExceptionChainHasTransient_ReturnsTrue(int depth)
@@ -79,7 +79,7 @@ public class TransientExceptionDetectorTests
         Assert.True(service.IsTransient(exception));
     }
 
-    [Theory]
+    [Theory(DisplayName = "Service should inspect AggregateException inner exceptions")]
     [InlineData(1, true)]  // One transient inner exception
     [InlineData(2, false)] // No transient inner exceptions
     public void IsTransient_AggregateException_ChecksInnerExceptions(int scenario, bool expectedResult)
@@ -107,7 +107,7 @@ public class TransientExceptionDetectorTests
         Assert.Equal(expectedResult, service.IsTransient(aggregateException));
     }
 
-    [Fact]
+    [Fact(DisplayName = "AggregateException with mixed inner exceptions should be transient if any inner is transient")]
     public void IsTransient_AggregateExceptionWithMultipleInnerOneTransient_ReturnsTrue()
     {
         var transientException = new TimeoutException("timeout");
