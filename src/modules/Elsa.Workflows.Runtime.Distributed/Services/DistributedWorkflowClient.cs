@@ -20,8 +20,12 @@ public class DistributedWorkflowClient(
     : IWorkflowClient
 {
     private readonly LocalWorkflowClient _localWorkflowClient = ActivatorUtilities.CreateInstance<LocalWorkflowClient>(serviceProvider, workflowInstanceId);
-    private readonly Lazy<ResiliencePipeline> _retryPipeline = new(() => CreateRetryPipeline(transientExceptionDetector, logger, workflowInstanceId));
+    private readonly ITransientExceptionDetector _transientExceptionDetector = transientExceptionDetector;
+    private readonly ILogger<DistributedWorkflowClient> _logger = logger;
+    private readonly Lazy<ResiliencePipeline> _retryPipeline = new(CreateRetryPipelineForInstance);
 
+    private ResiliencePipeline CreateRetryPipelineForInstance() =>
+        CreateRetryPipeline(_transientExceptionDetector, _logger, WorkflowInstanceId);
     public string WorkflowInstanceId => workflowInstanceId;
 
     public async Task<CreateWorkflowInstanceResponse> CreateInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
