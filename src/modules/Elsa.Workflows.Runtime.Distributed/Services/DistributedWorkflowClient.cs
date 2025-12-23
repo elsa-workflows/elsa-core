@@ -31,7 +31,7 @@ public class DistributedWorkflowClient(
 
     public async Task<RunWorkflowInstanceResponse> RunInstanceAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        var result = await WithLockAsync(async () => await _localWorkflowClient.RunInstanceAsync(request, cancellationToken));
+        var result = await WithLockAsync(async () => await _localWorkflowClient.RunInstanceAsync(request, cancellationToken), cancellationToken);
         return result;
     }
 
@@ -58,7 +58,7 @@ public class DistributedWorkflowClient(
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle,
             IncludeWorkflowOutput = request.IncludeWorkflowOutput
-        }, cancellationToken));
+        }, cancellationToken), cancellationToken);
     }
 
     public async Task CancelAsync(CancellationToken cancellationToken = default)
@@ -84,13 +84,13 @@ public class DistributedWorkflowClient(
     public async Task<bool> DeleteAsync(CancellationToken cancellationToken = default)
     {
         // Use the same distributed lock as for execution to prevent concurrent DB writes
-        return await WithLockAsync(async () => await _localWorkflowClient.DeleteAsync(cancellationToken));
+        return await WithLockAsync(async () => await _localWorkflowClient.DeleteAsync(cancellationToken), cancellationToken);
     }
 
-    private async Task<TReturn> WithLockAsync<TReturn>(Func<Task<TReturn>> func)
+    private async Task<TReturn> WithLockAsync<TReturn>(Func<Task<TReturn>> func, CancellationToken cancellationToken = default)
     {
         var lockKey = $"workflow-instance:{WorkflowInstanceId}";
-        var lockHandle = await AcquireLockWithRetryAsync(lockKey);
+        var lockHandle = await AcquireLockWithRetryAsync(lockKey, cancellationToken);
 
         try
         {
@@ -102,13 +102,13 @@ public class DistributedWorkflowClient(
         }
     }
 
-    private async Task<IDistributedSynchronizationHandle> AcquireLockWithRetryAsync(string lockKey)
+    private async Task<IDistributedSynchronizationHandle?> AcquireLockWithRetryAsync(string lockKey, CancellationToken cancellationToken = default)
     {
         var lockTimeout = distributedLockingOptions.Value.LockAcquisitionTimeout;
 
         return await _retryPipeline.Value.ExecuteAsync(async ct =>
             await distributedLockProvider.AcquireLockAsync(lockKey, lockTimeout, ct),
-            CancellationToken.None);
+            cancellationToken);
     }
 
     private async Task ReleaseLockAsync(IDistributedSynchronizationHandle? lockHandle)
