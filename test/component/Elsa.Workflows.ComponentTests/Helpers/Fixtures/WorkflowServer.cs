@@ -133,7 +133,13 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
             services.Decorate<IDistributedLockProvider, TestDistributedLockProvider>();
             
             // Also register TestDistributedLockProvider as itself so tests can access it directly for configuration
-            services.AddSingleton(sp => (TestDistributedLockProvider)sp.GetRequiredService<IDistributedLockProvider>());
+            services.AddSingleton(sp =>
+            {
+                var provider = sp.GetRequiredService<IDistributedLockProvider>();
+                if (provider is not TestDistributedLockProvider testProvider)
+                    throw new InvalidOperationException($"Expected IDistributedLockProvider to be decorated with TestDistributedLockProvider, but got {provider.GetType().Name}");
+                return testProvider;
+            });
 
             services
                 .AddSingleton<SignalManager>()
