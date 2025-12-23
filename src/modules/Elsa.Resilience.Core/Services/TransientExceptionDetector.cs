@@ -10,7 +10,21 @@ public class TransientExceptionDetector(IEnumerable<ITransientExceptionStrategy>
     {
         var detectorsList = detectors.ToList();
 
-        // Walk the entire exception chain (including inner exceptions)
+        // Handle aggregate exceptions specially to avoid redundant checks
+        if (exception is AggregateException aggregateException)
+        {
+            // Check the aggregate exception itself
+            if (detectorsList.Any(detector => detector.IsTransient(aggregateException)))
+                return true;
+
+            // Recursively check each inner exception (this will walk their chains)
+            if (aggregateException.InnerExceptions.Any(IsTransient))
+                return true;
+
+            return false;
+        }
+
+        // Walk the exception chain for non-aggregate exceptions
         var currentException = exception;
         while (currentException != null)
         {
@@ -19,13 +33,6 @@ public class TransientExceptionDetector(IEnumerable<ITransientExceptionStrategy>
                 return true;
 
             currentException = currentException.InnerException;
-        }
-
-        // Also check aggregate exceptions
-        if (exception is AggregateException aggregateException)
-        {
-            if (aggregateException.InnerExceptions.Any(IsTransient))
-                return true;
         }
 
         return false;
