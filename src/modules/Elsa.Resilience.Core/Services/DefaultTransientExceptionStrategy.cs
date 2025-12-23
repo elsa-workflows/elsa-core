@@ -58,12 +58,8 @@ public class DefaultTransientExceptionStrategy : ITransientExceptionStrategy
         // Check if the exception message contains any transient patterns
         var message = exception.Message;
         
-        if (!string.IsNullOrEmpty(message) &&
-            TransientExceptionMessagePatterns
-                .Where(pattern => message.Contains(pattern, StringComparison.OrdinalIgnoreCase))
-                .Any())
-            return true;
-        
-        return false;
+        return !string.IsNullOrEmpty(message) &&
+               TransientExceptionMessagePatterns
+                   .Any(pattern => message.Contains(pattern, StringComparison.OrdinalIgnoreCase));
     }
 }
