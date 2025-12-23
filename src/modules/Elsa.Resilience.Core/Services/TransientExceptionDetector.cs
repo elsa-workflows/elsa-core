@@ -5,7 +5,7 @@ namespace Elsa.Resilience;
 /// </summary>
 public class TransientExceptionDetector(IEnumerable<ITransientExceptionStrategy> detectors) : ITransientExceptionDetector
 {
-    private readonly List<ITransientExceptionStrategy> _detectors = detectors.ToList();
+    private readonly IReadOnlyList<ITransientExceptionStrategy> _detectors = detectors.ToList();
 
     /// <inheritdoc />
     public bool IsTransient(Exception exception)
