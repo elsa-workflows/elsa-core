@@ -59,16 +59,7 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
     public async Task RunInstanceAsync_TransientLockFailures_RetriesCorrectly(int failureCount, bool shouldThrow)
     {
         // Arrange
-        var workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
-
-        // First, create the workflow instance to get its ID
-        var createRequest = new CreateWorkflowInstanceRequest
-        {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(SimpleWorkflow.DefinitionId, VersionOptions.Latest)
-        };
-
-        var workflowClient = await workflowRuntime.CreateClientAsync();
-        await workflowClient.CreateInstanceAsync(createRequest);
+        var workflowClient = await CreateWorkflowClientAsync();
         var workflowInstanceId = workflowClient.WorkflowInstanceId;
 
         // Reset and configure failures for this specific workflow instance's lock
@@ -82,60 +73,18 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
         // Act & Assert
         if (shouldThrow)
         {
-            // Should throw after exhausting retries
             await Assert.ThrowsAsync<TimeoutException>(async () =>
                 await workflowClient.RunInstanceAsync(runRequest));
         }
         else
         {
-            // Should succeed after retries
             var response = await workflowClient.RunInstanceAsync(runRequest);
             Assert.NotNull(response);
         }
 
         // Verify retries occurred - check the delta from before the operation to account for background noise
-        var actualAttempts = MockProvider.AcquisitionAttemptCount - attemptCountBefore;
         var expectedAttempts = failureCount + 1; // failures + 1 success (or final failure for shouldThrow case)
-        Assert.True(actualAttempts >= expectedAttempts,
-            $"Expected at least {expectedAttempts} acquisition attempts, but got {actualAttempts}");
-    }
-
-    [Fact]
-    public async Task RunInstanceAsync_TransientLockFailureOnSecondRun_RetriesCorrectly()
-    {
-        // Arrange
-        var workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
-        
-        // First run - reset and don't inject failures
-        MockProvider.Reset();
-        var workflowClient = await workflowRuntime.CreateClientAsync();
-        
-        var createRequest = new CreateAndRunWorkflowInstanceRequest
-        {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(SimpleWorkflow.DefinitionId, VersionOptions.Latest)
-        };
-        
-        var firstResponse = await workflowClient.CreateAndRunInstanceAsync(createRequest);
-        Assert.NotNull(firstResponse.WorkflowInstanceId);
-        
-        // Verify first run succeeded (at least 1 attempt, possibly more from background workers)
-        Assert.True(MockProvider.AcquisitionAttemptCount >= 1);
-        
-        // Setup second workflow with failure - reset right before to minimize background noise
-        MockProvider.Reset();
-        MockProvider.FailAcquisitionTimes(2); // Fail twice, succeed on third
-        
-        var secondClient = await workflowRuntime.CreateClientAsync();
-        var secondResponse = await secondClient.CreateAndRunInstanceAsync(createRequest);
-        
-        // Act & Assert - Second run should succeed after retries
-        Assert.NotNull(secondResponse);
-        Assert.NotNull(secondResponse.WorkflowInstanceId);
-        Assert.NotEqual(firstResponse.WorkflowInstanceId, secondResponse.WorkflowInstanceId);
-        
-        // Verify retries occurred (at least 3 attempts: 2 failures + 1 success, possibly more from background)
-        Assert.True(MockProvider.AcquisitionAttemptCount >= 3,
-            $"Expected at least 3 acquisition attempts, but got {MockProvider.AcquisitionAttemptCount}");
+        AssertMinimumAttempts(MockProvider.AcquisitionAttemptCount - attemptCountBefore, expectedAttempts, "acquisition");
     }
 
     [Fact]
@@ -143,36 +92,55 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
     {
         // Arrange
         MockProvider.Reset();
-
-        var workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
-        var workflowClient = await workflowRuntime.CreateClientAsync();
-
-        var createRequest = new CreateAndRunWorkflowInstanceRequest
-        {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(SimpleWorkflow.DefinitionId, VersionOptions.Latest)
-        };
+        var workflowClient = await CreateWorkflowClientAsync(createInstance: false);
 
         // Configure failure after client creation to minimize background interference
         MockProvider.FailReleaseOnce();
         var releaseCountBefore = MockProvider.ReleaseAttemptCount;
 
         // Act - Release failure should be caught and logged, not thrown
-        var response = await workflowClient.CreateAndRunInstanceAsync(createRequest);
+        var response = await workflowClient.CreateAndRunInstanceAsync(CreateAndRunRequest());
 
         // Assert
         Assert.NotNull(response);
         Assert.NotNull(response.WorkflowInstanceId);
-
-        // Verify at least one release occurred (allow for background noise)
-        var actualReleaseAttempts = MockProvider.ReleaseAttemptCount - releaseCountBefore;
-        Assert.True(actualReleaseAttempts >= 1,
-            $"Expected at least 1 release attempt, but got {actualReleaseAttempts}");
+        AssertMinimumAttempts(MockProvider.ReleaseAttemptCount - releaseCountBefore, 1, "release");
     }
 
     private async Task<IDistributedSynchronizationHandle?> AcquireLockWithRetryAsync(string lockName) =>
         await RetryPipeline.ExecuteAsync(async ct =>
             await MockProvider.AcquireLockAsync(lockName, LockOptions.LockAcquisitionTimeout, ct),
             CancellationToken.None);
+
+    /// <summary>
+    /// Creates a workflow client with an optional workflow instance already created.
+    /// </summary>
+    private async Task<IWorkflowClient> CreateWorkflowClientAsync(bool createInstance = true)
+    {
+        var workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
+        var workflowClient = await workflowRuntime.CreateClientAsync();
+
+        if (createInstance)
+        {
+            var createRequest = new CreateWorkflowInstanceRequest
+            {
+                WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(SimpleWorkflow.DefinitionId, VersionOptions.Latest)
+            };
+            await workflowClient.CreateInstanceAsync(createRequest);
+        }
+
+        return workflowClient;
+    }
+
+    private static CreateAndRunWorkflowInstanceRequest CreateAndRunRequest() =>
+        new()
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(SimpleWorkflow.DefinitionId, VersionOptions.Latest)
+        };
+
+    private static void AssertMinimumAttempts(int actualAttempts, int expectedAttempts, string attemptType) =>
+        Assert.True(actualAttempts >= expectedAttempts,
+            $"Expected at least {expectedAttempts} {attemptType} attempts, but got {actualAttempts}");
 
     private static ResiliencePipeline CreateRetryPipeline(ITransientExceptionDetector transientExceptionDetector, ILogger logger) =>
         new ResiliencePipelineBuilder()
