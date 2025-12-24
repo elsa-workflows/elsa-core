@@ -43,8 +43,9 @@ public class Tests
         // Act
         await _workflowDispatcher.DispatchAsync(request, null);
 
-        // Allow async notification handlers to complete
-        await Task.Delay(100);
+        // Wait for notification handlers to complete
+        await _spy.WaitForWorkflowDefinitionDispatchingAsync();
+        await _spy.WaitForWorkflowDefinitionDispatchedAsync();
 
         // Assert
         Assert.True(_spy.WorkflowDefinitionDispatchingWasCalled, "WorkflowDefinitionDispatching notification should be called");
@@ -70,8 +71,9 @@ public class Tests
         // Act
         await _workflowDispatcher.DispatchAsync(request, null);
 
-        // Allow async notification handlers to complete
-        await Task.Delay(100);
+        // Wait for notification handlers to complete
+        await _spy.WaitForWorkflowInstanceDispatchingAsync();
+        await _spy.WaitForWorkflowInstanceDispatchedAsync();
 
         // Assert
         Assert.True(_spy.WorkflowInstanceDispatchingWasCalled, "WorkflowInstanceDispatching notification should be called");
