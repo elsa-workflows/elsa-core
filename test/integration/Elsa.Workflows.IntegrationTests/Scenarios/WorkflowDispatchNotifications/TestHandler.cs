@@ -20,6 +20,7 @@ public class TestHandler :
     {
         _spy.WorkflowDefinitionDispatchingWasCalled = true;
         _spy.CapturedDefinitionRequest = notification.Request;
+        _spy.SignalWorkflowDefinitionDispatching();
         return Task.CompletedTask;
     }
 
@@ -27,6 +28,7 @@ public class TestHandler :
     {
         _spy.WorkflowDefinitionDispatchedWasCalled = true;
         _spy.CapturedResponse = notification.Response;
+        _spy.SignalWorkflowDefinitionDispatched();
         return Task.CompletedTask;
     }
 
@@ -34,6 +36,7 @@ public class TestHandler :
     {
         _spy.WorkflowInstanceDispatchingWasCalled = true;
         _spy.CapturedInstanceRequest = notification.Request;
+        _spy.SignalWorkflowInstanceDispatching();
         return Task.CompletedTask;
     }
 
@@ -41,6 +44,7 @@ public class TestHandler :
     {
         _spy.WorkflowInstanceDispatchedWasCalled = true;
         _spy.CapturedResponse = notification.Response;
+        _spy.SignalWorkflowInstanceDispatched();
         return Task.CompletedTask;
     }
 }
