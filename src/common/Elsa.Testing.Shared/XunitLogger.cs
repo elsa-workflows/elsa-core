@@ -12,10 +12,18 @@ public class XunitLogger(ITestOutputHelper testOutputHelper, string categoryName
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
-        testOutputHelper.WriteLine($"{categoryName} [{eventId}] {formatter(state, exception)}");
+        try
+        {
+            testOutputHelper.WriteLine($"{categoryName} [{eventId}] {formatter(state, exception)}");
 
-        if (exception != null)
-            testOutputHelper.WriteLine(exception.ToString());
+            if (exception != null)
+                testOutputHelper.WriteLine(exception.ToString());
+        }
+        catch (InvalidOperationException)
+        {
+            // Suppress "no currently active test" exceptions that can occur when background tasks
+            // (like timers) try to log after tests have completed
+        }
     }
 
     private class NoopDisposable : IDisposable
