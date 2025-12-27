@@ -12,6 +12,7 @@ on:
       - 'enh/*'
       - 'rc/*'
       - 'develop/*'
+      - 'release/*'
       - 'codex/*'
   release:
     types: [prereleased, published]
