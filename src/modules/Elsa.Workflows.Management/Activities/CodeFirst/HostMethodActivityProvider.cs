@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Management.Activities.CodeFirst;
 
 /// <summary>
 /// Provides activities for each configured host method type registered via <see cref="HostMethodActivitiesOptions"/>.
-/// Public async methods (Task or Task&lt;T&gt; where T is string, object or AgentRunResponse) are exposed as activities.
+/// Public instance methods of the configured types are exposed as activities (as determined by <see cref="IHostMethodActivityDescriber"/>).
 /// Inputs come from public properties and method parameters.
 /// </summary>
 [UsedImplicitly]
