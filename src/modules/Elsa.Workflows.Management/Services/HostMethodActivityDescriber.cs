@@ -61,7 +61,7 @@ public class HostMethodActivityDescriber(IActivityDescriber activityDescriber) :
             activity.Type = activityTypeName;
             activity.HostType = hostType;
             activity.MethodName = methodName;
-            activity.RunAsynchronously = descriptor.RunAsynchronously;
+            activity.RunAsynchronously ??= descriptor.RunAsynchronously;
             return activity;
         };
 

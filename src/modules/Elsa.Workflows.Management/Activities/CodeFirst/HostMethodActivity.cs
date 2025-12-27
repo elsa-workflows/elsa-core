@@ -45,6 +45,7 @@ public class HostMethodActivity : Activity
         var serviceProvider = context.GetRequiredService<IServiceProvider>();
         var hostInstance = ActivatorUtilities.CreateInstance(serviceProvider, HostType);
         var args = await BuildArgumentsAsync(method, inputDescriptors, context, serviceProvider, cancellationToken);
+        var currentBookmarks = context.Bookmarks.ToList();
 
         ApplyPropertyInputs(hostInstance, inputDescriptors, context);
 
@@ -52,14 +53,15 @@ public class HostMethodActivity : Activity
         SetOutput(activityDescriptor, resultValue, context);
 
         // By convention, if no bookmarks are created, complete the activity. This may change in the future when we expose more control to the host type.
-        if (!context.Bookmarks.Any())
+        var addedBookmarks = context.Bookmarks.Except(currentBookmarks).ToList();
+        if (!addedBookmarks.Any())
         {
             await context.CompleteActivityAsync();
             return;
         }
         
         // If bookmarks were created, overwrite the resume callback. We need to invoke the callback provided by the host type.
-        foreach (var bookmark in context.Bookmarks)
+        foreach (var bookmark in addedBookmarks)
         {
             var callbackMethodName = bookmark.CallbackMethodName;
             bookmark.CallbackMethodName = nameof(ResumeAsync);
