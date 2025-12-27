@@ -4,6 +4,7 @@ using System.Reflection;
 using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Management.Activities.CodeFirst;
+using Elsa.Workflows.Management.Attributes;
 using Elsa.Workflows.Models;
 using Humanizer;
 
@@ -15,7 +16,7 @@ public class HostMethodActivityDescriber(IActivityDescriber activityDescriber) :
     {
         var methods = hostType
             .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
-            .Where(IsAllowedMethod)
+            .Where(m => !m.IsSpecialName)
             .ToList();
 
         var descriptors = new List<ActivityDescriptor>(methods.Count);
@@ -38,7 +39,8 @@ public class HostMethodActivityDescriber(IActivityDescriber activityDescriber) :
 
         var displayAttribute = method.GetCustomAttribute<DisplayAttribute>();
         var typeDisplayName = activityAttribute?.DisplayName ?? hostType.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName;
-        var methodDisplayName = displayAttribute?.Name ?? methodName.Humanize().Transform(To.TitleCase);
+        var methodNameWithoutAsync = StripAsyncSuffix(methodName);
+        var methodDisplayName = displayAttribute?.Name ?? methodNameWithoutAsync.Humanize().Transform(To.TitleCase);
         var displayName = !string.IsNullOrWhiteSpace(typeDisplayName) ? typeDisplayName : methodDisplayName;
         if (!string.IsNullOrWhiteSpace(activityAttribute?.DisplayName))
             displayName = activityAttribute.DisplayName!;
@@ -47,9 +49,9 @@ public class HostMethodActivityDescriber(IActivityDescriber activityDescriber) :
         descriptor.TypeName = activityTypeName;
         descriptor.DisplayName = displayName;
         descriptor.Description = activityAttribute?.Description ?? method.GetCustomAttribute<DescriptionAttribute>()?.Description ?? hostType.GetCustomAttribute<DescriptionAttribute>()?.Description;
-        descriptor.Category = activityAttribute?.Category ?? "Dynamic";
+        descriptor.Category = activityAttribute?.Category ?? hostType.Name.Humanize().Transform(To.TitleCase);
         descriptor.Kind = activityAttribute?.Kind ?? ActivityKind.Task;
-        descriptor.RunAsynchronously = activityAttribute?.RunAsynchronously ?? true;
+        descriptor.RunAsynchronously = activityAttribute?.RunAsynchronously ?? false;
         descriptor.IsBrowsable = true;
         descriptor.ClrType = typeof(HostMethodActivity);
 
@@ -75,7 +77,13 @@ public class HostMethodActivityDescriber(IActivityDescriber activityDescriber) :
 
         foreach (var parameter in method.GetParameters())
         {
-            if (parameter.ParameterType == typeof(CancellationToken) || parameter.ParameterType.FullName == "Elsa.Agents.AgentExecutionContext")
+            if (IsSpecialParameter(parameter))
+                continue;
+
+            // If FromServices is used, the parameter is not a workflow input unless explicitly forced via [Input].
+            var isFromServices = parameter.GetCustomAttribute<FromServicesAttribute>() != null;
+            var isExplicitInput = parameter.GetCustomAttribute<InputAttribute>() != null;
+            if (isFromServices && !isExplicitInput)
                 continue;
 
             var inputDescriptor = CreateParameterInputDescriptor(parameter);
@@ -92,9 +100,7 @@ public class HostMethodActivityDescriber(IActivityDescriber activityDescriber) :
 
     private string BuildActivityTypeName(string key, MethodInfo method, ActivityAttribute? activityAttribute)
     {
-        var methodName = method.Name.EndsWith("Async", StringComparison.Ordinal)
-            ? method.Name[..^5]
-            : method.Name;
+        var methodName = StripAsyncSuffix(method.Name);
 
         if (activityAttribute != null && !string.IsNullOrWhiteSpace(activityAttribute.Namespace))
         {
@@ -103,6 +109,13 @@ public class HostMethodActivityDescriber(IActivityDescriber activityDescriber) :
         }
 
         return $"Elsa.Dynamic.HostMethod.{key.Pascalize()}.{methodName}";
+    }
+
+    private static string StripAsyncSuffix(string name)
+    {
+        return name.EndsWith("Async", StringComparison.Ordinal)
+            ? name[..^5]
+            : name;
     }
 
     private InputDescriptor CreatePropertyInputDescriptor(PropertyInfo prop)
@@ -169,17 +182,19 @@ public class HostMethodActivityDescriber(IActivityDescriber activityDescriber) :
     private OutputDescriptor? CreateOutputDescriptor(MethodInfo method)
     {
         var returnType = method.ReturnType;
-        if (returnType == typeof(Task))
+
+        // No output for void or Task.
+        if (returnType == typeof(void) || returnType == typeof(Task))
             return null;
 
+        // Determine the "real" return type.
         Type actualReturnType;
         if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
             actualReturnType = returnType.GetGenericArguments()[0];
+        else if (typeof(Task).IsAssignableFrom(returnType))
+            return null;
         else
-            return null;
-
-        if (!IsSupportedReturnType(actualReturnType))
-            return null;
+            actualReturnType = returnType;
 
         var outputAttribute = method.ReturnParameter.GetCustomAttribute<OutputAttribute>() ??
                               method.GetCustomAttribute<OutputAttribute>() ??
@@ -205,25 +220,16 @@ public class HostMethodActivityDescriber(IActivityDescriber activityDescriber) :
         };
     }
 
-    private static bool IsAllowedMethod(MethodInfo method)
+    private static bool IsSpecialParameter(ParameterInfo parameter)
     {
-        if (!typeof(Task).IsAssignableFrom(method.ReturnType))
-            return false;
+        // These parameters are supplied by the runtime and should not become input descriptors.
+        if (parameter.ParameterType == typeof(CancellationToken))
+            return true;
 
-        if (method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
-        {
-            var resultType = method.ReturnType.GetGenericArguments()[0];
-            if (!IsSupportedReturnType(resultType))
-                return false;
-        }
+        if (parameter.ParameterType == typeof(ActivityExecutionContext))
+            return true;
 
-        return true;
-    }
-
-    private static bool IsSupportedReturnType(Type resultType)
-    {
-        var agentResponseTypeName = "Microsoft.Agents.AI.AgentRunResponse";
-        return resultType == typeof(string) || resultType == typeof(object) || resultType.FullName == agentResponseTypeName;
+        return false;
     }
 
     private static bool IsInputProperty(PropertyInfo prop)
