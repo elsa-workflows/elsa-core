@@ -100,4 +100,8 @@
         </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Scenarios\HostMethodActivities\" />
+    </ItemGroup>
+
 </Project>
