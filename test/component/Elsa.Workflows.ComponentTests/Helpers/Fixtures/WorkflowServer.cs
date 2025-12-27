@@ -12,6 +12,7 @@ using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Decorators;
 using Elsa.Workflows.ComponentTests.Materializers;
+using Elsa.Workflows.ComponentTests.Scenarios.HostMethodActivities;
 using Elsa.Workflows.ComponentTests.WorkflowProviders;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
@@ -66,6 +67,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
             {
                 elsa.AddWorkflowsFrom<WorkflowServer>();
                 elsa.AddActivitiesFrom<WorkflowServer>();
+                elsa.AddActivityHost<TestHostMethod>();
                 elsa.UseDefaultAuthentication(defaultAuthentication => defaultAuthentication.UseAdminApiKey());
                 elsa.UseFluentStorageProvider(sp =>
                 {

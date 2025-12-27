@@ -1,6 +1,6 @@
 namespace Elsa.Workflows.Attributes;
 
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface | AttributeTargets.Method)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Method)]
 public class ActivityAttribute : Attribute
 {
     public ActivityAttribute()
