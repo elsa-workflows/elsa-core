@@ -64,10 +64,14 @@ public class HostMethodActivity : Activity
         foreach (var bookmark in addedBookmarks)
         {
             var callbackMethodName = bookmark.CallbackMethodName;
+            
+            if (string.IsNullOrWhiteSpace(callbackMethodName))
+                continue;
+            
             bookmark.CallbackMethodName = nameof(ResumeAsync);
             var metadata = bookmark.Metadata ?? new Dictionary<string, string>();
             
-            metadata["HostMethodActivityResumeCallback"] = callbackMethodName!;
+            metadata["HostMethodActivityResumeCallback"] = callbackMethodName;
             bookmark.Metadata = metadata;
         }
     }
