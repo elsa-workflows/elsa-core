@@ -143,7 +143,7 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
     /// <summary>
     /// Configures the system to add a specific activity host type to the workflow management feature.
     /// </summary>
-    /// <generic name="T">The type of the activity host to be added.</generic>
+    /// <typeparam name="T">The type of the activity host to be added.</typeparam>
     /// <param name="key">An optional unique key to associate with the activity host type.</param>
     public WorkflowManagementFeature AddActivityHost<T>(string? key = null) where T : class
     {
