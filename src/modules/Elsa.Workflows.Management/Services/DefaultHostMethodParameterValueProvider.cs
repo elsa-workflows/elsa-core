@@ -2,6 +2,7 @@ using System.Reflection;
 using Elsa.Expressions.Helpers;
 using Elsa.Workflows.Management.Attributes;
 using Elsa.Workflows.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Management.Services;
 
@@ -24,7 +25,7 @@ public class DefaultHostMethodParameterValueProvider : IHostMethodParameterValue
         // Resolve from DI if explicitly requested.
         if (parameter.GetCustomAttribute<FromServicesAttribute>() != null)
         {
-            var service = context.ServiceProvider.GetService(parameter.ParameterType);
+            var service = context.ServiceProvider.GetRequiredService(parameter.ParameterType);
             return ValueTask.FromResult(HostMethodParameterValueProviderResult.HandledValue(service));
         }
 

@@ -1,7 +1,7 @@
 namespace Elsa.Workflows.Management.Options;
 
 /// <summary>
-/// Options controlling which CLR types should be exposed as host method activities (one activity per public Task/Task&lt;T&gt; method).
+/// Represents the options for managing host method-based activities in workflows.
 /// </summary>
 public class HostMethodActivitiesOptions
 {
@@ -11,8 +11,10 @@ public class HostMethodActivitiesOptions
     public IDictionary<string, Type> ActivityTypes { get; } = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Registers a type for code-first activity generation.
+    /// Adds a new activity type to the collection of activity types.
     /// </summary>
+    /// <typeparam name="T">The type of the activity to add.</typeparam>
+    /// <param name="key">An optional key to associate with the activity type. If not provided, the type's name will be used.</param>
     public HostMethodActivitiesOptions AddType<T>(string? key = null) where T : class
     {
         key ??= typeof(T).Name;
@@ -21,8 +23,10 @@ public class HostMethodActivitiesOptions
     }
 
     /// <summary>
-    /// Registers a type for code-first activity generation.
+    /// Adds a new activity type to the collection of activity types.
     /// </summary>
+    /// <param name="type">The type of the activity to add.</param>
+    /// <param name="key">An optional key to associate with the activity type. If not provided, the type's name will be used.</param>
     public HostMethodActivitiesOptions AddType(Type type, string? key = null)
     {
         key ??= type.Name;

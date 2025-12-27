@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Management.Activities.CodeFirst;
+using Elsa.Workflows.Management.Activities.HostMethod;
 using Elsa.Workflows.Management.Attributes;
 using Elsa.Workflows.Models;
 using Humanizer;

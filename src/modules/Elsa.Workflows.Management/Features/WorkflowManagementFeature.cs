@@ -14,7 +14,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.LogPersistence;
-using Elsa.Workflows.Management.Activities.CodeFirst;
+using Elsa.Workflows.Management.Activities.HostMethod;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;

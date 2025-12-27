@@ -3,11 +3,11 @@ using System.Dynamic;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Helpers;
-using Elsa.Workflows.Models;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Management.Activities.CodeFirst;
+namespace Elsa.Workflows.Management.Activities.HostMethod;
 
 /// <summary>
 /// Executes a public async method on a configured CLR type. Internal activity used by <see cref="HostMethodActivityProvider"/>.
@@ -27,11 +27,10 @@ public class HostMethodActivity : Activity
     
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
-        if (context.WorkflowExecutionContext.ResumedBookmarkContext?.Bookmark.Metadata != null)
+        var metadata = context.WorkflowExecutionContext.ResumedBookmarkContext?.Bookmark.Metadata; 
+        if (metadata != null)
         {
-            var bookmarkContext = context.WorkflowExecutionContext.ResumedBookmarkContext;
-            var bookmark = bookmarkContext.Bookmark;
-            var callbackMethodName = bookmark.Metadata["HostMethodActivityResumeCallback"];
+            var callbackMethodName = metadata["HostMethodActivityResumeCallback"];
             var callbackMethod = ResolveMethod(callbackMethodName);
             await ExecuteInternalAsync(context, callbackMethod);
         }
