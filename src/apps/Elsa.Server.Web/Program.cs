@@ -82,7 +82,7 @@ services
                 payloadStore.BlobStorage = sp =>
                 {
                     return StorageFactory.Blobs.AzureBlobStorageWithSas(
-                        "https://testrunsettingsfiles.blob.core.windows.net/testingblobconfig?sp=racwl&st=2025-12-27T00:21:16Z&se=2026-01-03T08:36:16Z&spr=https&sv=2024-11-04&sr=c&sig=t9%2BgVsH3NSN%2F5Co1wwYhtPQbBVYW6HZUko9zntB0sso%3D",
+                        "",
                         new Azure.Storage.Blobs.BlobClientOptions()
                     );
                 };
