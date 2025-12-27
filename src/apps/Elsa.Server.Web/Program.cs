@@ -7,6 +7,8 @@ using Elsa.Features.Services;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
+using Elsa.Server.Web.Activities;
+using Elsa.Server.Web.ActivityHosts;
 using Elsa.Server.Web.Filters;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
@@ -44,6 +46,7 @@ services
     {
         elsa
             .AddActivitiesFrom<Program>()
+            .AddActivityHost<Penguin>()
             .AddWorkflowsFrom<Program>()
             .UseIdentity(identity =>
             {
