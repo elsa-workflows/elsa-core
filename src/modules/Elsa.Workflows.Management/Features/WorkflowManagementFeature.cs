@@ -22,6 +22,7 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
+using Elsa.Workflows.Management.Payloads;
 using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Management.Stores;
@@ -53,10 +54,15 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
 
     private Func<IServiceProvider, IWorkflowDefinitionPublisher> _workflowDefinitionPublisher = sp => ActivatorUtilities.CreateInstance<WorkflowDefinitionPublisher>(sp);
     private Func<IServiceProvider, IWorkflowReferenceQuery> _workflowReferenceQuery = sp => ActivatorUtilities.CreateInstance<DefaultWorkflowReferenceQuery>(sp);
+    private ServiceDescriptor workflowPayloadStoreManagerRegistration = new(typeof(IWorkflowPayloadStoreManager), typeof(WorkflowPayloadStoreManager), ServiceLifetime.Scoped);
 
     private string CompressionAlgorithm { get; set; } = nameof(None);
     private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
+    private KeyValuePair<string, WorkflowPayloadPersistenceMode>? DefaultPayloadPersistence { get; set; }
+
     private bool IsReadOnlyMode { get; set; }
+
+    private readonly HashSet<ServiceDescriptor> payloadStoreRegistrations = [];
 
     /// <summary>
     /// A set of activity types to make available to the system. 
@@ -164,6 +170,50 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
         return this;
     }
 
+    public WorkflowManagementFeature AddPayloadStore<TPayloadStore>(TPayloadStore? instance = null)
+        where TPayloadStore : class, IWorkflowPayloadStore
+    {
+        if (instance is not null)
+        {
+            payloadStoreRegistrations.Add(new ServiceDescriptor(typeof(IWorkflowPayloadStore), instance, ServiceLifetime.Singleton));
+        }
+        else
+        {
+            payloadStoreRegistrations.Add(new ServiceDescriptor(typeof(IWorkflowPayloadStore), typeof(TPayloadStore), ServiceLifetime.Scoped));
+        }
+
+        return this;
+    }
+
+    public WorkflowManagementFeature AddPayloadStore<TPayloadStore>(Func<IServiceProvider, TPayloadStore> factory)
+        where TPayloadStore : IWorkflowPayloadStore
+    {
+        payloadStoreRegistrations.Add(new ServiceDescriptor(typeof(IWorkflowPayloadStore), sp => factory(sp), ServiceLifetime.Scoped));
+        return this;
+    }
+
+    public WorkflowManagementFeature SetPayloadStoreManager<TWorkflowPayloadStoreManager>(TWorkflowPayloadStoreManager? instance = null)
+        where TWorkflowPayloadStoreManager : class, IWorkflowPayloadStoreManager
+    {
+        if (instance is not null)
+        {
+            workflowPayloadStoreManagerRegistration = new(typeof(IWorkflowPayloadStoreManager), instance, ServiceLifetime.Singleton);
+        }
+        else
+        {
+            workflowPayloadStoreManagerRegistration = new(typeof(IWorkflowPayloadStoreManager), typeof(TWorkflowPayloadStoreManager), ServiceLifetime.Scoped);
+        }
+
+        return this;
+    }
+
+    public WorkflowManagementFeature SetPayloadStoreManager<TWorkflowPayloadStoreManager>(Func<IServiceProvider, TWorkflowPayloadStoreManager> factory)
+      where TWorkflowPayloadStoreManager : class, IWorkflowPayloadStoreManager
+    {
+        workflowPayloadStoreManagerRegistration = new(typeof(IWorkflowPayloadStoreManager), sp => factory(sp), ServiceLifetime.Scoped);
+        return this;
+    }
+
     /// <summary>
     /// Sets the compression algorithm to use for compressing workflow state.
     /// </summary>
@@ -183,6 +233,12 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
         return this;
     }
 
+    public WorkflowManagementFeature SetDefaultPayloadPersistence(string payloadType, WorkflowPayloadPersistenceMode mode)
+    {
+        DefaultPayloadPersistence = new(payloadType, mode);
+        return this;
+    }
+
     /// <summary>
     /// Enables or disables read-only mode for resources such as workflow definitions.
     /// </summary>
@@ -198,13 +254,13 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
         _workflowDefinitionPublisher = workflowDefinitionPublisher;
         return this;
     }
-    
+
     public WorkflowManagementFeature UseWorkflowReferenceFinder<T>() where T : class, IWorkflowReferenceQuery
     {
         Services.TryAddScoped<T>();
         return UseWorkflowReferenceFinder(sp => sp.GetRequiredService<T>());
     }
-    
+
     public WorkflowManagementFeature UseWorkflowReferenceFinder(Func<IServiceProvider, IWorkflowReferenceQuery> workflowReferenceFinder)
     {
         _workflowReferenceQuery = workflowReferenceFinder;
@@ -249,8 +305,12 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
             .AddScoped<IWorkflowInstanceVariableManager, WorkflowInstanceVariableManager>()
             .AddScoped<WorkflowDefinitionMapper>()
             .AddSingleton<VariableDefinitionMapper>()
-            .AddSingleton<WorkflowStateMapper>()
-            ;
+            .AddSingleton<WorkflowStateMapper>();
+
+        Services
+            .Add(workflowPayloadStoreManagerRegistration);
+        Services
+            .TryAddEnumerable(payloadStoreRegistrations);
 
         Services
             .AddNotificationHandler<DeleteWorkflowInstances>()
@@ -270,6 +330,7 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
             options.CompressionAlgorithm = CompressionAlgorithm;
             options.LogPersistenceMode = LogPersistenceMode;
             options.IsReadOnlyMode = IsReadOnlyMode;
+            options.DefaultPayloadPersistence = DefaultPayloadPersistence;
         });
     }
 }

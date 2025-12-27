@@ -32,4 +32,10 @@ public class ManagementOptions
     /// A mode that does not allow editing workflows.
     /// </summary>
     public bool IsReadOnlyMode { get; set; }
+
+    /// <summary>
+    /// The default payload persistence option that controls how the workflow payload data is persisted.
+    /// The key is the payload type and the value is <see cref="WorkflowPayloadPersistenceMode"/>
+    /// </summary>
+    public KeyValuePair<string, WorkflowPayloadPersistenceMode>? DefaultPayloadPersistence { get; set; }
 }

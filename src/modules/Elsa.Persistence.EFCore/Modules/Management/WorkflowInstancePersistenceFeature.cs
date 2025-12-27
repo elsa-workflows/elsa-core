@@ -3,6 +3,7 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Features;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Persistence.EFCore.Modules.Management;
 
@@ -17,6 +18,7 @@ public class EFCoreWorkflowInstancePersistenceFeature(IModule module) : Persiste
     public override void Configure()
     {
         Module.Configure<WorkflowInstancesFeature>(feature => feature.WorkflowInstanceStore = sp => sp.GetRequiredService<EFCoreWorkflowInstanceStore>());
+        Services.TryAddEnumerable(ServiceDescriptor.Scoped<IEntitySavingHandler, WorkflowPayloadSaveHandler>());
     }
 
     /// <inheritdoc />

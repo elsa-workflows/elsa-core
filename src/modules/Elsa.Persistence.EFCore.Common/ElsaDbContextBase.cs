@@ -84,7 +84,8 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     {
         using var scope = ServiceProvider.CreateScope();
         var handlers = scope.ServiceProvider.GetServices<IEntitySavingHandler>().ToList();
-        foreach (var entry in ChangeTracker.Entries().Where(IsModifiedEntity))
+        var entries = ChangeTracker.Entries().Where(IsModifiedEntity).ToList();
+        foreach (var entry in entries)
         {
             foreach (var handler in handlers)
                 await handler.HandleAsync(this, entry, cancellationToken);

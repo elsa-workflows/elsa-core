@@ -6,10 +6,12 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
+using FastEndpoints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -27,6 +29,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     private readonly EntityStore<ManagementElsaDbContext, WorkflowInstance> _store;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly ICompressionCodecResolver _compressionCodecResolver;
+    private readonly IWorkflowPayloadStoreManager payloadstoreManager;
     private readonly IOptions<ManagementOptions> _options;
     private readonly ILogger<EFCoreWorkflowInstanceStore> _logger;
 
@@ -36,13 +39,15 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     public EFCoreWorkflowInstanceStore(
         EntityStore<ManagementElsaDbContext, WorkflowInstance> store,
         IWorkflowStateSerializer workflowStateSerializer,
-        ICompressionCodecResolver compressionCodecResolver,
+        ICompressionCodecResolver compressionCodecResolver,        
+        IWorkflowPayloadStoreManager payloadstoreManager,
         IOptions<ManagementOptions> options,
         ILogger<EFCoreWorkflowInstanceStore> logger)
     {
         _store = store;
         _workflowStateSerializer = workflowStateSerializer;
         _compressionCodecResolver = compressionCodecResolver;
+        this.payloadstoreManager = payloadstoreManager;
         _options = options;
         _logger = logger;
     }
@@ -197,39 +202,26 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        await _store.SaveAsync(instance, OnSaveAsync, cancellationToken);
+        await _store.SaveAsync(instance, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        await _store.AddAsync(instance, OnSaveAsync, cancellationToken);
+        await _store.AddAsync(instance, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        await _store.UpdateAsync(instance, OnSaveAsync, cancellationToken);
+        await _store.UpdateAsync(instance, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
-        await _store.SaveManyAsync(instances, OnSaveAsync, cancellationToken);
-    }
-
-    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
-    private async ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance entity, CancellationToken cancellationToken)
-    {
-        var data = entity.WorkflowState;
-        var json = _workflowStateSerializer.Serialize(data);
-        var compressionAlgorithm = _options.Value.CompressionAlgorithm ?? nameof(None);
-        var compressionCodec = _compressionCodecResolver.Resolve(compressionAlgorithm);
-        var compressedJson = await compressionCodec.CompressAsync(json, cancellationToken);
-
-        managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = compressedJson;
-        managementElsaDbContext.Entry(entity).Property("DataCompressionAlgorithm").CurrentValue = compressionAlgorithm;
-    }
+        await _store.SaveManyAsync(instances, cancellationToken);
+    }    
 
     private async ValueTask OnLoadAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance? entity, CancellationToken cancellationToken)
     {
@@ -237,15 +229,15 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
             return;
 
         var data = entity.WorkflowState;
-        var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
+        var payload = await GetPayloadData(managementElsaDbContext, entity, cancellationToken);
         var compressionAlgorithm = (string?)managementElsaDbContext.Entry(entity).Property("DataCompressionAlgorithm").CurrentValue ?? nameof(None);
         var compressionStrategy = _compressionCodecResolver.Resolve(compressionAlgorithm);
 
         try
         {
-            if (!string.IsNullOrWhiteSpace(json))
+            if (!string.IsNullOrWhiteSpace(payload))
             {
-                json = await compressionStrategy.DecompressAsync(json, cancellationToken);
+                var json = await compressionStrategy.DecompressAsync(payload, cancellationToken);
                 data = _workflowStateSerializer.Deserialize(json);
             }
         }
@@ -254,6 +246,18 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
             _logger.LogWarning(exp, "Exception while deserializing workflow instance state: {InstanceId}. Reverting to default state", entity.Id);
         }
         entity.WorkflowState = data;
+    }
+
+    private ValueTask<string?> GetPayloadData(ElsaDbContextBase dbContext, WorkflowInstance entity, CancellationToken cancellationToken)
+    {
+        var result = (string?)dbContext.Entry(entity).Property("Data").CurrentValue;
+
+        if (!string.IsNullOrWhiteSpace(result) || entity.DataReference is null)
+        {
+            return new(result);
+        }
+
+        return payloadstoreManager.Get(entity.DataReference, cancellationToken);
     }
 
     private static IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter)

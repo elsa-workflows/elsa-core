@@ -22,7 +22,7 @@ public static class ModuleExtensions
             configure?.Invoke(management);
         });
         return module;
-    }
+    }    
 
     /// <summary>
     /// Adds the default workflow management feature to the specified module. 

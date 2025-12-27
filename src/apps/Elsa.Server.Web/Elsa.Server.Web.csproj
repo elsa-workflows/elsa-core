@@ -10,6 +10,7 @@
 		<ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage.ElsaScript\Elsa.WorkflowProviders.BlobStorage.ElsaScript.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+		<ProjectReference Include="..\..\modules\Elsa.Workflows.Management.BlobStorage\Elsa.Workflows.Management.BlobStorage.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
@@ -26,6 +27,10 @@
 	<ItemGroup>
       <Folder Include="App_Data\" />
     </ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="FluentStorage.Azure.Blobs" />
+	</ItemGroup>
 
 	<ItemGroup>
 	  <None Update="Workflows\hello-world.elsa">

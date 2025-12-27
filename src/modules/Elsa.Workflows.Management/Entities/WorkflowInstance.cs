@@ -1,4 +1,5 @@
 using Elsa.Common.Entities;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Management.Entities;
@@ -88,4 +89,6 @@ public class WorkflowInstance : Entity
     /// The timestamp when the workflow instance was finished.
     /// </summary>
     public DateTimeOffset? FinishedAt { get; set; }
+
+    public PayloadReference? DataReference { get; set; }
 }

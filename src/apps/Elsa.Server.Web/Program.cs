@@ -17,10 +17,15 @@ using Elsa.Workflows.Api;
 using Elsa.Workflows.CommitStates.Strategies;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.LogPersistence;
+using Elsa.Workflows.Management.BlobStorage;
+using Elsa.Workflows.Management.BlobStorage.Extensions;
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
+using FluentStorage;
+using FluentStorage.Azure.Blobs;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 
@@ -68,10 +73,26 @@ services
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
                 management.UseCache();
                 management.UseReadOnlyMode(useReadOnlyMode);
+                management.SetDefaultPayloadPersistence(BlobPayloadStore.TypeName, WorkflowPayloadPersistenceMode.ExternalPreferred);
+            })
+            .UseBlobPayloadStore(payloadStore =>
+            {
+                StorageFactory.Modules.UseAzureBlobStorage();
+                payloadStore.FolderUrl = "https://testrunsettingsfiles.blob.core.windows.net/testingblobconfig";
+                payloadStore.BlobStorage = sp =>
+                {
+                    return StorageFactory.Blobs.AzureBlobStorageWithSas(
+                        "https://testrunsettingsfiles.blob.core.windows.net/testingblobconfig?sp=racwl&st=2025-12-27T00:21:16Z&se=2026-01-03T08:36:16Z&spr=https&sv=2024-11-04&sr=c&sig=t9%2BgVsH3NSN%2F5Co1wwYhtPQbBVYW6HZUko9zntB0sso%3D",
+                        new Azure.Storage.Blobs.BlobClientOptions()
+                    );
+                };
             })
             .UseWorkflowRuntime(runtime =>
             {
-                runtime.UseEntityFrameworkCore(ef => ef.UseSqlite());
+                runtime.UseEntityFrameworkCore(ef =>
+                {
+                    ef.UseSqlite();
+                });
                 runtime.UseCache();
                 runtime.UseDistributedRuntime();
             })
