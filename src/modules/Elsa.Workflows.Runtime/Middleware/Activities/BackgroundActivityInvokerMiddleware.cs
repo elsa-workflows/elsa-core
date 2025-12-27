@@ -236,12 +236,12 @@ public class BackgroundActivityInvokerMiddleware(
                     {
                         ExistingActivityExecutionContext = scheduledActivity.Options.ExistingActivityInstanceId != null ? context.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == scheduledActivity.Options.ExistingActivityInstanceId) : null,
                         Variables = scheduledActivity.Options?.Variables,
-                        CompletionCallback = !string.IsNullOrEmpty(scheduledActivity.Options?.CompletionCallback) && owner != null ? owner.Activity.GetActivityCompletionCallback(scheduledActivity.Options.CompletionCallback) : default,
+                        CompletionCallback = !string.IsNullOrEmpty(scheduledActivity.Options?.CompletionCallback) && owner != null ? owner.Activity.GetActivityCompletionCallback(scheduledActivity.Options.CompletionCallback) : null,
                         PreventDuplicateScheduling = scheduledActivity.Options?.PreventDuplicateScheduling ?? false,
                         Input = scheduledActivity.Options?.Input,
                         Tag = scheduledActivity.Options?.Tag
                     }
-                    : default;
+                    : null;
                 await context.ScheduleActivityAsync(activityNode, owner, options);
             }
         }

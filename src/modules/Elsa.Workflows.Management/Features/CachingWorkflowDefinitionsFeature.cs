@@ -1,6 +1,5 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Workflows.Management.Handlers;
 using Elsa.Workflows.Management.Handlers.Notifications;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Management.Stores;
