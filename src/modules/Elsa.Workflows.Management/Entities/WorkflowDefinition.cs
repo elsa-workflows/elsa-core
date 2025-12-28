@@ -1,6 +1,7 @@
 using Elsa.Common.Entities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Payloads;
 
 namespace Elsa.Workflows.Management.Entities;
 
@@ -101,6 +102,8 @@ public class WorkflowDefinition : VersionedEntity
     /// System workflows are provided by modules and are not meant to be modified by users.
     /// </summary>
     public bool IsSystem { get; set; }
+
+    public PayloadReference? DataReference { get; set; }
 
     /// <summary>
     /// Creates and returns a shallow copy of the workflow definition.

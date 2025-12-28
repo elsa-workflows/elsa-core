@@ -4,6 +4,7 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -19,7 +20,11 @@ namespace Elsa.Persistence.EFCore.Modules.Management;
 
 /// <inheritdoc />
 [UsedImplicitly]
-public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, WorkflowDefinition> store, IPayloadSerializer payloadSerializer, ILogger<EFCoreWorkflowDefinitionStore> logger)
+public class EFCoreWorkflowDefinitionStore(
+    EntityStore<ManagementElsaDbContext, WorkflowDefinition> store, 
+    IPayloadSerializer payloadSerializer, 
+    IPayloadManager payloadManager,
+    ILogger<EFCoreWorkflowDefinitionStore> logger)
     : IWorkflowDefinitionStore
 {
     /// <inheritdoc />
@@ -162,22 +167,20 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     }
 
     private ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity, CancellationToken cancellationToken)
-    {
-        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
-        var json = payloadSerializer.Serialize(data);
-
-        managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
-        managementElsaDbContext.Entry(entity).Property("UsableAsActivity").CurrentValue = data.Options.UsableAsActivity;
+    {        
+        managementElsaDbContext.Entry(entity).Property("UsableAsActivity").CurrentValue = entity.Options.UsableAsActivity;
         return ValueTask.CompletedTask;
     }
 
-    private ValueTask OnLoadAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition? entity, CancellationToken cancellationToken)
+    private async ValueTask OnLoadAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition? entity, CancellationToken cancellationToken)
     {
         if (entity == null)
-            return ValueTask.CompletedTask;
+            return;
 
-        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
-        var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
+        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);        
+        var json = entity.DataReference is not null
+            ? await payloadManager.Get(entity.DataReference, cancellationToken)
+            : (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
         try
         {
@@ -195,8 +198,6 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         entity.Outputs = data.Outputs;
         entity.Outcomes = data.Outcomes;
         entity.CustomProperties = data.CustomProperties;
-
-        return ValueTask.CompletedTask;
     }
 
     private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter)
@@ -236,7 +237,7 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         return queryable;
     }
 
-    private class WorkflowDefinitionState
+    internal class WorkflowDefinitionState
     {
         [JsonConstructor]
         public WorkflowDefinitionState()

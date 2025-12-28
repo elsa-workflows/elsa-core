@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Management
 {
     [DbContext(typeof(ManagementElsaDbContext))]
-    [Migration("20251227021349_AddInstanceDataRef")]
-    partial class AddInstanceDataRef
+    [Migration("20251228142210_V3_6_AddPayloadDataReferences")]
+    partial class V3_6_AddPayloadDataReferences
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -226,14 +226,50 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Management
                     b.ToTable("WorkflowInstances", "Elsa");
                 });
 
+            modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowDefinition", b =>
+                {
+                    b.OwnsOne("Elsa.Workflows.Payloads.PayloadReference", "DataReference", b1 =>
+                        {
+                            b1.Property<string>("WorkflowDefinitionId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("CompressionAlgorithm")
+                                .HasMaxLength(36)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("TypeIdentifier")
+                                .IsRequired()
+                                .HasMaxLength(36)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Url")
+                                .IsRequired()
+                                .HasMaxLength(2048)
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("WorkflowDefinitionId");
+
+                            b1.ToTable("WorkflowDefinitions", "Elsa");
+
+                            b1.WithOwner()
+                                .HasForeignKey("WorkflowDefinitionId");
+                        });
+
+                    b.Navigation("DataReference");
+                });
+
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowInstance", b =>
                 {
-                    b.OwnsOne("Elsa.Workflows.Management.Models.PayloadReference", "DataReference", b1 =>
+                    b.OwnsOne("Elsa.Workflows.Payloads.PayloadReference", "DataReference", b1 =>
                         {
                             b1.Property<string>("WorkflowInstanceId")
                                 .HasColumnType("TEXT");
 
-                            b1.Property<string>("Type")
+                            b1.Property<string>("CompressionAlgorithm")
+                                .HasMaxLength(36)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("TypeIdentifier")
                                 .IsRequired()
                                 .HasMaxLength(36)
                                 .HasColumnType("TEXT");

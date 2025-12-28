@@ -16,11 +16,11 @@ public class WorkflowDefinitionsFeature(IModule module) : FeatureBase(module)
     /// </summary>
     public Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowDefinitionStore>();
 
-    private KeyValuePair<string, WorkflowPayloadPersistenceMode>? PayloadPersistence { get; set; }
+    public PayloadPersistenceOption? PayloadPersistence { get; set; }
 
-    public WorkflowDefinitionsFeature SetPayloadPersistence(string payloadType, WorkflowPayloadPersistenceMode mode)
+    public WorkflowDefinitionsFeature SetPayloadPersistence(string payloadTypeIdentifier, PayloadPersistenceMode mode)
     {
-        PayloadPersistence = new(payloadType, mode);
+        PayloadPersistence = new(payloadTypeIdentifier, mode);
         return this;
     }
 
@@ -30,6 +30,6 @@ public class WorkflowDefinitionsFeature(IModule module) : FeatureBase(module)
         Services
             .AddScoped(WorkflowDefinitionStore);
 
-        Services.Configure<WorkflowPayloadOptions>(options => options.WorkflowDefinitionsPersistence = PayloadPersistence);
+        Services.Configure<PayloadOptions>(options => options.WorkflowDefinitionsPersistence = PayloadPersistence);
     }
 }

@@ -20,6 +20,17 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.Ignore(x => x.CustomProperties);
         builder.Ignore(x => x.Options);
         builder.Property<string>("Data");
+        builder.OwnsOne(x => x.DataReference, dataRef =>
+        {
+            dataRef.Property(a => a.Url)
+                   .HasMaxLength(2048);
+
+            dataRef.Property(a => a.TypeIdentifier)
+                   .HasMaxLength(36);
+
+            dataRef.Property(a => a.CompressionAlgorithm)
+                   .HasMaxLength(36);
+        });
         builder.Property<bool?>("UsableAsActivity");
         builder.Property(x => x.ToolVersion).HasConversion(VersionToStringConverter, StringToVersionConverter);
         builder.HasIndex(x => new {x.DefinitionId, x.Version}).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.DefinitionId)}_{nameof(WorkflowDefinition.Version)}").IsUnique();
@@ -42,7 +53,10 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
             dataRef.Property(a => a.Url)            
                    .HasMaxLength(2048);
 
-            dataRef.Property(a => a.Type)
+            dataRef.Property(a => a.TypeIdentifier)
+                   .HasMaxLength(36);
+
+            dataRef.Property(a => a.CompressionAlgorithm)
                    .HasMaxLength(36);
         });
         builder.Property(x => x.Status).HasConversion<string>();

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <ItemGroup>
 		<ProjectReference Include="..\..\modules\Elsa.Caching\Elsa.Caching.csproj" />
@@ -25,12 +25,12 @@
     </ItemGroup>
 
 	<ItemGroup>
-      <Folder Include="App_Data\" />
-    </ItemGroup>
+		<PackageReference Include="FluentStorage.Azure.Blobs" />
+	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="FluentStorage.Azure.Blobs" />
-	</ItemGroup>
+      <Folder Include="App_Data\" />
+    </ItemGroup>
 
 	<ItemGroup>
 	  <None Update="Workflows\hello-world.elsa">

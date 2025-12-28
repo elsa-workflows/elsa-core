@@ -9,7 +9,7 @@
 
 
 	<ItemGroup>
-		<PackageReference Include="FluentStorage" />
+		<PackageReference Include="FluentStorage" />		
 		<PackageReference Include="System.Text.Json" />
 	</ItemGroup>
 

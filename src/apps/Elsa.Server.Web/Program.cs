@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using Elsa.Caching.Options;
+using Elsa.Common.Codecs;
 using Elsa.Common.RecurringTasks;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
@@ -73,19 +74,13 @@ services
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
                 management.UseCache();
                 management.UseReadOnlyMode(useReadOnlyMode);
-                management.SetDefaultPayloadPersistence(BlobPayloadStore.TypeName, WorkflowPayloadPersistenceMode.ExternalPreferred);
+                management.SetCompressionAlgorithm(nameof(GZip));
+                management.SetDefaultPayloadPersistence($"{configuration["PayloadStorage:TypeIdentifier"]}", PayloadPersistenceMode.ExternalPreferred);
             })
-            .UseBlobPayloadStore(payloadStore =>
+            .UseBlobPayloadStorage(configuration, (sp, options) =>
             {
                 StorageFactory.Modules.UseAzureBlobStorage();
-                payloadStore.FolderUrl = "https://testrunsettingsfiles.blob.core.windows.net/testingblobconfig";
-                payloadStore.BlobStorage = sp =>
-                {
-                    return StorageFactory.Blobs.AzureBlobStorageWithSas(
-                        "",
-                        new Azure.Storage.Blobs.BlobClientOptions()
-                    );
-                };
+                return StorageFactory.Blobs.AzureBlobStorageWithSas(options.ConnectionString);
             })
             .UseWorkflowRuntime(runtime =>
             {

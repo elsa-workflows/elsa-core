@@ -5,18 +5,21 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
+using Elsa.Workflows.State;
 using FastEndpoints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Elsa.Persistence.EFCore.Modules.Management;
 
@@ -29,7 +32,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     private readonly EntityStore<ManagementElsaDbContext, WorkflowInstance> _store;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly ICompressionCodecResolver _compressionCodecResolver;
-    private readonly IWorkflowPayloadStoreManager payloadstoreManager;
+    private readonly IPayloadManager payloadManager;
     private readonly IOptions<ManagementOptions> _options;
     private readonly ILogger<EFCoreWorkflowInstanceStore> _logger;
 
@@ -39,15 +42,15 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     public EFCoreWorkflowInstanceStore(
         EntityStore<ManagementElsaDbContext, WorkflowInstance> store,
         IWorkflowStateSerializer workflowStateSerializer,
-        ICompressionCodecResolver compressionCodecResolver,        
-        IWorkflowPayloadStoreManager payloadstoreManager,
+        ICompressionCodecResolver compressionCodecResolver,
+        IPayloadManager payloadManager,
         IOptions<ManagementOptions> options,
         ILogger<EFCoreWorkflowInstanceStore> logger)
     {
         _store = store;
         _workflowStateSerializer = workflowStateSerializer;
         _compressionCodecResolver = compressionCodecResolver;
-        this.payloadstoreManager = payloadstoreManager;
+        this.payloadManager = payloadManager;
         _options = options;
         _logger = logger;
     }
@@ -227,25 +230,20 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     {
         if (entity == null)
             return;
-
-        var data = entity.WorkflowState;
-        var payload = await GetPayloadData(managementElsaDbContext, entity, cancellationToken);
-        var compressionAlgorithm = (string?)managementElsaDbContext.Entry(entity).Property("DataCompressionAlgorithm").CurrentValue ?? nameof(None);
-        var compressionStrategy = _compressionCodecResolver.Resolve(compressionAlgorithm);
+        
+        var json = await GetPayloadData(managementElsaDbContext, entity, cancellationToken);
 
         try
         {
-            if (!string.IsNullOrWhiteSpace(payload))
+            if (!string.IsNullOrWhiteSpace(json))
             {
-                var json = await compressionStrategy.DecompressAsync(payload, cancellationToken);
-                data = _workflowStateSerializer.Deserialize(json);
+                entity.WorkflowState = _workflowStateSerializer.Deserialize(json);
             }
         }
         catch (Exception exp)
         {
             _logger.LogWarning(exp, "Exception while deserializing workflow instance state: {InstanceId}. Reverting to default state", entity.Id);
-        }
-        entity.WorkflowState = data;
+        }        
     }
 
     private ValueTask<string?> GetPayloadData(ElsaDbContextBase dbContext, WorkflowInstance entity, CancellationToken cancellationToken)
@@ -257,7 +255,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
             return new(result);
         }
 
-        return payloadstoreManager.Get(entity.DataReference, cancellationToken);
+        return payloadManager.Get(entity.DataReference, cancellationToken);
     }
 
     private static IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter)

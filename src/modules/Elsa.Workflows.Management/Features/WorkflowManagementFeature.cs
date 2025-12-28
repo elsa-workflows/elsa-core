@@ -22,7 +22,7 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
-using Elsa.Workflows.Management.Payloads;
+using Elsa.Workflows.Payloads;
 using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Management.Stores;
@@ -30,6 +30,7 @@ using Elsa.Workflows.Serialization.Serializers;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Management.Features;
 
@@ -54,15 +55,15 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
 
     private Func<IServiceProvider, IWorkflowDefinitionPublisher> _workflowDefinitionPublisher = sp => ActivatorUtilities.CreateInstance<WorkflowDefinitionPublisher>(sp);
     private Func<IServiceProvider, IWorkflowReferenceQuery> _workflowReferenceQuery = sp => ActivatorUtilities.CreateInstance<DefaultWorkflowReferenceQuery>(sp);
-    private ServiceDescriptor workflowPayloadStoreManagerRegistration = new(typeof(IWorkflowPayloadStoreManager), typeof(WorkflowPayloadStoreManager), ServiceLifetime.Scoped);
+    private ServiceDescriptor payloadManagerRegistration = new(typeof(IPayloadManager), typeof(PayloadManager), ServiceLifetime.Scoped);
 
     private string CompressionAlgorithm { get; set; } = nameof(None);
     private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
-    private KeyValuePair<string, WorkflowPayloadPersistenceMode>? DefaultPayloadPersistence { get; set; }
+    private PayloadPersistenceOption? DefaultPayloadPersistence { get; set; }
 
     private bool IsReadOnlyMode { get; set; }
 
-    private readonly HashSet<ServiceDescriptor> payloadStoreRegistrations = [];
+    private readonly HashSet<ServiceDescriptor> payloadStorageRegistrations = [];
 
     /// <summary>
     /// A set of activity types to make available to the system. 
@@ -170,47 +171,47 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
         return this;
     }
 
-    public WorkflowManagementFeature AddPayloadStore<TPayloadStore>(TPayloadStore? instance = null)
-        where TPayloadStore : class, IWorkflowPayloadStore
+    public WorkflowManagementFeature AddPayloadStorage<TPayloadStorage>(TPayloadStorage? instance = null)
+        where TPayloadStorage : class, IPayloadStorage
     {
         if (instance is not null)
         {
-            payloadStoreRegistrations.Add(new ServiceDescriptor(typeof(IWorkflowPayloadStore), instance, ServiceLifetime.Singleton));
+            payloadStorageRegistrations.Add(ServiceDescriptor.Singleton<IPayloadStorage>(instance));
         }
         else
         {
-            payloadStoreRegistrations.Add(new ServiceDescriptor(typeof(IWorkflowPayloadStore), typeof(TPayloadStore), ServiceLifetime.Scoped));
+            payloadStorageRegistrations.Add(new(typeof(IPayloadStorage), typeof(TPayloadStorage), ServiceLifetime.Scoped));
         }
 
         return this;
     }
 
-    public WorkflowManagementFeature AddPayloadStore<TPayloadStore>(Func<IServiceProvider, TPayloadStore> factory)
-        where TPayloadStore : IWorkflowPayloadStore
+    public WorkflowManagementFeature AddPayloadStorage<TPayloadStorage>(Func<IServiceProvider, TPayloadStorage> factory)
+        where TPayloadStorage : IPayloadStorage
     {
-        payloadStoreRegistrations.Add(new ServiceDescriptor(typeof(IWorkflowPayloadStore), sp => factory(sp), ServiceLifetime.Scoped));
+        payloadStorageRegistrations.Add(ServiceDescriptor.Scoped<IPayloadStorage>(sp => factory(sp)));
         return this;
     }
 
-    public WorkflowManagementFeature SetPayloadStoreManager<TWorkflowPayloadStoreManager>(TWorkflowPayloadStoreManager? instance = null)
-        where TWorkflowPayloadStoreManager : class, IWorkflowPayloadStoreManager
+    public WorkflowManagementFeature SetPayloadStoreManager<TPayloadManager>(TPayloadManager? instance = null)
+        where TPayloadManager : class, IPayloadManager
     {
         if (instance is not null)
         {
-            workflowPayloadStoreManagerRegistration = new(typeof(IWorkflowPayloadStoreManager), instance, ServiceLifetime.Singleton);
+            payloadManagerRegistration = new(typeof(IPayloadManager), instance, ServiceLifetime.Singleton);
         }
         else
         {
-            workflowPayloadStoreManagerRegistration = new(typeof(IWorkflowPayloadStoreManager), typeof(TWorkflowPayloadStoreManager), ServiceLifetime.Scoped);
+            payloadManagerRegistration = new(typeof(IPayloadManager), typeof(TPayloadManager), ServiceLifetime.Scoped);
         }
 
         return this;
     }
 
-    public WorkflowManagementFeature SetPayloadStoreManager<TWorkflowPayloadStoreManager>(Func<IServiceProvider, TWorkflowPayloadStoreManager> factory)
-      where TWorkflowPayloadStoreManager : class, IWorkflowPayloadStoreManager
+    public WorkflowManagementFeature SetPayloadStoreManager<TPayloadManager>(Func<IServiceProvider, TPayloadManager> factory)
+      where TPayloadManager : class, IPayloadManager
     {
-        workflowPayloadStoreManagerRegistration = new(typeof(IWorkflowPayloadStoreManager), sp => factory(sp), ServiceLifetime.Scoped);
+        payloadManagerRegistration = new(typeof(IPayloadManager), sp => factory(sp), ServiceLifetime.Scoped);
         return this;
     }
 
@@ -233,9 +234,9 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
         return this;
     }
 
-    public WorkflowManagementFeature SetDefaultPayloadPersistence(string payloadType, WorkflowPayloadPersistenceMode mode)
+    public WorkflowManagementFeature SetDefaultPayloadPersistence(string payloadType, PayloadPersistenceMode mode)
     {
-        DefaultPayloadPersistence = new(payloadType, mode);
+        DefaultPayloadPersistence = new (payloadType, mode);
         return this;
     }
 
@@ -308,9 +309,9 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
             .AddSingleton<WorkflowStateMapper>();
 
         Services
-            .Add(workflowPayloadStoreManagerRegistration);
+            .Add(payloadManagerRegistration);
         Services
-            .TryAddEnumerable(payloadStoreRegistrations);
+            .TryAddEnumerable(payloadStorageRegistrations);
 
         Services
             .AddNotificationHandler<DeleteWorkflowInstances>()

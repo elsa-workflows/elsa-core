@@ -1,6 +1,6 @@
 ﻿namespace Elsa.Workflows.Management.Options;
 
-public enum WorkflowPayloadPersistenceMode
+public enum PayloadPersistenceMode
 {
     ExternalPreferred,
     Hybrid,
