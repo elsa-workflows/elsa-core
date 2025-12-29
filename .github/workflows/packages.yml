@@ -18,7 +18,7 @@ on:
     types: [prereleased, published]
 
 env:
-  base_version: '3.6.0'
+  base_version: '3.7.0'
   feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
   nuget_feed_source: 'https://api.nuget.org/v3/index.json'
 
@@ -156,7 +156,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.x
+          dotnet-version: 10.x
 
       - name: Compile+Pack
         run: ./build.sh Compile+Pack --version ${VERSION} --analyseCode true
