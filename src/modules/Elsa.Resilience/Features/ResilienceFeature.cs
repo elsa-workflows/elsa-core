@@ -84,5 +84,10 @@ public class ResilienceFeature(IModule module) : FeatureBase(module)
             .AddScoped(_retryAttemptRecorder)
             .AddScoped(_retryAttemptReader)
             .AddHandlersFrom<ResilienceFeature>();
+
+        // Register transient exception detection infrastructure
+        Services
+            .AddSingleton<ITransientExceptionStrategy, DefaultTransientExceptionStrategy>()
+            .AddSingleton<ITransientExceptionDetector, TransientExceptionDetector>();
     }
 }
