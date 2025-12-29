@@ -25,10 +25,10 @@ public static class TopologicalTaskSorter
         var taskGroups = taskList.GroupBy(t => t.GetType()).ToDictionary(g => g.Key, g => g.ToList());
         var result = new List<T>();
 
-        foreach (var type in sortedTypes)
+        foreach (var type in sortedTypes.Where(taskGroups.ContainsKey))
         {
-            if (taskGroups.TryGetValue(type, out var group))
-                result.AddRange(group);
+            var group = taskGroups[type];
+            result.AddRange(group);
         }
 
         return result;
