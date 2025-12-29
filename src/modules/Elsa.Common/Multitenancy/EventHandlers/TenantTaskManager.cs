@@ -91,7 +91,8 @@ public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILo
                 .ContinueWith(t => taskExecutor.ExecuteTaskAsync(backgroundTask, _cancellationTokenSource.Token),
                     cancellationToken,
                     TaskContinuationOptions.RunContinuationsAsynchronously,
-                    TaskScheduler.Default);
+                    TaskScheduler.Default)
+                .Unwrap();
 
             if (!task.IsCompleted)
                 _runningBackgroundTasks.Add(task);
