@@ -4,7 +4,7 @@ namespace Elsa.Workflows.Models;
 
 public class Output : Argument
 {
-    public Output() : base(new Literal())
+    public Output() : base(new MemoryBlockReference())
     {
     }
 
