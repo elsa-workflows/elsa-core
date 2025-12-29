@@ -73,21 +73,21 @@ public sealed class WorkflowPayloadSaveHandler(
         return payloadSerializer.Serialize(data);
     }
 
-    private async ValueTask SetPayloadData(ElsaDbContextBase managementElsaDbContext, Entity entity, string dataReferencePropertyName, string compressedJson, string compressionAlgorithm, PayloadPersistenceOption? persistenceOption, CancellationToken cancellationToken)
+    private async ValueTask SetPayloadData(ElsaDbContextBase managementElsaDbContext, Entity entity, string dataReferencePropertyName, string data, string compressionAlgorithm, PayloadPersistenceOption? persistenceOption, CancellationToken cancellationToken)
     {
         var payloadPersistence = GetPayloadPersistence(persistenceOption);
         if (string.IsNullOrWhiteSpace(payloadPersistence.PayloadTypeIdentifier) || payloadPersistence.Mode == PayloadPersistenceMode.Internal)
         {
-            SetRawData(managementElsaDbContext, entity, compressedJson);
+            SetRawData(managementElsaDbContext, entity, data);
             return;
         }
 
         if (payloadPersistence.Mode == PayloadPersistenceMode.Hybrid)
         {
-            SetRawData(managementElsaDbContext, entity, compressedJson);
+            SetRawData(managementElsaDbContext, entity, data);
         }
 
-        var payloadReference = await payloadManager.Set(entity.Id, compressedJson, payloadPersistence.PayloadTypeIdentifier, compressionAlgorithm, cancellationToken);
+        var payloadReference = await payloadManager.Set(entity.Id, data, payloadPersistence.PayloadTypeIdentifier, compressionAlgorithm, cancellationToken);
         managementElsaDbContext.Entry(entity).Reference(dataReferencePropertyName).CurrentValue = payloadReference;
 
         if (payloadReference is not null && payloadPersistence.Mode == PayloadPersistenceMode.ExternalPreferred)
