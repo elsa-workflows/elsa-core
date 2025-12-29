@@ -701,6 +701,13 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <returns>True if the memory block exists, false otherwise.</returns>
     public bool TryGet(MemoryBlockReference blockReference, out object? value)
     {
+        // Handle Literal references directly - they hold their value and don't need to be in the memory register
+        if (blockReference is Literal literal)
+        {
+            value = literal.Value;
+            return true;
+        }
+
         var memoryBlock = GetMemoryBlock(blockReference);
 
         if (memoryBlock != null)

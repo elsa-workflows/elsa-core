@@ -156,7 +156,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.x
+          dotnet-version: 10.x
 
       - name: Compile+Pack
         run: ./build.sh Compile+Pack --version ${VERSION} --analyseCode true

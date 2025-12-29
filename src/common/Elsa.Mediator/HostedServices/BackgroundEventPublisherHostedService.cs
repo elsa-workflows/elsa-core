@@ -52,12 +52,19 @@ public class BackgroundEventPublisherHostedService : BackgroundService
 
         // Continuously read notifications from the input channel and distribute them to worker channels
         // using round-robin distribution for load balancing
-        await foreach (var notification in channelReader.ReadAllAsync(cancellationToken))
+        try
         {
-            var output = _outputs[index];
-            await output.Writer.WriteAsync(notification, cancellationToken);
-            // Move to the next worker in a circular fashion
-            index = (index + 1) % _workerCount;
+            await foreach (var notification in channelReader.ReadAllAsync(cancellationToken))
+            {
+                var output = _outputs[index];
+                await output.Writer.WriteAsync(notification, cancellationToken);
+                // Move to the next worker in a circular fashion
+                index = (index + 1) % _workerCount;
+            }
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, "An operation was cancelled while processing the queue");
         }
 
         // When the input channel is completed, complete all output channels
@@ -75,23 +82,30 @@ public class BackgroundEventPublisherHostedService : BackgroundService
     /// <param name="cancellationToken">Cancellation token from the hosted service</param>
     private async Task ReadOutputAsync(Channel<NotificationContext> output, INotificationSender notificationSender, CancellationToken cancellationToken)
     {
-        await foreach (var notificationContext in output.Reader.ReadAllAsync(cancellationToken))
+        try
         {
-            try
+            await foreach (var notificationContext in output.Reader.ReadAllAsync(cancellationToken))
             {
-                var notification = notificationContext.Notification;
-                // Link the cancellation tokens so that cancellation can happen from either source
-                using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, notificationContext.CancellationToken);
-                await notificationSender.SendAsync(notification, NotificationStrategy.Sequential, linkedTokenSource.Token);
+                try
+                {
+                    var notification = notificationContext.Notification;
+                    // Link the cancellation tokens so that cancellation can happen from either source
+                    using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, notificationContext.CancellationToken);
+                    await notificationSender.SendAsync(notification, NotificationStrategy.Sequential, linkedTokenSource.Token);
+                }
+                catch (OperationCanceledException e)
+                {
+                    _logger.LogDebug(e, "An operation was cancelled while processing the queue");
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "An unhandled exception occurred while processing the queue");
+                }
             }
-            catch (OperationCanceledException e)
-            {
-                _logger.LogDebug(e, "An operation was cancelled while processing the queue");
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "An unhandled exception occurred while processing the queue");
-            }
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, "An operation was cancelled while processing the queue");
         }
     }
 }
