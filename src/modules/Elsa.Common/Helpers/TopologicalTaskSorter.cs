@@ -21,14 +21,14 @@ public static class TopologicalTaskSorter
         var dependencyGraph = BuildDependencyGraph(taskTypes);
         var sortedTypes = TopologicalSort(dependencyGraph);
 
-        // Map sorted types back to original task instances
-        var taskMap = taskList.ToDictionary(t => t.GetType(), t => t);
+        // Map sorted types back to original task instances, preserving multiples
+        var taskGroups = taskList.GroupBy(t => t.GetType()).ToDictionary(g => g.Key, g => g.ToList());
         var result = new List<T>();
 
         foreach (var type in sortedTypes)
         {
-            if (taskMap.TryGetValue(type, out var task))
-                result.Add(task);
+            if (taskGroups.TryGetValue(type, out var group))
+                result.AddRange(group);
         }
 
         return result;
