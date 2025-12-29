@@ -68,13 +68,13 @@ public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILo
 
     private async Task RunStartupTasksAsync(ITenantScope tenantScope, ITaskExecutor taskExecutor, CancellationToken cancellationToken)
     {
-        var startupTasks = tenantScope.ServiceProvider.GetServices<IStartupTask>().ToList();
-
-        // Sort by dependencies first, then by Order attribute
-        var sortedTasks = TopologicalTaskSorter.Sort(startupTasks)
+        var startupTasks = tenantScope.ServiceProvider.GetServices<IStartupTask>()
             .OrderBy(x => x.GetType().GetCustomAttribute<OrderAttribute>()?.Order ?? 0f)
             .ToList();
 
+        // First apply OrderAttribute to determine a base order, then perform topological sorting.
+        // The topological sort is the final ordering step to ensure dependency constraints are respected.
+        var sortedTasks = TopologicalTaskSorter.Sort(startupTasks).ToList();
         foreach (var task in sortedTasks)
             await taskExecutor.ExecuteTaskAsync(task, cancellationToken);
     }
