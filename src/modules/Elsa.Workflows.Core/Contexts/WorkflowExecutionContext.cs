@@ -115,7 +115,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IServiceProvider serviceProvider,
         WorkflowGraph workflowGraph,
         string id,
-        string? correlationId = null,
+        string? correlationId,
         string? parentWorkflowInstanceId = null,
         IDictionary<string, object>? input = null,
         IDictionary<string, object>? properties = null,
