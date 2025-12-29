@@ -115,7 +115,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IServiceProvider serviceProvider,
         WorkflowGraph workflowGraph,
         string id,
-        string? correlationId = null,
+        string? correlationId,
         string? parentWorkflowInstanceId = null,
         IDictionary<string, object>? input = null,
         IDictionary<string, object>? properties = null,
@@ -638,14 +638,6 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public void ClearCompletedActivityExecutionContexts()
     {
         RemoveActivityExecutionContexts(x => x is { IsCompleted: true, ParentActivityExecutionContext: not null });
-    }
-    
-    /// <summary>
-    /// Clears all activity completion callback entries from the workflow execution context.
-    /// </summary>
-    public void ClearCompletionCallbacks()
-    {
-        _completionCallbackEntries.Clear();
     }
 
     public IEnumerable<ActivityExecutionContext> GetActiveActivityExecutionContexts()
