@@ -37,6 +37,59 @@ public class LiteralInputTests
         var result = await _workflowRunner.RunAsync(workflow);
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
     }
+
+    [Fact(DisplayName = "ActivityExecutionContext.TryGet should return true and value for Literal")]
+    public async Task TryGet_ShouldHandleLiteralDirectly()
+    {
+        // Arrange - Create a workflow and activity execution context
+        await _services.PopulateRegistriesAsync();
+        
+        var activity = new WriteLine("Test");
+        var workflow = new Workflow { Root = activity };
+        
+        var workflowGraphBuilder = _services.GetRequiredService<IWorkflowGraphBuilder>();
+        var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow);
+        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_services, workflowGraph, "test");
+        var activityExecutionContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(activity);
+        
+        // Create a Literal and use it as a MemoryBlockReference
+        var expectedValue = "Hello World";
+        var literal = new Literal<string>(expectedValue);
+        var blockReference = (MemoryBlockReference)literal;
+        
+        // Act - Call TryGet directly with the Literal
+        var success = activityExecutionContext.TryGet(blockReference, out var actualValue);
+        
+        // Assert - Should succeed and return the literal's value
+        Assert.True(success, "TryGet should return true for Literal references");
+        Assert.Equal(expectedValue, actualValue);
+    }
+
+    [Fact(DisplayName = "ActivityExecutionContext.Get with Input<T> containing Literal should work")]
+    public async Task Get_ShouldWorkWithInputContainingLiteral()
+    {
+        // Arrange
+        await _services.PopulateRegistriesAsync();
+        
+        var activity = new WriteLine("Test");
+        var workflow = new Workflow { Root = activity };
+        
+        var workflowGraphBuilder = _services.GetRequiredService<IWorkflowGraphBuilder>();
+        var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow);
+        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_services, workflowGraph, "test");
+        var activityExecutionContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(activity);
+        
+        // Create an Input with a Literal value
+        var expectedValue = 42;
+        var literal = new Literal<int>(expectedValue);
+        var input = new Input<int>(literal);
+        
+        // Act - Get the value through the Input (which internally uses TryGet)
+        var actualValue = activityExecutionContext.Get(input);
+        
+        // Assert
+        Assert.Equal(expectedValue, actualValue);
+    }
 }
 
 /// <summary>
