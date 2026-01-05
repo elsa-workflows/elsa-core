@@ -101,7 +101,7 @@ jobs:
           path: artifacts/coverage
 
       - name: Upload Pages artifact
-        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/3.6.0')
+        if: always() && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
         uses: actions/upload-pages-artifact@v3
         with:
           path: './artifacts/coverage-report'
