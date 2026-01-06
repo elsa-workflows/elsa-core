@@ -13,6 +13,7 @@ public partial class Flowchart
     {
         var flowContext = ctx.TargetContext;
         var completedActivity = ctx.ChildContext.Activity;
+        var completedActivityContext = ctx.ChildContext;
         var flowGraph = flowContext.GetFlowGraph();
         var tokens = GetTokenList(flowContext);
 
@@ -21,6 +22,22 @@ public partial class Flowchart
         {
             tokens.Clear();
             await flowContext.CompleteActivityAsync();
+            return;
+        }
+
+        // Check if the completed activity is a direct child of this flowchart.
+        // If not, skip flowchart-specific processing as the activity is managed by an intermediate container (e.g., sub-process).
+        var isDirectChild = completedActivityContext.ParentActivityExecutionContext == flowContext;
+        
+        if (!isDirectChild)
+        {
+            // The activity is not a direct child, so we don't process its tokens.
+            // Instead, just check if the flowchart should complete.
+            if (!flowContext.HasPendingWork())
+            {
+                tokens.Clear();
+                await flowContext.CompleteActivityAsync();
+            }
             return;
         }
 
