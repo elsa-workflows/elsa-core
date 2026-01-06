@@ -20,23 +20,19 @@ public partial class Flowchart
         // If the completed activity is a terminal node, complete the flowchart immediately.
         if (completedActivity is ITerminalNode)
         {
-            tokens.Clear();
-            await flowContext.CompleteActivityAsync();
+            await ClearTokensAndCompleteFlowchartAsync(flowContext, tokens);
             return;
         }
 
         // Check if the completed activity is a direct child of this flowchart.
         // If not, skip flowchart-specific processing as the activity is managed by an intermediate container (e.g., sub-process).
-        var isDirectChild = completedActivityContext.ParentActivityExecutionContext == flowContext;
-        
-        if (!isDirectChild)
+        if (!IsDirectChild(flowContext, completedActivityContext))
         {
             // The activity is not a direct child, so we don't process its tokens.
             // Instead, just check if the flowchart should complete.
             if (!flowContext.HasPendingWork())
             {
-                tokens.Clear();
-                await flowContext.CompleteActivityAsync();
+                await ClearTokensAndCompleteFlowchartAsync(flowContext, tokens);
             }
             return;
         }
@@ -168,12 +164,20 @@ public partial class Flowchart
         // Complete flowchart if no pending work.
         if (!flowContext.HasPendingWork())
         {
-            tokens.Clear();
-            await flowContext.CompleteActivityAsync();
+            await ClearTokensAndCompleteFlowchartAsync(flowContext, tokens);
         }
 
         // Purge consumed tokens for the completed activity.
         tokens.RemoveWhere(t => t.ToActivityId == completedActivity.Id && t.Consumed);
+    }
+
+    /// <summary>
+    /// Clears all tokens and completes the flowchart.
+    /// </summary>
+    private static async ValueTask ClearTokensAndCompleteFlowchartAsync(ActivityExecutionContext flowContext, List<Token> tokens)
+    {
+        tokens.Clear();
+        await flowContext.CompleteActivityAsync();
     }
 
     private async ValueTask OnTokenFlowActivityCanceledAsync(CancelSignal signal, SignalContext context)

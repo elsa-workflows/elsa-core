@@ -140,9 +140,7 @@ public partial class Flowchart
 
         // Check if the completed activity is a direct child of this flowchart.
         // If not, skip flowchart-specific processing as the activity is managed by an intermediate container (e.g., sub-process).
-        var isDirectChild = completedActivityContext.ParentActivityExecutionContext == flowchartContext;
-        
-        if (!isDirectChild)
+        if (!IsDirectChild(flowchartContext, completedActivityContext))
         {
             // The activity is not a direct child, so we don't process its outbound connections.
             // Instead, just check if the flowchart should complete.
