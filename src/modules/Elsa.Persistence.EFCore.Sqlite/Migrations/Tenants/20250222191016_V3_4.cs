@@ -18,22 +18,15 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Tenants
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.EnsureSchema(
-                name: _schema.Schema);
-
-            migrationBuilder.RenameTable(
-                name: "Tenants",
-                newName: "Tenants",
-                newSchema: _schema.Schema);
+            // SQLite does not support schemas. 
+            // This migration was attempting to move tables to a schema, which is not needed for SQLite.
+            // No operations required.
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameTable(
-                name: "Tenants",
-                schema: _schema.Schema,
-                newName: "Tenants");
+            // No operations required.
         }
     }
 }
