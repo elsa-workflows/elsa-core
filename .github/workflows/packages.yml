@@ -101,7 +101,7 @@ jobs:
           path: artifacts/coverage
 
       - name: Upload Pages artifact
-        if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop/3.6.0')
+        if: always() && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
         uses: actions/upload-pages-artifact@v3
         with:
           path: './artifacts/coverage-report'
@@ -138,7 +138,7 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased") ]]; then
             git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
-            git branch --remote --contains | grep origin/main
+            git branch --remote --contains | grep -E 'origin/(main|release/)'
           else
             git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
             git branch --remote --contains | grep origin/${BRANCH_NAME}
