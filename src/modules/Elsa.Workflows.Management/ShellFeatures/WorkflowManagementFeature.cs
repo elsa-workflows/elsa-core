@@ -29,13 +29,16 @@ namespace Elsa.Workflows.Management.ShellFeatures;
 /// <summary>
 /// Installs and configures the workflow management feature.
 /// </summary>
-[DependsOn(typeof(StringCompressionFeature))]
-[DependsOn(typeof(MediatorFeature))]
-[DependsOn(typeof(MemoryCacheFeature))]
-[DependsOn(typeof(SystemClockFeature))]
-[DependsOn(typeof(WorkflowsFeature))]
-[DependsOn(typeof(WorkflowDefinitionsFeature))]
-[DependsOn(typeof(WorkflowInstancesFeature))]
+[ShellFeature(DependsOn =
+[
+    "StringCompression",
+    "Mediator",
+    "MemoryCache",
+    "SystemClock",
+    "Workflows",
+    "WorkflowDefinitions",
+    "WorkflowInstances"
+])]
 [UsedImplicitly]
 public class WorkflowManagementFeature : IShellFeature
 {

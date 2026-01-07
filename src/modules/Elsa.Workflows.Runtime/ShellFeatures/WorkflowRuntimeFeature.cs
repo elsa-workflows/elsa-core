@@ -16,14 +16,13 @@ using Elsa.Workflows.Runtime.UIHints;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
-using WorkflowsFeature = Elsa.Workflows.ShellFeatures.WorkflowsFeature;
 
 namespace Elsa.Workflows.Runtime.ShellFeatures;
 
 /// <summary>
 /// Installs and configures workflow runtime features.
 /// </summary>
-[ShellFeature(DependsOn = [nameof(WorkflowsFeature)])]
+[ShellFeature(DependsOn = ["Workflows"])]
 public class WorkflowRuntimeFeature : IShellFeature
 {
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();

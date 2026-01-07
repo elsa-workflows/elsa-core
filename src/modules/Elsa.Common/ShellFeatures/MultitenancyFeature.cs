@@ -9,7 +9,7 @@ namespace Elsa.Common.ShellFeatures;
 
 public class MultitenancyFeature : IShellFeature
 {
-    private Func<IServiceProvider, ITenantsProvider> _tenantsProviderFactory = sp => sp.GetRequiredService<DefaultTenantsProvider>();
+    private readonly Func<IServiceProvider, ITenantsProvider> _tenantsProviderFactory = sp => sp.GetRequiredService<DefaultTenantsProvider>();
 
     public void ConfigureServices(IServiceCollection services)
     {
@@ -19,16 +19,10 @@ public class MultitenancyFeature : IShellFeature
             .AddSingleton<ITenantFinder, DefaultTenantFinder>()
             .AddSingleton<ITenantService, DefaultTenantService>()
             
-            // Order is important: Startup task first, then background and recurring tasks.
-            .AddSingleton<ITenantActivatedEvent, RunStartupTasks>()
-            
-            .AddSingleton<RunBackgroundTasks>()
-            .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<RunBackgroundTasks>())
-            .AddSingleton<ITenantDeactivatedEvent>(sp => sp.GetRequiredService<RunBackgroundTasks>())
-            
-            .AddSingleton<StartRecurringTasks>()
-            .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<StartRecurringTasks>())
-            .AddSingleton<ITenantDeactivatedEvent>(sp => sp.GetRequiredService<StartRecurringTasks>())
+            // TenantTaskManager handles all task lifecycle in the correct order
+            .AddSingleton<TenantTaskManager>()
+            .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<TenantTaskManager>())
+            .AddSingleton<ITenantDeactivatedEvent>(sp => sp.GetRequiredService<TenantTaskManager>())
             
             .AddSingleton<RecurringTaskScheduleManager>()
             .AddSingleton<TenantEventsManager>()

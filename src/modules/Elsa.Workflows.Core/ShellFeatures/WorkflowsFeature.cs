@@ -32,12 +32,12 @@ namespace Elsa.Workflows.ShellFeatures;
 
 [ShellFeature(DependsOn =
 [
-    nameof(SystemClockFeature),
-    nameof(ExpressionsFeature),
-    nameof(MediatorFeature),
-    nameof(DefaultFormattersFeature),
-    nameof(MultitenancyFeature),
-    nameof(CommitStrategiesFeature),
+    "SystemClock",
+    "Expressions",
+    "Mediator",
+    "DefaultFormatters",
+    "Multitenancy",
+    "CommitStrategies"
 ])]
 public class WorkflowsFeature : IShellFeature
 {
@@ -173,11 +173,11 @@ public class WorkflowsFeature : IShellFeature
 
             // Logging
             .AddLogging();
-        
-            // Flowchart
-            services.AddSerializationOptionsConfigurator<FlowchartSerializationOptionConfigurator>();
 
-            // Register FlowchartOptions
-            services.AddOptions<FlowchartOptions>();
+        // Flowchart
+        services.AddSerializationOptionsConfigurator<FlowchartSerializationOptionConfigurator>();
+
+        // Register FlowchartOptions
+        services.AddOptions<FlowchartOptions>();
     }
 }
