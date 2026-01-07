@@ -115,7 +115,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IServiceProvider serviceProvider,
         WorkflowGraph workflowGraph,
         string id,
-        string? correlationId = null,
+        string? correlationId,
         string? parentWorkflowInstanceId = null,
         IDictionary<string, object>? input = null,
         IDictionary<string, object>? properties = null,
@@ -445,7 +445,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// Registers a completion callback for the specified activity.
     /// </summary>
-    internal void AddCompletionCallback(ActivityExecutionContext owner, ActivityNode child, ActivityCompletionCallback? completionCallback = null, object? tag = null)
+    public void AddCompletionCallback(ActivityExecutionContext owner, ActivityNode child, ActivityCompletionCallback? completionCallback = null, object? tag = null)
     {
         var entry = new ActivityCompletionCallbackEntry(owner, child, completionCallback, tag);
         _completionCallbackEntries.Add(entry);
@@ -454,7 +454,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// Unregisters the completion callback for the specified owner and child activity.
     /// </summary>
-    internal ActivityCompletionCallbackEntry? PopCompletionCallback(ActivityExecutionContext owner, ActivityNode child)
+    public ActivityCompletionCallbackEntry? PopCompletionCallback(ActivityExecutionContext owner, ActivityNode child)
     {
         var entry = _completionCallbackEntries.FirstOrDefault(x => x.Owner == owner && x.Child == child);
 
@@ -465,12 +465,20 @@ public partial class WorkflowExecutionContext : IExecutionContext
         return entry;
     }
 
-    internal void RemoveCompletionCallback(ActivityCompletionCallbackEntry entry) => _completionCallbackEntries.Remove(entry);
+    public void RemoveCompletionCallback(ActivityCompletionCallbackEntry entry) => _completionCallbackEntries.Remove(entry);
 
-    internal void RemoveCompletionCallbacks(IEnumerable<ActivityCompletionCallbackEntry> entries)
+    public void RemoveCompletionCallbacks(IEnumerable<ActivityCompletionCallbackEntry> entries)
     {
         foreach (var entry in entries.ToList())
             _completionCallbackEntries.Remove(entry);
+    }
+
+    /// <summary>
+    /// Clears all activity completion callback entries from the workflow execution context.
+    /// </summary>
+    public void ClearCompletionCallbacks()
+    {
+        _completionCallbackEntries.Clear();
     }
 
     /// <summary>

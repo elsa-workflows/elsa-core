@@ -28,6 +28,6 @@ public class Complete : ElsaEndpoint<Request, Response>
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         await _taskReporter.ReportCompletionAsync(request.TaskId, request.Result, cancellationToken);
-        if (!HttpContext.Response.HasStarted) await Send.OkAsync(cancellationToken);
+        if (!HttpContext.Response.HasStarted) await Send.OkAsync(cancellation: cancellationToken);
     }
 }

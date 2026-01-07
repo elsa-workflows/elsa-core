@@ -39,14 +39,14 @@ internal class Trigger : ElsaEndpoint<Request>
         if (workflowExecutionMode == WorkflowExecutionMode.Asynchronous)
         {
             await _eventPublisher.PublishAsync(eventName, correlationId, workflowInstanceId, activityInstanceId, input, true, cancellationToken);
-            await Send.OkAsync(cancellationToken);
+            await Send.OkAsync(cancellation: cancellationToken);
         }
         else
         {
             await _eventPublisher.PublishAsync(eventName, correlationId, workflowInstanceId, activityInstanceId, input, false, cancellationToken);
 
             if (!HttpContext.Response.HasStarted)
-                await Send.OkAsync(cancellationToken);
+                await Send.OkAsync(cancellation: cancellationToken);
         }
     }
 }

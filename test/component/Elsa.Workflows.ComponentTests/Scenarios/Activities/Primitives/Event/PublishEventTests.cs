@@ -46,7 +46,7 @@ public class PublishEventTests : AppComponentTest
         var correlationId = Guid.NewGuid().ToString();
 
         // Act - Publish global event
-        await RunWorkflowAsync(PublishGlobalEventWorkflow.DefinitionId, correlationId);
+        await _workflowRunner.RunWorkflowAsync(PublishGlobalEventWorkflow.DefinitionId, correlationId);
 
         // Assert - Consumer workflow was triggered and completed
         var consumerInstance = await GetSingleWorkflowInstanceAsync(ConsumerWorkflow.DefinitionId, correlationId);
@@ -61,7 +61,7 @@ public class PublishEventTests : AppComponentTest
         var correlationId = Guid.NewGuid().ToString();
 
         // Act - Publish global event with payload
-        await RunWorkflowAsync(PublishGlobalEventWorkflow.DefinitionId, correlationId);
+        await _workflowRunner.RunWorkflowAsync(PublishGlobalEventWorkflow.DefinitionId, correlationId);
 
         // Assert - Consumer workflow received the payload
         var consumerInstance = await GetSingleWorkflowInstanceAsync(ConsumerWorkflow.DefinitionId, correlationId);
@@ -76,17 +76,6 @@ public class PublishEventTests : AppComponentTest
         var payloadJson = JsonSerializer.Serialize(receivedPayload);
         Assert.Contains("\"Status\"", payloadJson);
         Assert.Contains("\"Shipped\"", payloadJson);
-    }
-
-    private async Task RunWorkflowAsync(string definitionId, string? correlationId = null)
-    {
-        var workflowClient = await _workflowRuntime.CreateClientAsync();
-        await workflowClient.CreateInstanceAsync(new()
-        {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Published),
-            CorrelationId = correlationId
-        });
-        await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
     }
 
     private async Task<WorkflowInstance> GetSingleWorkflowInstanceAsync(string definitionId, string correlationId, int timeoutMs = 5000)

@@ -45,12 +45,19 @@ public class BackgroundCommandSenderHostedService : BackgroundService
         }
 
         // Main dispatcher loop: read from the input channel and distribute to worker channels
-        await foreach (var commandContext in _commandsChannel.Reader.ReadAllAsync(cancellationToken))
+        try
         {
-            var output = _outputs[index];
-            await output.Writer.WriteAsync(commandContext, cancellationToken);
-            // Round-robin distribution - move to next worker
-            index = (index + 1) % _workerCount;
+            await foreach (var commandContext in _commandsChannel.Reader.ReadAllAsync(cancellationToken))
+            {
+                var output = _outputs[index];
+                await output.Writer.WriteAsync(commandContext, cancellationToken);
+                // Round-robin distribution - move to next worker
+                index = (index + 1) % _workerCount;
+            }
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, "An operation was cancelled while processing the queue");
         }
 
         // If the input channel is completed, complete all worker channels
@@ -61,31 +68,38 @@ public class BackgroundCommandSenderHostedService : BackgroundService
     private async Task ReadOutputAsync(Channel<CommandContext> output, CancellationToken cancellationToken)
     {
         // Worker task: process commands from the worker's channel
-        await foreach (var commandContext in output.Reader.ReadAllAsync(cancellationToken))
+        try
         {
-            try
+            await foreach (var commandContext in output.Reader.ReadAllAsync(cancellationToken))
             {
-                // Create a fresh scope for each command to ensure proper service lifetime
-                using var scope = _scopeFactory.CreateScope();
-                var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
+                try
+                {
+                    // Create a fresh scope for each command to ensure proper service lifetime
+                    using var scope = _scopeFactory.CreateScope();
+                    var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
 
-                // Link the service cancellation token with the command's token to ensure proper cancellation
-                using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
-                    cancellationToken,
-                    commandContext.CancellationToken);
+                    // Link the service cancellation token with the command's token to ensure proper cancellation
+                    using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+                        cancellationToken,
+                        commandContext.CancellationToken);
 
-                // Process the command using the command sender service with the linked token
-                await commandSender.SendAsync(
-                    commandContext.Command,
-                    CommandStrategy.Default,
-                    commandContext.Headers,
-                    linkedTokenSource.Token);
+                    // Process the command using the command sender service with the linked token
+                    await commandSender.SendAsync(
+                        commandContext.Command,
+                        CommandStrategy.Default,
+                        commandContext.Headers,
+                        linkedTokenSource.Token);
+                }
+                catch (Exception e)
+                {
+                    // Log errors but continue processing other commands
+                    _logger.LogError(e, "An unhandled exception occurred while processing the queue");
+                }
             }
-            catch (Exception e)
-            {
-                // Log errors but continue processing other commands
-                _logger.LogError(e, "An unhandled exception occurred while processing the queue");
-            }
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, "An operation was cancelled while processing the queue");
         }
     }
 }

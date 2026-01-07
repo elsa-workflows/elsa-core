@@ -21,6 +21,6 @@ internal class Cancel(IWorkflowCancellationService workflowCancellationService)
     {
         await workflowCancellationService.CancelWorkflowAsync(request.Id, cancellationToken);
         
-        await Send.OkAsync(cancellationToken);
+        await Send.OkAsync(cancellation: cancellationToken);
     }
 }

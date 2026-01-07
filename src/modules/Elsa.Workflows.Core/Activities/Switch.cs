@@ -56,19 +56,37 @@ public class Switch : Activity
         var matchingCases = (await FindMatchingCasesAsync(context.ExpressionExecutionContext)).ToList();
         var hasAnyMatches = matchingCases.Any();
         var mode = context.Get(Mode);
-        var results = mode == SwitchMode.MatchFirst ? hasAnyMatches ? new[] { matchingCases.First() } : Array.Empty<SwitchCase>() : matchingCases.ToArray();
+        var results = mode == SwitchMode.MatchFirst 
+            ? hasAnyMatches 
+                ? new[] { matchingCases.First() } 
+                : Array.Empty<SwitchCase>() 
+            : matchingCases.ToArray();
+
+        var scheduledActivityIds = new HashSet<string>();
 
         if (hasAnyMatches)
         {
             foreach (var result in results)
             {
-                await context.ScheduleActivityAsync(result.Activity, OnChildActivityCompletedAsync);
-            }
+                if (result.Activity == null)
+                    continue;
 
-            return;
+                await context.ScheduleActivityAsync(result.Activity, OnChildActivityCompletedAsync);
+                scheduledActivityIds.Add(result.Activity.Id);
+            }
+        }
+        else if (Default != null)
+        {
+            await context.ScheduleActivityAsync(Default, OnChildActivityCompletedAsync);
+            scheduledActivityIds.Add(Default.Id);
         }
 
-        await context.ScheduleActivityAsync(Default, OnChildActivityCompletedAsync);
+        context.SetProperty("ScheduledActivityIds", scheduledActivityIds);
+
+        if (!scheduledActivityIds.Any())
+        {
+            await context.CompleteActivityAsync();
+        }
     }
 
     private async Task<IEnumerable<SwitchCase>> FindMatchingCasesAsync(ExpressionExecutionContext context)
@@ -89,9 +107,19 @@ public class Switch : Activity
         return matchingCases;
     }
 
+    /// <summary>
+    /// Tracks the completion of scheduled child activities and completes the Switch activity only after all scheduled children have finished executing.
+    /// </summary>
     private async ValueTask OnChildActivityCompletedAsync(ActivityCompletedContext context)
     {
-        await context.TargetContext.CompleteActivityAsync();
+        var scheduledActivityIds = context.TargetContext.GetProperty<HashSet<string>>("ScheduledActivityIds");
+
+        if (scheduledActivityIds != null 
+            && scheduledActivityIds.Remove(context.ChildContext.Activity.Id) 
+            && scheduledActivityIds.Count == 0)
+        {
+            await context.TargetContext.CompleteActivityAsync();
+        }
     }
 }
 

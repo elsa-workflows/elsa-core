@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Elsa.Common.Models;
 using Elsa.Testing.Shared.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
@@ -53,6 +54,17 @@ public class AsyncWorkflowRunner : IDisposable
         var signalName = GetSignalName(workflowInstanceId);
         var workflowExecutionContext = await _signalManager.WaitAsync<WorkflowExecutionContext>(signalName);
         return new(workflowExecutionContext, _activityExecutionRecords.Values.ToList());
+    }
+
+    public async Task RunWorkflowAsync(string definitionId, string? correlationId = null)
+    {
+        var workflowClient = await _workflowRuntime.CreateClientAsync();
+        await workflowClient.CreateInstanceAsync(new()
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Published),
+            CorrelationId = correlationId
+        });
+        await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
     }
 
     private void OnWorkflowStateCommitted(object? sender, WorkflowStateCommittedEventArgs e)
