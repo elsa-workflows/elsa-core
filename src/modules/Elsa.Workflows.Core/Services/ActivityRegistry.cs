@@ -75,7 +75,14 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     public async Task RefreshDescriptorsAsync(IEnumerable<IActivityProvider> activityProviders, CancellationToken cancellationToken = default)
     {
         var providersDictionary = new ConcurrentDictionary<Type, ICollection<ActivityDescriptor>>();
-        var activityDescriptors = new ConcurrentDictionary<(string Type, int Version), ActivityDescriptor>(_activityDescriptors);
+        var activityDescriptors = new ConcurrentDictionary<(string Type, int Version), ActivityDescriptor>();
+        
+        // First, re-add manual descriptors without logging warnings (since we're starting fresh).
+        foreach (var manualDescriptor in _manualActivityDescriptors)
+        {
+            activityDescriptors[(manualDescriptor.TypeName, manualDescriptor.Version)] = manualDescriptor;
+        }
+        
         foreach (var activityProvider in activityProviders)
         {
             var descriptors = (await activityProvider.GetDescriptorsAsync(cancellationToken)).ToList();
