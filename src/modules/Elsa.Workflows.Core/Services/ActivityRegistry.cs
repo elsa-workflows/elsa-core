@@ -77,7 +77,20 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         var providersDictionary = new ConcurrentDictionary<Type, ICollection<ActivityDescriptor>>();
         var activityDescriptors = new ConcurrentDictionary<(string Type, int Version), ActivityDescriptor>();
         
-        // First, re-add manual descriptors without logging warnings (since we're starting fresh).
+        // First, preserve manually registered descriptors (from GetType() provider) without logging warnings (since we're starting fresh).
+        if (_providedActivityDescriptors.TryGetValue(GetType(), out var manualDescriptors))
+        {
+            var preservedManualDescriptors = new List<ActivityDescriptor>();
+            providersDictionary[GetType()] = preservedManualDescriptors;
+            
+            foreach (var manualDescriptor in manualDescriptors)
+            {
+                activityDescriptors[(manualDescriptor.TypeName, manualDescriptor.Version)] = manualDescriptor;
+                preservedManualDescriptors.Add(manualDescriptor);
+            }
+        }
+        
+        // Also add descriptors from _manualActivityDescriptors (from RegisterAsync(Type) calls).
         foreach (var manualDescriptor in _manualActivityDescriptors)
         {
             activityDescriptors[(manualDescriptor.TypeName, manualDescriptor.Version)] = manualDescriptor;
