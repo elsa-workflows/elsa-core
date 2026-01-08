@@ -36,6 +36,7 @@ const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated requests.
 const bool useMultitenancy = false;
 const bool disableVariableWrappers = false;
+var useOidc = false;
 
 ObjectConverter.StrictMode = true;
 
@@ -45,12 +46,15 @@ var configuration = builder.Configuration;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 
-// Add authentication
-services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+if (useOidc)
+{
+    // Add authentication
+    services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
-services.AddAuthorization();
-services.AddScoped<IClaimsTransformation, PermissionsClaimsTransformation>();
+    services.AddAuthorization();
+    services.AddScoped<IClaimsTransformation, PermissionsClaimsTransformation>();
+}
 
 if (builder.Environment.IsDevelopment())
 {
@@ -62,18 +66,22 @@ if (builder.Environment.IsDevelopment())
 services
     .AddElsa(elsa =>
     {
+        if (!useOidc)
+        {
+            elsa.UseIdentity(identity =>
+                {
+                    identity.TokenOptions += options => identityTokenSection.Bind(options);
+                    identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
+                    identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
+                    identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
+                })
+                .UseDefaultAuthentication();
+        }
+        
         elsa
             .AddActivitiesFrom<Program>()
             .AddActivityHost<Penguin>()
             .AddWorkflowsFrom<Program>()
-            // .UseIdentity(identity =>
-            // {
-            //     identity.TokenOptions += options => identityTokenSection.Bind(options);
-            //     identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
-            //     identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
-            //     identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
-            // })
-            // .UseDefaultAuthentication()
             .UseWorkflows(workflows =>
             {
                 workflows.UseCommitStrategies(strategies =>
