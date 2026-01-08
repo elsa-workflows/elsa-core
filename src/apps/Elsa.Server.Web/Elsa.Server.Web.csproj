@@ -1,42 +1,47 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
     <ItemGroup>
-		<ProjectReference Include="..\..\modules\Elsa.Caching\Elsa.Caching.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Common\Elsa.Common.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Dsl.ElsaScript\Elsa.Dsl.ElsaScript.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Expressions\Elsa.Expressions.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage.ElsaScript\Elsa.WorkflowProviders.BlobStorage.ElsaScript.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Expressions.CSharp\Elsa.Expressions.CSharp.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Expressions.Liquid\Elsa.Expressions.Liquid.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Expressions.Python\Elsa.Expressions.Python.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj" />
-		<ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Caching\Elsa.Caching.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Common\Elsa.Common.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Dsl.ElsaScript\Elsa.Dsl.ElsaScript.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Expressions\Elsa.Expressions.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage.ElsaScript\Elsa.WorkflowProviders.BlobStorage.ElsaScript.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Expressions.CSharp\Elsa.Expressions.CSharp.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Expressions.Liquid\Elsa.Expressions.Liquid.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Expressions.Python\Elsa.Expressions.Python.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj"/>
     </ItemGroup>
 
-	<ItemGroup>
-      <Folder Include="App_Data\" />
+    <ItemGroup>
+        <Folder Include="App_Data\"/>
     </ItemGroup>
 
-	<ItemGroup>
-	  <None Update="Workflows\hello-world.elsa">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
-	  <None Update="Workflows\hello-world-http.elsa">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
-	  <None Update="Workflows\for-loop.elsa">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
-	</ItemGroup>
+    <ItemGroup>
+        <None Update="Workflows\hello-world.elsa">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Workflows\hello-world-http.elsa">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Workflows\for-loop.elsa">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect"/>
+        <PackageReference Include="Microsoft.Identity.Web"/>
+    </ItemGroup>
 
 </Project>

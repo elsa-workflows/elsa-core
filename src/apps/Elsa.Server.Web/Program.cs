@@ -4,6 +4,7 @@ using Elsa.Common.RecurringTasks;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Features.Services;
+using Elsa.Identity.Claims;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
@@ -24,7 +25,11 @@ using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
+using Microsoft.Identity.Web;
+using Microsoft.IdentityModel.Logging;
 
 // ReSharper disable RedundantAssignment
 const bool useReadOnlyMode = false;
@@ -40,6 +45,19 @@ var configuration = builder.Configuration;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 
+// Add authentication
+services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+
+services.AddAuthorization();
+services.AddScoped<IClaimsTransformation, PermissionsClaimsTransformation>();
+
+if (builder.Environment.IsDevelopment())
+{
+    IdentityModelEventSource.ShowPII = true;
+    IdentityModelEventSource.LogCompleteSecurityArtifact = true;
+}
+
 // Add Elsa services.
 services
     .AddElsa(elsa =>
@@ -48,14 +66,14 @@ services
             .AddActivitiesFrom<Program>()
             .AddActivityHost<Penguin>()
             .AddWorkflowsFrom<Program>()
-            .UseIdentity(identity =>
-            {
-                identity.TokenOptions += options => identityTokenSection.Bind(options);
-                identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
-                identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
-                identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
-            })
-            .UseDefaultAuthentication()
+            // .UseIdentity(identity =>
+            // {
+            //     identity.TokenOptions += options => identityTokenSection.Bind(options);
+            //     identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
+            //     identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
+            //     identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
+            // })
+            // .UseDefaultAuthentication()
             .UseWorkflows(workflows =>
             {
                 workflows.UseCommitStrategies(strategies =>
