@@ -33,7 +33,7 @@ using Microsoft.IdentityModel.Logging;
 
 // ReSharper disable RedundantAssignment
 const bool useReadOnlyMode = false;
-const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated requests.
+const bool useSignalR = true; // Disabled until Elsa Studio sends authenticated requests.
 const bool useMultitenancy = false;
 const bool disableVariableWrappers = false;
 var useOidc = false;
@@ -76,6 +76,11 @@ services
                     identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
                 })
                 .UseDefaultAuthentication();
+        }
+
+        if (useSignalR)
+        {
+            elsa.UseRealTimeWorkflows();
         }
         
         elsa
