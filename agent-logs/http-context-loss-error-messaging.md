@@ -89,6 +89,6 @@ A new integration test project has been created at `test/integration/Elsa.Http.I
 2. `WriteFileHttpResponse_WithNoHttpContext_ShouldRecordIncident` - Verifies that WriteFileHttpResponse records an incident when HTTP context is null
 
 **Current Status:**
-The test project compiles successfully but tests are not being discovered by the xUnit test runner. Further investigation is needed to resolve the test discovery issue. The test code follows the same patterns as other integration tests in the solution and should work once the discovery issue is resolved.
+The test project compiles and runs successfully. The integration tests are discovered by the xUnit test runner and currently all tests pass (2 tests passing), in line with the repository README.
 
 
