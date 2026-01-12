@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using Elsa.Workflows.Exceptions;
 
 namespace Elsa.Activities.UnitTests.Http;
 
@@ -213,7 +214,7 @@ public class WriteFileHttpResponseTests
         // Assert
         Assert.True(context.IsCompleted);
         
-        // Range processing and ETag would be handled by FileStreamResult
+        // Range processing and ETag should be handled by FileStreamResult
         Assert.True(httpContext.Response.Headers.ContainsKey("ETag"));
     }
 
@@ -279,7 +280,7 @@ public class WriteFileHttpResponseTests
     }
 
     [Fact]
-    public async Task Should_Create_Bookmark_When_No_HttpContext_Available()
+    public async Task Should_Fault_When_No_HttpContext_Available()
     {
         // Arrange
         var activity = new WriteFileHttpResponse();
@@ -292,61 +293,8 @@ public class WriteFileHttpResponseTests
             AddMockServices(services);
         });
 
-        // Act
-        var context = await fixture.ExecuteAsync();
-
-        // Assert
-        Assert.False(context.IsCompleted);
-        var bookmarks = context.WorkflowExecutionContext.Bookmarks.ToList();
-        Assert.Single(bookmarks);
-    }
-
-    [Fact]
-    public async Task Should_Resume_From_Bookmark_With_HttpContext()
-    {
-        // Arrange
-        var activity = new WriteFileHttpResponse();
-        var testContent = "Hello World"u8.ToArray();
-        activity.Content = new(testContent);
-        
-        var fixture = new ActivityTestFixture(activity);
-        var httpContext = CreateMockHttpContext();
-        
-        // First execution - should create bookmark
-        fixture.ConfigureServices(services =>
-        {
-            var mockHttpContextAccessor = Substitute.For<IHttpContextAccessor>();
-            mockHttpContextAccessor.HttpContext.Returns((HttpContext?)null);
-            services.AddSingleton(mockHttpContextAccessor);
-            AddMockServices(services);
-        });
-        
-        var firstContext = await fixture.ExecuteAsync();
-        Assert.False(firstContext.IsCompleted);
-
-        // Resume execution with HttpContext available
-        fixture.ConfigureServices(services =>
-        {
-            var newHttpContextAccessor = Substitute.For<IHttpContextAccessor>();
-            newHttpContextAccessor.HttpContext.Returns(httpContext);
-            services.AddSingleton(newHttpContextAccessor);
-            AddMockServices(services);
-        });
-
-        // Act - simulate resume by executing with bookmark context
-        var newFixture = new ActivityTestFixture(activity);
-        newFixture.ConfigureServices(services =>
-        {
-            var resumeHttpContextAccessor = Substitute.For<IHttpContextAccessor>();
-            resumeHttpContextAccessor.HttpContext.Returns(httpContext);
-            services.AddSingleton(resumeHttpContextAccessor);
-            AddMockServices(services);
-        });
-        
-        var resumedContext = await newFixture.ExecuteAsync();
-
-        // Assert
-        Assert.True(resumedContext.IsCompleted);
+        // Act + Assert
+        await Assert.ThrowsAsync<FaultException>(() => fixture.ExecuteAsync());
     }
 
     [Fact] 
