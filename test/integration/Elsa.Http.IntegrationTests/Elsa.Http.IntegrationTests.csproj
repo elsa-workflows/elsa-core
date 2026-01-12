@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     
     <PropertyGroup>
-        <ProjectGuid>{8c4f6a2d-1e9f-4b3c-9d8e-7f5a6b4c3d2e}</ProjectGuid>
         <Include>[Elsa.Http]*</Include>
         <Threshold>1</Threshold>
     </PropertyGroup>
