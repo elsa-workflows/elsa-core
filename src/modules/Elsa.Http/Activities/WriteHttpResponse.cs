@@ -82,24 +82,11 @@ public class WriteHttpResponse : Activity
 
         if (httpContext == null)
         {
-            // We're executing in a non-HTTP context (e.g. in a virtual actor).
-            // Create a bookmark to allow the invoker to export the state and resume execution from there.
-            context.CreateBookmark(OnResumeAsync, BookmarkMetadata.HttpCrossBoundary);
-            return;
-        }
-
-        await WriteResponseAsync(context, httpContext.Response);
-    }
-
-    private async ValueTask OnResumeAsync(ActivityExecutionContext context)
-    {
-        var httpContextAccessor = context.GetRequiredService<IHttpContextAccessor>();
-        var httpContext = httpContextAccessor.HttpContext;
-
-        if (httpContext == null)
-        {
-            // We're not in an HTTP context, so let's fail.
-            throw new FaultException(HttpFaultCodes.NoHttpContext, HttpFaultCategories.Http, DefaultFaultTypes.System, "Cannot execute in a non-HTTP context");
+            throw new FaultException(
+                HttpFaultCodes.NoHttpContext, 
+                HttpFaultCategories.Http, 
+                DefaultFaultTypes.System, 
+                "The HTTP context was lost during workflow execution. This typically occurs when a workflow initiated from an HTTP endpoint is suspended and later resumed in a different execution context (e.g., background processing, virtual actor, or after a workflow transition). The original HTTP request context that expects a response is no longer available.");
         }
 
         await WriteResponseAsync(context, httpContext.Response);
