@@ -22,7 +22,10 @@ namespace Elsa.Workflows.Runtime.ShellFeatures;
 /// <summary>
 /// Installs and configures workflow runtime features.
 /// </summary>
-[ShellFeature(DependsOn = ["Workflows"])]
+[ShellFeature(
+    DisplayName = "Workflow Runtime",
+    Description = "Provides workflow execution runtime and scheduling capabilities",
+    DependsOn = ["Workflows"])]
 public class WorkflowRuntimeFeature : IShellFeature
 {
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
