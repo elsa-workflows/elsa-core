@@ -5,6 +5,9 @@
     </PropertyGroup>
     <!-- Conditional package versions for .NET 8/9 compatibility -->
     <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net9.0'">
+        <PackageVersion Include="FastEndpoints" Version="7.0.0"/>
+        <PackageVersion Include="FastEndpoints.Security" Version="7.0.0"/>
+        <PackageVersion Include="FastEndpoints.Swagger" Version="7.0.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="9.0.11"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components" Version="9.0.11"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.11"/>
@@ -43,6 +46,9 @@
     </ItemGroup>
     <!-- .NET 10 specific package versions -->
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        <PackageVersion Include="FastEndpoints" Version="7.2.0"/>
+        <PackageVersion Include="FastEndpoints.Security" Version="7.2.0"/>
+        <PackageVersion Include="FastEndpoints.Swagger" Version="7.2.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="10.0.1"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components" Version="10.0.1"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.1"/>
@@ -103,9 +109,6 @@
         <PackageVersion Include="DistributedLock.Core" Version="1.0.8"/>
         <PackageVersion Include="DistributedLock.FileSystem" Version="1.0.3"/>
         <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="9.2.2"/>
-        <PackageVersion Include="FastEndpoints" Version="7.1.1"/>
-        <PackageVersion Include="FastEndpoints.Security" Version="7.1.1"/>
-        <PackageVersion Include="FastEndpoints.Swagger" Version="7.1.1"/>
         <PackageVersion Include="FluentStorage" Version="6.0.0"/>
         <PackageVersion Include="FluentStorage.Azure.Blobs" Version="6.0.0"/>
         <PackageVersion Include="Fluid.Core" Version="2.31.0"/>

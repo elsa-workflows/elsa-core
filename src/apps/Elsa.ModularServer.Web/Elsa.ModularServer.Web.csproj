@@ -4,6 +4,8 @@
 <!--    </ItemGroup>-->
     <ItemGroup>
       <ProjectReference Include="..\..\..\..\..\..\sfmskywalker\cshells\main\src\CShells.AspNetCore\CShells.AspNetCore.csproj" />
+      <ProjectReference Include="..\..\..\..\..\..\sfmskywalker\cshells\main\src\CShells.FastEndpoints\CShells.FastEndpoints.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
       <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
     </ItemGroup>
 </Project>
