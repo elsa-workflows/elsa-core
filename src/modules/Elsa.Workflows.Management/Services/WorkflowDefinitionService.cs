@@ -9,17 +9,16 @@ namespace Elsa.Workflows.Management.Services;
 public class WorkflowDefinitionService(
     IWorkflowDefinitionStore workflowDefinitionStore,
     IWorkflowGraphBuilder workflowGraphBuilder,
-    Func<IEnumerable<IWorkflowMaterializer>> materializers)
+    IMaterializerRegistry materializerRegistry)
     : IWorkflowDefinitionService
 {
     /// <inheritdoc />
     public async Task<WorkflowGraph> MaterializeWorkflowAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
-        var workflowMaterializers = materializers();
-        var materializer = workflowMaterializers.FirstOrDefault(x => x.Name == definition.MaterializerName);
+        var materializer = materializerRegistry.GetMaterializer(definition.MaterializerName);
 
         if (materializer == null)
-            throw new("Provider not found");
+            throw new($"Materializer '{definition.MaterializerName}' not found. The materializer may be disabled or not registered.");
 
         var workflow = await materializer.MaterializeAsync(definition, cancellationToken);
         return await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
