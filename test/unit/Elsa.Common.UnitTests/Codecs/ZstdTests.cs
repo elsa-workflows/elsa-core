@@ -21,14 +21,15 @@ public class ZstdTests
         Assert.NotEqual(input, result);
     }
 
-    [Fact]
-    public async Task DecompressAsync_WithCompressedString_ReturnsOriginalString()
+    [Theory]
+    [InlineData("Hello, World!")]
+    [InlineData("")]
+    [InlineData("Hello! 你好! مرحبا! Здравствуйте! 🎉🎊")]
+    [InlineData("{\"name\":\"John Doe\",\"age\":30,\"city\":\"New York\",\"items\":[1,2,3,4,5]}")]
+    public async Task CompressDecompress_RoundTrip_PreservesOriginalData(string original)
     {
-        // Arrange
-        var original = "Hello, World!";
-        var compressed = await _codec.CompressAsync(original);
-
         // Act
+        var compressed = await _codec.CompressAsync(original);
         var decompressed = await _codec.DecompressAsync(compressed);
 
         // Assert
@@ -51,34 +52,6 @@ public class ZstdTests
     }
 
     [Fact]
-    public async Task CompressDecompress_WithEmptyString_WorksCorrectly()
-    {
-        // Arrange
-        var original = string.Empty;
-
-        // Act
-        var compressed = await _codec.CompressAsync(original);
-        var decompressed = await _codec.DecompressAsync(compressed);
-
-        // Assert
-        Assert.Equal(original, decompressed);
-    }
-
-    [Fact]
-    public async Task CompressDecompress_WithSpecialCharacters_WorksCorrectly()
-    {
-        // Arrange
-        var original = "Hello! 你好! مرحبا! Здравствуйте! 🎉🎊";
-
-        // Act
-        var compressed = await _codec.CompressAsync(original);
-        var decompressed = await _codec.DecompressAsync(compressed);
-
-        // Assert
-        Assert.Equal(original, decompressed);
-    }
-
-    [Fact]
     public async Task CompressAsync_MultipleCallsWithSameInput_ProducesConsistentResults()
     {
         // Arrange
@@ -90,19 +63,5 @@ public class ZstdTests
 
         // Assert
         Assert.Equal(result1, result2);
-    }
-
-    [Fact]
-    public async Task CompressDecompress_WithJsonData_WorksCorrectly()
-    {
-        // Arrange
-        var original = "{\"name\":\"John Doe\",\"age\":30,\"city\":\"New York\",\"items\":[1,2,3,4,5]}";
-
-        // Act
-        var compressed = await _codec.CompressAsync(original);
-        var decompressed = await _codec.DecompressAsync(compressed);
-
-        // Assert
-        Assert.Equal(original, decompressed);
     }
 }
