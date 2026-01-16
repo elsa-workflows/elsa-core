@@ -5,7 +5,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <ElsaStudioVersion>3.5.1-preview-3.5.1-1211-hotfix1.1423</ElsaStudioVersion>
-    <MicrosoftVersion>9.0.8</MicrosoftVersion>
+    <MicrosoftVersion>9.0.9</MicrosoftVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Antlr4.Runtime.Standard" Version="4.13.1" />
