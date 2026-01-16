@@ -4,7 +4,7 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <PropertyGroup>
-    <ElsaStudioVersion>3.5.1-preview-3.5.1-1211-hotfix1.1423</ElsaStudioVersion>
+    <ElsaStudioVersion>3.5.1-preview-3.5.1-1211-hotfix1.1425</ElsaStudioVersion>
     <MicrosoftVersion>9.0.9</MicrosoftVersion>
   </PropertyGroup>
   <ItemGroup>
@@ -92,8 +92,8 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.12.0-beta.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.12.0-beta.1" />
-    <PackageVersion Include="Polly" Version="8.6.0" />
-    <PackageVersion Include="Polly.Extensions" Version="8.6.0" />
+    <PackageVersion Include="Polly" Version="8.6.3" />
+    <PackageVersion Include="Polly.Extensions" Version="8.6.3" />
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
     <PackageVersion Include="PolySharp" Version="1.15.0" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0-preview.3.efcore.9.0.0" />
