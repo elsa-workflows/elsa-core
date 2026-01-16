@@ -5,10 +5,8 @@ on:
     branches:
       - 'main'
       - 'bug/*'
-      - 'perf/*'
       - 'patch/*'
       - 'feat/*'
-      - 'enh/*'
       - 'rc/*'
       - 'develop/*'
       - 'codex/*'
