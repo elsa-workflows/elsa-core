@@ -1,6 +1,7 @@
 using Elsa.Common;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
@@ -20,7 +21,8 @@ public class WorkflowDefinitionPublisher(
     IIdentityGenerator identityGenerator,
     IActivitySerializer activitySerializer,
     IMediator mediator,
-    ISystemClock systemClock)
+    ISystemClock systemClock,
+    ITenantAccessor tenantAccessor)
     : IWorkflowDefinitionPublisher
 {
     /// <inheritdoc />
@@ -207,6 +209,7 @@ public class WorkflowDefinitionPublisher(
     /// <inheritdoc />
     public async Task<WorkflowDefinition> SaveDraftAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
+        definition.TenantId = tenantAccessor.Tenant?.Id;
         var draft = definition;
         var definitionId = definition.DefinitionId;
         var filter = new WorkflowDefinitionFilter
