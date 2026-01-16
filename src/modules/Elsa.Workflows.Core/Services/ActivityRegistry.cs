@@ -77,7 +77,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         var providersDictionary = new ConcurrentDictionary<Type, ICollection<ActivityDescriptor>>();
         var activityDescriptors = new ConcurrentDictionary<(string Type, int Version), ActivityDescriptor>();
         
-        // First, preserve manually registered descriptors (from GetType() provider) without logging warnings (since we're starting fresh).
+        // First, preserve manually registered descriptors from Register/RegisterAsync(Type) calls, which are stored under the ActivityRegistry type (GetType()) as the provider key, without logging warnings (since we're starting fresh).
         if (_providedActivityDescriptors.TryGetValue(GetType(), out var manualDescriptors))
         {
             var preservedManualDescriptors = new List<ActivityDescriptor>();
@@ -90,10 +90,24 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
             }
         }
         
-        // Also add descriptors from _manualActivityDescriptors (from RegisterAsync(Type) calls).
-        foreach (var manualDescriptor in _manualActivityDescriptors)
+        // Also add descriptors from _manualActivityDescriptors (from RegisterAsync(Type activityType) calls).
+        // These should also be tracked under the GetType() provider key to keep providersDictionary consistent.
+        if (!_manualActivityDescriptors.Count.Equals(0))
         {
-            activityDescriptors[(manualDescriptor.TypeName, manualDescriptor.Version)] = manualDescriptor;
+            if (!providersDictionary.TryGetValue(GetType(), out var manualProviderDescriptors))
+            {
+                manualProviderDescriptors = new List<ActivityDescriptor>();
+                providersDictionary[GetType()] = manualProviderDescriptors;
+            }
+            
+            foreach (var manualDescriptor in _manualActivityDescriptors)
+            {
+                activityDescriptors[(manualDescriptor.TypeName, manualDescriptor.Version)] = manualDescriptor;
+                
+                // Avoid adding duplicates to the provider list if the descriptor was already preserved.
+                if (!manualProviderDescriptors.Contains(manualDescriptor))
+                    manualProviderDescriptors.Add(manualDescriptor);
+            }
         }
         
         foreach (var activityProvider in activityProviders)
