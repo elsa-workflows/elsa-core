@@ -12,6 +12,7 @@ on:
       - 'rc/*'
       - 'develop/*'
       - 'codex/*'
+      - '*hotfix*'
   release:
     types: [ prereleased, published ]
 env:
