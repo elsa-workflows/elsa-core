@@ -92,7 +92,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         
         // Also add descriptors from _manualActivityDescriptors (from RegisterAsync(Type activityType) calls).
         // These should also be tracked under the GetType() provider key to keep providersDictionary consistent.
-        if (!_manualActivityDescriptors.Count.Equals(0))
+        if (_manualActivityDescriptors.Count > 0)
         {
             if (!providersDictionary.TryGetValue(GetType(), out var manualProviderDescriptors))
             {
