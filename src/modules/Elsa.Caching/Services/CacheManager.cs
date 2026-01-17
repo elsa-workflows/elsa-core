@@ -24,8 +24,21 @@ public class CacheManager(IMemoryCache memoryCache, IChangeTokenSignaler changeT
     }
     
     /// <inheritdoc />
-    public async Task<TItem?> GetOrCreateAsync<TItem>(object key, Func<ICacheEntry, Task<TItem>> factory)
+    public async Task<TItem?> FindOrCreateAsync<TItem>(object key, Func<ICacheEntry, Task<TItem>> factory)
     {
         return await memoryCache.GetOrCreateAsync(key, async entry => await factory(entry));
+    }
+
+    /// <summary>
+    /// Retrieves a cached item by the specified key or creates a new one using the provided factory function.
+    /// </summary>
+    /// <param name="key">The key used to identify the cached item.</param>
+    /// <param name="factory">A factory function that provides the value to be cached if it does not already exist.</param>
+    /// <typeparam name="TItem">The type of the item to retrieve or create.</typeparam>
+    /// <returns>The cached or newly created item.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the factory function returns null.</exception>
+    public async Task<TItem> GetOrCreateAsync<TItem>(object key, Func<ICacheEntry, Task<TItem>> factory)
+    {
+        return await memoryCache.GetOrCreateAsync(key, async entry => await factory(entry)) ?? throw new InvalidOperationException("Factory returned null.");
     }
 }
