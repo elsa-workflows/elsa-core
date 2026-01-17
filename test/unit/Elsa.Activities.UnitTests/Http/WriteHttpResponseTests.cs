@@ -5,6 +5,7 @@ using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using Elsa.Workflows.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -193,7 +194,7 @@ public class WriteHttpResponseTests
     }
 
     [Fact]
-    public async Task Should_Create_Bookmark_When_No_HttpContext_Available()
+    public async Task Should_Fault_When_No_HttpContext_Available()
     {
         // Arrange
         var activity = new WriteHttpResponse();
@@ -208,13 +209,8 @@ public class WriteHttpResponseTests
             services.AddSingleton(Substitute.For<IStimulusHasher>());
         });
 
-        // Act
-        var context = await fixture.ExecuteAsync();
-
-        // Assert
-        Assert.False(context.IsCompleted);
-        var bookmarks = context.WorkflowExecutionContext.Bookmarks.ToList();
-        Assert.Single(bookmarks);
+        // Act + Assert
+        await Assert.ThrowsAsync<FaultException>(() => fixture.ExecuteAsync());
     }
 
     [Fact]
