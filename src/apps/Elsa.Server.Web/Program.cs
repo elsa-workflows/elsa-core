@@ -80,7 +80,7 @@ services
             })
             .UseWorkflowsApi()
             .UseFluentStorageProvider()
-            //.UseElsaScriptBlobStorage()
+            .UseElsaScriptBlobStorage()
             .UseScheduling()
             .UseCSharp(options =>
             {
