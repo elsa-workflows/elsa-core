@@ -208,7 +208,7 @@ public class LocalWorkflowClient(
     private async Task<WorkflowGraph> GetWorkflowGraphAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken)
     {
         var result = await workflowDefinitionService.TryFindWorkflowGraphAsync(definitionHandle, cancellationToken);
-        if (!result.WorkflowDefinitionExists) throw new WorkflowGraphNotFoundException("Workflow graph not found.", definitionHandle);
+        if (!result.WorkflowDefinitionExists) throw new WorkflowDefinitionNotFoundException("Workflow definition not found.", definitionHandle);
         if (!result.WorkflowGraphExists) throw new WorkflowMaterializerNotFoundException("Workflow materializer not found.", definitionHandle);
         return result.WorkflowGraph!;
     }

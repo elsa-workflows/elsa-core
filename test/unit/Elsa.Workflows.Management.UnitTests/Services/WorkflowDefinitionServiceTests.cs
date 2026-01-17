@@ -22,7 +22,7 @@ public class WorkflowDefinitionServiceTests
     {
         // Arrange
         var definition = TestHelpers.CreateWorkflowDefinition("def-1", "test-materializer");
-        var (workflow, workflowGraph) = SetupMaterializerAndGraphBuilder(definition);
+        var (_, workflowGraph) = SetupMaterializerAndGraphBuilder(definition);
 
         var service = CreateService();
 
@@ -43,7 +43,7 @@ public class WorkflowDefinitionServiceTests
         var service = CreateService();
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(() => service.MaterializeWorkflowAsync(definition));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.MaterializeWorkflowAsync(definition));
         Assert.Contains("Materializer 'missing-materializer' not found", exception.Message);
     }
 

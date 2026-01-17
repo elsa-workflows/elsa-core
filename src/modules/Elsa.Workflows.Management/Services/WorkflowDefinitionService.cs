@@ -21,7 +21,7 @@ public class WorkflowDefinitionService(
         var materializer = materializerRegistry.GetMaterializer(definition.MaterializerName);
 
         if (materializer == null)
-            throw new($"Materializer '{definition.MaterializerName}' not found. The materializer may be disabled or not registered.");
+            throw new InvalidOperationException($"Materializer '{definition.MaterializerName}' not found. The materializer may be disabled or not registered.");
 
         var workflow = await materializer.MaterializeAsync(definition, cancellationToken);
         return await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
