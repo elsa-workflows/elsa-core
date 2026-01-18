@@ -56,9 +56,9 @@ public class BackgroundWorkflowCancellationDispatcherTests
         await _commandSender.Received(1).SendAsync(
             Arg.Any<CancelWorkflowsCommand>(),
             CommandStrategy.Background,
-            Arg.Is<IDictionary<object, object>>(headers => 
-                headers.ContainsKey(TenantHeaders.TenantIdKey) && 
-                headers[TenantHeaders.TenantIdKey].ToString() == tenantId),
+            Arg.Is<IDictionary<object, object>>(headers =>
+                headers.TryGetValue(TenantHeaders.TenantIdKey, out var value) &&
+                value?.ToString() == tenantId),
             Arg.Any<CancellationToken>());
     }
 
