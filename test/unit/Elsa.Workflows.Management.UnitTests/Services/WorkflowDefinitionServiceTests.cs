@@ -1,6 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Management.UnitTests.Helpers;
@@ -43,8 +44,7 @@ public class WorkflowDefinitionServiceTests
         var service = CreateService();
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.MaterializeWorkflowAsync(definition));
-        Assert.Contains("Materializer 'missing-materializer' not found", exception.Message);
+        await Assert.ThrowsAsync<WorkflowMaterializerNotFoundException>(() => service.MaterializeWorkflowAsync(definition));
     }
 
     [Fact]
