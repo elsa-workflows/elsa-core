@@ -1,3 +1,4 @@
+using CShells.AspNetCore.Configuration;
 using CShells.AspNetCore.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -5,7 +6,7 @@ var services = builder.Services;
 
 // Configure CShells for multi-tenancy with ASP.NET Core integration
 // This automatically registers shell-aware authentication and authorization providers
-builder.AddShells();
+builder.AddShells(shells => shells.WithAuthenticationAndAuthorization());
 services.AddHealthChecks();
 
 // Add minimal authentication and authorization services in root
