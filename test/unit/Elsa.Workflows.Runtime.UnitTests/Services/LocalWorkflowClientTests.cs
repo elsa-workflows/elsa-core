@@ -1,5 +1,6 @@
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
@@ -74,8 +75,7 @@ public class LocalWorkflowClientTests
             .Returns(findResult);
 
         // Act & Assert
-        await Assert.ThrowsAsync<WorkflowMaterializerNotFoundException>(() =>
-            client.CreateInstanceAsync(request));
+        await Assert.ThrowsAsync<WorkflowMaterializerNotFoundException>(() => client.CreateInstanceAsync(request));
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class LocalWorkflowClientTests
 
     private LocalWorkflowClient CreateClient()
     {
-        return new LocalWorkflowClient(
+        return new(
             "test-workflow-instance-id",
             _workflowInstanceManager,
             _workflowDefinitionService,

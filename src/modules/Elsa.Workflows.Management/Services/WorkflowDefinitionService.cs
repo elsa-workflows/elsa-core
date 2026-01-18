@@ -1,5 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
@@ -21,7 +22,7 @@ public class WorkflowDefinitionService(
         var materializer = materializerRegistry.GetMaterializer(definition.MaterializerName);
 
         if (materializer == null)
-            throw new InvalidOperationException($"Materializer '{definition.MaterializerName}' not found. The materializer may be disabled or not registered.");
+            throw new WorkflowMaterializerNotFoundException(definition.MaterializerName);
 
         var workflow = await materializer.MaterializeAsync(definition, cancellationToken);
         return await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);

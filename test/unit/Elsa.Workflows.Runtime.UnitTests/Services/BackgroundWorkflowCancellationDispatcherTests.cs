@@ -118,6 +118,6 @@ public class BackgroundWorkflowCancellationDispatcherTests
 
     private BackgroundWorkflowCancellationDispatcher CreateDispatcher()
     {
-        return new BackgroundWorkflowCancellationDispatcher(_commandSender, _tenantAccessor);
+        return new(_commandSender, _tenantAccessor);
     }
 }
