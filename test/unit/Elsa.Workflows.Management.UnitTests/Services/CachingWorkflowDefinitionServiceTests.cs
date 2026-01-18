@@ -481,7 +481,7 @@ public class CachingWorkflowDefinitionServiceTests
     private WorkflowGraphFindResult CreateWorkflowGraphFindResult(string definitionId = "def-1", string materializerName = "materializer")
     {
         var definition = TestHelpers.CreateWorkflowDefinition(definitionId, materializerName);
-        var (workflow, workflowGraph) = CreateWorkflowAndGraph(definitionId);
+        var (_, workflowGraph) = CreateWorkflowAndGraph(definitionId);
         return new WorkflowGraphFindResult(definition, workflowGraph);
     }
 }

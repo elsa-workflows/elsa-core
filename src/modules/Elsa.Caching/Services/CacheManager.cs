@@ -39,6 +39,6 @@ public class CacheManager(IMemoryCache memoryCache, IChangeTokenSignaler changeT
     /// <exception cref="InvalidOperationException">Thrown if the factory function returns null.</exception>
     public async Task<TItem> GetOrCreateAsync<TItem>(object key, Func<ICacheEntry, Task<TItem>> factory)
     {
-        return await memoryCache.GetOrCreateAsync(key, async entry => await factory(entry)) ?? throw new InvalidOperationException("Factory returned null.");
+        return await memoryCache.GetOrCreateAsync(key, async entry => await factory(entry)) ?? throw new InvalidOperationException($"Factory returned null for cache key: {key}.");
     }
 }

@@ -31,7 +31,7 @@ internal class GetByDefinitionId(IWorkflowDefinitionStore store, IWorkflowDefini
         if (!materializerRegistry.IsMaterializerAvailable(definition.MaterializerName))
         {
             AddError($"The workflow materializer '{definition.MaterializerName}' is not available. The materializer may be disabled or not registered.");
-            await Send.ErrorsAsync(StatusCodes.Status503ServiceUnavailable, cancellationToken);
+            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, cancellationToken);
             return;
         }
 

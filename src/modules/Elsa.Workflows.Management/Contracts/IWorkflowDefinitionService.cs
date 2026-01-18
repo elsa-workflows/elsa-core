@@ -115,8 +115,8 @@ public interface IWorkflowDefinitionService
     /// <param name="filter">The filter specifying criteria to identify the workflow definitions to search for.</param>
     /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
     /// <returns>
-    /// A <see cref="WorkflowGraphFindResult"/> containing the workflow graph and its associated definition,
-    /// or indicating that they do not exist.
+    /// A collection of <see cref="WorkflowGraphFindResult"/> instances, each containing a workflow graph and its associated definition
+    /// for every matching workflow definition. If no matching workflow definitions are found, the collection is empty.
     /// </returns>
     Task<IEnumerable<WorkflowGraphFindResult>> TryFindWorkflowGraphsAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
 }

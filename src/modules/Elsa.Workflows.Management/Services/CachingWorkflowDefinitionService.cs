@@ -156,12 +156,17 @@ public class CachingWorkflowDefinitionService(
         var results = new List<WorkflowGraphFindResult>();
         foreach (var workflowDefinition in workflowDefinitions)
         {
+            if (!materializerRegistry.IsMaterializerAvailable(workflowDefinition.MaterializerName))
+            {
+                var unavailableResult = new WorkflowGraphFindResult(workflowDefinition, null);
+                results.Add(unavailableResult);
+                continue;
+            }
+
             var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(workflowDefinition.Id);
             var workflowGraph = await FindFromCacheAsync(
                 cacheKey,
-                async () => !materializerRegistry.IsMaterializerAvailable(workflowDefinition.MaterializerName) 
-                    ? null 
-                    : await MaterializeWorkflowAsync(workflowDefinition, cancellationToken),
+                async () => await MaterializeWorkflowAsync(workflowDefinition, cancellationToken),
                 wf => wf.Workflow.Identity.DefinitionId);
             
             var result = new WorkflowGraphFindResult(workflowDefinition, workflowGraph);
