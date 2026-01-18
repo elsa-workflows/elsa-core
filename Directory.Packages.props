@@ -100,10 +100,11 @@
         <PackageVersion Include="coverlet.collector" Version="6.0.4" PrivateAssets="All"/>
         <PackageVersion Include="coverlet.msbuild" Version="6.0.4" PrivateAssets="All"/>
         <PackageVersion Include="Cronos" Version="0.11.1"/>
-        <PackageVersion Include="CShells" Version="0.0.5-preview.25"/>
-        <PackageVersion Include="CShells.Abstractions" Version="0.0.5-preview.25"/>
-        <PackageVersion Include="CShells.AspNetCore" Version="0.0.5-preview.25"/>
-        <PackageVersion Include="CShells.AspNetCore.Abstractions" Version="0.0.5-preview.25"/>
+        <PackageVersion Include="CShells" Version="0.0.6-preview.30"/>
+        <PackageVersion Include="CShells.Abstractions" Version="0.0.6-preview.30"/>
+        <PackageVersion Include="CShells.AspNetCore" Version="0.0.6-preview.30"/>
+        <PackageVersion Include="CShells.AspNetCore.Abstractions" Version="0.0.6-preview.30"/>
+        <PackageVersion Include="CShells.FastEndpoints.Abstractions" Version="0.0.6-preview.30"/>
         <PackageVersion Include="Datadog.Trace.Bundle" Version="3.32.0"/>
         <PackageVersion Include="DistributedLock" Version="2.7.1"/>
         <PackageVersion Include="DistributedLock.Core" Version="1.0.8"/>
