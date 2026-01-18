@@ -9,12 +9,16 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="CShells.AspNetCore.Abstractions" />
+        <PackageReference Include="CShells.FastEndpoints.Abstractions" />
         <PackageReference Include="FastEndpoints" />
         <PackageReference Include="FastEndpoints.Security" />
         <PackageReference Include="FastEndpoints.Swagger" />
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\..\..\..\sfmskywalker\cshells\main\src\CShells.AspNetCore.Abstractions\CShells.AspNetCore.Abstractions.csproj" />
+        <ProjectReference Include="..\..\..\..\..\..\sfmskywalker\cshells\main\src\CShells.FastEndpoints.Abstractions\CShells.FastEndpoints.Abstractions.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
         <ProjectReference Include="..\Elsa.Features\Elsa.Features.csproj" />
     </ItemGroup>
