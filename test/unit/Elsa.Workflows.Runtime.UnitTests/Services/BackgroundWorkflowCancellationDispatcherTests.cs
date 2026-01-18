@@ -37,7 +37,10 @@ public class BackgroundWorkflowCancellationDispatcherTests
     {
         // Arrange
         var tenantId = "test-tenant-123";
-        var tenant = new Tenant { Id = tenantId };
+        var tenant = new Tenant
+        {
+            Id = tenantId
+        };
         _tenantAccessor.Tenant.Returns(tenant);
 
         var dispatcher = CreateDispatcher();
@@ -51,8 +54,8 @@ public class BackgroundWorkflowCancellationDispatcherTests
             Arg.Any<CancelWorkflowsCommand>(),
             CommandStrategy.Background,
             Arg.Is<IDictionary<object, object>>(headers =>
-                headers.TryGetValue(TenantHeaders.TenantIdKey, out var value) &&
-                value?.ToString() == tenantId),
+                headers.ContainsKey(TenantHeaders.TenantIdKey) &&
+                headers[TenantHeaders.TenantIdKey].ToString() == tenantId),
             Arg.Any<CancellationToken>());
     }
 
@@ -72,7 +75,7 @@ public class BackgroundWorkflowCancellationDispatcherTests
         await _commandSender.Received(1).SendAsync(
             Arg.Any<CancelWorkflowsCommand>(),
             CommandStrategy.Background,
-            Arg.Is<IDictionary<object, object>>(headers => 
+            Arg.Is<IDictionary<object, object>>(headers =>
                 !headers.ContainsKey(TenantHeaders.TenantIdKey)),
             Arg.Any<CancellationToken>());
     }
