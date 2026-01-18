@@ -23,7 +23,7 @@ namespace Elsa.Workflows.Api.ShellFeatures;
     Description = "Provides REST API endpoints for workflow management",
     DependsOn =
 [
-    "FastEndpoints",
+    "ElsaFastEndpoints",
     "WorkflowInstances",
     "WorkflowManagement",
     "WorkflowRuntime",
