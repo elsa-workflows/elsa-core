@@ -19,8 +19,10 @@ public class CachingWorkflowDefinitionService(
     IMaterializerRegistry materializerRegistry) : IWorkflowDefinitionService
 {
     /// <inheritdoc />
-    public Task<WorkflowGraph> MaterializeWorkflowAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default) =>
-        decoratedService.MaterializeWorkflowAsync(definition, cancellationToken);
+    public Task<WorkflowGraph> MaterializeWorkflowAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    {
+        return decoratedService.MaterializeWorkflowAsync(definition, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)

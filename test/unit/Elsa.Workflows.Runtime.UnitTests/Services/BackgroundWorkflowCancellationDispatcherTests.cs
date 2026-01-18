@@ -11,14 +11,8 @@ namespace Elsa.Workflows.Runtime.UnitTests.Services;
 
 public class BackgroundWorkflowCancellationDispatcherTests
 {
-    private readonly ICommandSender _commandSender;
-    private readonly ITenantAccessor _tenantAccessor;
-
-    public BackgroundWorkflowCancellationDispatcherTests()
-    {
-        _commandSender = Substitute.For<ICommandSender>();
-        _tenantAccessor = Substitute.For<ITenantAccessor>();
-    }
+    private readonly ICommandSender _commandSender = Substitute.For<ICommandSender>();
+    private readonly ITenantAccessor _tenantAccessor = Substitute.For<ITenantAccessor>();
 
     [Fact]
     public async Task DispatchAsync_SendsCommandWithBackgroundStrategy()
@@ -103,7 +97,7 @@ public class BackgroundWorkflowCancellationDispatcherTests
         // Arrange
         var dispatcher = CreateDispatcher();
         var request = new DispatchCancelWorkflowRequest();
-        var cancellationToken = new CancellationToken();
+        var cancellationToken = CancellationToken.None;
 
         // Act
         await dispatcher.DispatchAsync(request, cancellationToken);

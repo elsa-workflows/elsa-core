@@ -482,6 +482,6 @@ public class CachingWorkflowDefinitionServiceTests
     {
         var definition = TestHelpers.CreateWorkflowDefinition(definitionId, materializerName);
         var (_, workflowGraph) = CreateWorkflowAndGraph(definitionId);
-        return new WorkflowGraphFindResult(definition, workflowGraph);
+        return new(definition, workflowGraph);
     }
 }

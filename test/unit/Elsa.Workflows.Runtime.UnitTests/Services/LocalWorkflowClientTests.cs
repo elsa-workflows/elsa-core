@@ -13,22 +13,12 @@ namespace Elsa.Workflows.Runtime.UnitTests.Services;
 
 public class LocalWorkflowClientTests
 {
-    private readonly IWorkflowInstanceManager _workflowInstanceManager;
-    private readonly IWorkflowDefinitionService _workflowDefinitionService;
-    private readonly IWorkflowRunner _workflowRunner;
-    private readonly IWorkflowCanceler _workflowCanceler;
-    private readonly WorkflowStateMapper _workflowStateMapper;
-    private readonly ILogger<LocalWorkflowClient> _logger;
-
-    public LocalWorkflowClientTests()
-    {
-        _workflowInstanceManager = Substitute.For<IWorkflowInstanceManager>();
-        _workflowDefinitionService = Substitute.For<IWorkflowDefinitionService>();
-        _workflowRunner = Substitute.For<IWorkflowRunner>();
-        _workflowCanceler = Substitute.For<IWorkflowCanceler>();
-        _workflowStateMapper = Substitute.For<WorkflowStateMapper>();
-        _logger = Substitute.For<ILogger<LocalWorkflowClient>>();
-    }
+    private readonly IWorkflowInstanceManager _workflowInstanceManager = Substitute.For<IWorkflowInstanceManager>();
+    private readonly IWorkflowDefinitionService _workflowDefinitionService = Substitute.For<IWorkflowDefinitionService>();
+    private readonly IWorkflowRunner _workflowRunner = Substitute.For<IWorkflowRunner>();
+    private readonly IWorkflowCanceler _workflowCanceler = Substitute.For<IWorkflowCanceler>();
+    private readonly WorkflowStateMapper _workflowStateMapper = Substitute.For<WorkflowStateMapper>();
+    private readonly ILogger<LocalWorkflowClient> _logger = Substitute.For<ILogger<LocalWorkflowClient>>();
 
     [Fact]
     public async Task CreateInstanceAsync_ThrowsWorkflowDefinitionNotFoundException_WhenDefinitionDoesNotExist()

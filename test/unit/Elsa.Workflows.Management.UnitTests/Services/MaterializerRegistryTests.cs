@@ -174,6 +174,6 @@ public class MaterializerRegistryTests
 
     private static MaterializerRegistry CreateRegistry(params IWorkflowMaterializer[] materializers)
     {
-        return new MaterializerRegistry(() => materializers);
+        return new(() => materializers);
     }
 }
