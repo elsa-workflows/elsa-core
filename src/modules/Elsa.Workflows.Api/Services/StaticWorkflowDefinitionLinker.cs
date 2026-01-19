@@ -1,5 +1,6 @@
 ﻿using Elsa.Models;
 using Elsa.Workflows.Api.Models;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
@@ -11,7 +12,8 @@ namespace Elsa.Workflows.Api.Services;
 ///  <inheritdoc/>
 public class StaticWorkflowDefinitionLinker(
     IOptions<ManagementOptions> managementOptions,
-    WorkflowDefinitionMapper workflowDefinitionMapper)
+    WorkflowDefinitionMapper workflowDefinitionMapper,
+    IMaterializerRegistry materializerRegistry)
     : IWorkflowDefinitionLinker
 {
     /// <inheritdoc />
@@ -51,7 +53,7 @@ public class StaticWorkflowDefinitionLinker(
 
         foreach (var item in list.Items)
         {
-            items.Add(new LinkedWorkflowDefinitionSummary
+            items.Add(new()
             {
                 Links = GenerateLinksForSingleEntry(item.DefinitionId, item.IsReadonly),
                 Id = item.Id,
@@ -65,11 +67,12 @@ public class StaticWorkflowDefinitionLinker(
                 ProviderName = item.ProviderName,
                 MaterializerName = item.MaterializerName,
                 CreatedAt = item.CreatedAt,
-                IsReadonly = item.IsReadonly
+                IsReadonly = item.IsReadonly,
+                IsMaterializerAvailable = materializerRegistry.IsMaterializerAvailable(item.MaterializerName)
             });
         }
 
-        return new PagedListResponse<LinkedWorkflowDefinitionSummary>
+        return new()
         {
             TotalCount = list.TotalCount,
             Items = items,
@@ -126,13 +129,13 @@ public class StaticWorkflowDefinitionLinker(
 
         if (!managementOptions.Value.IsReadOnlyMode)
         {
-            linksList.Add(new Link($"/bulk-actions/delete/workflow-definitions/by-definition-id", "bulk-delete-by-definition-id", "POST"));
-            linksList.Add(new Link($"/bulk-actions/delete/workflow-definitions/by-id", "bulk-delete-by-id", "POST"));
-            linksList.Add(new Link($"/bulk-actions/publish/workflow-definitions/by-definition-ids", "bulk-publish", "POST"));
-            linksList.Add(new Link($"/bulk-actions/retract/workflow-definitions/by-definition-ids", "bulk-retract", "POST"));
-            linksList.Add(new Link($"/workflow-definitions/import", "import", "POST"));
-            linksList.Add(new Link($"/workflow-definitions/import-files", "import-files", "POST"));
-            linksList.Add(new Link($"/workflow-definitions", "create", "POST"));
+            linksList.Add(new($"/bulk-actions/delete/workflow-definitions/by-definition-id", "bulk-delete-by-definition-id", "POST"));
+            linksList.Add(new($"/bulk-actions/delete/workflow-definitions/by-id", "bulk-delete-by-id", "POST"));
+            linksList.Add(new($"/bulk-actions/publish/workflow-definitions/by-definition-ids", "bulk-publish", "POST"));
+            linksList.Add(new($"/bulk-actions/retract/workflow-definitions/by-definition-ids", "bulk-retract", "POST"));
+            linksList.Add(new($"/workflow-definitions/import", "import", "POST"));
+            linksList.Add(new($"/workflow-definitions/import-files", "import-files", "POST"));
+            linksList.Add(new($"/workflow-definitions", "create", "POST"));
         }
 
         return linksList.ToArray();
@@ -153,11 +156,11 @@ public class StaticWorkflowDefinitionLinker(
 
         if (!managementOptions.Value.IsReadOnlyMode && !definitionIsReadonly)
         {
-            links.Add(new Link($"/workflow-definitions/{definitionId}/publish", "publish", "POST"));
-            links.Add(new Link($"/workflow-definitions/{definitionId}/retract", "retract", "POST"));
-            links.Add(new Link($"/workflow-definitions/{definitionId}", "delete", "DELETE"));
-            links.Add(new Link($"/workflow-definitions/{definitionId}/import", "import", "PUT"));
-            links.Add(new Link($"/workflow-definitions/{definitionId}/update-references", "update-references", "POST"));
+            links.Add(new($"/workflow-definitions/{definitionId}/publish", "publish", "POST"));
+            links.Add(new($"/workflow-definitions/{definitionId}/retract", "retract", "POST"));
+            links.Add(new($"/workflow-definitions/{definitionId}", "delete", "DELETE"));
+            links.Add(new($"/workflow-definitions/{definitionId}/import", "import", "PUT"));
+            links.Add(new($"/workflow-definitions/{definitionId}/update-references", "update-references", "POST"));
         }
 
         return links.ToArray();
