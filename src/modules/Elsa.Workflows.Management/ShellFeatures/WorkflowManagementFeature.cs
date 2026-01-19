@@ -129,10 +129,39 @@ public class WorkflowManagementFeature : IShellFeature
             .AddNotificationHandler<ValidateWorkflow>()
             ;
 
+        AddActivitiesFrom<WorkflowsFeature>();
+        AddActivitiesFrom<WorkflowManagementFeature>();
+        
+
         services.Configure<ManagementOptions>(options =>
         {
+            foreach (var activityType in ActivityTypes.Distinct())
+                options.ActivityTypes.Add(activityType);
+
             foreach (var descriptor in VariableDescriptors.DistinctBy(x => x.Type))
                 options.VariableDescriptors.Add(descriptor);
         });
+    }
+
+    /// <summary>
+    /// A set of activity types to make available to the system. 
+    /// </summary>
+    private HashSet<Type> ActivityTypes { get; } = [];
+
+    /// <summary>
+    /// Adds the specified activity types to the system.
+    /// </summary>
+    private WorkflowManagementFeature AddActivities(IEnumerable<Type> activityTypes)
+    {
+        ActivityTypes.AddRange(activityTypes);
+        return this;
+    }
+
+    private WorkflowManagementFeature AddActivitiesFrom<TMarker>()
+    {
+        var activityTypes = typeof(TMarker).Assembly.GetExportedTypes()
+            .Where(x => typeof(IActivity).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, IsGenericType: false })
+            .ToList();
+        return AddActivities(activityTypes);
     }
 }
