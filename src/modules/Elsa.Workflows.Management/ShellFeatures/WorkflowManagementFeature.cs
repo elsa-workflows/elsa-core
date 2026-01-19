@@ -94,6 +94,7 @@ public class WorkflowManagementFeature : IShellFeature
             .AddScoped<WorkflowDefinitionActivityDescriptorFactory>()
             .AddScoped<WorkflowDefinitionActivityProvider>()
             .AddScoped<IWorkflowDefinitionActivityRegistryUpdater, WorkflowDefinitionActivityRegistryUpdater>()
+            .AddScoped<IMaterializerRegistry, MaterializerRegistry>()
             .AddScoped<IWorkflowDefinitionService, WorkflowDefinitionService>()
             .AddScoped<IWorkflowSerializer, WorkflowSerializer>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
