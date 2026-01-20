@@ -7,6 +7,7 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Helpers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -38,13 +39,16 @@ public class ActivityJsonConverter(
         }
 
         var clonedOptions = GetClonedOptions(options);
+        var logger = serviceProvider.GetRequiredService<ILogger<ActivityJsonConverter>>();
 
         // If the activity type is not found, create a NotFoundActivity instead.
         if (activityDescriptor == null)
         {
             var notFoundActivityDescriptor = activityRegistry.Find<NotFoundActivity>()!;
-            var notFoundActivity = JsonActivityConstructorContextHelper.CreateActivity<NotFoundActivity>(notFoundActivityDescriptor, activityRoot, clonedOptions);
+            var notFoundActivityResult = JsonActivityConstructorContextHelper.CreateActivity<NotFoundActivity>(notFoundActivityDescriptor, activityRoot, clonedOptions);
+            LogExceptionsIfAny(notFoundActivityResult);
 
+            var notFoundActivity = notFoundActivityResult.Activity;
             notFoundActivity.Type = notFoundActivityTypeName;
             notFoundActivity.Version = 1;
             notFoundActivity.MissingTypeName = activityTypeName;
@@ -56,8 +60,20 @@ public class ActivityJsonConverter(
         }
 
         var context = JsonActivityConstructorContextHelper.Create(activityDescriptor, activityRoot, clonedOptions);
-        var activity = activityDescriptor.Constructor(context);
-        return activity;
+        var activityResult = activityDescriptor.Constructor(context);
+        LogExceptionsIfAny(activityResult);
+
+        return activityResult.Activity;
+    }
+
+    void LogExceptionsIfAny(ActivityConstructionResult result)
+    {
+        if (!result.HasExceptions)
+            return;
+
+        var logger = serviceProvider.GetRequiredService<ILogger<ActivityJsonConverter>>();
+        foreach (var exception in result.Exceptions)
+            logger.LogWarning("An exception was thrown while constructing activity with id '{activityId}': {Message}", result.Activity.Id, exception.Message);
     }
 
     /// <inheritdoc />

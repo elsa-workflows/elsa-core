@@ -6,7 +6,7 @@ namespace Elsa.Workflows;
 public class ActivityFactory : IActivityFactory
 {
     /// <inheritdoc />
-    public IActivity Create(Type type, ActivityConstructorContext context)
+    public ActivityConstructionResult Create(Type type, ActivityConstructorContext context)
     {
         return context.CreateActivity(type);
     }

@@ -57,7 +57,8 @@ public class WorkflowDefinitionActivityDescriptorFactory
             },
             Constructor = context =>
             {
-                var activity = context.CreateActivity<WorkflowDefinitionActivity>();
+                var activityResult = context.CreateActivity<WorkflowDefinitionActivity>();
+                var activity = activityResult.Activity;
                 activity.Type = typeName;
                 activity.WorkflowDefinitionId = definition.DefinitionId;
                 activity.WorkflowDefinitionVersionId = definition.Id;
@@ -65,7 +66,7 @@ public class WorkflowDefinitionActivityDescriptorFactory
                 activity.LatestAvailablePublishedVersion = latestPublishedDefinition?.Version ?? definition.Version;
                 activity.LatestAvailablePublishedVersionId = latestPublishedDefinition?.Id ?? definition.Id;
 
-                return activity;
+                return activityResult;
             }
         };
     }
