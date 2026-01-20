@@ -92,9 +92,9 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
             },
             Constructor = context =>
             {
-                var activity = context.CreateActivity(activityType);
-                activity.Type = fullTypeName;
-                return activity;
+                var activityResult = context.CreateActivity(activityType);
+                activityResult.Activity.Type = fullTypeName;
+                return activityResult;
             },
         };
 
