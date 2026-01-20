@@ -39,8 +39,7 @@ public class ActivityJsonConverter(
         }
 
         var clonedOptions = GetClonedOptions(options);
-        var logger = serviceProvider.GetRequiredService<ILogger<ActivityJsonConverter>>();
-
+        
         // If the activity type is not found, create a NotFoundActivity instead.
         if (activityDescriptor == null)
         {

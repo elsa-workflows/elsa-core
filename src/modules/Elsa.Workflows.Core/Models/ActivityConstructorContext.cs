@@ -156,7 +156,7 @@ public static class JsonActivityConstructorContextHelper
             if (!activityRoot.TryGetProperty(propertyName, out var propertyElement) || propertyElement.ValueKind == JsonValueKind.Null || propertyElement.ValueKind == JsonValueKind.Undefined)
                 continue;
 
-            if(propertyElement.ValueKind == JsonValueKind.Object && !propertyElement.TryGetProperty("typeName", out var typeNameElement))
+            if(propertyElement.ValueKind == JsonValueKind.Object && !propertyElement.TryGetProperty("typeName", out var _))
             {
                 var exception = new InvalidActivityDescriptorInputException(
                     $"Activity descriptor '{activityDescriptor.Name}' has invalid input property '{propertyName}'; missing required property 'typeName'"
