@@ -16,7 +16,6 @@ public class PostgreSqlProviderConfigurator : DatabaseProviderConfigurator<Npgsq
     /// <param name="migrationsAssembly">The assembly containing PostgreSQL migrations.</param>
     public PostgreSqlProviderConfigurator(Assembly migrationsAssembly) : base(migrationsAssembly)
     {
-        ConnectionString = _ => throw new InvalidOperationException("Connection string is required for PostgreSQL.");
     }
 
     /// <inheritdoc />

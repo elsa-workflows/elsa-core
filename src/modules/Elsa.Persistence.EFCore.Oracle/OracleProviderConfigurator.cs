@@ -16,7 +16,6 @@ public class OracleProviderConfigurator : DatabaseProviderConfigurator<OracleDbC
     /// <param name="migrationsAssembly">The assembly containing Oracle migrations.</param>
     public OracleProviderConfigurator(Assembly migrationsAssembly) : base(migrationsAssembly)
     {
-        ConnectionString = _ => throw new InvalidOperationException("Connection string is required for Oracle.");
     }
 
     /// <inheritdoc />

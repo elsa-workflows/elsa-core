@@ -16,7 +16,6 @@ public class MySqlProviderConfigurator : DatabaseProviderConfigurator<MySqlDbCon
     /// <param name="migrationsAssembly">The assembly containing MySQL migrations.</param>
     public MySqlProviderConfigurator(Assembly migrationsAssembly) : base(migrationsAssembly)
     {
-        ConnectionString = _ => throw new InvalidOperationException("Connection string is required for MySQL.");
     }
 
     /// <inheritdoc />

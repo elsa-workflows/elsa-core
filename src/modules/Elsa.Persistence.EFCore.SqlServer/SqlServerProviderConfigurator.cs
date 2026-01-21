@@ -16,7 +16,6 @@ public class SqlServerProviderConfigurator : DatabaseProviderConfigurator<SqlSer
     /// <param name="migrationsAssembly">The assembly containing SQL Server migrations.</param>
     public SqlServerProviderConfigurator(Assembly migrationsAssembly) : base(migrationsAssembly)
     {
-        ConnectionString = _ => throw new InvalidOperationException("Connection string is required for SQL Server.");
     }
 
     /// <inheritdoc />

@@ -1,12 +1,15 @@
+using CShells.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EFCore;
 
 /// <summary>
 /// A generic shell feature that applies a database provider configuration to a persistence feature.
+/// This feature automatically infers dependencies from the base persistence feature.
 /// </summary>
 public class DatabaseProviderShellFeature<TBaseFeature, TDbContext, TOptionsBuilder>
-    : PersistenceShellFeatureBase<DatabaseProviderShellFeature<TBaseFeature, TDbContext, TOptionsBuilder>, TDbContext>
+    : PersistenceShellFeatureBase<DatabaseProviderShellFeature<TBaseFeature, TDbContext, TOptionsBuilder>, TDbContext>,
+      IInfersDependenciesFrom<TBaseFeature>
     where TBaseFeature : PersistenceShellFeatureBase<TBaseFeature, TDbContext>
     where TDbContext : ElsaDbContextBase
 {
@@ -24,7 +27,7 @@ public class DatabaseProviderShellFeature<TBaseFeature, TDbContext, TOptionsBuil
     /// <summary>
     /// Gets or sets the connection string to use.
     /// </summary>
-    public Func<IServiceProvider, string> ConnectionString
+    public string ConnectionString
     {
         get => _providerConfigurator.ConnectionString;
         set => _providerConfigurator.ConnectionString = value;

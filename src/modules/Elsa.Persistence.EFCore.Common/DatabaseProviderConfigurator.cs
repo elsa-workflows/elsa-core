@@ -16,8 +16,7 @@ public abstract class DatabaseProviderConfigurator<TOptionsBuilder>
     /// <summary>
     /// Gets or sets the connection string to use.
     /// </summary>
-    public Func<IServiceProvider, string> ConnectionString { get; set; }
-        = _ => throw new InvalidOperationException("Connection string is required.");
+    public string ConnectionString { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets additional options to configure the database context.
@@ -53,6 +52,6 @@ public abstract class DatabaseProviderConfigurator<TOptionsBuilder>
     /// </summary>
     public Action<IServiceProvider, DbContextOptionsBuilder> GetDbContextOptionsBuilder()
     {
-        return (sp, db) => ConfigureProvider(db, MigrationsAssembly, ConnectionString(sp), DbContextOptions, ProviderOptions);
+        return (sp, db) => ConfigureProvider(db, MigrationsAssembly, ConnectionString, DbContextOptions, ProviderOptions);
     }
 }

@@ -16,7 +16,6 @@ public class SqliteProviderConfigurator : DatabaseProviderConfigurator<SqliteDbC
     /// <param name="migrationsAssembly">The assembly containing SQLite migrations.</param>
     public SqliteProviderConfigurator(Assembly migrationsAssembly) : base(migrationsAssembly)
     {
-        ConnectionString = _ => "Data Source=elsa.sqlite.db;Cache=Shared;";
     }
 
     /// <inheritdoc />
