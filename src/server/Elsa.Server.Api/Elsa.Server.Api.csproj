@@ -4,7 +4,7 @@
     <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
         <Description>
             Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
             This package provides API endpoints to interact with the workflow host.
@@ -19,6 +19,13 @@
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net9.0'">
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.1" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0'">
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.1" />
+        <PackageReference Include="System.Linq.Async" Version="6.0.1">
+            <ExcludeAssets>compile</ExcludeAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
