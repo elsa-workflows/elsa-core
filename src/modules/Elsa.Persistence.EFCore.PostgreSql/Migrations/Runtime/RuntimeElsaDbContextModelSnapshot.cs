@@ -68,11 +68,23 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
                     b.Property<int>("AggregateFaultCount")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("CallStackDepth")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("HasBookmarks")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("SchedulingActivityExecutionId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SchedulingActivityId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SchedulingWorkflowInstanceId")
+                        .HasColumnType("text");
 
                     b.Property<string>("SerializedActivityState")
                         .HasColumnType("text");

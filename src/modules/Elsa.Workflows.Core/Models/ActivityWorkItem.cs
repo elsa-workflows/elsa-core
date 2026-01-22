@@ -16,7 +16,9 @@ public class ActivityWorkItem
         object? tag = null,
         IEnumerable<Variable>? variables = null,
         ActivityExecutionContext? existingActivityExecutionContext = null,
-        IDictionary<string, object>? input = null)
+        IDictionary<string, object>? input = null,
+        string? schedulingActivityExecutionId = null,
+        string? schedulingWorkflowInstanceId = null)
     {
         Activity = activity;
         Owner = owner;
@@ -24,6 +26,8 @@ public class ActivityWorkItem
         Variables = variables;
         ExistingActivityExecutionContext = existingActivityExecutionContext;
         Input = input ?? new Dictionary<string, object>();
+        SchedulingActivityExecutionId = schedulingActivityExecutionId;
+        SchedulingWorkflowInstanceId = schedulingWorkflowInstanceId;
     }
 
     /// <summary>
@@ -55,4 +59,18 @@ public class ActivityWorkItem
     /// Optional input to pass to the activity.
     /// </summary>
     public IDictionary<string, object> Input { get; set; }
+
+    /// <summary>
+    /// The ID of the activity execution context that scheduled this work item.
+    /// This represents the temporal/execution predecessor that directly triggered execution of this activity,
+    /// distinct from the structural parent (<see cref="Owner"/>).
+    /// </summary>
+    public string? SchedulingActivityExecutionId { get; set; }
+
+    /// <summary>
+    /// The workflow instance ID of the workflow that scheduled this work item.
+    /// This is set when crossing workflow boundaries (e.g., via ExecuteWorkflow or DispatchWorkflow).
+    /// For activities within the same workflow instance, this will be null.
+    /// </summary>
+    public string? SchedulingWorkflowInstanceId { get; set; }
 }
