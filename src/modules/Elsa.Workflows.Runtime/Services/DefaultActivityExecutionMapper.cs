@@ -28,6 +28,9 @@ public class DefaultActivityExecutionMapper(
         var persistableJournalData = GetPersistableDictionary(source.JournalData!, persistenceMap.InternalState);
         var cancellationToken = source.CancellationToken;
 
+        // Calculate call stack depth by traversing the scheduling chain
+        var callStackDepth = CalculateCallStackDepth(source);
+
         var record = new ActivityExecutionRecord
         {
             Id = source.Id,
@@ -47,7 +50,11 @@ public class DefaultActivityExecutionMapper(
             HasBookmarks = source.Bookmarks.Any(),
             Status = source.Status,
             AggregateFaultCount = source.AggregateFaultCount,
-            CompletedAt = source.CompletedAt
+            CompletedAt = source.CompletedAt,
+            SchedulingActivityExecutionId = source.SchedulingActivityExecutionId,
+            SchedulingActivityId = source.SchedulingActivityId,
+            SchedulingWorkflowInstanceId = source.SchedulingWorkflowInstanceId,
+            CallStackDepth = callStackDepth
         };
 
         record = record.SanitizeLogMessage();
@@ -99,5 +106,33 @@ public class DefaultActivityExecutionMapper(
     private IDictionary<string, object?>? GetPersistableDictionary(IDictionary<string, object?> dictionary, LogPersistenceMode mode)
     {
         return mode == LogPersistenceMode.Include ? new Dictionary<string, object?>(dictionary) : null;
+    }
+
+    private int? CalculateCallStackDepth(ActivityExecutionContext source)
+    {
+        if (source.SchedulingActivityExecutionId == null)
+            return 0; // Root activity
+
+        var depth = 1;
+        var currentSchedulingId = source.SchedulingActivityExecutionId;
+        var workflowExecutionContext = source.WorkflowExecutionContext;
+
+        // Traverse the scheduling chain until we reach a root activity (null scheduling ID)
+        // Limit depth to prevent infinite loops in case of circular references
+        const int maxDepth = 1000;
+
+        while (currentSchedulingId != null && depth < maxDepth)
+        {
+            var schedulingContext = workflowExecutionContext.ActivityExecutionContexts
+                .FirstOrDefault(x => x.Id == currentSchedulingId);
+
+            if (schedulingContext == null)
+                break; // Can't traverse further if the scheduling context isn't in the current workflow
+
+            currentSchedulingId = schedulingContext.SchedulingActivityExecutionId;
+            depth++;
+        }
+
+        return depth;
     }
 }

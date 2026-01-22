@@ -78,4 +78,21 @@ public interface IActivityExecutionStore : ILogRecordStore<ActivityExecutionReco
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>The number of deleted records.</returns>
     Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves the execution chain for the specified activity execution record by traversing the SchedulingActivityExecutionId chain.
+    /// Returns records ordered from root (depth 0) to the specified record.
+    /// </summary>
+    /// <param name="activityExecutionId">The ID of the activity execution record to retrieve the chain for.</param>
+    /// <param name="includeCrossWorkflowChain">If true (default), follows SchedulingWorkflowInstanceId across workflow boundaries. If false, stops at workflow boundaries.</param>
+    /// <param name="skip">The number of items to skip (for pagination). Applied after ordering from root to leaf.</param>
+    /// <param name="take">The maximum number of items to return (for pagination).</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>A paginated result containing the call stack records, ordered from root to leaf.</returns>
+    Task<Results.PagedCallStackResult> GetExecutionChainAsync(
+        string activityExecutionId,
+        bool includeCrossWorkflowChain = true,
+        int? skip = null,
+        int? take = null,
+        CancellationToken cancellationToken = default);
 }

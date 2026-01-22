@@ -68,32 +68,44 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                     b.Property<int>("AggregateFaultCount")
                         .HasColumnType("NUMBER(10)");
 
+                    b.Property<int?>("CallStackDepth")
+                        .HasColumnType("NUMBER(10)");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<bool>("HasBookmarks")
                         .HasColumnType("BOOLEAN");
 
+                    b.Property<string>("SchedulingActivityExecutionId")
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<string>("SchedulingActivityId")
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<string>("SchedulingWorkflowInstanceId")
+                        .HasColumnType("NVARCHAR2(2000)");
+
                     b.Property<string>("SerializedActivityState")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedActivityStateCompressionAlgorithm")
                         .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedException")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedMetadata")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedOutputs")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedProperties")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
@@ -229,10 +241,10 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("SerializedMetadata")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("NVARCHAR2(450)");
@@ -284,7 +296,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("NVARCHAR2(450)");
@@ -353,7 +365,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Message")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("ParentActivityInstanceId")
                         .HasColumnType("NVARCHAR2(450)");
@@ -362,10 +374,10 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                         .HasColumnType("NUMBER(19)");
 
                     b.Property<string>("SerializedActivityState")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("Source")
                         .HasColumnType("NVARCHAR2(2000)");
@@ -473,10 +485,10 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("SerializedBookmarkPayload")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedInput")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("NVARCHAR2(2000)");

@@ -29,12 +29,16 @@ public class ScheduledChildCallbackBehavior : Behavior
             var completedContext = new ActivityCompletedContext(activityExecutionContext, childActivityExecutionContext, signal.Result);
             var tag = callbackEntry.Tag;
             completedContext.TargetContext.Tag = tag;
-            
+
             var mediator = activityExecutionContext.GetRequiredService<IMediator>();
             var invokingActivityCallbackNotification = new Notifications.InvokingActivityCallback(activityExecutionContext, childActivityExecutionContext);
             await mediator.SendAsync(invokingActivityCallbackNotification, context.CancellationToken);
-            
-            await callbackEntry.CompletionCallback(completedContext);
+
+            // Set ambient scheduling scope so activities scheduled within the callback automatically inherit the completed child's context
+            using (activityExecutionContext.WorkflowExecutionContext.BeginSchedulingScope(childActivityExecutionContext.Id, null))
+            {
+                await callbackEntry.CompletionCallback(completedContext);
+            }
         }
     }
 }

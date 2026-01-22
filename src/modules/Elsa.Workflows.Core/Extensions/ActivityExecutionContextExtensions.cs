@@ -485,5 +485,37 @@ public static partial class ActivityExecutionContextExtensions
 
         public bool GetHasEvaluatedProperties() => activityExecutionContext.TransientProperties.TryGetValue<bool>("HasEvaluatedProperties", out var value) && value;
         public void SetHasEvaluatedProperties() => activityExecutionContext.TransientProperties["HasEvaluatedProperties"] = true;
+
+        /// <summary>
+        /// Retrieves the complete execution chain for this activity execution context by traversing the SchedulingActivityExecutionId chain.
+        /// Returns contexts ordered from root (depth 0) to this context.
+        /// </summary>
+        /// <returns>A collection of activity execution contexts representing the complete call stack, ordered from root to leaf.</returns>
+        public IEnumerable<ActivityExecutionContext> GetExecutionChain()
+        {
+            var chain = new List<ActivityExecutionContext>();
+            var currentContext = activityExecutionContext;
+
+            // Traverse the chain backwards from this context to the root
+            while (currentContext != null)
+            {
+                chain.Add(currentContext);
+
+                // Find the parent in the workflow execution context
+                if (currentContext.SchedulingActivityExecutionId != null)
+                {
+                    currentContext = currentContext.WorkflowExecutionContext.ActivityExecutionContexts
+                        .FirstOrDefault(x => x.Id == currentContext.SchedulingActivityExecutionId);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            // Reverse to get root-to-leaf order
+            chain.Reverse();
+            return chain;
+        }
     }
 }

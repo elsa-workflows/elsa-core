@@ -108,7 +108,20 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
         var executeDelegate = context.WorkflowExecutionContext.ExecuteDelegate 
                               ?? (ExecuteActivityDelegate)Delegate.CreateDelegate(typeof(ExecuteActivityDelegate), context.Activity, ExecuteAsyncMethodInfo);
 
-        await executeDelegate(context);
+        // If this is a bookmark resume, set the ambient scheduling scope so any activities scheduled during the resume
+        // automatically inherit the resuming activity's context as the scheduling source
+        var isBookmarkResume = context.WorkflowExecutionContext.ResumedBookmarkContext != null;
+        if (isBookmarkResume)
+        {
+            using (context.WorkflowExecutionContext.BeginSchedulingScope(context.Id, null))
+            {
+                await executeDelegate(context);
+            }
+        }
+        else
+        {
+            await executeDelegate(context);
+        }
     }
 
     private async Task EvaluateInputPropertiesAsync(ActivityExecutionContext context)
