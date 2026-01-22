@@ -202,8 +202,9 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
         else
         {
             // No positional arguments, use default constructor
-            var activityConstructorContext = new ActivityConstructorContext(activityDescriptor, ActivityActivator.Create);
-            activity = activityDescriptor.Constructor(activityConstructorContext);
+            var activityConstructorContext = new ActivityConstructorContext(activityDescriptor, (t) => new(ActivityActivator.Create(t)));
+            var activityConstructionResult = activityDescriptor.Constructor(activityConstructorContext);
+            activity = activityConstructionResult.Activity;
         }
 
         // Set named argument properties
