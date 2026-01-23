@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
@@ -89,7 +90,7 @@ public interface IActivityExecutionStore : ILogRecordStore<ActivityExecutionReco
     /// <param name="take">The maximum number of items to return (for pagination).</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A paginated result containing the call stack records, ordered from root to leaf.</returns>
-    Task<Results.PagedCallStackResult> GetExecutionChainAsync(
+    Task<Page<ActivityExecutionRecord>> GetExecutionChainAsync(
         string activityExecutionId,
         bool includeCrossWorkflowChain = true,
         int? skip = null,

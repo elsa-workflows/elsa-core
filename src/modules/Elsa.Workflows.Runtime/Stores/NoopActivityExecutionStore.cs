@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
@@ -56,19 +57,13 @@ public class NoopActivityExecutionStore : IActivityExecutionStore
         return Task.FromResult(0L);
     }
 
-    public Task<Results.PagedCallStackResult> GetExecutionChainAsync(
+    public Task<Page<ActivityExecutionRecord>> GetExecutionChainAsync(
         string activityExecutionId,
         bool includeCrossWorkflowChain = true,
         int? skip = null,
         int? take = null,
         CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(new Results.PagedCallStackResult
-        {
-            Items = Array.Empty<ActivityExecutionRecord>(),
-            TotalCount = 0,
-            Skip = skip,
-            Take = take
-        });
+        return Task.FromResult(Page.Empty<ActivityExecutionRecord>());
     }
 }

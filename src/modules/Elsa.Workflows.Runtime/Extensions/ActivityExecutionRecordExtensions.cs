@@ -1,5 +1,5 @@
+using Elsa.Common.Models;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Results;
 
 namespace Elsa.Workflows.Runtime.Extensions;
 
@@ -19,7 +19,7 @@ public static class ActivityExecutionRecordExtensions
     /// <param name="take">The maximum number of items to return (for pagination).</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A paginated result containing the call stack records, ordered from root to leaf.</returns>
-    public static Task<PagedCallStackResult> GetExecutionChainAsync(
+    public static Task<Page<ActivityExecutionRecord>> GetExecutionChainAsync(
         this ActivityExecutionRecord record,
         IActivityExecutionStore store,
         bool includeCrossWorkflowChain = true,
