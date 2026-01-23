@@ -91,7 +91,11 @@ public class LocalWorkflowClient(
     private async Task CancelAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
     {
         if (workflowInstance.Status != WorkflowStatus.Running) return;
-        var workflowGraph = await GetWorkflowGraphAsync(workflowInstance, cancellationToken);
+        var workflowGraph = await TryGetWorkflowGraphAsync(workflowInstance, cancellationToken);
+        
+        if (workflowGraph == null) 
+            return;
+        
         var workflowState = await workflowCanceler.CancelWorkflowAsync(workflowGraph, workflowInstance.WorkflowState, cancellationToken);
         await workflowInstanceManager.SaveAsync(workflowState, cancellationToken);
     }
@@ -215,6 +219,30 @@ public class LocalWorkflowClient(
         var result = await workflowDefinitionService.TryFindWorkflowGraphAsync(definitionHandle, cancellationToken);
         if (!result.WorkflowDefinitionExists) throw new WorkflowDefinitionNotFoundException("Workflow definition not found.", definitionHandle);
         if (!result.WorkflowGraphExists) throw new WorkflowMaterializerNotFoundException(result.WorkflowDefinition!.MaterializerName);
+        return result.WorkflowGraph!;
+    }
+    
+    private async Task<WorkflowGraph?> TryGetWorkflowGraphAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
+    {
+        var handle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowInstance.DefinitionVersionId);
+        return await TryGetWorkflowGraphAsync(handle, cancellationToken);
+    }
+    
+    private async Task<WorkflowGraph?> TryGetWorkflowGraphAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken)
+    {
+        var result = await workflowDefinitionService.TryFindWorkflowGraphAsync(definitionHandle, cancellationToken);
+        if (!result.WorkflowDefinitionExists)
+        {
+            logger.LogWarning("Workflow definition not found: {WorkflowDefinitionId}", definitionHandle.DefinitionId);
+            return null;
+        }
+
+        if (!result.WorkflowGraphExists)
+        {
+            logger.LogWarning("Workflow materializer not found: {WorkflowDefinitionId}", definitionHandle.DefinitionId);
+            return null;
+        }
+        
         return result.WorkflowGraph!;
     }
 }
