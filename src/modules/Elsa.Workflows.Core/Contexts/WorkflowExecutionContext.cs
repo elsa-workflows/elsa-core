@@ -713,40 +713,4 @@ public partial class WorkflowExecutionContext : IExecutionContext
     {
         return _commitStateHandler.CommitAsync(this, CancellationToken);
     }
-
-    /// <summary>
-    /// Begins a scheduling scope that sets the ambient scheduling source for activities scheduled within the scope.
-    /// The ambient values are used as fallback when ScheduleWorkOptions does not explicitly specify them.
-    /// Always dispose the returned scope to restore previous values and prevent leakage.
-    /// </summary>
-    /// <param name="activityExecutionId">The activity execution ID that is scheduling work within this scope.</param>
-    /// <param name="workflowInstanceId">The workflow instance ID (for cross-workflow tracking).</param>
-    /// <returns>A disposable scope that restores previous ambient values when disposed.</returns>
-    public IDisposable BeginSchedulingScope(string? activityExecutionId, string? workflowInstanceId = null)
-    {
-        return new SchedulingScope(this, activityExecutionId, workflowInstanceId);
-    }
-
-    private sealed class SchedulingScope : IDisposable
-    {
-        private readonly WorkflowExecutionContext _context;
-        private readonly string? _previousActivityExecutionId;
-        private readonly string? _previousWorkflowInstanceId;
-
-        public SchedulingScope(WorkflowExecutionContext context, string? activityExecutionId, string? workflowInstanceId)
-        {
-            _context = context;
-            _previousActivityExecutionId = context.CurrentSchedulingActivityExecutionId;
-            _previousWorkflowInstanceId = context.CurrentSchedulingWorkflowInstanceId;
-
-            context.CurrentSchedulingActivityExecutionId = activityExecutionId;
-            context.CurrentSchedulingWorkflowInstanceId = workflowInstanceId;
-        }
-
-        public void Dispose()
-        {
-            _context.CurrentSchedulingActivityExecutionId = _previousActivityExecutionId;
-            _context.CurrentSchedulingWorkflowInstanceId = _previousWorkflowInstanceId;
-        }
-    }
 }

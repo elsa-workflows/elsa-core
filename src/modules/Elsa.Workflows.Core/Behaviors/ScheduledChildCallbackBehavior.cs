@@ -1,5 +1,4 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Notifications;
 using JetBrains.Annotations;
 using ActivityCompleted = Elsa.Workflows.Signals.ActivityCompleted;
 
@@ -33,12 +32,7 @@ public class ScheduledChildCallbackBehavior : Behavior
             var mediator = activityExecutionContext.GetRequiredService<IMediator>();
             var invokingActivityCallbackNotification = new Notifications.InvokingActivityCallback(activityExecutionContext, childActivityExecutionContext);
             await mediator.SendAsync(invokingActivityCallbackNotification, context.CancellationToken);
-
-            // Set ambient scheduling scope so activities scheduled within the callback automatically inherit the completed child's context
-            using (activityExecutionContext.WorkflowExecutionContext.BeginSchedulingScope(childActivityExecutionContext.Id, null))
-            {
-                await callbackEntry.CompletionCallback(completedContext);
-            }
+            await callbackEntry.CompletionCallback(completedContext);
         }
     }
 }

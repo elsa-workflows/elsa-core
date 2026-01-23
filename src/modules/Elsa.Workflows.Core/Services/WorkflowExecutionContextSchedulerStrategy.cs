@@ -27,11 +27,11 @@ public class WorkflowExecutionContextSchedulerStrategy : IWorkflowExecutionConte
         var activity = activityNode.Activity;
         var tag = options?.Tag;
 
-        // Use explicit SchedulingActivityExecutionId from options, or fall back to ambient context
-        var schedulingActivityExecutionId = options?.SchedulingActivityExecutionId ?? context.CurrentSchedulingActivityExecutionId;
+        // Use explicit SchedulingActivityExecutionId from options, or fall back to owner context.
+        var schedulingActivityExecutionId = options?.SchedulingActivityExecutionId ?? owner.Id;
 
-        // Use explicit SchedulingWorkflowInstanceId from options, or fall back to ambient context
-        var schedulingWorkflowInstanceId = options?.SchedulingWorkflowInstanceId ?? context.CurrentSchedulingWorkflowInstanceId;
+        // Use explicit SchedulingWorkflowInstanceId from options, if any.
+        var schedulingWorkflowInstanceId = options?.SchedulingWorkflowInstanceId;
 
         var workItem = new ActivityWorkItem(
             activity,

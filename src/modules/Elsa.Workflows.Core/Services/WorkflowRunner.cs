@@ -88,17 +88,9 @@ public class WorkflowRunner(
             cancellationToken);
 
         // Schedule the first activity.
-        var schedulingActivityExecutionId = options?.SchedulingActivityExecutionId;
-        var schedulingWorkflowInstanceId = options?.SchedulingWorkflowInstanceId;
-
-        // Set ambient scope for child workflow start so any activities scheduled during workflow initialization
-        // inherit the parent's scheduling context
-        using (workflowExecutionContext.BeginSchedulingScope(schedulingActivityExecutionId, schedulingWorkflowInstanceId))
-        {
-            workflowExecutionContext.ScheduleWorkflow(
-                schedulingActivityExecutionId: schedulingActivityExecutionId,
-                schedulingWorkflowInstanceId: schedulingWorkflowInstanceId);
-        }
+        workflowExecutionContext.ScheduleWorkflow(
+            schedulingActivityExecutionId: options?.SchedulingActivityExecutionId,
+            schedulingWorkflowInstanceId: options?.SchedulingWorkflowInstanceId);
 
         return await RunAsync(workflowExecutionContext);
     }
@@ -185,14 +177,10 @@ public class WorkflowRunner(
                 var schedulingActivityExecutionId = options?.SchedulingActivityExecutionId;
                 var schedulingWorkflowInstanceId = options?.SchedulingWorkflowInstanceId;
 
-                // Set ambient scope for child workflow start
-                using (workflowExecutionContext.BeginSchedulingScope(schedulingActivityExecutionId, schedulingWorkflowInstanceId))
-                {
-                    workflowExecutionContext.ScheduleWorkflow(
-                        variables: vars,
-                        schedulingActivityExecutionId: schedulingActivityExecutionId,
-                        schedulingWorkflowInstanceId: schedulingWorkflowInstanceId);
-                }
+                workflowExecutionContext.ScheduleWorkflow(
+                    variables: vars,
+                    schedulingActivityExecutionId: schedulingActivityExecutionId,
+                    schedulingWorkflowInstanceId: schedulingWorkflowInstanceId);
             }
         }
 
