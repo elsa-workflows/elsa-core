@@ -39,9 +39,7 @@ internal class Endpoint(IActivityExecutionStore store) : ElsaEndpoint<Request, R
         {
             ActivityExecutionId = id,
             Items = result.Items.ToList(),
-            TotalCount = result.TotalCount,
-            Skip = result.Skip,
-            Take = result.Take
+            TotalCount = result.TotalCount
         };
 
         await Send.OkAsync(response, cancellationToken);

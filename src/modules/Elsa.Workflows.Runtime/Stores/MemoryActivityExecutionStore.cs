@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Entities;
@@ -93,7 +94,7 @@ public class MemoryActivityExecutionStore : IActivityExecutionStore
     }
 
     /// <inheritdoc />
-    public Task<Results.PagedCallStackResult> GetExecutionChainAsync(
+    public Task<Page<ActivityExecutionRecord>> GetExecutionChainAsync(
         string activityExecutionId,
         bool includeCrossWorkflowChain = true,
         int? skip = null,
@@ -130,15 +131,7 @@ public class MemoryActivityExecutionStore : IActivityExecutionStore
         if (take.HasValue)
             chain = chain.Take(take.Value).ToList();
 
-        var result = new Results.PagedCallStackResult
-        {
-            Items = chain,
-            TotalCount = totalCount,
-            Skip = skip,
-            Take = take
-        };
-
-        return Task.FromResult(result);
+        return Task.FromResult(Page.Of(chain, totalCount));
     }
 
     private static IQueryable<ActivityExecutionRecord> Filter(IQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter) => filter.Apply(queryable);

@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Text.Json;
 using Elsa.Common;
+using Elsa.Common.Models;
 using Elsa.Common.Codecs;
 using Elsa.Common.Entities;
 using Elsa.Extensions;
@@ -84,7 +85,7 @@ public class EFCoreActivityExecutionStore(
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("Calls Elsa.Persistence.EFCore.Modules.Runtime.EFCoreActivityExecutionStore.OnLoadAsync")]
-    public async Task<Elsa.Workflows.Runtime.Results.PagedCallStackResult> GetExecutionChainAsync(
+    public async Task<Page<ActivityExecutionRecord>> GetExecutionChainAsync(
         string activityExecutionId,
         bool includeCrossWorkflowChain = true,
         int? skip = null,
@@ -97,12 +98,13 @@ public class EFCoreActivityExecutionStore(
         // Traverse the chain backwards from the specified record to the root
         while (currentId != null)
         {
+            var id = currentId;
             var record = await store.QueryAsync(
-                query => query.Where(x => x.Id == currentId),
+                query => query.Where(x => x.Id == id),
                 OnLoadAsync,
                 cancellationToken).FirstOrDefault();
 
-            if (record == null)
+            if (record == null!)
                 break;
 
             chain.Add(record);
@@ -125,13 +127,7 @@ public class EFCoreActivityExecutionStore(
         if (take.HasValue)
             chain = chain.Take(take.Value).ToList();
 
-        return new Elsa.Workflows.Runtime.Results.PagedCallStackResult
-        {
-            Items = chain,
-            TotalCount = totalCount,
-            Skip = skip,
-            Take = take
-        };
+        return Page.Of(chain, totalCount);
     }
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)

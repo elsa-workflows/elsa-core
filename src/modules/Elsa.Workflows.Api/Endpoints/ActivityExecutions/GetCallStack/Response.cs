@@ -10,7 +10,7 @@ public class Response
     /// <summary>
     /// The ID of the activity execution that was requested.
     /// </summary>
-    public string ActivityExecutionId { get; set; } = default!;
+    public string ActivityExecutionId { get; set; } = null!;
 
     /// <summary>
     /// The activity execution records in the call stack (ordered from root to current activity).
@@ -21,15 +21,5 @@ public class Response
     /// <summary>
     /// The total number of items in the full call stack chain.
     /// </summary>
-    public int TotalCount { get; set; }
-
-    /// <summary>
-    /// The number of items skipped (for pagination).
-    /// </summary>
-    public int? Skip { get; set; }
-
-    /// <summary>
-    /// The maximum number of items returned (for pagination).
-    /// </summary>
-    public int? Take { get; set; }
+    public long TotalCount { get; set; }
 }
