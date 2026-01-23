@@ -1,9 +1,10 @@
+using Elsa.Abstractions;
 using Elsa.Labels.Contracts;
 using FastEndpoints;
 
 namespace Elsa.Labels.Endpoints.Labels.Get;
 
-internal class Get : Endpoint<Request, Response, LabelMapper>
+internal class Get : ElsaEndpoint<Request, Response, LabelMapper>
 {
     private readonly ILabelStore _store;
 
@@ -15,7 +16,7 @@ internal class Get : Endpoint<Request, Response, LabelMapper>
     public override void Configure()
     {
         Get("/labels/{id}");
-        Policies(Constants.PolicyName);
+        ConfigurePermissions("read:labels");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

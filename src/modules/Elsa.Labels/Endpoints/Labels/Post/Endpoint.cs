@@ -1,3 +1,4 @@
+using Elsa.Abstractions;
 using Elsa.Labels.Contracts;
 using Elsa.Workflows;
 using FastEndpoints;
@@ -6,7 +7,7 @@ using JetBrains.Annotations;
 namespace Elsa.Labels.Endpoints.Labels.Post;
 
 [PublicAPI]
-internal class Create : Endpoint<Request, Response, LabelMapper>
+internal class Create : ElsaEndpoint<Request, Response, LabelMapper>
 {
     private readonly ILabelStore _store;
 
@@ -18,7 +19,7 @@ internal class Create : Endpoint<Request, Response, LabelMapper>
     public override void Configure()
     {
         Post("/labels");
-        Policies(Constants.PolicyName);
+        ConfigurePermissions("update:labels");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
