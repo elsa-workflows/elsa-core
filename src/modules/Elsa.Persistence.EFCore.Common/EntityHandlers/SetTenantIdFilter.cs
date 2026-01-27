@@ -35,14 +35,12 @@ public class SetTenantIdFilter(ITenantAccessor? tenantAccessor) : IEntityModelCr
             Expression.Constant("TenantId"));
 
         // Build an expression that accesses tenantAccessor.Tenant.Id
-        // This will be evaluated at query time, not at model creation time
+        // Note: While we capture the ITenantAccessor instance here, its Tenant property uses AsyncLocal,
+        // which means it will return the correct tenant for the current async execution context at query time.
+        // This is safe because each request/scope has its own AsyncLocal value.
         var tenantAccessorConstant = Expression.Constant(tenantAccessor, typeof(ITenantAccessor));
         var tenantProperty = Expression.Property(tenantAccessorConstant, nameof(ITenantAccessor.Tenant));
-        var tenantIdOnAccessor = Expression.Condition(
-            Expression.Equal(tenantProperty, Expression.Constant(null, typeof(Tenant))),
-            Expression.Constant(null, typeof(string)),
-            Expression.Property(tenantProperty, nameof(Tenant.Id))
-        );
+        var tenantIdOnAccessor = Expression.Property(tenantProperty, nameof(Tenant.Id));
 
         var body = Expression.Equal(tenantIdProperty, tenantIdOnAccessor);
 
