@@ -19,7 +19,7 @@ internal class Create : ElsaEndpoint<Request, Response, LabelMapper>
     public override void Configure()
     {
         Post("/labels");
-        ConfigurePermissions("update:labels");
+        ConfigurePermissions("create:labels");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
