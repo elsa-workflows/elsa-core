@@ -29,7 +29,7 @@ using Microsoft.Extensions.Options;
 // ReSharper disable RedundantAssignment
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated requests.
-const bool useMultitenancy = false;
+const bool useMultitenancy = true;
 const bool disableVariableWrappers = false;
 
 ObjectConverter.StrictMode = true;
@@ -118,6 +118,10 @@ services
                 http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
                 http.UseCache();
             });
+        
+        if(useMultitenancy)
+            elsa.UseTenants();
+        
         ConfigureForTest?.Invoke(elsa);
     });
 
