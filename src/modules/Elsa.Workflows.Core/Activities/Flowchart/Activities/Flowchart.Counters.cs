@@ -180,7 +180,7 @@ public partial class Flowchart
         // but was legitimately scheduled by another trigger
         if (flowGraph.IsDanglingActivity(activity) && outboundConnections.Count == 0)
         {
-            throw new($"Activity {activity.Id} is not reachable from the flowchart graph and has no outbound connections. Unable to schedule it's outbound activities.");
+            throw new($"Activity {activity.Id} is not reachable from the flowchart graph and has no outbound connections. Unable to schedule its outbound activities.");
         }
 
         // Register the activity as visited unless it was executed due to a backward connection
