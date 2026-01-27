@@ -4,12 +4,14 @@ using Elsa.Common.RecurringTasks;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Features.Services;
+using Elsa.Identity.Multitenancy;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
 using Elsa.Server.Web.Activities;
 using Elsa.Server.Web.ActivityHosts;
 using Elsa.Server.Web.Filters;
+using Elsa.Tenants;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
 using Elsa.WorkflowProviders.BlobStorage.ElsaScript.Extensions;
@@ -120,7 +122,14 @@ services
             });
         
         if(useMultitenancy)
-            elsa.UseTenants();
+        {
+            elsa.UseTenants(tenants =>
+            {
+                tenants.UseConfigurationBasedTenantsProvider(options => configuration.GetSection("Multitenancy").Bind(options));
+                tenants.ConfigureMultitenancy(options => options.TenantResolverPipelineBuilder = new TenantResolverPipelineBuilder()
+                    .Append<CurrentUserTenantResolver>());
+            });
+        }
         
         ConfigureForTest?.Invoke(elsa);
     });
