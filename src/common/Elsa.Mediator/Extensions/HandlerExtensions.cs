@@ -47,7 +47,15 @@ public static class HandlerExtensions
     {
         var notification = notificationContext.Notification;
         var cancellationToken = notificationContext.CancellationToken;
-        return (Task)handleMethod.Invoke(handler, [notification, cancellationToken])!;
+
+        try
+        {
+            return (Task)handleMethod.Invoke(handler, [notification, cancellationToken])!;
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null)
+        {
+            throw ex.InnerException;
+        }
     }
 
     /// <summary>
@@ -60,7 +68,14 @@ public static class HandlerExtensions
     {
         var command = commandContext.Command;
         var cancellationToken = commandContext.CancellationToken;
-        var task = (Task<TResult>)handleMethod.Invoke(handler, [command, cancellationToken])!;
-        return task;
+
+        try
+        {
+            return (Task<TResult>)handleMethod.Invoke(handler, [command, cancellationToken])!;
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null)
+        {
+            throw ex.InnerException;
+        }
     }
 }

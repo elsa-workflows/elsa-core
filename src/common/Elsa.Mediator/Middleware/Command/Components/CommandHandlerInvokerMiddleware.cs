@@ -39,9 +39,10 @@ public class CommandHandlerInvokerMiddleware(CommandMiddlewareDelegate next) : I
         var executeMethodWithReturnType = executeMethod.MakeGenericMethod(resultType);
 
         // Execute command.
-        var task = executeMethodWithReturnType.Invoke(strategy, [strategyContext]);
+        var task = (Task)executeMethodWithReturnType.Invoke(strategy, [strategyContext])!;
+        await task;
 
-        // Get the result of the task.
+        // Get the result of the completed task.
         var taskWithReturnType = typeof(Task<>).MakeGenericType(resultType);
         var resultProperty = taskWithReturnType.GetProperty(nameof(Task<object>.Result))!;
         context.Result = resultProperty.GetValue(task);

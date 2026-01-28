@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.Mediator]*</Include>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\common\Elsa.Mediator\Elsa.Mediator.csproj"/>
+    </ItemGroup>
+
+</Project>
