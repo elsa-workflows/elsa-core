@@ -11,7 +11,7 @@ namespace Elsa.Common.Multitenancy;
 public class Tenant : Entity
 {
     /// <summary>
-    /// The ID used for the default tenant. An empty string is used as dictionaries cannot have null keys.
+    /// The ID used for the default tenant.
     /// </summary>
     public const string DefaultTenantId = "";
 
