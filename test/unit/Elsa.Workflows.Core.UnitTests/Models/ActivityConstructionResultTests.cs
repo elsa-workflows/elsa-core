@@ -9,7 +9,7 @@ public class ActivityConstructionResultTests
     [InlineData(0, false)]
     [InlineData(1, true)]
     [InlineData(2, true)]
-    public void Constructor_WithVaryingExceptionCounts_SetsHasExceptionsCorrectly(int exceptionCount, bool expectedHasExceptions)
+    public void Constructor_WithVaryingExceptionCounts_SetsPropertiesCorrectly(int exceptionCount, bool expectedHasExceptions)
     {
         // Arrange
         var activity = CreateActivity();
@@ -39,10 +39,10 @@ public class ActivityConstructionResultTests
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(3)]
-    public void Cast_PreservesActivityAndExceptions(int exceptionCount)
+    [InlineData(0, false)]
+    [InlineData(1, true)]
+    [InlineData(3, true)]
+    public void Cast_PreservesActivityAndExceptions(int exceptionCount, bool expectedHasExceptions)
     {
         // Arrange
         var activity = CreateActivity();
@@ -56,14 +56,14 @@ public class ActivityConstructionResultTests
         Assert.IsType<ActivityConstructionResult<WriteLine>>(typedResult);
         Assert.Same(activity, typedResult.Activity);
         Assert.Equal(exceptionCount, typedResult.Exceptions.Count());
-        Assert.Equal(result.HasExceptions, typedResult.HasExceptions);
+        Assert.Equal(expectedHasExceptions, typedResult.HasExceptions);
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(2)]
-    public void GenericConstructor_CreatesTypedResult(int exceptionCount)
+    [InlineData(0, false)]
+    [InlineData(1, true)]
+    [InlineData(2, true)]
+    public void GenericConstructor_CreatesTypedResultWithInheritance(int exceptionCount, bool expectedHasExceptions)
     {
         // Arrange
         var activity = CreateActivity();
@@ -75,7 +75,7 @@ public class ActivityConstructionResultTests
         // Assert
         Assert.Same(activity, result.Activity);
         Assert.Equal(exceptionCount, result.Exceptions.Count());
-        Assert.Equal(exceptionCount > 0, result.HasExceptions);
+        Assert.Equal(expectedHasExceptions, result.HasExceptions);
         Assert.IsAssignableFrom<ActivityConstructionResult>(result);
     }
 
@@ -87,16 +87,14 @@ public class ActivityConstructionResultTests
         var exceptions = CreateExceptions(3);
         var result = new ActivityConstructionResult(activity, exceptions);
 
-        // Act
-        var enumeratedExceptions = new List<Exception>();
+        // Act & Assert
+        var count = 0;
         foreach (var ex in result.Exceptions)
         {
-            enumeratedExceptions.Add(ex);
+            Assert.NotNull(ex);
+            count++;
         }
-
-        // Assert
-        Assert.Equal(3, enumeratedExceptions.Count);
-        Assert.All(enumeratedExceptions, ex => Assert.NotNull(ex));
+        Assert.Equal(3, count);
     }
 
     // Helper methods
@@ -106,11 +104,8 @@ public class ActivityConstructionResultTests
     {
         if (count == 0) return null;
 
-        var exceptions = new List<Exception>();
-        for (var i = 0; i < count; i++)
-        {
-            exceptions.Add(new InvalidOperationException($"Error {i + 1}"));
-        }
-        return exceptions;
+        return Enumerable.Range(1, count)
+            .Select(i => new InvalidOperationException($"Error {i}") as Exception)
+            .ToList();
     }
 }
