@@ -118,10 +118,10 @@ services
                 http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
                 http.UseCache();
             });
-        
-        if(useMultitenancy)
+
+        if (useMultitenancy)
             elsa.UseTenants();
-        
+
         ConfigureForTest?.Invoke(elsa);
     });
 
