@@ -1,4 +1,4 @@
-# 6. Adoption of Explicit Merge Modes for Flowchart Joins
+# 7. Adoption of Explicit Merge Modes for Flowchart Joins
 
 Date: 2025-09-30
 

@@ -1,4 +1,4 @@
-# 5. Tenant Deleted Event
+# 6. Tenant Deleted Event
 
 Date: 2025-08-05
 
