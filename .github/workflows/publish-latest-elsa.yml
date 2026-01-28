@@ -146,7 +146,7 @@ jobs:
 
       - run: npm publish *.tgz
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_2x }}
 
   publish_nuget_preview:
     name: Publish Nuget (Preview)
