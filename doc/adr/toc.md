@@ -7,4 +7,4 @@
 * [5. Token-Centric Flowchart Execution Model](0005-token-centric-flowchart-execution-model.md)
 * [6. Tenant Deleted Event](0006-tenant-deleted-event.md)
 * [7. Adoption of Explicit Merge Modes for Flowchart Joins](0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md)
-* [8. Empty String as Default Tenant ID](0008-empty-string-as-default-tenant-id.md)string-as-default-tenant-id.md)
+* [8. Empty String as Default Tenant ID](0008-empty-string-as-default-tenant-id.md)
