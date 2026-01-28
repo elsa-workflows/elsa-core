@@ -18,6 +18,16 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Drop old index if it exists (before TenantId was added)
+            migrationBuilder.Sql($@"
+                IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId'
+                    AND object_id = OBJECT_ID('{_schema.Schema}.Triggers'))
+                BEGIN
+                    DROP INDEX [IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId]
+                    ON [{_schema.Schema}].[Triggers]
+                END
+            ");
+
             migrationBuilder.AlterColumn<string>(
                 name: "ActivityId",
                 schema: _schema.Schema,

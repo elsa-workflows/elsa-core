@@ -186,7 +186,7 @@ public class ConcurrentTriggerIndexingTests(App app) : AppComponentTest(app)
 
         return new()
         {
-            Identity = new(definitionId, 1, workflowId),
+            Identity = new(definitionId, 1, workflowId, ""),
             Root = new Sequence
             {
                 Activities =
@@ -208,6 +208,7 @@ public class ConcurrentTriggerIndexingTests(App app) : AppComponentTest(app)
             Id = workflow.Identity.Id,
             DefinitionId = workflow.Identity.DefinitionId,
             Version = workflow.Identity.Version,
+            TenantId = workflow.Identity.TenantId,
             IsLatest = true,
             IsPublished = true,
             Name = "Test Concurrent Workflow",
