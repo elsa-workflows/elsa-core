@@ -33,12 +33,13 @@ public class ActivityExecutionContextSchedulerStrategy : IActivityExecutionConte
                 Options = options != null
                     ? new ScheduledActivityOptions
                     {
-                        CompletionCallback = options?.CompletionCallback?.Method.Name,
-                        Tag = options?.Tag,
-                        ExistingActivityInstanceId = options?.ExistingActivityExecutionContext?.Id,
-                        PreventDuplicateScheduling = options?.PreventDuplicateScheduling ?? false,
-                        Variables = options?.Variables?.ToList(),
-                        Input = options?.Input
+                        CompletionCallback = options.CompletionCallback?.Method.Name,
+                        Tag = options.Tag,
+                        ExistingActivityInstanceId = options.ExistingActivityExecutionContext?.Id,
+                        PreventDuplicateScheduling = options.PreventDuplicateScheduling,
+                        SchedulingActivityExecutionId = options.SchedulingActivityExecutionId ?? context.Id,
+                        Variables = options.Variables?.ToList(),
+                        Input = options.Input
                     }
                     : null
             };

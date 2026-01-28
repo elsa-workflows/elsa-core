@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Signals;
 
 namespace Elsa.Workflows.Activities.Flowchart.Activities;
@@ -60,7 +61,12 @@ public partial class Flowchart
                     if (existingBlockedToken == null)
                     {
                         // Schedule the target.
-                        await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
+                        var options = new ScheduleWorkOptions
+                        {
+                            CompletionCallback = OnChildCompletedTokenBasedLogicAsync,
+                            SchedulingActivityExecutionId = ctx.ChildContext.Id
+                        };
+                        await flowContext.ScheduleActivityAsync(targetActivity, options);
 
                         // Block other inbound connections (adjust per mode if needed).
                         var otherInboundConnections = flowGraph.GetForwardInboundConnections(targetActivity)
@@ -99,11 +105,23 @@ public partial class Flowchart
                         );
 
                         if (hasAllTokens)
-                            await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
+                        {
+                            var options = new ScheduleWorkOptions
+                            {
+                                CompletionCallback = OnChildCompletedTokenBasedLogicAsync,
+                                SchedulingActivityExecutionId = ctx.ChildContext.Id
+                            };
+                            await flowContext.ScheduleActivityAsync(targetActivity, options);
+                        }
                     }
                     else
                     {
-                        await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
+                        var options = new ScheduleWorkOptions
+                        {
+                            CompletionCallback = OnChildCompletedTokenBasedLogicAsync,
+                            SchedulingActivityExecutionId = ctx.ChildContext.Id
+                        };
+                        await flowContext.ScheduleActivityAsync(targetActivity, options);
                     }
 
                     break;
@@ -125,11 +143,23 @@ public partial class Flowchart
                         );
 
                         if (hasAllTokens)
-                            await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
+                        {
+                            var options = new ScheduleWorkOptions
+                            {
+                                CompletionCallback = OnChildCompletedTokenBasedLogicAsync,
+                                SchedulingActivityExecutionId = ctx.ChildContext.Id
+                            };
+                            await flowContext.ScheduleActivityAsync(targetActivity, options);
+                        }
                     }
                     else
                     {
-                        await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
+                        var options = new ScheduleWorkOptions
+                        {
+                            CompletionCallback = OnChildCompletedTokenBasedLogicAsync,
+                            SchedulingActivityExecutionId = ctx.ChildContext.Id
+                        };
+                        await flowContext.ScheduleActivityAsync(targetActivity, options);
                     }
 
                     break;
@@ -143,7 +173,14 @@ public partial class Flowchart
                     );
 
                     if (!hasUnconsumed)
-                        await flowContext.ScheduleActivityAsync(targetActivity, OnChildCompletedTokenBasedLogicAsync);
+                    {
+                        var options = new ScheduleWorkOptions
+                        {
+                            CompletionCallback = OnChildCompletedTokenBasedLogicAsync,
+                            SchedulingActivityExecutionId = ctx.ChildContext.Id
+                        };
+                        await flowContext.ScheduleActivityAsync(targetActivity, options);
+                    }
                     break;
             }
         }

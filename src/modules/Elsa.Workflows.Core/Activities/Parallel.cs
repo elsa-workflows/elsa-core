@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Options;
 
 namespace Elsa.Workflows.Activities;
 
@@ -36,8 +37,15 @@ public class Parallel : Container
 
         context.SetProperty(ScheduledChildrenProperty, Activities.Count);
 
+        // For Parallel, all children are scheduled by the parent activity (this), so the scheduling activity is the Parallel itself
+        var options = new ScheduleWorkOptions
+        {
+            CompletionCallback = OnChildCompleted,
+            SchedulingActivityExecutionId = context.Id
+        };
+
         foreach (var activity in Activities)
-            await context.ScheduleActivityAsync(activity, OnChildCompleted);
+            await context.ScheduleActivityAsync(activity, options);
     }
     
     private static async ValueTask OnChildCompleted(ActivityCompletedContext context)

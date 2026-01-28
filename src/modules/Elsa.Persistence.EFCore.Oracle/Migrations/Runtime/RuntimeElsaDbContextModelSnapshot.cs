@@ -68,11 +68,23 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                     b.Property<int>("AggregateFaultCount")
                         .HasColumnType("NUMBER(10)");
 
+                    b.Property<int?>("CallStackDepth")
+                        .HasColumnType("NUMBER(10)");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<bool>("HasBookmarks")
                         .HasColumnType("BOOLEAN");
+
+                    b.Property<string>("SchedulingActivityExecutionId")
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<string>("SchedulingActivityId")
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<string>("SchedulingWorkflowInstanceId")
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedActivityState")
                         .HasColumnType("NCLOB");

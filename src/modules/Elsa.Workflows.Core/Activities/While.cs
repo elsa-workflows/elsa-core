@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Behaviors;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
@@ -83,16 +84,23 @@ public class While : Activity
 
     private async ValueTask OnBodyCompleted(ActivityCompletedContext context)
     {
-        await HandleIterationAsync(context.TargetContext);
+        await HandleIterationAsync(context.TargetContext, context.ChildContext);
     }
 
-    private async ValueTask HandleIterationAsync(ActivityExecutionContext context)
+    private async ValueTask HandleIterationAsync(ActivityExecutionContext context, ActivityExecutionContext? completedChildContext = null)
     {
         var isBreaking = context.GetIsBreaking();
         var loop = !isBreaking && await context.EvaluateInputPropertyAsync<While, bool>(x => x.Condition);
 
         if (loop)
-            await context.ScheduleActivityAsync(Body, OnBodyCompleted);
+        {
+            var options = new ScheduleWorkOptions
+            {
+                CompletionCallback = OnBodyCompleted,
+                SchedulingActivityExecutionId = completedChildContext?.Id
+            };
+            await context.ScheduleActivityAsync(Body, options);
+        }
         else
             await context.CompleteActivityAsync();
     }

@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Entities;
@@ -90,6 +91,47 @@ public class MemoryActivityExecutionStore : IActivityExecutionStore
         var records = _store.Query(query => Filter(query, filter)).ToList();
         _store.DeleteMany(records, x => x.Id);
         return Task.FromResult(records.LongCount());
+    }
+
+    /// <inheritdoc />
+    public Task<Page<ActivityExecutionRecord>> GetExecutionChainAsync(
+        string activityExecutionId,
+        bool includeCrossWorkflowChain = true,
+        int? skip = null,
+        int? take = null,
+        CancellationToken cancellationToken = default)
+    {
+        var chain = new List<ActivityExecutionRecord>();
+        var currentId = activityExecutionId;
+
+        // Traverse the chain backwards from the specified record to the root
+        while (currentId != null)
+        {
+            var record = _store.Query(query => query.Where(x => x.Id == currentId)).FirstOrDefault();
+            if (record == null)
+                break;
+
+            chain.Add(record);
+
+            // If not including cross-workflow chain and we hit a workflow boundary, stop
+            if (!includeCrossWorkflowChain && record.SchedulingWorkflowInstanceId != null)
+                break;
+
+            currentId = record.SchedulingActivityExecutionId;
+        }
+
+        // Reverse to get root-to-leaf order
+        chain.Reverse();
+
+        var totalCount = chain.Count;
+
+        // Apply pagination if specified
+        if (skip.HasValue)
+            chain = chain.Skip(skip.Value).ToList();
+        if (take.HasValue)
+            chain = chain.Take(take.Value).ToList();
+
+        return Task.FromResult(Page.Of(chain, totalCount));
     }
 
     private static IQueryable<ActivityExecutionRecord> Filter(IQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter) => filter.Apply(queryable);

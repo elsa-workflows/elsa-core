@@ -68,11 +68,23 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
                     b.Property<int>("AggregateFaultCount")
                         .HasColumnType("int");
 
+                    b.Property<int?>("CallStackDepth")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<bool>("HasBookmarks")
                         .HasColumnType("bit");
+
+                    b.Property<string>("SchedulingActivityExecutionId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SchedulingActivityId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SchedulingWorkflowInstanceId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SerializedActivityState")
                         .HasColumnType("nvarchar(max)");
