@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
@@ -27,6 +28,7 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             Substitute.For<IPayloadSerializer>(),
             Substitute.For<ISystemClock>(),
             Substitute.For<IIdentityGraphService>(),
+            Substitute.For<ITenantAccessor>(),
             Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>());
     }
 

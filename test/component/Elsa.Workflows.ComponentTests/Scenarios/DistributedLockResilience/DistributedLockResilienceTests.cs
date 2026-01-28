@@ -19,10 +19,10 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.DistributedLockResilience;
 public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
 {
     private const int MaxRetryAttempts = 3;
-    
-    // The IDistributedLockProvider is decorated with TestDistributedLockProvider in WorkflowServer.ConfigureTestServices
-    // This cast is safe because the decorator pattern ensures TestDistributedLockProvider wraps the actual provider
-    private TestDistributedLockProvider MockProvider => (TestDistributedLockProvider)Scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
+
+    // Selective mock provider - only mocks specific locks, not all locks globally
+    private SelectiveMockLockProvider SelectiveMockProvider => Scope.ServiceProvider.GetRequiredService<SelectiveMockLockProvider>();
+
     private ITransientExceptionDetector TransientExceptionDetector => Scope.ServiceProvider.GetRequiredService<ITransientExceptionDetector>();
     private ILogger<DistributedLockResilienceTests> Logger => Scope.ServiceProvider.GetRequiredService<ILogger<DistributedLockResilienceTests>>();
     private DistributedLockingOptions LockOptions => Scope.ServiceProvider.GetRequiredService<IOptions<DistributedLockingOptions>>().Value;
@@ -34,22 +34,25 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
     [InlineData(4, 4, true)]  // Four failures, exhausts retries (MaxRetryAttempts = 3)
     public async Task AcquireLockWithRetry_AcquisitionFailures_BehavesAsExpected(int failureCount, int expectedAttemptCount, bool shouldThrow)
     {
-        // Arrange
-        MockProvider.Reset();
-        MockProvider.FailAcquisitionTimes(failureCount);
+        // Arrange - Mock this specific lock only
+        var lockName = $"test-lock-{failureCount}";
+        var mockProvider = SelectiveMockProvider.MockLock(lockName);
+        mockProvider.Reset();
+        mockProvider.FailAcquisitionTimes(failureCount);
 
         // Act & Assert
         if (shouldThrow)
         {
-            await Assert.ThrowsAsync<TimeoutException>(async () => await AcquireLockWithRetryAsync($"test-lock-{failureCount}"));
+            await Assert.ThrowsAsync<TimeoutException>(async () => await AcquireLockWithRetryAsync(lockName, mockProvider));
         }
         else
         {
-            await using var handle = await AcquireLockWithRetryAsync($"test-lock-{failureCount}");
+            await using var handle = await AcquireLockWithRetryAsync(lockName, mockProvider);
             Assert.NotNull(handle);
         }
 
-        Assert.Equal(expectedAttemptCount, MockProvider.AcquisitionAttemptCount);
+        // Assert exact count - only this lock is mocked
+        Assert.Equal(expectedAttemptCount, mockProvider.AcquisitionAttemptCount);
     }
 
     [Theory]
@@ -62,10 +65,11 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
         var workflowClient = await CreateWorkflowClientAsync();
         var workflowInstanceId = workflowClient.WorkflowInstanceId;
 
-        // Reset and configure failures for this specific workflow instance's lock
-        MockProvider.Reset();
-        MockProvider.FailAcquisitionTimesForLock($"workflow-instance:{workflowInstanceId}", failureCount);
-        var attemptCountBefore = MockProvider.AcquisitionAttemptCount;
+        // Configure failures for this specific workflow instance's lock only
+        var lockPrefix = $"workflow-instance:{workflowInstanceId}";
+        var mockProvider = SelectiveMockProvider.MockLock(lockPrefix);
+        mockProvider.Reset();
+        mockProvider.FailAcquisitionTimes(failureCount);
 
         // Now run the instance with the configured lock failures
         var runRequest = new RunWorkflowInstanceRequest();
@@ -82,34 +86,42 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
             Assert.NotNull(response);
         }
 
-        // Verify retries occurred - check the delta from before the operation to account for background noise
-        var expectedAttempts = failureCount + 1; // failures + 1 success (or final failure for shouldThrow case)
-        AssertMinimumAttempts(MockProvider.AcquisitionAttemptCount - attemptCountBefore, expectedAttempts, "acquisition");
+        // Assert exact count - only this specific workflow instance lock is mocked
+        // When shouldThrow=true, all attempts fail: MaxRetryAttempts+1 (initial + retries)
+        // When shouldThrow=false, we succeed after failures: failureCount+1 (failures + success)
+        var expectedAttempts = shouldThrow ? MaxRetryAttempts + 1 : failureCount + 1;
+        Assert.Equal(expectedAttempts, mockProvider.AcquisitionAttemptCount);
     }
 
     [Fact]
     public async Task RunInstanceAsync_TransientReleaseFailure_ShouldLogButNotThrow()
     {
         // Arrange
-        MockProvider.Reset();
         var workflowClient = await CreateWorkflowClientAsync(createInstance: false);
 
-        // Configure failure after client creation to minimize background interference
-        MockProvider.FailReleaseOnce();
-        var releaseCountBefore = MockProvider.ReleaseAttemptCount;
+        // Create and run to get the workflow instance ID, then configure release failure for that lock
+        var request = CreateAndRunRequest();
+
+        // Mock the workflow-instance lock prefix (all workflow instance locks)
+        var mockProvider = SelectiveMockProvider.MockLock("workflow-instance:");
+        mockProvider.Reset();
+        mockProvider.FailReleaseOnce();
 
         // Act - Release failure should be caught and logged, not thrown
-        var response = await workflowClient.CreateAndRunInstanceAsync(CreateAndRunRequest());
+        var response = await workflowClient.CreateAndRunInstanceAsync(request);
 
         // Assert
         Assert.NotNull(response);
         Assert.NotNull(response.WorkflowInstanceId);
-        AssertMinimumAttempts(MockProvider.ReleaseAttemptCount - releaseCountBefore, 1, "release");
+
+        // Verify at least one release occurred
+        Assert.True(mockProvider.ReleaseAttemptCount >= 1,
+            $"Expected at least 1 release attempt, but got {mockProvider.ReleaseAttemptCount}");
     }
 
-    private async Task<IDistributedSynchronizationHandle?> AcquireLockWithRetryAsync(string lockName) =>
+    private async Task<IDistributedSynchronizationHandle?> AcquireLockWithRetryAsync(string lockName, TestDistributedLockProvider mockProvider) =>
         await RetryPipeline.ExecuteAsync(async ct =>
-            await MockProvider.AcquireLockAsync(lockName, LockOptions.LockAcquisitionTimeout, ct),
+            await mockProvider.CreateLock(lockName).AcquireAsync(LockOptions.LockAcquisitionTimeout, ct),
             CancellationToken.None);
 
     /// <summary>
@@ -137,10 +149,6 @@ public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(SimpleWorkflow.DefinitionId, VersionOptions.Latest)
         };
-
-    private static void AssertMinimumAttempts(int actualAttempts, int expectedAttempts, string attemptType) =>
-        Assert.True(actualAttempts >= expectedAttempts,
-            $"Expected at least {expectedAttempts} {attemptType} attempts, but got {actualAttempts}");
 
     private static ResiliencePipeline CreateRetryPipeline(ITransientExceptionDetector transientExceptionDetector, ILogger logger) =>
         new ResiliencePipelineBuilder()

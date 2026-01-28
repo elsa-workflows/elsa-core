@@ -1,4 +1,5 @@
-﻿using Elsa.Testing.Shared;
+﻿using Elsa.Common.Multitenancy;
+using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
@@ -29,7 +30,7 @@ public class Tests
                 DefinitionId: "WorkflowWithTrigger",
                 Version: 1,
                 Id: "1",
-                TenantId: "default"
+                TenantId: Tenant.DefaultTenantId
             ),
             Root = new Event("Foo")
             {

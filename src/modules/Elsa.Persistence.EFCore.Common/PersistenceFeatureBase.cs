@@ -2,6 +2,7 @@ using Elsa.Common.Entities;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Persistence.EFCore.EntityHandlers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
@@ -60,6 +61,9 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext>(IModule modul
         {
             options.RunMigrations[typeof(TDbContext)] = RunMigrations;
         });
+        
+        Services.AddScoped<IEntitySavingHandler, ApplyTenantId>();
+        Services.AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>();
     }
 
     protected virtual void ConfigureMigrations()

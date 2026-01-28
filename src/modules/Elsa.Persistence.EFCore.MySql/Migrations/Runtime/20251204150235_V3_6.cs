@@ -30,10 +30,10 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                 .OldAnnotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId",
+                name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId",
                 schema: _schema.Schema,
                 table: "Triggers",
-                columns: new[] { "WorkflowDefinitionId", "Hash", "ActivityId" },
+                columns: new[] { "WorkflowDefinitionId", "Hash", "ActivityId", "TenantId" },
                 unique: true);
         }
 
@@ -41,7 +41,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(
-                name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId",
+                name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId",
                 schema: _schema.Schema,
                 table: "Triggers");
 

@@ -1,7 +1,7 @@
 ﻿namespace Elsa.Common.Multitenancy;
 
 /// <summary>
-/// A strategy for resolving the current tenant. This is called the tenant initializer.
+/// A strategy for resolving the current tenant, called from the tenant initializer.
 /// </summary>
 public interface ITenantResolver
 {

@@ -15,6 +15,11 @@ public class TestDistributedLockProvider(IDistributedLockProvider innerProvider)
     private int _releaseAttemptCount;
     private string? _targetLockPrefix;
 
+    /// <summary>
+    /// Gets the inner/real lock provider that this test provider wraps.
+    /// </summary>
+    public IDistributedLockProvider InnerProvider => innerProvider;
+
     public int AcquisitionAttemptCount => _acquisitionAttemptCount;
     public int ReleaseAttemptCount => _releaseAttemptCount;
 

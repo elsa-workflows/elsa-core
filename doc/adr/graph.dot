@@ -8,7 +8,13 @@ _3 [label="3. Direct Bookmark Management in WorkflowExecutionContext"; URL="0003
 _2 -> _3 [style="dotted", weight=1];
 _4 [label="4. Activity Execution Snapshots"; URL="0004-activity-execution-snapshots.html"];
 _3 -> _4 [style="dotted", weight=1];
-_5 [label="5. Tenant Deleted Event"; URL="0005-tenant-deleted-event.html"];
+_5 [label="5. Token-Centric Flowchart Execution Model"; URL="0005-token-centric-flowchart-execution-model.html"];
 _4 -> _5 [style="dotted", weight=1];
+_6 [label="6. Tenant Deleted Event"; URL="0006-tenant-deleted-event.html"];
+_5 -> _6 [style="dotted", weight=1];
+_7 [label="7. Adoption of Explicit Merge Modes for Flowchart Joins"; URL="0007-adoption-of-explicit-merge-modes-for-flowchart-joins.html"];
+_6 -> _7 [style="dotted", weight=1];
+_8 [label="8. Empty String as Default Tenant ID"; URL="0008-empty-string-as-default-tenant-id.html"];
+_7 -> _8 [style="dotted", weight=1];
 }
 }
