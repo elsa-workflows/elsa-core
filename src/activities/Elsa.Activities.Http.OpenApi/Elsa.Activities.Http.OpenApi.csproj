@@ -4,7 +4,7 @@
     <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
         <Description>
             Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
             This package provides Swashbuckle filters that include HTTP Endpoint activities.
@@ -25,5 +25,12 @@
     <ItemGroup>
       <ProjectReference Include="..\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
     </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0'">
+        <PackageReference Include="System.Linq.Async" Version="6.0.1">
+            <ExcludeAssets>compile</ExcludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
 
 </Project>
