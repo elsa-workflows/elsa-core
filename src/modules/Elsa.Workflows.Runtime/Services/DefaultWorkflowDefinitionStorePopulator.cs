@@ -68,6 +68,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
             foreach (var result in results)
             {
+                // Only import workflows belonging to the current tenant.
                 if (result.Workflow.Identity.TenantId.NormalizeTenantId() != currentTenantId.NormalizeTenantId())
                 {
                     _logger.LogDebug(
