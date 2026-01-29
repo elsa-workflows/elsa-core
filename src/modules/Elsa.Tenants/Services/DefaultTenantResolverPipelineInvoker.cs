@@ -27,7 +27,7 @@ public class DefaultTenantResolverPipelineInvoker(
 
             if (result.IsResolved)
             {
-                var resolvedTenantId = result.ResolveTenantId().NormalizeTenantId();
+                var resolvedTenantId = result.ResolveTenantId();
 
                 if (tenantsDictionary.TryGetValue(resolvedTenantId, out var tenant))
                     return tenant;
