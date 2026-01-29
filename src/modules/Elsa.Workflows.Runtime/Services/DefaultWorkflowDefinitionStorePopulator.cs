@@ -60,7 +60,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     {
         var providers = _workflowDefinitionProviders();
         var workflowDefinitions = new List<WorkflowDefinition>();
-        var currentTenantId = _tenantAccessor.Tenant?.Id;
+        var currentTenantId = _tenantAccessor.Tenant?.Id.NormalizeTenantId();
 
         foreach (var provider in providers)
         {
@@ -69,7 +69,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             foreach (var result in results)
             {
                 // Only import workflows belonging to the current tenant.
-                if (result.Workflow.Identity.TenantId.NormalizeTenantId() != currentTenantId.NormalizeTenantId())
+                if (result.Workflow.Identity.TenantId.NormalizeTenantId() != currentTenantId)
                 {
                     _logger.LogDebug(
                         "Skipping adding workflow {WorkflowId} from provider {Provider} because it belongs to tenant '{WorkflowTenantId}' but current tenant is '{CurrentTenantId}'",
