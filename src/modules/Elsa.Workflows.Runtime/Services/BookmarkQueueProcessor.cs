@@ -30,8 +30,18 @@ public class BookmarkQueueProcessor(IBookmarkQueueStore store, IWorkflowResumer 
 
     private async Task ProcessPageAsync(Page<BookmarkQueueItem> page, CancellationToken cancellationToken = default)
     {
-        foreach (var bookmarkQueueItem in page.Items) 
-            await ProcessItemAsync(bookmarkQueueItem, cancellationToken);
+        foreach (var bookmarkQueueItem in page.Items)
+        {
+            try
+            {
+                await ProcessItemAsync(bookmarkQueueItem, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // Log the error but continue processing other items in the batch
+                logger.LogError(ex, "Error processing bookmark queue item {BookmarkQueueItemId}. Continuing with next item.", bookmarkQueueItem.Id);
+            }
+        }
     }
 
     private async Task ProcessItemAsync(BookmarkQueueItem item, CancellationToken cancellationToken = default)
@@ -54,14 +64,19 @@ public class BookmarkQueueProcessor(IBookmarkQueueStore store, IWorkflowResumer 
                 logger.LogDebug("No matching bookmarks found for bookmark queue item {BookmarkQueueItemId} for workflow instance {WorkflowInstanceId} for activity type {ActivityType} with stimulus {StimulusHash}. The bookmark may have already been processed by another queue item.", item.Id, item.WorkflowInstanceId, item.ActivityTypeName, item.StimulusHash);
             }
         }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error resuming workflow for bookmark queue item {BookmarkQueueItemId} for workflow instance {WorkflowInstanceId}. The queue item will still be deleted to prevent accumulation.", item.Id, item.WorkflowInstanceId);
+        }
         finally
         {
             // Always delete the queue item after processing, regardless of whether bookmarks were found or an exception occurred.
             // This prevents duplicate queue items from accumulating when the same bookmark is queued multiple times in rapid succession.
             // The distributed lock in WorkflowResumer ensures that the actual bookmark is only processed once.
+            // Use CancellationToken.None to ensure cleanup happens even during application shutdown.
             try
             {
-                await store.DeleteAsync(item.Id, cancellationToken);
+                await store.DeleteAsync(item.Id, CancellationToken.None);
             }
             catch (Exception ex)
             {
