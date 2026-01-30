@@ -199,7 +199,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{0A04B1FD-06C
 		doc\adr\graph.dot = doc\adr\graph.dot
 		doc\adr\toc.md = doc\adr\toc.md
 		doc\adr\0005-activity-execution-snapshots.md = doc\adr\0004-activity-execution-snapshots.md
-		doc\adr\0005-tenant-deleted-event.md = doc\adr\0005-tenant-deleted-event.md
 		doc\adr\0005-token-centric-flowchart-execution-model.md = doc\adr\0005-token-centric-flowchart-execution-model.md
 		doc\adr\0006-tenant-deleted-event.md = doc\adr\0006-tenant-deleted-event.md
 		doc\adr\0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md = doc\adr\0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md
