@@ -46,11 +46,15 @@ public class BookmarkQueueProcessor(IBookmarkQueueStore store, IWorkflowResumer 
         if (responses.Count > 0)
         {
             logger.LogDebug("Successfully resumed {WorkflowCount} workflow instances using stimulus {StimulusHash} for activity type {ActivityType}", responses.Count, item.StimulusHash, item.ActivityTypeName);
-            await store.DeleteAsync(item.Id, cancellationToken);
         }
         else
         {
-            logger.LogDebug("No matching bookmarks found for bookmark queue item {BookmarkQueueItemId} for workflow instance {WorkflowInstanceId} for activity type {ActivityType} with stimulus {StimulusHash}", item.Id, item.WorkflowInstanceId, item.ActivityTypeName, item.StimulusHash);
+            logger.LogDebug("No matching bookmarks found for bookmark queue item {BookmarkQueueItemId} for workflow instance {WorkflowInstanceId} for activity type {ActivityType} with stimulus {StimulusHash}. The bookmark may have already been processed by another queue item.", item.Id, item.WorkflowInstanceId, item.ActivityTypeName, item.StimulusHash);
         }
+        
+        // Always delete the queue item after processing, regardless of whether bookmarks were found.
+        // This prevents duplicate queue items from accumulating when the same bookmark is queued multiple times in rapid succession.
+        // The distributed lock in WorkflowResumer ensures that the actual bookmark is only processed once.
+        await store.DeleteAsync(item.Id, cancellationToken);
     }
 }
