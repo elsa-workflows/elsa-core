@@ -26,7 +26,10 @@ internal class ResumeBulkDispatchWorkflowActivity(IBookmarkQueue bookmarkQueue, 
         if (!waitForCompletion)
             return;
         
-        var parentInstanceId = (string)workflowState.Properties["ParentInstanceId"];
+        if (!workflowState.Properties.TryGetValue("ParentInstanceId", out var parentInstanceIdValue))
+            return;
+        
+        var parentInstanceId = (string)parentInstanceIdValue;
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<BulkDispatchWorkflows>();
         var stimulus = new BulkDispatchWorkflowsStimulus(parentInstanceId);
         var stimulusHash = stimulusHasher.Hash(activityTypeName, stimulus);
