@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
@@ -6,20 +7,24 @@ using Elsa.Workflows.Models;
 namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 
 /// <summary>
-/// Provides activity descriptors based on <see cref="WorkflowDefinition"/>s stored in the database. 
+/// Provides activity descriptors based on <see cref="WorkflowDefinition"/>s stored in the database.
 /// </summary>
-public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, WorkflowDefinitionActivityDescriptorFactory workflowDefinitionActivityDescriptorFactory) : IActivityProvider
+public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, WorkflowDefinitionActivityDescriptorFactory workflowDefinitionActivityDescriptorFactory, ITenantAccessor tenantAccessor) : IActivityProvider
 {
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
+        var currentTenantId = (tenantAccessor.Tenant?.Id).NormalizeTenantId();
+
         var filter = new WorkflowDefinitionFilter
         {
             UsableAsActivity = true,
             VersionOptions = VersionOptions.All
         };
-        
-        var definitions = (await store.FindManyAsync(filter, cancellationToken)).ToList();
+
+        var definitions = (await store.FindManyAsync(filter, cancellationToken))
+            .Where(d => d.TenantId.NormalizeTenantId() == currentTenantId)
+            .ToList();
         return CreateDescriptors(definitions).ToList();
     }
 
