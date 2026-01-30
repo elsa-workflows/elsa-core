@@ -6,6 +6,7 @@ using Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Filters;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities;
@@ -39,16 +40,12 @@ public class DeleteWorkflowTests : AppComponentTest
         var deletedCount = await workflowDefinitionManager.DeleteByDefinitionIdAsync(Workflows.DeleteWorkflow.DefinitionId);
         Assert.True(deletedCount > 0, "Expected workflow definition to be deleted.");
 
-        // Wait briefly for deletion to complete
-        await Task.Delay(TimeSpan.FromMilliseconds(500));
-
-        // Force refresh of the activity registry from the database
-        // This will query the database and NOT find the deleted workflow
+        // Force a refresh of the activity registry to ensure it reflects the deletion
         var activityRegistry = _scope1.ServiceProvider.GetRequiredService<IActivityRegistry>();
         var workflowDefinitionActivityProvider = _scope1.ServiceProvider.GetRequiredService<WorkflowDefinitionActivityProvider>();
         await activityRegistry.RefreshDescriptorsAsync(workflowDefinitionActivityProvider);
 
-        // Now verify the workflow is removed from the registry
+        // Verify the workflow is removed from the registry
         WorkflowTypeDeletedFromRegistry(_scope1, Workflows.DeleteWorkflow.Type);
     }
 

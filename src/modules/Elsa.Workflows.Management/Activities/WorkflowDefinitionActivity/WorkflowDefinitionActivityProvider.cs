@@ -14,17 +14,13 @@ public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
-        var currentTenantId = (tenantAccessor.Tenant?.Id).NormalizeTenantId();
-
         var filter = new WorkflowDefinitionFilter
         {
             UsableAsActivity = true,
             VersionOptions = VersionOptions.All
         };
 
-        var definitions = (await store.FindManyAsync(filter, cancellationToken))
-            .Where(d => d.TenantId.NormalizeTenantId() == currentTenantId)
-            .ToList();
+        var definitions = (await store.FindManyAsync(filter, cancellationToken)).ToList();
         return CreateDescriptors(definitions).ToList();
     }
 
