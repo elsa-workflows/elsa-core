@@ -36,8 +36,7 @@ public class DeleteWorkflowTests : AppComponentTest
         var workflowDefinitionManager = _scope1.ServiceProvider.GetRequiredService<IWorkflowDefinitionManager>();
         await workflowDefinitionManager.DeleteByDefinitionIdAsync(Workflows.DeleteWorkflow.DefinitionId);
 
-        // Wait for the event handler to process the deletion from the activity registry
-        await _signalManager.WaitAsync(WorkflowDeletedSignal, 5000);
+        await WaitForWorkflowTypeRemovedAsync(_scope1, Workflows.DeleteWorkflow.Type, TimeSpan.FromSeconds(5));
 
         WorkflowTypeDeletedFromRegistry(_scope1, Workflows.DeleteWorkflow.Type);
     }
@@ -72,6 +71,20 @@ public class DeleteWorkflowTests : AppComponentTest
         var descriptor = activityRegistry.Find(type);
 
         Assert.Null(descriptor);
+    }
+
+    private static async Task WaitForWorkflowTypeRemovedAsync(IServiceScope scope, string type, TimeSpan timeout)
+    {
+        var activityRegistry = scope.ServiceProvider.GetRequiredService<IActivityRegistry>();
+        var deadline = DateTimeOffset.UtcNow + timeout;
+
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            if (activityRegistry.Find(type) == null)
+                return;
+
+            await Task.Delay(100);
+        }
     }
 
     private void OnWorkflowDefinitionDeleted(object? sender, WorkflowDefinitionDeletedEventArgs args)
