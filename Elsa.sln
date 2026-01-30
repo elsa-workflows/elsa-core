@@ -196,12 +196,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{0A04B1FD-06C
 		doc\adr\0001-record-architecture-decisions.md = doc\adr\0001-record-architecture-decisions.md
 		doc\adr\0002-fault-propagation-from-child-to-parent-activities.md = doc\adr\0002-fault-propagation-from-child-to-parent-activities.md
 		doc\adr\0003-direct-bookmark-management-in-workflowexecutioncontext.md = doc\adr\0003-direct-bookmark-management-in-workflowexecutioncontext.md
-		doc\adr\0004-token-centric-flowchart-execution-model.md = doc\adr\0004-token-centric-flowchart-execution-model.md
 		doc\adr\graph.dot = doc\adr\graph.dot
 		doc\adr\toc.md = doc\adr\toc.md
 		doc\adr\0005-activity-execution-snapshots.md = doc\adr\0004-activity-execution-snapshots.md
-		doc\adr\0006-tenant-deleted-event.md = doc\adr\0005-tenant-deleted-event.md
-		doc\adr\0006-adoption-of-explicit-merge-modes-for-flowchart-joins.md = doc\adr\0006-adoption-of-explicit-merge-modes-for-flowchart-joins.md
+		doc\adr\0005-tenant-deleted-event.md = doc\adr\0005-tenant-deleted-event.md
+		doc\adr\0005-token-centric-flowchart-execution-model.md = doc\adr\0005-token-centric-flowchart-execution-model.md
+		doc\adr\0006-tenant-deleted-event.md = doc\adr\0006-tenant-deleted-event.md
+		doc\adr\0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md = doc\adr\0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md
+		doc\adr\0008-empty-string-as-default-tenant-id.md = doc\adr\0008-empty-string-as-default-tenant-id.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bounty", "bounty", "{9B80A705-2E31-4012-964A-83963DCDB384}"
@@ -326,6 +328,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Resilience.Core.UnitTests", "test\unit\Elsa.Resilience.Core.UnitTests\Elsa.Resilience.Core.UnitTests.csproj", "{B8006D70-1630-43DB-A043-FA89FAC70F37}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Common.UnitTests", "test\unit\Elsa.Common.UnitTests\Elsa.Common.UnitTests.csproj", "{A3C07D5B-2A30-494E-B9BC-4B1594B31ABC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Tenants.UnitTests", "test\unit\Elsa.Tenants.UnitTests\Elsa.Tenants.UnitTests.csproj", "{DC476900-D836-4920-A696-CF8796668723}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -591,6 +595,10 @@ Global
 		{A3C07D5B-2A30-494E-B9BC-4B1594B31ABC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A3C07D5B-2A30-494E-B9BC-4B1594B31ABC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A3C07D5B-2A30-494E-B9BC-4B1594B31ABC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC476900-D836-4920-A696-CF8796668723}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC476900-D836-4920-A696-CF8796668723}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC476900-D836-4920-A696-CF8796668723}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC476900-D836-4920-A696-CF8796668723}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -694,6 +702,7 @@ Global
 		{874F5A44-DB06-47AB-A18C-2D13942E0147} = {477C2416-312D-46AE-BCD6-8FA1FAB43624}
 		{B8006D70-1630-43DB-A043-FA89FAC70F37} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{A3C07D5B-2A30-494E-B9BC-4B1594B31ABC} = {18453B51-25EB-4317-A4B3-B10518252E92}
+		{DC476900-D836-4920-A696-CF8796668723} = {18453B51-25EB-4317-A4B3-B10518252E92}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

@@ -1,10 +1,11 @@
 using Elsa.Common;
-using Elsa.Workflows.Activities;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
+using Open.Linq.AsyncExtensions;
 using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Services;
@@ -18,25 +19,25 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
     public DefaultWorkflowDefinitionStorePopulatorTests()
     {
         _storeMock = Substitute.For<IWorkflowDefinitionStore>();
-        _storeMock.FindManyAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
-            .Returns(_workflowDefinitionsInStore);
-        _populator = new DefaultWorkflowDefinitionStorePopulator(() => new List<IWorkflowsProvider>(),
+        _storeMock.FindManyAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>()).Returns(_workflowDefinitionsInStore);
+        _populator = new(() => new List<IWorkflowsProvider>(),
             Substitute.For<ITriggerIndexer>(),
             _storeMock,
             Substitute.For<IActivitySerializer>(),
             Substitute.For<IPayloadSerializer>(),
             Substitute.For<ISystemClock>(),
             Substitute.For<IIdentityGraphService>(),
+            Substitute.For<ITenantAccessor>(),
             Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>());
     }
 
     [Fact(DisplayName = "When adding a new workflow it needs to be saved")]
     public async Task AddOrUpdateCoreAsync_NewWorkflowDefinition_AddsWorkflowDefinition()
     {
-        var workflow = new MaterializedWorkflow(new Workflow
+        var workflow = new MaterializedWorkflow(new()
         {
-            Identity = new WorkflowIdentity("a", 7, "1"),
-            Publication = new WorkflowPublication(true, true)
+            Identity = new("a", 7, "1"),
+            Publication = new(true, true)
         }, "Test", "Test");
 
         await _populator.AddAsync(workflow);
@@ -62,9 +63,9 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             }
         });
 
-        var workflow = new MaterializedWorkflow(new Workflow
+        var workflow = new MaterializedWorkflow(new()
         {
-            Identity = new WorkflowIdentity("a", 1, "1"),
+            Identity = new("a", 1, "1"),
             Inputs = new List<InputDefinition>
             {
                 new()
@@ -94,10 +95,10 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             IsLatest = true,
             IsPublished = true
         });
-        var workflow = new MaterializedWorkflow(new Workflow
+        var workflow = new MaterializedWorkflow(new()
         {
-            Identity = new WorkflowIdentity("a", 2, "2"),
-            Publication = new WorkflowPublication(workflowAddedIsLatest, workflowAddedIsPublished)
+            Identity = new("a", 2, "2"),
+            Publication = new(workflowAddedIsLatest, workflowAddedIsPublished)
         }, "Test", "Test");
 
         await _populator.AddAsync(workflow);
@@ -119,11 +120,11 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             IsPublished = true
         });
 
-        var workflow = new MaterializedWorkflow(new Workflow
+        var workflow = new MaterializedWorkflow(new()
         {
-            Identity = new WorkflowIdentity("a", 3, "1"),
+            Identity = new("a", 3, "1"),
             Version = 1,
-            Publication = new WorkflowPublication(true, true)
+            Publication = new(true, true)
         }, "Test", "Test");
 
         await _populator.AddAsync(workflow);
@@ -143,9 +144,9 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
                 Version = 1,
             });
 
-        var workflow = new MaterializedWorkflow(new Workflow
+        var workflow = new MaterializedWorkflow(new()
         {
-            Identity = new WorkflowIdentity("a", 2, "1")
+            Identity = new("a", 2, "1")
         }, "Test", "Test");
 
         await _populator.AddAsync(workflow);
@@ -166,10 +167,10 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
                 IsLatest = true
             });
         
-        var workflow = new MaterializedWorkflow(new Workflow
+        var workflow = new MaterializedWorkflow(new()
         {
-            Identity = new WorkflowIdentity("a", 1, "1"),
-            Publication = new WorkflowPublication(true, true)
+            Identity = new("a", 1, "1"),
+            Publication = new(true, true)
         }, "Test", "Test");
 
         await _populator.AddAsync(workflow);
@@ -195,10 +196,10 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
                 }
             });
 
-        var workflow = new MaterializedWorkflow(new Workflow
+        var workflow = new MaterializedWorkflow(new()
         {
-            Identity = new WorkflowIdentity("a", 1, "1"),
-            Publication = new WorkflowPublication(true, true)
+            Identity = new("a", 1, "1"),
+            Publication = new(true, true)
         }, "Test", "Test");
 
         await _populator.AddAsync(workflow);
@@ -226,5 +227,92 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
     {
         await _storeMock.Received(count)
             .SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "PopulateStoreAsync imports workflows from current tenant")]
+    public async Task PopulateStoreAsync_CurrentTenantWorkflows_ImportsWorkflows()
+    {
+        var currentTenantId = "tenant-1";
+
+        var workflow1 = CreateMaterializedWorkflow("workflow-1", "id-1", currentTenantId);
+        var workflow2 = CreateMaterializedWorkflow("workflow-2", "id-2", currentTenantId);
+
+        var populator = CreatePopulatorWithTenant(currentTenantId, workflow1, workflow2);
+        var result = await populator.PopulateStoreAsync();
+
+        Assert.Equal(2, result.Count());
+        await _storeMock.Received(2).SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "PopulateStoreAsync skips workflows from other tenants")]
+    public async Task PopulateStoreAsync_OtherTenantWorkflows_SkipsWorkflows()
+    {
+        var currentTenantId = "tenant-1";
+        var otherTenantId = "tenant-2";
+
+        var workflowCurrentTenant = CreateMaterializedWorkflow("workflow-1", "id-1", currentTenantId);
+        var workflowOtherTenant = CreateMaterializedWorkflow("workflow-2", "id-2", otherTenantId);
+
+        var populator = CreatePopulatorWithTenant(currentTenantId, workflowCurrentTenant, workflowOtherTenant);
+        var result = await populator.PopulateStoreAsync().ToList();
+
+        Assert.Single(result);
+        Assert.Equal("workflow-1", result.First().DefinitionId);
+        await _storeMock.Received(1).SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory(DisplayName = "PopulateStoreAsync handles null/empty tenant IDs correctly")]
+    [InlineData(null, null, true)]  // Both null - should import
+    [InlineData("", "", true)]      // Both empty - should import
+    [InlineData(null, "", true)]    // Normalized as same - should import
+    [InlineData("tenant-1", null, false)]  // Different tenants - should skip
+    [InlineData("tenant-1", "", false)]    // Different tenants - should skip
+    public async Task PopulateStoreAsync_NullOrEmptyTenantIds_HandlesCorrectly(string? currentTenantId, string? workflowTenantId, bool shouldImport)
+    {
+        var workflow = CreateMaterializedWorkflow("workflow-1", "id-1", workflowTenantId);
+        var populator = CreatePopulatorWithTenant(currentTenantId, workflow);
+        var result = await populator.PopulateStoreAsync();
+
+        if (shouldImport)
+        {
+            Assert.Single(result);
+            await _storeMock.Received(1).SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
+        }
+        else
+        {
+            Assert.Empty(result);
+            await _storeMock.DidNotReceive().SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
+        }
+    }
+
+    private MaterializedWorkflow CreateMaterializedWorkflow(string definitionId, string id, string? tenantId)
+    {
+        return new(new()
+        {
+            Identity = new(definitionId, 1, id, tenantId),
+            Publication = new(true, true)
+        }, "Test", "TestProvider");
+    }
+
+    private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(string? tenantId, params MaterializedWorkflow[] workflows)
+    {
+        var tenantAccessor = Substitute.For<ITenantAccessor>();
+        tenantAccessor.Tenant.Returns(tenantId != null ? new Tenant { Id = tenantId } : null);
+
+        var provider = Substitute.For<IWorkflowsProvider>();
+        provider.Name.Returns("TestProvider");
+        provider.GetWorkflowsAsync(Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<IEnumerable<MaterializedWorkflow>>(workflows));
+
+        return new(
+            () => new List<IWorkflowsProvider> { provider },
+            Substitute.For<ITriggerIndexer>(),
+            _storeMock,
+            Substitute.For<IActivitySerializer>(),
+            Substitute.For<IPayloadSerializer>(),
+            Substitute.For<ISystemClock>(),
+            Substitute.For<IIdentityGraphService>(),
+            tenantAccessor,
+            Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>());
     }
 }

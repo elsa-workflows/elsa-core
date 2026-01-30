@@ -131,16 +131,17 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
         builder.ConfigureTestServices(services =>
         {
-            // Decorate IDistributedLockProvider with TestDistributedLockProvider so tests use it
-            services.Decorate<IDistributedLockProvider, TestDistributedLockProvider>();
-            
-            // Also register TestDistributedLockProvider as itself so tests can access it directly for configuration
+            // Decorate IDistributedLockProvider with SelectiveMockLockProvider
+            // This allows tests to selectively mock specific locks without affecting background operations
+            services.Decorate<IDistributedLockProvider, SelectiveMockLockProvider>();
+
+            // Register SelectiveMockLockProvider as itself so tests can access it for configuration
             services.AddSingleton(sp =>
             {
                 var provider = sp.GetRequiredService<IDistributedLockProvider>();
-                if (provider is not TestDistributedLockProvider testProvider)
-                    throw new InvalidOperationException($"Expected IDistributedLockProvider to be decorated with TestDistributedLockProvider, but got {provider.GetType().Name}");
-                return testProvider;
+                if (provider is not SelectiveMockLockProvider selectiveProvider)
+                    throw new InvalidOperationException($"Expected IDistributedLockProvider to be decorated with SelectiveMockLockProvider, but got {provider.GetType().Name}");
+                return selectiveProvider;
             });
 
             services
@@ -154,7 +155,6 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 .AddWorkflowsProvider<TestWorkflowProvider>()
                 .AddNotificationHandlersFrom<WorkflowEventHandlers>()
                 .Decorate<IChangeTokenSignaler, EventPublishingChangeTokenSignaler>()
-                .Decorate<IDistributedLockProvider, TestDistributedLockProvider>()
                 ;
         });
     }

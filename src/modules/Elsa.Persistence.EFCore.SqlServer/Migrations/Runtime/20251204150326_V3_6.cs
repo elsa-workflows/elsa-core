@@ -18,6 +18,16 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Drop old index if it exists (before TenantId was added)
+            migrationBuilder.Sql($@"
+                IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId'
+                    AND object_id = OBJECT_ID('{_schema.Schema}.Triggers'))
+                BEGIN
+                    DROP INDEX [IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId]
+                    ON [{_schema.Schema}].[Triggers]
+                END
+            ");
+
             migrationBuilder.AlterColumn<string>(
                 name: "ActivityId",
                 schema: _schema.Schema,
@@ -28,10 +38,10 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
                 oldType: "nvarchar(max)");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId",
+                name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId",
                 schema: _schema.Schema,
                 table: "Triggers",
-                columns: new[] { "WorkflowDefinitionId", "Hash", "ActivityId" },
+                columns: new[] { "WorkflowDefinitionId", "Hash", "ActivityId", "TenantId" },
                 unique: true,
                 filter: "[Hash] IS NOT NULL");
         }
@@ -40,7 +50,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(
-                name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId",
+                name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId",
                 schema: _schema.Schema,
                 table: "Triggers");
 

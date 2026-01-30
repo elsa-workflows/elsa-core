@@ -47,7 +47,7 @@ public class ClrWorkflowsProvider(
         {
             Id = id,
             DefinitionId = definitionId,
-            TenantId = tenantId?.NullIfEmpty()
+            TenantId = tenantId.NormalizeTenantId()
         };
 
         var materializerContext = new ClrWorkflowMaterializerContext(workflowBuilder.GetType());
