@@ -60,7 +60,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     {
         var providers = _workflowDefinitionProviders();
         var workflowDefinitions = new List<WorkflowDefinition>();
-        var currentTenantId = _tenantAccessor.Tenant?.Id.NormalizeTenantId();
+        var currentTenantId = (_tenantAccessor.Tenant?.Id).NormalizeTenantId();
 
         foreach (var provider in providers)
         {
