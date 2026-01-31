@@ -47,16 +47,10 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
             if (descriptor.TypeName != type)
                 continue;
 
-            if (descriptor.TenantId == tenantId)
-            {
-                if (tenantSpecific == null || descriptor.Version > tenantSpecific.Version)
-                    tenantSpecific = descriptor;
-            }
-            else if (descriptor.TenantId == null)
-            {
-                if (tenantAgnostic == null || descriptor.Version > tenantAgnostic.Version)
-                    tenantAgnostic = descriptor;
-            }
+            if (descriptor.TenantId == tenantId && (tenantSpecific == null || descriptor.Version > tenantSpecific.Version))
+                tenantSpecific = descriptor;
+            else if (descriptor.TenantId == null && (tenantAgnostic == null || descriptor.Version > tenantAgnostic.Version))
+                tenantAgnostic = descriptor;
         }
 
         // Prefer tenant-specific over tenant-agnostic
