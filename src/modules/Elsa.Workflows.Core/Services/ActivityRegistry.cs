@@ -35,7 +35,27 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     }
 
     /// <inheritdoc />
-    public ActivityDescriptor? Find(string type) => _activityDescriptors.Values.Where(x => (x.TenantId == tenantAccessor.TenantId || x.TenantId == null) && x.TypeName == type).MaxBy(x => x.Version);
+    public ActivityDescriptor? Find(string type)
+    {
+        var tenantId = tenantAccessor.TenantId;
+        ActivityDescriptor? tenantSpecific = null;
+        ActivityDescriptor? tenantAgnostic = null;
+
+        // Single-pass iteration to find both tenant-specific and tenant-agnostic descriptors
+        foreach (var descriptor in _activityDescriptors.Values)
+        {
+            if (descriptor.TypeName != type)
+                continue;
+
+            if (descriptor.TenantId == tenantId && (tenantSpecific == null || descriptor.Version > tenantSpecific.Version))
+                tenantSpecific = descriptor;
+            else if (descriptor.TenantId == null && (tenantAgnostic == null || descriptor.Version > tenantAgnostic.Version))
+                tenantAgnostic = descriptor;
+        }
+
+        // Prefer tenant-specific over tenant-agnostic
+        return tenantSpecific ?? tenantAgnostic;
+    }
 
     /// <inheritdoc />
     public ActivityDescriptor? Find(string type, int version) => _activityDescriptors.GetValueOrDefault((tenantAccessor.TenantId, type, version)) ?? _activityDescriptors.GetValueOrDefault((null, type, version));
