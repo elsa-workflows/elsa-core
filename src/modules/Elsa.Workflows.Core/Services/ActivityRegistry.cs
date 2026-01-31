@@ -78,17 +78,22 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     {
         var currentTenantId = tenantAccessor.TenantId;
 
-        // Get all matching descriptors from both tenant and agnostic registries
-        var tenantDescriptor = _tenantRegistries.TryGetValue(currentTenantId, out var tenantRegistry)
-            ? tenantRegistry.ActivityDescriptors.Values.Where(x => x.TypeName == type).MaxBy(x => x.Version)
-            : null;
+        // Always prefer tenant-specific descriptors over tenant-agnostic ones
+        // Get highest version from current tenant's registry
+        if (_tenantRegistries.TryGetValue(currentTenantId, out var tenantRegistry))
+        {
+            var tenantDescriptor = tenantRegistry.ActivityDescriptors.Values
+                .Where(x => x.TypeName == type)
+                .MaxBy(x => x.Version);
 
-        var agnosticDescriptor = _agnosticRegistry.ActivityDescriptors.Values.Where(x => x.TypeName == type).MaxBy(x => x.Version);
+            if (tenantDescriptor != null)
+                return tenantDescriptor;
+        }
 
-        // Return the one with the highest version
-        if (tenantDescriptor == null) return agnosticDescriptor;
-        if (agnosticDescriptor == null) return tenantDescriptor;
-        return tenantDescriptor.Version > agnosticDescriptor.Version ? tenantDescriptor : agnosticDescriptor;
+        // Fall back to agnostic registry only if no tenant-specific descriptor exists
+        return _agnosticRegistry.ActivityDescriptors.Values
+            .Where(x => x.TypeName == type)
+            .MaxBy(x => x.Version);
     }
 
     /// <inheritdoc />
