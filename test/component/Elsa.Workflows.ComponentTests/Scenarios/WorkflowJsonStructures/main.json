@@ -1,6 +1,7 @@
 {
   "id": "a417fadbbb7c417e",
   "definitionId": "ebe87d0f1d1924ea",
+  "tenantId": "*",
   "name": "Main",
   "createdAt": "2024-06-20T15:08:33.469865+00:00",
   "version": 1,

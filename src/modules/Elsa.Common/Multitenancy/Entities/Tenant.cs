@@ -16,6 +16,11 @@ public class Tenant : Entity
     public const string DefaultTenantId = "";
 
     /// <summary>
+    /// The ID used for tenant-agnostic entities that are available to all tenants.
+    /// </summary>
+    public const string AgnosticTenantId = "*";
+
+    /// <summary>
     /// Gets or sets the name.
     /// </summary>
     public string Name { get; set; } = null!;

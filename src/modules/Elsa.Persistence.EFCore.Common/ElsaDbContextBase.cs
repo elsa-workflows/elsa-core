@@ -47,13 +47,8 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         Schema = !string.IsNullOrWhiteSpace(_elsaDbContextOptions?.SchemaName) ? _elsaDbContextOptions.SchemaName : ElsaSchema;
 
         var tenantAccessor = serviceProvider.GetService<ITenantAccessor>();
-        var tenantId = tenantAccessor?.Tenant?.Id;
-
-        // See ADR-0008 and ADR-0009
-        // Empty string represents the default tenant and must be preserved
-        // Null represents tenant-agnostic context and should not be set on the DbContext
-        if (tenantId != null)
-            TenantId = tenantId;
+        var tenantId = (tenantAccessor?.TenantId).NormalizeTenantId();
+        TenantId ??= tenantId;
     }
 
     /// <inheritdoc/>

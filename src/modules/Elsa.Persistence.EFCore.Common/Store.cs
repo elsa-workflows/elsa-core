@@ -186,7 +186,15 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         foreach (var entity in entityList)
         {
             if (entity is Entity entityWithTenant)
-                entityWithTenant.TenantId = tenantId;
+            {
+                // Don't touch tenant-agnostic entities (marked with "*")
+                if (entityWithTenant.TenantId == Tenant.AgnosticTenantId)
+                    continue;
+
+                // Apply current tenant ID to entities without one
+                if (entityWithTenant.TenantId == null && tenantId != null)
+                    entityWithTenant.TenantId = tenantId;
+            }
         }
 
         try

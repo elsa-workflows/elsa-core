@@ -25,26 +25,26 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     }
 
     /// <inheritdoc />
-    public IEnumerable<ActivityDescriptor> ListAll() => _activityDescriptors.Values.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null);
+    public IEnumerable<ActivityDescriptor> ListAll() => _activityDescriptors.Values.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null || x.TenantId == Tenant.AgnosticTenantId);
 
     /// <inheritdoc />
     public IEnumerable<ActivityDescriptor> ListByProvider(Type providerType)
     {
         var list = _providedActivityDescriptors.TryGetValue(providerType, out var descriptors) ? descriptors : ArraySegment<ActivityDescriptor>.Empty;
-        return list.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null);
+        return list.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null || x.TenantId == Tenant.AgnosticTenantId);
     }
 
     /// <inheritdoc />
-    public ActivityDescriptor? Find(string type) => _activityDescriptors.Values.Where(x => (x.TenantId == tenantAccessor.TenantId || x.TenantId == null) && x.TypeName == type).MaxBy(x => x.Version);
+    public ActivityDescriptor? Find(string type) => _activityDescriptors.Values.Where(x => (x.TenantId == tenantAccessor.TenantId || x.TenantId == null || x.TenantId == Tenant.AgnosticTenantId) && x.TypeName == type).MaxBy(x => x.Version);
 
     /// <inheritdoc />
-    public ActivityDescriptor? Find(string type, int version) => _activityDescriptors.GetValueOrDefault((tenantAccessor.TenantId, type, version)) ?? _activityDescriptors.GetValueOrDefault((null, type, version));
+    public ActivityDescriptor? Find(string type, int version) => _activityDescriptors.GetValueOrDefault((tenantAccessor.TenantId, type, version)) ?? _activityDescriptors.GetValueOrDefault((null, type, version)) ?? _activityDescriptors.GetValueOrDefault((Tenant.AgnosticTenantId, type, version));
 
     /// <inheritdoc />
-    public ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null).FirstOrDefault(predicate);
+    public ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null || x.TenantId == Tenant.AgnosticTenantId).FirstOrDefault(predicate);
 
     /// <inheritdoc />
-    public IEnumerable<ActivityDescriptor> FindMany(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null).Where(predicate);
+    public IEnumerable<ActivityDescriptor> FindMany(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null || x.TenantId == Tenant.AgnosticTenantId).Where(predicate);
 
     /// <inheritdoc />
     public void Register(ActivityDescriptor descriptor)
