@@ -11,6 +11,9 @@ namespace Elsa.Workflows.Core.UnitTests.Services;
 /// </summary>
 public class ActivityRegistryTests
 {
+    private const string TestActivityType = "TestActivity";
+    private const string CurrentTenant = "tenant1";
+    
     private readonly ITenantAccessor _tenantAccessor;
     private readonly IActivityDescriber _activityDescriber;
     private readonly ILogger<ActivityRegistry> _logger;
@@ -22,216 +25,136 @@ public class ActivityRegistryTests
         _activityDescriber = Substitute.For<IActivityDescriber>();
         _logger = Substitute.For<ILogger<ActivityRegistry>>();
         _registry = new ActivityRegistry(_activityDescriber, Array.Empty<IActivityDescriptorModifier>(), _tenantAccessor, _logger);
+        
+        // Set default tenant for all tests
+        _tenantAccessor.TenantId.Returns(CurrentTenant);
+    }
+
+    private ActivityDescriptor CreateDescriptor(string typeName, int version, string? tenantId) =>
+        new()
+        {
+            TypeName = typeName,
+            Version = version,
+            TenantId = tenantId,
+            Kind = ActivityKind.Action
+        };
+
+    private void RegisterDescriptors(params ActivityDescriptor[] descriptors)
+    {
+        foreach (var descriptor in descriptors)
+            _registry.Register(descriptor);
+    }
+
+    private static void AssertDescriptor(ActivityDescriptor? result, string? expectedTenantId, int expectedVersion)
+    {
+        Assert.NotNull(result);
+        Assert.Equal(expectedTenantId, result.TenantId);
+        Assert.Equal(expectedVersion, result.Version);
     }
 
     [Fact]
     public void Find_TenantSpecificPreferredOverTenantAgnostic_WhenBothExist()
     {
-        // Arrange - tenant1 is the current tenant
-        _tenantAccessor.TenantId.Returns("tenant1");
-
-        var tenantSpecificDescriptor = new ActivityDescriptor
-        {
-            TypeName = "TestActivity",
-            Version = 1,
-            TenantId = "tenant1",
-            Kind = ActivityKind.Action
-        };
-
-        var tenantAgnosticDescriptor = new ActivityDescriptor
-        {
-            TypeName = "TestActivity",
-            Version = 2, // Higher version
-            TenantId = null,
-            Kind = ActivityKind.Action
-        };
-
-        _registry.Register(tenantSpecificDescriptor);
-        _registry.Register(tenantAgnosticDescriptor);
+        // Arrange
+        var tenantSpecific = CreateDescriptor(TestActivityType, 1, CurrentTenant);
+        var tenantAgnostic = CreateDescriptor(TestActivityType, 2, null); // Higher version
+        RegisterDescriptors(tenantSpecific, tenantAgnostic);
 
         // Act
-        var result = _registry.Find("TestActivity");
+        var result = _registry.Find(TestActivityType);
 
         // Assert - tenant-specific should be preferred even though it has a lower version
-        Assert.NotNull(result);
-        Assert.Equal("tenant1", result.TenantId);
-        Assert.Equal(1, result.Version);
+        AssertDescriptor(result, CurrentTenant, 1);
     }
 
     [Fact]
     public void Find_ReturnsTenantAgnostic_WhenNoTenantSpecificExists()
     {
-        // Arrange - tenant1 is the current tenant
-        _tenantAccessor.TenantId.Returns("tenant1");
-
-        var tenantAgnosticDescriptor = new ActivityDescriptor
-        {
-            TypeName = "TestActivity",
-            Version = 1,
-            TenantId = null,
-            Kind = ActivityKind.Action
-        };
-
-        _registry.Register(tenantAgnosticDescriptor);
+        // Arrange
+        var tenantAgnostic = CreateDescriptor(TestActivityType, 1, null);
+        RegisterDescriptors(tenantAgnostic);
 
         // Act
-        var result = _registry.Find("TestActivity");
+        var result = _registry.Find(TestActivityType);
 
-        // Assert - tenant-agnostic should be returned when no tenant-specific exists
-        Assert.NotNull(result);
-        Assert.Null(result.TenantId);
-        Assert.Equal(1, result.Version);
+        // Assert
+        AssertDescriptor(result, null, 1);
     }
 
-    [Fact]
-    public void Find_ReturnsHighestVersionTenantSpecific_WhenMultipleTenantSpecificExist()
+    [Theory]
+    [InlineData(1, 2, 3, 3)] // Multiple versions, expect highest
+    [InlineData(3, 1, 2, 3)] // Out of order registration
+    [InlineData(1, 1, 1, 1)] // Same version multiple times
+    public void Find_ReturnsHighestVersionTenantSpecific_WhenMultipleTenantSpecificExist(int v1, int v2, int v3, int expectedVersion)
     {
-        // Arrange - tenant1 is the current tenant
-        _tenantAccessor.TenantId.Returns("tenant1");
-
-        var tenantSpecificV1 = new ActivityDescriptor
+        // Arrange
+        var descriptors = new[]
         {
-            TypeName = "TestActivity",
-            Version = 1,
-            TenantId = "tenant1",
-            Kind = ActivityKind.Action
+            CreateDescriptor(TestActivityType, v1, CurrentTenant),
+            CreateDescriptor(TestActivityType, v2, CurrentTenant),
+            CreateDescriptor(TestActivityType, v3, CurrentTenant)
         };
-
-        var tenantSpecificV2 = new ActivityDescriptor
-        {
-            TypeName = "TestActivity",
-            Version = 2,
-            TenantId = "tenant1",
-            Kind = ActivityKind.Action
-        };
-
-        var tenantSpecificV3 = new ActivityDescriptor
-        {
-            TypeName = "TestActivity",
-            Version = 3,
-            TenantId = "tenant1",
-            Kind = ActivityKind.Action
-        };
-
-        _registry.Register(tenantSpecificV1);
-        _registry.Register(tenantSpecificV2);
-        _registry.Register(tenantSpecificV3);
+        RegisterDescriptors(descriptors);
 
         // Act
-        var result = _registry.Find("TestActivity");
+        var result = _registry.Find(TestActivityType);
 
-        // Assert - highest version tenant-specific should be returned
-        Assert.NotNull(result);
-        Assert.Equal("tenant1", result.TenantId);
-        Assert.Equal(3, result.Version);
+        // Assert
+        AssertDescriptor(result, CurrentTenant, expectedVersion);
     }
 
-    [Fact]
-    public void Find_ReturnsHighestVersionTenantAgnostic_WhenMultipleTenantAgnosticExist()
+    [Theory]
+    [InlineData(1, 2, 3, 3)] // Multiple versions, expect highest
+    [InlineData(3, 1, 2, 3)] // Out of order registration
+    [InlineData(1, 1, 1, 1)] // Same version multiple times
+    public void Find_ReturnsHighestVersionTenantAgnostic_WhenMultipleTenantAgnosticExist(int v1, int v2, int v3, int expectedVersion)
     {
-        // Arrange - tenant1 is the current tenant
-        _tenantAccessor.TenantId.Returns("tenant1");
-
-        var tenantAgnosticV1 = new ActivityDescriptor
+        // Arrange
+        var descriptors = new[]
         {
-            TypeName = "TestActivity",
-            Version = 1,
-            TenantId = null,
-            Kind = ActivityKind.Action
+            CreateDescriptor(TestActivityType, v1, null),
+            CreateDescriptor(TestActivityType, v2, null),
+            CreateDescriptor(TestActivityType, v3, null)
         };
-
-        var tenantAgnosticV2 = new ActivityDescriptor
-        {
-            TypeName = "TestActivity",
-            Version = 2,
-            TenantId = null,
-            Kind = ActivityKind.Action
-        };
-
-        var tenantAgnosticV3 = new ActivityDescriptor
-        {
-            TypeName = "TestActivity",
-            Version = 3,
-            TenantId = null,
-            Kind = ActivityKind.Action
-        };
-
-        _registry.Register(tenantAgnosticV1);
-        _registry.Register(tenantAgnosticV2);
-        _registry.Register(tenantAgnosticV3);
+        RegisterDescriptors(descriptors);
 
         // Act
-        var result = _registry.Find("TestActivity");
+        var result = _registry.Find(TestActivityType);
 
-        // Assert - highest version tenant-agnostic should be returned
-        Assert.NotNull(result);
-        Assert.Null(result.TenantId);
-        Assert.Equal(3, result.Version);
+        // Assert
+        AssertDescriptor(result, null, expectedVersion);
     }
 
     [Fact]
     public void Find_ReturnsNull_WhenNoMatchingDescriptorsExist()
     {
-        // Arrange - tenant1 is the current tenant
-        _tenantAccessor.TenantId.Returns("tenant1");
-
-        var otherDescriptor = new ActivityDescriptor
-        {
-            TypeName = "OtherActivity",
-            Version = 1,
-            TenantId = "tenant1",
-            Kind = ActivityKind.Action
-        };
-
-        _registry.Register(otherDescriptor);
+        // Arrange
+        var otherDescriptor = CreateDescriptor("OtherActivity", 1, CurrentTenant);
+        RegisterDescriptors(otherDescriptor);
 
         // Act
         var result = _registry.Find("NonExistentActivity");
 
-        // Assert - null should be returned when no matching descriptors exist
+        // Assert
         Assert.Null(result);
     }
 
     [Fact]
     public void Find_IgnoresOtherTenantDescriptors_OnlyReturnsCurrentTenantOrAgnostic()
     {
-        // Arrange - tenant1 is the current tenant
-        _tenantAccessor.TenantId.Returns("tenant1");
-
-        var tenant1Descriptor = new ActivityDescriptor
+        // Arrange
+        var descriptors = new[]
         {
-            TypeName = "TestActivity",
-            Version = 1,
-            TenantId = "tenant1",
-            Kind = ActivityKind.Action
+            CreateDescriptor(TestActivityType, 1, CurrentTenant),
+            CreateDescriptor(TestActivityType, 5, "tenant2"), // Much higher version but wrong tenant
+            CreateDescriptor(TestActivityType, 2, null)
         };
-
-        var tenant2Descriptor = new ActivityDescriptor
-        {
-            TypeName = "TestActivity",
-            Version = 5, // Much higher version but wrong tenant
-            TenantId = "tenant2",
-            Kind = ActivityKind.Action
-        };
-
-        var tenantAgnosticDescriptor = new ActivityDescriptor
-        {
-            TypeName = "TestActivity",
-            Version = 2,
-            TenantId = null,
-            Kind = ActivityKind.Action
-        };
-
-        _registry.Register(tenant1Descriptor);
-        _registry.Register(tenant2Descriptor);
-        _registry.Register(tenantAgnosticDescriptor);
+        RegisterDescriptors(descriptors);
 
         // Act
-        var result = _registry.Find("TestActivity");
+        var result = _registry.Find(TestActivityType);
 
         // Assert - should return tenant1 descriptor (not tenant2, even though it has higher version)
-        Assert.NotNull(result);
-        Assert.Equal("tenant1", result.TenantId);
-        Assert.Equal(1, result.Version);
+        AssertDescriptor(result, CurrentTenant, 1);
     }
 }
