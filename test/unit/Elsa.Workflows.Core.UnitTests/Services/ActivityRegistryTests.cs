@@ -13,7 +13,7 @@ public class ActivityRegistryTests
 {
     private const string TestActivityType = "TestActivity";
     private const string CurrentTenant = "tenant1";
-    
+
     private readonly ITenantAccessor _tenantAccessor;
     private readonly IActivityDescriber _activityDescriber;
     private readonly ILogger<ActivityRegistry> _logger;
