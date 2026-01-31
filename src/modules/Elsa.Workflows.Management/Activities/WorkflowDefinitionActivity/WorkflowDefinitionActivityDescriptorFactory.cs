@@ -1,4 +1,3 @@
-using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Models;
