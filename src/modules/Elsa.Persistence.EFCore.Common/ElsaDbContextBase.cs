@@ -49,7 +49,10 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         var tenantAccessor = serviceProvider.GetService<ITenantAccessor>();
         var tenantId = tenantAccessor?.Tenant?.Id;
 
-        if (!string.IsNullOrWhiteSpace(tenantId))
+        // See ADR-0008 and ADR-0009
+        // Empty string represents the default tenant and must be preserved
+        // Null represents tenant-agnostic context and should not be set on the DbContext
+        if (tenantId != null)
             TenantId = tenantId;
     }
 
