@@ -50,7 +50,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         var tenantId = tenantAccessor?.Tenant?.Id;
 
         if (!string.IsNullOrWhiteSpace(tenantId))
-            TenantId = tenantId.NullIfEmpty();
+            TenantId = tenantId;
     }
 
     /// <inheritdoc/>

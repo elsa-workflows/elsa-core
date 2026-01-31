@@ -13,7 +13,7 @@ public class ApplyTenantId : IEntitySavingHandler
     public ValueTask HandleAsync(ElsaDbContextBase dbContext, EntityEntry entry, CancellationToken cancellationToken = default)
     {
         if (entry.Entity is Entity entity) 
-            entity.TenantId = dbContext.TenantId.NullIfEmpty();
+            entity.TenantId = dbContext.TenantId;
 
         return default;
     }
