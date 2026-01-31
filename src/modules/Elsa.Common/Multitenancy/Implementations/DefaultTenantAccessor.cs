@@ -7,6 +7,8 @@ public class DefaultTenantAccessor : ITenantAccessor
 {
     private static readonly AsyncLocal<Tenant?> CurrentTenantField = new();
 
+    public string TenantId => (Tenant?.TenantId).NormalizeTenantId();
+
     /// <inheritdoc/>
     public Tenant? Tenant
     {

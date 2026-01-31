@@ -17,6 +17,10 @@ using Elsa.Workflows.ComponentTests.Scenarios.HostMethodActivities;
 using Elsa.Workflows.ComponentTests.WorkflowProviders;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
+using Elsa.Tenants;
+using Elsa.Tenants.Extensions;
+using Elsa.Common.Features;
+using Elsa.Workflows.ComponentTests.Services;
 using FluentStorage;
 using JetBrains.Annotations;
 using Medallion.Threading;
@@ -125,6 +129,15 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 elsa.UseHttp(http =>
                 {
                     http.UseCache();
+                });
+
+                // Ensure a consistent tenant context for tests.
+                elsa.Configure<MultitenancyFeature>(feature => feature.UseTenantsProvider(_ => new TestTenantsProvider(string.Empty, "Tenant1", "Tenant2", "Tenant3")));
+                elsa.UseTenants(tenants =>
+                {
+                    tenants.ConfigureMultitenancy(options =>
+                        options.TenantResolverPipelineBuilder = new TenantResolverPipelineBuilder()
+                            .Append<ComponentTestTenantResolver>());
                 });
             };
         }

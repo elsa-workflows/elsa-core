@@ -8,3 +8,4 @@
 * [6. Tenant Deleted Event](0006-tenant-deleted-event.md)
 * [7. Adoption of Explicit Merge Modes for Flowchart Joins](0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md)
 * [8. Empty String as Default Tenant ID](0008-empty-string-as-default-tenant-id.md)
+* [9. Null Tenant ID for Tenant-Agnostic Entities](0009-null-tenant-id-for-tenant-agnostic-entities.md)

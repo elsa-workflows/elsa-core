@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
@@ -7,11 +8,11 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.Workflows;
 
 /// <inheritdoc />
-public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<IActivityDescriptorModifier> modifiers, ILogger<ActivityRegistry> logger) : IActivityRegistry
+public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<IActivityDescriptorModifier> modifiers, ITenantAccessor tenantAccessor, ILogger<ActivityRegistry> logger) : IActivityRegistry
 {
     private readonly ISet<ActivityDescriptor> _manualActivityDescriptors = new HashSet<ActivityDescriptor>();
     private ConcurrentDictionary<Type, ICollection<ActivityDescriptor>> _providedActivityDescriptors = new();
-    private ConcurrentDictionary<(string Type, int Version), ActivityDescriptor> _activityDescriptors = new();
+    private ConcurrentDictionary<(string? TenantId, string Type, int Version), ActivityDescriptor> _activityDescriptors = new();
 
     /// <inheritdoc />
     public void Add(Type providerType, ActivityDescriptor descriptor) => Add(descriptor, GetOrCreateDescriptors(providerType));
@@ -20,26 +21,30 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     public void Remove(Type providerType, ActivityDescriptor descriptor)
     {
         _providedActivityDescriptors[providerType].Remove(descriptor);
-        _activityDescriptors.Remove((descriptor.TypeName, descriptor.Version), out _);
+        _activityDescriptors.Remove((descriptor.TenantId, descriptor.TypeName, descriptor.Version), out _);
     }
 
     /// <inheritdoc />
-    public IEnumerable<ActivityDescriptor> ListAll() => _activityDescriptors.Values;
+    public IEnumerable<ActivityDescriptor> ListAll() => _activityDescriptors.Values.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null);
 
     /// <inheritdoc />
-    public IEnumerable<ActivityDescriptor> ListByProvider(Type providerType) => _providedActivityDescriptors.TryGetValue(providerType, out var descriptors) ? descriptors : ArraySegment<ActivityDescriptor>.Empty;
+    public IEnumerable<ActivityDescriptor> ListByProvider(Type providerType)
+    {
+        var list = _providedActivityDescriptors.TryGetValue(providerType, out var descriptors) ? descriptors : ArraySegment<ActivityDescriptor>.Empty;
+        return list.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null);
+    }
 
     /// <inheritdoc />
-    public ActivityDescriptor? Find(string type) => _activityDescriptors.Values.Where(x => x.TypeName == type).MaxBy(x => x.Version);
+    public ActivityDescriptor? Find(string type) => _activityDescriptors.Values.Where(x => (x.TenantId == tenantAccessor.TenantId || x.TenantId == null) && x.TypeName == type).MaxBy(x => x.Version);
 
     /// <inheritdoc />
-    public ActivityDescriptor? Find(string type, int version) => _activityDescriptors.TryGetValue((type, version), out var descriptor) ? descriptor : null;
+    public ActivityDescriptor? Find(string type, int version) => _activityDescriptors.GetValueOrDefault((tenantAccessor.TenantId, type, version)) ?? _activityDescriptors.GetValueOrDefault((null, type, version));
 
     /// <inheritdoc />
-    public ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.FirstOrDefault(predicate);
+    public ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null).FirstOrDefault(predicate);
 
     /// <inheritdoc />
-    public IEnumerable<ActivityDescriptor> FindMany(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.Where(predicate);
+    public IEnumerable<ActivityDescriptor> FindMany(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null).Where(predicate);
 
     /// <inheritdoc />
     public void Register(ActivityDescriptor descriptor)
@@ -74,13 +79,24 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     /// <inheritdoc />
     public async Task RefreshDescriptorsAsync(IEnumerable<IActivityProvider> activityProviders, CancellationToken cancellationToken = default)
     {
-        var providersDictionary = new ConcurrentDictionary<Type, ICollection<ActivityDescriptor>>();
-        var activityDescriptors = new ConcurrentDictionary<(string Type, int Version), ActivityDescriptor>(_activityDescriptors);
+        var providersDictionary = new ConcurrentDictionary<Type, ICollection<ActivityDescriptor>>(_providedActivityDescriptors);
+        var activityDescriptors = new ConcurrentDictionary<(string? TenantId, string Type, int Version), ActivityDescriptor>(_activityDescriptors);
+    
         foreach (var activityProvider in activityProviders)
         {
+            var providerType = activityProvider.GetType();
+        
+            // Remove old descriptors for THIS provider
+            if (providersDictionary.TryGetValue(providerType, out var oldDescriptors))
+            {
+                foreach (var oldDescriptor in oldDescriptors)
+                    activityDescriptors.TryRemove((oldDescriptor.TenantId, oldDescriptor.TypeName, oldDescriptor.Version), out _);
+            }
+        
+            // Add new descriptors for THIS provider
             var descriptors = (await activityProvider.GetDescriptorsAsync(cancellationToken)).ToList();
             var providerDescriptors = new List<ActivityDescriptor>();
-            providersDictionary[activityProvider.GetType()] = providerDescriptors;
+            providersDictionary[providerType] = providerDescriptors;
             foreach (var descriptor in descriptors)
             {
                 Add(descriptor, activityDescriptors, providerDescriptors);
@@ -93,17 +109,25 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
 
     public async Task RefreshDescriptorsAsync(IActivityProvider activityProvider, CancellationToken cancellationToken = default)
     {
-        var providersDictionary = new ConcurrentDictionary<Type, ICollection<ActivityDescriptor>>(_providedActivityDescriptors);
-        var activityDescriptors = new ConcurrentDictionary<(string Type, int Version), ActivityDescriptor>(_activityDescriptors);
+        var providerType = activityProvider.GetType();
+
+        // Remove ALL old descriptors for this provider from _activityDescriptors
+        if (_providedActivityDescriptors.TryGetValue(providerType, out var oldDescriptors))
+        {
+            foreach (var oldDescriptor in oldDescriptors)
+                _activityDescriptors.TryRemove((oldDescriptor.TenantId, oldDescriptor.TypeName, oldDescriptor.Version), out _);
+        }
+
+        // Get new descriptors from provider
         var descriptors = (await activityProvider.GetDescriptorsAsync(cancellationToken)).ToList();
+
+        // Add new descriptors
         var providerDescriptors = new List<ActivityDescriptor>();
-        providersDictionary[activityProvider.GetType()] = providerDescriptors;
-
         foreach (var descriptor in descriptors)
-            Add(descriptor, activityDescriptors, providerDescriptors);
+            Add(descriptor, _activityDescriptors, providerDescriptors);
 
-        Interlocked.Exchange(ref _activityDescriptors, activityDescriptors);
-        Interlocked.Exchange(ref _providedActivityDescriptors, providersDictionary);
+        // Update the provider's descriptor list
+        _providedActivityDescriptors[providerType] = providerDescriptors;
     }
 
     private void Add(ActivityDescriptor descriptor, ICollection<ActivityDescriptor> target)
@@ -111,7 +135,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         Add(descriptor, _activityDescriptors, target);
     }
 
-    private void Add(ActivityDescriptor? descriptor, ConcurrentDictionary<(string Type, int Version), ActivityDescriptor> activityDescriptors, ICollection<ActivityDescriptor> providerDescriptors)
+    private void Add(ActivityDescriptor? descriptor, ConcurrentDictionary<(string? TenantId, string Type, int Version), ActivityDescriptor> activityDescriptors, ICollection<ActivityDescriptor> providerDescriptors)
     {
         if (descriptor is null)
         {
@@ -123,7 +147,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
             modifier.Modify(descriptor);
 
         // If the descriptor already exists, replace it. But log a warning.
-        if (activityDescriptors.TryGetValue((descriptor.TypeName, descriptor.Version), out var existingDescriptor))
+        if (activityDescriptors.TryGetValue((descriptor.TenantId, descriptor.TypeName, descriptor.Version), out var existingDescriptor))
         {
             // Remove the existing descriptor from the providerDescriptors collection.
             providerDescriptors.Remove(existingDescriptor);
@@ -132,7 +156,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
             logger.LogWarning("Activity descriptor {ActivityType} v{ActivityVersion} was already registered. Replacing with new descriptor", descriptor.TypeName, descriptor.Version);
         }
 
-        activityDescriptors[(descriptor.TypeName, descriptor.Version)] = descriptor;
+        activityDescriptors[(descriptor.TenantId, descriptor.TypeName, descriptor.Version)] = descriptor;
         providerDescriptors.Add(descriptor);
     }
 
@@ -149,7 +173,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         var descriptors = ListByProvider(providerType).ToList();
 
         foreach (var descriptor in descriptors)
-            _activityDescriptors.Remove((descriptor.TypeName, descriptor.Version), out _);
+            _activityDescriptors.Remove((descriptor.TenantId, descriptor.TypeName, descriptor.Version), out _);
 
         _providedActivityDescriptors.Remove(providerType, out _);
     }

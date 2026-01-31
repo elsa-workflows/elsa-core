@@ -25,7 +25,7 @@ public class SetTenantIdFilter : IEntityModelCreatingHandler
     {
         var parameter = Expression.Parameter(clrType, "e");
 
-        // e => EF.Property<string>(e, "TenantId") == this.TenantId
+        // e => EF.Property<string>(e, "TenantId") == this.TenantId || EF.Property<string>(e, "TenantId") == null
         var tenantIdProperty = Expression.Call(
             typeof(EF),
             nameof(EF.Property),
@@ -37,7 +37,9 @@ public class SetTenantIdFilter : IEntityModelCreatingHandler
             Expression.Constant(dbContext),
             nameof(ElsaDbContextBase.TenantId));
 
-        var body = Expression.Equal(tenantIdProperty, tenantIdOnContext);
+        var equalityCheck = Expression.Equal(tenantIdProperty, tenantIdOnContext);
+        var nullCheck = Expression.Equal(tenantIdProperty, Expression.Constant(null, typeof(string)));
+        var body = Expression.OrElse(equalityCheck, nullCheck);
 
         return Expression.Lambda(body, parameter);
     }

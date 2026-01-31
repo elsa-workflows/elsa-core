@@ -12,7 +12,6 @@ public class DeleteWorkflow : WorkflowBase
     {
         builder.Name = Type;
         builder.WithDefinitionId(DefinitionId);
-        builder.WithTenantId("Tenant1"); // Use Tenant1 to match the test environment tenant
         builder.WorkflowOptions.UsableAsActivity = true;
         builder.Root = new Sequence
         {
