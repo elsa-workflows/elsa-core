@@ -183,12 +183,8 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     /// <inheritdoc />
     public async Task RefreshDescriptorsAsync(IEnumerable<IActivityProvider> activityProviders, CancellationToken cancellationToken = default)
     {
-        var currentTenantId = tenantAccessor.TenantId;
-
-        foreach (var activityProvider in activityProviders)
-        {
+        foreach (var activityProvider in activityProviders) 
             await RefreshDescriptorsAsync(activityProvider, cancellationToken);
-        }
     }
 
     public async Task RefreshDescriptorsAsync(IActivityProvider activityProvider, CancellationToken cancellationToken = default)
