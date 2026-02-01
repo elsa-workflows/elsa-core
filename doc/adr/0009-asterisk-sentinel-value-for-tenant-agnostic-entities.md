@@ -98,6 +98,62 @@ The asterisk character `"*"` is **reserved** and cannot be used as an actual ten
 
 ## Implementation Notes
 
+### Semantic Flow: From Entity Creation to Query
+
+Understanding how tenant IDs flow through the system is critical:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Entity Creation / Deserialization                           │
+├─────────────────────────────────────────────────────────────┤
+│ TenantId = null  →  Not yet assigned                        │
+│ TenantId = "*"   →  Explicitly agnostic                     │
+│ TenantId = ""    →  Default tenant                          │
+│ TenantId = "foo" →  Specific tenant "foo"                   │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ ApplyTenantId Handler (before DB save)                      │
+├─────────────────────────────────────────────────────────────┤
+│ TenantId = "*"   →  PRESERVED (agnostic)                    │
+│ TenantId = null  →  SET to current tenant from context      │
+│ TenantId = ""    →  PRESERVED (default tenant)              │
+│ TenantId = "foo" →  PRESERVED (specific tenant)             │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ Database Storage                                             │
+├─────────────────────────────────────────────────────────────┤
+│ TenantId = "*"   →  Stored as "*" (agnostic)                │
+│ TenantId = ""    →  Stored as "" (default tenant)           │
+│ TenantId = "foo" →  Stored as "foo" (specific tenant)       │
+│ NOTE: No null values in DB after ApplyTenantId handler      │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ SetTenantIdFilter (EF Core Query)                           │
+├─────────────────────────────────────────────────────────────┤
+│ Returns: TenantId == current_tenant OR TenantId == "*"      │
+│ Result: Tenant-specific records + agnostic records          │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ ActivityRegistry (In-Memory)                                │
+├─────────────────────────────────────────────────────────────┤
+│ null or "*"  → _agnosticRegistry (shared)                   │
+│ TenantId=""  → _tenantRegistries[""] (default)              │
+│ TenantId=X   → _tenantRegistries[X] (specific tenant X)     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Points:**
+- **`null` is transient**: It only exists during entity creation/deserialization before `ApplyTenantId` runs
+- **`"*"` is permanent**: Once set, it's preserved and stored in the database as-is
+- **`NormalizeTenantId()` converts `null` → `""`**: This ensures `null` becomes the default tenant, NOT agnostic
+- **Database has no nulls**: After `ApplyTenantId` handler, all entities have non-null tenant IDs
+- **EF Core filters check for `"*"`**: The query filter explicitly compares against the string `"*"`, not null
+- **ActivityRegistry accepts both**: For flexibility, in-memory registry treats both `null` and `"*"` as agnostic
+
 ### ActivityRegistry Behavior
 
 When `Find(string type)` is called:
@@ -106,13 +162,27 @@ When `Find(string type)` is called:
 3. Only if no tenant-specific descriptor exists, fall back to the agnostic registry
 4. This ensures tenant-specific customizations always take precedence
 
+The `GetOrCreateRegistry()` method treats both `null` and `"*"` as agnostic:
+```csharp
+if (tenantId is null or Tenant.AgnosticTenantId)
+    return _agnosticRegistry;
+```
+
+This provides flexibility for in-memory operations where activity descriptors might temporarily have `null` tenant IDs before normalization.
+
 ### Workflow Import Behavior
 
 When workflows are imported from providers (e.g., blob storage):
 - Workflows without an explicit `tenantId` field in their JSON have `TenantId = null`
-- These are normalized to the current tenant ID during import
+- During import, these are normalized to the current tenant ID via `NormalizeTenantId()` extension
+- When saved to database, `ApplyTenantId` handler assigns the current tenant from context
 - To create truly tenant-agnostic workflows, explicitly set `"tenantId": "*"` in the workflow JSON
+- The `"*"` value will be preserved through import, save, and query operations
 
 ### Testing Considerations
 
-Component tests use the default tenant (`""`). Built-in activities use the agnostic marker (`"*"`). Tenant-specific tests should create explicit tenant contexts to verify proper isolation.
+- Component tests use the default tenant (`""`)
+- Built-in activities use the agnostic marker (`"*"`)
+- Tenant-specific tests should create explicit tenant contexts to verify proper isolation
+- Unit tests should verify that `"*"` is preserved through save operations
+- Integration tests should verify that `"*"` entities are returned for all tenant contexts
