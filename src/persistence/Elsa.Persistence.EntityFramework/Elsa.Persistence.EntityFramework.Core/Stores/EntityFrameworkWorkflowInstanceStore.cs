@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO.Compression;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -90,8 +93,9 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             };
 
             var json = _contentSerializer.Serialize(data);
+            string compressed = Compress(json);
 
-            dbContext.Entry(entity).Property("Data").CurrentValue = json;
+            dbContext.Entry(entity).Property("Data").CurrentValue = compressed;
         }
 
         protected override void OnLoading(ElsaContext dbContext, WorkflowInstance entity)
@@ -111,7 +115,20 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.CurrentActivity
             };
 
-            var json = (string)dbContext.Entry(entity).Property("Data").CurrentValue;
+            var jsonValue = (string)dbContext.Entry(entity).Property("Data").CurrentValue;
+            string json = "";
+            
+            if (!string.IsNullOrEmpty(jsonValue))
+            {
+                if (jsonValue.StartsWith("{"))
+                {
+                    json = jsonValue;
+                }
+                else
+                {
+                    json = Decompress(jsonValue);
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(json))
             {
@@ -136,6 +153,47 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             entity.Fault = data.Fault;
             entity.Faults = data.Faults;
             entity.CurrentActivity = data.CurrentActivity;
+        }
+
+        public static string Decompress(string input)
+        {
+            byte[] compressed = Convert.FromBase64String(input);
+            byte[] decompressed = Decompress(compressed);
+            return Encoding.UTF8.GetString(decompressed);
+        }
+
+        public static string Compress(string input)
+        {
+            byte[] encoded = Encoding.UTF8.GetBytes(input);
+            byte[] compressed = Compress(encoded);
+            return Convert.ToBase64String(compressed);
+        }
+
+        public static byte[] Decompress(byte[] input)
+        {
+            using (var memoryStream = new MemoryStream(input))
+            {
+                using (var outputStream = new MemoryStream())
+                {
+                    using (var decompressStream = new GZipStream(memoryStream, CompressionMode.Decompress))
+                    {
+                        decompressStream.CopyTo(outputStream);
+                    }
+                    return outputStream.ToArray();
+                }
+            }
+        }
+
+        public static byte[] Compress(byte[] input)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                using (var gzipStream = new GZipStream(memoryStream, CompressionLevel.Optimal))
+                {
+                    gzipStream.Write(input, 0, input.Length);
+                }
+                return memoryStream.ToArray();
+            }
         }
     }
 }
