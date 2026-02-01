@@ -67,6 +67,8 @@ Update `ApplyTenantId` handler to:
 - Preserve `TenantId = "*"` (don't overwrite tenant-agnostic entities)
 - Only apply current tenant ID to entities with `TenantId = null`
 
+**Important: This is a security-by-default design.** Entities with `null` tenant ID are **never** automatically converted to tenant-agnostic (`"*"`). They are always assigned to the current tenant context. To create tenant-agnostic database entities, developers **must explicitly** set `TenantId = "*"`. This prevents accidental data leakage across tenants.
+
 ### 5. Reserved Character Constraint
 
 The asterisk character `"*"` is **reserved** and cannot be used as an actual tenant ID. Tenant creation and validation logic should reject any attempt to create a tenant with ID `"*"`.
@@ -169,6 +171,40 @@ if (tenantId is null or Tenant.AgnosticTenantId)
 ```
 
 This provides flexibility for in-memory operations where activity descriptors might temporarily have `null` tenant IDs before normalization.
+
+### Activity Descriptors vs Database Entities: Different Rules
+
+The system treats **in-memory activity descriptors** and **persistent database entities** differently for security and architectural reasons:
+
+#### In-Memory Activity Descriptors (Ephemeral)
+- Created on startup by activity providers
+- **Built-in activities** (WriteLine, SetVariable, etc.): Created with `TenantId = null` by `ActivityDescriber`
+- **Workflow-as-activities**: Created with `TenantId = definition.TenantId` by `WorkflowDefinitionActivityDescriptorFactory`
+- `null` is acceptable here because descriptors are recreated on each startup and mapped to `_agnosticRegistry`
+- No security risk: descriptors don't contain sensitive data, just metadata about activity types
+
+#### Persistent Database Entities (WorkflowDefinition, etc.)
+- Stored permanently in the database
+- **Must explicitly set `TenantId = "*"`** to be tenant-agnostic
+- `TenantId = null` is **never** converted to `"*"` - always assigned to current tenant
+- **Security-by-default**: Prevents accidental data leakage across tenants
+- A developer who forgets to set `TenantId` creates a tenant-specific entity, not a global one
+
+**Example - Creating Tenant-Agnostic Workflow:**
+```json
+{
+  "tenantId": "*",
+  "name": "GlobalApprovalWorkflow",
+  "description": "Shared across all tenants",
+  "root": { ... }
+}
+```
+
+**Why This Asymmetry Is Important:**
+1. **Safety**: Database entities with null tenant ID default to current tenant (safe)
+2. **Explicitness**: Tenant-agnostic entities must be intentional (require `"*"`)
+3. **Different lifecycles**: Descriptors are ephemeral, entities are persistent
+4. **Backward compatibility**: Built-in activities work without modification
 
 ### Workflow Import Behavior
 
