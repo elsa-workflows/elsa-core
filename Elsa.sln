@@ -207,7 +207,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{0A04B1FD-06C
 		doc\adr\0006-tenant-deleted-event.md = doc\adr\0006-tenant-deleted-event.md
 		doc\adr\0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md = doc\adr\0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md
 		doc\adr\0008-empty-string-as-default-tenant-id.md = doc\adr\0008-empty-string-as-default-tenant-id.md
-		doc\adr\0009-null-tenant-id-for-tenant-agnostic-entities.md = doc\adr\0009-null-tenant-id-for-tenant-agnostic-entities.md
+		doc\adr\0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md = doc\adr\0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bounty", "bounty", "{9B80A705-2E31-4012-964A-83963DCDB384}"
