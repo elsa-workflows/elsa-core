@@ -190,7 +190,6 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     public async Task RefreshDescriptorsAsync(IActivityProvider activityProvider, CancellationToken cancellationToken = default)
     {
         var providerType = activityProvider.GetType();
-        var currentTenantId = tenantAccessor.TenantId;
 
         // Get new descriptors from provider
         var descriptors = (await activityProvider.GetDescriptorsAsync(cancellationToken)).ToList();
