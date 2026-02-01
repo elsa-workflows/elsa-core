@@ -194,8 +194,9 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         // Get new descriptors from provider
         var descriptors = (await activityProvider.GetDescriptorsAsync(cancellationToken)).ToList();
 
-        // Group descriptors by normalized tenant ID (null becomes agnostic marker for grouping purposes)
-        var descriptorsByTenant = descriptors.GroupBy(d => d.TenantId);
+        // Group descriptors by normalized tenant ID
+        // Normalize null to "*" so both map to the same agnostic group, avoiding redundant processing
+        var descriptorsByTenant = descriptors.GroupBy(d => NormalizeTenantIdForGrouping(d.TenantId));
 
         foreach (var group in descriptorsByTenant)
         {
@@ -302,5 +303,16 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     private ICollection<ActivityDescriptor> GetOrCreateProviderDescriptors(TenantRegistryData registry, Type providerType)
     {
         return registry.ProvidedActivityDescriptors.GetOrAdd(providerType, _ => new List<ActivityDescriptor>());
+    }
+
+    /// <summary>
+    /// Normalizes tenant ID for grouping purposes.
+    /// Converts null to "*" so that both null and "*" descriptors are grouped together,
+    /// avoiding redundant processing of the agnostic registry.
+    /// </summary>
+    private static string? NormalizeTenantIdForGrouping(string? tenantId)
+    {
+        // Normalize null to "*" so both map to the same group
+        return tenantId ?? Tenant.AgnosticTenantId;
     }
 }
