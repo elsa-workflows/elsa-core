@@ -285,7 +285,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     /// <summary>
     /// Clears all activity descriptors for a specific tenant. Useful when a tenant is deactivated.
     /// </summary>
-    public void ClearTenant(string tenantId)
+    internal void ClearTenant(string tenantId)
     {
         _tenantRegistries.TryRemove(tenantId, out _);
     }
