@@ -16,7 +16,7 @@ digraph {
     _6 -> _7 [style="dotted", weight=1];
     _8 [label="8. Empty String as Default Tenant ID"; URL="0008-empty-string-as-default-tenant-id.html"];
     _7 -> _8 [style="dotted", weight=1];
-    _9 [label="9. Null Tenant ID for Tenant-Agnostic Entities"; URL="0009-null-tenant-id-for-tenant-agnostic-entities.html"];
+    _9 [label="9. Asterisk Sentinel Value for Tenant-Agnostic Entities"; URL="0009-asterisk-sentinel-value-for-tenant-agnostic-entities.html"];
     _8 -> _9 [style="dotted", weight=1];
   }
 }

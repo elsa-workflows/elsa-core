@@ -10,6 +10,6 @@ public class ComponentTestTenantResolver : TenantResolverBase
     protected override TenantResolverResult Resolve(TenantResolverContext context)
     {
         // Resolve to empty string (default tenant) to match workflow definitions without explicit tenants
-        return AutoResolve(string.Empty);
+        return AutoResolve(Tenant.DefaultTenantId);
     }
 }

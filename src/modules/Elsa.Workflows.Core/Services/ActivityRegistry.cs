@@ -10,66 +10,148 @@ namespace Elsa.Workflows;
 /// <inheritdoc />
 public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<IActivityDescriptorModifier> modifiers, ITenantAccessor tenantAccessor, ILogger<ActivityRegistry> logger) : IActivityRegistry
 {
+    // Legacy support for manually registered activities
     private readonly ISet<ActivityDescriptor> _manualActivityDescriptors = new HashSet<ActivityDescriptor>();
-    private ConcurrentDictionary<Type, ICollection<ActivityDescriptor>> _providedActivityDescriptors = new();
-    private ConcurrentDictionary<(string? TenantId, string Type, int Version), ActivityDescriptor> _activityDescriptors = new();
+
+    // Per-tenant activity descriptors (workflow-as-activities, tenant-specific providers, etc.)
+    private readonly ConcurrentDictionary<string, TenantRegistryData> _tenantRegistries = new();
+
+    // Tenant-agnostic activity descriptors (built-in activities, manually registered, etc.)
+    private readonly TenantRegistryData _agnosticRegistry = new();
 
     /// <inheritdoc />
-    public void Add(Type providerType, ActivityDescriptor descriptor) => Add(descriptor, GetOrCreateDescriptors(providerType));
+    public void Add(Type providerType, ActivityDescriptor descriptor)
+    {
+        var registry = GetOrCreateRegistry(descriptor.TenantId);
+        var providerDescriptors = GetOrCreateProviderDescriptors(registry, providerType);
+        Add(descriptor, registry.ActivityDescriptors, providerDescriptors);
+    }
 
     /// <inheritdoc />
     public void Remove(Type providerType, ActivityDescriptor descriptor)
     {
-        _providedActivityDescriptors[providerType].Remove(descriptor);
-        _activityDescriptors.Remove((descriptor.TenantId, descriptor.TypeName, descriptor.Version), out _);
+        var registry = GetOrCreateRegistry(descriptor.TenantId);
+        if (registry.ProvidedActivityDescriptors.TryGetValue(providerType, out var providerDescriptors))
+        {
+            providerDescriptors.Remove(descriptor);
+            registry.ActivityDescriptors.TryRemove((descriptor.TypeName, descriptor.Version), out _);
+        }
     }
 
     /// <inheritdoc />
-    public IEnumerable<ActivityDescriptor> ListAll() => _activityDescriptors.Values.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null);
+    public IEnumerable<ActivityDescriptor> ListAll()
+    {
+        var currentTenantId = tenantAccessor.TenantId;
+
+        // Get descriptors from current tenant's registry
+        var tenantDescriptors = _tenantRegistries.TryGetValue(currentTenantId, out var tenantRegistry)
+            ? tenantRegistry.ActivityDescriptors.Values
+            : Enumerable.Empty<ActivityDescriptor>();
+
+        // Get descriptors from agnostic registry
+        var agnosticDescriptors = _agnosticRegistry.ActivityDescriptors.Values;
+
+        return tenantDescriptors.Concat(agnosticDescriptors);
+    }
 
     /// <inheritdoc />
     public IEnumerable<ActivityDescriptor> ListByProvider(Type providerType)
     {
-        var list = _providedActivityDescriptors.TryGetValue(providerType, out var descriptors) ? descriptors : ArraySegment<ActivityDescriptor>.Empty;
-        return list.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null);
+        var currentTenantId = tenantAccessor.TenantId;
+
+        // Get descriptors from current tenant's registry
+        var tenantDescriptors = _tenantRegistries.TryGetValue(currentTenantId, out var tenantRegistry) &&
+                                tenantRegistry.ProvidedActivityDescriptors.TryGetValue(providerType, out var tenantProviderDescriptors)
+            ? tenantProviderDescriptors
+            : Enumerable.Empty<ActivityDescriptor>();
+
+        // Get descriptors from agnostic registry
+        var agnosticDescriptors = _agnosticRegistry.ProvidedActivityDescriptors.TryGetValue(providerType, out var agnosticProviderDescriptors)
+            ? agnosticProviderDescriptors
+            : Enumerable.Empty<ActivityDescriptor>();
+
+        return tenantDescriptors.Concat(agnosticDescriptors);
     }
 
     /// <inheritdoc />
     public ActivityDescriptor? Find(string type)
     {
-        var tenantId = tenantAccessor.TenantId;
-        ActivityDescriptor? tenantSpecific = null;
-        ActivityDescriptor? tenantAgnostic = null;
+        var currentTenantId = tenantAccessor.TenantId;
 
-        // Single-pass iteration to find both tenant-specific and tenant-agnostic descriptors
-        foreach (var descriptor in _activityDescriptors.Values)
+        // Always prefer tenant-specific descriptors over tenant-agnostic ones
+        // Get highest version from current tenant's registry
+        if (_tenantRegistries.TryGetValue(currentTenantId, out var tenantRegistry))
         {
-            if (descriptor.TypeName != type)
-                continue;
+            var tenantDescriptor = tenantRegistry.ActivityDescriptors.Values
+                .Where(x => x.TypeName == type)
+                .MaxBy(x => x.Version);
 
-            if (descriptor.TenantId == tenantId && (tenantSpecific == null || descriptor.Version > tenantSpecific.Version))
-                tenantSpecific = descriptor;
-            else if (descriptor.TenantId == null && (tenantAgnostic == null || descriptor.Version > tenantAgnostic.Version))
-                tenantAgnostic = descriptor;
+            if (tenantDescriptor != null)
+                return tenantDescriptor;
         }
 
-        // Prefer tenant-specific over tenant-agnostic
-        return tenantSpecific ?? tenantAgnostic;
+        // Fall back to agnostic registry only if no tenant-specific descriptor exists
+        return _agnosticRegistry.ActivityDescriptors.Values
+            .Where(x => x.TypeName == type)
+            .MaxBy(x => x.Version);
     }
 
     /// <inheritdoc />
-    public ActivityDescriptor? Find(string type, int version) => _activityDescriptors.GetValueOrDefault((tenantAccessor.TenantId, type, version)) ?? _activityDescriptors.GetValueOrDefault((null, type, version));
+    public ActivityDescriptor? Find(string type, int version)
+    {
+        var currentTenantId = tenantAccessor.TenantId;
+
+        // Check current tenant's registry first
+        if (_tenantRegistries.TryGetValue(currentTenantId, out var tenantRegistry) &&
+            tenantRegistry.ActivityDescriptors.TryGetValue((type, version), out var tenantDescriptor))
+        {
+            return tenantDescriptor;
+        }
+
+        // Fall back to agnostic registry
+        return _agnosticRegistry.ActivityDescriptors.TryGetValue((type, version), out var agnosticDescriptor)
+            ? agnosticDescriptor
+            : null;
+    }
 
     /// <inheritdoc />
-    public ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null).FirstOrDefault(predicate);
+    public ActivityDescriptor? Find(Func<ActivityDescriptor, bool> predicate)
+    {
+        var currentTenantId = tenantAccessor.TenantId;
+
+        // Check current tenant's registry first
+        if (_tenantRegistries.TryGetValue(currentTenantId, out var tenantRegistry))
+        {
+            var tenantMatch = tenantRegistry.ActivityDescriptors.Values.FirstOrDefault(predicate);
+            if (tenantMatch != null) return tenantMatch;
+        }
+
+        // Fall back to agnostic registry
+        return _agnosticRegistry.ActivityDescriptors.Values.FirstOrDefault(predicate);
+    }
 
     /// <inheritdoc />
-    public IEnumerable<ActivityDescriptor> FindMany(Func<ActivityDescriptor, bool> predicate) => _activityDescriptors.Values.Where(x => x.TenantId == tenantAccessor.TenantId || x.TenantId == null).Where(predicate);
+    public IEnumerable<ActivityDescriptor> FindMany(Func<ActivityDescriptor, bool> predicate)
+    {
+        var currentTenantId = tenantAccessor.TenantId;
+
+        // Get descriptors from current tenant's registry
+        var tenantDescriptors = _tenantRegistries.TryGetValue(currentTenantId, out var tenantRegistry)
+            ? tenantRegistry.ActivityDescriptors.Values.Where(predicate)
+            : Enumerable.Empty<ActivityDescriptor>();
+
+        // Get descriptors from agnostic registry
+        var agnosticDescriptors = _agnosticRegistry.ActivityDescriptors.Values.Where(predicate);
+
+        return tenantDescriptors.Concat(agnosticDescriptors);
+    }
 
     /// <inheritdoc />
     public void Register(ActivityDescriptor descriptor)
     {
-        Add(GetType(), descriptor);
+        var registry = GetOrCreateRegistry(descriptor.TenantId);
+        var providerDescriptors = GetOrCreateProviderDescriptors(registry, GetType());
+        Add(descriptor, registry.ActivityDescriptors, providerDescriptors);
     }
 
     /// <inheritdoc />
@@ -77,12 +159,14 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     {
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName(activityType);
 
-        if (_activityDescriptors.Values.Any(x => x.TypeName == activityTypeName))
+        // Check if already registered in any registry
+        if (ListAll().Any(x => x.TypeName == activityTypeName))
             return;
 
         var activityDescriptor = await activityDescriber.DescribeActivityAsync(activityType, cancellationToken);
 
-        Add(activityDescriptor, _activityDescriptors, _manualActivityDescriptors);
+        var registry = GetOrCreateRegistry(activityDescriptor.TenantId);
+        Add(activityDescriptor, registry.ActivityDescriptors, _manualActivityDescriptors);
         _manualActivityDescriptors.Add(activityDescriptor);
     }
 
@@ -99,63 +183,48 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     /// <inheritdoc />
     public async Task RefreshDescriptorsAsync(IEnumerable<IActivityProvider> activityProviders, CancellationToken cancellationToken = default)
     {
-        var providersDictionary = new ConcurrentDictionary<Type, ICollection<ActivityDescriptor>>(_providedActivityDescriptors);
-        var activityDescriptors = new ConcurrentDictionary<(string? TenantId, string Type, int Version), ActivityDescriptor>(_activityDescriptors);
-    
-        foreach (var activityProvider in activityProviders)
-        {
-            var providerType = activityProvider.GetType();
-        
-            // Remove old descriptors for THIS provider
-            if (providersDictionary.TryGetValue(providerType, out var oldDescriptors))
-            {
-                foreach (var oldDescriptor in oldDescriptors)
-                    activityDescriptors.TryRemove((oldDescriptor.TenantId, oldDescriptor.TypeName, oldDescriptor.Version), out _);
-            }
-        
-            // Add new descriptors for THIS provider
-            var descriptors = (await activityProvider.GetDescriptorsAsync(cancellationToken)).ToList();
-            var providerDescriptors = new List<ActivityDescriptor>();
-            providersDictionary[providerType] = providerDescriptors;
-            foreach (var descriptor in descriptors)
-            {
-                Add(descriptor, activityDescriptors, providerDescriptors);
-            }
-        }
-
-        Interlocked.Exchange(ref _activityDescriptors, activityDescriptors);
-        Interlocked.Exchange(ref _providedActivityDescriptors, providersDictionary);
+        foreach (var activityProvider in activityProviders) 
+            await RefreshDescriptorsAsync(activityProvider, cancellationToken);
     }
 
     public async Task RefreshDescriptorsAsync(IActivityProvider activityProvider, CancellationToken cancellationToken = default)
     {
         var providerType = activityProvider.GetType();
 
-        // Remove ALL old descriptors for this provider from _activityDescriptors
-        if (_providedActivityDescriptors.TryGetValue(providerType, out var oldDescriptors))
-        {
-            foreach (var oldDescriptor in oldDescriptors)
-                _activityDescriptors.TryRemove((oldDescriptor.TenantId, oldDescriptor.TypeName, oldDescriptor.Version), out _);
-        }
-
         // Get new descriptors from provider
         var descriptors = (await activityProvider.GetDescriptorsAsync(cancellationToken)).ToList();
 
-        // Add new descriptors
-        var providerDescriptors = new List<ActivityDescriptor>();
-        foreach (var descriptor in descriptors)
-            Add(descriptor, _activityDescriptors, providerDescriptors);
+        // Group descriptors by normalized tenant ID
+        // Normalize null to "*" so both map to the same agnostic group, avoiding redundant processing
+        var descriptorsByTenant = descriptors.GroupBy(d => NormalizeTenantIdForGrouping(d.TenantId));
 
-        // Update the provider's descriptor list
-        _providedActivityDescriptors[providerType] = providerDescriptors;
+        foreach (var group in descriptorsByTenant)
+        {
+            var tenantId = group.Key;
+            var registry = GetOrCreateRegistry(tenantId);
+
+            // Remove old descriptors for this provider from this tenant's registry
+            if (registry.ProvidedActivityDescriptors.TryGetValue(providerType, out var oldDescriptors))
+            {
+                foreach (var oldDescriptor in oldDescriptors.ToList())
+                {
+                    registry.ActivityDescriptors.TryRemove((oldDescriptor.TypeName, oldDescriptor.Version), out _);
+                }
+            }
+
+            // Add new descriptors for this tenant
+            var providerDescriptors = new List<ActivityDescriptor>();
+            foreach (var descriptor in group)
+            {
+                Add(descriptor, registry.ActivityDescriptors, providerDescriptors);
+            }
+
+            // Update the provider's descriptor list in this registry
+            registry.ProvidedActivityDescriptors[providerType] = providerDescriptors;
+        }
     }
 
-    private void Add(ActivityDescriptor descriptor, ICollection<ActivityDescriptor> target)
-    {
-        Add(descriptor, _activityDescriptors, target);
-    }
-
-    private void Add(ActivityDescriptor? descriptor, ConcurrentDictionary<(string? TenantId, string Type, int Version), ActivityDescriptor> activityDescriptors, ICollection<ActivityDescriptor> providerDescriptors)
+    private void Add(ActivityDescriptor? descriptor, ConcurrentDictionary<(string Type, int Version), ActivityDescriptor> activityDescriptors, ICollection<ActivityDescriptor> providerDescriptors)
     {
         if (descriptor is null)
         {
@@ -167,45 +236,83 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
             modifier.Modify(descriptor);
 
         // If the descriptor already exists, replace it. But log a warning.
-        if (activityDescriptors.TryGetValue((descriptor.TenantId, descriptor.TypeName, descriptor.Version), out var existingDescriptor))
+        if (activityDescriptors.TryGetValue((descriptor.TypeName, descriptor.Version), out var existingDescriptor))
         {
             // Remove the existing descriptor from the providerDescriptors collection.
             providerDescriptors.Remove(existingDescriptor);
 
             // Log a warning.
-            logger.LogWarning("Activity descriptor {ActivityType} v{ActivityVersion} was already registered. Replacing with new descriptor", descriptor.TypeName, descriptor.Version);
+            logger.LogWarning("Activity descriptor {ActivityType} v{ActivityVersion} was already registered for tenant {TenantId}. Replacing with new descriptor", descriptor.TypeName, descriptor.Version, descriptor.TenantId);
         }
 
-        activityDescriptors[(descriptor.TenantId, descriptor.TypeName, descriptor.Version)] = descriptor;
+        activityDescriptors[(descriptor.TypeName, descriptor.Version)] = descriptor;
         providerDescriptors.Add(descriptor);
     }
 
     /// <inheritdoc />
     public void Clear()
     {
-        _activityDescriptors.Clear();
-        _providedActivityDescriptors.Clear();
+        _tenantRegistries.Clear();
+        _agnosticRegistry.ActivityDescriptors.Clear();
+        _agnosticRegistry.ProvidedActivityDescriptors.Clear();
     }
 
     /// <inheritdoc />
     public void ClearProvider(Type providerType)
     {
-        var descriptors = ListByProvider(providerType).ToList();
+        var currentTenantId = tenantAccessor.TenantId;
 
-        foreach (var descriptor in descriptors)
-            _activityDescriptors.Remove((descriptor.TenantId, descriptor.TypeName, descriptor.Version), out _);
+        // Clear from current tenant's registry
+        if (_tenantRegistries.TryGetValue(currentTenantId, out var tenantRegistry)
+            && tenantRegistry.ProvidedActivityDescriptors.TryGetValue(providerType, out var descriptors))
+        {
+            foreach (var descriptor in descriptors.ToList()) 
+                tenantRegistry.ActivityDescriptors.TryRemove((descriptor.TypeName, descriptor.Version), out _);
 
-        _providedActivityDescriptors.Remove(providerType, out _);
+            tenantRegistry.ProvidedActivityDescriptors.TryRemove(providerType, out _);
+        }
+
+        // Clear from agnostic registry
+        if (_agnosticRegistry.ProvidedActivityDescriptors.TryGetValue(providerType, out var agnosticDescriptors))
+        {
+            foreach (var descriptor in agnosticDescriptors.ToList()) 
+                _agnosticRegistry.ActivityDescriptors.TryRemove((descriptor.TypeName, descriptor.Version), out _);
+
+            _agnosticRegistry.ProvidedActivityDescriptors.TryRemove(providerType, out _);
+        }
     }
 
-    private ICollection<ActivityDescriptor> GetOrCreateDescriptors(Type provider)
+    /// <summary>
+    /// Clears all activity descriptors for a specific tenant. Useful when a tenant is deactivated.
+    /// </summary>
+    internal void ClearTenant(string tenantId)
     {
-        if (_providedActivityDescriptors.TryGetValue(provider, out var descriptors))
-            return descriptors;
+        _tenantRegistries.TryRemove(tenantId, out _);
+    }
 
-        descriptors = new List<ActivityDescriptor>();
-        _providedActivityDescriptors[provider] = descriptors;
+    private TenantRegistryData GetOrCreateRegistry(string? tenantId)
+    {
+        // Null or agnostic tenant ID goes to agnostic registry
+        if (tenantId is null or Tenant.AgnosticTenantId)
+            return _agnosticRegistry;
 
-        return descriptors;
+        // Get or create tenant-specific registry
+        return _tenantRegistries.GetOrAdd(tenantId, _ => new());
+    }
+
+    private ICollection<ActivityDescriptor> GetOrCreateProviderDescriptors(TenantRegistryData registry, Type providerType)
+    {
+        return registry.ProvidedActivityDescriptors.GetOrAdd(providerType, _ => new List<ActivityDescriptor>());
+    }
+
+    /// <summary>
+    /// Normalizes tenant ID for grouping purposes.
+    /// Converts null to "*" so that both null and "*" descriptors are grouped together,
+    /// avoiding redundant processing of the agnostic registry.
+    /// </summary>
+    private static string? NormalizeTenantIdForGrouping(string? tenantId)
+    {
+        // Normalize null to "*" so both map to the same group
+        return tenantId ?? Tenant.AgnosticTenantId;
     }
 }

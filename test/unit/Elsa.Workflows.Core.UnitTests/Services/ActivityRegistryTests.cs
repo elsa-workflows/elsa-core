@@ -57,7 +57,7 @@ public class ActivityRegistryTests
     {
         // Arrange
         var tenantSpecific = CreateDescriptor(TestActivityType, 1, CurrentTenant);
-        var tenantAgnostic = CreateDescriptor(TestActivityType, 2, null); // Higher version
+        var tenantAgnostic = CreateDescriptor(TestActivityType, 2, Tenant.AgnosticTenantId); // Higher version
         RegisterDescriptors(tenantSpecific, tenantAgnostic);
 
         // Act
@@ -71,14 +71,14 @@ public class ActivityRegistryTests
     public void Find_ReturnsTenantAgnostic_WhenNoTenantSpecificExists()
     {
         // Arrange
-        var tenantAgnostic = CreateDescriptor(TestActivityType, 1, null);
+        var tenantAgnostic = CreateDescriptor(TestActivityType, 1, Tenant.AgnosticTenantId);
         RegisterDescriptors(tenantAgnostic);
 
         // Act
         var result = _registry.Find(TestActivityType);
 
         // Assert
-        AssertDescriptor(result, null, 1);
+        AssertDescriptor(result, Tenant.AgnosticTenantId, 1);
     }
 
     [Theory]
@@ -112,9 +112,9 @@ public class ActivityRegistryTests
         // Arrange
         var descriptors = new[]
         {
-            CreateDescriptor(TestActivityType, v1, null),
-            CreateDescriptor(TestActivityType, v2, null),
-            CreateDescriptor(TestActivityType, v3, null)
+            CreateDescriptor(TestActivityType, v1, Tenant.AgnosticTenantId),
+            CreateDescriptor(TestActivityType, v2, Tenant.AgnosticTenantId),
+            CreateDescriptor(TestActivityType, v3, Tenant.AgnosticTenantId)
         };
         RegisterDescriptors(descriptors);
 
@@ -122,7 +122,7 @@ public class ActivityRegistryTests
         var result = _registry.Find(TestActivityType);
 
         // Assert
-        AssertDescriptor(result, null, expectedVersion);
+        AssertDescriptor(result, Tenant.AgnosticTenantId, expectedVersion);
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public class ActivityRegistryTests
         {
             CreateDescriptor(TestActivityType, 1, CurrentTenant),
             CreateDescriptor(TestActivityType, 5, "tenant2"), // Much higher version but wrong tenant
-            CreateDescriptor(TestActivityType, 2, null)
+            CreateDescriptor(TestActivityType, 2, Tenant.AgnosticTenantId)
         };
         RegisterDescriptors(descriptors);
 
