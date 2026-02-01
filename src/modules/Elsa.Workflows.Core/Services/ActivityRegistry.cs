@@ -267,25 +267,21 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         var currentTenantId = tenantAccessor.TenantId;
 
         // Clear from current tenant's registry
-        if (_tenantRegistries.TryGetValue(currentTenantId, out var tenantRegistry))
+        if (_tenantRegistries.TryGetValue(currentTenantId, out var tenantRegistry)
+            && tenantRegistry.ProvidedActivityDescriptors.TryGetValue(providerType, out var descriptors))
         {
-            if (tenantRegistry.ProvidedActivityDescriptors.TryGetValue(providerType, out var descriptors))
-            {
-                foreach (var descriptor in descriptors.ToList())
-                {
-                    tenantRegistry.ActivityDescriptors.TryRemove((descriptor.TypeName, descriptor.Version), out _);
-                }
-                tenantRegistry.ProvidedActivityDescriptors.TryRemove(providerType, out _);
-            }
+            foreach (var descriptor in descriptors.ToList()) 
+                tenantRegistry.ActivityDescriptors.TryRemove((descriptor.TypeName, descriptor.Version), out _);
+
+            tenantRegistry.ProvidedActivityDescriptors.TryRemove(providerType, out _);
         }
 
         // Clear from agnostic registry
         if (_agnosticRegistry.ProvidedActivityDescriptors.TryGetValue(providerType, out var agnosticDescriptors))
         {
-            foreach (var descriptor in agnosticDescriptors.ToList())
-            {
+            foreach (var descriptor in agnosticDescriptors.ToList()) 
                 _agnosticRegistry.ActivityDescriptors.TryRemove((descriptor.TypeName, descriptor.Version), out _);
-            }
+
             _agnosticRegistry.ProvidedActivityDescriptors.TryRemove(providerType, out _);
         }
     }
@@ -301,11 +297,11 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     private TenantRegistryData GetOrCreateRegistry(string? tenantId)
     {
         // Null or agnostic tenant ID goes to agnostic registry
-        if (tenantId == null || tenantId == Tenant.AgnosticTenantId)
+        if (tenantId is null or Tenant.AgnosticTenantId)
             return _agnosticRegistry;
 
         // Get or create tenant-specific registry
-        return _tenantRegistries.GetOrAdd(tenantId, _ => new TenantRegistryData());
+        return _tenantRegistries.GetOrAdd(tenantId, _ => new());
     }
 
     private ICollection<ActivityDescriptor> GetOrCreateProviderDescriptors(TenantRegistryData registry, Type providerType)
