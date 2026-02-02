@@ -39,6 +39,14 @@ public class DeleteWorkflowTests : AppComponentTest
         var workflowDefinitionManager = _scope1.ServiceProvider.GetRequiredService<IWorkflowDefinitionManager>();
         var deletedCount = await workflowDefinitionManager.DeleteByDefinitionIdAsync(Workflows.DeleteWorkflow.DefinitionId);
         Assert.True(deletedCount > 0, "Expected workflow definition to be deleted.");
+        
+        var store = _scope1.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+        var t1 = await store.FindAsync(new WorkflowDefinitionFilter
+        {
+            DefinitionId = Workflows.DeleteWorkflow.DefinitionId
+        });
+        
+        Assert.Null(t1);
 
         // Force a refresh of the activity registry to ensure it reflects the deletion
         var activityRegistry = _scope1.ServiceProvider.GetRequiredService<IActivityRegistry>();

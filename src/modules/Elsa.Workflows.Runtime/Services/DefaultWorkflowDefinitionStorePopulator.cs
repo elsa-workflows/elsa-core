@@ -68,8 +68,11 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
             foreach (var result in results)
             {
-                // Only import workflows belonging to the current tenant.
-                if (result.Workflow.Identity.TenantId.NormalizeTenantId() != currentTenantId)
+                // Normalize tenant IDs for comparison (null becomes empty string)
+                var definitionTenantId = result.Workflow.Identity.TenantId.NormalizeTenantId();
+
+                // Only import workflows belonging to the current tenant or tenant-agnostic workflows (TenantId = "*").
+                if (definitionTenantId != currentTenantId && definitionTenantId != Tenant.AgnosticTenantId)
                 {
                     _logger.LogDebug(
                         "Skipping adding workflow {WorkflowId} from provider {Provider} because it belongs to tenant '{WorkflowTenantId}' but current tenant is '{CurrentTenantId}'",
@@ -187,14 +190,18 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         await UpdateIsLatest();
         await UpdateIsPublished();
 
+        // Determine the tenant ID for the workflow definition
+        // If the workflow has no tenant ID, use the current tenant (normalized to handle null -> "")
+        var workflowTenantId = workflow.Identity.TenantId ?? (_tenantAccessor.Tenant?.Id).NormalizeTenantId();
+
         var workflowDefinition = existingDefinitionVersion ?? new WorkflowDefinition
         {
             DefinitionId = workflow.Identity.DefinitionId,
             Id = workflow.Identity.Id,
             Version = workflow.Identity.Version,
-            TenantId = workflow.Identity.TenantId,
+            TenantId = workflowTenantId,
         };
-
+        
         workflowDefinition.Description = workflow.WorkflowMetadata.Description;
         workflowDefinition.Name = workflow.WorkflowMetadata.Name;
         workflowDefinition.ToolVersion = workflow.WorkflowMetadata.ToolVersion;

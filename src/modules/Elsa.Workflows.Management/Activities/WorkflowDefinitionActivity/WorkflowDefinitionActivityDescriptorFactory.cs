@@ -1,4 +1,3 @@
-using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Models;
@@ -10,11 +9,8 @@ public class WorkflowDefinitionActivityDescriptorFactory
 {
     public ActivityDescriptor CreateDescriptor(WorkflowDefinition definition, WorkflowDefinition? latestPublishedDefinition = null)
     {
-        var baseName = definition.Name!.Pascalize();
-        var tenantId = definition.TenantId.NormalizeTenantId();
-
-        // Include tenant ID in type name for non-default tenants to ensure uniqueness across tenants
-        var typeName = string.IsNullOrEmpty(tenantId) ? baseName : $"{tenantId}:{baseName}";
+        var typeName = definition.Name!.Pascalize();
+        var tenantId = definition.TenantId;
         
         var ports = definition.Outcomes.Select(outcome => new Port
         {
@@ -36,6 +32,7 @@ public class WorkflowDefinitionActivityDescriptorFactory
 
         return new()
         {
+            TenantId = tenantId,
             TypeName = typeName,
             ClrType = typeof(WorkflowDefinitionActivity),
             Name = typeName,
