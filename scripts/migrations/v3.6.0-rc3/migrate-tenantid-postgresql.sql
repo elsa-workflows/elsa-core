@@ -25,6 +25,7 @@ BEGIN;
 DO $$
 DECLARE
     v_count INTEGER;
+    v_table_exists BOOLEAN;
 BEGIN
     -- =============================================
     -- Management Context
@@ -32,7 +33,13 @@ BEGIN
     RAISE NOTICE 'Migrating Management Context tables...';
     
     -- WorkflowDefinitions
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'WorkflowDefinitions') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('WorkflowDefinitions')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "WorkflowDefinitions" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -48,7 +55,13 @@ BEGIN
     END IF;
     
     -- WorkflowInstances
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'WorkflowInstances') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('WorkflowInstances')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "WorkflowInstances" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -71,7 +84,13 @@ BEGIN
     RAISE NOTICE 'Migrating Runtime Context tables...';
     
     -- Triggers (StoredTrigger)
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'Triggers') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('Triggers')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "Triggers" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -87,7 +106,13 @@ BEGIN
     END IF;
     
     -- Bookmarks (StoredBookmark)
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'Bookmarks') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('Bookmarks')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "Bookmarks" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -103,7 +128,13 @@ BEGIN
     END IF;
     
     -- BookmarkQueueItems
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'BookmarkQueueItems') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('BookmarkQueueItems')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "BookmarkQueueItems" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -119,7 +150,13 @@ BEGIN
     END IF;
     
     -- ActivityExecutionRecords
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'ActivityExecutionRecords') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('ActivityExecutionRecords')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "ActivityExecutionRecords" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -135,7 +172,13 @@ BEGIN
     END IF;
     
     -- WorkflowExecutionLogRecords
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'WorkflowExecutionLogRecords') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('WorkflowExecutionLogRecords')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "WorkflowExecutionLogRecords" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -151,7 +194,13 @@ BEGIN
     END IF;
     
     -- WorkflowInboxMessages
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'WorkflowInboxMessages') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('WorkflowInboxMessages')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "WorkflowInboxMessages" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -167,7 +216,13 @@ BEGIN
     END IF;
     
     -- KeyValuePairs (SerializedKeyValuePair)
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'KeyValuePairs') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('KeyValuePairs')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "KeyValuePairs" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -190,7 +245,13 @@ BEGIN
     RAISE NOTICE 'Migrating Identity Context tables...';
     
     -- Users
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'Users') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('Users')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "Users" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -206,7 +267,13 @@ BEGIN
     END IF;
     
     -- Applications
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'Applications') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('Applications')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "Applications" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -222,7 +289,13 @@ BEGIN
     END IF;
     
     -- Roles
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'Roles') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('Roles')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "Roles" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -245,7 +318,13 @@ BEGIN
     RAISE NOTICE 'Migrating Labels Context tables...';
     
     -- Labels
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'Labels') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('Labels')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "Labels" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -261,7 +340,13 @@ BEGIN
     END IF;
     
     -- WorkflowDefinitionLabels
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'WorkflowDefinitionLabels') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('WorkflowDefinitionLabels')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "WorkflowDefinitionLabels" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -284,7 +369,13 @@ BEGIN
     RAISE NOTICE 'Migrating Alterations Context tables...';
     
     -- AlterationPlans
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'AlterationPlans') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('AlterationPlans')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "AlterationPlans" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -300,7 +391,13 @@ BEGIN
     END IF;
     
     -- AlterationJobs
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'AlterationJobs') THEN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = current_schema() 
+        AND LOWER(table_name) = LOWER('AlterationJobs')
+    ) INTO v_table_exists;
+    
+    IF v_table_exists THEN
         SELECT COUNT(*) INTO v_count FROM "AlterationJobs" WHERE "TenantId" IS NULL;
         
         IF v_count > 0 THEN
@@ -317,9 +414,6 @@ BEGIN
     
     RAISE NOTICE '';
     RAISE NOTICE 'Migration completed successfully!';
-    RAISE NOTICE '';
-    RAISE NOTICE 'Review the changes above. If everything looks correct, the transaction will be committed.';
-    RAISE NOTICE 'If you want to undo these changes, you can abort now with Ctrl+C or rollback the transaction.';
     
 EXCEPTION
     WHEN OTHERS THEN
@@ -330,6 +424,7 @@ EXCEPTION
 END $$;
 
 -- Commit the transaction
+-- If you need to rollback, press Ctrl+C now or execute: ROLLBACK;
 COMMIT;
 
 \echo 'Changes committed successfully!'

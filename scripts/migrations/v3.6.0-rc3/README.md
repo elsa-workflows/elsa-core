@@ -93,6 +93,8 @@ Or execute within pgAdmin:
 mysql -h <host> -u <username> -p <database> < migrate-tenantid-mysql.sql
 ```
 
+**Note:** The MySQL script will attempt to update all tables. If a table doesn't exist, MySQL will display a warning but continue with the remaining tables.
+
 Or execute within MySQL Workbench:
 1. Open MySQL Workbench
 2. Connect to your database
@@ -226,7 +228,7 @@ Ensure you're using the correct script for your database type:
 For questions or issues:
 - GitHub Issues: https://github.com/elsa-workflows/elsa-core/issues
 - GitHub Discussions: https://github.com/elsa-workflows/elsa-core/discussions
-- Discord: https://discord.gg/hhChk5H472
+- Discord: https://discord.gg/hhChk5H472 (check the main repository README if this link has expired)
 
 ## Related Documentation
 

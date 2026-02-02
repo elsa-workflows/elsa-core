@@ -427,10 +427,10 @@ BEGIN TRY
     PRINT '';
     PRINT 'Migration completed successfully!';
     PRINT '';
-    PRINT 'IMPORTANT: Review the changes above. If everything looks correct, type COMMIT to save.';
-    PRINT 'If you want to undo these changes, type ROLLBACK.';
     
     -- Commit the transaction
+    -- Note: Changes are committed automatically. To prevent auto-commit, 
+    -- comment out the COMMIT line and manually execute COMMIT or ROLLBACK.
     COMMIT TRANSACTION;
     PRINT 'Changes committed successfully!';
     
