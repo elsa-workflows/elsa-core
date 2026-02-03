@@ -109,6 +109,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     });
                     runtime.UseCache();
                     runtime.UseDistributedRuntime();
+                    // Use test-specific bookmark queue worker without throttling to prevent timeouts
+                    runtime.BookmarkQueueWorker = sp => sp.GetRequiredService<TestBookmarkQueueWorker>();
                 });
                 elsa.UseJavaScript(options =>
                 {
@@ -168,6 +170,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 .AddWorkflowsProvider<TestWorkflowProvider>()
                 .AddNotificationHandlersFrom<WorkflowEventHandlers>()
                 .Decorate<IChangeTokenSignaler, EventPublishingChangeTokenSignaler>()
+                .AddSingleton<TestBookmarkQueueWorker>()
                 ;
         });
     }
