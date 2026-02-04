@@ -615,6 +615,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             if (schedulingContext != null)
             {
                 activityExecutionContext.SchedulingActivityId = schedulingContext.Activity.Id;
+                activityExecutionContext.CallStackDepth = schedulingContext.CallStackDepth + 1;
             }
         }
 
@@ -702,3 +703,4 @@ public partial class WorkflowExecutionContext : IExecutionContext
         return _commitStateHandler.CommitAsync(this, CancellationToken);
     }
 }
+
