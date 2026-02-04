@@ -102,10 +102,11 @@ public class MemoryActivityExecutionStore : IActivityExecutionStore
         CancellationToken cancellationToken = default)
     {
         var chain = new List<ActivityExecutionRecord>();
+        var visited = new HashSet<string>();
         var currentId = activityExecutionId;
 
         // Traverse the chain backwards from the specified record to the root
-        while (currentId != null)
+        while (currentId != null && visited.Add(currentId))
         {
             var record = _store.Query(query => query.Where(x => x.Id == currentId)).FirstOrDefault();
             if (record == null)
