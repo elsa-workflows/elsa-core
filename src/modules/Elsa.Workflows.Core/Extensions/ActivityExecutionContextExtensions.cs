@@ -294,7 +294,7 @@ public static partial class ActivityExecutionContextExtensions
             var childContexts = activityExecutionContext.Children.ToList();
 
             foreach (var childContext in childContexts)
-                await CancelActivityAsync(childContext);
+                await childContext.CancelActivityAsync();
 
             var publisher = activityExecutionContext.GetRequiredService<INotificationSender>();
             activityExecutionContext.TransitionTo(ActivityStatus.Canceled);
@@ -400,7 +400,7 @@ public static partial class ActivityExecutionContextExtensions
             {
                 yield return child;
 
-                foreach (var descendent in GetDescendents(child))
+                foreach (var descendent in child.GetDescendents())
                     yield return descendent;
             }
         }
@@ -472,7 +472,6 @@ public static partial class ActivityExecutionContextExtensions
             }
         
             var propertyName = memberExpr.Member.Name;
-            
             var value = activityExecutionContext.Get(propertyName);
         
             if (value != null)
@@ -494,10 +493,11 @@ public static partial class ActivityExecutionContextExtensions
         public IEnumerable<ActivityExecutionContext> GetExecutionChain()
         {
             var chain = new List<ActivityExecutionContext>();
+            var visited = new HashSet<string>();
             var currentContext = activityExecutionContext;
 
             // Traverse the chain backwards from this context to the root
-            while (currentContext != null)
+            while (currentContext != null && visited.Add(currentContext.Id))
             {
                 chain.Add(currentContext);
 

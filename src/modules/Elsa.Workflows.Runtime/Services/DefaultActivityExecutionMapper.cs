@@ -116,15 +116,15 @@ public class DefaultActivityExecutionMapper(
         var depth = 1;
         var currentSchedulingId = source.SchedulingActivityExecutionId;
         var workflowExecutionContext = source.WorkflowExecutionContext;
+        var visited = new HashSet<string> { source.Id };
 
         // Traverse the scheduling chain until we reach a root activity (null scheduling ID)
-        // Limit depth to prevent infinite loops in case of circular references
-        const int maxDepth = 1000;
-
-        while (currentSchedulingId != null && depth < maxDepth)
+        // Cycle detection is handled by the visited HashSet
+        while (currentSchedulingId != null && visited.Add(currentSchedulingId))
         {
+            var id = currentSchedulingId;
             var schedulingContext = workflowExecutionContext.ActivityExecutionContexts
-                .FirstOrDefault(x => x.Id == currentSchedulingId);
+                .FirstOrDefault(x => x.Id == id);
 
             if (schedulingContext == null)
                 break; // Can't traverse further if the scheduling context isn't in the current workflow
