@@ -351,18 +351,6 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public IDictionary<object, object> TransientProperties { get; set; } = new Dictionary<object, object>();
 
     /// <summary>
-    /// The ambient scheduling activity execution ID. Used as a fallback when ScheduleWorkOptions does not explicitly specify a scheduling activity.
-    /// This is set automatically during completion callbacks, bookmark resumes, and child workflow starts.
-    /// </summary>
-    public string? CurrentSchedulingActivityExecutionId { get; set; }
-
-    /// <summary>
-    /// The ambient scheduling workflow instance ID. Used as a fallback when crossing workflow boundaries.
-    /// This is set automatically when starting a child workflow to track the parent workflow instance.
-    /// </summary>
-    public string? CurrentSchedulingWorkflowInstanceId { get; set; }
-
-    /// <summary>
     /// A collection of incidents that may have occurred during execution.
     /// </summary>
     public ICollection<ActivityIncident> Incidents { get; set; }
