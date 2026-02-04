@@ -1,15 +1,8 @@
 using Elsa.Common;
-using Elsa.Common.Codecs;
 using Elsa.Workflows.Management.Options;
-using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.Options;
 using Moq;
-using Xunit;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows;
-using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Elsa.Testing.Shared;
 namespace Elsa.Workflows.Runtime.UnitTests.Services;
 public class DefaultActivityExecutionMapperTests
@@ -18,14 +11,14 @@ public class DefaultActivityExecutionMapperTests
     private readonly Mock<IPayloadSerializer> _payloadSerializerMock = new();
     private readonly Mock<ICompressionCodecResolver> _compressionCodecResolverMock = new();
     private readonly Mock<IOptions<ManagementOptions>> _optionsMock = new();
-    private readonly DefaultActivityExecutionMapper _sut;
+    private readonly DefaultActivityExecutionMapper _mapper;
 
     public DefaultActivityExecutionMapperTests()
     {
         _optionsMock.Setup(x => x.Value).Returns(new ManagementOptions());
         _compressionCodecResolverMock.Setup(x => x.Resolve(It.IsAny<string>())).Returns(new Mock<ICompressionCodec>().Object);
         
-        _sut = new DefaultActivityExecutionMapper(
+        _mapper = new(
             _safeSerializerMock.Object,
             _payloadSerializerMock.Object,
             _compressionCodecResolverMock.Object,
@@ -48,7 +41,7 @@ public class DefaultActivityExecutionMapperTests
         };
 
         // Act
-        var record = await _sut.MapAsync(contextA);
+        var record = await _mapper.MapAsync(contextA);
 
         // Assert
         Assert.Equal(5, record.CallStackDepth);
