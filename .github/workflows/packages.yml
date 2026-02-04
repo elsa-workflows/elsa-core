@@ -172,7 +172,7 @@ jobs:
     name: Publish to feedz.io
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
       - name: Download Packages
@@ -187,8 +187,8 @@ jobs:
     name: Publish release to nuget.org
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    if: ${{ github.event.action == 'published' }}
+    timeout-minutes: 20
+    if: ${{ github.event.action == 'published' || github.event.action == 'prereleased' }}
     steps:
       - name: Download Packages
         uses: actions/download-artifact@v4.1.7
@@ -202,7 +202,7 @@ jobs:
     name: Deploy coverage to GitHub Pages
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop/3.6.0'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop/3.6.0' || github.ref == 'refs/heads/release/3.6.0'
     permissions:
       pages: write
       id-token: write
