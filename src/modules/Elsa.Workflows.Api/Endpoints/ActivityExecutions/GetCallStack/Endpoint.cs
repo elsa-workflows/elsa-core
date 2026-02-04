@@ -24,17 +24,29 @@ internal class Endpoint(IActivityExecutionStore store) : ElsaEndpoint<Request, R
     {
         var id = Route<string>("id");
         var includeCrossWorkflowChain = request.IncludeCrossWorkflowChain ?? true;
+
+        // Apply defaulting and upper bound to the requested page size to prevent excessive queries.
+        const int defaultTake = 100;
+        const int maxTake = 1000;
+
         var skip = request.Skip;
-        var take = request.Take;
+        var take = request.Take ?? defaultTake;
 
-        var result = await store.GetExecutionChainAsync(id, includeCrossWorkflowChain, skip, take, cancellationToken);
+        if (take <= 0)
+            take = defaultTake;
 
-        if (result.TotalCount == 0)
+        if (take > maxTake)
+            take = maxTake;
+        // First, check if the activity execution exists.
+        var activityExecution = await store.FindAsync(id, cancellationToken);
+        if (activityExecution == null)
         {
             await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
+        // Then, get the execution chain. An empty chain should result in 200 with an empty items array.
+        var result = await store.GetExecutionChainAsync(id, includeCrossWorkflowChain, skip, take, cancellationToken);
         var response = new Response
         {
             ActivityExecutionId = id,
