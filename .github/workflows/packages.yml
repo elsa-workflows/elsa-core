@@ -188,7 +188,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    if: ${{ github.event.action == 'published' || github.event.action == 'prereleased' }}
+    if: ${{ github.event.action == 'published' }}
     steps:
       - name: Download Packages
         uses: actions/download-artifact@v4.1.7
