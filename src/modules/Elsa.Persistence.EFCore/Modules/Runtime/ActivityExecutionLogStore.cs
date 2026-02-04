@@ -83,53 +83,6 @@ public class EFCoreActivityExecutionStore(
         return await store.DeleteWhereAsync(queryable => Filter(queryable, filter), cancellationToken);
     }
 
-    /// <inheritdoc />
-    [RequiresUnreferencedCode("Calls Elsa.Persistence.EFCore.Modules.Runtime.EFCoreActivityExecutionStore.OnLoadAsync")]
-    public async Task<Page<ActivityExecutionRecord>> GetExecutionChainAsync(
-        string activityExecutionId,
-        bool includeCrossWorkflowChain = true,
-        int? skip = null,
-        int? take = null,
-        CancellationToken cancellationToken = default)
-    {
-        var chain = new List<ActivityExecutionRecord>();
-        var visited = new HashSet<string>();
-        var currentId = activityExecutionId;
-
-        // Traverse the chain backwards from the specified record to the root
-        while (currentId != null && visited.Add(currentId))
-        {
-            var id = currentId;
-            var record = await store.QueryAsync(
-                query => query.Where(x => x.Id == id),
-                OnLoadAsync,
-                cancellationToken).FirstOrDefault();
-
-            if (record == null!)
-                break;
-
-            chain.Add(record);
-
-            // If not including cross-workflow chain and we hit a workflow boundary, stop
-            if (!includeCrossWorkflowChain && record.SchedulingWorkflowInstanceId != null)
-                break;
-
-            currentId = record.SchedulingActivityExecutionId;
-        }
-
-        // Reverse to get root-to-leaf order
-        chain.Reverse();
-
-        var totalCount = chain.Count;
-
-        // Apply pagination if specified
-        if (skip.HasValue)
-            chain = chain.Skip(skip.Value).ToList();
-        if (take.HasValue)
-            chain = chain.Take(take.Value).ToList();
-
-        return Page.Of(chain, totalCount);
-    }
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
     {
