@@ -24,18 +24,21 @@ public class WorkflowExecutionContextTests
         // Act
         // Level 0 (already created by fixture.BuildAsync for the root activity, but let's create explicitly for clarity)
         var contextA = await workflowExecutionContext.CreateActivityExecutionContextAsync(activityA);
-        
+        workflowExecutionContext.AddActivityExecutionContext(contextA);
+
         // Level 1: B scheduled by A
         var contextB = await workflowExecutionContext.CreateActivityExecutionContextAsync(activityB, new ActivityInvocationOptions
         {
             SchedulingActivityExecutionId = contextA.Id
         });
-        
+        workflowExecutionContext.AddActivityExecutionContext(contextB);
+
         // Level 2: C scheduled by B
         var contextC = await workflowExecutionContext.CreateActivityExecutionContextAsync(activityC, new ActivityInvocationOptions
         {
             SchedulingActivityExecutionId = contextB.Id
         });
+        workflowExecutionContext.AddActivityExecutionContext(contextC);
 
         // Assert
         Assert.Equal(0, contextA.CallStackDepth);

@@ -16,6 +16,10 @@ public class WorkflowStateExtractorTests
         // Arrange
         var root = new WriteLine("root");
         var fixture = new ActivityTestFixture(root);
+        fixture.ConfigureServices(services =>
+        {
+            services.AddScoped<IWorkflowStateExtractor, WorkflowStateExtractor>();
+        });
         var contextRoot = await fixture.BuildAsync();
         var workflowExecutionContext = contextRoot.WorkflowExecutionContext;
         
