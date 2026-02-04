@@ -24,9 +24,19 @@ internal class Endpoint(IActivityExecutionStore store) : ElsaEndpoint<Request, R
     {
         var id = Route<string>("id");
         var includeCrossWorkflowChain = request.IncludeCrossWorkflowChain ?? true;
-        var skip = request.Skip;
-        var take = request.Take;
 
+        // Apply defaulting and upper bound to the requested page size to prevent excessive queries.
+        const int defaultTake = 100;
+        const int maxTake = 1000;
+
+        var skip = request.Skip;
+        var take = request.Take ?? defaultTake;
+
+        if (take <= 0)
+            take = defaultTake;
+
+        if (take > maxTake)
+            take = maxTake;
         var result = await store.GetExecutionChainAsync(id, includeCrossWorkflowChain, skip, take, cancellationToken);
 
         if (result.TotalCount == 0)
