@@ -11,7 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Testing.Shared;
+
 namespace Elsa.Workflows.Runtime.UnitTests.Services;
+
 public class DefaultActivityExecutionMapperTests
 {
     private readonly Mock<ISafeSerializer> _safeSerializerMock = new();
