@@ -142,6 +142,11 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     public string? SchedulingWorkflowInstanceId { get; set; }
 
     /// <summary>
+    /// The depth of this activity in the call stack (0 for root activities).
+    /// </summary>
+    public int CallStackDepth { get; set; }
+
+    /// <summary>
     /// The expression execution context.
     /// </summary>
     public ExpressionExecutionContext ExpressionExecutionContext { get; }
@@ -810,3 +815,4 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     {
     }
 }
+
