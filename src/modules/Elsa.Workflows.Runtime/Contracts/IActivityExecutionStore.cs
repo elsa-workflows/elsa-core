@@ -95,5 +95,8 @@ public interface IActivityExecutionStore : ILogRecordStore<ActivityExecutionReco
         bool includeCrossWorkflowChain = true,
         int? skip = null,
         int? take = null,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default)
+    {
+        return ActivityExecutionStoreExtensions.GetExecutionChainAsync(this, activityExecutionId, includeCrossWorkflowChain, skip, take, cancellationToken);
+    }
 }
