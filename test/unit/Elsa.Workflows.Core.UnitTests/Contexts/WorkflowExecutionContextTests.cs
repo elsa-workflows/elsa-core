@@ -1,9 +1,8 @@
-using Elsa.Common;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
+using NSubstitute;
 
 namespace Elsa.Workflows.Core.UnitTests.Contexts;
 
@@ -18,6 +17,16 @@ public class WorkflowExecutionContextTests
         var activityC = new WriteLine("C");
         var root = new Sequence { Activities = { activityA, activityB, activityC } };
         var fixture = new ActivityTestFixture(root);
+
+        // Configure identity generator to return unique IDs
+        var counter = 0;
+        fixture.ConfigureServices(services =>
+        {
+            var identityGenerator = Substitute.For<IIdentityGenerator>();
+            identityGenerator.GenerateId().Returns(_ => $"id-{++counter}");
+            services.AddSingleton(identityGenerator);
+        });
+
         var contextRoot = await fixture.BuildAsync();
         var workflowExecutionContext = contextRoot.WorkflowExecutionContext;
 
