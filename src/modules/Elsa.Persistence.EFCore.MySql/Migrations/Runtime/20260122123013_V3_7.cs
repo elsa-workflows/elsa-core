@@ -29,7 +29,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                 name: "SchedulingActivityExecutionId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "longtext",
+                type: "varchar(255)",
                 nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -37,7 +37,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                 name: "SchedulingActivityId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "longtext",
+                type: "varchar(255)",
                 nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -45,45 +45,9 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                 name: "SchedulingWorkflowInstanceId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "longtext",
+                type: "varchar(255)",
                 nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SchedulingActivityExecutionId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "varchar(255)",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "longtext",
-                oldNullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SchedulingActivityId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "varchar(255)",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "longtext",
-                oldNullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SchedulingWorkflowInstanceId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "varchar(255)",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "longtext",
-                oldNullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityExecutionRecord_SchedulingActivityExecutionId",
@@ -121,42 +85,6 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                 name: "IX_ActivityExecutionRecord_SchedulingWorkflowInstanceId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SchedulingActivityExecutionId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "longtext",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "varchar(255)",
-                oldNullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SchedulingActivityId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "longtext",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "varchar(255)",
-                oldNullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SchedulingWorkflowInstanceId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "longtext",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "varchar(255)",
-                oldNullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.DropColumn(
                 name: "CallStackDepth",

@@ -29,52 +29,22 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
                 name: "SchedulingActivityExecutionId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "nvarchar(max)",
+                type: "nvarchar(450)",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "SchedulingActivityId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "nvarchar(max)",
+                type: "nvarchar(450)",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "SchedulingWorkflowInstanceId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "nvarchar(max)",
+                type: "nvarchar(450)",
                 nullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SchedulingActivityExecutionId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "nvarchar(450)",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(max)",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SchedulingActivityId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "nvarchar(450)",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(max)",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SchedulingWorkflowInstanceId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "nvarchar(450)",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(max)",
-                oldNullable: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityExecutionRecord_SchedulingActivityExecutionId",
@@ -112,36 +82,6 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
                 name: "IX_ActivityExecutionRecord_SchedulingWorkflowInstanceId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SchedulingActivityExecutionId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "nvarchar(max)",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(450)",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SchedulingActivityId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "nvarchar(max)",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(450)",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SchedulingWorkflowInstanceId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "nvarchar(max)",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(450)",
-                oldNullable: true);
 
             migrationBuilder.DropColumn(
                 name: "CallStackDepth",
