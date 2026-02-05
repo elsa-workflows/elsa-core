@@ -15,8 +15,24 @@ public class ScheduledTimer : IDisposable, IAsyncDisposable
 
     private async void Callback(object? state)
     {
-        await _action();
-        _timer.Change(_interval(), Timeout.InfiniteTimeSpan);
+        try
+        {
+            try
+            {
+                await _action();
+            }
+            catch (Exception)
+            {
+                // The action failed, but we still want to reschedule the timer.
+            }
+            
+            _timer.Change(_interval(), Timeout.InfiniteTimeSpan);
+        }
+        catch (Exception)
+        {
+            // Ignore exceptions to prevent process crash (async void).
+            // This is especially important during application shutdown where the timer or dependencies might be disposed.
+        }
     }
 
     public void Dispose()
