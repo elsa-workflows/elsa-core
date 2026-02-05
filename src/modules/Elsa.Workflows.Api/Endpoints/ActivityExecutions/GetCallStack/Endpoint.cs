@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Filters;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityExecutions.GetCallStack;
@@ -22,7 +23,7 @@ internal class Endpoint(IActivityExecutionStore store) : ElsaEndpoint<Request, R
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var id = Route<string>("id");
+        var id = Route<string>("id")!;
         var includeCrossWorkflowChain = request.IncludeCrossWorkflowChain ?? true;
 
         // Apply defaulting and upper bound to the requested page size to prevent excessive queries.
@@ -37,8 +38,13 @@ internal class Endpoint(IActivityExecutionStore store) : ElsaEndpoint<Request, R
 
         if (take > maxTake)
             take = maxTake;
+        
         // First, check if the activity execution exists.
-        var activityExecution = await store.FindAsync(id, cancellationToken);
+        var idFilter = new ActivityExecutionRecordFilter
+        {
+            Id = id
+        };
+        var activityExecution = await store.FindAsync(idFilter, cancellationToken);
         if (activityExecution == null)
         {
             await Send.NotFoundAsync(cancellationToken);
