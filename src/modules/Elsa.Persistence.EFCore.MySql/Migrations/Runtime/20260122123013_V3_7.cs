@@ -29,7 +29,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                 name: "SchedulingActivityExecutionId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "longtext",
+                type: "varchar(255)",
                 nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -37,7 +37,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                 name: "SchedulingActivityId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "longtext",
+                type: "varchar(255)",
                 nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -45,14 +45,47 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                 name: "SchedulingWorkflowInstanceId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "longtext",
+                type: "varchar(255)",
                 nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_SchedulingActivityExecutionId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                column: "SchedulingActivityExecutionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_SchedulingActivityId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                column: "SchedulingActivityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_SchedulingWorkflowInstanceId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                column: "SchedulingWorkflowInstanceId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropIndex(
+                name: "IX_ActivityExecutionRecord_SchedulingActivityExecutionId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords");
+
+            migrationBuilder.DropIndex(
+                name: "IX_ActivityExecutionRecord_SchedulingActivityId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords");
+
+            migrationBuilder.DropIndex(
+                name: "IX_ActivityExecutionRecord_SchedulingWorkflowInstanceId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords");
+
             migrationBuilder.DropColumn(
                 name: "CallStackDepth",
                 schema: _schema.Schema,

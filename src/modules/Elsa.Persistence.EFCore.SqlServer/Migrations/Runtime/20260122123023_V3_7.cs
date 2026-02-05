@@ -29,27 +29,60 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
                 name: "SchedulingActivityExecutionId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "nvarchar(max)",
+                type: "nvarchar(450)",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "SchedulingActivityId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "nvarchar(max)",
+                type: "nvarchar(450)",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "SchedulingWorkflowInstanceId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "nvarchar(max)",
+                type: "nvarchar(450)",
                 nullable: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_SchedulingActivityExecutionId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                column: "SchedulingActivityExecutionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_SchedulingActivityId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                column: "SchedulingActivityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_SchedulingWorkflowInstanceId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                column: "SchedulingWorkflowInstanceId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropIndex(
+                name: "IX_ActivityExecutionRecord_SchedulingActivityExecutionId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords");
+
+            migrationBuilder.DropIndex(
+                name: "IX_ActivityExecutionRecord_SchedulingActivityId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords");
+
+            migrationBuilder.DropIndex(
+                name: "IX_ActivityExecutionRecord_SchedulingWorkflowInstanceId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords");
+
             migrationBuilder.DropColumn(
                 name: "CallStackDepth",
                 schema: _schema.Schema,
