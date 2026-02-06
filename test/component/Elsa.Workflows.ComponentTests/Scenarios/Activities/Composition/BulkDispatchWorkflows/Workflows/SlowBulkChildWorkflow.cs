@@ -19,7 +19,8 @@ public class SlowBulkChildWorkflow : WorkflowBase
         {
             Activities =
             {
-                Delay.FromMilliseconds(10),
+                // Use a longer delay to ensure reliable timer firing
+                Delay.FromMilliseconds(500),
                 new WriteLine(context => $"Processing item: {context.GetInput<string>(item)}")
             }
         };

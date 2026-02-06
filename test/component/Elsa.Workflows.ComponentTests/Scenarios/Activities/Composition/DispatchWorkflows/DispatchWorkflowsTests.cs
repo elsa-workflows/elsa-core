@@ -106,6 +106,7 @@ public class DispatchWorkflowsTests : AppComponentTest
         var workflowEvents = Scope.ServiceProvider.GetRequiredService<WorkflowEvents>();
         var completedChildWorkflows = new List<WorkflowExecutionContext>();
         var childWorkflowCompletionTcs = new TaskCompletionSource();
+        var lockObj = new object();
 
         // Subscribe to child workflow completion events
         void OnWorkflowStateCommitted(object? sender, WorkflowStateCommittedEventArgs e)
@@ -116,8 +117,11 @@ public class DispatchWorkflowsTests : AppComponentTest
                 return;
             }
 
-            completedChildWorkflows.Add(e.WorkflowExecutionContext);
-            childWorkflowCompletionTcs.TrySetResult();
+            lock (lockObj)
+            {
+                completedChildWorkflows.Add(e.WorkflowExecutionContext);
+                childWorkflowCompletionTcs.TrySetResult();
+            }
         }
 
         workflowEvents.WorkflowStateCommitted += OnWorkflowStateCommitted;
