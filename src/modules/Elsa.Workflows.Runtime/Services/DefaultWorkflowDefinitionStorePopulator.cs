@@ -69,7 +69,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             foreach (var result in results)
             {
                 // Normalize tenant IDs for comparison (null becomes empty string)
-                var definitionTenantId = result.Workflow.Identity.TenantId.NormalizeTenantId();
+                var definitionTenantId = result.Workflow.Identity.TenantId ?? Tenant.AgnosticTenantId;
 
                 // Only import workflows belonging to the current tenant or tenant-agnostic workflows (TenantId = "*").
                 if (definitionTenantId != currentTenantId && definitionTenantId != Tenant.AgnosticTenantId)
@@ -192,7 +192,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
         // Determine the tenant ID for the workflow definition
         // If the workflow has no tenant ID, use the current tenant (normalized to handle null -> "")
-        var workflowTenantId = workflow.Identity.TenantId ?? (_tenantAccessor.Tenant?.Id).NormalizeTenantId();
+        var workflowTenantId = workflow.Identity.TenantId ?? _tenantAccessor.Tenant?.Id ?? Tenant.AgnosticTenantId;
 
         var workflowDefinition = existingDefinitionVersion ?? new WorkflowDefinition
         {
