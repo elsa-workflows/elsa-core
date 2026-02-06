@@ -97,7 +97,7 @@ public class CachingWorkflowDefinitionService(IWorkflowDefinitionService decorat
         foreach (var workflowDefinition in workflowDefinitions)
         {
             var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(workflowDefinition.Id);
-            var workflowGraph = await GetFromCacheAsync(
+            var workflowGraph = await FindFromCacheAsync(
                 cacheKey,
                 async () => await MaterializeWorkflowAsync(workflowDefinition, cancellationToken),
                 wf => wf.Workflow.Identity.DefinitionId);
@@ -107,20 +107,96 @@ public class CachingWorkflowDefinitionService(IWorkflowDefinitionService decorat
         return workflowGraphs;
     }
 
-    private async Task<T?> GetFromCacheAsync<T>(string cacheKey, Func<Task<T?>> getObjectFunc, Func<T, string> getChangeTokenKeyFunc)
+    /// <inheritdoc />
+    public async Task<WorkflowGraphFindResult> TryFindWorkflowGraphAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(definitionId, versionOptions);
+        var result = await GetFromCacheAsync(cacheKey,
+            () => decoratedService.TryFindWorkflowGraphAsync(definitionId, versionOptions, cancellationToken),
+            x => x.WorkflowDefinition?.DefinitionId);
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkflowGraphFindResult> TryFindWorkflowGraphAsync(string definitionVersionId, CancellationToken cancellationToken = default)
+    {
+        var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(definitionVersionId);
+        var result = await GetFromCacheAsync(cacheKey,
+            () => decoratedService.TryFindWorkflowGraphAsync(definitionVersionId, cancellationToken),
+            x => x.WorkflowDefinition?.DefinitionId);
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    public Task<WorkflowGraphFindResult> TryFindWorkflowGraphAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken = default)
+    {
+        var filter = definitionHandle.ToFilter();
+        return TryFindWorkflowGraphAsync(filter, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkflowGraphFindResult> TryFindWorkflowGraphAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    {
+        var cacheKey = cacheManager.CreateWorkflowFilterCacheKey(filter);
+        var result = await GetFromCacheAsync(cacheKey,
+            () => decoratedService.TryFindWorkflowGraphAsync(filter, cancellationToken),
+            x => x.WorkflowDefinition?.DefinitionId);
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<WorkflowGraphFindResult>> TryFindWorkflowGraphsAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    {
+        var workflowDefinitions = await workflowDefinitionStore.FindManyAsync(filter, cancellationToken);
+        var results = new List<WorkflowGraphFindResult>();
+        foreach (var workflowDefinition in workflowDefinitions)
+        {
+            if (!materializerRegistry.IsMaterializerAvailable(workflowDefinition.MaterializerName))
+            {
+                var unavailableResult = new WorkflowGraphFindResult(workflowDefinition, null);
+                results.Add(unavailableResult);
+                continue;
+            }
+
+            var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(workflowDefinition.Id);
+            var workflowGraph = await FindFromCacheAsync(
+                cacheKey,
+                async () => await MaterializeWorkflowAsync(workflowDefinition, cancellationToken),
+                wf => wf.Workflow.Identity.DefinitionId);
+
+            var result = new WorkflowGraphFindResult(workflowDefinition, workflowGraph);
+            results.Add(result);
+        }
+
+        return results;
+    }
+
+    private async Task<T?> FindFromCacheAsync<T>(string cacheKey, Func<Task<T?>> getObjectFunc, Func<T, string> getChangeTokenKeyFunc) where T : class
+    {
+        return await GetFromCacheAsync(
+            cacheKey,
+            getObjectFunc,
+            obj => obj != null ? getChangeTokenKeyFunc(obj) : null);
+    }
+
+    private async Task<T?> GetFromCacheAsync<T>(string cacheKey, Func<Task<T?>> getObjectFunc, Func<T, string?> getChangeTokenKeyFunc)
     {
         var cache = cacheManager.Cache;
-        return await cache.GetOrCreateAsync(cacheKey, async entry =>
+        return await cache.FindOrCreateAsync(cacheKey, async entry =>
         {
             entry.SetAbsoluteExpiration(cache.CachingOptions.Value.CacheDuration);
             var obj = await getObjectFunc();
+            var changeTokenKeyInput = obj != null ? getChangeTokenKeyFunc(obj) : null;
 
-            if (obj == null)
-                return default;
+            if (changeTokenKeyInput != null)
+            {
+                var changeTokenKey = cacheManager.CreateWorkflowDefinitionChangeTokenKey(changeTokenKeyInput);
+                entry.AddExpirationToken(cache.GetToken(changeTokenKey));
+            }
 
-            var changeTokenKeyInput = getChangeTokenKeyFunc(obj);
-            var changeTokenKey = cacheManager.CreateWorkflowDefinitionChangeTokenKey(changeTokenKeyInput);
-            entry.AddExpirationToken(cache.GetToken(changeTokenKey));
             return obj;
         });
     }
