@@ -168,8 +168,15 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
             // Run the main workflow
             var result = await RunWorkflowAsync(parentWorkflowDefinitionId);
 
-            // Wait for all child workflows to complete
-            await childWorkflowCompletionTcs.Task;
+            // Wait for all child workflows to complete with a timeout to prevent test from hanging
+            try
+            {
+                await childWorkflowCompletionTcs.Task.WaitAsync(TimeSpan.FromSeconds(60));
+            }
+            catch (TimeoutException)
+            {
+                throw new TimeoutException($"Timed out waiting for {expectedChildCount} child workflows to complete. Only {completedChildWorkflows.Count} completed.");
+            }
 
             return (result, completedChildWorkflows);
         }
