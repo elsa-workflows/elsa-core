@@ -39,7 +39,10 @@ public class CommandHandlerInvokerMiddleware(CommandMiddlewareDelegate next) : I
         var executeMethodWithReturnType = executeMethod.MakeGenericMethod(resultType);
 
         // Execute command.
-        var task = executeMethodWithReturnType.Invoke(strategy, [strategyContext]);
+        var task = (Task)executeMethodWithReturnType.Invoke(strategy, [strategyContext])!;
+
+        // Wait for completion.
+        await task;
 
         // Get the result of the task.
         var taskWithReturnType = typeof(Task<>).MakeGenericType(resultType);
