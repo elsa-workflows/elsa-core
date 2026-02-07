@@ -1,24 +1,31 @@
 using Elsa.Common;
-using Elsa.Common.Codecs;
-using Elsa.Workflows;
+using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Options;
-using Elsa.Workflows.Runtime;
-using Elsa.Workflows.State;
 using Microsoft.Extensions.Options;
 using NSubstitute;
-using Xunit;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Services;
 
+/// <summary>
+/// Unit tests for DefaultActivityExecutionMapper.
+/// </summary>
 public class DefaultActivityExecutionMapperTests
 {
+    /// <summary>
+    /// Tests that the mapper correctly maps CallStackDepth, SchedulingActivityExecutionId,
+    /// and SchedulingActivityId from the ActivityExecutionContext to the record.
+    /// </summary>
     [Fact]
     public async Task MapAsync_MapsCallStackDepth_Correctly()
     {
         // Arrange
         var safeSerializer = Substitute.For<ISafeSerializer>();
+        safeSerializer.Serialize(Arg.Any<object>()).Returns("serialized");
+        
         var payloadSerializer = Substitute.For<IPayloadSerializer>();
+        payloadSerializer.Serialize(Arg.Any<object>()).Returns("serialized");
+        
         var compressionCodecResolver = Substitute.For<ICompressionCodecResolver>();
         var compressionCodec = Substitute.For<ICompressionCodec>();
         compressionCodecResolver.Resolve(Arg.Any<string>()).Returns(compressionCodec);
@@ -33,25 +40,21 @@ public class DefaultActivityExecutionMapperTests
             compressionCodecResolver,
             managementOptions);
         
+        // Use ActivityTestFixture to create real context objects
         var activity = new WriteLine("Test");
-        var workflowExecutionContext = Substitute.For<WorkflowExecutionContext>();
-        workflowExecutionContext.Id.Returns("workflow-123");
+        var fixture = new ActivityTestFixture(activity);
+        var activityExecutionContext = await fixture.BuildAsync();
         
-        var activityExecutionContext = Substitute.For<ActivityExecutionContext>();
-        activityExecutionContext.Id.Returns("context-c");
-        activityExecutionContext.Activity.Returns(activity);
-        activityExecutionContext.NodeId.Returns("node-c");
-        activityExecutionContext.WorkflowExecutionContext.Returns(workflowExecutionContext);
-        activityExecutionContext.Status.Returns(ActivityStatus.Running);
-        activityExecutionContext.CallStackDepth.Returns(2);
-        activityExecutionContext.SchedulingActivityExecutionId.Returns("context-b");
-        activityExecutionContext.SchedulingActivityId.Returns("activity-b");
-        activityExecutionContext.CancellationToken.Returns(CancellationToken.None);
+        // Set the properties we want to test
+        activityExecutionContext.CallStackDepth = 2;
+        activityExecutionContext.SchedulingActivityExecutionId = "context-b";
+        activityExecutionContext.SchedulingActivityId = "activity-b";
         
         // Act
         var record = await mapper.MapAsync(activityExecutionContext);
         
         // Assert
+        Assert.NotNull(record);
         Assert.Equal(2, record.CallStackDepth);
         Assert.Equal("context-b", record.SchedulingActivityExecutionId);
         Assert.Equal("activity-b", record.SchedulingActivityId);
