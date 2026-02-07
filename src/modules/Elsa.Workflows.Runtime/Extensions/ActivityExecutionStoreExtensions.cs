@@ -34,13 +34,7 @@ public static class ActivityExecutionStoreExtensions
                 if (record == null)
                     break;
 
-                // Optimization: Load all records for the workflow instance to avoid N+1 queries.
-                var workflowRecords = await store.FindManyAsync(new() { WorkflowInstanceId = record.WorkflowInstanceId }, cancellationToken);
-                foreach (var r in workflowRecords) loadedRecords.TryAdd(r.Id, r);
-                
-                // Ensure we have the record from the loaded batch.
-                if (!loadedRecords.TryGetValue(currentId, out record))
-                    break;
+                loadedRecords.TryAdd(currentId, record);
             }
 
             chain.Add(record);
