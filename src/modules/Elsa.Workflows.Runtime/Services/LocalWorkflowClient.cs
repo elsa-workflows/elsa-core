@@ -1,5 +1,6 @@
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Options;
@@ -211,8 +212,9 @@ public class LocalWorkflowClient(
 
     private async Task<WorkflowGraph> GetWorkflowGraphAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken)
     {
-        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(definitionHandle, cancellationToken);
-        if (workflowGraph == null) throw new WorkflowGraphNotFoundException("Workflow graph not found.", definitionHandle);
-        return workflowGraph;
+        var result = await workflowDefinitionService.TryFindWorkflowGraphAsync(definitionHandle, cancellationToken);
+        if (!result.WorkflowDefinitionExists) throw new WorkflowDefinitionNotFoundException("Workflow definition not found.", definitionHandle);
+        if (!result.WorkflowGraphExists) throw new WorkflowMaterializerNotFoundException(result.WorkflowDefinition!.MaterializerName);
+        return result.WorkflowGraph!;
     }
 }

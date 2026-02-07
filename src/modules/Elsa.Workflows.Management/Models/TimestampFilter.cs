@@ -12,7 +12,7 @@ public class TimestampFilter
     /// <summary>
     /// Gets or sets the column to filter by.
     /// </summary>
-    public required string Column { get; set; } = default!;
+    public required string Column { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the operator to use for filtering.

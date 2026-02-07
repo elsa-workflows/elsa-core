@@ -15,7 +15,7 @@ public class Zstd : ICompressionCodec
     {
         var inputBytes = Encoding.UTF8.GetBytes(input);
         var span = inputBytes.AsSpan();
-        var result = Iron.Compress(Codec.Zstd, span);
+        using var result = Iron.Compress(Codec.Zstd, span);
         var compressedBytes = result.AsSpan();
         var compressedString = Convert.ToBase64String(compressedBytes);
         
@@ -27,7 +27,7 @@ public class Zstd : ICompressionCodec
     {
         var inputBytes = Convert.FromBase64String(input);
         var span = inputBytes.AsSpan();
-        var result = Iron.Decompress(Codec.Zstd, span);
+        using var result = Iron.Decompress(Codec.Zstd, span);
         var decompressedBytes = result.AsSpan();
         var decompressedString = Encoding.UTF8.GetString(decompressedBytes);
         

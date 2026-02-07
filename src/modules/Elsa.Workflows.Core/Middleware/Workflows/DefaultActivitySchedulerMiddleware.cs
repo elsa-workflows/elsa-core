@@ -3,6 +3,7 @@ using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Middleware.Workflows;
 
@@ -20,7 +21,7 @@ public static class UseActivitySchedulerMiddlewareExtensions
 /// <summary>
 /// A workflow execution middleware component that executes scheduled work items.
 /// </summary>
-public class DefaultActivitySchedulerMiddleware(WorkflowMiddlewareDelegate next, IActivityInvoker activityInvoker, ICommitStrategyRegistry commitStrategyRegistry) : WorkflowExecutionMiddleware(next)
+public class DefaultActivitySchedulerMiddleware(WorkflowMiddlewareDelegate next, IActivityInvoker activityInvoker, ICommitStrategyRegistry commitStrategyRegistry, IOptions<CommitStateOptions> commitStateOptions) : WorkflowExecutionMiddleware(next)
 {
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
@@ -29,19 +30,19 @@ public class DefaultActivitySchedulerMiddleware(WorkflowMiddlewareDelegate next,
 
         context.TransitionTo(WorkflowSubStatus.Executing);
         await ConditionallyCommitStateAsync(context, WorkflowLifetimeEvent.WorkflowExecuting);
-        
+
         while (scheduler.HasAny)
         {
             // Do not start a workflow if cancellation has been requested.
             if (context.CancellationToken.IsCancellationRequested)
                 break;
-            
+
             var currentWorkItem = scheduler.Take();
             await ExecuteWorkItemAsync(context, currentWorkItem);
         }
-        
+
         await Next(context);
-        
+
         if (context.Status == WorkflowStatus.Running)
             context.TransitionTo(context.AllActivitiesCompleted() ? WorkflowSubStatus.Finished : WorkflowSubStatus.Suspended);
     }
@@ -61,18 +62,20 @@ public class DefaultActivitySchedulerMiddleware(WorkflowMiddlewareDelegate next,
 
         await activityInvoker.InvokeAsync(context, workItem.Activity, options);
     }
-    
+
     private async Task ConditionallyCommitStateAsync(WorkflowExecutionContext context, WorkflowLifetimeEvent lifetimeEvent)
     {
         var strategyName = context.Workflow.Options.CommitStrategyName;
-        var strategy = string.IsNullOrWhiteSpace(strategyName) ? null : commitStrategyRegistry.FindWorkflowStrategy(strategyName);
-        
-        if(strategy == null)
+        IWorkflowCommitStrategy? strategy = !string.IsNullOrWhiteSpace(strategyName)
+            ? commitStrategyRegistry.FindWorkflowStrategy(strategyName)
+            : commitStateOptions.Value.DefaultWorkflowCommitStrategy;
+
+        if (strategy == null)
             return;
-        
+
         var strategyContext = new WorkflowCommitStateStrategyContext(context, lifetimeEvent);
         var commitAction = strategy.ShouldCommit(strategyContext);
-        
+
         if (commitAction is CommitAction.Commit)
             await context.CommitAsync();
     }

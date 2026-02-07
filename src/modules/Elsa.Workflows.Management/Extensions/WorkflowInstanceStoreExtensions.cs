@@ -1,6 +1,5 @@
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Filters;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
