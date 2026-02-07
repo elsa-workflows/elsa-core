@@ -14,71 +14,66 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class BookmarkExecutionContextExtensions
 {
-    extension(ActivityExecutionContext context)
+    public static string GenerateBookmarkTriggerUrl(this ActivityExecutionContext context, string bookmarkId, TimeSpan lifetime) => context.ExpressionExecutionContext.GenerateBookmarkTriggerUrl(bookmarkId, lifetime);
+    public static string GenerateBookmarkTriggerUrl(this ActivityExecutionContext context, string bookmarkId, DateTimeOffset expiresAt) => context.ExpressionExecutionContext.GenerateBookmarkTriggerUrl(bookmarkId, expiresAt);
+    public static string GenerateBookmarkTriggerUrl(this ActivityExecutionContext context, string bookmarkId) => context.ExpressionExecutionContext.GenerateBookmarkTriggerUrl(bookmarkId);
+
+    /// <summary>
+    /// Generates a URL that can be used to resume a bookmarked workflow.
+    /// </summary>
+    /// <param name="context">The expression execution context.</param>
+    /// <param name="bookmarkId">The ID of the bookmark to resume.</param>
+    /// <param name="lifetime">The lifetime of the bookmark trigger token.</param>
+    /// <returns>A URL that can be used to resume a bookmarked workflow.</returns>
+    public static string GenerateBookmarkTriggerUrl(this ExpressionExecutionContext context, string bookmarkId, TimeSpan lifetime)
     {
-        public string GenerateBookmarkTriggerUrl(string bookmarkId, TimeSpan lifetime) => context.ExpressionExecutionContext.GenerateBookmarkTriggerUrl(bookmarkId, lifetime);
-        public string GenerateBookmarkTriggerUrl(string bookmarkId, DateTimeOffset expiresAt) => context.ExpressionExecutionContext.GenerateBookmarkTriggerUrl(bookmarkId, expiresAt);
-        public string GenerateBookmarkTriggerUrl(string bookmarkId) => context.ExpressionExecutionContext.GenerateBookmarkTriggerUrl(bookmarkId);
-        public string GenerateBookmarkTriggerToken(string bookmarkId, TimeSpan? lifetime = null, DateTimeOffset? expiresAt = null) => context.ExpressionExecutionContext.GenerateBookmarkTriggerToken(bookmarkId, lifetime, expiresAt);
+        var token = context.GenerateBookmarkTriggerTokenInternal(bookmarkId, lifetime);
+        return context.GenerateBookmarkTriggerUrlInternal(token);
     }
 
+    /// <summary>
+    /// Generates a URL that can be used to resume a bookmarked workflow.
+    /// </summary>
     /// <param name="context">The expression execution context.</param>
-    extension(ExpressionExecutionContext context)
+    /// <param name="bookmarkId">The ID of the bookmark to resume.</param>
+    /// <param name="expiresAt">The expiration date of the bookmark trigger token.</param>
+    /// <returns>A URL that can be used to resume a bookmarked workflow.</returns>
+    public static string GenerateBookmarkTriggerUrl(this ExpressionExecutionContext context, string bookmarkId, DateTimeOffset expiresAt)
     {
-        /// <summary>
-        /// Generates a URL that can be used to resume a bookmarked workflow.
-        /// </summary>
-        /// <param name="bookmarkId">The ID of the bookmark to resume.</param>
-        /// <param name="lifetime">The lifetime of the bookmark trigger token.</param>
-        /// <returns>A URL that can be used to resume a bookmarked workflow.</returns>
-        public string GenerateBookmarkTriggerUrl(string bookmarkId, TimeSpan lifetime)
-        {
-            var token = context.GenerateBookmarkTriggerToken(bookmarkId, lifetime);
-            return context.GenerateBookmarkTriggerUrlInternal(token);
-        }
+        var token = context.GenerateBookmarkTriggerTokenInternal(bookmarkId, expiresAt: expiresAt);
+        return context.GenerateBookmarkTriggerUrlInternal(token);
+    }
 
-        /// <summary>
-        /// Generates a URL that can be used to resume a bookmarked workflow.
-        /// </summary>
-        /// <param name="bookmarkId">The ID of the bookmark to resume.</param>
-        /// <param name="expiresAt">The expiration date of the bookmark trigger token.</param>
-        /// <returns>A URL that can be used to resume a bookmarked workflow.</returns>
-        public string GenerateBookmarkTriggerUrl(string bookmarkId, DateTimeOffset expiresAt)
-        {
-            var token = context.GenerateBookmarkTriggerToken(bookmarkId, expiresAt: expiresAt);
-            return context.GenerateBookmarkTriggerUrlInternal(token);
-        }
+    /// <summary>
+    /// Generates a URL that can be used to resume a bookmarked workflow.
+    /// </summary>
+    /// <param name="context">The expression execution context.</param>
+    /// <param name="bookmarkId">The ID of the bookmark to resume.</param>
+    /// <returns>A URL that can be used to trigger an event.</returns>
+    public static string GenerateBookmarkTriggerUrl(this ExpressionExecutionContext context, string bookmarkId)
+    {
+        var token = context.GenerateBookmarkTriggerTokenInternal(bookmarkId);
+        return context.GenerateBookmarkTriggerUrlInternal(token);
+    }
 
-        /// <summary>
-        /// Generates a URL that can be used to resume a bookmarked workflow.
-        /// </summary>
-        /// <param name="bookmarkId">The ID of the bookmark to resume.</param>
-        /// <returns>A URL that can be used to trigger an event.</returns>
-        public string GenerateBookmarkTriggerUrl(string bookmarkId)
-        {
-            var token = context.GenerateBookmarkTriggerToken(bookmarkId);
-            return context.GenerateBookmarkTriggerUrlInternal(token);
-        }
+    private static string GenerateBookmarkTriggerUrlInternal(this ExpressionExecutionContext context, string token)
+    {
+        var options = context.GetRequiredService<IOptions<ApiEndpointOptions>>().Value;
+        var url = $"{options.RoutePrefix}/bookmarks/resume?t={token}";
+        var absoluteUrlProvider = context.GetRequiredService<IAbsoluteUrlProvider>();
+        return absoluteUrlProvider.ToAbsoluteUrl(url).ToString();
+    }
 
-        public string GenerateBookmarkTriggerToken(string bookmarkId, TimeSpan? lifetime = null, DateTimeOffset? expiresAt = null)
-        {
-            var workflowInstanceId = context.GetWorkflowExecutionContext().Id;
-            var payload = new BookmarkTokenPayload(bookmarkId, workflowInstanceId);
-            var tokenService = context.GetRequiredService<ITokenService>();
+    private static string GenerateBookmarkTriggerTokenInternal(this ExpressionExecutionContext context, string bookmarkId, TimeSpan? lifetime = null, DateTimeOffset? expiresAt = null)
+    {
+        var workflowInstanceId = context.GetWorkflowExecutionContext().Id;
+        var payload = new BookmarkTokenPayload(bookmarkId, workflowInstanceId);
+        var tokenService = context.GetRequiredService<ITokenService>();
 
-            return lifetime != null
-                ? tokenService.CreateToken(payload, lifetime.Value)
-                : expiresAt != null
-                    ? tokenService.CreateToken(payload, expiresAt.Value)
-                    : tokenService.CreateToken(payload);
-        }
-        
-        private string GenerateBookmarkTriggerUrlInternal(string token)
-        {
-            var options = context.GetRequiredService<IOptions<ApiEndpointOptions>>().Value;
-            var url = $"{options.RoutePrefix}/bookmarks/resume?t={token}";
-            var absoluteUrlProvider = context.GetRequiredService<IAbsoluteUrlProvider>();
-            return absoluteUrlProvider.ToAbsoluteUrl(url).ToString();
-        }
+        return lifetime != null
+            ? tokenService.CreateToken(payload, lifetime.Value)
+            : expiresAt != null
+                ? tokenService.CreateToken(payload, expiresAt.Value)
+                : tokenService.CreateToken(payload);
     }
 }
