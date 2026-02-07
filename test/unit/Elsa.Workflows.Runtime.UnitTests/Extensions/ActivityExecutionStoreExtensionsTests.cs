@@ -1,23 +1,20 @@
+using Elsa.Common.Models;
+using Elsa.Common.Services;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Filters;
-using Moq;
+using Elsa.Workflows.Runtime.Stores;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Extensions;
 
 public class ActivityExecutionStoreExtensionsTests
 {
-    private readonly Mock<IActivityExecutionStore> _storeMock = new();
-
     [Fact(DisplayName = "GetExecutionChainAsync returns empty page when record not found")]
     public async Task GetExecutionChainAsync_ReturnsEmptyPage_WhenRecordNotFound()
     {
         // Arrange
-        _storeMock
-            .Setup(x => x.FindAsync(It.IsAny<ActivityExecutionRecordFilter>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ActivityExecutionRecord?)null);
+        var store = CreateStore();
 
         // Act
-        var result = await _storeMock.Object.GetExecutionChainAsync("non-existent-id");
+        var result = await store.GetExecutionChainAsync("non-existent-id");
 
         // Assert
         Assert.Empty(result.Items);
@@ -28,20 +25,20 @@ public class ActivityExecutionStoreExtensionsTests
     public async Task GetExecutionChainAsync_ReturnsSingleRecord_WhenNoParent()
     {
         // Arrange
-        SetupStore(CreateChain(1));
+        var store = CreateStore(CreateChain(1));
 
         // Act & Assert
-        await AssertChainAsync("record-1", expectedIds: ["record-1"]);
+        await AssertChainAsync(store, "record-1", expectedIds: ["record-1"]);
     }
 
     [Fact(DisplayName = "GetExecutionChainAsync traverses chain correctly with multiple levels")]
     public async Task GetExecutionChainAsync_TraversesChainCorrectly_WithMultipleLevels()
     {
         // Arrange
-        SetupStore(CreateChain(3));
+        var store = CreateStore(CreateChain(3));
 
         // Act & Assert
-        await AssertChainAsync("record-3", expectedIds: ["record-1", "record-2", "record-3"]);
+        await AssertChainAsync(store, "record-3", expectedIds: ["record-1", "record-2", "record-3"]);
     }
 
     [Theory(DisplayName = "GetExecutionChainAsync respects workflow boundary based on includeCrossWorkflowChain")]
@@ -53,10 +50,10 @@ public class ActivityExecutionStoreExtensionsTests
         var parentRecord = CreateRecord("parent-record", "parent-workflow", null);
         var childRoot = CreateRecord("child-root", "child-workflow", "parent-record", "parent-workflow");
         var childLeaf = CreateRecord("child-leaf", "child-workflow", "child-root");
-        SetupStore(parentRecord, childRoot, childLeaf);
+        var store = CreateStore(parentRecord, childRoot, childLeaf);
 
         // Act & Assert
-        await AssertChainAsync("child-leaf", expectedIds, includeCrossWorkflowChain: includeCrossWorkflowChain);
+        await AssertChainAsync(store, "child-leaf", expectedIds, includeCrossWorkflowChain: includeCrossWorkflowChain);
     }
 
     [Theory(DisplayName = "GetExecutionChainAsync applies pagination correctly")]
@@ -67,10 +64,10 @@ public class ActivityExecutionStoreExtensionsTests
     public async Task GetExecutionChainAsync_AppliesPagination(int skip, int? take, int expectedTotal, string[] expectedIds)
     {
         // Arrange
-        SetupStore(CreateChain(4));
+        var store = CreateStore(CreateChain(4));
 
         // Act
-        var result = await _storeMock.Object.GetExecutionChainAsync("record-4", skip: skip, take: take);
+        var result = await store.GetExecutionChainAsync("record-4", skip: skip, take: take);
         var items = result.Items.ToList();
 
         // Assert
@@ -84,10 +81,10 @@ public class ActivityExecutionStoreExtensionsTests
         // Arrange: Create a circular reference (which shouldn't happen in practice, but should be handled)
         var record1 = CreateRecord("record-1", "workflow-1", "record-2");
         var record2 = CreateRecord("record-2", "workflow-1", "record-1");
-        SetupStore(record1, record2);
+        var store = CreateStore(record1, record2);
 
         // Act
-        var result = await _storeMock.Object.GetExecutionChainAsync("record-1");
+        var result = await store.GetExecutionChainAsync("record-1");
 
         // Assert: Should have visited both records (once each) and stopped
         Assert.Equal(2, result.Items.Count);
@@ -95,14 +92,22 @@ public class ActivityExecutionStoreExtensionsTests
 
     #region Helpers
 
-    private async Task AssertChainAsync(
+    private static MemoryActivityExecutionStore CreateStore(params ActivityExecutionRecord[] records)
+    {
+        var memoryStore = new MemoryStore<ActivityExecutionRecord>();
+        memoryStore.SaveMany(records, r => r.Id);
+        return new MemoryActivityExecutionStore(memoryStore);
+    }
+
+    private static async Task AssertChainAsync(
+        IActivityExecutionStore store,
         string startRecordId,
         string[] expectedIds,
         bool includeCrossWorkflowChain = true,
         int skip = 0,
         int? take = null)
     {
-        var result = await _storeMock.Object.GetExecutionChainAsync(startRecordId, includeCrossWorkflowChain, skip, take);
+        var result = await store.GetExecutionChainAsync(startRecordId, includeCrossWorkflowChain, skip, take);
         var items = result.Items.ToList();
 
         Assert.Equal(expectedIds.Length, items.Count);
@@ -140,25 +145,6 @@ public class ActivityExecutionStoreExtensionsTests
             SchedulingActivityExecutionId = schedulingActivityExecutionId,
             SchedulingWorkflowInstanceId = schedulingWorkflowInstanceId
         };
-
-    private void SetupStore(params ActivityExecutionRecord[] records)
-    {
-        var recordsDict = records.ToDictionary(r => r.Id);
-        var recordsByWorkflow = records.GroupBy(r => r.WorkflowInstanceId)
-            .ToDictionary(g => g.Key, g => g.ToList());
-
-        _storeMock
-            .Setup(x => x.FindAsync(It.IsAny<ActivityExecutionRecordFilter>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ActivityExecutionRecordFilter filter, CancellationToken _) =>
-                filter.Id != null && recordsDict.TryGetValue(filter.Id, out var record) ? record : null);
-
-        _storeMock
-            .Setup(x => x.FindManyAsync(It.IsAny<ActivityExecutionRecordFilter>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ActivityExecutionRecordFilter filter, CancellationToken _) =>
-                filter.WorkflowInstanceId != null && recordsByWorkflow.TryGetValue(filter.WorkflowInstanceId, out var workflowRecords)
-                    ? workflowRecords.AsEnumerable()
-                    : Enumerable.Empty<ActivityExecutionRecord>());
-    }
 
     #endregion
 }
