@@ -20,7 +20,7 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         _storeMock = Substitute.For<IWorkflowDefinitionStore>();
         _storeMock.FindManyAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
             .Returns(_workflowDefinitionsInStore);
-        _populator = new(() => new List<IWorkflowsProvider>(),
+        _populator = new DefaultWorkflowDefinitionStorePopulator(() => new List<IWorkflowsProvider>(),
             Substitute.For<ITriggerIndexer>(),
             _storeMock,
             Substitute.For<IActivitySerializer>(),
@@ -33,10 +33,10 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
     [Fact(DisplayName = "When adding a new workflow it needs to be saved")]
     public async Task AddOrUpdateCoreAsync_NewWorkflowDefinition_AddsWorkflowDefinition()
     {
-        var workflow = new MaterializedWorkflow(new()
+        var workflow = new MaterializedWorkflow(new Workflow
         {
-            Identity = new("a", 7, "1"),
-            Publication = new(true, true)
+            Identity = new WorkflowIdentity("a", 7, "1"),
+            Publication = new WorkflowPublication(true, true)
         }, "Test", "Test");
 
         await _populator.AddAsync(workflow);
@@ -62,9 +62,9 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             }
         });
 
-        var workflow = new MaterializedWorkflow(new()
+        var workflow = new MaterializedWorkflow(new Workflow
         {
-            Identity = new("a", 1, "1"),
+            Identity = new WorkflowIdentity("a", 1, "1"),
             Inputs = new List<InputDefinition>
             {
                 new()
@@ -94,10 +94,10 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             IsLatest = true,
             IsPublished = true
         });
-        var workflow = new MaterializedWorkflow(new()
+        var workflow = new MaterializedWorkflow(new Workflow
         {
-            Identity = new("a", 2, "2"),
-            Publication = new(workflowAddedIsLatest, workflowAddedIsPublished)
+            Identity = new WorkflowIdentity("a", 2, "2"),
+            Publication = new WorkflowPublication(workflowAddedIsLatest, workflowAddedIsPublished)
         }, "Test", "Test");
 
         await _populator.AddAsync(workflow);
@@ -119,11 +119,11 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             IsPublished = true
         });
 
-        var workflow = new MaterializedWorkflow(new()
+        var workflow = new MaterializedWorkflow(new Workflow
         {
-            Identity = new("a", 3, "1"),
+            Identity = new WorkflowIdentity("a", 3, "1"),
             Version = 1,
-            Publication = new(true, true)
+            Publication = new WorkflowPublication(true, true)
         }, "Test", "Test");
 
         await _populator.AddAsync(workflow);
@@ -143,9 +143,9 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
                 Version = 1,
             });
 
-        var workflow = new MaterializedWorkflow(new()
+        var workflow = new MaterializedWorkflow(new Workflow
         {
-            Identity = new("a", 2, "1")
+            Identity = new WorkflowIdentity("a", 2, "1")
         }, "Test", "Test");
 
         await _populator.AddAsync(workflow);
@@ -166,10 +166,10 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
                 IsLatest = true
             });
         
-        var workflow = new MaterializedWorkflow(new()
+        var workflow = new MaterializedWorkflow(new Workflow
         {
-            Identity = new("a", 1, "1"),
-            Publication = new(true, true)
+            Identity = new WorkflowIdentity("a", 1, "1"),
+            Publication = new WorkflowPublication(true, true)
         }, "Test", "Test");
 
         await _populator.AddAsync(workflow);
@@ -195,10 +195,10 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
                 }
             });
 
-        var workflow = new MaterializedWorkflow(new()
+        var workflow = new MaterializedWorkflow(new Workflow
         {
-            Identity = new("a", 1, "1"),
-            Publication = new(true, true)
+            Identity = new WorkflowIdentity("a", 1, "1"),
+            Publication = new WorkflowPublication(true, true)
         }, "Test", "Test");
 
         await _populator.AddAsync(workflow);

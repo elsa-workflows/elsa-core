@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Signals;
 using JetBrains.Annotations;
 
@@ -29,7 +30,7 @@ public class Sequence : Container
         await HandleItemAsync(context);
     }
 
-    private async ValueTask HandleItemAsync(ActivityExecutionContext context)
+    private async ValueTask HandleItemAsync(ActivityExecutionContext context, ActivityExecutionContext? completedChildContext = null)
     {
         var currentIndex = context.GetProperty<int>(CurrentIndexProperty);
         var childActivities = Activities.ToList();
@@ -41,7 +42,12 @@ public class Sequence : Container
         }
 
         var nextActivity = childActivities.ElementAt(currentIndex);
-        await context.ScheduleActivityAsync(nextActivity, OnChildCompleted);
+        var options = new ScheduleWorkOptions
+        {
+            CompletionCallback = OnChildCompleted,
+            SchedulingActivityExecutionId = completedChildContext?.Id
+        };
+        await context.ScheduleActivityAsync(nextActivity, options);
         context.UpdateProperty<int>(CurrentIndexProperty, x => x + 1);
     }
 
@@ -59,7 +65,7 @@ public class Sequence : Container
             return;
         }
 
-        await HandleItemAsync(targetContext);
+        await HandleItemAsync(targetContext, childContext);
     }
 
     private void OnBreakSignalReceived(BreakSignal signal, SignalContext signalContext)

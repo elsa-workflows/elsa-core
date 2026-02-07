@@ -88,7 +88,9 @@ public class WorkflowRunner(
             cancellationToken);
 
         // Schedule the first activity.
-        workflowExecutionContext.ScheduleWorkflow();
+        workflowExecutionContext.ScheduleWorkflow(
+            schedulingActivityExecutionId: options?.SchedulingActivityExecutionId,
+            schedulingWorkflowInstanceId: options?.SchedulingWorkflowInstanceId);
 
         return await RunAsync(workflowExecutionContext);
     }
@@ -172,7 +174,13 @@ public class WorkflowRunner(
             {
                 // Nothing was scheduled. Schedule the workflow itself.
                 var vars = variables?.Select(x => new Variable(x.Key, x.Value)).ToList();
-                workflowExecutionContext.ScheduleWorkflow(variables: vars);
+                var schedulingActivityExecutionId = options?.SchedulingActivityExecutionId;
+                var schedulingWorkflowInstanceId = options?.SchedulingWorkflowInstanceId;
+
+                workflowExecutionContext.ScheduleWorkflow(
+                    variables: vars,
+                    schedulingActivityExecutionId: schedulingActivityExecutionId,
+                    schedulingWorkflowInstanceId: schedulingWorkflowInstanceId);
             }
         }
 

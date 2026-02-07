@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Text.Json;
 using Elsa.Common;
+using Elsa.Common.Models;
 using Elsa.Common.Codecs;
 using Elsa.Common.Entities;
 using Elsa.Extensions;
@@ -81,6 +82,7 @@ public class EFCoreActivityExecutionStore(
     {
         return await store.DeleteWhereAsync(queryable => Filter(queryable, filter), cancellationToken);
     }
+
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
     {

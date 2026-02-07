@@ -68,11 +68,23 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                     b.Property<int>("AggregateFaultCount")
                         .HasColumnType("int");
 
+                    b.Property<int?>("CallStackDepth")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<bool>("HasBookmarks")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("SchedulingActivityExecutionId")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SchedulingActivityId")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SchedulingWorkflowInstanceId")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SerializedActivityState")
                         .HasColumnType("longtext");

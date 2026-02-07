@@ -294,7 +294,7 @@ public static partial class ActivityExecutionContextExtensions
             var childContexts = activityExecutionContext.Children.ToList();
 
             foreach (var childContext in childContexts)
-                await CancelActivityAsync(childContext);
+                await childContext.CancelActivityAsync();
 
             var publisher = activityExecutionContext.GetRequiredService<INotificationSender>();
             activityExecutionContext.TransitionTo(ActivityStatus.Canceled);
@@ -400,7 +400,7 @@ public static partial class ActivityExecutionContextExtensions
             {
                 yield return child;
 
-                foreach (var descendent in GetDescendents(child))
+                foreach (var descendent in child.GetDescendents())
                     yield return descendent;
             }
         }
@@ -472,7 +472,6 @@ public static partial class ActivityExecutionContextExtensions
             }
         
             var propertyName = memberExpr.Member.Name;
-            
             var value = activityExecutionContext.Get(propertyName);
         
             if (value != null)
@@ -485,5 +484,38 @@ public static partial class ActivityExecutionContextExtensions
 
         public bool GetHasEvaluatedProperties() => activityExecutionContext.TransientProperties.TryGetValue<bool>("HasEvaluatedProperties", out var value) && value;
         public void SetHasEvaluatedProperties() => activityExecutionContext.TransientProperties["HasEvaluatedProperties"] = true;
+
+        /// <summary>
+        /// Retrieves the complete execution chain for this activity execution context by traversing the SchedulingActivityExecutionId chain.
+        /// Returns contexts ordered from root (depth 0) to this context.
+        /// </summary>
+        /// <returns>A collection of activity execution contexts representing the complete call stack, ordered from root to leaf.</returns>
+        public IEnumerable<ActivityExecutionContext> GetExecutionChain()
+        {
+            var chain = new List<ActivityExecutionContext>();
+            var visited = new HashSet<string>();
+            var currentContext = activityExecutionContext;
+
+            // Traverse the chain backwards from this context to the root
+            while (currentContext != null && visited.Add(currentContext.Id))
+            {
+                chain.Add(currentContext);
+
+                // Find the parent in the workflow execution context
+                if (currentContext.SchedulingActivityExecutionId != null)
+                {
+                    currentContext = currentContext.WorkflowExecutionContext.ActivityExecutionContexts
+                        .FirstOrDefault(x => x.Id == currentContext.SchedulingActivityExecutionId);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            // Reverse to get root-to-leaf order
+            chain.Reverse();
+            return chain;
+        }
     }
 }

@@ -11,7 +11,6 @@ using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Stimuli;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Middleware.Activities;
 
@@ -25,9 +24,8 @@ public class BackgroundActivityInvokerMiddleware(
     IIdentityGenerator identityGenerator,
     IBackgroundActivityScheduler backgroundActivityScheduler,
     ICommitStrategyRegistry commitStrategyRegistry,
-    IMediator mediator,
-    IOptions<CommitStateOptions> commitStateOptions)
-    : DefaultActivityInvokerMiddleware(next, commitStrategyRegistry, commitStateOptions, logger)
+    IMediator mediator)
+    : DefaultActivityInvokerMiddleware(next, commitStrategyRegistry, logger)
 {
     internal static string GetBackgroundActivityOutputKey(string activityNodeId) => $"__BackgroundActivityOutput:{activityNodeId}";
     internal static string GetBackgroundActivityOutcomesKey(string activityNodeId) => $"__BackgroundActivityOutcomes:{activityNodeId}";
@@ -123,7 +121,7 @@ public class BackgroundActivityInvokerMiddleware(
     }
 
     private static bool GetIsBackgroundExecution(ActivityExecutionContext context) => context.TransientProperties.ContainsKey(BackgroundActivityExecutionContextExtensions.IsBackgroundExecution);
-
+    
     /// <summary>
     /// If the input contains captured output from the background activity invoker, apply that to the execution context.
     /// </summary>
@@ -177,7 +175,7 @@ public class BackgroundActivityInvokerMiddleware(
 
         context.WorkflowExecutionContext.Properties.Remove(bookmarksKey);
     }
-
+    
     private void CapturePropertiesIfAny(ActivityExecutionContext context)
     {
         var activity = context.Activity;
@@ -189,7 +187,7 @@ public class BackgroundActivityInvokerMiddleware(
         if (capturedProperties == null)
             return;
 
-        foreach (var property in capturedProperties)
+        foreach (var property in capturedProperties) 
             context.Properties[property.Key] = property.Value;
     }
 
@@ -238,12 +236,12 @@ public class BackgroundActivityInvokerMiddleware(
                     {
                         ExistingActivityExecutionContext = scheduledActivity.Options.ExistingActivityInstanceId != null ? context.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == scheduledActivity.Options.ExistingActivityInstanceId) : null,
                         Variables = scheduledActivity.Options?.Variables,
-                        CompletionCallback = !string.IsNullOrEmpty(scheduledActivity.Options?.CompletionCallback) && owner != null ? owner.Activity.GetActivityCompletionCallback(scheduledActivity.Options.CompletionCallback) : null,
+                        CompletionCallback = !string.IsNullOrEmpty(scheduledActivity.Options?.CompletionCallback) && owner != null ? owner.Activity.GetActivityCompletionCallback(scheduledActivity.Options.CompletionCallback) : default,
                         PreventDuplicateScheduling = scheduledActivity.Options?.PreventDuplicateScheduling ?? false,
                         Input = scheduledActivity.Options?.Input,
                         Tag = scheduledActivity.Options?.Tag
                     }
-                    : null;
+                    : default;
                 await context.ScheduleActivityAsync(activityNode, owner, options);
             }
         }

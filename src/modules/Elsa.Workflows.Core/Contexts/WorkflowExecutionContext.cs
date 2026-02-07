@@ -115,7 +115,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IServiceProvider serviceProvider,
         WorkflowGraph workflowGraph,
         string id,
-        string? correlationId,
+        string? correlationId = null,
         string? parentWorkflowInstanceId = null,
         IDictionary<string, object>? input = null,
         IDictionary<string, object>? properties = null,
@@ -604,6 +604,21 @@ public partial class WorkflowExecutionContext : IExecutionContext
         var activityInput = options?.Input ?? new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         activityExecutionContext.ActivityInput.Merge(activityInput);
 
+        // Populate call stack fields from options
+        activityExecutionContext.SchedulingActivityExecutionId = options?.SchedulingActivityExecutionId;
+        activityExecutionContext.SchedulingWorkflowInstanceId = options?.SchedulingWorkflowInstanceId;
+
+        // Denormalize the scheduling activity ID for convenience
+        if (options?.SchedulingActivityExecutionId != null)
+        {
+            var schedulingContext = ActivityExecutionContexts.FirstOrDefault(x => x.Id == options.SchedulingActivityExecutionId);
+            if (schedulingContext != null)
+            {
+                activityExecutionContext.SchedulingActivityId = schedulingContext.Activity.Id;
+                activityExecutionContext.CallStackDepth = schedulingContext.CallStackDepth + 1;
+            }
+        }
+
         return activityExecutionContext;
     }
 
@@ -688,3 +703,4 @@ public partial class WorkflowExecutionContext : IExecutionContext
         return _commitStateHandler.CommitAsync(this, CancellationToken);
     }
 }
+

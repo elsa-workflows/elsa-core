@@ -133,6 +133,8 @@ public class DispatchWorkflow : Activity<object>
             Properties = properties,
             CorrelationId = correlationId,
             InstanceId = instanceId,
+            SchedulingActivityExecutionId = context.Id,
+            SchedulingWorkflowInstanceId = parentInstanceId
         };
         var options = new DispatchWorkflowOptions
         {

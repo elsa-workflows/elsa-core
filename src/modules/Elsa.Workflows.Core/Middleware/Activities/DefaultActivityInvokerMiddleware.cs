@@ -5,7 +5,6 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Middleware.Activities;
 
@@ -23,11 +22,11 @@ public static class ActivityInvokerMiddlewareExtensions
 /// <summary>
 /// A default activity execution middleware component that evaluates the current activity's properties, executes the activity and adds any produced bookmarks to the workflow execution context.
 /// </summary>
-public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ICommitStrategyRegistry commitStrategyRegistry, IOptions<CommitStateOptions> commitStateOptions, ILogger<DefaultActivityInvokerMiddleware> logger)
+public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ICommitStrategyRegistry commitStrategyRegistry, ILogger<DefaultActivityInvokerMiddleware> logger)
     : IActivityExecutionMiddleware
 {
     private static readonly MethodInfo ExecuteAsyncMethodInfo = typeof(IActivity).GetMethod(nameof(IActivity.ExecuteAsync))!;
-
+    
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
@@ -66,7 +65,7 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
 
         // Execute activity.
         await ExecuteActivityAsync(context);
-
+        
         var currentActivityStatus = context.Status;
         var activityDidComplete = previousActivityStatus != ActivityStatus.Completed && currentActivityStatus == ActivityStatus.Completed;
 
@@ -87,7 +86,7 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
 
         // Invoke next middleware.
         await next(context);
-
+        
         // If the activity completed, send a notification.
         if (activityDidComplete)
         {
@@ -106,9 +105,7 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
     /// </summary>
     protected virtual async ValueTask ExecuteActivityAsync(ActivityExecutionContext context)
     {
-        var executeDelegate = context.WorkflowExecutionContext.ExecuteDelegate
-                              ?? (ExecuteActivityDelegate)Delegate.CreateDelegate(typeof(ExecuteActivityDelegate), context.Activity, ExecuteAsyncMethodInfo);
-
+        var executeDelegate = context.WorkflowExecutionContext.ExecuteDelegate ?? (ExecuteActivityDelegate)Delegate.CreateDelegate(typeof(ExecuteActivityDelegate), context.Activity, ExecuteAsyncMethodInfo);
         await executeDelegate(context);
     }
 
@@ -130,11 +127,7 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
     private bool ShouldCommit(ActivityExecutionContext context, ActivityLifetimeEvent lifetimeEvent)
     {
         var strategyName = context.Activity.GetCommitStrategy();
-
-        IActivityCommitStrategy? strategy = !string.IsNullOrWhiteSpace(strategyName)
-            ? commitStrategyRegistry.FindActivityStrategy(strategyName)
-            : commitStateOptions.Value.DefaultActivityCommitStrategy;
-
+        var strategy = string.IsNullOrWhiteSpace(strategyName) ? null : commitStrategyRegistry.FindActivityStrategy(strategyName);
         var commitAction = CommitAction.Default;
 
         if (strategy != null)
@@ -152,10 +145,7 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
             case CommitAction.Default:
                 {
                     var workflowStrategyName = context.WorkflowExecutionContext.Workflow.Options.CommitStrategyName;
-
-                    IWorkflowCommitStrategy? workflowStrategy = !string.IsNullOrWhiteSpace(workflowStrategyName)
-                        ? commitStrategyRegistry.FindWorkflowStrategy(workflowStrategyName)
-                        : commitStateOptions.Value.DefaultWorkflowCommitStrategy;
+                    var workflowStrategy = string.IsNullOrWhiteSpace(workflowStrategyName) ? null : commitStrategyRegistry.FindWorkflowStrategy(workflowStrategyName);
 
                     if (workflowStrategy == null)
                         return false;

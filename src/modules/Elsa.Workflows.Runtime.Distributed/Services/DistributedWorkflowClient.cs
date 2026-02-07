@@ -1,26 +1,21 @@
 using Elsa.Common.DistributedHosting;
-using Elsa.Resilience;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Polly;
 
 namespace Elsa.Workflows.Runtime.Distributed;
 
 public class DistributedWorkflowClient(
     string workflowInstanceId,
     IDistributedLockProvider distributedLockProvider,
-    ITransientExceptionDetector transientExceptionDetector,
     IOptions<DistributedLockingOptions> distributedLockingOptions,
-    IServiceProvider serviceProvider,
-    ILogger<DistributedWorkflowClient> logger)
+    IServiceProvider serviceProvider)
     : IWorkflowClient
 {
     private readonly LocalWorkflowClient _localWorkflowClient = ActivatorUtilities.CreateInstance<LocalWorkflowClient>(serviceProvider, workflowInstanceId);
-    private readonly Lazy<ResiliencePipeline> _retryPipeline = new(() => CreateRetryPipeline(transientExceptionDetector, logger, workflowInstanceId));
+
     public string WorkflowInstanceId => workflowInstanceId;
 
     public async Task<CreateWorkflowInstanceResponse> CreateInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
@@ -30,7 +25,7 @@ public class DistributedWorkflowClient(
 
     public async Task<RunWorkflowInstanceResponse> RunInstanceAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        var result = await WithLockAsync(async () => await _localWorkflowClient.RunInstanceAsync(request, cancellationToken), cancellationToken);
+        var result = await WithLockAsync(async () => await _localWorkflowClient.RunInstanceAsync(request, cancellationToken));
         return result;
     }
 
@@ -57,7 +52,7 @@ public class DistributedWorkflowClient(
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle,
             IncludeWorkflowOutput = request.IncludeWorkflowOutput
-        }, cancellationToken), cancellationToken);
+        }, cancellationToken));
     }
 
     public async Task CancelAsync(CancellationToken cancellationToken = default)
@@ -83,71 +78,15 @@ public class DistributedWorkflowClient(
     public async Task<bool> DeleteAsync(CancellationToken cancellationToken = default)
     {
         // Use the same distributed lock as for execution to prevent concurrent DB writes
-        return await WithLockAsync(async () => await _localWorkflowClient.DeleteAsync(cancellationToken), cancellationToken);
+        return await WithLockAsync(async () => await _localWorkflowClient.DeleteAsync(cancellationToken));
     }
 
-    private async Task<TReturn> WithLockAsync<TReturn>(Func<Task<TReturn>> func, CancellationToken cancellationToken = default)
+    private async Task<R> WithLockAsync<R>(Func<Task<R>> func)
     {
         var lockKey = $"workflow-instance:{WorkflowInstanceId}";
-        var lockHandle = await AcquireLockWithRetryAsync(lockKey, cancellationToken);
-
-        try
-        {
-            return await func();
-        }
-        finally
-        {
-            await ReleaseLockAsync(lockHandle);
-        }
-    }
-
-    private async Task<IDistributedSynchronizationHandle?> AcquireLockWithRetryAsync(string lockKey, CancellationToken cancellationToken = default)
-    {
         var lockTimeout = distributedLockingOptions.Value.LockAcquisitionTimeout;
-
-        return await _retryPipeline.Value.ExecuteAsync(async ct =>
-            await distributedLockProvider.AcquireLockAsync(lockKey, lockTimeout, ct),
-            cancellationToken);
-    }
-
-    private async Task ReleaseLockAsync(IDistributedSynchronizationHandle? lockHandle)
-    {
-        if (lockHandle == null)
-            return;
-
-        try
-        {
-            await lockHandle.DisposeAsync();
-        }
-        catch (Exception ex)
-        {
-            // Log but don't throw - the work is already done, and the lock
-            // will be automatically released when the connection dies
-            logger.LogWarning(ex, "Failed to release distributed lock for workflow instance {WorkflowInstanceId}. The lock will be automatically released by the database.", WorkflowInstanceId);
-        }
-    }
-
-    private static ResiliencePipeline CreateRetryPipeline(
-        ITransientExceptionDetector transientExceptionDetector,
-        ILogger<DistributedWorkflowClient> logger,
-        string workflowInstanceId)
-    {
-        const int maxRetryAttempts = 3;
-
-        return new ResiliencePipelineBuilder()
-            .AddRetry(new()
-            {
-                MaxRetryAttempts = maxRetryAttempts,
-                Delay = TimeSpan.FromMilliseconds(500),
-                BackoffType = DelayBackoffType.Exponential,
-                UseJitter = true,
-                ShouldHandle = new PredicateBuilder().Handle<Exception>(transientExceptionDetector.IsTransient),
-                OnRetry = args =>
-                {
-                    logger.LogWarning(args.Outcome.Exception, "Transient error acquiring lock for workflow instance {WorkflowInstanceId}. Attempt {AttemptNumber} of {MaxAttempts}.", workflowInstanceId, args.AttemptNumber + 1, maxRetryAttempts);
-                    return ValueTask.CompletedTask;
-                }
-            })
-            .Build();
+        await using var @lock = await distributedLockProvider.AcquireLockAsync(lockKey, lockTimeout);
+        var result = await func();
+        return result;
     }
 }

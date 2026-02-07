@@ -30,4 +30,18 @@ public class ScheduleWorkOptions
     /// Input to send to the workflow.
     /// </summary>
     public IDictionary<string, object>? Input { get; set; }
+
+    /// <summary>
+    /// The ID of the activity execution context that scheduled this work item.
+    /// This represents the temporal/execution predecessor that directly triggered execution of this activity,
+    /// distinct from the structural parent (<see cref="ExistingActivityExecutionContext"/> or Owner).
+    /// </summary>
+    public string? SchedulingActivityExecutionId { get; set; }
+
+    /// <summary>
+    /// The workflow instance ID of the workflow that scheduled this work item.
+    /// This is set when crossing workflow boundaries (e.g., via ExecuteWorkflow or DispatchWorkflow).
+    /// For activities within the same workflow instance, this will be null.
+    /// </summary>
+    public string? SchedulingWorkflowInstanceId { get; set; }
 }

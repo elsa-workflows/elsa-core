@@ -17,10 +17,19 @@ public static class WorkflowExecutionContextExtensions
         /// <summary>
         /// Schedules the workflow for execution.
         /// </summary>
-        public ActivityWorkItem ScheduleWorkflow(IDictionary<string, object>? input = null, IEnumerable<Variable>? variables = null)
+        public ActivityWorkItem ScheduleWorkflow(
+            IDictionary<string, object>? input = null,
+            IEnumerable<Variable>? variables = null,
+            string? schedulingActivityExecutionId = null,
+            string? schedulingWorkflowInstanceId = null)
         {
             var workflow = workflowExecutionContext.Workflow;
-            var workItem = new ActivityWorkItem(workflow, input: input, variables: variables);
+            var workItem = new ActivityWorkItem(
+                workflow,
+                input: input,
+                variables: variables,
+                schedulingActivityExecutionId: schedulingActivityExecutionId,
+                schedulingWorkflowInstanceId: schedulingWorkflowInstanceId);
             workflowExecutionContext.Scheduler.Schedule(workItem);
             return workItem;
         }
