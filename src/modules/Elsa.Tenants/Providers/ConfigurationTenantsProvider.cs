@@ -48,7 +48,7 @@ public class ConfigurationTenantsProvider : ITenantsProvider
         var tenants = options.Tenants.ToList();
         
         // Rebind each Tenant's Configuration property manually using array indices
-        for (var i = 0; i < tenants.Count; i++) 
+        for (int i = 0; i < tenants.Count; i++) 
             tenants[i].Configuration = _configuration.GetSection($"Multitenancy:Tenants:{i}:Configuration");
         
         _tenants = tenants;

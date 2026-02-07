@@ -6,7 +6,7 @@ namespace Elsa.Common.Multitenancy;
 /// Represents a tenant scope, which sets the current tenant for the duration of the scope.
 /// After the scope is disposed, the original tenant is restored.
 /// </summary>
-public class TenantScope(IServiceScope serviceScope, ITenantAccessor tenantAccessor, Tenant? tenant) : ITenantScope, IAsyncDisposable
+public class TenantScope(IServiceScope serviceScope, ITenantAccessor tenantAccessor, Tenant? tenant) : IAsyncDisposable
 {
     private readonly IDisposable _tenantContext = tenantAccessor.PushContext(tenant);
 
