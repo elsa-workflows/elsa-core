@@ -344,7 +344,7 @@ This document inventories all changes in the `feat/activity-execution-call-stack
 | M | `README.md` — Minor update |
 | D | `agent-logs/http-context-loss-error-messaging.md` |
 | D | `design/elsa-workflows-workflow-engine-for-dotnet.png` |
-| A | `plan-activityExecutionCallStack.prompt.md` — Implementation plan (consider whether to keep) |
+| A | `plan-activityExecutionCallStack.prompt.md` — Implementation plan; should be moved to PR 9 (Call Stack feature) or removed if no longer needed |
 
 ---
 
@@ -393,5 +393,5 @@ The PRs can be merged in the following order to minimize conflicts:
 | 7 | Infrastructure improvements | ~14 | Low |
 | 8 | Model/API cleanups | ~19 | Low-Medium |
 | 9 | Call Stack feature (core) | ~60 | High |
-| 10 | Meta/docs cleanup | ~8 | None |
+| 10 | Meta/docs cleanup | ~8 | Low |
 | **Total** | | **~215** | |
