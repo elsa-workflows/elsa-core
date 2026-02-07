@@ -22,7 +22,6 @@ on:
       - main
       - 'patch/*'
       - 'develop/*'
-      - 'release/*'
     paths:
       - '**/*'
 
