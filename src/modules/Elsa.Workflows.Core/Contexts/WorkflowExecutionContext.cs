@@ -624,7 +624,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
                 // Not found but caller provided depth (e.g., cross-workflow invocation)
                 activityExecutionContext.CallStackDepth = options.SchedulingCallStackDepth.Value + 1;
             }
-            // else: scheduling context not found and no depth provided, depth stays at default (0)
+            // else: scheduling context not found and no depth provided.
+            // Depth stays at default (0), which may result in incorrect call stack depth tracking
+            // if the scheduling context should have been present but wasn't found.
         }
 
         return activityExecutionContext;
