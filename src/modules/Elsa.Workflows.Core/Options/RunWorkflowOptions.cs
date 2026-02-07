@@ -28,4 +28,12 @@ public class RunWorkflowOptions
     /// This is set when crossing workflow boundaries.
     /// </summary>
     public string? SchedulingWorkflowInstanceId { get; set; }
+
+    /// <summary>
+    /// The call stack depth of the scheduling activity execution context.
+    /// This is used to calculate the call stack depth when the scheduling context is not present
+    /// in ActivityExecutionContexts (e.g., for cross-workflow invocations).
+    /// Should be set to the depth of the scheduling activity (not depth + 1, as the increment is applied automatically).
+    /// </summary>
+    public int? SchedulingCallStackDepth { get; set; }
 }

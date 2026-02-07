@@ -134,7 +134,8 @@ public class DispatchWorkflow : Activity<object>
             CorrelationId = correlationId,
             InstanceId = instanceId,
             SchedulingActivityExecutionId = context.Id,
-            SchedulingWorkflowInstanceId = parentInstanceId
+            SchedulingWorkflowInstanceId = parentInstanceId,
+            SchedulingCallStackDepth = context.CallStackDepth
         };
         var options = new DispatchWorkflowOptions
         {

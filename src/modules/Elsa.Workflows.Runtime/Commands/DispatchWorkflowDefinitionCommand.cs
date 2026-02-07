@@ -17,4 +17,5 @@ public class DispatchWorkflowDefinitionCommand(string definitionVersionId) : ICo
     public string? TriggerActivityId { get; set; }
     public string? SchedulingActivityExecutionId { get; set; }
     public string? SchedulingWorkflowInstanceId { get; set; }
+    public int? SchedulingCallStackDepth { get; set; }
 }

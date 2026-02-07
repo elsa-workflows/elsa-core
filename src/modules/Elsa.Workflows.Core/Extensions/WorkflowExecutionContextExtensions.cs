@@ -21,7 +21,8 @@ public static class WorkflowExecutionContextExtensions
             IDictionary<string, object>? input = null,
             IEnumerable<Variable>? variables = null,
             string? schedulingActivityExecutionId = null,
-            string? schedulingWorkflowInstanceId = null)
+            string? schedulingWorkflowInstanceId = null,
+            int? schedulingCallStackDepth = null)
         {
             var workflow = workflowExecutionContext.Workflow;
             var workItem = new ActivityWorkItem(
@@ -29,7 +30,8 @@ public static class WorkflowExecutionContextExtensions
                 input: input,
                 variables: variables,
                 schedulingActivityExecutionId: schedulingActivityExecutionId,
-                schedulingWorkflowInstanceId: schedulingWorkflowInstanceId);
+                schedulingWorkflowInstanceId: schedulingWorkflowInstanceId,
+                schedulingCallStackDepth: schedulingCallStackDepth);
             workflowExecutionContext.Scheduler.Schedule(workItem);
             return workItem;
         }
