@@ -90,7 +90,8 @@ public class WorkflowRunner(
         // Schedule the first activity.
         workflowExecutionContext.ScheduleWorkflow(
             schedulingActivityExecutionId: options?.SchedulingActivityExecutionId,
-            schedulingWorkflowInstanceId: options?.SchedulingWorkflowInstanceId);
+            schedulingWorkflowInstanceId: options?.SchedulingWorkflowInstanceId,
+            schedulingCallStackDepth: options?.SchedulingCallStackDepth);
 
         return await RunAsync(workflowExecutionContext);
     }
@@ -176,11 +177,13 @@ public class WorkflowRunner(
                 var vars = variables?.Select(x => new Variable(x.Key, x.Value)).ToList();
                 var schedulingActivityExecutionId = options?.SchedulingActivityExecutionId;
                 var schedulingWorkflowInstanceId = options?.SchedulingWorkflowInstanceId;
+                var schedulingCallStackDepth = options?.SchedulingCallStackDepth;
 
                 workflowExecutionContext.ScheduleWorkflow(
                     variables: vars,
                     schedulingActivityExecutionId: schedulingActivityExecutionId,
-                    schedulingWorkflowInstanceId: schedulingWorkflowInstanceId);
+                    schedulingWorkflowInstanceId: schedulingWorkflowInstanceId,
+                    schedulingCallStackDepth: schedulingCallStackDepth);
             }
         }
 

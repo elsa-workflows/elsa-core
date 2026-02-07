@@ -18,7 +18,8 @@ public class ActivityWorkItem
         ActivityExecutionContext? existingActivityExecutionContext = null,
         IDictionary<string, object>? input = null,
         string? schedulingActivityExecutionId = null,
-        string? schedulingWorkflowInstanceId = null)
+        string? schedulingWorkflowInstanceId = null,
+        int? schedulingCallStackDepth = null)
     {
         Activity = activity;
         Owner = owner;
@@ -28,6 +29,7 @@ public class ActivityWorkItem
         Input = input ?? new Dictionary<string, object>();
         SchedulingActivityExecutionId = schedulingActivityExecutionId;
         SchedulingWorkflowInstanceId = schedulingWorkflowInstanceId;
+        SchedulingCallStackDepth = schedulingCallStackDepth;
     }
 
     /// <summary>
@@ -73,4 +75,12 @@ public class ActivityWorkItem
     /// For activities within the same workflow instance, this will be null.
     /// </summary>
     public string? SchedulingWorkflowInstanceId { get; set; }
+
+    /// <summary>
+    /// The call stack depth of the scheduling activity execution context.
+    /// This is used to calculate the call stack depth when the scheduling context is not present
+    /// in ActivityExecutionContexts (e.g., for cross-workflow invocations).
+    /// Should be set to the depth of the scheduling activity (not depth + 1, as the increment is applied automatically).
+    /// </summary>
+    public int? SchedulingCallStackDepth { get; set; }
 }
