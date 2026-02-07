@@ -3,8 +3,9 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.IntegrationTests.Scenarios.RunAsynchronousActivityOutput.Activities;
 using Elsa.Workflows.Memory;
-using Elsa.Workflows.Runtime.Distributed.Extensions;
+using Elsa.Workflows.Runtime.Distributed;
 using Elsa.Workflows.Runtime.Stores;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.RunAsynchronousActivityOutput;
 
@@ -115,13 +116,16 @@ public class Tests
 
         // Act
         var workflowFinishedRecord = await workflow.DispatchWorkflowAndRunToCompletion(
+            configureServices: services =>
+            {
+                services.AddScoped<DistributedWorkflowRuntime>();
+            },
             configureElsa: elsa =>
             {
-                // Use the distributed runtime feature so the correct bookmark queue worker and its dependencies are registered.
                 elsa.UseWorkflowRuntime(workflowRuntime =>
                 {
-                    workflowRuntime.UseDistributedRuntime();
-                    workflowRuntime.ActivityExecutionLogStore = _ => activityExecutionStore;
+                    workflowRuntime.ActivityExecutionLogStore = sp => activityExecutionStore;
+                    workflowRuntime.WorkflowRuntime = sp => sp.GetRequiredService<DistributedWorkflowRuntime>();
                 });
             });
 

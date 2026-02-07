@@ -1,6 +1,6 @@
 namespace Elsa.Workflows.Attributes;
 
-[AttributeUsage(AttributeTargets.Property | AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.ReturnValue)]
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Class)]
 public class OutputAttribute : Attribute
 {
     /// <summary>

@@ -4,7 +4,7 @@ namespace Elsa.Workflows.Attributes;
 /// Specifies various metadata about an activity's input property.
 /// This metadata can be used by visual designers to control various aspects of the input editor control.
 /// </summary>
-[AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
+[AttributeUsage(AttributeTargets.Property)]
 public class InputAttribute : Attribute
 {
     /// <summary>
