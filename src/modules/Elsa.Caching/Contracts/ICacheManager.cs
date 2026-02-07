@@ -26,12 +26,7 @@ public interface ICacheManager
     ValueTask TriggerTokenAsync(string key, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Finds an item from the cache, or creates it if it doesn't exist.
-    /// </summary>
-    Task<TItem?> FindOrCreateAsync<TItem>(object key, Func<ICacheEntry, Task<TItem>> factory);
-    
-    /// <summary>
     /// Gets an item from the cache, or creates it if it doesn't exist.
     /// </summary>
-    Task<TItem> GetOrCreateAsync<TItem>(object key, Func<ICacheEntry, Task<TItem>> factory);
+    Task<TItem?> GetOrCreateAsync<TItem>(object key, Func<ICacheEntry, Task<TItem>> factory);
 }

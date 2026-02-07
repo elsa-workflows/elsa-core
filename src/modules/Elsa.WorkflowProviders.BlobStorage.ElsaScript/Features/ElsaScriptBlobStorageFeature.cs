@@ -1,3 +1,4 @@
+using Elsa.Dsl.ElsaScript.Compiler;
 using Elsa.Dsl.ElsaScript.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;

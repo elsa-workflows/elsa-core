@@ -77,7 +77,7 @@ public class CachingTriggerStore(ITriggerStore decoratedStore, ICacheManager cac
         var tenantId = tenantAccessor.Tenant?.Id;
         var tenantIdPrefix = !string.IsNullOrEmpty(tenantId) ? $"{tenantId}:" : string.Empty;
         var internalKey = $"{tenantIdPrefix}{typeof(T).Name}:{key}";
-        return await cacheManager.FindOrCreateAsync(internalKey, async entry =>
+        return await cacheManager.GetOrCreateAsync(internalKey, async entry =>
         {
             var invalidationRequestToken = cacheManager.GetToken(CacheInvalidationTokenKey);
             entry.AddExpirationToken(invalidationRequestToken);
