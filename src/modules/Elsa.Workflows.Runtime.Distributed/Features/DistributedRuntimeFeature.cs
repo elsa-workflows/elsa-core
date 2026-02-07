@@ -11,13 +11,8 @@ namespace Elsa.Workflows.Runtime.Distributed.Features;
 /// Installs and configures workflow runtime features.
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
-public class DistributedRuntimeFeature : FeatureBase
+public class DistributedRuntimeFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public DistributedRuntimeFeature(IModule module) : base(module)
-    {
-    }
-
     public override void Configure()
     {
         Module.UseWorkflowRuntime(runtime =>
