@@ -2,7 +2,6 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Resilience.Features;
 using Elsa.Workflows.Runtime.Features;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,9 +11,13 @@ namespace Elsa.Workflows.Runtime.Distributed.Features;
 /// Installs and configures workflow runtime features.
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
-[DependsOn(typeof(ResilienceFeature))]
-public class DistributedRuntimeFeature(IModule module) : FeatureBase(module)
+public class DistributedRuntimeFeature : FeatureBase
 {
+    /// <inheritdoc />
+    public DistributedRuntimeFeature(IModule module) : base(module)
+    {
+    }
+
     public override void Configure()
     {
         Module.UseWorkflowRuntime(runtime =>
