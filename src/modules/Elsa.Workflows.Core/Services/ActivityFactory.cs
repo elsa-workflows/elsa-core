@@ -8,6 +8,6 @@ public class ActivityFactory : IActivityFactory
     /// <inheritdoc />
     public IActivity Create(Type type, ActivityConstructorContext context)
     {
-        return context.CreateActivity(type).Activity;
+        return context.CreateActivity(type);
     }
 }

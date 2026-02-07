@@ -125,7 +125,7 @@ public sealed class ActivityJsonConverterTests
 
     static IActivityRegistry CreateActivityRegistry(string typeName, IActivity activity, int? version = null)
     {
-        var descriptor = new ActivityDescriptor { Constructor = _ => new(activity) };
+        var descriptor = new ActivityDescriptor { Constructor = _ => activity };
         var activityRegistry = Substitute.For<IActivityRegistry>();
 
         if (version.HasValue)
@@ -140,7 +140,7 @@ public sealed class ActivityJsonConverterTests
     {
         var descriptor = new ActivityDescriptor
         {
-            Constructor = _ => new(WorkflowAsActivity),
+            Constructor = _ => WorkflowAsActivity,
             CustomProperties = { [customPropertyName] = customPropertyValue }
         };
 
@@ -334,11 +334,6 @@ public sealed class ActivityJsonConverterTests
     private static ActivityJsonConverter CreateSut(IActivityRegistry activityRegistry)
     {
         var expressionDescriptorRegistry = new ExpressionDescriptorRegistry([]);
-        var serviceProvider = Substitute.For<IServiceProvider>();
-        serviceProvider
-            .GetService(typeof(ILogger<ActivityJsonConverter>))!
-            .Returns(CreateLogger<ActivityJsonConverter>());
-
         return new(
             activityRegistry,
             expressionDescriptorRegistry,
@@ -347,7 +342,7 @@ public sealed class ActivityJsonConverterTests
                 new(expressionDescriptorRegistry),
                 CreateLogger<ActivityWriter>()
             ),
-            serviceProvider
+            Substitute.For<IServiceProvider>()
         );
     }
 

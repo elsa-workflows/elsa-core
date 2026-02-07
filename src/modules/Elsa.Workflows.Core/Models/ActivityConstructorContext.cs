@@ -3,17 +3,15 @@ using System.Text.Json.Nodes;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Memory;
 using Humanizer;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Models;
 
-public record ActivityConstructorContext(ActivityDescriptor ActivityDescriptor, Func<Type, ActivityConstructionResult> ActivityFactory)
+public record ActivityConstructorContext(ActivityDescriptor ActivityDescriptor, Func<Type, IActivity> ActivityFactory)
 {
-    public ActivityConstructionResult<T> CreateActivity<T>() where T : IActivity => ActivityFactory(typeof(T)).Cast<T>();
-    public ActivityConstructionResult CreateActivity(Type type) => ActivityFactory(type);
+    public T CreateActivity<T>() where T : IActivity => (T)ActivityFactory(typeof(T));
+    public IActivity CreateActivity(Type type) => ActivityFactory(type);
 }
 
 public static class JsonActivityConstructorContextHelper
@@ -23,15 +21,13 @@ public static class JsonActivityConstructorContextHelper
         return new ActivityConstructorContext(activityDescriptor, type => CreateActivity(activityDescriptor, type, element, serializerOptions));
     }
 
-    public static ActivityConstructionResult<T> CreateActivity<T>(ActivityDescriptor activityDescriptor, JsonElement element, JsonSerializerOptions serializerOptions) where T : IActivity
+    public static T CreateActivity<T>(ActivityDescriptor activityDescriptor, JsonElement element, JsonSerializerOptions serializerOptions) where T : IActivity
     {
-        return CreateActivity(activityDescriptor, typeof(T), element, serializerOptions).Cast<T>();
+        return (T)CreateActivity(activityDescriptor, typeof(T), element, serializerOptions);
     }
 
-    public static ActivityConstructionResult CreateActivity(ActivityDescriptor activityDescriptor, Type type, JsonElement element, JsonSerializerOptions serializerOptions)
+    public static IActivity CreateActivity(ActivityDescriptor activityDescriptor, Type type, JsonElement element, JsonSerializerOptions serializerOptions)
     {
-        var exceptions = new List<Exception>();
-
         // 1) Grab the raw text
         var raw = element.GetRawText();
 
@@ -60,14 +56,14 @@ public static class JsonActivityConstructorContextHelper
             composite.Setup();
 
         // 9) Existing synthetic inputs/outputs routines, using the cleanedElement
-        ReadSyntheticInputs(activityDescriptor, activity, cleanedElement, serializerOptions, exceptions);
+        ReadSyntheticInputs(activityDescriptor, activity, cleanedElement, serializerOptions);
         ReadSyntheticOutputs(activityDescriptor, activity, cleanedElement);
 
         // 10) Finally re‑apply those flags
         activity.SetCanStartWorkflow(canStartWorkflow);
         activity.SetRunAsynchronously(runAsynchronously);
 
-        return new(activity, exceptions);
+        return activity;
     }
 
     /// <summary>
@@ -144,7 +140,7 @@ public static class JsonActivityConstructorContextHelper
         }
     }
 
-    private static void ReadSyntheticInputs(ActivityDescriptor activityDescriptor, IActivity activity, JsonElement activityRoot, JsonSerializerOptions options, List<Exception> exceptions)
+    private static void ReadSyntheticInputs(ActivityDescriptor activityDescriptor, IActivity activity, JsonElement activityRoot, JsonSerializerOptions options)
     {
         foreach (var inputDescriptor in activityDescriptor.Inputs.Where(x => x.IsSynthetic))
         {
@@ -155,15 +151,6 @@ public static class JsonActivityConstructorContextHelper
 
             if (!activityRoot.TryGetProperty(propertyName, out var propertyElement) || propertyElement.ValueKind == JsonValueKind.Null || propertyElement.ValueKind == JsonValueKind.Undefined)
                 continue;
-
-            if(propertyElement.ValueKind == JsonValueKind.Object && !propertyElement.TryGetProperty("typeName", out var _))
-            {
-                var exception = new InvalidActivityDescriptorInputException(
-                    $"Activity descriptor '{activityDescriptor.Name}' has invalid input property '{propertyName}'; missing required property 'typeName'"
-                );
-                exceptions.Add(exception);
-                continue;
-            }
 
             var isWrapped = propertyElement.ValueKind == JsonValueKind.Object && propertyElement.GetProperty("typeName").ValueKind != JsonValueKind.Undefined;
 

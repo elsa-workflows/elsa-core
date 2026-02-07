@@ -69,7 +69,7 @@ public class ActivityDescriptor
     /// Instantiates a concrete instance of an <see cref="IActivity"/>.
     /// </summary>
     [JsonIgnore]
-    public Func<ActivityConstructorContext, ActivityConstructionResult> Constructor { get; set; } = null!;
+    public Func<ActivityConstructorContext, IActivity> Constructor { get; set; } = null!;
 
     /// <summary>
     /// The kind of activity.
