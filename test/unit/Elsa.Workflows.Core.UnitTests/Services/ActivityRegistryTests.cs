@@ -1,5 +1,4 @@
 using Elsa.Common.Multitenancy;
-using Elsa.Workflows;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -14,42 +13,18 @@ public class ActivityRegistryTests
     private const string TestActivityType = "TestActivity";
     private const string CurrentTenant = "tenant1";
 
-    private readonly ITenantAccessor _tenantAccessor;
-    private readonly IActivityDescriber _activityDescriber;
     private readonly ILogger<ActivityRegistry> _logger;
     private readonly ActivityRegistry _registry;
 
     public ActivityRegistryTests()
     {
-        _tenantAccessor = Substitute.For<ITenantAccessor>();
-        _activityDescriber = Substitute.For<IActivityDescriber>();
+        var tenantAccessor = Substitute.For<ITenantAccessor>();
+        var activityDescriber = Substitute.For<IActivityDescriber>();
         _logger = Substitute.For<ILogger<ActivityRegistry>>();
-        _registry = new ActivityRegistry(_activityDescriber, Array.Empty<IActivityDescriptorModifier>(), _tenantAccessor, _logger);
+        _registry = new(activityDescriber, [], tenantAccessor, _logger);
         
         // Set default tenant for all tests
-        _tenantAccessor.TenantId.Returns(CurrentTenant);
-    }
-
-    private ActivityDescriptor CreateDescriptor(string typeName, int version, string? tenantId) =>
-        new()
-        {
-            TypeName = typeName,
-            Version = version,
-            TenantId = tenantId,
-            Kind = ActivityKind.Action
-        };
-
-    private void RegisterDescriptors(params ActivityDescriptor[] descriptors)
-    {
-        foreach (var descriptor in descriptors)
-            _registry.Register(descriptor);
-    }
-
-    private static void AssertDescriptor(ActivityDescriptor? result, string? expectedTenantId, int expectedVersion)
-    {
-        Assert.NotNull(result);
-        Assert.Equal(expectedTenantId, result.TenantId);
-        Assert.Equal(expectedVersion, result.Version);
+        tenantAccessor.TenantId.Returns(CurrentTenant);
     }
 
     [Fact]
@@ -162,8 +137,6 @@ public class ActivityRegistryTests
     public async Task RefreshDescriptorsAsync_CalledTwice_DoesNotLogWarnings()
     {
         // Arrange
-        var modifiers = Array.Empty<IActivityDescriptorModifier>();
-        
         var mockProvider = Substitute.For<IActivityProvider>();
         var descriptor1 = new ActivityDescriptor
         {
@@ -186,9 +159,9 @@ public class ActivityRegistryTests
         };
         
         mockProvider.GetDescriptorsAsync(Arg.Any<CancellationToken>())
-            .ReturnsAsync(new[] { descriptor1, descriptor2 });
-        
-        var providers = new[] { mockProvider.Object };
+            .Returns(new ValueTask<IEnumerable<ActivityDescriptor>>([descriptor1, descriptor2]));
+
+        var providers = new[] { mockProvider };
         
         // Act - First refresh
         await _registry.RefreshDescriptorsAsync(providers);
@@ -200,7 +173,7 @@ public class ActivityRegistryTests
         _logger.DidNotReceive().Log(
             LogLevel.Warning,
             Arg.Any<EventId>(),
-            Arg.Is<object>((v, t) => v.ToString()!.Contains("was already registered")),
+            Arg.Is<object>(v => v.ToString()!.Contains("was already registered")),
             Arg.Any<Exception>(),
             Arg.Any<Func<object, Exception?, string>>());
         
@@ -215,8 +188,6 @@ public class ActivityRegistryTests
     public async Task RefreshDescriptorsAsync_PreservesManualDescriptors()
     {
         // Arrange
-        var modifiers = Array.Empty<IActivityDescriptorModifier>();
-        
         // Create a manual descriptor
         var manualDescriptor = new ActivityDescriptor
         {
@@ -243,9 +214,9 @@ public class ActivityRegistryTests
         };
         
         mockProvider.GetDescriptorsAsync(Arg.Any<CancellationToken>())
-            .ReturnsAsync(new[] { providerDescriptor });
-        
-        var providers = new[] { mockProvider.Object };
+            .Returns(new ValueTask<IEnumerable<ActivityDescriptor>>([providerDescriptor]));
+
+        var providers = new[] { mockProvider };
         
         // Act - Refresh with provider
         await _registry.RefreshDescriptorsAsync(providers);
@@ -260,7 +231,7 @@ public class ActivityRegistryTests
         _logger.DidNotReceive().Log(
             LogLevel.Warning,
             Arg.Any<EventId>(),
-            Arg.Is<object>((v, t) => v.ToString()!.Contains("ManualActivity")),
+            Arg.Is<object>(v => v.ToString()!.Contains("ManualActivity")),
             Arg.Any<Exception>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
@@ -269,12 +240,7 @@ public class ActivityRegistryTests
     public async Task RefreshDescriptorsAsync_LogsWarning_WhenDifferentProvidersRegisterSameActivity()
     {
         // Arrange
-        var modifiers = Array.Empty<IActivityDescriptorModifier>();
-        
         // Create two different providers with the same activity
-        var mockProvider1 = Substitute.For<IActivityProvider>();
-        var mockProvider2 = Substitute.For<IActivityProvider>();
-        
         var descriptor1 = new ActivityDescriptor
         {
             TypeName = "DuplicateActivity",
@@ -284,7 +250,7 @@ public class ActivityRegistryTests
             Description = "From Provider 1",
             IsBrowsable = true
         };
-        
+
         var descriptor2 = new ActivityDescriptor
         {
             TypeName = "DuplicateActivity",
@@ -294,24 +260,53 @@ public class ActivityRegistryTests
             Description = "From Provider 2",
             IsBrowsable = true
         };
-        
-        mockProvider1.GetDescriptorsAsync(Arg.Any<CancellationToken>())
-            .ReturnsAsync(new[] { descriptor1 });
-        
-        mockProvider2.GetDescriptorsAsync(Arg.Any<CancellationToken>())
-            .ReturnsAsync(new[] { descriptor2 });
-        
-        var providers = new[] { mockProvider1.Object, mockProvider2.Object };
-        
+
+        var provider1 = new Provider1([descriptor1]);
+        var provider2 = new Provider2([descriptor2]);
+        var providers = new IActivityProvider[] { provider1, provider2 };
+
         // Act
         await _registry.RefreshDescriptorsAsync(providers);
-        
+
         // Assert - Should log a warning for the duplicate
         _logger.Received(1).Log(
             LogLevel.Warning,
             Arg.Any<EventId>(),
-            Arg.Is<object>((v, t) => v.ToString()!.Contains("DuplicateActivity") && v.ToString()!.Contains("was already registered")),
+            Arg.Is<object>(v => v.ToString()!.Contains("DuplicateActivity") && v.ToString()!.Contains("was already registered")),
             Arg.Any<Exception>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
+
+    
+    private ActivityDescriptor CreateDescriptor(string typeName, int version, string? tenantId) =>
+        new()
+        {
+            TypeName = typeName,
+            Version = version,
+            TenantId = tenantId,
+            Kind = ActivityKind.Action
+        };
+
+    private void RegisterDescriptors(params ActivityDescriptor[] descriptors)
+    {
+        foreach (var descriptor in descriptors)
+            _registry.Register(descriptor);
+    }
+
+    private static void AssertDescriptor(ActivityDescriptor? result, string? expectedTenantId, int expectedVersion)
+    {
+        Assert.NotNull(result);
+        Assert.Equal(expectedTenantId, result.TenantId);
+        Assert.Equal(expectedVersion, result.Version);
+    }
+    private sealed class Provider1(IEnumerable<ActivityDescriptor> descriptors) : IActivityProvider
+    {
+        public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default) => new(descriptors);
+    }
+
+    private sealed class Provider2(IEnumerable<ActivityDescriptor> descriptors) : IActivityProvider
+    {
+        public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default) => new(descriptors);
+    }
+    
 }
