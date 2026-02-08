@@ -118,7 +118,12 @@ public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILo
                 {
                     logger.LogInformation(e, "Recurring task {TaskType} was cancelled", task.GetType().Name);
                 }
-            });
+                catch (Exception e)
+                {
+                    // Log but don't rethrow - recurring tasks should not crash the host
+                    logger.LogError(e, "Recurring task {TaskType} failed with an error", task.GetType().Name);
+                }
+            }, logger);
 
             _scheduledTimers.Add(timer);
             await task.StartAsync(cancellationToken);

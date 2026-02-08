@@ -29,13 +29,13 @@ public abstract class TenantResolverBase : ITenantResolver
     /// <summary>
     /// Creates a new instance of <see cref="TenantResolverResult"/> representing a resolved tenant.
     /// </summary>
-    protected TenantResolverResult Resolved(string tenantId) => new(tenantId);
-    
+    protected TenantResolverResult Resolved(string? tenantId) => TenantResolverResult.Resolved(tenantId);
+
     /// <summary>
     /// Creates a new instance of <see cref="TenantResolverResult"/> representing an unresolved tenant.
     /// </summary>
-    protected TenantResolverResult Unresolved() => new(null);
-    
+    protected TenantResolverResult Unresolved() => TenantResolverResult.Unresolved();
+
     /// <summary>
     /// Automatically resolves the tenant if the tenant ID is not null.
     /// </summary>

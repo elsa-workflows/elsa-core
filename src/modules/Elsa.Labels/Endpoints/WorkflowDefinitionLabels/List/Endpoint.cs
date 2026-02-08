@@ -1,14 +1,14 @@
+using Elsa.Abstractions;
 using Elsa.Labels.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
-using FastEndpoints;
 using JetBrains.Annotations;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Labels.Endpoints.WorkflowDefinitionLabels.List;
 
 [PublicAPI]
-internal class List : Endpoint<Request, Response>
+internal class List : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowDefinitionLabelStore _workflowDefinitionLabelStore;
@@ -24,7 +24,7 @@ internal class List : Endpoint<Request, Response>
     public override void Configure()
     {
         Get("/workflow-definitions/{id}/labels");
-        Policies(Constants.PolicyName);
+        ConfigurePermissions("read:workflow-definition-labels");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

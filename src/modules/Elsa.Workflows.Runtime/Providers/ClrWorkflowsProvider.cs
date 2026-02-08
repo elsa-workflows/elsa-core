@@ -1,5 +1,3 @@
-using Elsa.Common.Multitenancy;
-using Elsa.Extensions;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Runtime.Features;
 using Elsa.Workflows.Runtime.Options;
@@ -15,7 +13,6 @@ namespace Elsa.Workflows.Runtime.Providers;
 public class ClrWorkflowsProvider(
     IOptions<RuntimeOptions> options,
     IWorkflowBuilderFactory workflowBuilderFactory,
-    ITenantAccessor tenantAccessor,
     IServiceProvider serviceProvider) : IWorkflowsProvider
 {
     /// <inheritdoc />
@@ -34,20 +31,17 @@ public class ClrWorkflowsProvider(
         var builder = workflowBuilderFactory.CreateBuilder();
         var workflowBuilder = await workflowFactory(serviceProvider);
         var workflowBuilderType = workflowBuilder.GetType();
-        var tenant = tenantAccessor.Tenant;
-        var tenantPrefix = !string.IsNullOrEmpty(tenant?.Id) ? $"{tenant.Id}:" : string.Empty;
         await workflowBuilder.BuildAsync(builder, cancellationToken);
         var workflow = await builder.BuildWorkflowAsync(cancellationToken);
         var versionSuffix = $"v{workflow.Version}";
-        var definitionId = string.IsNullOrEmpty(workflow.Identity.DefinitionId) ? tenantPrefix + workflowBuilderType.Name : $"{tenantPrefix}{workflow.Identity.DefinitionId}";
-        var id = string.IsNullOrEmpty(workflow.Identity.Id) ? $"{tenantPrefix}{workflowBuilderType.Name}:{versionSuffix}" : $"{tenantPrefix}{workflow.Identity.Id}";
-        var tenantId = string.IsNullOrEmpty(workflow.Identity.TenantId) ? tenant?.Id : workflow.Identity.TenantId;
+        var definitionId = string.IsNullOrEmpty(workflow.Identity.DefinitionId) ? workflowBuilderType.Name : $"{workflow.Identity.DefinitionId}";
+        var id = string.IsNullOrEmpty(workflow.Identity.Id) ? $"{workflowBuilderType.Name}:{versionSuffix}" : $"{workflow.Identity.Id}";
         
         workflow.Identity = workflow.Identity with
         {
             Id = id,
             DefinitionId = definitionId,
-            TenantId = tenantId?.NullIfEmpty()
+            TenantId = workflow.Identity.TenantId
         };
 
         var materializerContext = new ClrWorkflowMaterializerContext(workflowBuilder.GetType());

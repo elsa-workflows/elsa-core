@@ -2,6 +2,8 @@ namespace Elsa.Common.Multitenancy;
 
 public interface ITenantAccessor
 {
+    string TenantId { get; }
+    
     /// <summary>
     /// Get the current <see cref="Multitenancy.Tenant"/>.
     /// </summary>

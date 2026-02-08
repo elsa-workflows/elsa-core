@@ -137,10 +137,10 @@ jobs:
       - name: Verify commit exists in branch
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased") ]]; then
-            git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+            git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
             git branch --remote --contains | grep -E 'origin/(main|release/)'
           else
-            git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+            git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
             git branch --remote --contains | grep origin/${BRANCH_NAME}
           fi
 
@@ -172,7 +172,7 @@ jobs:
     name: Publish to feedz.io
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
       - name: Download Packages
@@ -187,7 +187,7 @@ jobs:
     name: Publish release to nuget.org
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     if: ${{ github.event.action == 'published' }}
     steps:
       - name: Download Packages
@@ -202,7 +202,7 @@ jobs:
     name: Deploy coverage to GitHub Pages
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop/3.6.0'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop/3.6.0' || github.ref == 'refs/heads/release/3.6.0'
     permissions:
       pages: write
       id-token: write
