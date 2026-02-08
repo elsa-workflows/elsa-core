@@ -1,5 +1,6 @@
 using CShells.Features;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures;
 
@@ -11,4 +12,9 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures;
     Description = "Provides PostgreSql persistence for workflow definitions and runtime data",
     DependsOn = ["PostgreSqlWorkflowDefinitionPersistence", "PostgreSqlWorkflowInstancePersistence", "PostgreSqlWorkflowRuntimePersistence"])]
 [UsedImplicitly]
-public class PostgreSqlWorkflowPersistenceShellFeature;
+public class PostgreSqlWorkflowPersistenceShellFeature : IShellFeature
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+    }
+}

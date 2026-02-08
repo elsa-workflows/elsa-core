@@ -1,5 +1,6 @@
 using CShells.Features;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures;
 
@@ -11,4 +12,9 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures;
     Description = "Provides Oracle persistence for workflow definitions and runtime data",
     DependsOn = ["OracleWorkflowDefinitionPersistence", "OracleWorkflowInstancePersistence", "OracleWorkflowRuntimePersistence"])]
 [UsedImplicitly]
-public class OracleWorkflowPersistenceShellFeature;
+public class OracleWorkflowPersistenceShellFeature : IShellFeature
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+    }
+}

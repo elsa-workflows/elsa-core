@@ -1,7 +1,6 @@
 using CShells.Features;
-using Elsa.Persistence.EFCore.Modules.Management;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures;
 
@@ -13,4 +12,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures;
     Description = "Provides Sqlite persistence for workflow definitions and runtime data",
     DependsOn = ["SqliteWorkflowDefinitionPersistence", "SqliteWorkflowInstancePersistence", "SqliteWorkflowRuntimePersistence"])]
 [UsedImplicitly]
-public class SqliteWorkflowPersistenceShellFeature;
+public class SqliteWorkflowPersistenceShellFeature : IShellFeature
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+    }
+}

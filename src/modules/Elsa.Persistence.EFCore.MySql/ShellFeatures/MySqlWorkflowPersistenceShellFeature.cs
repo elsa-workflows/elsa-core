@@ -1,5 +1,6 @@
 using CShells.Features;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EFCore.MySql.ShellFeatures;
 
@@ -11,4 +12,9 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures;
     Description = "Provides MySql persistence for workflow definitions and runtime data",
     DependsOn = ["MySqlWorkflowDefinitionPersistence", "MySqlWorkflowInstancePersistence", "MySqlWorkflowRuntimePersistence"])]
 [UsedImplicitly]
-public class MySqlWorkflowPersistenceShellFeature;
+public class MySqlWorkflowPersistenceShellFeature : IShellFeature
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+    }
+}
