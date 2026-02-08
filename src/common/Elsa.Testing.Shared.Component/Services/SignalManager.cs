@@ -20,17 +20,18 @@ public class SignalManager
     {
         var taskCompletionSource = GetOrCreate(signal);
         using var cancellationTokenSource = new CancellationTokenSource(millisecondsTimeout);
-        try
+        var delayTask = Task.Delay(millisecondsTimeout, cancellationTokenSource.Token);
+        var completedTask = await Task.WhenAny(taskCompletionSource.Task, delayTask);
+
+        if (completedTask == delayTask)
         {
-            await Task.WhenAny(taskCompletionSource.Task, Task.Delay(millisecondsTimeout, cancellationTokenSource.Token));
-            cancellationTokenSource.Token.ThrowIfCancellationRequested();
             _signals.TryRemove(signal, out _);
-            return await taskCompletionSource.Task;
-        }
-        catch (OperationCanceledException)
-        {
             throw new TimeoutException($"Signal '{signal}' timed out after {millisecondsTimeout} milliseconds.");
         }
+
+        cancellationTokenSource.Cancel();
+        _signals.TryRemove(signal, out _);
+        return await taskCompletionSource.Task;
     }
 
     public void Trigger(object signal, object? result = null)
@@ -45,6 +46,6 @@ public class SignalManager
 
     private TaskCompletionSource<object?> GetOrCreate(object eventName)
     {
-        return _signals.GetOrAdd(eventName, _ => new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously));
+        return _signals.GetOrAdd(eventName, _ => new(TaskCreationOptions.RunContinuationsAsynchronously));
     }
 }

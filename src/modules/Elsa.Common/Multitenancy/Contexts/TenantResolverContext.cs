@@ -30,9 +30,10 @@ public class TenantResolverContext
     /// </summary>
     /// <param name="tenantId">The tenant ID.</param>
     /// <returns>The found tenant or null if no tenant with the provided ID exists.</returns>
-    public Tenant? FindTenant(string tenantId)
+    public Tenant? FindTenant(string? tenantId)
     {
-        return _tenantsDictionary.TryGetValue(tenantId, out var tenant) ? tenant : null;
+        var normalizedId = tenantId.NormalizeTenantId();
+        return _tenantsDictionary.TryGetValue(normalizedId, out var tenant) ? tenant : null;
     }
 
     /// <summary>

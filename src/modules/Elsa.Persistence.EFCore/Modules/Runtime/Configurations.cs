@@ -125,15 +125,16 @@ public class Configurations :
         builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.TenantId)}");
 
         // Add unique constraint to prevent duplicate trigger registrations in multi-engine environments
-        // A trigger is uniquely identified by WorkflowDefinitionId + Hash + ActivityId
+        // A trigger is uniquely identified by WorkflowDefinitionId + Hash + ActivityId + TenantId
         builder.HasIndex(x => new
             {
                 x.WorkflowDefinitionId,
                 x.Hash,
-                x.ActivityId
+                x.ActivityId,
+                x.TenantId
             })
             .IsUnique()
-            .HasDatabaseName($"IX_{nameof(StoredTrigger)}_Unique_{nameof(StoredTrigger.WorkflowDefinitionId)}_{nameof(StoredTrigger.Hash)}_{nameof(StoredTrigger.ActivityId)}");
+            .HasDatabaseName($"IX_{nameof(StoredTrigger)}_Unique_{nameof(StoredTrigger.WorkflowDefinitionId)}_{nameof(StoredTrigger.Hash)}_{nameof(StoredTrigger.ActivityId)}_{nameof(StoredTrigger.TenantId)}");
     }
 
     /// <inheritdoc />

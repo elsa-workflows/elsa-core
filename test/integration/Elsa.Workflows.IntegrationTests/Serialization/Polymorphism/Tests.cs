@@ -87,4 +87,30 @@ public class Tests
         options.Converters.Add(new PolymorphicObjectConverterFactory(new WellKnownTypeRegistry()));
         return options;
     }
+
+    [Fact(DisplayName = "Types with custom converters that serialize to primitives are serialized as primitives")]
+    
+    public void CustomConverterProducingPrimitive_IsSerializedAsPrimitive()
+    {
+        var model = new MyNumber { Number = 123UL };
+        var options = GetSerializerOptions();
+        var expectedJson = "123";
+        var json = JsonSerializer.Serialize<object>(model, options);
+        Assert.Equal(expectedJson, json);
+    }
+
+    [JsonConverter(typeof(MyNumberConverter))]
+    private struct MyNumber
+    {
+        public ulong Number { get; init; }
+    }
+
+    private class MyNumberConverter : JsonConverter<MyNumber>
+    {
+        public override MyNumber Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            => new() { Number = reader.GetUInt64() };
+
+        public override void Write(Utf8JsonWriter writer, MyNumber value, JsonSerializerOptions options)
+            => writer.WriteNumberValue(value.Number);
+    }
 }

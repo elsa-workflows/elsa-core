@@ -57,12 +57,13 @@ public class HostMethodActivityDescriber(IActivityDescriber activityDescriber) :
 
         descriptor.Constructor = context =>
         {
-            var activity = context.CreateActivity<HostMethodActivity>();
+            var activityResult = context.CreateActivity<HostMethodActivity>();
+            var activity = activityResult.Activity;
             activity.Type = activityTypeName;
             activity.HostType = hostType;
             activity.MethodName = methodName;
             activity.RunAsynchronously ??= descriptor.RunAsynchronously;
-            return activity;
+            return activityResult;
         };
 
         descriptor.Inputs.Clear();

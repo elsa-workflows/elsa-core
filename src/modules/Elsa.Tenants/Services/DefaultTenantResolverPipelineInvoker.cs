@@ -17,7 +17,8 @@ public class DefaultTenantResolverPipelineInvoker(
     public async Task<Tenant?> InvokePipelineAsync(CancellationToken cancellationToken = default)
     {
         var resolutionPipeline = options.Value.TenantResolverPipelineBuilder.Build(serviceProvider);
-        var tenantsDictionary = (await tenantsProvider.ListAsync(cancellationToken)).ToDictionary(x => x.Id);
+        var tenants = await tenantsProvider.ListAsync(cancellationToken);
+        var tenantsDictionary = tenants.ToDictionary(x => x.Id.NormalizeTenantId());
         var context = new TenantResolverContext(tenantsDictionary, cancellationToken);
 
         foreach (var resolver in resolutionPipeline)

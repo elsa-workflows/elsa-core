@@ -10,6 +10,8 @@ namespace Elsa.Workflows.Models;
 [DebuggerDisplay("{TypeName}")]
 public class ActivityDescriptor
 {
+    public string? TenantId { get; set; } // Null means tenant-agnostic.
+    
     /// <summary>
     /// The fully qualified name of the activity type.
     /// </summary>
@@ -69,7 +71,7 @@ public class ActivityDescriptor
     /// Instantiates a concrete instance of an <see cref="IActivity"/>.
     /// </summary>
     [JsonIgnore]
-    public Func<ActivityConstructorContext, IActivity> Constructor { get; set; } = null!;
+    public Func<ActivityConstructorContext, ActivityConstructionResult> Constructor { get; set; } = null!;
 
     /// <summary>
     /// The kind of activity.

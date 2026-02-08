@@ -1,5 +1,6 @@
 using Elsa.Common;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
@@ -19,6 +20,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     private readonly IPayloadSerializer _payloadSerializer;
     private readonly ISystemClock _systemClock;
     private readonly IIdentityGraphService _identityGraphService;
+    private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<DefaultWorkflowDefinitionStorePopulator> _logger;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
@@ -33,6 +35,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         IPayloadSerializer payloadSerializer,
         ISystemClock systemClock,
         IIdentityGraphService identityGraphService,
+        ITenantAccessor tenantAccessor,
         ILogger<DefaultWorkflowDefinitionStorePopulator> logger)
     {
         _workflowDefinitionProviders = workflowDefinitionProviders;
@@ -42,6 +45,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         _payloadSerializer = payloadSerializer;
         _systemClock = systemClock;
         _identityGraphService = identityGraphService;
+        _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
 
@@ -56,6 +60,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     {
         var providers = _workflowDefinitionProviders();
         var workflowDefinitions = new List<WorkflowDefinition>();
+        var currentTenantId = (_tenantAccessor.Tenant?.Id).NormalizeTenantId();
 
         foreach (var provider in providers)
         {
@@ -63,6 +68,21 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
             foreach (var result in results)
             {
+                // Normalize tenant IDs for comparison (null becomes empty string)
+                var definitionTenantId = result.Workflow.Identity.TenantId.NormalizeTenantId();
+
+                // Only import workflows belonging to the current tenant or tenant-agnostic workflows (TenantId = "*").
+                if (definitionTenantId != currentTenantId && definitionTenantId != Tenant.AgnosticTenantId)
+                {
+                    _logger.LogDebug(
+                        "Skipping adding workflow {WorkflowId} from provider {Provider} because it belongs to tenant '{WorkflowTenantId}' but current tenant is '{CurrentTenantId}'",
+                        result.Workflow.Identity.DefinitionId,
+                        provider.Name,
+                        result.Workflow.Identity.TenantId,
+                        currentTenantId);
+                    continue;
+                }
+
                 var workflowDefinition = await AddAsync(result, indexTriggers, cancellationToken);
                 workflowDefinitions.Add(workflowDefinition);
             }
@@ -128,7 +148,9 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         {
             // NEW WAY: OriginalSource is provided
             // For JSON workflows, we still need to populate StringData with the serialized root for backwards compatibility
-            stringData = materializedWorkflow.MaterializerName == "Json" ? _activitySerializer.Serialize(workflow.Root) :
+            stringData = materializedWorkflow.MaterializerName == "Json"
+                ? _activitySerializer.Serialize(workflow.Root)
+                :
                 // For new formats (ElsaScript, YAML, etc.), only OriginalSource is needed
                 // StringData can be null as these materializers only use OriginalSource
                 null;
@@ -168,14 +190,18 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         await UpdateIsLatest();
         await UpdateIsPublished();
 
+        // Determine the tenant ID for the workflow definition
+        // If the workflow has no tenant ID, use the current tenant (normalized to handle null -> "")
+        var workflowTenantId = workflow.Identity.TenantId ?? (_tenantAccessor.Tenant?.Id).NormalizeTenantId();
+
         var workflowDefinition = existingDefinitionVersion ?? new WorkflowDefinition
         {
             DefinitionId = workflow.Identity.DefinitionId,
             Id = workflow.Identity.Id,
             Version = workflow.Identity.Version,
-            TenantId = workflow.Identity.TenantId,
+            TenantId = workflowTenantId,
         };
-
+        
         workflowDefinition.Description = workflow.WorkflowMetadata.Description;
         workflowDefinition.Name = workflow.WorkflowMetadata.Name;
         workflowDefinition.ToolVersion = workflow.WorkflowMetadata.ToolVersion;

@@ -4,6 +4,9 @@ using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities.Workflows;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
+using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Filters;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities;
@@ -34,8 +37,23 @@ public class DeleteWorkflowTests : AppComponentTest
         EnsureWorkflowInRegistry(_scope1, Workflows.DeleteWorkflow.Type);
 
         var workflowDefinitionManager = _scope1.ServiceProvider.GetRequiredService<IWorkflowDefinitionManager>();
-        await workflowDefinitionManager.DeleteByDefinitionIdAsync(Workflows.DeleteWorkflow.DefinitionId);
+        var deletedCount = await workflowDefinitionManager.DeleteByDefinitionIdAsync(Workflows.DeleteWorkflow.DefinitionId);
+        Assert.True(deletedCount > 0, "Expected workflow definition to be deleted.");
+        
+        var store = _scope1.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+        var t1 = await store.FindAsync(new WorkflowDefinitionFilter
+        {
+            DefinitionId = Workflows.DeleteWorkflow.DefinitionId
+        });
+        
+        Assert.Null(t1);
 
+        // Force a refresh of the activity registry to ensure it reflects the deletion
+        var activityRegistry = _scope1.ServiceProvider.GetRequiredService<IActivityRegistry>();
+        var workflowDefinitionActivityProvider = _scope1.ServiceProvider.GetRequiredService<WorkflowDefinitionActivityProvider>();
+        await activityRegistry.RefreshDescriptorsAsync(workflowDefinitionActivityProvider);
+
+        // Verify the workflow is removed from the registry
         WorkflowTypeDeletedFromRegistry(_scope1, Workflows.DeleteWorkflow.Type);
     }
 
@@ -69,6 +87,22 @@ public class DeleteWorkflowTests : AppComponentTest
         var descriptor = activityRegistry.Find(type);
 
         Assert.Null(descriptor);
+    }
+
+    private static async Task<bool> WaitForWorkflowTypeRemovedAsync(IServiceScope scope, string type, TimeSpan timeout)
+    {
+        var activityRegistry = scope.ServiceProvider.GetRequiredService<IActivityRegistry>();
+        var deadline = DateTimeOffset.UtcNow + timeout;
+
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            if (activityRegistry.Find(type) == null)
+                return true;
+
+            await Task.Delay(100);
+        }
+
+        return false;
     }
 
     private void OnWorkflowDefinitionDeleted(object? sender, WorkflowDefinitionDeletedEventArgs args)

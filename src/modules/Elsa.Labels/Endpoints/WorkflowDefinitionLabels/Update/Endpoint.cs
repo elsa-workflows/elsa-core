@@ -1,3 +1,4 @@
+using Elsa.Abstractions;
 using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
 using Elsa.Workflows;
@@ -11,7 +12,7 @@ using Open.Linq.AsyncExtensions;
 namespace Elsa.Labels.Endpoints.WorkflowDefinitionLabels.Update;
 
 [PublicAPI]
-internal class Update : Endpoint<Request, Response>
+internal class Update : ElsaEndpoint<Request, Response>
 {
     private readonly ILabelStore _labelStore;
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
@@ -42,7 +43,7 @@ internal class Update : Endpoint<Request, Response>
     public override void Configure()
     {
         Post("/workflow-definitions/{id}/labels");
-        Policies(Constants.PolicyName);
+        ConfigurePermissions("update:workflow-definition-labels");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

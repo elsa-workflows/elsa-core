@@ -10,6 +10,7 @@ public class WorkflowDefinitionActivityDescriptorFactory
     public ActivityDescriptor CreateDescriptor(WorkflowDefinition definition, WorkflowDefinition? latestPublishedDefinition = null)
     {
         var typeName = definition.Name!.Pascalize();
+        var tenantId = definition.TenantId;
         
         var ports = definition.Outcomes.Select(outcome => new Port
         {
@@ -31,6 +32,7 @@ public class WorkflowDefinitionActivityDescriptorFactory
 
         return new()
         {
+            TenantId = tenantId,
             TypeName = typeName,
             ClrType = typeof(WorkflowDefinitionActivity),
             Name = typeName,
@@ -57,7 +59,8 @@ public class WorkflowDefinitionActivityDescriptorFactory
             },
             Constructor = context =>
             {
-                var activity = context.CreateActivity<WorkflowDefinitionActivity>();
+                var activityResult = context.CreateActivity<WorkflowDefinitionActivity>();
+                var activity = activityResult.Activity;
                 activity.Type = typeName;
                 activity.WorkflowDefinitionId = definition.DefinitionId;
                 activity.WorkflowDefinitionVersionId = definition.Id;
@@ -65,7 +68,7 @@ public class WorkflowDefinitionActivityDescriptorFactory
                 activity.LatestAvailablePublishedVersion = latestPublishedDefinition?.Version ?? definition.Version;
                 activity.LatestAvailablePublishedVersionId = latestPublishedDefinition?.Id ?? definition.Id;
 
-                return activity;
+                return activityResult;
             }
         };
     }
