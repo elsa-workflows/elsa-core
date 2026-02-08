@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Management;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Management;
 /// </summary>
 [ShellFeature(
     DisplayName = "Sqlite Workflow Definition Persistence",
-    Description = "Provides Sqlite persistence for workflow definitions")]
+    Description = "Provides Sqlite persistence for workflow definitions",
+    DependsOn = ["WorkflowManagement", "WorkflowDefinitions"])]
 [UsedImplicitly]
 public class SqliteWorkflowDefinitionPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreWorkflowDefinitionPersistenceShellFeature, ManagementElsaDbContext, SqliteDbContextOptionsBuilder>
+    : EFCoreWorkflowDefinitionPersistenceShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SqliteWorkflowDefinitionPersistenceShellFeature"/> class.
-    /// </summary>
-    public SqliteWorkflowDefinitionPersistenceShellFeature()
-        : base(new SqliteProviderConfigurator(typeof(SqliteWorkflowDefinitionPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaSqlite(migrationsAssembly, connectionString, options);
     }
 }

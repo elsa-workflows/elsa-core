@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Tenants;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Tenants;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Tenants;
 /// </summary>
 [ShellFeature(
     DisplayName = "MySql Tenant Persistence",
-    Description = "Provides MySql persistence for tenant management")]
+    Description = "Provides MySql persistence for tenant management",
+    DependsOn = ["TenantManagement"])]
 [UsedImplicitly]
 public class MySqlTenantPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreTenantManagementShellFeature, TenantsElsaDbContext, MySqlDbContextOptionsBuilder>
+    : EFCoreTenantManagementShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MySqlTenantPersistenceShellFeature"/> class.
-    /// </summary>
-    public MySqlTenantPersistenceShellFeature()
-        : base(new MySqlProviderConfigurator(typeof(MySqlTenantPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaMySql(migrationsAssembly, connectionString, options);
     }
 }

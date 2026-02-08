@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Identity;
 using JetBrains.Annotations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Identity;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Identity;
 /// </summary>
 [ShellFeature(
     DisplayName = "PostgreSql Identity Persistence",
-    Description = "Provides PostgreSql persistence for identity management")]
+    Description = "Provides PostgreSql persistence for identity management",
+    DependsOn = ["Identity"])]
 [UsedImplicitly]
 public class PostgreSqlIdentityPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreIdentityPersistenceShellFeature, IdentityElsaDbContext, NpgsqlDbContextOptionsBuilder>
+    : EFCoreIdentityPersistenceShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PostgreSqlIdentityPersistenceShellFeature"/> class.
-    /// </summary>
-    public PostgreSqlIdentityPersistenceShellFeature()
-        : base(new PostgreSqlProviderConfigurator(typeof(PostgreSqlIdentityPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaPostgreSql(migrationsAssembly, connectionString, options);
     }
 }

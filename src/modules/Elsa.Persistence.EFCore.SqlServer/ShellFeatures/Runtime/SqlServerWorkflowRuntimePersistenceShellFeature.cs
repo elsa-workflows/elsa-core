@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Runtime;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Runtime;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Runtime;
 /// </summary>
 [ShellFeature(
     DisplayName = "SqlServer Workflow Runtime Persistence",
-    Description = "Provides SqlServer persistence for workflow runtime")]
+    Description = "Provides SqlServer persistence for workflow runtime",
+    DependsOn = ["WorkflowRuntime"])]
 [UsedImplicitly]
 public class SqlServerWorkflowRuntimePersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreWorkflowRuntimePersistenceShellFeature, RuntimeElsaDbContext, SqlServerDbContextOptionsBuilder>
+    : EFCoreWorkflowRuntimePersistenceShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SqlServerWorkflowRuntimePersistenceShellFeature"/> class.
-    /// </summary>
-    public SqlServerWorkflowRuntimePersistenceShellFeature()
-        : base(new SqlServerProviderConfigurator(typeof(SqlServerWorkflowRuntimePersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaSqlServer(migrationsAssembly, connectionString, options);
     }
 }

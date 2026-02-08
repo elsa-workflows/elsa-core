@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Labels;
 using JetBrains.Annotations;
-using Oracle.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Labels;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Labels;
 /// </summary>
 [ShellFeature(
     DisplayName = "Oracle Label Persistence",
-    Description = "Provides Oracle persistence for label management")]
+    Description = "Provides Oracle persistence for label management",
+    DependsOn = ["Labels"])]
 [UsedImplicitly]
 public class OracleLabelPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreLabelPersistenceShellFeature, LabelsElsaDbContext, OracleDbContextOptionsBuilder>
+    : EFCoreLabelPersistenceShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OracleLabelPersistenceShellFeature"/> class.
-    /// </summary>
-    public OracleLabelPersistenceShellFeature()
-        : base(new OracleProviderConfigurator(typeof(OracleLabelPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaOracle(migrationsAssembly, connectionString, options);
     }
 }

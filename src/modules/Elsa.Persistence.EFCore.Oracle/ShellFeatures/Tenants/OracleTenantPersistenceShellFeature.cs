@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Tenants;
 using JetBrains.Annotations;
-using Oracle.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Tenants;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Tenants;
 /// </summary>
 [ShellFeature(
     DisplayName = "Oracle Tenant Persistence",
-    Description = "Provides Oracle persistence for tenant management")]
+    Description = "Provides Oracle persistence for tenant management",
+    DependsOn = ["TenantManagement"])]
 [UsedImplicitly]
 public class OracleTenantPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreTenantManagementShellFeature, TenantsElsaDbContext, OracleDbContextOptionsBuilder>
+    : EFCoreTenantManagementShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OracleTenantPersistenceShellFeature"/> class.
-    /// </summary>
-    public OracleTenantPersistenceShellFeature()
-        : base(new OracleProviderConfigurator(typeof(OracleTenantPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaOracle(migrationsAssembly, connectionString, options);
     }
 }

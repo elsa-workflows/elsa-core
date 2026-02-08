@@ -1,4 +1,4 @@
-using CShells.Features;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,17 +6,15 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Persistence.EFCore.Modules.Management;
 
 /// <summary>
-/// Configures the workflow definitions feature with an Entity Framework Core persistence provider.
+/// Base class for workflow definition persistence features.
+/// This is not a standalone shell feature - use provider-specific features like SqliteWorkflowDefinitionPersistenceShellFeature.
 /// </summary>
-[ShellFeature(
-    DisplayName = "EF Core Workflow Definition Persistence",
-    Description = "Provides Entity Framework Core persistence for workflow definitions",
-    DependsOn = ["WorkflowManagement", "WorkflowDefinitions"])]
 [UsedImplicitly]
-public class EFCoreWorkflowDefinitionPersistenceShellFeature : PersistenceShellFeatureBase<EFCoreWorkflowDefinitionPersistenceShellFeature, ManagementElsaDbContext>
+public abstract class EFCoreWorkflowDefinitionPersistenceShellFeatureBase : PersistenceShellFeatureBase<ManagementElsaDbContext>
 {
     protected override void OnConfiguring(IServiceCollection services)
     {
+        services.AddScoped<IWorkflowDefinitionStore, EFCoreWorkflowDefinitionStore>();
         AddEntityStore<WorkflowDefinition, EFCoreWorkflowDefinitionStore>(services);
     }
 }

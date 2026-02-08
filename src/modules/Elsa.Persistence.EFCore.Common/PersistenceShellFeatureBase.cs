@@ -1,3 +1,4 @@
+using System.Reflection;
 using CShells.Features;
 using Elsa.Common.Entities;
 using Elsa.Extensions;
@@ -8,18 +9,18 @@ using Microsoft.Extensions.DependencyInjection;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Persistence.EFCore;
 
-public abstract class PersistenceShellFeatureBase<TFeature, TDbContext> : IShellFeature
+public abstract class PersistenceShellFeatureBase<TDbContext> : IShellFeature
     where TDbContext : ElsaDbContextBase
 {
     /// <summary>
     /// Gets or sets a value indicating whether to use context pooling.
     /// </summary>
-    public virtual bool UseContextPooling { get; set; }
+    public bool UseContextPooling { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to run migrations.
     /// </summary>
-    public virtual bool RunMigrations { get; set; } = true;
+    public bool RunMigrations { get; set; } = true;
 
     /// <summary>
     /// Gets or sets the lifetime of the <see cref="IDbContextFactory{TContext}"/>. Defaults to <see cref="ServiceLifetime.Singleton"/>.
@@ -27,18 +28,31 @@ public abstract class PersistenceShellFeatureBase<TFeature, TDbContext> : IShell
     public ServiceLifetime DbContextFactoryLifetime { get; set; } = ServiceLifetime.Scoped;
 
     /// <summary>
+    /// Gets or sets the connection string to use for the database.
+    /// </summary>
+    public string ConnectionString { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets additional options to configure the database context.
+    /// </summary>
+    public ElsaDbContextOptions? DbContextOptions { get; set; }
+
+    /// <summary>
     /// Gets or sets the callback used to configure the <see cref="DbContextOptionsBuilder"/>.
     /// </summary>
-    public virtual Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder { get; set; } = null!;
+    protected virtual Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder { get; set; } = (_, _) => { };
     
     public void ConfigureServices(IServiceCollection services)
     {
-        if (DbContextOptionsBuilder == null)
-            throw new InvalidOperationException("The DbContextOptionsBuilder must be configured.");
-
         Action<IServiceProvider, DbContextOptionsBuilder> setup = (sp, opts) =>
         {
             opts.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+
+            // Configure the database provider
+            var migrationsAssembly = GetMigrationsAssembly();
+            ConfigureProvider(opts, migrationsAssembly, ConnectionString, DbContextOptions);
+
+            // Allow derived classes to further configure
             DbContextOptionsBuilder(sp, opts);
         };
 
@@ -53,17 +67,32 @@ public abstract class PersistenceShellFeatureBase<TFeature, TDbContext> : IShell
         {
             options.RunMigrations[typeof(TDbContext)] = RunMigrations;
         });
-        
-        OnConfiguring(services);   
+
+        services.AddStartupTask<RunMigrationsStartupTask<TDbContext>>();
+        OnConfiguring(services);
     }
+
+    /// <summary>
+    /// Gets the assembly containing migrations for this provider.
+    /// By default, returns the assembly of the concrete feature type.
+    /// </summary>
+    protected virtual Assembly GetMigrationsAssembly() => GetType().Assembly;
+
+    /// <summary>
+    /// Configures the database provider for the specified <see cref="DbContextOptionsBuilder"/>.
+    /// </summary>
+    /// <param name="builder">The options builder to configure.</param>
+    /// <param name="migrationsAssembly">The assembly containing migrations.</param>
+    /// <param name="connectionString">The connection string to use.</param>
+    /// <param name="options">Additional options to configure the database context.</param>
+    protected abstract void ConfigureProvider(
+        DbContextOptionsBuilder builder,
+        Assembly migrationsAssembly,
+        string connectionString,
+        ElsaDbContextOptions? options);
 
     protected virtual void OnConfiguring(IServiceCollection services)
     {
-    }
-
-    protected virtual void ConfigureMigrations(IServiceCollection services)
-    {
-        services.AddStartupTask<RunMigrationsStartupTask<TDbContext>>();
     }
 
     /// <summary>

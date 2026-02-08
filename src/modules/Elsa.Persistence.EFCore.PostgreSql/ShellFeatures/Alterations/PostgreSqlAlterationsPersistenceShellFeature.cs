@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Alterations;
 using JetBrains.Annotations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Alterations;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Alterations;
 /// </summary>
 [ShellFeature(
     DisplayName = "PostgreSql Alterations Persistence",
-    Description = "Provides PostgreSql persistence for workflow alterations")]
+    Description = "Provides PostgreSql persistence for workflow alterations",
+    DependsOn = ["Alterations"])]
 [UsedImplicitly]
 public class PostgreSqlAlterationsPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreAlterationsPersistenceShellFeature, AlterationsElsaDbContext, NpgsqlDbContextOptionsBuilder>
+    : EFCoreAlterationsPersistenceShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PostgreSqlAlterationsPersistenceShellFeature"/> class.
-    /// </summary>
-    public PostgreSqlAlterationsPersistenceShellFeature()
-        : base(new PostgreSqlProviderConfigurator(typeof(PostgreSqlAlterationsPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaPostgreSql(migrationsAssembly, connectionString, options);
     }
 }

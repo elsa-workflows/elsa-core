@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Alterations;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Alterations;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Alterations;
 /// </summary>
 [ShellFeature(
     DisplayName = "MySql Alterations Persistence",
-    Description = "Provides MySql persistence for workflow alterations")]
+    Description = "Provides MySql persistence for workflow alterations",
+    DependsOn = ["Alterations"])]
 [UsedImplicitly]
 public class MySqlAlterationsPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreAlterationsPersistenceShellFeature, AlterationsElsaDbContext, MySqlDbContextOptionsBuilder>
+    : EFCoreAlterationsPersistenceShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MySqlAlterationsPersistenceShellFeature"/> class.
-    /// </summary>
-    public MySqlAlterationsPersistenceShellFeature()
-        : base(new MySqlProviderConfigurator(typeof(MySqlAlterationsPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaMySql(migrationsAssembly, connectionString, options);
     }
 }

@@ -51,11 +51,6 @@ public class WorkflowManagementFeature : IShellFeature
     private const string DataCategory = "Data";
     private const string SystemCategory = "System";
 
-    private Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowDefinitionStore>();
-    private Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInstanceStore>();
-    private Func<IServiceProvider, IWorkflowDefinitionPublisher> WorkflowDefinitionPublisher { get; set; } = sp => ActivatorUtilities.CreateInstance<WorkflowDefinitionPublisher>(sp);
-    private Func<IServiceProvider, IWorkflowReferenceQuery> WorkflowReferenceQuery { get; set; } = sp => ActivatorUtilities.CreateInstance<DefaultWorkflowReferenceQuery>(sp);
-
     /// <summary>
     /// A set of variable types to make available to the system. 
     /// </summary>
@@ -98,8 +93,8 @@ public class WorkflowManagementFeature : IShellFeature
             .AddScoped<IWorkflowDefinitionService, WorkflowDefinitionService>()
             .AddScoped<IWorkflowSerializer, WorkflowSerializer>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
-            .AddScoped(WorkflowReferenceQuery)
-            .AddScoped(WorkflowDefinitionPublisher)
+            .AddScoped<IWorkflowReferenceQuery, DefaultWorkflowReferenceQuery>()
+            .AddScoped<IWorkflowDefinitionPublisher, IWorkflowDefinitionPublisher>()
             .AddScoped<IWorkflowDefinitionImporter, WorkflowDefinitionImporter>()
             .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
             .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
@@ -116,8 +111,8 @@ public class WorkflowManagementFeature : IShellFeature
             .AddScoped<WorkflowDefinitionMapper>()
             .AddSingleton<VariableDefinitionMapper>()
             .AddSingleton<WorkflowStateMapper>()
-            .AddScoped(WorkflowInstanceStore)
-            .AddScoped(WorkflowDefinitionStore)
+            .AddScoped<IWorkflowInstanceStore, MemoryWorkflowInstanceStore>()
+            .AddScoped<IWorkflowDefinitionStore, MemoryWorkflowDefinitionStore>()
             .AddSingleton<IWorkflowDefinitionCacheManager, WorkflowDefinitionCacheManager>()
             .Decorate<IWorkflowDefinitionStore, CachingWorkflowDefinitionStore>()
             .Decorate<IWorkflowDefinitionService, CachingWorkflowDefinitionService>()

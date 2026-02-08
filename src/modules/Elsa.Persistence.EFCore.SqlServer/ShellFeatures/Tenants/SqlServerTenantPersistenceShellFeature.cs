@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Tenants;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Tenants;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Tenants;
 /// </summary>
 [ShellFeature(
     DisplayName = "SqlServer Tenant Persistence",
-    Description = "Provides SqlServer persistence for tenant management")]
+    Description = "Provides SqlServer persistence for tenant management",
+    DependsOn = ["TenantManagement"])]
 [UsedImplicitly]
 public class SqlServerTenantPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreTenantManagementShellFeature, TenantsElsaDbContext, SqlServerDbContextOptionsBuilder>
+    : EFCoreTenantManagementShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SqlServerTenantPersistenceShellFeature"/> class.
-    /// </summary>
-    public SqlServerTenantPersistenceShellFeature()
-        : base(new SqlServerProviderConfigurator(typeof(SqlServerTenantPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaSqlServer(migrationsAssembly, connectionString, options);
     }
 }

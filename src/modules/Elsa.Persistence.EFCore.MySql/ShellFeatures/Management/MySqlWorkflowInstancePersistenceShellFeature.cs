@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Management;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Management;
 /// </summary>
 [ShellFeature(
     DisplayName = "MySql Workflow Instance Persistence",
-    Description = "Provides MySql persistence for workflow instances")]
+    Description = "Provides MySql persistence for workflow instances",
+    DependsOn = ["WorkflowManagement", "WorkflowInstances"])]
 [UsedImplicitly]
 public class MySqlWorkflowInstancePersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreWorkflowInstancePersistenceShellFeature, ManagementElsaDbContext, MySqlDbContextOptionsBuilder>
+    : EFCoreWorkflowInstancePersistenceShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MySqlWorkflowInstancePersistenceShellFeature"/> class.
-    /// </summary>
-    public MySqlWorkflowInstancePersistenceShellFeature()
-        : base(new MySqlProviderConfigurator(typeof(MySqlWorkflowInstancePersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaMySql(migrationsAssembly, connectionString, options);
     }
 }

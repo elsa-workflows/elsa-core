@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Runtime;
 using JetBrains.Annotations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Runtime;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Runtime;
 /// </summary>
 [ShellFeature(
     DisplayName = "PostgreSql Workflow Runtime Persistence",
-    Description = "Provides PostgreSql persistence for workflow runtime")]
+    Description = "Provides PostgreSql persistence for workflow runtime",
+    DependsOn = ["WorkflowRuntime"])]
 [UsedImplicitly]
 public class PostgreSqlWorkflowRuntimePersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreWorkflowRuntimePersistenceShellFeature, RuntimeElsaDbContext, NpgsqlDbContextOptionsBuilder>
+    : EFCoreWorkflowRuntimePersistenceShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PostgreSqlWorkflowRuntimePersistenceShellFeature"/> class.
-    /// </summary>
-    public PostgreSqlWorkflowRuntimePersistenceShellFeature()
-        : base(new PostgreSqlProviderConfigurator(typeof(PostgreSqlWorkflowRuntimePersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaPostgreSql(migrationsAssembly, connectionString, options);
     }
 }

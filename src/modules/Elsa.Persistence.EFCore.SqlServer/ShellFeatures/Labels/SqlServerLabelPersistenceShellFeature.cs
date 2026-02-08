@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Labels;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Labels;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Labels;
 /// </summary>
 [ShellFeature(
     DisplayName = "SqlServer Label Persistence",
-    Description = "Provides SqlServer persistence for label management")]
+    Description = "Provides SqlServer persistence for label management",
+    DependsOn = ["Labels"])]
 [UsedImplicitly]
 public class SqlServerLabelPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreLabelPersistenceShellFeature, LabelsElsaDbContext, SqlServerDbContextOptionsBuilder>
+    : EFCoreLabelPersistenceShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SqlServerLabelPersistenceShellFeature"/> class.
-    /// </summary>
-    public SqlServerLabelPersistenceShellFeature()
-        : base(new SqlServerProviderConfigurator(typeof(SqlServerLabelPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaSqlServer(migrationsAssembly, connectionString, options);
     }
 }

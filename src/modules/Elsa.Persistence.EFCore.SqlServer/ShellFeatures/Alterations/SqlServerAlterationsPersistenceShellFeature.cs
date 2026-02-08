@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Alterations;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Alterations;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Alterations;
 /// </summary>
 [ShellFeature(
     DisplayName = "SqlServer Alterations Persistence",
-    Description = "Provides SqlServer persistence for workflow alterations")]
+    Description = "Provides SqlServer persistence for workflow alterations",
+    DependsOn = ["Alterations"])]
 [UsedImplicitly]
 public class SqlServerAlterationsPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreAlterationsPersistenceShellFeature, AlterationsElsaDbContext, SqlServerDbContextOptionsBuilder>
+    : EFCoreAlterationsPersistenceShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SqlServerAlterationsPersistenceShellFeature"/> class.
-    /// </summary>
-    public SqlServerAlterationsPersistenceShellFeature()
-        : base(new SqlServerProviderConfigurator(typeof(SqlServerAlterationsPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaSqlServer(migrationsAssembly, connectionString, options);
     }
 }

@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
 using JetBrains.Annotations;
-using Oracle.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Management;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Management;
 /// </summary>
 [ShellFeature(
     DisplayName = "Oracle Workflow Instance Persistence",
-    Description = "Provides Oracle persistence for workflow instances")]
+    Description = "Provides Oracle persistence for workflow instances",
+    DependsOn = ["WorkflowManagement", "WorkflowInstances"])]
 [UsedImplicitly]
 public class OracleWorkflowInstancePersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreWorkflowInstancePersistenceShellFeature, ManagementElsaDbContext, OracleDbContextOptionsBuilder>
+    : EFCoreWorkflowInstancePersistenceShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OracleWorkflowInstancePersistenceShellFeature"/> class.
-    /// </summary>
-    public OracleWorkflowInstancePersistenceShellFeature()
-        : base(new OracleProviderConfigurator(typeof(OracleWorkflowInstancePersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaOracle(migrationsAssembly, connectionString, options);
     }
 }

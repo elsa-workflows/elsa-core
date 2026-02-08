@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Identity;
 using JetBrains.Annotations;
-using Oracle.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Identity;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Identity;
 /// </summary>
 [ShellFeature(
     DisplayName = "Oracle Identity Persistence",
-    Description = "Provides Oracle persistence for identity management")]
+    Description = "Provides Oracle persistence for identity management",
+    DependsOn = ["Identity"])]
 [UsedImplicitly]
 public class OracleIdentityPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreIdentityPersistenceShellFeature, IdentityElsaDbContext, OracleDbContextOptionsBuilder>
+    : EFCoreIdentityPersistenceShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OracleIdentityPersistenceShellFeature"/> class.
-    /// </summary>
-    public OracleIdentityPersistenceShellFeature()
-        : base(new OracleProviderConfigurator(typeof(OracleIdentityPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaOracle(migrationsAssembly, connectionString, options);
     }
 }

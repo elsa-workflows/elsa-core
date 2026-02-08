@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Tenants;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Tenants;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Tenants;
 /// </summary>
 [ShellFeature(
     DisplayName = "Sqlite Tenant Persistence",
-    Description = "Provides Sqlite persistence for tenant management")]
+    Description = "Provides Sqlite persistence for tenant management",
+    DependsOn = ["TenantManagement"])]
 [UsedImplicitly]
 public class SqliteTenantPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreTenantManagementShellFeature, TenantsElsaDbContext, SqliteDbContextOptionsBuilder>
+    : EFCoreTenantManagementShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SqliteTenantPersistenceShellFeature"/> class.
-    /// </summary>
-    public SqliteTenantPersistenceShellFeature()
-        : base(new SqliteProviderConfigurator(typeof(SqliteTenantPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaSqlite(migrationsAssembly, connectionString, options);
     }
 }

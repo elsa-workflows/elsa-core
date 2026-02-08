@@ -1,5 +1,6 @@
-using CShells.Features;
+using Elsa.KeyValues.Contracts;
 using Elsa.KeyValues.Entities;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,17 +8,21 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Persistence.EFCore.Modules.Runtime;
 
 /// <summary>
-/// Configures the workflow runtime feature with Entity Framework Core persistence providers.
+/// Base class for workflow runtime persistence features.
+/// This is not a standalone shell feature - use provider-specific features.
 /// </summary>
-[ShellFeature(
-    DisplayName = "EF Core Workflow Runtime Persistence",
-    Description = "Provides Entity Framework Core persistence for workflow runtime",
-    DependsOn = ["WorkflowRuntime"])]
 [UsedImplicitly]
-public class EFCoreWorkflowRuntimePersistenceShellFeature : PersistenceShellFeatureBase<EFCoreWorkflowRuntimePersistenceShellFeature, RuntimeElsaDbContext>
+public abstract class EFCoreWorkflowRuntimePersistenceShellFeatureBase : PersistenceShellFeatureBase<RuntimeElsaDbContext>
 {
     protected override void OnConfiguring(IServiceCollection services)
     {
+        services.AddScoped<ITriggerStore, EFCoreTriggerStore>();
+        services.AddScoped<IBookmarkStore, EFCoreBookmarkStore>();
+        services.AddScoped<IBookmarkQueueStore, EFBookmarkQueueStore>();
+        services.AddScoped<IWorkflowExecutionLogStore, EFCoreWorkflowExecutionLogStore>();
+        services.AddScoped<IActivityExecutionStore, EFCoreActivityExecutionStore>();
+        services.AddScoped<IKeyValueStore, EFCoreKeyValueStore>();
+        
         AddEntityStore<StoredTrigger, EFCoreTriggerStore>(services);
         AddStore<StoredBookmark, EFCoreBookmarkStore>(services);
         AddStore<BookmarkQueueItem, EFBookmarkQueueStore>(services);

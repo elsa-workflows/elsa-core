@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Tenants;
 using JetBrains.Annotations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Tenants;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Tenants;
 /// </summary>
 [ShellFeature(
     DisplayName = "PostgreSql Tenant Persistence",
-    Description = "Provides PostgreSql persistence for tenant management")]
+    Description = "Provides PostgreSql persistence for tenant management",
+    DependsOn = ["TenantManagement"])]
 [UsedImplicitly]
 public class PostgreSqlTenantPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreTenantManagementShellFeature, TenantsElsaDbContext, NpgsqlDbContextOptionsBuilder>
+    : EFCoreTenantManagementShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PostgreSqlTenantPersistenceShellFeature"/> class.
-    /// </summary>
-    public PostgreSqlTenantPersistenceShellFeature()
-        : base(new PostgreSqlProviderConfigurator(typeof(PostgreSqlTenantPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaPostgreSql(migrationsAssembly, connectionString, options);
     }
 }

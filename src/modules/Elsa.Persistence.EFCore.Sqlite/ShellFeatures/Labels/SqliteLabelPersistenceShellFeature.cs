@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Labels;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Labels;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Labels;
 /// </summary>
 [ShellFeature(
     DisplayName = "Sqlite Label Persistence",
-    Description = "Provides Sqlite persistence for label management")]
+    Description = "Provides Sqlite persistence for label management",
+    DependsOn = ["Labels"])]
 [UsedImplicitly]
 public class SqliteLabelPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreLabelPersistenceShellFeature, LabelsElsaDbContext, SqliteDbContextOptionsBuilder>
+    : EFCoreLabelPersistenceShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SqliteLabelPersistenceShellFeature"/> class.
-    /// </summary>
-    public SqliteLabelPersistenceShellFeature()
-        : base(new SqliteProviderConfigurator(typeof(SqliteLabelPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaSqlite(migrationsAssembly, connectionString, options);
     }
 }

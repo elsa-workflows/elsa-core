@@ -1,7 +1,9 @@
+using System.Reflection;
 using CShells.Features;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Labels;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Labels;
 
@@ -10,16 +12,15 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Labels;
 /// </summary>
 [ShellFeature(
     DisplayName = "MySql Label Persistence",
-    Description = "Provides MySql persistence for label management")]
+    Description = "Provides MySql persistence for label management",
+    DependsOn = ["Labels"])]
 [UsedImplicitly]
 public class MySqlLabelPersistenceShellFeature
-    : DatabaseProviderShellFeature<EFCoreLabelPersistenceShellFeature, LabelsElsaDbContext, MySqlDbContextOptionsBuilder>
+    : EFCoreLabelPersistenceShellFeatureBase
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MySqlLabelPersistenceShellFeature"/> class.
-    /// </summary>
-    public MySqlLabelPersistenceShellFeature()
-        : base(new MySqlProviderConfigurator(typeof(MySqlLabelPersistenceShellFeature).Assembly))
+    /// <inheritdoc />
+    protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        builder.UseElsaMySql(migrationsAssembly, connectionString, options);
     }
 }

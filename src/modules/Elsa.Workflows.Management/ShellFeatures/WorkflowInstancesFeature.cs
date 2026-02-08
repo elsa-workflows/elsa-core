@@ -14,10 +14,8 @@ namespace Elsa.Workflows.Management.ShellFeatures;
 [UsedImplicitly]
 public class WorkflowInstancesFeature : IShellFeature
 {
-    private Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInstanceStore>();
-
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddScoped(WorkflowInstanceStore);
+        services.AddScoped<IWorkflowInstanceStore, MemoryWorkflowInstanceStore>();
     }
 }

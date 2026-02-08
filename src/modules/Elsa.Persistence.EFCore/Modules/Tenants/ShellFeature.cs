@@ -1,22 +1,20 @@
-using CShells.Features;
 using Elsa.Common.Multitenancy;
+using Elsa.Tenants;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EFCore.Modules.Tenants;
 
 /// <summary>
-/// Configures the tenant management feature with an Entity Framework Core persistence provider.
+/// Base class for tenant management persistence features.
+/// This is not a standalone shell feature - use provider-specific features.
 /// </summary>
-[ShellFeature(
-    DisplayName = "EF Core Tenant Management Persistence",
-    Description = "Provides Entity Framework Core persistence for tenant management",
-    DependsOn = ["TenantManagement"])]
 [UsedImplicitly]
-public class EFCoreTenantManagementShellFeature : PersistenceShellFeatureBase<EFCoreTenantManagementShellFeature, TenantsElsaDbContext>
+public abstract class EFCoreTenantManagementShellFeatureBase : PersistenceShellFeatureBase<TenantsElsaDbContext>
 {
     protected override void OnConfiguring(IServiceCollection services)
     {
+        services.AddScoped<ITenantStore, EFCoreTenantStore>();
         AddEntityStore<Tenant, EFCoreTenantStore>(services);
     }
 }
