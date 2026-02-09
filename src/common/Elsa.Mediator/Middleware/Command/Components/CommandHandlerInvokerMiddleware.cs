@@ -42,10 +42,8 @@ public class CommandHandlerInvokerMiddleware(CommandMiddlewareDelegate next) : I
         var task = (Task)executeMethodWithReturnType.Invoke(strategy, [strategyContext])!;
         await task;
 
-        // Await the task to get the result without blocking.
+        // Get result of task.
         var taskWithReturnType = typeof(Task<>).MakeGenericType(resultType);
-        var taskInstance = (Task)task!;
-        await taskInstance.ConfigureAwait(false);
         var resultProperty = taskWithReturnType.GetProperty(nameof(Task<object>.Result))!;
         context.Result = resultProperty.GetValue(task);
 

@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <Include>[Elsa.Mediator]*</Include>
+        <Threshold>0</Threshold>
     </PropertyGroup>
 
     <ItemGroup>
