@@ -40,7 +40,7 @@ public class CommandHandlerInvokerMiddleware(CommandMiddlewareDelegate next) : I
 
         // Execute command.
         var task = (Task)executeMethodWithReturnType.Invoke(strategy, [strategyContext])!;
-        await task;
+        await task.ConfigureAwait(false);
 
         // Get result of task.
         var taskWithReturnType = typeof(Task<>).MakeGenericType(resultType);
@@ -48,6 +48,6 @@ public class CommandHandlerInvokerMiddleware(CommandMiddlewareDelegate next) : I
         context.Result = resultProperty.GetValue(task);
 
         // Invoke next middleware.
-        await next(context);
+        await next(context).ConfigureAwait(false);
     }
 }

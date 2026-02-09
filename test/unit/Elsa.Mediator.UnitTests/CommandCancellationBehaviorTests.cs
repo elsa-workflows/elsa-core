@@ -38,7 +38,7 @@ public class CommandCancellationBehaviorTests
     {
         // Arrange
         using var fixture = CreateCommandSender<SlowCommandHandler>();
-        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
         // Act & Assert
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
