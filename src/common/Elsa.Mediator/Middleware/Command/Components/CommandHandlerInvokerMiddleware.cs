@@ -39,16 +39,15 @@ public class CommandHandlerInvokerMiddleware(CommandMiddlewareDelegate next) : I
         var executeMethodWithReturnType = executeMethod.MakeGenericMethod(resultType);
 
         // Execute command.
-        var task = executeMethodWithReturnType.Invoke(strategy, [strategyContext]);
+        var task = (Task)executeMethodWithReturnType.Invoke(strategy, [strategyContext])!;
+        await task.ConfigureAwait(false);
 
-        // Await the task to get the result without blocking.
+        // Get result of task.
         var taskWithReturnType = typeof(Task<>).MakeGenericType(resultType);
-        var taskInstance = (Task)task!;
-        await taskInstance.ConfigureAwait(false);
         var resultProperty = taskWithReturnType.GetProperty(nameof(Task<object>.Result))!;
         context.Result = resultProperty.GetValue(task);
 
         // Invoke next middleware.
-        await next(context);
+        await next(context).ConfigureAwait(false);
     }
 }

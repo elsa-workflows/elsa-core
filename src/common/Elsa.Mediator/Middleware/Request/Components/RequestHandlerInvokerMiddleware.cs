@@ -31,7 +31,7 @@ public class RequestHandlerInvokerMiddleware(
         var handleMethod = handlerType.GetMethod("HandleAsync")!;
         var cancellationToken = context.CancellationToken;
         var task = (Task)handleMethod.Invoke(handler, [request, cancellationToken])!;
-        await task;
+        await task.ConfigureAwait(false);
 
         // Get result of task.
         var taskWithReturnType = typeof(Task<>).MakeGenericType(responseType);
@@ -39,6 +39,6 @@ public class RequestHandlerInvokerMiddleware(
         context.Response = resultProperty.GetValue(task)!;
 
         // Invoke next middleware.
-        await next(context);
+        await next(context).ConfigureAwait(false);
     }
 }
