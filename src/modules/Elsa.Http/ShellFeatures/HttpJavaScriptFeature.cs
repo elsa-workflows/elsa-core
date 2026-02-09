@@ -10,7 +10,7 @@ namespace Elsa.Http.ShellFeatures;
 [ShellFeature(
     DisplayName = "HTTP JavaScript Integration",
     Description = "Provides JavaScript integration for HTTP activities",
-    DependencyOf = ["Http", "JavaScript"])]
+    DependsOn = ["Http", "JavaScript"])]
 public class HttpJavaScriptFeature : IShellFeature
 {
     public void ConfigureServices(IServiceCollection services)

@@ -28,7 +28,7 @@ namespace Elsa.Http.ShellFeatures;
 [ShellFeature(
     DisplayName = "HTTP",
     Description = "Provides HTTP workflow activities, endpoints, and related services",
-    DependsOn = ["HttpJavaScript", "Resilience"])]
+    DependsOn = ["Resilience"])]
 public class HttpFeature : IShellFeature
 {
     /// <summary>

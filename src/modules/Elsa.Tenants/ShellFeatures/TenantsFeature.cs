@@ -10,8 +10,7 @@ namespace Elsa.Tenants.ShellFeatures;
 /// </summary>
 [ShellFeature(
     DisplayName = "Tenants",
-    Description = "Provides multi-tenancy support for workflow isolation",
-    DependencyOf = ["Multitenancy"])]
+    Description = "Provides multi-tenancy support for workflow isolation")]
 public class TenantsFeature : IShellFeature
 {
     public void ConfigureServices(IServiceCollection services)

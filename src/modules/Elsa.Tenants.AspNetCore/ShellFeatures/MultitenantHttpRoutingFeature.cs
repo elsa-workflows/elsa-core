@@ -12,7 +12,7 @@ namespace Elsa.Tenants.AspNetCore.ShellFeatures;
 [ShellFeature(
     DisplayName = "Multi-tenant HTTP Routing",
     Description = "Enables tenant resolution and routing for HTTP requests",
-    DependencyOf = ["Http", "Tenants"])]
+    DependsOn = ["Http", "Tenants"])]
 public class MultitenantHttpRoutingFeature : IShellFeature
 {
     /// <summary>

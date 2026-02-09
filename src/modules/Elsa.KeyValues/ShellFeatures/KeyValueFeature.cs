@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.KeyValues.ShellFeatures;
 
 /// <summary>
-/// Installs and configures instance management features.
+/// Installs and configures key-value storage features.
 /// </summary>
 [ShellFeature(
     DisplayName = "Key-Value Store",
