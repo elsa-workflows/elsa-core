@@ -88,7 +88,7 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// <summary>
     /// A factory that instantiates an <see cref="IDistributedLockProvider"/>.
     /// </summary>
-    public Func<IServiceProvider, IDistributedLockProvider> DistributedLockProvider { get; set; } = _ => new FileDistributedSynchronizationProvider(new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "App_Data/locks")));
+    public Func<IServiceProvider, IDistributedLockProvider> DistributedLockProvider { get; set; } = _ => new FileDistributedSynchronizationProvider(new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "App_Data", "locks")));
 
     /// <summary>
     /// A factory that instantiates an <see cref="ITaskDispatcher"/>.
