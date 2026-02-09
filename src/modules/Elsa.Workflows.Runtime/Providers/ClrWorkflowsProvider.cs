@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Runtime.Providers;
 /// Provides workflows to the system that are registered with <see cref="WorkflowRuntimeFeature"/>
 /// </summary>
 [UsedImplicitly]
-public class    (
+public class ClrWorkflowsProvider(
     IOptions<RuntimeOptions> options,
     IWorkflowBuilderFactory workflowBuilderFactory,
     IServiceProvider serviceProvider) : IWorkflowsProvider
