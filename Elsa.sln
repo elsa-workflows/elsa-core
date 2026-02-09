@@ -329,22 +329,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dsl", "dsl", "{477C2416-312
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ModularServer.Web", "src\apps\Elsa.ModularServer.Web\Elsa.ModularServer.Web.csproj", "{E9CA9A0B-6180-4CA7-814C-FA60D1F1B6EC}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cshells", "cshells", "{71595D88-A05C-446E-B294-5CB6D91FB91F}"
-	ProjectSection(SolutionItems) = preProject
-		..\..\..\sfmskywalker\cshells\main\Directory.Packages.props = ..\..\..\sfmskywalker\cshells\main\Directory.Packages.props
-		..\..\..\sfmskywalker\cshells\main\Directory.Build.props = ..\..\..\sfmskywalker\cshells\main\Directory.Build.props
-	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CShells", "..\..\..\sfmskywalker\cshells\main\src\CShells\CShells.csproj", "{A70C589D-A498-4139-9CA9-CA82CB7864F0}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CShells.Abstractions", "..\..\..\sfmskywalker\cshells\main\src\CShells.Abstractions\CShells.Abstractions.csproj", "{E06268B5-C087-4508-86A7-8D8482759A0D}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CShells.AspNetCore.Abstractions", "..\..\..\sfmskywalker\cshells\main\src\CShells.AspNetCore.Abstractions\CShells.AspNetCore.Abstractions.csproj", "{4096D2AB-1C9D-40B9-9F5C-7235089759A5}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CShells.Providers.FluentStorage", "..\..\..\sfmskywalker\cshells\main\src\CShells.Providers.FluentStorage\CShells.Providers.FluentStorage.csproj", "{E8397C32-5BD2-4DE8-BB29-96624A9C75A0}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CShells.AspNetCore", "..\..\..\sfmskywalker\cshells\main\src\CShells.AspNetCore\CShells.AspNetCore.csproj", "{8A645D0A-F4F6-4A7E-B917-0FFCB66C50B7}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Resilience.Core.UnitTests", "test\unit\Elsa.Resilience.Core.UnitTests\Elsa.Resilience.Core.UnitTests.csproj", "{B8006D70-1630-43DB-A043-FA89FAC70F37}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Common.UnitTests", "test\unit\Elsa.Common.UnitTests\Elsa.Common.UnitTests.csproj", "{A3C07D5B-2A30-494E-B9BC-4B1594B31ABC}"
@@ -352,10 +336,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Http.IntegrationTests", "test\integration\Elsa.Http.IntegrationTests\Elsa.Http.IntegrationTests.csproj", "{8C4F6A2D-1E9F-4B3C-9D8E-7F5A6B4C3D2E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Tenants.UnitTests", "test\unit\Elsa.Tenants.UnitTests\Elsa.Tenants.UnitTests.csproj", "{DC476900-D836-4920-A696-CF8796668723}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CShells.FastEndpoints.Abstractions", "..\..\..\sfmskywalker\cshells\main\src\CShells.FastEndpoints.Abstractions\CShells.FastEndpoints.Abstractions.csproj", "{BE744448-F7F9-4807-BA5B-47D3463E4CF6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CShells.FastEndpoints", "..\..\..\sfmskywalker\cshells\main\src\CShells.FastEndpoints\CShells.FastEndpoints.csproj", "{690B7E4E-62C1-409B-BB9B-F8F55051CA27}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -617,26 +597,6 @@ Global
 		{E9CA9A0B-6180-4CA7-814C-FA60D1F1B6EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E9CA9A0B-6180-4CA7-814C-FA60D1F1B6EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E9CA9A0B-6180-4CA7-814C-FA60D1F1B6EC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A70C589D-A498-4139-9CA9-CA82CB7864F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A70C589D-A498-4139-9CA9-CA82CB7864F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A70C589D-A498-4139-9CA9-CA82CB7864F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A70C589D-A498-4139-9CA9-CA82CB7864F0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E06268B5-C087-4508-86A7-8D8482759A0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E06268B5-C087-4508-86A7-8D8482759A0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E06268B5-C087-4508-86A7-8D8482759A0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E06268B5-C087-4508-86A7-8D8482759A0D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4096D2AB-1C9D-40B9-9F5C-7235089759A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4096D2AB-1C9D-40B9-9F5C-7235089759A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4096D2AB-1C9D-40B9-9F5C-7235089759A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4096D2AB-1C9D-40B9-9F5C-7235089759A5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E8397C32-5BD2-4DE8-BB29-96624A9C75A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E8397C32-5BD2-4DE8-BB29-96624A9C75A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E8397C32-5BD2-4DE8-BB29-96624A9C75A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E8397C32-5BD2-4DE8-BB29-96624A9C75A0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8A645D0A-F4F6-4A7E-B917-0FFCB66C50B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8A645D0A-F4F6-4A7E-B917-0FFCB66C50B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8A645D0A-F4F6-4A7E-B917-0FFCB66C50B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8A645D0A-F4F6-4A7E-B917-0FFCB66C50B7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B8006D70-1630-43DB-A043-FA89FAC70F37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B8006D70-1630-43DB-A043-FA89FAC70F37}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B8006D70-1630-43DB-A043-FA89FAC70F37}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -653,14 +613,6 @@ Global
 		{DC476900-D836-4920-A696-CF8796668723}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DC476900-D836-4920-A696-CF8796668723}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DC476900-D836-4920-A696-CF8796668723}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BE744448-F7F9-4807-BA5B-47D3463E4CF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BE744448-F7F9-4807-BA5B-47D3463E4CF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BE744448-F7F9-4807-BA5B-47D3463E4CF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BE744448-F7F9-4807-BA5B-47D3463E4CF6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{690B7E4E-62C1-409B-BB9B-F8F55051CA27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{690B7E4E-62C1-409B-BB9B-F8F55051CA27}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{690B7E4E-62C1-409B-BB9B-F8F55051CA27}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{690B7E4E-62C1-409B-BB9B-F8F55051CA27}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -763,17 +715,10 @@ Global
 		{477C2416-312D-46AE-BCD6-8FA1FAB43624} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{874F5A44-DB06-47AB-A18C-2D13942E0147} = {477C2416-312D-46AE-BCD6-8FA1FAB43624}
 		{E9CA9A0B-6180-4CA7-814C-FA60D1F1B6EC} = {D92BEAB2-60D6-4BB4-885A-6BA681C6CCF1}
-		{A70C589D-A498-4139-9CA9-CA82CB7864F0} = {71595D88-A05C-446E-B294-5CB6D91FB91F}
-		{E06268B5-C087-4508-86A7-8D8482759A0D} = {71595D88-A05C-446E-B294-5CB6D91FB91F}
-		{4096D2AB-1C9D-40B9-9F5C-7235089759A5} = {71595D88-A05C-446E-B294-5CB6D91FB91F}
-		{E8397C32-5BD2-4DE8-BB29-96624A9C75A0} = {71595D88-A05C-446E-B294-5CB6D91FB91F}
-		{8A645D0A-F4F6-4A7E-B917-0FFCB66C50B7} = {71595D88-A05C-446E-B294-5CB6D91FB91F}
 		{B8006D70-1630-43DB-A043-FA89FAC70F37} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{A3C07D5B-2A30-494E-B9BC-4B1594B31ABC} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{8C4F6A2D-1E9F-4B3C-9D8E-7F5A6B4C3D2E} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
 		{DC476900-D836-4920-A696-CF8796668723} = {18453B51-25EB-4317-A4B3-B10518252E92}
-		{BE744448-F7F9-4807-BA5B-47D3463E4CF6} = {71595D88-A05C-446E-B294-5CB6D91FB91F}
-		{690B7E4E-62C1-409B-BB9B-F8F55051CA27} = {71595D88-A05C-446E-B294-5CB6D91FB91F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

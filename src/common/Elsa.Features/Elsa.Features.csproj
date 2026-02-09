@@ -8,13 +8,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-<!--        <PackageReference Include="CShells.Abstractions"/>-->
+        <PackageReference Include="CShells.Abstractions"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\..\..\..\..\..\sfmskywalker\cshells\main\src\CShells.Abstractions\CShells.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

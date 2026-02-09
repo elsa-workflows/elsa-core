@@ -1,10 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-<!--    <ItemGroup>-->
-<!--        <PackageReference Include="CShells.AspNetCore"/>-->
-<!--    </ItemGroup>-->
     <ItemGroup>
-      <ProjectReference Include="..\..\..\..\..\..\sfmskywalker\cshells\main\src\CShells.AspNetCore\CShells.AspNetCore.csproj" />
-      <ProjectReference Include="..\..\..\..\..\..\sfmskywalker\cshells\main\src\CShells.FastEndpoints\CShells.FastEndpoints.csproj" />
+        <PackageReference Include="CShells.AspNetCore"/>
+        <PackageReference Include="CShells.FastEndpoints"/>
+    </ItemGroup>
+    <ItemGroup>
       <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Resilience\Elsa.Resilience.csproj" />

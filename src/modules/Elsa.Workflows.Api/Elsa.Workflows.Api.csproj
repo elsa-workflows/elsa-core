@@ -6,9 +6,12 @@
         </Description>
         <PackageTags>elsa module workflows api</PackageTags>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="CShells.FastEndpoints.Abstractions" />
+    </ItemGroup>
 	
     <ItemGroup>
-        <ProjectReference Include="..\..\..\..\..\..\sfmskywalker\cshells\main\src\CShells.FastEndpoints.Abstractions\CShells.FastEndpoints.Abstractions.csproj" />
         <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
         <ProjectReference Include="..\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj" />
         <ProjectReference Include="..\Elsa.SasTokens\Elsa.SasTokens.csproj" />
