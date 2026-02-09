@@ -182,7 +182,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         }
 
         // When doing a custom SQL query (Bulk Upsert), none of the installed query filters will be applied. Hence, we are assigning the current tenant ID explicitly.
-        var tenantId = serviceProvider.GetRequiredService<ITenantAccessor>().Tenant?.Id;
+        var tenantId = serviceProvider.GetRequiredService<ITenantAccessor>().TenantId;
         foreach (var entity in entityList)
         {
             if (entity is Entity entityWithTenant)

@@ -32,6 +32,6 @@ public class TenantAwareDbContextFactory<TDbContext>(
     private void SetTenantId(TDbContext context)
     {
         if (context is ElsaDbContextBase elsaContext) 
-            elsaContext.TenantId = tenantAccessor.Tenant?.Id;
+            elsaContext.TenantId = tenantAccessor.TenantId;
     }
 }
