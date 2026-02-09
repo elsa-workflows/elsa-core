@@ -87,7 +87,6 @@ public class WorkflowsFeature : IShellFeature
             .AddScoped<IActivitySchedulerFactory, ActivitySchedulerFactory>()
             .AddSingleton<IWorkflowExecutionContextSchedulerStrategy, WorkflowExecutionContextSchedulerStrategy>()
             .AddSingleton<IActivityExecutionContextSchedulerStrategy, ActivityExecutionContextSchedulerStrategy>()
-            .AddScoped<ICommitStateHandler, NoopCommitStateHandler>()
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IStimulusHasher, StimulusHasher>()
             .AddSingleton<IIdentityGenerator, ShortGuidIdentityGenerator>()
@@ -179,5 +178,8 @@ public class WorkflowsFeature : IShellFeature
 
         // Register FlowchartOptions
         services.AddOptions<FlowchartOptions>();
+        
+        // Overridable services
+        services.AddScoped<ICommitStateHandler, NoopCommitStateHandler>();
     }
 }

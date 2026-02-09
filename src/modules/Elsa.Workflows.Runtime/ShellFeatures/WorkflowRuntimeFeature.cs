@@ -2,6 +2,7 @@ using CShells.Features;
 using Elsa.Common.RecurringTasks;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
@@ -194,7 +195,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             .AddScoped<IActivityPropertyLogPersistenceEvaluator, ActivityPropertyLogPersistenceEvaluator>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
-            .AddScoped<DefaultCommitStateHandler>()
+            .AddScoped<ICommitStateHandler, DefaultCommitStateHandler>()
             .AddScoped<WorkflowHeartbeatGeneratorFactory>()
 
             // Deprecated services.

@@ -7,6 +7,7 @@
       <ProjectReference Include="..\..\..\..\..\..\sfmskywalker\cshells\main\src\CShells.FastEndpoints\CShells.FastEndpoints.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.Resilience\Elsa.Resilience.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
       <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
     </ItemGroup>
