@@ -17,6 +17,10 @@ using Elsa.Workflows.ComponentTests.Scenarios.HostMethodActivities;
 using Elsa.Workflows.ComponentTests.WorkflowProviders;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
+using Elsa.Tenants;
+using Elsa.Tenants.Extensions;
+using Elsa.Common.Features;
+using Elsa.Workflows.ComponentTests.Services;
 using FluentStorage;
 using JetBrains.Annotations;
 using Medallion.Threading;
@@ -105,6 +109,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     });
                     runtime.UseCache();
                     runtime.UseDistributedRuntime();
+                    // Use test-specific bookmark queue worker without throttling to prevent timeouts
+                    runtime.BookmarkQueueWorker = sp => sp.GetRequiredService<TestBookmarkQueueWorker>();
                 });
                 elsa.UseJavaScript(options =>
                 {
@@ -126,21 +132,31 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     http.UseCache();
                 });
+
+                // Ensure a consistent tenant context for tests.
+                elsa.Configure<MultitenancyFeature>(feature => feature.UseTenantsProvider(_ => new TestTenantsProvider(string.Empty, "Tenant1", "Tenant2", "Tenant3")));
+                elsa.UseTenants(tenants =>
+                {
+                    tenants.ConfigureMultitenancy(options =>
+                        options.TenantResolverPipelineBuilder = new TenantResolverPipelineBuilder()
+                            .Append<ComponentTestTenantResolver>());
+                });
             };
         }
 
         builder.ConfigureTestServices(services =>
         {
-            // Decorate IDistributedLockProvider with TestDistributedLockProvider so tests use it
-            services.Decorate<IDistributedLockProvider, TestDistributedLockProvider>();
-            
-            // Also register TestDistributedLockProvider as itself so tests can access it directly for configuration
+            // Decorate IDistributedLockProvider with SelectiveMockLockProvider
+            // This allows tests to selectively mock specific locks without affecting background operations
+            services.Decorate<IDistributedLockProvider, SelectiveMockLockProvider>();
+
+            // Register SelectiveMockLockProvider as itself so tests can access it for configuration
             services.AddSingleton(sp =>
             {
                 var provider = sp.GetRequiredService<IDistributedLockProvider>();
-                if (provider is not TestDistributedLockProvider testProvider)
-                    throw new InvalidOperationException($"Expected IDistributedLockProvider to be decorated with TestDistributedLockProvider, but got {provider.GetType().Name}");
-                return testProvider;
+                if (provider is not SelectiveMockLockProvider selectiveProvider)
+                    throw new InvalidOperationException($"Expected IDistributedLockProvider to be decorated with SelectiveMockLockProvider, but got {provider.GetType().Name}");
+                return selectiveProvider;
             });
 
             services
@@ -154,7 +170,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 .AddWorkflowsProvider<TestWorkflowProvider>()
                 .AddNotificationHandlersFrom<WorkflowEventHandlers>()
                 .Decorate<IChangeTokenSignaler, EventPublishingChangeTokenSignaler>()
-                .Decorate<IDistributedLockProvider, TestDistributedLockProvider>()
+                .AddSingleton<TestBookmarkQueueWorker>()
                 ;
         });
     }

@@ -6,7 +6,7 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <Threshold>36</Threshold>
+        <Threshold>25</Threshold>
     </PropertyGroup>
 
     <ItemGroup>

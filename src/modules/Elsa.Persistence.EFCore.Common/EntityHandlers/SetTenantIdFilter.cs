@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
+using Elsa.Common.Multitenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
@@ -25,7 +26,7 @@ public class SetTenantIdFilter : IEntityModelCreatingHandler
     {
         var parameter = Expression.Parameter(clrType, "e");
 
-        // e => EF.Property<string>(e, "TenantId") == this.TenantId
+        // e => EF.Property<string>(e, "TenantId") == this.TenantId || EF.Property<string>(e, "TenantId") == "*"
         var tenantIdProperty = Expression.Call(
             typeof(EF),
             nameof(EF.Property),
@@ -37,7 +38,9 @@ public class SetTenantIdFilter : IEntityModelCreatingHandler
             Expression.Constant(dbContext),
             nameof(ElsaDbContextBase.TenantId));
 
-        var body = Expression.Equal(tenantIdProperty, tenantIdOnContext);
+        var equalityCheck = Expression.Equal(tenantIdProperty, tenantIdOnContext);
+        var agnosticCheck = Expression.Equal(tenantIdProperty, Expression.Constant(Tenant.AgnosticTenantId, typeof(string)));
+        var body = Expression.OrElse(equalityCheck, agnosticCheck);
 
         return Expression.Lambda(body, parameter);
     }

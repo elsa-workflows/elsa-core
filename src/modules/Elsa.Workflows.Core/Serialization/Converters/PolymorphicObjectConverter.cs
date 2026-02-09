@@ -242,6 +242,15 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             return;
         }
 
+        // If the value was serialized as a primitive by another converter,
+        // write it directly instead of assuming an object structure.
+        if (jsonElement.ValueKind != JsonValueKind.Object &&
+            jsonElement.ValueKind != JsonValueKind.Array)
+        {
+            jsonElement.WriteTo(writer);
+            return;
+        }
+
         writer.WriteStartObject();
 
         if (jsonElement.ValueKind == JsonValueKind.Array)
