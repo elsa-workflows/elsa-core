@@ -11,10 +11,10 @@ public class CommandCancellationBehaviorTests
     public async Task SendAsync_WithSuccessfulCommand_ReturnsResult()
     {
         // Arrange
-        var commandSender = CreateCommandSender<EchoCommandHandler>();
+        using var fixture = CreateCommandSender<EchoCommandHandler>();
 
         // Act
-        var result = await commandSender.SendAsync(new EchoCommand("Hello"));
+        var result = await fixture.CommandSender.SendAsync(new EchoCommand("Hello"));
 
         // Assert
         Assert.Equal("Hello", result);
@@ -24,55 +24,55 @@ public class CommandCancellationBehaviorTests
     public async Task SendAsync_WithCancelledToken_ThrowsOperationCanceledException()
     {
         // Arrange
-        var commandSender = CreateCommandSender<SlowCommandHandler>();
+        using var fixture = CreateCommandSender<SlowCommandHandler>();
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
         // Act & Assert
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => commandSender.SendAsync(new SlowCommand(), cts.Token));
+            () => fixture.CommandSender.SendAsync(new SlowCommand(), cts.Token));
     }
 
     [Fact]
     public async Task SendAsync_WithTimeout_ThrowsOperationCanceledException()
     {
         // Arrange
-        var commandSender = CreateCommandSender<SlowCommandHandler>();
+        using var fixture = CreateCommandSender<SlowCommandHandler>();
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
 
         // Act & Assert
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => commandSender.SendAsync(new SlowCommand(), cts.Token));
+            () => fixture.CommandSender.SendAsync(new SlowCommand(), cts.Token));
     }
 
     [Fact]
     public async Task SendAsync_WithSelfCancellingHandler_ThrowsTaskCanceledException()
     {
         // Arrange
-        var commandSender = CreateCommandSender<SelfCancellingCommandHandler>();
+        using var fixture = CreateCommandSender<SelfCancellingCommandHandler>();
         using var cts = new CancellationTokenSource();
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => commandSender.SendAsync(new SelfCancellingCommand(cts)));
+        await Assert.ThrowsAsync<TaskCanceledException>(
+            () => fixture.CommandSender.SendAsync(new SelfCancellingCommand(cts)));
     }
 
     [Fact]
     public async Task SendAsync_WithFailingHandler_ThrowsOriginalException()
     {
         // Arrange
-        var commandSender = CreateCommandSender<FailingCommandHandler>();
+        using var fixture = CreateCommandSender<FailingCommandHandler>();
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => commandSender.SendAsync(new FailingCommand("Test error")));
+            () => fixture.CommandSender.SendAsync(new FailingCommand("Test error")));
 
         Assert.Equal("Test error", ex.Message);
     }
 
     #region Helpers
 
-    private static ICommandSender CreateCommandSender<THandler>() where THandler : class, ICommandHandler
+    private static CommandSenderFixture CreateCommandSender<THandler>() where THandler : class, ICommandHandler
     {
         var services = new ServiceCollection();
         services.AddLogging(b => b.SetMinimumLevel(LogLevel.Warning));
@@ -80,7 +80,19 @@ public class CommandCancellationBehaviorTests
         services.AddCommandHandler<THandler>();
 
         var provider = services.BuildServiceProvider();
-        return provider.CreateScope().ServiceProvider.GetRequiredService<ICommandSender>();
+        var scope = provider.CreateScope();
+        return new CommandSenderFixture(provider, scope);
+    }
+
+    private sealed class CommandSenderFixture(ServiceProvider provider, IServiceScope scope) : IDisposable
+    {
+        public ICommandSender CommandSender => scope.ServiceProvider.GetRequiredService<ICommandSender>();
+
+        public void Dispose()
+        {
+            scope.Dispose();
+            provider.Dispose();
+        }
     }
 
     #endregion
@@ -106,7 +118,7 @@ public class CommandCancellationBehaviorTests
     {
         public async Task<Unit> HandleAsync(SlowCommand command, CancellationToken cancellationToken)
         {
-            await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
+            await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
             return Unit.Instance;
         }
     }

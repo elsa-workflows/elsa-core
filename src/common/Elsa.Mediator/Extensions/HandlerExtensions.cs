@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Middleware.Command;
 using Elsa.Mediator.Middleware.Notification;
@@ -54,7 +55,8 @@ public static class HandlerExtensions
         }
         catch (TargetInvocationException ex) when (ex.InnerException is not null)
         {
-            throw ex.InnerException;
+            ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+            throw; // Unreachable, but required for compiler
         }
     }
 
@@ -75,7 +77,8 @@ public static class HandlerExtensions
         }
         catch (TargetInvocationException ex) when (ex.InnerException is not null)
         {
-            throw ex.InnerException;
+            ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+            throw; // Unreachable, but required for compiler
         }
     }
 }
