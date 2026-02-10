@@ -10,6 +10,7 @@ public class DefaultWorkflowRegistry(IWorkflowDefinitionStorePopulator populator
     public async Task RegisterAsync(Workflow workflow, CancellationToken cancellationToken = default)
     {
         var materializedWorkflow = new MaterializedWorkflow(workflow, nameof(DefaultWorkflowRegistry), TypedWorkflowMaterializer.MaterializerName);
-        await populator.AddAsync(materializedWorkflow, cancellationToken);
+        var result = await populator.AddAsync(materializedWorkflow, cancellationToken);
+        result.ThrowIfFailure();
     }
 }

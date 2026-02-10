@@ -76,6 +76,17 @@ public class Result<T>(bool success, T? value, Exception? exception)
 
         return this;
     }
+
+    /// <summary>
+    /// Throws the exception if the result is a failure.
+    /// </summary>
+    public Result<T> ThrowIfFailure()
+    {
+        if (!IsSuccess && Exception != null)
+            throw Exception;
+
+        return this;
+    }
 }
 
 /// <summary>
