@@ -1,6 +1,7 @@
 using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
+using Elsa.Expressions.Models;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
@@ -83,8 +84,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
                     continue;
                 }
 
-                var workflowDefinition = await AddAsync(result, indexTriggers, cancellationToken);
-                workflowDefinitions.Add(workflowDefinition);
+                var addResult = await AddAsync(result, indexTriggers, cancellationToken);
+                addResult.OnSuccess(workflowDefinition => workflowDefinitions.Add(workflowDefinition));
             }
         }
 
@@ -92,21 +93,22 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     }
 
     /// <inheritdoc />
-    public Task<WorkflowDefinition> AddAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
+    public Task<Result<WorkflowDefinition>> AddAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
     {
         return AddAsync(materializedWorkflow, true, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition> AddAsync(MaterializedWorkflow materializedWorkflow, bool indexTriggers, CancellationToken cancellationToken = default)
+    public async Task<Result<WorkflowDefinition>> AddAsync(MaterializedWorkflow materializedWorkflow, bool indexTriggers, CancellationToken cancellationToken = default)
     {
         await AssignIdentities(materializedWorkflow.Workflow, cancellationToken);
-        var workflowDefinition = await AddOrUpdateAsync(materializedWorkflow, cancellationToken);
+        var result = await AddOrUpdateAsync(materializedWorkflow, cancellationToken);
 
-        if (indexTriggers && workflowDefinition.IsPublished)
-            await _triggerIndexer.IndexTriggersAsync(workflowDefinition, cancellationToken);
-
-        return workflowDefinition;
+        return await result.OnSuccessAsync(async workflowDefinition =>
+        {
+            if (indexTriggers && workflowDefinition.IsPublished)
+                await _triggerIndexer.IndexTriggersAsync(workflowDefinition, cancellationToken);
+        });
     }
 
     private async Task AssignIdentities(Workflow workflow, CancellationToken cancellationToken)
@@ -114,13 +116,23 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         await _identityGraphService.AssignIdentitiesAsync(workflow, cancellationToken);
     }
 
-    private async Task<WorkflowDefinition> AddOrUpdateAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
+    private async Task<Result<WorkflowDefinition>> AddOrUpdateAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
     {
         await _semaphore.WaitAsync(cancellationToken);
 
         try
         {
-            return await AddOrUpdateCoreAsync(materializedWorkflow, cancellationToken);
+            var workflowDefinition = await AddOrUpdateCoreAsync(materializedWorkflow, cancellationToken);
+            return Result.Success(workflowDefinition);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "An error occurred while populating the workflow definition store for workflow {WorkflowId} (Name: {WorkflowName}, Version: {Version})",
+                materializedWorkflow.Workflow.Identity.DefinitionId,
+                materializedWorkflow.Workflow.WorkflowMetadata.Name,
+                materializedWorkflow.Workflow.Identity.Version);
+
+            return Result.Failure<WorkflowDefinition>(e);
         }
         finally
         {
