@@ -11,9 +11,22 @@ public class Result<T>(bool success, T? value, Exception? exception)
     public bool IsSuccess { get; } = success;
 
     /// <summary>
-    /// The result value.
+    /// The result value. Throws an exception if accessed when the result is a failure.
     /// </summary>
-    public T Value { get; } = value!;
+    public T Value
+    {
+        get
+        {
+            if (!IsSuccess)
+                throw new InvalidOperationException("Cannot access Value on a failed result. Check IsSuccess first or use ValueOrDefault.", Exception);
+            return value!;
+        }
+    }
+
+    /// <summary>
+    /// The result value, or null/default if the result is a failure. Useful when null is a valid success value.
+    /// </summary>
+    public T? ValueOrDefault => value;
 
     /// <summary>
     /// Any exception that may have occurred during the operation.
