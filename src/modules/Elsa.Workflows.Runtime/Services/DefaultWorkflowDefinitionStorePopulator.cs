@@ -1,7 +1,6 @@
 using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
-using Elsa.Expressions.Models;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
