@@ -112,11 +112,7 @@ public class WorkflowManagementFeature : IShellFeature
             .AddSingleton<VariableDefinitionMapper>()
             .AddSingleton<WorkflowStateMapper>()
             .AddScoped<IWorkflowInstanceStore, MemoryWorkflowInstanceStore>()
-            .AddScoped<IWorkflowDefinitionStore, MemoryWorkflowDefinitionStore>()
-            .AddSingleton<IWorkflowDefinitionCacheManager, WorkflowDefinitionCacheManager>()
-            .Decorate<IWorkflowDefinitionStore, CachingWorkflowDefinitionStore>()
-            .Decorate<IWorkflowDefinitionService, CachingWorkflowDefinitionService>()
-            .AddNotificationHandler<EvictWorkflowDefinitionServiceCache>();
+            .AddScoped<IWorkflowDefinitionStore, MemoryWorkflowDefinitionStore>();
 
         services
             .AddNotificationHandler<DeleteWorkflowInstances>()

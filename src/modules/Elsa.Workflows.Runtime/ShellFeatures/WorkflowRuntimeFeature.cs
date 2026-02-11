@@ -134,10 +134,6 @@ public class WorkflowRuntimeFeature : IShellFeature
         {
             options.Channels.AddRange(WorkflowDispatcherChannels.Values);
         });
-        services.Configure<RecurringTaskOptions>(options =>
-        {
-            options.Schedule.ConfigureTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10));
-        });
 
         services
             // Core.
@@ -182,9 +178,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<IBookmarkResumer, BookmarkResumer>()
             .AddScoped<IBookmarkQueue, StoreBookmarkQueue>()
             .AddScoped(WorkflowResumer)
-            .AddScoped<WorkflowResumer>()
             .AddScoped(BookmarkQueueWorker)
-            .AddScoped<BookmarkQueueWorker>()
             .AddScoped<ITriggerInvoker, TriggerInvoker>()
             .AddScoped<IWorkflowCanceler, WorkflowCanceler>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
@@ -262,13 +256,5 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddScoped<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
-        
-        services
-            // Decorators.
-            .Decorate<ITriggerStore, CachingTriggerStore>()
-
-            // Handlers.
-            .AddNotificationHandler<InvalidateTriggersCache>()
-            .AddNotificationHandler<InvalidateWorkflowsCache>();
     }
 }

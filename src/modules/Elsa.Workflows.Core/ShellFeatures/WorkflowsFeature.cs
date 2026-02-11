@@ -172,12 +172,6 @@ public class WorkflowsFeature : IShellFeature
 
             // Logging
             .AddLogging();
-
-        // Flowchart
-        services.AddSerializationOptionsConfigurator<FlowchartSerializationOptionConfigurator>();
-
-        // Register FlowchartOptions
-        services.AddOptions<FlowchartOptions>();
         
         // Overridable services
         services.AddScoped<ICommitStateHandler, NoopCommitStateHandler>();

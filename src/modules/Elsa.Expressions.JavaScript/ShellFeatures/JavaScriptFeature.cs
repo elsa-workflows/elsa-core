@@ -37,7 +37,6 @@ public class JavaScriptFeature : IShellFeature
         // JavaScript services.
         services
             .AddScoped<IJavaScriptEvaluator, JintJavaScriptEvaluator>()
-            .AddScoped<ITypeDefinitionService, TypeDefinitionService>()
             .AddExpressionDescriptorProvider<JavaScriptExpressionDescriptorProvider>();
 
         // Type definition services.
