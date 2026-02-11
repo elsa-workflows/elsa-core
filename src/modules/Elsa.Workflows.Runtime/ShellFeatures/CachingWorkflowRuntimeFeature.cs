@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Runtime.ShellFeatures;
 [ShellFeature(
     DisplayName = "Caching Workflow Runtime",
     Description = "Provides caching for workflow runtime operations",
-    DependsOn = ["MemoryCache"])]
+    DependsOn = ["MemoryCache", "WorkflowRuntime"])]
 [UsedImplicitly]
 public class CachingWorkflowRuntimeFeature : IShellFeature
 {
