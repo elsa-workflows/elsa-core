@@ -21,7 +21,7 @@ public class Tests
         var result = value.TryConvertTo<int>(_objectConverterOptions);
 
         // Assert
-        Assert.True(result.Success);
+        Assert.True(result.IsSuccess);
         Assert.Equal(42, result.Value);
     }
 
@@ -35,7 +35,7 @@ public class Tests
         var result = value.TryConvertTo<int>(_objectConverterOptions);
 
         // Assert
-        Assert.True(result.Success);
+        Assert.True(result.IsSuccess);
         Assert.Equal(42, result.Value);
     }
 
@@ -49,7 +49,7 @@ public class Tests
         var result = value.TryConvertTo<int>(_objectConverterOptions);
 
         // Assert
-        Assert.False(result.Success);
+        Assert.False(result.IsSuccess);
         Assert.NotNull(result.Exception);
     }
 
@@ -63,7 +63,7 @@ public class Tests
         var result = value.TryConvertTo<Dictionary<string, object>>(_objectConverterOptions);
 
         // Assert
-        Assert.False(result.Success);
+        Assert.False(result.IsSuccess);
         Assert.NotNull(result.Exception);
     }
 

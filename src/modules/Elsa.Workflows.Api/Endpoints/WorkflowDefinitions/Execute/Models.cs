@@ -64,7 +64,7 @@ public class GetRequest : IExecutionRequest
             }
         });
 
-        return result?.Success == true ? (IDictionary<string, object>?)result.Value : null;
+        return result?.IsSuccess == true ? (IDictionary<string, object>?)result.Value : null;
     }
 }
 

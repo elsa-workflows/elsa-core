@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 
@@ -26,7 +27,7 @@ public interface IWorkflowDefinitionStorePopulator
     /// </summary>
     /// <param name="materializedWorkflow">A materialized workflow.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
-    Task<WorkflowDefinition> AddAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default);
+    Task<Result<WorkflowDefinition>> AddAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Adds a workflow definition to the store.
@@ -34,5 +35,5 @@ public interface IWorkflowDefinitionStorePopulator
     /// <param name="materializedWorkflow">A materialized workflow.</param>
     /// <param name="indexTriggers">Whether to index triggers.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
-    Task<WorkflowDefinition> AddAsync(MaterializedWorkflow materializedWorkflow, bool indexTriggers, CancellationToken cancellationToken = default);
+    Task<Result<WorkflowDefinition>> AddAsync(MaterializedWorkflow materializedWorkflow, bool indexTriggers, CancellationToken cancellationToken = default);
 }
