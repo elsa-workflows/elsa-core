@@ -298,6 +298,7 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
     {
         var tenantAccessor = Substitute.For<ITenantAccessor>();
         tenantAccessor.Tenant.Returns(tenantId != null ? new Tenant { Id = tenantId } : null);
+        tenantAccessor.TenantId.Returns(tenantId.NormalizeTenantId());
 
         var provider = Substitute.For<IWorkflowsProvider>();
         provider.Name.Returns("TestProvider");
