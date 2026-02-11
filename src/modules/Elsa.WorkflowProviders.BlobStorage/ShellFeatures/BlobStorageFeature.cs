@@ -42,8 +42,11 @@ public class BlobStorageFeature : IShellFeature
     /// </summary>
     public static string GetDefaultWorkflowsDirectory()
     {
-        var entryAssemblyDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!;
-        var directory = Path.Combine(entryAssemblyDir, "Workflows");
+        var entryAssembly = Assembly.GetEntryAssembly();
+        var entryAssemblyDir = entryAssembly != null 
+            ? Path.GetDirectoryName(entryAssembly.Location) 
+            : AppContext.BaseDirectory;
+        var directory = Path.Combine(entryAssemblyDir!, "Workflows");
         return directory;
     }
 }

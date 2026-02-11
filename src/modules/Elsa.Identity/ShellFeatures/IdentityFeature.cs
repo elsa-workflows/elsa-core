@@ -56,8 +56,8 @@ public class IdentityFeature : IFastEndpointsShellFeature
 
     public void ConfigureServices(IServiceCollection services)
     {
-        // Configure options with defaults
-        services.Configure<IdentityTokenOptions>(options => { options.SigningKey = "A really long signing key that should be replaced with something more secure."; });
+        // Configure options - Note: SigningKey must be configured by the application for security
+        services.Configure<IdentityTokenOptions>(_ => { });
         services.Configure<ApiKeyOptions>(ApiKeyDefaults.AuthenticationScheme, options =>
         {
             options.Realm = "Elsa Workflows";

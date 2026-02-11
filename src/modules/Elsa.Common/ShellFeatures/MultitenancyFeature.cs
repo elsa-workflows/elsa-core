@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.ShellFeatures;
 
+[ShellFeature("Multitenancy")]
 public class MultitenancyFeature : IShellFeature
 {
     private readonly Func<IServiceProvider, ITenantsProvider> _tenantsProviderFactory = sp => sp.GetRequiredService<DefaultTenantsProvider>();

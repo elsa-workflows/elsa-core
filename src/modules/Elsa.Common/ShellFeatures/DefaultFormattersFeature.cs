@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.ShellFeatures;
 
+[ShellFeature("DefaultFormatters")]
 public class DefaultFormattersFeature : IShellFeature
 {
     public void ConfigureServices(IServiceCollection services)

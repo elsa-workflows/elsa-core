@@ -23,7 +23,7 @@ public abstract class PersistenceShellFeatureBase<TDbContext> : IShellFeature
     public bool RunMigrations { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets the lifetime of the <see cref="IDbContextFactory{TContext}"/>. Defaults to <see cref="ServiceLifetime.Singleton"/>.
+    /// Gets or sets the lifetime of the <see cref="IDbContextFactory{TContext}"/>. Defaults to <see cref="ServiceLifetime.Scoped"/>.
     /// </summary>
     public ServiceLifetime DbContextFactoryLifetime { get; set; } = ServiceLifetime.Scoped;
 
