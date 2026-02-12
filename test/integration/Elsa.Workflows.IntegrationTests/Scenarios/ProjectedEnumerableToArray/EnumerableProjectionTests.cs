@@ -22,7 +22,6 @@ public class EnumerableProjectionTests(ITestOutputHelper testOutputHelper)
         // Assert
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus); // If conversion failed, workflow will have faulted.
         var variableManager = _fixture.Services.GetRequiredService<IWorkflowInstanceVariableManager>();
-
         var messagesVariable = (await variableManager.GetVariablesAsync(result.WorkflowExecutionContext)).FirstOrDefault(x => x.Variable.Name == "Messages");
         var messages = messagesVariable?.Value.ConvertTo<string[]>();
         
