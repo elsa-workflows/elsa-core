@@ -35,8 +35,9 @@ public class ShellInstalledFeatureProvider : IInstalledFeatureProvider
     /// <inheritdoc />
     public FeatureDescriptor? Find(string fullName)
     {
-        var shellFeature = _shellFeatures.FirstOrDefault(sf =>
-            MapToFullName(sf) == fullName);
+        var shellFeature = _shellFeatures
+            .Where(sf => sf.StartupType != null)
+            .FirstOrDefault(sf => MapToFullName(sf) == fullName);
 
         return shellFeature != null ? MapToElsaFeatureDescriptor(shellFeature) : null;
     }

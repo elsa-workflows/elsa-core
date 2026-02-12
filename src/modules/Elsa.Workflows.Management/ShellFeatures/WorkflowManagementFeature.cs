@@ -56,7 +56,7 @@ public class WorkflowManagementFeature : IShellFeature
     /// </summary>
     public HashSet<VariableDescriptor> VariableDescriptors { get; } =
     [
-        new(typeof(object), PrimitivesCategory, "The root class for all object in the CLR System."),
+        new(typeof(object), PrimitivesCategory, "The root class for all objects in the CLR System."),
         new(typeof(string), PrimitivesCategory, "Represents a static string of characters."),
         new(typeof(bool), PrimitivesCategory, "Represents a true or false value."),
         new(typeof(int), PrimitivesCategory, "A 32 bit integer."),
