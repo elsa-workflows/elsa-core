@@ -129,7 +129,7 @@ public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedSt
     }
 
     /// <inheritdoc />
-    public async Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
+    public async Task<bool> GetIsNameUnique(string name, string? definitionId = null, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(nameof(GetIsNameUnique), name, definitionId);
         return await GetOrCreateAsync(cacheKey, () => decoratedStore.GetIsNameUnique(name, definitionId, cancellationToken));

@@ -5,6 +5,9 @@
     </PropertyGroup>
     <!-- Conditional package versions for .NET 8/9 compatibility -->
     <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net9.0'">
+        <PackageVersion Include="FastEndpoints" Version="7.0.0"/>
+        <PackageVersion Include="FastEndpoints.Security" Version="7.0.0"/>
+        <PackageVersion Include="FastEndpoints.Swagger" Version="7.0.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="9.0.11"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components" Version="9.0.11"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.11"/>
@@ -31,18 +34,21 @@
         <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.11"/>
         <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="9.0.11"/>
         <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.10.0"/>
-        <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.11"/>
-        <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.11"/>
-        <PackageVersion Include="Microsoft.Extensions.Resilience" Version="9.10.0"/>
         <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.11"/>
         <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.11"/>
         <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.11"/>
+        <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.11"/>
+        <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.11"/>
+        <PackageVersion Include="Microsoft.Extensions.Resilience" Version="9.10.0"/>
 		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="9.23.26000"/>
         <PackageVersion Include="Scrutor" Version="6.1.0"/>
     </ItemGroup>
     <!-- .NET 10 specific package versions -->
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        <PackageVersion Include="FastEndpoints" Version="7.2.0"/>
+        <PackageVersion Include="FastEndpoints.Security" Version="7.2.0"/>
+        <PackageVersion Include="FastEndpoints.Swagger" Version="7.2.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="10.0.1"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components" Version="10.0.1"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.1"/>
@@ -94,14 +100,17 @@
         <PackageVersion Include="coverlet.collector" Version="6.0.4" PrivateAssets="All"/>
         <PackageVersion Include="coverlet.msbuild" Version="6.0.4" PrivateAssets="All"/>
         <PackageVersion Include="Cronos" Version="0.11.1"/>
+        <PackageVersion Include="CShells" Version="0.0.7"/>
+        <PackageVersion Include="CShells.Abstractions" Version="0.0.7"/>
+        <PackageVersion Include="CShells.AspNetCore" Version="0.0.7"/>
+        <PackageVersion Include="CShells.AspNetCore.Abstractions" Version="0.0.7"/>
+        <PackageVersion Include="CShells.FastEndpoints" Version="0.0.7"/>
+        <PackageVersion Include="CShells.FastEndpoints.Abstractions" Version="0.0.7"/>
         <PackageVersion Include="Datadog.Trace.Bundle" Version="3.32.0"/>
         <PackageVersion Include="DistributedLock" Version="2.7.1"/>
         <PackageVersion Include="DistributedLock.Core" Version="1.0.8"/>
         <PackageVersion Include="DistributedLock.FileSystem" Version="1.0.3"/>
         <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="9.2.2"/>
-        <PackageVersion Include="FastEndpoints" Version="7.1.1"/>
-        <PackageVersion Include="FastEndpoints.Security" Version="7.1.1"/>
-        <PackageVersion Include="FastEndpoints.Swagger" Version="7.1.1"/>
         <PackageVersion Include="FluentStorage" Version="6.0.0"/>
         <PackageVersion Include="FluentStorage.Azure.Blobs" Version="6.0.0"/>
         <PackageVersion Include="Fluid.Core" Version="2.31.0"/>

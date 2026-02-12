@@ -9,16 +9,8 @@ namespace Elsa.Workflows.Api.Endpoints.Features.Get;
 /// Returns the specified installed feature.
 /// </summary>
 [PublicAPI]
-internal class Get : ElsaEndpointWithoutRequest<FeatureDescriptor>
+internal class Get(IInstalledFeatureProvider installedFeatureProvider) : ElsaEndpointWithoutRequest<FeatureDescriptor>
 {
-    private readonly IInstalledFeatureRegistry _installedFeatureRegistry;
-
-    /// <inheritdoc />
-    public Get(IInstalledFeatureRegistry installedFeatureRegistry)
-    {
-        _installedFeatureRegistry = installedFeatureRegistry;
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -30,14 +22,14 @@ internal class Get : ElsaEndpointWithoutRequest<FeatureDescriptor>
     public override async Task HandleAsync( CancellationToken cancellationToken)
     {
         var fullName = Route<string>("fullName")!;
-        var descriptor = _installedFeatureRegistry.Find(fullName);
+        var descriptor = installedFeatureProvider.Find(fullName);
 
         if (descriptor == null)
         {
             await Send.NotFoundAsync(cancellationToken);
             return;
         }
-        
+
         await Send.OkAsync(descriptor, cancellationToken);
     }
 }

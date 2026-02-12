@@ -127,6 +127,7 @@ public class Module : IModule
         }
 
         Services.AddSingleton<IInstalledFeatureRegistry>(registry);
+        Services.AddSingleton<IInstalledFeatureProvider>(sp => new InstalledFeatureProvider(sp.GetRequiredService<IInstalledFeatureRegistry>()));
     }
 
     private IEnumerable<IFeature> ExcludeFeaturesWithMissingDependencies(IEnumerable<IFeature> features)

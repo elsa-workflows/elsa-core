@@ -42,7 +42,6 @@ var configuration = builder.Configuration;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 
-// Add Elsa services.
 services
     .AddElsa(elsa =>
     {
