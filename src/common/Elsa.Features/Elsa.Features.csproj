@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="CShells.Abstractions"/>
+        <ProjectReference Include="..\..\..\..\cshells\src\CShells.Abstractions\CShells.Abstractions.csproj" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     </ItemGroup>
