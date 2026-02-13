@@ -1,9 +1,15 @@
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class DefaultRegistriesPopulator(IWorkflowDefinitionStorePopulator workflowDefinitionStorePopulator, IActivityRegistryPopulator activityRegistryPopulator) : IRegistriesPopulator
+public class DefaultRegistriesPopulator(
+    IWorkflowDefinitionStorePopulator workflowDefinitionStorePopulator, 
+    IActivityRegistryPopulator activityRegistryPopulator,
+    INotificationSender notificationSender) : IRegistriesPopulator
 {
     /// <inheritdoc />
     public async Task PopulateAsync(CancellationToken cancellationToken = default)
@@ -21,6 +27,11 @@ public class DefaultRegistriesPopulator(IWorkflowDefinitionStorePopulator workfl
 
         // Stage 4. Re-update the workflow definition store with the current set of activities.
         // Finally, we need to re-populate the workflow definition store to make sure that the workflow definitions are up-to-date.
-        await workflowDefinitionStorePopulator.PopulateStoreAsync(true, cancellationToken);
+        var workflowDefinitions = await workflowDefinitionStorePopulator.PopulateStoreAsync(true, cancellationToken);
+        
+        // Stage 5: Publish a notification that the workflow definitions have been reloaded. This ensures other replicated nodes can update their activity registry.
+        var reloadedWorkflowDefinitions = workflowDefinitions.Select(ReloadedWorkflowDefinition.FromDefinition).ToList();
+        var notification = new WorkflowDefinitionsReloaded(reloadedWorkflowDefinitions);
+        await notificationSender.SendAsync(notification, cancellationToken);
     }
 }
