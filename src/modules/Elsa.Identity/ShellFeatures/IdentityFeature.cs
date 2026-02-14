@@ -57,7 +57,7 @@ public class IdentityFeature : IFastEndpointsShellFeature
     public void ConfigureServices(IServiceCollection services)
     {
         // Configure options - Note: SigningKey must be configured by the application for security
-        services.Configure<IdentityTokenOptions>(_ => { });
+        services.AddOptions<IdentityTokenOptions>().BindConfiguration("Identity");
         services.Configure<ApiKeyOptions>(ApiKeyDefaults.AuthenticationScheme, options =>
         {
             options.Realm = "Elsa Workflows";
