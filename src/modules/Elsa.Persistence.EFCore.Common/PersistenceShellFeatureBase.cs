@@ -5,6 +5,7 @@ using Elsa.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Persistence.EFCore;
@@ -14,26 +15,31 @@ public abstract class PersistenceShellFeatureBase<TDbContext> : IShellFeature
 {
     /// <summary>
     /// Gets or sets a value indicating whether to use context pooling.
+    /// When not explicitly set, falls back to shared settings if available.
     /// </summary>
-    public bool UseContextPooling { get; set; }
+    public bool? UseContextPooling { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to run migrations.
+    /// When not explicitly set, falls back to shared settings if available, defaulting to true.
     /// </summary>
-    public bool RunMigrations { get; set; } = true;
+    public bool? RunMigrations { get; set; }
 
     /// <summary>
-    /// Gets or sets the lifetime of the <see cref="IDbContextFactory{TContext}"/>. Defaults to <see cref="ServiceLifetime.Scoped"/>.
+    /// Gets or sets the lifetime of the <see cref="IDbContextFactory{TContext}"/>.
+    /// When not explicitly set, falls back to shared settings if available, defaulting to <see cref="ServiceLifetime.Scoped"/>.
     /// </summary>
-    public ServiceLifetime DbContextFactoryLifetime { get; set; } = ServiceLifetime.Scoped;
+    public ServiceLifetime? DbContextFactoryLifetime { get; set; }
 
     /// <summary>
     /// Gets or sets the connection string to use for the database.
+    /// When not explicitly set, falls back to shared settings if available.
     /// </summary>
-    public string ConnectionString { get; set; } = null!;
+    public string? ConnectionString { get; set; }
 
     /// <summary>
     /// Gets or sets additional options to configure the database context.
+    /// When not explicitly set, falls back to shared settings if available.
     /// </summary>
     public ElsaDbContextOptions? DbContextOptions { get; set; }
 
@@ -44,28 +50,52 @@ public abstract class PersistenceShellFeatureBase<TDbContext> : IShellFeature
     
     public void ConfigureServices(IServiceCollection services)
     {
+        // Capture feature-specific settings
+        var featureConnectionString = ConnectionString;
+        var featureDbContextOptions = DbContextOptions;
+        var featureUseContextPooling = UseContextPooling;
+        var featureRunMigrations = RunMigrations;
+        var featureDbContextFactoryLifetime = DbContextFactoryLifetime;
+
+        // Resolve effective settings at runtime, falling back to shared settings
         Action<IServiceProvider, DbContextOptionsBuilder> setup = (sp, opts) =>
         {
+            var sharedSettings = sp.GetService<IOptions<SharedPersistenceSettings>>()?.Value;
+            
+            var connectionString = featureConnectionString 
+                ?? sharedSettings?.ConnectionString
+                ?? throw new InvalidOperationException(
+                    $"Connection string not configured for {GetType().Name}. " +
+                    $"Either configure the feature directly or provide shared settings via the combined persistence feature.");
+            
+            var dbContextOptions = featureDbContextOptions ?? sharedSettings?.DbContextOptions;
+
             opts.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
 
             // Configure the database provider
             var migrationsAssembly = GetMigrationsAssembly();
-            ConfigureProvider(opts, migrationsAssembly, ConnectionString, DbContextOptions);
+            ConfigureProvider(opts, migrationsAssembly, connectionString, dbContextOptions);
 
             // Allow derived classes to further configure
             DbContextOptionsBuilder(sp, opts);
         };
 
-        if (UseContextPooling)
+        // Resolve pooling and lifetime settings with fallback
+        // Note: These are resolved at configuration time, not runtime, but they'll use defaults if not set
+        var useContextPooling = featureUseContextPooling ?? false;
+        var dbContextFactoryLifetime = featureDbContextFactoryLifetime ?? ServiceLifetime.Scoped;
+        var runMigrations = featureRunMigrations ?? true;
+
+        if (useContextPooling)
             services.AddPooledDbContextFactory<TDbContext>(setup);
         else
-            services.AddDbContextFactory<TDbContext>(setup, DbContextFactoryLifetime);
+            services.AddDbContextFactory<TDbContext>(setup, dbContextFactoryLifetime);
 
         services.Decorate<IDbContextFactory<TDbContext>, TenantAwareDbContextFactory<TDbContext>>();
 
         services.Configure<MigrationOptions>(options =>
         {
-            options.RunMigrations[typeof(TDbContext)] = RunMigrations;
+            options.RunMigrations[typeof(TDbContext)] = runMigrations;
         });
 
         services.AddStartupTask<RunMigrationsStartupTask<TDbContext>>();
