@@ -189,6 +189,8 @@ public class IdentityFeature : FeatureBase
             .AddScoped(UserProvider)
             .AddScoped(ApplicationProvider)
             .AddScoped(RoleProvider)
+            .AddScoped<IUserManager, UserManager>()
+            .AddScoped<IRoleManager, RoleManager>()
             .AddScoped<ISecretHasher, DefaultSecretHasher>()
             .AddScoped<IAccessTokenIssuer, DefaultAccessTokenIssuer>()
             .AddScoped<IUserCredentialsValidator, DefaultUserCredentialsValidator>()

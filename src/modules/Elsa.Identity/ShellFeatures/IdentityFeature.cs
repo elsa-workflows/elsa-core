@@ -24,36 +24,6 @@ namespace Elsa.Identity.ShellFeatures;
 [UsedImplicitly]
 public class IdentityFeature : IFastEndpointsShellFeature
 {
-    /// <summary>
-    /// A delegate that creates an instance of an implementation of <see cref="IUserStore"/>.
-    /// </summary>
-    public Func<IServiceProvider, IUserStore> UserStore { get; set; } = sp => sp.GetRequiredService<MemoryUserStore>();
-
-    /// <summary>
-    /// A delegate that creates an instance of an implementation of <see cref="IApplicationStore"/>.
-    /// </summary>
-    public Func<IServiceProvider, IApplicationStore> ApplicationStore { get; set; } = sp => sp.GetRequiredService<MemoryApplicationStore>();
-
-    /// <summary>
-    /// A delegate that creates an instance of an implementation of <see cref="IRoleStore"/>.
-    /// </summary>
-    public Func<IServiceProvider, IRoleStore> RoleStore { get; set; } = sp => sp.GetRequiredService<MemoryRoleStore>();
-
-    /// <summary>
-    /// A delegate that creates an instance of an implementation of <see cref="IUserProvider"/>.
-    /// </summary>
-    public Func<IServiceProvider, IUserProvider> UserProvider { get; set; } = sp => sp.GetRequiredService<AdminUserProvider>();
-
-    /// <summary>
-    /// A delegate that creates an instance of an implementation of <see cref="IApplicationProvider"/>.
-    /// </summary>
-    public Func<IServiceProvider, IApplicationProvider> ApplicationProvider { get; set; } = sp => sp.GetRequiredService<StoreBasedApplicationProvider>();
-
-    /// <summary>
-    /// A delegate that creates an instance of an implementation of <see cref="IRoleProvider"/>.
-    /// </summary>
-    public Func<IServiceProvider, IRoleProvider> RoleProvider { get; set; } = sp => sp.GetRequiredService<AdminRoleProvider>();
-
     public void ConfigureServices(IServiceCollection services)
     {
         // Configure options - Note: SigningKey must be configured by the application for security
@@ -97,12 +67,8 @@ public class IdentityFeature : IFastEndpointsShellFeature
 
         // Services.
         services
-            .AddScoped(UserStore)
-            .AddScoped(ApplicationStore)
-            .AddScoped(RoleStore)
-            .AddScoped(UserProvider)
-            .AddScoped(ApplicationProvider)
-            .AddScoped(RoleProvider)
+            .AddScoped<IUserManager, UserManager>()
+            .AddScoped<IRoleManager, RoleManager>()
             .AddScoped<ISecretHasher, DefaultSecretHasher>()
             .AddScoped<IAccessTokenIssuer, DefaultAccessTokenIssuer>()
             .AddScoped<IUserCredentialsValidator, DefaultUserCredentialsValidator>()
@@ -115,5 +81,14 @@ public class IdentityFeature : IFastEndpointsShellFeature
             .AddScoped<DefaultApiKeyGeneratorAndParser>()
             .AddHttpContextAccessor()
             ;
+
+        // Overridable services.
+        services
+            .AddScoped<IUserStore, MemoryUserStore>()
+            .AddScoped<IApplicationStore, MemoryApplicationStore>()
+            .AddScoped<IRoleStore, MemoryRoleStore>()
+            .AddScoped<IUserProvider, StoreBasedUserProvider>()
+            .AddScoped<IApplicationProvider, StoreBasedApplicationProvider>()
+            .AddScoped<IRoleProvider, StoreBasedRoleProvider>();
     }
 }

@@ -28,11 +28,6 @@ public class DefaultAuthenticationFeature : IShellFeature
     /// </summary>
     public Type ApiKeyProviderType { get; set; } = typeof(DefaultApiKeyProvider);
 
-    /// <summary>
-    /// Gets or sets whether to require localhost for the security root policy.
-    /// </summary>
-    public bool RequireLocalHost { get; set; } = true;
-
     public void ConfigureServices(IServiceCollection services)
     {
         services.ConfigureOptions<ConfigureJwtBearerOptions>();
@@ -64,10 +59,7 @@ public class DefaultAuthenticationFeature : IShellFeature
 
         services.AddAuthorization(options =>
         {
-            if (RequireLocalHost)
-                options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostPermissionRequirement()));
-            else
-                options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.RequireAuthenticatedUser());
+            options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.RequireAuthenticatedUser());
         });
     }
 }
