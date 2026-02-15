@@ -1,8 +1,5 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
-using Elsa.Identity.Entities;
-using Elsa.Workflows;
-using Humanizer;
 using JetBrains.Annotations;
 
 namespace Elsa.Identity.Endpoints.Roles.Create;
@@ -11,28 +8,8 @@ namespace Elsa.Identity.Endpoints.Roles.Create;
 /// An endpoint that creates a new role.
 /// </summary>
 [PublicAPI]
-internal class Create : ElsaEndpoint<Request, Response>
+internal class Create(IRoleManager roleManager) : ElsaEndpoint<Request, Response>
 {
-    private readonly IIdentityGenerator _identityGenerator;
-    private readonly ISecretGenerator _secretGenerator;
-    private readonly ISecretHasher _secretHasher;
-    private readonly IUserStore _userStore;
-    private readonly IRoleStore _roleStore;
-
-    public Create(
-        IIdentityGenerator identityGenerator,
-        ISecretGenerator secretGenerator,
-        ISecretHasher secretHasher,
-        IUserStore userStore,
-        IRoleStore roleStore)
-    {
-        _identityGenerator = identityGenerator;
-        _secretGenerator = secretGenerator;
-        _secretHasher = secretHasher;
-        _userStore = userStore;
-        _roleStore = roleStore;
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -44,21 +21,16 @@ internal class Create : ElsaEndpoint<Request, Response>
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var id = request.Id ?? request.Name.Kebaberize();
-
-        var role = new Role
-        {
-            Id = id,
-            Name = request.Name,
-            Permissions = request.Permissions ?? new List<string>()
-        };
-
-        await _roleStore.SaveAsync(role, cancellationToken);
+        var result = await roleManager.CreateRoleAsync(
+            request.Name,
+            request.Permissions,
+            request.Id,
+            cancellationToken);
 
         var response = new Response(
-            id,
-            role.Name,
-            role.Permissions);
+            result.Role.Id,
+            result.Role.Name,
+            result.Role.Permissions);
 
         await Send.OkAsync(response, cancellationToken);
     }
