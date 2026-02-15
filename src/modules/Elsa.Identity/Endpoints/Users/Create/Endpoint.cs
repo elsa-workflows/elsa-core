@@ -8,10 +8,9 @@ namespace Elsa.Identity.Endpoints.Users.Create;
 /// An endpoint that creates a new user. Requires the <code>SecurityRoot</code> policy.
 /// </summary>
 [PublicAPI]
-internal class Create(IUserManager userManager, IRoleStore roleStore)
+internal class Create(IUserManager userManager)
     : ElsaEndpoint<Request, Response>
 {
-    private readonly IRoleStore _roleStore = roleStore;
 
     /// <inheritdoc />
     public override void Configure()
