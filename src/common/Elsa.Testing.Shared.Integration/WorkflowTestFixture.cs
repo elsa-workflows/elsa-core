@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Expressions.Models;
 using Elsa.Features.Services;
 using Elsa.Workflows;
@@ -108,7 +109,9 @@ public class WorkflowTestFixture
             return this;
         
         _services = _testApplicationBuilder.Build();
-        await Services.PopulateRegistriesAsync();
+        var tenantService = Services.GetRequiredService<ITenantService>();
+        await tenantService.ActivateTenantsAsync();
+        
         return this;
     }
 
