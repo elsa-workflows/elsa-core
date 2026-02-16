@@ -556,7 +556,9 @@ public static class ExpressionExecutionContextExtensions
             return obj;
 
         // Use LINQ to convert the IEnumerable to an array.
-        var elementType = obj.GetType().GetGenericArguments().FirstOrDefault();
+        // For projection operators like Select, the element type is the LAST generic argument
+        // (e.g., ListSelectIterator<TSource, TResult> where TResult is the element type)
+        var elementType = obj.GetType().GetGenericArguments().LastOrDefault();
 
         if (elementType == null)
             return obj;

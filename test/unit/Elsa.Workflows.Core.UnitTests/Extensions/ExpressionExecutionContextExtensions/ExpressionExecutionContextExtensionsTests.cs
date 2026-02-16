@@ -1,5 +1,8 @@
+using Elsa.Expressions.JavaScript.Activities;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Testing.Shared;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 
 namespace Elsa.Workflows.Core.UnitTests;
@@ -13,7 +16,7 @@ public class ExpressionExecutionContextExtensionsTests
         var variable = new Variable("test", 5);
         var memoryRegister = new MemoryRegister(new Dictionary<string, MemoryBlock>
         {
-            { variable.Id, new MemoryBlock(variable.Value, new VariableBlockMetadata(variable, typeof(object), true)) }
+            { variable.Id, new(variable.Value, new VariableBlockMetadata(variable, typeof(object), true)) }
         });
 
         var context = new ExpressionExecutionContext(null!, memoryRegister);
@@ -46,7 +49,7 @@ public class ExpressionExecutionContextExtensionsTests
         var variable = new Variable("test", 5);
         var memoryRegister = new MemoryRegister(new Dictionary<string, MemoryBlock>
         {
-            { variable.Id, new MemoryBlock(variable.Value, new VariableBlockMetadata(variable, typeof(object), true)) }
+            { variable.Id, new(variable.Value, new VariableBlockMetadata(variable, typeof(object), true)) }
         });
 
         var context = new ExpressionExecutionContext(null!, memoryRegister);
@@ -92,7 +95,7 @@ public class ExpressionExecutionContextExtensionsTests
         var variable = new Variable("test", 5);
         var memoryRegister = new MemoryRegister(new Dictionary<string, MemoryBlock>
         {
-            { variable.Id, new MemoryBlock(variable.Value, new VariableBlockMetadata(variable, typeof(object), true)) }
+            { variable.Id, new(variable.Value, new VariableBlockMetadata(variable, typeof(object), true)) }
         });
 
         var context = new ExpressionExecutionContext(null!, memoryRegister);
