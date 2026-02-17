@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.ListConsumingWorkflow
 [UsedImplicitly]
 internal class ListConsumingWorkflows(
     IWorkflowDefinitionStore store,
-    IWorkflowReferenceQuery workflowReferenceQuery) : ElsaEndpoint<Request, Response>
+    IWorkflowConsumerService workflowConsumerService) : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
     {
@@ -38,7 +38,9 @@ internal class ListConsumingWorkflows(
         }
         
         // Get all workflows that reference this workflow definition (transitive closure)
-        var consumingDefinitionIds = await GetAllConsumingWorkflowDefinitionIdsAsync(definition.DefinitionId, cancellationToken);
+        var consumingDefinitionIds = await workflowConsumerService
+            .GetConsumingWorkflowDefinitionIdsAsync(definition.DefinitionId, cancellationToken)
+            .ToListAsync(cancellationToken);
         
         if (!consumingDefinitionIds.Any())
         {
@@ -74,31 +76,5 @@ internal class ListConsumingWorkflows(
             : VersionOptions.FromString(request.VersionOptions);
         
         return WorkflowDefinitionHandle.ByDefinitionId(request.DefinitionId, versionOptions);
-    }
-
-    private async Task<IEnumerable<string>> GetAllConsumingWorkflowDefinitionIdsAsync(
-        string definitionId,
-        CancellationToken cancellationToken,
-        HashSet<string>? visitedIds = null)
-    {
-        visitedIds ??= new HashSet<string>();
-        var allConsumingIds = new List<string>();
-
-        // If we've already processed this definition ID, skip it to prevent infinite recursion.
-        if (!visitedIds.Add(definitionId))
-            return allConsumingIds;
-
-        // Get direct references
-        var directRefs = await workflowReferenceQuery.ExecuteAsync(definitionId, cancellationToken);
-        allConsumingIds.AddRange(directRefs);
-
-        // Recursively get consumers of consumers
-        foreach (var refId in directRefs)
-        {
-            var transitiveRefs = await GetAllConsumingWorkflowDefinitionIdsAsync(refId, cancellationToken, visitedIds);
-            allConsumingIds.AddRange(transitiveRefs);
-        }
-
-        return allConsumingIds.Distinct();
     }
 }
