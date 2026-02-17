@@ -66,11 +66,14 @@ internal class ListConsumingWorkflows(
         if (!string.IsNullOrEmpty(request.DefinitionVersionId))
             return WorkflowDefinitionHandle.ByDefinitionVersionId(request.DefinitionVersionId);
         
+        if (string.IsNullOrEmpty(request.DefinitionId))
+            return null!; // caller must check and return 400
+        
         var versionOptions = string.IsNullOrEmpty(request.VersionOptions) 
             ? VersionOptions.Latest 
             : VersionOptions.FromString(request.VersionOptions);
         
-        return WorkflowDefinitionHandle.ByDefinitionId(request.DefinitionId!, versionOptions);
+        return WorkflowDefinitionHandle.ByDefinitionId(request.DefinitionId, versionOptions);
     }
 
     private async Task<IEnumerable<string>> GetAllConsumingWorkflowDefinitionIdsAsync(
