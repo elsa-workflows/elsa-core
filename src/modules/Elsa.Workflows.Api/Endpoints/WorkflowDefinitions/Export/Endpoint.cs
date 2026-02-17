@@ -21,6 +21,7 @@ internal class Export : ElsaEndpoint<Request>
     private readonly IApiSerializer _serializer;
     private readonly IWorkflowDefinitionStore _store;
     private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
+    private readonly IWorkflowReferenceQuery _workflowReferenceQuery;
 
     /// <inheritdoc />
     public Export(
@@ -28,11 +29,13 @@ internal class Export : ElsaEndpoint<Request>
         IWorkflowDefinitionService workflowDefinitionService,
         IApiSerializer serializer,
         WorkflowDefinitionMapper workflowDefinitionMapper,
-        VariableDefinitionMapper variableDefinitionMapper)
+        VariableDefinitionMapper variableDefinitionMapper,
+        IWorkflowReferenceQuery workflowReferenceQuery)
     {
         _store = store;
         _serializer = serializer;
         _workflowDefinitionMapper = workflowDefinitionMapper;
+        _workflowReferenceQuery = workflowReferenceQuery;
     }
 
     /// <inheritdoc />
@@ -47,14 +50,15 @@ internal class Export : ElsaEndpoint<Request>
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         if (request.DefinitionId != null)
-            await DownloadSingleWorkflowAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
+            await DownloadSingleWorkflowAsync(request.DefinitionId, request.VersionOptions, request.IncludeConsumers, cancellationToken);
         else if (request.Ids != null)
-            await DownloadMultipleWorkflowsAsync(request.Ids, cancellationToken);
+            await DownloadMultipleWorkflowsAsync(request.Ids, request.IncludeConsumers, cancellationToken);
         else await Send.NoContentAsync(cancellationToken);
     }
 
-    private async Task DownloadMultipleWorkflowsAsync(ICollection<string> ids, CancellationToken cancellationToken)
+    private async Task DownloadMultipleWorkflowsAsync(ICollection<string> ids, bool includeConsumers, CancellationToken cancellationToken)
     {
+        // Get the initial set of definitions
         List<WorkflowDefinition> definitions = (await _store.FindManyAsync(new()
         {
             Ids = ids
@@ -64,6 +68,27 @@ internal class Export : ElsaEndpoint<Request>
         {
             await Send.NoContentAsync(cancellationToken);
             return;
+        }
+
+        // If includeConsumers is true, add all consuming workflows
+        if (includeConsumers)
+        {
+            var allDefinitionIds = new HashSet<string>(ids);
+            
+            foreach (var definition in definitions.ToList())
+            {
+                var consumingIds = await GetAllConsumingWorkflowDefinitionIdsAsync(definition.DefinitionId, cancellationToken);
+                allDefinitionIds.UnionWith(consumingIds);
+            }
+            
+            // Fetch all definitions including consumers (latest versions)
+            var allDefinitions = await _store.FindManyAsync(new()
+            {
+                DefinitionIds = allDefinitionIds.ToArray(),
+                VersionOptions = VersionOptions.Latest
+            }, cancellationToken);
+            
+            definitions = allDefinitions.ToList();
         }
 
         var zipStream = new MemoryStream();
@@ -86,7 +111,7 @@ internal class Export : ElsaEndpoint<Request>
         await Send.BytesAsync(zipStream.ToArray(), "workflow-definitions.zip", cancellation: cancellationToken);
     }
 
-    private async Task DownloadSingleWorkflowAsync(string definitionId, string? versionOptions, CancellationToken cancellationToken)
+    private async Task DownloadSingleWorkflowAsync(string definitionId, string? versionOptions, bool includeConsumers, CancellationToken cancellationToken)
     {
         var parsedVersionOptions = string.IsNullOrEmpty(versionOptions) ? VersionOptions.Latest : VersionOptions.FromString(versionOptions);
         WorkflowDefinition? definition = (await _store.FindManyAsync(new()
@@ -101,11 +126,31 @@ internal class Export : ElsaEndpoint<Request>
             return;
         }
 
-        var model = await CreateWorkflowModelAsync(definition, cancellationToken);
-        var binaryJson = await SerializeWorkflowDefinitionAsync(model, cancellationToken);
-        var fileName = GetFileName(model);
+        // If we need to include consumers, export as a zip with multiple files
+        if (includeConsumers)
+        {
+            var allDefinitionIds = new HashSet<string> { definition.DefinitionId };
+            var consumingIds = await GetAllConsumingWorkflowDefinitionIdsAsync(definition.DefinitionId, cancellationToken);
+            allDefinitionIds.UnionWith(consumingIds);
+            
+            // Fetch all definitions including consumers (latest versions)
+            var allDefinitions = await _store.FindManyAsync(new()
+            {
+                DefinitionIds = allDefinitionIds.ToArray(),
+                VersionOptions = VersionOptions.Latest
+            }, cancellationToken);
+            
+            await DownloadMultipleWorkflowsAsZipAsync(allDefinitions.ToList(), cancellationToken);
+        }
+        else
+        {
+            // Single file export
+            var model = await CreateWorkflowModelAsync(definition, cancellationToken);
+            var binaryJson = await SerializeWorkflowDefinitionAsync(model, cancellationToken);
+            var fileName = GetFileName(model);
 
-        await Send.BytesAsync(binaryJson, fileName, cancellation: cancellationToken);
+            await Send.BytesAsync(binaryJson, fileName, cancellation: cancellationToken);
+        }
     }
 
     private string GetFileName(WorkflowDefinitionModel definition)
@@ -141,5 +186,53 @@ internal class Export : ElsaEndpoint<Request>
     private async Task<WorkflowDefinitionModel> CreateWorkflowModelAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
     {
         return await _workflowDefinitionMapper.MapAsync(definition, cancellationToken);
+    }
+
+    private async Task DownloadMultipleWorkflowsAsZipAsync(List<WorkflowDefinition> definitions, CancellationToken cancellationToken)
+    {
+        var zipStream = new MemoryStream();
+        using (var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
+        {
+            // Create a JSON file for each workflow definition:
+            foreach (var definition in definitions)
+            {
+                var model = await CreateWorkflowModelAsync(definition, cancellationToken);
+                var binaryJson = await SerializeWorkflowDefinitionAsync(model, cancellationToken);
+                var fileName = GetFileName(model);
+                var entry = zipArchive.CreateEntry(fileName, CompressionLevel.Optimal);
+                await using var entryStream = entry.Open();
+                await entryStream.WriteAsync(binaryJson, cancellationToken);
+            }
+        }
+
+        // Send the zip file to the client:
+        zipStream.Position = 0;
+        await Send.BytesAsync(zipStream.ToArray(), "workflow-definitions.zip", cancellation: cancellationToken);
+    }
+
+    private async Task<IEnumerable<string>> GetAllConsumingWorkflowDefinitionIdsAsync(
+        string definitionId,
+        CancellationToken cancellationToken,
+        HashSet<string>? visitedIds = null)
+    {
+        visitedIds ??= new HashSet<string>();
+        var allConsumingIds = new List<string>();
+
+        // If we've already processed this definition ID, skip it to prevent infinite recursion.
+        if (!visitedIds.Add(definitionId))
+            return allConsumingIds;
+
+        // Get direct references
+        var directRefs = await _workflowReferenceQuery.ExecuteAsync(definitionId, cancellationToken);
+        allConsumingIds.AddRange(directRefs);
+
+        // Recursively get consumers of consumers
+        foreach (var refId in directRefs)
+        {
+            var transitiveRefs = await GetAllConsumingWorkflowDefinitionIdsAsync(refId, cancellationToken, visitedIds);
+            allConsumingIds.AddRange(transitiveRefs);
+        }
+
+        return allConsumingIds.Distinct();
     }
 }
