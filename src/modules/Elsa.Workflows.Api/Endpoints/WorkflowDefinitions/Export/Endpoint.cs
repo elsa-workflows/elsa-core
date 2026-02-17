@@ -91,12 +91,8 @@ internal class Export : ElsaEndpoint<Request>
         if (includeConsumingWorkflows)
         {
             var definitions = await IncludeConsumersAsync([definition], cancellationToken);
-
-            if (definitions.Count > 1)
-            {
-                await WriteZipResponseAsync(definitions, cancellationToken);
-                return;
-            }
+            await WriteZipResponseAsync(definitions, cancellationToken);
+            return;
         }
 
         var model = await CreateWorkflowModelAsync(definition, cancellationToken);
@@ -116,16 +112,20 @@ internal class Export : ElsaEndpoint<Request>
         var allDefinitionIds = new HashSet<string>(initialDefinitionIds);
         var definitionsToProcess = new Queue<string>(allDefinitionIds);
 
+        // Process one BFS level at a time, querying all nodes in the frontier concurrently.
         while (definitionsToProcess.Count > 0)
         {
-            var currentDefinitionId = definitionsToProcess.Dequeue();
-            var consumerIds = await _workflowReferenceQuery.ExecuteAsync(currentDefinitionId, cancellationToken);
+            var frontier = new List<string>();
+            while (definitionsToProcess.Count > 0)
+                frontier.Add(definitionsToProcess.Dequeue());
 
-            foreach (var consumerId in consumerIds)
-            {
-                if (allDefinitionIds.Add(consumerId))
-                    definitionsToProcess.Enqueue(consumerId);
-            }
+            var tasks = frontier.Select(id => _workflowReferenceQuery.ExecuteAsync(id, cancellationToken));
+            var results = await Task.WhenAll(tasks);
+
+            foreach (var consumerIds in results)
+                foreach (var consumerId in consumerIds)
+                    if (allDefinitionIds.Add(consumerId))
+                        definitionsToProcess.Enqueue(consumerId);
         }
 
         // Find any consumer definitions not already in our list.
