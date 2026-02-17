@@ -20,4 +20,9 @@ internal class Request
     /// A list of workflow definition version IDs.
     /// </summary>
     public ICollection<string>? Ids { get; set; } = default!;
+    
+    /// <summary>
+    /// When true, automatically includes all consuming workflow definitions in the export.
+    /// </summary>
+    public bool IncludeConsumingWorkflows { get; set; }
 }
