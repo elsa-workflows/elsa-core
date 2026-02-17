@@ -73,9 +73,11 @@ internal class Export : ElsaEndpoint<Request>
         // If includeConsumers is true, add all consuming workflows
         if (includeConsumers)
         {
-            var allDefinitionIds = new HashSet<string>(ids);
+        if (includeConsumers)
+        {
+            var allDefinitionIds = new HashSet<string>(definitions.Select(d => d.DefinitionId));
             
-            foreach (var definition in definitions.ToList())
+            foreach (var definition in definitions)
             {
                 var consumingIds = await GetAllConsumingWorkflowDefinitionIdsAsync(definition.DefinitionId, cancellationToken);
                 allDefinitionIds.UnionWith(consumingIds);
@@ -89,6 +91,7 @@ internal class Export : ElsaEndpoint<Request>
             }, cancellationToken);
             
             definitions = allDefinitions.ToList();
+        }
         }
 
         var zipStream = new MemoryStream();
