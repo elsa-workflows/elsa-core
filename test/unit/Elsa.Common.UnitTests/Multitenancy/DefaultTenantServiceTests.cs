@@ -16,7 +16,7 @@ public class DefaultTenantServiceTests
     public async Task ActivateTenantsAsync_WhenProviderReturnsEmpty_ActivatesDefaultTenant()
     {
         // Arrange - provider returns no tenants
-        var tenantService = await CreateTenantServiceAsync(Array.Empty<Tenant>());
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(Array.Empty<Tenant>());
 
         try
         {
@@ -33,6 +33,7 @@ public class DefaultTenantServiceTests
         {
             if (tenantService is IAsyncDisposable disposable)
                 await disposable.DisposeAsync();
+            await serviceProvider.DisposeAsync();
         }
     }
 
@@ -40,7 +41,7 @@ public class DefaultTenantServiceTests
     public async Task ListAsync_WhenProviderReturnsEmpty_ReturnsDefaultTenant()
     {
         // Arrange - ListAsync triggers initialization when provider returns empty
-        var tenantService = await CreateTenantServiceAsync(Array.Empty<Tenant>());
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(Array.Empty<Tenant>());
 
         try
         {
@@ -55,6 +56,7 @@ public class DefaultTenantServiceTests
         {
             if (tenantService is IAsyncDisposable disposable)
                 await disposable.DisposeAsync();
+            await serviceProvider.DisposeAsync();
         }
     }
 
@@ -64,7 +66,7 @@ public class DefaultTenantServiceTests
         // Arrange - provider returns specific tenants
         var tenant1 = new Tenant { Id = "tenant-1", Name = "Tenant 1" };
         var tenant2 = new Tenant { Id = "tenant-2", Name = "Tenant 2" };
-        var tenantService = await CreateTenantServiceAsync([tenant1, tenant2]);
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([tenant1, tenant2]);
 
         try
         {
@@ -81,6 +83,7 @@ public class DefaultTenantServiceTests
         {
             if (tenantService is IAsyncDisposable disposable)
                 await disposable.DisposeAsync();
+            await serviceProvider.DisposeAsync();
         }
     }
 
@@ -90,7 +93,7 @@ public class DefaultTenantServiceTests
         // Arrange - start with tenants, then provider returns empty (simulating config change)
         var tenant1 = new Tenant { Id = "tenant-1", Name = "Tenant 1" };
         var providerReturns = new List<Tenant> { tenant1 };
-        var tenantService = await CreateTenantServiceAsync(providerReturns, () => providerReturns);
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(providerReturns, () => providerReturns);
 
         try
         {
@@ -112,10 +115,11 @@ public class DefaultTenantServiceTests
         {
             if (tenantService is IAsyncDisposable disposable)
                 await disposable.DisposeAsync();
+            await serviceProvider.DisposeAsync();
         }
     }
 
-    private static async Task<ITenantService> CreateTenantServiceAsync(IEnumerable<Tenant> tenants, Func<List<Tenant>>? tenantsFactory = null)
+    private static Task<(ITenantService TenantService, ServiceProvider ServiceProvider)> CreateTenantServiceAsync(IEnumerable<Tenant> tenants, Func<List<Tenant>>? tenantsFactory = null)
     {
         var tenantList = tenants.ToList();
         var getTenants = tenantsFactory ?? (() => tenantList);
@@ -136,6 +140,6 @@ public class DefaultTenantServiceTests
         services.AddLogging();
 
         var serviceProvider = services.BuildServiceProvider();
-        return serviceProvider.GetRequiredService<ITenantService>();
+        return Task.FromResult((serviceProvider.GetRequiredService<ITenantService>(), serviceProvider));
     }
 }
