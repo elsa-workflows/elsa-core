@@ -1,47 +1,101 @@
 # Contributing to Elsa
-We love your input! We want to make contributing to this project as easy and transparent as possible, whether it's:
 
+Thank you for your interest in contributing to Elsa.
+
+We value clarity, discipline, and maintainability in our codebase. Well-scoped pull requests and high-quality bug reports help us maintain velocity without sacrificing quality.
+
+Whether you're:
 - Reporting a bug
-- Discussing the current state of the code
+- Proposing a feature
 - Submitting a fix
-- Proposing new features
+- Improving documentation
 - Becoming a maintainer
 
-## We Develop with Github
-We use github to host code, to track issues and feature requests, as well as accept pull requests.
+— your contributions are welcome.
 
-## We Use [Trunk Based Development]([https://guides.github.com/introduction/flow/index.html](https://trunkbaseddevelopment.com/)), And All Code Changes Happen Through Pull Requests
-Pull requests are the best way to propose changes to the codebase (we use [Trunk Based Development]([https://guides.github.com/introduction/flow/index.html](https://trunkbaseddevelopment.com/))). We actively welcome your pull requests:
+---
 
-1. Fork the repo and create your branch from `main`.
+## Development Workflow
+
+Elsa follows **Trunk Based Development**.
+
+All changes happen through Pull Requests targeting the `main` branch.
+
+1. Fork the repository and create your branch from `main`.
 2. If you've added code that should be tested, add tests.
-3. If you've changed APIs, update the documentation.
+3. If you've changed APIs, update documentation.
 4. Ensure the test suite passes.
-5. Issue that pull request!
+5. Open a Pull Request.
 
-## Any contributions you make will be under the MIT Software License
-In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.
+---
 
-## Report bugs using Github's [issues](https://github.com/elsa-workflows/elsa-core/issues)
-We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/elsa-workflows/elsa-core/issues/new); it's that easy!
+## Pull Requests
 
-## Write bug reports with detail, background, and sample code
+We aim for PRs that are easy to review, easy to reason about, and safe to merge.
 
+### 1) One PR = One Concern
 
-**Great Bug Reports** tend to have:
+Keep PRs focused on a single logical change:
 
-- A quick summary and/or background
+- ✅ Bug fix
+- ✅ Refactor (no behavior change)
+- ✅ Formatting
+- ✅ Dependency update
+- ✅ Documentation change
+- ❌ Mixing unrelated cleanups with functional changes
+
+**Why:** Mixed concerns increase cognitive load, slow reviews, and increase merge risk.
+
+If you notice cleanup opportunities while fixing a bug:
+- Prefer a follow-up PR titled `refactor: ...` or `chore: ...`
+- Or keep cleanup strictly limited to what is required for the fix
+
+PRs that mix unrelated concerns may be asked to split before review continues.
+
+---
+
+### 2) Make Reviews Fast
+
+A good PR includes:
+
+- A clear problem statement
+- Expected behavior
+- Steps to reproduce (if applicable)
+- Steps to verify the change
+- Screenshots or video for UI changes (if applicable)
+
+The easier your PR is to review, the faster it can be merged.
+
+---
+
+### 3) Prefer Small PRs
+
+Smaller PRs are:
+- Easier to review
+- Less risky to merge
+- More likely to receive timely feedback
+
+If a change is large, consider splitting it into incremental PRs.
+
+---
+
+## Reporting Bugs
+
+We use GitHub Issues to track bugs and feature requests.
+
+When reporting a bug, please include:
+
+- A clear summary
 - Steps to reproduce
-  - Be specific!
-  - Give sample code if you can.
-- What you expected would happen
-- What actually happens
-- Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
+- Expected behavior
+- Actual behavior
+- Relevant logs or screenshots
+- Sample code (if applicable)
 
-People *love* thorough bug reports. I'm not even kidding.
+Thorough bug reports significantly increase the chance of a fast and accurate resolution.
+
+---
 
 ## License
-By contributing, you agree that your contributions will be licensed under its MIT License.
 
-## References
-This document was adapted from the open-source contribution guidelines for [Facebook's Draft](https://github.com/facebook/draft-js/blob/a9316a723f9e918afde44dea68b5f9f39b7d9b00/CONTRIBUTING.md)
+By contributing, you agree that your contributions will be licensed under the project's MIT License.
