@@ -7,10 +7,10 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Consumers;
 
 /// <summary>
-/// Returns all workflow definitions that consume the specified workflow definition.
+/// Returns all workflow definitions that consume the specified workflow definition (recursively).
 /// </summary>
 [PublicAPI]
-internal class Consumers(IWorkflowDefinitionStore store, IWorkflowReferenceQuery workflowReferenceQuery) : ElsaEndpoint<Request, Response>
+internal class Consumers(IWorkflowDefinitionStore store, IWorkflowReferenceGraphBuilder workflowReferenceGraphBuilder) : ElsaEndpoint<Request, Response>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -36,7 +36,8 @@ internal class Consumers(IWorkflowDefinitionStore store, IWorkflowReferenceQuery
             return;
         }
 
-        var consumerIds = (await workflowReferenceQuery.ExecuteAsync(request.DefinitionId, cancellationToken)).ToList();
+        var graph = await workflowReferenceGraphBuilder.BuildGraphAsync(request.DefinitionId, cancellationToken);
+        var consumerIds = graph.ConsumerDefinitionIds.ToList();
         await Send.OkAsync(new Response(consumerIds), cancellationToken);
     }
 }
