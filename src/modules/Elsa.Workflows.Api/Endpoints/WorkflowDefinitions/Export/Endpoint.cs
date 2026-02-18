@@ -20,7 +20,7 @@ internal class Export : ElsaEndpoint<Request>
 {
     private readonly IApiSerializer _serializer;
     private readonly IWorkflowDefinitionStore _store;
-    private readonly IWorkflowReferenceQuery _workflowReferenceQuery;
+    private readonly IWorkflowReferenceGraphBuilder _workflowReferenceGraphBuilder;
     private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
 
     /// <inheritdoc />
@@ -28,12 +28,12 @@ internal class Export : ElsaEndpoint<Request>
         IWorkflowDefinitionStore store,
         IApiSerializer serializer,
         WorkflowDefinitionMapper workflowDefinitionMapper,
-        IWorkflowReferenceQuery workflowReferenceQuery)
+        IWorkflowReferenceGraphBuilder workflowReferenceGraphBuilder)
     {
         _store = store;
         _serializer = serializer;
         _workflowDefinitionMapper = workflowDefinitionMapper;
-        _workflowReferenceQuery = workflowReferenceQuery;
+        _workflowReferenceGraphBuilder = workflowReferenceGraphBuilder;
     }
 
     /// <inheritdoc />
@@ -108,28 +108,11 @@ internal class Export : ElsaEndpoint<Request>
     /// </summary>
     private async Task<List<WorkflowDefinition>> IncludeConsumersAsync(List<WorkflowDefinition> definitions, CancellationToken cancellationToken)
     {
-        var initialDefinitionIds = new HashSet<string>(definitions.Select(d => d.DefinitionId));
-        var allDefinitionIds = new HashSet<string>(initialDefinitionIds);
-        var definitionsToProcess = new Queue<string>(allDefinitionIds);
-
-        // Process one BFS level at a time, querying all nodes in the frontier concurrently.
-        while (definitionsToProcess.Count > 0)
-        {
-            var frontier = new List<string>();
-            while (definitionsToProcess.Count > 0)
-                frontier.Add(definitionsToProcess.Dequeue());
-
-            var tasks = frontier.Select(id => _workflowReferenceQuery.ExecuteAsync(id, cancellationToken));
-            var results = await Task.WhenAll(tasks);
-
-            foreach (var consumerIds in results)
-                foreach (var consumerId in consumerIds)
-                    if (allDefinitionIds.Add(consumerId))
-                        definitionsToProcess.Enqueue(consumerId);
-        }
-
+        var initialDefinitionIds = definitions.Select(d => d.DefinitionId).ToList();
+        var graph = await _workflowReferenceGraphBuilder.BuildGraphAsync(initialDefinitionIds, cancellationToken);
+        
         // Find any consumer definitions not already in our list.
-        var newDefinitionIds = allDefinitionIds.Except(initialDefinitionIds).ToList();
+        var newDefinitionIds = graph.ConsumerDefinitionIds.Except(initialDefinitionIds).ToList();
 
         if (newDefinitionIds.Count > 0)
         {
