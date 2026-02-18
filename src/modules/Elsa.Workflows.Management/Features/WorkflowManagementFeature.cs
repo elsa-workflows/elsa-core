@@ -234,6 +234,16 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
         return this;
     }
 
+    /// <summary>
+    /// Configures the workflow reference graph builder options.
+    /// </summary>
+    /// <param name="configure">A delegate to configure the options.</param>
+    public WorkflowManagementFeature ConfigureWorkflowReferenceGraph(Action<WorkflowReferenceGraphOptions> configure)
+    {
+        Services.Configure(configure);
+        return this;
+    }
+
     /// <inheritdoc />
     [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public override void Configure()
@@ -300,5 +310,6 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
         });
 
         Services.Configure<HostMethodActivitiesOptions>(_ => { });
+        Services.Configure<WorkflowReferenceGraphOptions>(_ => { });
     }
 }

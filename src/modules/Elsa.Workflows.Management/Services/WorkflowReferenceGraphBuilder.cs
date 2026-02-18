@@ -1,4 +1,6 @@
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Management.Options;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Management.Services;
 
@@ -6,8 +8,9 @@ namespace Elsa.Workflows.Management.Services;
 /// Default implementation of <see cref="IWorkflowReferenceGraphBuilder"/> that uses <see cref="IWorkflowReferenceQuery"/>
 /// to recursively build a complete graph of workflow references.
 /// </summary>
-public class WorkflowReferenceGraphBuilder(IWorkflowReferenceQuery workflowReferenceQuery) : IWorkflowReferenceGraphBuilder
+public class WorkflowReferenceGraphBuilder(IWorkflowReferenceQuery workflowReferenceQuery, IOptions<WorkflowReferenceGraphOptions> options) : IWorkflowReferenceGraphBuilder
 {
+    private readonly WorkflowReferenceGraphOptions _options = options.Value;
     /// <inheritdoc />
     public async Task<WorkflowReferenceGraph> BuildGraphAsync(string definitionId, CancellationToken cancellationToken = default)
     {
@@ -39,9 +42,18 @@ public class WorkflowReferenceGraphBuilder(IWorkflowReferenceQuery workflowRefer
     private async IAsyncEnumerable<WorkflowReferenceEdge> BuildEdgesAsync(
         string definitionId,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken,
-        HashSet<string>? visitedIds = null)
+        HashSet<string>? visitedIds = null,
+        int currentDepth = 0)
     {
         visitedIds ??= new HashSet<string>();
+
+        // Check depth limit
+        if (_options.MaxDepth > 0 && currentDepth >= _options.MaxDepth)
+            yield break;
+
+        // Check max definitions limit
+        if (_options.MaxDefinitions > 0 && visitedIds.Count >= _options.MaxDefinitions)
+            yield break;
 
         // If we've already processed this definition ID, skip it to prevent infinite recursion.
         if (!visitedIds.Add(definitionId))
@@ -55,7 +67,7 @@ public class WorkflowReferenceGraphBuilder(IWorkflowReferenceQuery workflowRefer
             yield return new WorkflowReferenceEdge(Source: consumerId, Target: definitionId);
             
             // Recursively process the consumer
-            await foreach (var childEdge in BuildEdgesAsync(consumerId, cancellationToken, visitedIds))
+            await foreach (var childEdge in BuildEdgesAsync(consumerId, cancellationToken, visitedIds, currentDepth + 1))
                 yield return childEdge;
         }
     }
