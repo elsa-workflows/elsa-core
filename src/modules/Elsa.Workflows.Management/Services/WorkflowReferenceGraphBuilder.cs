@@ -15,7 +15,7 @@ public class WorkflowReferenceGraphBuilder(IWorkflowReferenceQuery workflowRefer
     public async Task<WorkflowReferenceGraph> BuildGraphAsync(string definitionId, CancellationToken cancellationToken = default)
     {
         var edges = await BuildEdgesAsync(definitionId, cancellationToken).ToListAsync(cancellationToken);
-        return new WorkflowReferenceGraph([definitionId], edges);
+        return new([definitionId], edges);
     }
 
     /// <inheritdoc />
@@ -36,7 +36,7 @@ public class WorkflowReferenceGraphBuilder(IWorkflowReferenceQuery workflowRefer
         // Deduplicate edges
         var distinctEdges = allEdges.Distinct().ToList();
 
-        return new WorkflowReferenceGraph(rootIds, distinctEdges);
+        return new(rootIds, distinctEdges);
     }
 
     private async IAsyncEnumerable<WorkflowReferenceEdge> BuildEdgesAsync(
@@ -45,7 +45,7 @@ public class WorkflowReferenceGraphBuilder(IWorkflowReferenceQuery workflowRefer
         HashSet<string>? visitedIds = null,
         int currentDepth = 0)
     {
-        visitedIds ??= new HashSet<string>();
+        visitedIds ??= new();
 
         // Check depth limit
         if (_options.MaxDepth > 0 && currentDepth >= _options.MaxDepth)
@@ -64,7 +64,7 @@ public class WorkflowReferenceGraphBuilder(IWorkflowReferenceQuery workflowRefer
         // For each consumer, create an edge: Consumer (Source) → definitionId (Target)
         foreach (var consumerId in consumerIds)
         {
-            yield return new WorkflowReferenceEdge(Source: consumerId, Target: definitionId);
+            yield return new(Source: consumerId, Target: definitionId);
             
             // Recursively process the consumer
             await foreach (var childEdge in BuildEdgesAsync(consumerId, cancellationToken, visitedIds, currentDepth + 1))
