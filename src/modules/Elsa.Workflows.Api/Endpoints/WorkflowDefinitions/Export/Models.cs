@@ -9,7 +9,7 @@ internal class Request
     /// <summary>
     /// The workflow definition ID.
     /// </summary>
-    public string? DefinitionId { get; set; } = default!;
+    public string? DefinitionId { get; set; } = null!;
     
     /// <summary>
     /// The version options.
@@ -19,7 +19,7 @@ internal class Request
     /// <summary>
     /// A list of workflow definition version IDs.
     /// </summary>
-    public ICollection<string>? Ids { get; set; } = default!;
+    public ICollection<string>? Ids { get; set; } = null!;
     
     /// <summary>
     /// When true, automatically includes all consuming workflow definitions in the export.

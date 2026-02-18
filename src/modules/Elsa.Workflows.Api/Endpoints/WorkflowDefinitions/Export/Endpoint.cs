@@ -56,7 +56,7 @@ internal class Export : ElsaEndpoint<Request>
 
     private async Task DownloadMultipleWorkflowsAsync(ICollection<string> ids, bool includeConsumingWorkflows, CancellationToken cancellationToken)
     {
-        List<WorkflowDefinition> definitions = (await _store.FindManyAsync(new()
+        var definitions = (await _store.FindManyAsync(new()
         {
             Ids = ids
         }, cancellationToken)).ToList();
@@ -76,7 +76,7 @@ internal class Export : ElsaEndpoint<Request>
     private async Task DownloadSingleWorkflowAsync(string definitionId, string? versionOptions, bool includeConsumingWorkflows, CancellationToken cancellationToken)
     {
         var parsedVersionOptions = string.IsNullOrEmpty(versionOptions) ? VersionOptions.Latest : VersionOptions.FromString(versionOptions);
-        WorkflowDefinition? definition = (await _store.FindManyAsync(new()
+        var definition = (await _store.FindManyAsync(new()
         {
             DefinitionId = definitionId,
             VersionOptions = parsedVersionOptions
@@ -131,6 +131,22 @@ internal class Export : ElsaEndpoint<Request>
     private async Task WriteZipResponseAsync(List<WorkflowDefinition> definitions, CancellationToken cancellationToken)
     {
         var zipStream = new MemoryStream();
+        
+#if NET10_0_OR_GREATER
+        await using (var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
+        {
+            // Create a JSON file for each workflow definition:
+            foreach (var definition in definitions)
+            {
+                var model = await CreateWorkflowModelAsync(definition, cancellationToken);
+                var binaryJson = await SerializeWorkflowDefinitionAsync(model, cancellationToken);
+                var fileName = GetFileName(model);
+                var entry = zipArchive.CreateEntry(fileName, CompressionLevel.Optimal);
+                await using var entryStream = await entry.OpenAsync(cancellationToken);
+                await entryStream.WriteAsync(binaryJson, cancellationToken);
+            }
+        }
+#else
         using (var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
         {
             // Create a JSON file for each workflow definition:
@@ -144,7 +160,8 @@ internal class Export : ElsaEndpoint<Request>
                 await entryStream.WriteAsync(binaryJson, cancellationToken);
             }
         }
-
+#endif
+        
         // Send the zip file to the client:
         zipStream.Position = 0;
         await Send.BytesAsync(zipStream.ToArray(), "workflow-definitions.zip", cancellation: cancellationToken);
@@ -176,8 +193,7 @@ internal class Export : ElsaEndpoint<Request>
         writer.WriteEndObject();
 
         await writer.FlushAsync(cancellationToken);
-        var binaryJson = output.ToArray();
-        return binaryJson;
+        return output.ToArray();
     }
 
     private async Task<WorkflowDefinitionModel> CreateWorkflowModelAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
