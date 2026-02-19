@@ -1,5 +1,4 @@
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
-using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
 
@@ -12,12 +11,8 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowReferenceGraph;
 public class WorkflowReferenceGraphTests(App app) : AppComponentTest(app)
 {
     private const string GrandchildDefinitionId = "refgraph-grandchild";
-    private const string GrandchildVersionId = "refgraph-grandchild-v1";
     private const string ChildDefinitionId = "refgraph-child";
-    private const string ChildVersionId = "refgraph-child-v1";
     private const string ParentDefinitionId = "refgraph-parent";
-
-    // --- Consumers endpoint ---
 
     [Fact(DisplayName = "Consumers endpoint returns direct and transitive consumers")]
     public async Task ConsumersEndpoint_ReturnsTransitiveConsumers()
