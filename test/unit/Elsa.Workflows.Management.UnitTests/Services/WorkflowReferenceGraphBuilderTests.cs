@@ -1,3 +1,4 @@
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Services;
 using Microsoft.Extensions.Options;
@@ -29,20 +30,20 @@ public class WorkflowReferenceGraphBuilderTests
     [Fact]
     public async Task BuildGraphAsync_WithDirectConsumers_ReturnsEdgesAndConsumers()
     {
-        SetupFanOutGraph(); // A consumed by B and C.
+        SetupGraph(
+            ("A", ["B", "C"]),
+            ("B", []),
+            ("C", [])
+        );
 
         var builder = CreateBuilder();
         var graph = await builder.BuildGraphAsync("A");
 
         // Edges.
-        Assert.Equal(2, graph.Edges.Count);
-        Assert.Contains(graph.Edges, e => e is { Source: "B", Target: "A" });
-        Assert.Contains(graph.Edges, e => e is { Source: "C", Target: "A" });
+        AssertEdges(graph, ("B", "A"), ("C", "A"));
 
         // Consumer IDs.
-        Assert.Equal(2, graph.ConsumerDefinitionIds.Count);
-        Assert.Contains("B", graph.ConsumerDefinitionIds);
-        Assert.Contains("C", graph.ConsumerDefinitionIds);
+        AssertConsumers(graph, "B", "C");
 
         // Inbound lookup on target "A" returns the same consumers.
         var consumers = graph.GetConsumers("A").ToList();
@@ -54,50 +55,49 @@ public class WorkflowReferenceGraphBuilderTests
     [Fact]
     public async Task BuildGraphAsync_WithTransitiveConsumers_ReturnsFullGraph()
     {
-        _query.ExecuteAsync("A", Arg.Any<CancellationToken>()).Returns(["B"]);
-        _query.ExecuteAsync("B", Arg.Any<CancellationToken>()).Returns(["C"]);
-        _query.ExecuteAsync("C", Arg.Any<CancellationToken>()).Returns([]);
+        SetupGraph(
+            ("A", ["B"]),
+            ("B", ["C"]),
+            ("C", [])
+        );
 
         var builder = CreateBuilder();
         var graph = await builder.BuildGraphAsync("A");
 
-        Assert.Equal(2, graph.Edges.Count);
-        Assert.Contains(graph.Edges, e => e is { Source: "B", Target: "A" });
-        Assert.Contains(graph.Edges, e => e is { Source: "C", Target: "B" });
-        Assert.Equal(2, graph.ConsumerDefinitionIds.Count);
-        Assert.Contains("B", graph.ConsumerDefinitionIds);
-        Assert.Contains("C", graph.ConsumerDefinitionIds);
+        AssertEdges(graph, ("B", "A"), ("C", "B"));
+        AssertConsumers(graph, "B", "C");
     }
 
     [Fact]
     public async Task BuildGraphAsync_WithDiamondGraph_IncludesAllEdges()
     {
-        SetupDiamondGraph(); // A←{B,C}, B←D, C←D.
+        SetupGraph(
+            ("A", ["B", "C"]),
+            ("B", ["D"]),
+            ("C", ["D"]),
+            ("D", [])
+        );
 
         var builder = CreateBuilder();
         var graph = await builder.BuildGraphAsync("A");
 
         // All three consumers should be discovered.
-        Assert.Equal(3, graph.ConsumerDefinitionIds.Count);
-        Assert.Contains("B", graph.ConsumerDefinitionIds);
-        Assert.Contains("C", graph.ConsumerDefinitionIds);
-        Assert.Contains("D", graph.ConsumerDefinitionIds);
+        AssertConsumers(graph, "B", "C", "D");
 
         // Edges: B→A, D→B (from B's branch), C→A, D→C (edge yielded before recursion is skipped).
-        Assert.Equal(4, graph.Edges.Count);
-        Assert.Contains(graph.Edges, e => e is { Source: "B", Target: "A" });
-        Assert.Contains(graph.Edges, e => e is { Source: "D", Target: "B" });
-        Assert.Contains(graph.Edges, e => e is { Source: "C", Target: "A" });
-        Assert.Contains(graph.Edges, e => e is { Source: "D", Target: "C" });
+        AssertEdges(graph, ("B", "A"), ("D", "B"), ("C", "A"), ("D", "C"));
     }
 
     [Fact]
     public async Task BuildGraphAsync_WithDiamondGraph_DoesNotRecurseAlreadyVisitedNodes()
     {
-        SetupDiamondGraph(); // A←{B,C}, B←D, C←D.
-        // Extend: D is also consumed by E.
-        _query.ExecuteAsync("D", Arg.Any<CancellationToken>()).Returns(["E"]);
-        _query.ExecuteAsync("E", Arg.Any<CancellationToken>()).Returns([]);
+        SetupGraph(
+            ("A", ["B", "C"]),
+            ("B", ["D"]),
+            ("C", ["D"]),
+            ("D", ["E"]),
+            ("E", [])
+        );
 
         var builder = CreateBuilder();
         var graph = await builder.BuildGraphAsync("A");
@@ -111,19 +111,17 @@ public class WorkflowReferenceGraphBuilderTests
     [Fact]
     public async Task BuildGraphAsync_WithCycle_DoesNotInfiniteLoop()
     {
-        // A → B → C → A (cycle of consumers).
-        _query.ExecuteAsync("A", Arg.Any<CancellationToken>()).Returns(["B"]);
-        _query.ExecuteAsync("B", Arg.Any<CancellationToken>()).Returns(["C"]);
-        _query.ExecuteAsync("C", Arg.Any<CancellationToken>()).Returns(["A"]);
+        SetupGraph(
+            ("A", ["B"]),
+            ("B", ["C"]),
+            ("C", ["A"])
+        );
 
         var builder = CreateBuilder();
         var graph = await builder.BuildGraphAsync("A");
 
         // Edges: B→A, C→B, A→C (edge yielded, but A already visited so recursion stops).
-        Assert.Equal(3, graph.Edges.Count);
-        Assert.Contains(graph.Edges, e => e is { Source: "B", Target: "A" });
-        Assert.Contains(graph.Edges, e => e is { Source: "C", Target: "B" });
-        Assert.Contains(graph.Edges, e => e is { Source: "A", Target: "C" });
+        AssertEdges(graph, ("B", "A"), ("C", "B"), ("A", "C"));
     }
 
     [Theory(DisplayName = "Traversal limits stop recursion")]
@@ -131,28 +129,29 @@ public class WorkflowReferenceGraphBuilderTests
     [InlineData(0, 2, "MaxDefinitions")]
     public async Task BuildGraphAsync_WithTraversalLimit_StopsRecursion(int maxDepth, int maxDefinitions, string _)
     {
-        // Chain: A → B → C → D (→ E when MaxDepth, but irrelevant — both limits truncate at the same point).
-        _query.ExecuteAsync("A", Arg.Any<CancellationToken>()).Returns(["B"]);
-        _query.ExecuteAsync("B", Arg.Any<CancellationToken>()).Returns(["C"]);
-        _query.ExecuteAsync("C", Arg.Any<CancellationToken>()).Returns(["D"]);
-        _query.ExecuteAsync("D", Arg.Any<CancellationToken>()).Returns([]);
+        SetupGraph(
+            ("A", ["B"]),
+            ("B", ["C"]),
+            ("C", ["D"]),
+            ("D", [])
+        );
 
         var builder = CreateBuilder(new() { MaxDepth = maxDepth, MaxDefinitions = maxDefinitions });
         var graph = await builder.BuildGraphAsync("A");
 
         // Both limits produce 2 edges: B→A and C→B. D is never reached.
-        Assert.Equal(2, graph.Edges.Count);
-        Assert.Contains(graph.Edges, e => e is { Source: "B", Target: "A" });
-        Assert.Contains(graph.Edges, e => e is { Source: "C", Target: "B" });
+        AssertEdges(graph, ("B", "A"), ("C", "B"));
         Assert.DoesNotContain(graph.Edges, e => e.Source == "D");
     }
 
     [Fact]
     public async Task BuildGraphAsync_MultipleRoots_MergesGraphs()
     {
-        _query.ExecuteAsync("A", Arg.Any<CancellationToken>()).Returns(["B", "C"]);
-        _query.ExecuteAsync("B", Arg.Any<CancellationToken>()).Returns(["C"]);
-        _query.ExecuteAsync("C", Arg.Any<CancellationToken>()).Returns([]);
+        SetupGraph(
+            ("A", ["B", "C"]),
+            ("B", ["C"]),
+            ("C", [])
+        );
 
         var builder = CreateBuilder();
         var graph = await builder.BuildGraphAsync(["A", "B"]);
@@ -160,17 +159,18 @@ public class WorkflowReferenceGraphBuilderTests
         Assert.Equal(2, graph.RootDefinitionIds.Count);
         Assert.Contains("A", graph.RootDefinitionIds);
         Assert.Contains("B", graph.RootDefinitionIds);
-        Assert.Single(graph.ConsumerDefinitionIds);
-        Assert.Contains("C", graph.ConsumerDefinitionIds);
+        AssertConsumers(graph, "C");
     }
 
     [Fact]
     public async Task BuildGraphAsync_MultipleRoots_SharedConsumer_YieldsEdgesForEachRoot()
     {
         // X consumes both A and B.
-        _query.ExecuteAsync("A", Arg.Any<CancellationToken>()).Returns(["X"]);
-        _query.ExecuteAsync("B", Arg.Any<CancellationToken>()).Returns(["X"]);
-        _query.ExecuteAsync("X", Arg.Any<CancellationToken>()).Returns([]);
+        SetupGraph(
+            ("A", ["X"]),
+            ("B", ["X"]),
+            ("X", [])
+        );
 
         var builder = CreateBuilder();
         var graph = await builder.BuildGraphAsync(["A", "B"]);
@@ -183,8 +183,10 @@ public class WorkflowReferenceGraphBuilderTests
     [Fact]
     public async Task BuildGraphAsync_OutboundLookup_ReturnsCorrectDependencies()
     {
-        _query.ExecuteAsync("A", Arg.Any<CancellationToken>()).Returns(["B"]);
-        _query.ExecuteAsync("B", Arg.Any<CancellationToken>()).Returns([]);
+        SetupGraph(
+            ("A", ["B"]),
+            ("B", [])
+        );
 
         var builder = CreateBuilder();
         var graph = await builder.BuildGraphAsync("A");
@@ -211,20 +213,23 @@ public class WorkflowReferenceGraphBuilderTests
         return new(_query, new OptionsWrapper<WorkflowReferenceGraphOptions>(options));
     }
 
-    /// <summary>A consumed by B and C (fan-out). B and C are leaves.</summary>
-    private void SetupFanOutGraph()
+    private void SetupGraph(params (string Source, string[] Consumers)[] definitions)
     {
-        _query.ExecuteAsync("A", Arg.Any<CancellationToken>()).Returns(["B", "C"]);
-        _query.ExecuteAsync("B", Arg.Any<CancellationToken>()).Returns([]);
-        _query.ExecuteAsync("C", Arg.Any<CancellationToken>()).Returns([]);
+        foreach (var (source, consumers) in definitions)
+            _query.ExecuteAsync(source, Arg.Any<CancellationToken>()).Returns(consumers);
     }
 
-    /// <summary>Diamond: A←{B,C}, B←D, C←D. D is a leaf by default.</summary>
-    private void SetupDiamondGraph()
+    private static void AssertEdges(WorkflowReferenceGraph graph, params (string Source, string Target)[] edges)
     {
-        _query.ExecuteAsync("A", Arg.Any<CancellationToken>()).Returns(["B", "C"]);
-        _query.ExecuteAsync("B", Arg.Any<CancellationToken>()).Returns(["D"]);
-        _query.ExecuteAsync("C", Arg.Any<CancellationToken>()).Returns(["D"]);
-        _query.ExecuteAsync("D", Arg.Any<CancellationToken>()).Returns([]);
+        Assert.Equal(edges.Length, graph.Edges.Count);
+        foreach (var (source, target) in edges)
+            Assert.Contains(graph.Edges, e => e is { Source: var s, Target: var t } && s == source && t == target);
+    }
+
+    private static void AssertConsumers(WorkflowReferenceGraph graph, params string[] consumerIds)
+    {
+        Assert.Equal(consumerIds.Length, graph.ConsumerDefinitionIds.Count);
+        foreach (var consumerId in consumerIds)
+            Assert.Contains(consumerId, graph.ConsumerDefinitionIds);
     }
 }
