@@ -33,7 +33,7 @@ public class DistributedWorkflowDefinitionsRefresher(IWorkflowDefinitionsRefresh
         var lockKey = $"WorkflowDefinitionsRefresher:{definitionIdsKey}";
         await using var distributedLock = await distributedLockProvider.TryAcquireLockAsync(
             lockKey,
-            TimeSpan.FromMinutes(1),
+            TimeSpan.Zero,
             cancellationToken);
         
         if (distributedLock == null)
