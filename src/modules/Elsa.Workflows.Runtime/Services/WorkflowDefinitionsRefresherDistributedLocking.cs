@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Runtime;
 /// </summary>
 /// <param name="inner"></param>
 /// <param name="distributedLockProvider"></param>
-public abstract class WorkflowDefinitionsRefresherDistributedLocking(IWorkflowDefinitionsRefresher inner,
+public class WorkflowDefinitionsRefresherDistributedLocking(IWorkflowDefinitionsRefresher inner,
     IDistributedLockProvider distributedLockProvider) : IWorkflowDefinitionsRefresher
 {
     /// <summary>
