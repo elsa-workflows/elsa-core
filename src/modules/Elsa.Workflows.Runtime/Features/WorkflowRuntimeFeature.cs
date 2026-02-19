@@ -267,11 +267,9 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
             
             .AddScoped<IWorkflowDefinitionsRefresher, WorkflowDefinitionsRefresher>()
-            // Decorating with distributed locking to prevent multiple instances from refreshing the same workflow definitions at the same time.
             .Decorate<IWorkflowDefinitionsRefresher, WorkflowDefinitionsRefresherDistributedLocking>()
             
             .AddScoped<IWorkflowDefinitionsReloader, WorkflowDefinitionsReloader>()
-            // Decorating with distributed locking to prevent multiple instances from reloading workflow definitions at the same time.
             .Decorate<IWorkflowDefinitionsReloader, WorkflowDefinitionsReloaderDistributedLocking>()
             
             .AddScoped<IWorkflowRegistry, DefaultWorkflowRegistry>()

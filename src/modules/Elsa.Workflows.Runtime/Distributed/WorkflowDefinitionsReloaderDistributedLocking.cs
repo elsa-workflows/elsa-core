@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Runtime.Distributed;
 public class WorkflowDefinitionsReloaderDistributedLocking(
     IWorkflowDefinitionsReloader inner,
     IDistributedLockProvider distributedLockProvider,
-    ILogger logger) : IWorkflowDefinitionsReloader
+    ILogger<WorkflowDefinitionsReloaderDistributedLocking> logger) : IWorkflowDefinitionsReloader
 {
     private const string LockKey = "WorkflowDefinitionsReloader";
     

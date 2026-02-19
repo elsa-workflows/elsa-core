@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Runtime.Distributed;
 [UsedImplicitly]
 public class WorkflowDefinitionsRefresherDistributedLocking(IWorkflowDefinitionsRefresher inner,
     IDistributedLockProvider distributedLockProvider,
-    ILogger logger) : IWorkflowDefinitionsRefresher
+    ILogger<WorkflowDefinitionsRefresherDistributedLocking> logger) : IWorkflowDefinitionsRefresher
 {
     /// <summary>
     /// This ensures that only one instance of the application can refresh a set of workflow definitions at a time, preventing potential conflicts and ensuring consistency across distributed environments.
