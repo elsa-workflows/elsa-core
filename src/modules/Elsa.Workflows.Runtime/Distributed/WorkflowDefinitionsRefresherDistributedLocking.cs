@@ -1,14 +1,16 @@
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
+using JetBrains.Annotations;
 using Medallion.Threading;
 
-namespace Elsa.Workflows.Runtime;
+namespace Elsa.Workflows.Runtime.Distributed;
 
 /// <summary>
 /// Decorator class that adds Distributed Locking to the Workflow Definitions Refresher.
 /// </summary>
 /// <param name="inner"></param>
 /// <param name="distributedLockProvider"></param>
+[UsedImplicitly]
 public class WorkflowDefinitionsRefresherDistributedLocking(IWorkflowDefinitionsRefresher inner,
     IDistributedLockProvider distributedLockProvider) : IWorkflowDefinitionsRefresher
 {
