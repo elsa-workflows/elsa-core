@@ -1,5 +1,6 @@
 using JetBrains.Annotations;
 using Medallion.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Distributed;
 
@@ -11,7 +12,8 @@ namespace Elsa.Workflows.Runtime.Distributed;
 [UsedImplicitly]
 public class WorkflowDefinitionsReloaderDistributedLocking(
     IWorkflowDefinitionsReloader inner,
-    IDistributedLockProvider distributedLockProvider) : IWorkflowDefinitionsReloader
+    IDistributedLockProvider distributedLockProvider,
+    ILogger logger) : IWorkflowDefinitionsReloader
 {
     private const string LockKey = "WorkflowDefinitionsReloader";
     
@@ -28,7 +30,7 @@ public class WorkflowDefinitionsReloaderDistributedLocking(
         
         if (distributedLock == null)
         {
-            // Another instance is already reloading workflow definitions. Skip this reload.
+            logger.LogInformation("Could not acquire lock for workflow definitions reload. Another instance is already reloading workflow definitions");
             return;
         }
         

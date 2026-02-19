@@ -2,6 +2,7 @@ using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
 using JetBrains.Annotations;
 using Medallion.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Distributed;
 
@@ -12,7 +13,8 @@ namespace Elsa.Workflows.Runtime.Distributed;
 /// <param name="distributedLockProvider"></param>
 [UsedImplicitly]
 public class WorkflowDefinitionsRefresherDistributedLocking(IWorkflowDefinitionsRefresher inner,
-    IDistributedLockProvider distributedLockProvider) : IWorkflowDefinitionsRefresher
+    IDistributedLockProvider distributedLockProvider,
+    ILogger logger) : IWorkflowDefinitionsRefresher
 {
     /// <summary>
     /// This ensures that only one instance of the application can refresh a set of workflow definitions at a time, preventing potential conflicts and ensuring consistency across distributed environments.
@@ -36,7 +38,7 @@ public class WorkflowDefinitionsRefresherDistributedLocking(IWorkflowDefinitions
         
         if (distributedLock == null)
         {
-            // Another instance is already refreshing these workflow definitions. Skip this refresh.
+            logger.LogInformation("Could not acquire lock for workflow definitions refresh. Another instance is already refreshing these workflow definitions");
             return new RefreshWorkflowDefinitionsResponse(Array.Empty<string>(), request.DefinitionIds!);
         }
         
