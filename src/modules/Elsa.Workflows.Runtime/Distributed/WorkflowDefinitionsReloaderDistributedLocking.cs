@@ -25,7 +25,7 @@ public class DistributedWorkflowDefinitionsReloader(
     {
         await using var distributedLock = await distributedLockProvider.TryAcquireLockAsync(
             LockKey,
-            TimeSpan.FromMinutes(1),
+            TimeSpan.Zero,
             cancellationToken);
         
         if (distributedLock == null)
