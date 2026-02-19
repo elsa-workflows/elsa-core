@@ -36,4 +36,16 @@ public class WorkflowReferenceGraphTests(App app) : AppComponentTest(app)
         Assert.NotNull(response);
         Assert.Empty(response.ConsumingWorkflowDefinitionIds);
     }
+
+    [Fact(DisplayName = "Consumers endpoint for unknown workflow returns not found")]
+    public async Task ConsumersEndpoint_UnknownWorkflow_ReturnsNotFound()
+    {
+        var client = WorkflowServer.CreateApiClient<IWorkflowDefinitionsApi>();
+        const string unknownDefinitionId = "refgraph-unknown-definition";
+
+        var exception = await Assert.ThrowsAsync<Refit.ApiException>(async () =>
+            await client.GetConsumersAsync(unknownDefinitionId));
+
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, exception.StatusCode);
+    }
 }

@@ -131,17 +131,19 @@ internal class Export : ElsaEndpoint<Request>
     private async Task WriteZipResponseAsync(List<WorkflowDefinition> definitions, CancellationToken cancellationToken)
     {
         var zipStream = new MemoryStream();
+        var sortedDefinitions = definitions.OrderBy(d => d.DefinitionId).ToList();
         
 #if NET10_0_OR_GREATER
         await using (var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
         {
             // Create a JSON file for each workflow definition:
-            foreach (var definition in definitions)
+            foreach (var definition in sortedDefinitions)
             {
                 var model = await CreateWorkflowModelAsync(definition, cancellationToken);
                 var binaryJson = await SerializeWorkflowDefinitionAsync(model, cancellationToken);
                 var fileName = GetFileName(model);
                 var entry = zipArchive.CreateEntry(fileName, CompressionLevel.Optimal);
+                entry.LastWriteTime = DateTimeOffset.UnixEpoch;
                 await using var entryStream = await entry.OpenAsync(cancellationToken);
                 await entryStream.WriteAsync(binaryJson, cancellationToken);
             }
@@ -150,12 +152,13 @@ internal class Export : ElsaEndpoint<Request>
         using (var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
         {
             // Create a JSON file for each workflow definition:
-            foreach (var definition in definitions)
+            foreach (var definition in sortedDefinitions)
             {
                 var model = await CreateWorkflowModelAsync(definition, cancellationToken);
                 var binaryJson = await SerializeWorkflowDefinitionAsync(model, cancellationToken);
                 var fileName = GetFileName(model);
                 var entry = zipArchive.CreateEntry(fileName, CompressionLevel.Optimal);
+                entry.LastWriteTime = DateTimeOffset.UnixEpoch;
                 await using var entryStream = entry.Open();
                 await entryStream.WriteAsync(binaryJson, cancellationToken);
             }
