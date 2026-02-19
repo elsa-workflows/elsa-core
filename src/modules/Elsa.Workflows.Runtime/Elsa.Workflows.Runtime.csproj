@@ -23,4 +23,8 @@
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Distributed\" />
+    </ItemGroup>
+
 </Project>

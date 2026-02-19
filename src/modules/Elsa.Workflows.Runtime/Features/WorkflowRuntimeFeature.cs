@@ -267,10 +267,10 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
             
             .AddScoped<IWorkflowDefinitionsRefresher, WorkflowDefinitionsRefresher>()
-            .Decorate<IWorkflowDefinitionsRefresher, WorkflowDefinitionsRefresherDistributedLocking>()
+            .Decorate<IWorkflowDefinitionsRefresher, DistributedWorkflowDefinitionsRefresher>()
             
             .AddScoped<IWorkflowDefinitionsReloader, WorkflowDefinitionsReloader>()
-            .Decorate<IWorkflowDefinitionsReloader, WorkflowDefinitionsReloaderDistributedLocking>()
+            .Decorate<IWorkflowDefinitionsReloader, DistributedWorkflowDefinitionsReloader>()
             
             .AddScoped<IWorkflowRegistry, DefaultWorkflowRegistry>()
             .AddScoped<IWorkflowMatcher, WorkflowMatcher>()
