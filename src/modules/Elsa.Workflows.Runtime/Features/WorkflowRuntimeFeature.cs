@@ -13,7 +13,6 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
-using Elsa.Workflows.Runtime.Distributed;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.Options;
@@ -265,13 +264,8 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IActivityExecutionMapper, DefaultActivityExecutionMapper>()
             .AddScoped<IWorkflowDefinitionStorePopulator, DefaultWorkflowDefinitionStorePopulator>()
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
-            
             .AddScoped<IWorkflowDefinitionsRefresher, WorkflowDefinitionsRefresher>()
-            .Decorate<IWorkflowDefinitionsRefresher, DistributedWorkflowDefinitionsRefresher>()
-            
             .AddScoped<IWorkflowDefinitionsReloader, WorkflowDefinitionsReloader>()
-            .Decorate<IWorkflowDefinitionsReloader, DistributedWorkflowDefinitionsReloader>()
-            
             .AddScoped<IWorkflowRegistry, DefaultWorkflowRegistry>()
             .AddScoped<IWorkflowMatcher, WorkflowMatcher>()
             .AddScoped<IWorkflowInvoker, WorkflowInvoker>()
