@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.Workflows.Runtime.Distributed;
 
 /// <summary>
-/// Decorator class that adds Distributed Locking to the Workflow Definitions Refresher.
+/// Decorator class that adds distributed locking to the Workflow Definitions Refresher.
 /// </summary>
 /// <param name="inner"></param>
 /// <param name="distributedLockProvider"></param>
