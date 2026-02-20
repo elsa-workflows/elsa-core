@@ -61,12 +61,17 @@ jobs:
       - name: Run tests with coverage
         run: |
           set -euo pipefail
-          mapfile -t projects < <(find test -type f -name '*.csproj' | sort)
+          mapfile -t projects < <(find test -type f -name '*.csproj' -print0 | xargs -0 -n1 | sort)
           if [ ${#projects[@]} -eq 0 ]; then
             echo "No test projects were found in the test directory." >&2
             exit 1
           fi
           for project in "${projects[@]}"; do
+            # Ensure we only process .csproj files
+            if [[ "$project" != *.csproj ]]; then
+              echo "Skipping non-csproj file: $project"
+              continue
+            fi
             echo "Running tests with coverage for ${project}"
             dotnet test "$project" --configuration Release --no-build --logger "GitHubActions;report-warnings=false" /p:CollectCoverage=true
           done
