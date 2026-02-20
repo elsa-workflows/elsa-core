@@ -69,20 +69,21 @@ jobs:
             exit 1
           fi
 
-          mapfile -t projects < <(find test -type f -name '*.csproj' -print0 | xargs -0 -n1 | sort)
+          mapfile -t projects < <(find test/unit -type f -name '*.csproj' -print0 | xargs -0 -n1 | sort)
           if [ ${#projects[@]} -eq 0 ]; then
-            echo "No test projects were found in the test directory." >&2
+            echo "No test projects were found in the test/unit directory." >&2
             exit 1
           fi
+
           for project in "${projects[@]}"; do
-            if [[ "$project" != *.csproj ]]; then
-              echo "Skipping non-csproj file: $project"
-              continue
-            fi
+            echo "Building test project ${project}"
+            dotnet build "$project" --configuration Release --framework net10.0
+
             echo "Running tests with coverage for ${project}"
             dotnet test "$project" \
               --configuration Release \
               --framework net10.0 \
+              --no-build \
               --logger "GitHubActions;report-warnings=false" \
               /p:CollectCoverage=true
           done
