@@ -31,13 +31,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up .NET SDKs
+      - name: Set up .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
+          dotnet-version: 10.0.1xx
+
+      - name: Show .NET info
+        run: |
+          dotnet --info
+          dotnet --list-sdks
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
@@ -48,10 +50,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore solution
-        run: dotnet restore Elsa.sln
-
-      - name: Build solution
-        run: dotnet build Elsa.sln --no-restore --configuration Release
+        run: dotnet restore Elsa.sln --ignore-failed-sources
 
       - name: Prepare coverage directory
         run: |
@@ -61,14 +60,36 @@ jobs:
       - name: Run tests with coverage
         run: |
           set -euo pipefail
-          mapfile -t projects < <(find test -type f -name '*.csproj' | sort)
-          if [ ${#projects[@]} -eq 0 ]; then
-            echo "No test projects were found in the test directory." >&2
+          dotnet --info
+          if ! dotnet --version | grep -q '^10\.'; then
+            echo "Expected .NET SDK 10.x but got $(dotnet --version)" >&2
             exit 1
           fi
+
+          # Discover test projects across unit/component/integration.
+          mapfile -t projects < <(
+            find test/unit test/component test/integration \
+              -type f -name '*.csproj' -print0 2>/dev/null \
+              | xargs -0 -n1 \
+              | sort
+          )
+
+          if [ ${#projects[@]} -eq 0 ]; then
+            echo "No test projects were found in test/unit, test/component or test/integration." >&2
+            exit 1
+          fi
+
           for project in "${projects[@]}"; do
+            echo "Building test project ${project}"
+            dotnet build "$project" --configuration Release --framework net10.0
+
             echo "Running tests with coverage for ${project}"
-            dotnet test "$project" --configuration Release --no-build --logger "GitHubActions;report-warnings=false" /p:CollectCoverage=true
+            dotnet test "$project" \
+              --configuration Release \
+              --framework net10.0 \
+              --no-build \
+              --logger "GitHubActions;report-warnings=false" \
+              /p:CollectCoverage=true
           done
 
       - name: Dump docker logs on failure

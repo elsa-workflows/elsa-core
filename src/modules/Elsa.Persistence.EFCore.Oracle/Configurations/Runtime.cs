@@ -21,6 +21,7 @@ public class Runtime :
         builder.Property<string>("SerializedPayload").HasColumnType("NCLOB");
         builder.Property<string>("SerializedOutputs").HasColumnType("NCLOB");
         builder.Property<string>("SerializedProperties").HasColumnType("NCLOB");
+        builder.Property<string>("SerializedMetadata").HasColumnType("NCLOB");
     }
 
     /// <inheritdoc />

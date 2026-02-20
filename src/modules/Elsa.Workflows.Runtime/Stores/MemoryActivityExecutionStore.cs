@@ -92,5 +92,6 @@ public class MemoryActivityExecutionStore : IActivityExecutionStore
         return Task.FromResult(records.LongCount());
     }
 
+
     private static IQueryable<ActivityExecutionRecord> Filter(IQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter) => filter.Apply(queryable);
 }

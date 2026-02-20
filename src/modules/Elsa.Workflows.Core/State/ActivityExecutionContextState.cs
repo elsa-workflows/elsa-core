@@ -20,6 +20,11 @@ public class ActivityExecutionContextState
     /// The ID of the activity instance.
     /// </summary>
     public string Id { get; set; } = default!;
+
+    /// <summary>
+    /// The depth of this activity in the call stack (0 for root activities).
+    /// </summary>
+    public int CallStackDepth { get; set; }
     
     /// <summary>
     /// The ID of the parent of the activity instance.

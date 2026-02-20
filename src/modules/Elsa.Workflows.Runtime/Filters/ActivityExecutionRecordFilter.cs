@@ -73,6 +73,42 @@ public class ActivityExecutionRecordFilter
     public bool? Completed { get; set; }
 
     /// <summary>
+    /// The ID of the activity execution context that scheduled this activity execution.
+    /// </summary>
+    public string? SchedulingActivityExecutionId { get; set; }
+
+    /// <summary>
+    /// The IDs of the activity execution contexts that scheduled activity executions.
+    /// </summary>
+    public ICollection<string>? SchedulingActivityExecutionIds { get; set; }
+
+    /// <summary>
+    /// The ID of the activity that scheduled this activity execution (denormalized).
+    /// </summary>
+    public string? SchedulingActivityId { get; set; }
+
+    /// <summary>
+    /// The IDs of the activities that scheduled activity executions (denormalized).
+    /// </summary>
+    public ICollection<string>? SchedulingActivityIds { get; set; }
+
+    /// <summary>
+    /// The workflow instance ID of the workflow that scheduled this activity execution.
+    /// Used for cross-workflow call stack tracking.
+    /// </summary>
+    public string? SchedulingWorkflowInstanceId { get; set; }
+
+    /// <summary>
+    /// The workflow instance IDs of the workflows that scheduled activity executions.
+    /// </summary>
+    public ICollection<string>? SchedulingWorkflowInstanceIds { get; set; }
+
+    /// <summary>
+    /// The call stack depth of the activity execution.
+    /// </summary>
+    public int? CallStackDepth { get; set; }
+
+    /// <summary>
     /// Returns true if the filter is empty.
     /// </summary>
     public bool IsEmpty =>
@@ -88,7 +124,14 @@ public class ActivityExecutionRecordFilter
         && Names == null
         && Status == null
         && Statuses == null
-        && Completed == null;
+        && Completed == null
+        && SchedulingActivityExecutionId == null
+        && SchedulingActivityExecutionIds == null
+        && SchedulingActivityId == null
+        && SchedulingActivityIds == null
+        && SchedulingWorkflowInstanceId == null
+        && SchedulingWorkflowInstanceIds == null
+        && CallStackDepth == null;
 
     /// <summary>
     /// Applies the filter to the specified queryable.
@@ -109,6 +152,13 @@ public class ActivityExecutionRecordFilter
         if (filter.Status != null) queryable = queryable.Where(x => x.Status == filter.Status);
         if (filter.Statuses != null && filter.Statuses.Any()) queryable = queryable.Where(x => filter.Statuses.Contains(x.Status));
         if (filter.Completed != null) queryable = filter.Completed == true ? queryable.Where(x => x.CompletedAt != null) : queryable.Where(x => x.CompletedAt == null);
+        if (filter.SchedulingActivityExecutionId != null) queryable = queryable.Where(x => x.SchedulingActivityExecutionId == filter.SchedulingActivityExecutionId);
+        if (filter.SchedulingActivityExecutionIds != null && filter.SchedulingActivityExecutionIds.Any()) queryable = queryable.Where(x => x.SchedulingActivityExecutionId != null && filter.SchedulingActivityExecutionIds.Contains(x.SchedulingActivityExecutionId));
+        if (filter.SchedulingActivityId != null) queryable = queryable.Where(x => x.SchedulingActivityId == filter.SchedulingActivityId);
+        if (filter.SchedulingActivityIds != null && filter.SchedulingActivityIds.Any()) queryable = queryable.Where(x => x.SchedulingActivityId != null && filter.SchedulingActivityIds.Contains(x.SchedulingActivityId));
+        if (filter.SchedulingWorkflowInstanceId != null) queryable = queryable.Where(x => x.SchedulingWorkflowInstanceId == filter.SchedulingWorkflowInstanceId);
+        if (filter.SchedulingWorkflowInstanceIds != null && filter.SchedulingWorkflowInstanceIds.Any()) queryable = queryable.Where(x => x.SchedulingWorkflowInstanceId != null && filter.SchedulingWorkflowInstanceIds.Contains(x.SchedulingWorkflowInstanceId));
+        if (filter.CallStackDepth != null) queryable = queryable.Where(x => x.CallStackDepth == filter.CallStackDepth);
 
         return queryable;
     }

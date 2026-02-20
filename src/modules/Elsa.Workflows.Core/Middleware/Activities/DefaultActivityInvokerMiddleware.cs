@@ -106,9 +106,7 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
     /// </summary>
     protected virtual async ValueTask ExecuteActivityAsync(ActivityExecutionContext context)
     {
-        var executeDelegate = context.WorkflowExecutionContext.ExecuteDelegate
-                              ?? (ExecuteActivityDelegate)Delegate.CreateDelegate(typeof(ExecuteActivityDelegate), context.Activity, ExecuteAsyncMethodInfo);
-
+        var executeDelegate = context.WorkflowExecutionContext.ExecuteDelegate ?? (ExecuteActivityDelegate)Delegate.CreateDelegate(typeof(ExecuteActivityDelegate), context.Activity, ExecuteAsyncMethodInfo);
         await executeDelegate(context);
     }
 

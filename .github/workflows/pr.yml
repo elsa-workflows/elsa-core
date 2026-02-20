@@ -37,7 +37,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            9.x
+            10.x
       - uses: actions/checkout@v6
       - name: 'Run: Compile, Test'
         run: ./build.cmd Compile Test

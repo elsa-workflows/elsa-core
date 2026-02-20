@@ -26,7 +26,22 @@ public class WorkflowExecutionContextSchedulerStrategy : IWorkflowExecutionConte
 
         var activity = activityNode.Activity;
         var tag = options?.Tag;
-        var workItem = new ActivityWorkItem(activity, owner, tag, options?.Variables, options?.ExistingActivityExecutionContext, options?.Input);
+
+        // Use explicit SchedulingActivityExecutionId from options, or fall back to owner context.
+        var schedulingActivityExecutionId = options?.SchedulingActivityExecutionId ?? owner.Id;
+
+        // Use explicit SchedulingWorkflowInstanceId from options, if any.
+        var schedulingWorkflowInstanceId = options?.SchedulingWorkflowInstanceId;
+
+        var workItem = new ActivityWorkItem(
+            activity,
+            owner,
+            tag,
+            options?.Variables,
+            options?.ExistingActivityExecutionContext,
+            options?.Input,
+            schedulingActivityExecutionId,
+            schedulingWorkflowInstanceId);
         var completionCallback = options?.CompletionCallback;
 
         context.AddCompletionCallback(owner, activityNode, completionCallback, tag);

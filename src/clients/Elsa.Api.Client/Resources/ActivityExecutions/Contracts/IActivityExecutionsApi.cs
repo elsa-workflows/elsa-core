@@ -45,4 +45,16 @@ public interface IActivityExecutionsApi
     /// <returns>The activity execution.</returns>
     [Get("/activity-executions/{id}")]
     Task<ActivityExecutionRecord?> GetAsync(string id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the call stack (execution chain) for a given activity execution.
+    /// </summary>
+    /// <param name="id">The ID of the activity execution.</param>
+    /// <param name="includeCrossWorkflowChain">Whether to include parent workflow activities across workflow boundaries.</param>
+    /// <param name="skip">The number of items to skip (for pagination).</param>
+    /// <param name="take">The maximum number of items to return (for pagination).</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The response containing the call stack.</returns>
+    [Get("/activity-executions/{id}/call-stack")]
+    Task<ActivityExecutionCallStack> GetCallStackAsync(string id, bool? includeCrossWorkflowChain = null, int? skip = null, int? take = null, CancellationToken cancellationToken = default);
 }

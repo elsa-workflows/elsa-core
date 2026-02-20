@@ -18,12 +18,8 @@ using Nuke.Components;
 ]
 public partial class Build;
 
-class CustomGitHubActionsAttribute : GitHubActionsAttribute
+class CustomGitHubActionsAttribute(string name, GitHubActionsImage image, params GitHubActionsImage[] images) : GitHubActionsAttribute(name, image, images)
 {
-    public CustomGitHubActionsAttribute(string name, GitHubActionsImage image, params GitHubActionsImage[] images) : base(name, image, images)
-    {
-    }
-
     protected override GitHubActionsJob GetJobs(GitHubActionsImage image, IReadOnlyCollection<ExecutableTarget> relevantTargets)
     {
         var job = base.GetJobs(image, relevantTargets);
@@ -31,21 +27,16 @@ class CustomGitHubActionsAttribute : GitHubActionsAttribute
         var newSteps = new List<GitHubActionsStep>(job.Steps);
 
         // only need to list the ones that are missing from default image
-        newSteps.Insert(0, new GitHubActionsSetupDotNetStep(["9.x"]));
+        newSteps.Insert(0, new GitHubActionsSetupDotNetStep(["10.x"]));
 
         job.Steps = newSteps.ToArray();
         return job;
     }
 }
 
-class GitHubActionsSetupDotNetStep : GitHubActionsStep
+class GitHubActionsSetupDotNetStep(string[] versions) : GitHubActionsStep
 {
-    public GitHubActionsSetupDotNetStep(string[] versions)
-    {
-        Versions = versions;
-    }
-
-    string[] Versions { get; }
+    string[] Versions { get; } = versions;
 
     public override void Write(CustomFileWriter writer)
     {

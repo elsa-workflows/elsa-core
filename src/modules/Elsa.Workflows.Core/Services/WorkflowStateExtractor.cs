@@ -148,6 +148,7 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
             var metadata = activityExecutionContextState.Metadata;
             var activityExecutionContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(activity);
             activityExecutionContext.Id = activityExecutionContextState.Id;
+            activityExecutionContext.CallStackDepth = activityExecutionContextState.CallStackDepth;
             activityExecutionContext.Properties.Merge(properties);
             activityExecutionContext.Metadata.Merge(metadata);
             
@@ -239,6 +240,7 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
             var activityExecutionContextState = new ActivityExecutionContextState
             {
                 Id = activityExecutionContext.Id,
+                CallStackDepth = activityExecutionContext.CallStackDepth,
                 ParentContextId = activityExecutionContext.ParentActivityExecutionContext?.Id,
                 ScheduledActivityNodeId = activityExecutionContext.NodeId,
                 OwnerActivityNodeId = activityExecutionContext.ParentActivityExecutionContext?.NodeId,

@@ -55,7 +55,10 @@ public class DefaultActivitySchedulerMiddleware(WorkflowMiddlewareDelegate next,
             ExistingActivityExecutionContext = workItem.ExistingActivityExecutionContext,
             Tag = workItem.Tag,
             Variables = workItem.Variables,
-            Input = workItem.Input
+            Input = workItem.Input,
+            SchedulingActivityExecutionId = workItem.SchedulingActivityExecutionId,
+            SchedulingWorkflowInstanceId = workItem.SchedulingWorkflowInstanceId,
+            SchedulingCallStackDepth = workItem.SchedulingCallStackDepth
         };
 
         await activityInvoker.InvokeAsync(context, workItem.Activity, options);

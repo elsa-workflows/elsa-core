@@ -64,11 +64,23 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                     b.Property<int>("AggregateFaultCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("CallStackDepth")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("HasBookmarks")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("SchedulingActivityExecutionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SchedulingActivityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SchedulingWorkflowInstanceId")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("SerializedActivityState")
                         .HasColumnType("TEXT");

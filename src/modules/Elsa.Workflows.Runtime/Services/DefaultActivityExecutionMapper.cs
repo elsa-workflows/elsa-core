@@ -47,7 +47,11 @@ public class DefaultActivityExecutionMapper(
             HasBookmarks = source.Bookmarks.Any(),
             Status = source.Status,
             AggregateFaultCount = source.AggregateFaultCount,
-            CompletedAt = source.CompletedAt
+            CompletedAt = source.CompletedAt,
+            SchedulingActivityExecutionId = source.SchedulingActivityExecutionId,
+            SchedulingActivityId = source.SchedulingActivityId,
+            SchedulingWorkflowInstanceId = source.SchedulingWorkflowInstanceId,
+            CallStackDepth = source.CallStackDepth
         };
 
         record = record.SanitizeLogMessage();

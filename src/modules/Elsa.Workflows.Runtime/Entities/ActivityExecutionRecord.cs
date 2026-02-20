@@ -96,6 +96,29 @@ public partial class ActivityExecutionRecord : Entity, ILogRecord
     /// Gets or sets the time at which the activity execution completed.
     /// </summary>
     public DateTimeOffset? CompletedAt { get; set; }
+
+    /// <summary>
+    /// The ID of the activity execution context that scheduled this activity execution.
+    /// This represents the temporal/execution predecessor that directly triggered execution of this activity.
+    /// </summary>
+    public string? SchedulingActivityExecutionId { get; set; }
+
+    /// <summary>
+    /// The ID of the activity that scheduled this activity execution (denormalized for convenience).
+    /// </summary>
+    public string? SchedulingActivityId { get; set; }
+
+    /// <summary>
+    /// The workflow instance ID of the workflow that scheduled this activity execution.
+    /// This is set when crossing workflow boundaries (e.g., via ExecuteWorkflow or DispatchWorkflow).
+    /// </summary>
+    public string? SchedulingWorkflowInstanceId { get; set; }
+
+    /// <summary>
+    /// The depth of this activity in the call stack (0 for root activities).
+    /// Calculated by traversing the SchedulingActivityExecutionId chain until reaching null.
+    /// </summary>
+    public int? CallStackDepth { get; set; }
 }
 
 public partial class ActivityExecutionRecord

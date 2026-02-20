@@ -604,6 +604,31 @@ public partial class WorkflowExecutionContext : IExecutionContext
         var activityInput = options?.Input ?? new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         activityExecutionContext.ActivityInput.Merge(activityInput);
 
+        // Populate call stack fields from options
+        activityExecutionContext.SchedulingActivityExecutionId = options?.SchedulingActivityExecutionId;
+        activityExecutionContext.SchedulingWorkflowInstanceId = options?.SchedulingWorkflowInstanceId;
+
+        // Calculate call stack depth
+        if (options?.SchedulingActivityExecutionId != null)
+        {
+            // First, try to find the scheduling context in the current workflow
+            var schedulingContext = ActivityExecutionContexts.FirstOrDefault(x => x.Id == options.SchedulingActivityExecutionId);
+            if (schedulingContext != null)
+            {
+                // Found in current workflow - use its depth
+                activityExecutionContext.SchedulingActivityId = schedulingContext.Activity.Id;
+                activityExecutionContext.CallStackDepth = schedulingContext.CallStackDepth + 1;
+            }
+            else if (options.SchedulingCallStackDepth.HasValue)
+            {
+                // Not found but caller provided depth (e.g., cross-workflow invocation)
+                activityExecutionContext.CallStackDepth = options.SchedulingCallStackDepth.Value + 1;
+            }
+            // else: scheduling context not found and no depth provided.
+            // Depth stays at default (0), which may result in incorrect call stack depth tracking
+            // if the scheduling context should have been present but wasn't found.
+        }
+
         return activityExecutionContext;
     }
 
@@ -688,3 +713,4 @@ public partial class WorkflowExecutionContext : IExecutionContext
         return _commitStateHandler.CommitAsync(this, CancellationToken);
     }
 }
+

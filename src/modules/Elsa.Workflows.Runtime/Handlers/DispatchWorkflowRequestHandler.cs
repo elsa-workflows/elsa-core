@@ -42,7 +42,10 @@ internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IW
             Input = command.Input,
             Properties = command.Properties,
             ParentId = command.ParentWorkflowInstanceId,
-            TriggerActivityId = command.TriggerActivityId
+            TriggerActivityId = command.TriggerActivityId,
+            SchedulingActivityExecutionId = command.SchedulingActivityExecutionId,
+            SchedulingWorkflowInstanceId = command.SchedulingWorkflowInstanceId,
+            SchedulingCallStackDepth = command.SchedulingCallStackDepth
         };
         await client.CreateAndRunInstanceAsync(createRequest, cancellationToken);
         return Unit.Instance;

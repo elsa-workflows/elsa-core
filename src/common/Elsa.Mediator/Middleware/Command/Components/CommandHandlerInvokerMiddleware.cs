@@ -40,9 +40,11 @@ public class CommandHandlerInvokerMiddleware(CommandMiddlewareDelegate next) : I
 
         // Execute command.
         var task = (Task)executeMethodWithReturnType.Invoke(strategy, [strategyContext])!;
-        await task.ConfigureAwait(false);
 
-        // Get result of task.
+        // Wait for completion.
+        await task;
+
+        // Get the result of the task.
         var taskWithReturnType = typeof(Task<>).MakeGenericType(resultType);
         var resultProperty = taskWithReturnType.GetProperty(nameof(Task<object>.Result))!;
         context.Result = resultProperty.GetValue(task);
