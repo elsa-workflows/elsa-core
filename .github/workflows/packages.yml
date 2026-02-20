@@ -39,6 +39,11 @@ jobs:
             9.0.x
             10.0.x
 
+      - name: Show .NET info
+        run: |
+          dotnet --info
+          dotnet --list-sdks
+
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
@@ -61,6 +66,8 @@ jobs:
       - name: Run tests with coverage
         run: |
           set -euo pipefail
+          # Force using .NET 10 toolchain for test execution (net10.0)
+          export DOTNET_ROLL_FORWARD=LatestMajor
           mapfile -t projects < <(find test -type f -name '*.csproj' -print0 | xargs -0 -n1 | sort)
           if [ ${#projects[@]} -eq 0 ]; then
             echo "No test projects were found in the test directory." >&2
@@ -73,7 +80,11 @@ jobs:
               continue
             fi
             echo "Running tests with coverage for ${project}"
-            dotnet test "$project" --configuration Release --no-build --logger "GitHubActions;report-warnings=false" /p:CollectCoverage=true
+            dotnet test "$project" \
+              --configuration Release \
+              --framework net10.0 \
+              --logger "GitHubActions;report-warnings=false" \
+              /p:CollectCoverage=true
           done
 
       - name: Dump docker logs on failure
