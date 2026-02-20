@@ -29,6 +29,9 @@ public class DistributedRuntimeFeature(IModule module) : FeatureBase(module)
     {
         Services
             .AddScoped<DistributedWorkflowRuntime>()
-            .AddScoped<DistributedBookmarkQueueWorker>();
+            .AddScoped<DistributedBookmarkQueueWorker>()
+            
+            .Decorate<IWorkflowDefinitionsRefresher, DistributedWorkflowDefinitionsRefresher>()
+            .Decorate<IWorkflowDefinitionsReloader, DistributedWorkflowDefinitionsReloader>();
     }
 }
