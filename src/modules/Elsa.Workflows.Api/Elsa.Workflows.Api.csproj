@@ -6,6 +6,10 @@
         </Description>
         <PackageTags>elsa module workflows api</PackageTags>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="CShells.FastEndpoints.Abstractions" />
+    </ItemGroup>
 	
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />

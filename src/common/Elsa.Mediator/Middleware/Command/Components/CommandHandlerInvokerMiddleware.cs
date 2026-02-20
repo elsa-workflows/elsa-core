@@ -50,6 +50,6 @@ public class CommandHandlerInvokerMiddleware(CommandMiddlewareDelegate next) : I
         context.Result = resultProperty.GetValue(task);
 
         // Invoke next middleware.
-        await next(context);
+        await next(context).ConfigureAwait(false);
     }
 }

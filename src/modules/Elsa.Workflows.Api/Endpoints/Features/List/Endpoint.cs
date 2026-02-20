@@ -10,16 +10,8 @@ namespace Elsa.Workflows.Api.Endpoints.Features.List;
 /// Returns a list of installed features.
 /// </summary>
 [PublicAPI]
-internal class List : ElsaEndpointWithoutRequest<ListResponse<FeatureDescriptor>>
+internal class List(IInstalledFeatureProvider installedFeatureProvider) : ElsaEndpointWithoutRequest<ListResponse<FeatureDescriptor>>
 {
-    private readonly IInstalledFeatureRegistry _installedFeatureRegistry;
-
-    /// <inheritdoc />
-    public List(IInstalledFeatureRegistry installedFeatureRegistry)
-    {
-        _installedFeatureRegistry = installedFeatureRegistry;
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -30,7 +22,7 @@ internal class List : ElsaEndpointWithoutRequest<ListResponse<FeatureDescriptor>
     /// <inheritdoc />
     public override Task<ListResponse<FeatureDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
     {
-        var descriptors = _installedFeatureRegistry.List().ToList();
+        var descriptors = installedFeatureProvider.List().ToList();
         var response = new ListResponse<FeatureDescriptor>(descriptors);
 
         return Task.FromResult(response);

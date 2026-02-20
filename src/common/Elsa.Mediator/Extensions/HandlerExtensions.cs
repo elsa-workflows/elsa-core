@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Middleware.Command;
 using Elsa.Mediator.Middleware.Notification;
@@ -47,7 +48,7 @@ public static class HandlerExtensions
     {
         var notification = notificationContext.Notification;
         var cancellationToken = notificationContext.CancellationToken;
-        return (Task)handleMethod.Invoke(handler, [notification, cancellationToken])!;
+        return InvokeAndUnwrap<Task>(handleMethod, handler, [notification, cancellationToken]);
     }
 
     /// <summary>
@@ -60,7 +61,22 @@ public static class HandlerExtensions
     {
         var command = commandContext.Command;
         var cancellationToken = commandContext.CancellationToken;
-        var task = (Task<TResult>)handleMethod.Invoke(handler, [command, cancellationToken])!;
-        return task;
+        return InvokeAndUnwrap<Task<TResult>>(handleMethod, handler, [command, cancellationToken]);
+    }
+
+    /// <summary>
+    /// Invokes a method via reflection and unwraps any TargetInvocationException to preserve the original exception's stack trace.
+    /// </summary>
+    private static T InvokeAndUnwrap<T>(MethodBase method, object target, object[] args) where T : Task
+    {
+        try
+        {
+            return (T)method.Invoke(target, args)!;
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null)
+        {
+            ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+            throw; // Unreachable, but required for compiler
+        }
     }
 }

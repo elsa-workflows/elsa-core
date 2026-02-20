@@ -1,23 +1,143 @@
-using Elsa.Workflows;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 
 namespace Elsa.Workflows.Core.UnitTests.Services;
 
+/// <summary>
+/// Unit tests for ActivityRegistry, specifically testing multi-tenant descriptor resolution logic and refresh behavior.
+/// </summary>
 public class ActivityRegistryTests
 {
+    private const string TestActivityType = "TestActivity";
+    private const string CurrentTenant = "tenant1";
+
+    private readonly ILogger<ActivityRegistry> _logger;
+    private readonly ActivityRegistry _registry;
+
+    public ActivityRegistryTests()
+    {
+        var tenantAccessor = Substitute.For<ITenantAccessor>();
+        var activityDescriber = Substitute.For<IActivityDescriber>();
+        _logger = Substitute.For<ILogger<ActivityRegistry>>();
+        _registry = new(activityDescriber, [], tenantAccessor, _logger);
+        
+        // Set default tenant for all tests
+        tenantAccessor.TenantId.Returns(CurrentTenant);
+    }
+
+    [Fact]
+    public void Find_TenantSpecificPreferredOverTenantAgnostic_WhenBothExist()
+    {
+        // Arrange
+        var tenantSpecific = CreateDescriptor(TestActivityType, 1, CurrentTenant);
+        var tenantAgnostic = CreateDescriptor(TestActivityType, 2, Tenant.AgnosticTenantId); // Higher version
+        RegisterDescriptors(tenantSpecific, tenantAgnostic);
+
+        // Act
+        var result = _registry.Find(TestActivityType);
+
+        // Assert - tenant-specific should be preferred even though it has a lower version
+        AssertDescriptor(result, CurrentTenant, 1);
+    }
+
+    [Fact]
+    public void Find_ReturnsTenantAgnostic_WhenNoTenantSpecificExists()
+    {
+        // Arrange
+        var tenantAgnostic = CreateDescriptor(TestActivityType, 1, Tenant.AgnosticTenantId);
+        RegisterDescriptors(tenantAgnostic);
+
+        // Act
+        var result = _registry.Find(TestActivityType);
+
+        // Assert
+        AssertDescriptor(result, Tenant.AgnosticTenantId, 1);
+    }
+
+    [Theory]
+    [InlineData(1, 2, 3, 3)] // Multiple versions, expect highest
+    [InlineData(3, 1, 2, 3)] // Out of order registration
+    [InlineData(1, 1, 1, 1)] // Same version multiple times
+    public void Find_ReturnsHighestVersionTenantSpecific_WhenMultipleTenantSpecificExist(int v1, int v2, int v3, int expectedVersion)
+    {
+        // Arrange
+        var descriptors = new[]
+        {
+            CreateDescriptor(TestActivityType, v1, CurrentTenant),
+            CreateDescriptor(TestActivityType, v2, CurrentTenant),
+            CreateDescriptor(TestActivityType, v3, CurrentTenant)
+        };
+        RegisterDescriptors(descriptors);
+
+        // Act
+        var result = _registry.Find(TestActivityType);
+
+        // Assert
+        AssertDescriptor(result, CurrentTenant, expectedVersion);
+    }
+
+    [Theory]
+    [InlineData(1, 2, 3, 3)] // Multiple versions, expect highest
+    [InlineData(3, 1, 2, 3)] // Out of order registration
+    [InlineData(1, 1, 1, 1)] // Same version multiple times
+    public void Find_ReturnsHighestVersionTenantAgnostic_WhenMultipleTenantAgnosticExist(int v1, int v2, int v3, int expectedVersion)
+    {
+        // Arrange
+        var descriptors = new[]
+        {
+            CreateDescriptor(TestActivityType, v1, Tenant.AgnosticTenantId),
+            CreateDescriptor(TestActivityType, v2, Tenant.AgnosticTenantId),
+            CreateDescriptor(TestActivityType, v3, Tenant.AgnosticTenantId)
+        };
+        RegisterDescriptors(descriptors);
+
+        // Act
+        var result = _registry.Find(TestActivityType);
+
+        // Assert
+        AssertDescriptor(result, Tenant.AgnosticTenantId, expectedVersion);
+    }
+
+    [Fact]
+    public void Find_ReturnsNull_WhenNoMatchingDescriptorsExist()
+    {
+        // Arrange
+        var otherDescriptor = CreateDescriptor("OtherActivity", 1, CurrentTenant);
+        RegisterDescriptors(otherDescriptor);
+
+        // Act
+        var result = _registry.Find("NonExistentActivity");
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void Find_IgnoresOtherTenantDescriptors_OnlyReturnsCurrentTenantOrAgnostic()
+    {
+        // Arrange
+        var descriptors = new[]
+        {
+            CreateDescriptor(TestActivityType, 1, CurrentTenant),
+            CreateDescriptor(TestActivityType, 5, "tenant2"), // Much higher version but wrong tenant
+            CreateDescriptor(TestActivityType, 2, Tenant.AgnosticTenantId)
+        };
+        RegisterDescriptors(descriptors);
+
+        // Act
+        var result = _registry.Find(TestActivityType);
+
+        // Assert - should return tenant1 descriptor (not tenant2, even though it has higher version)
+        AssertDescriptor(result, CurrentTenant, 1);
+    }
+
     [Fact]
     public async Task RefreshDescriptorsAsync_CalledTwice_DoesNotLogWarnings()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<ActivityRegistry>>();
-        var mockActivityDescriber = new Mock<IActivityDescriber>();
-        var modifiers = Array.Empty<IActivityDescriptorModifier>();
-        
-        var registry = new ActivityRegistry(mockActivityDescriber.Object, modifiers, mockLogger.Object);
-        
-        var mockProvider = new Mock<IActivityProvider>();
+        var mockProvider = Substitute.For<IActivityProvider>();
         var descriptor1 = new ActivityDescriptor
         {
             TypeName = "TestActivity1",
@@ -38,30 +158,27 @@ public class ActivityRegistryTests
             IsBrowsable = true
         };
         
-        mockProvider.Setup(p => p.GetDescriptorsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { descriptor1, descriptor2 });
-        
-        var providers = new[] { mockProvider.Object };
+        mockProvider.GetDescriptorsAsync(Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<IEnumerable<ActivityDescriptor>>([descriptor1, descriptor2]));
+
+        var providers = new[] { mockProvider };
         
         // Act - First refresh
-        await registry.RefreshDescriptorsAsync(providers);
+        await _registry.RefreshDescriptorsAsync(providers);
         
         // Act - Second refresh (simulates the intentional repopulation in DefaultRegistriesPopulator)
-        await registry.RefreshDescriptorsAsync(providers);
+        await _registry.RefreshDescriptorsAsync(providers);
         
         // Assert - Verify no warning logs were made
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("was already registered")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Never,
-            "Expected no duplicate registration warnings during refresh");
+        _logger.DidNotReceive().Log(
+            LogLevel.Warning,
+            Arg.Any<EventId>(),
+            Arg.Is<object>(v => v.ToString()!.Contains("was already registered")),
+            Arg.Any<Exception>(),
+            Arg.Any<Func<object, Exception?, string>>());
         
         // Verify descriptors are still registered
-        var allDescriptors = registry.ListAll().ToList();
+        var allDescriptors = _registry.ListAll().ToList();
         Assert.Equal(2, allDescriptors.Count);
         Assert.Contains(allDescriptors, d => d.TypeName == "TestActivity1");
         Assert.Contains(allDescriptors, d => d.TypeName == "TestActivity2");
@@ -71,12 +188,6 @@ public class ActivityRegistryTests
     public async Task RefreshDescriptorsAsync_PreservesManualDescriptors()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<ActivityRegistry>>();
-        var mockActivityDescriber = new Mock<IActivityDescriber>();
-        var modifiers = Array.Empty<IActivityDescriptorModifier>();
-        
-        var registry = new ActivityRegistry(mockActivityDescriber.Object, modifiers, mockLogger.Object);
-        
         // Create a manual descriptor
         var manualDescriptor = new ActivityDescriptor
         {
@@ -88,10 +199,10 @@ public class ActivityRegistryTests
             IsBrowsable = true
         };
         
-        registry.Register(manualDescriptor);
+        _registry.Register(manualDescriptor);
         
         // Create a provider descriptor
-        var mockProvider = new Mock<IActivityProvider>();
+        var mockProvider = Substitute.For<IActivityProvider>();
         var providerDescriptor = new ActivityDescriptor
         {
             TypeName = "ProviderActivity",
@@ -102,46 +213,34 @@ public class ActivityRegistryTests
             IsBrowsable = true
         };
         
-        mockProvider.Setup(p => p.GetDescriptorsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { providerDescriptor });
-        
-        var providers = new[] { mockProvider.Object };
+        mockProvider.GetDescriptorsAsync(Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<IEnumerable<ActivityDescriptor>>([providerDescriptor]));
+
+        var providers = new[] { mockProvider };
         
         // Act - Refresh with provider
-        await registry.RefreshDescriptorsAsync(providers);
+        await _registry.RefreshDescriptorsAsync(providers);
         
         // Assert - Both manual and provider descriptors should be present
-        var allDescriptors = registry.ListAll().ToList();
+        var allDescriptors = _registry.ListAll().ToList();
         Assert.Equal(2, allDescriptors.Count);
         Assert.Contains(allDescriptors, d => d.TypeName == "ManualActivity");
         Assert.Contains(allDescriptors, d => d.TypeName == "ProviderActivity");
         
         // Verify no warnings about manual descriptor being replaced
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("ManualActivity")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Never,
-            "Expected no warnings about manual descriptor");
+        _logger.DidNotReceive().Log(
+            LogLevel.Warning,
+            Arg.Any<EventId>(),
+            Arg.Is<object>(v => v.ToString()!.Contains("ManualActivity")),
+            Arg.Any<Exception>(),
+            Arg.Any<Func<object, Exception?, string>>());
     }
     
     [Fact]
     public async Task RefreshDescriptorsAsync_LogsWarning_WhenDifferentProvidersRegisterSameActivity()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<ActivityRegistry>>();
-        var mockActivityDescriber = new Mock<IActivityDescriber>();
-        var modifiers = Array.Empty<IActivityDescriptorModifier>();
-        
-        var registry = new ActivityRegistry(mockActivityDescriber.Object, modifiers, mockLogger.Object);
-        
         // Create two different providers with the same activity
-        var mockProvider1 = new Mock<IActivityProvider>();
-        var mockProvider2 = new Mock<IActivityProvider>();
-        
         var descriptor1 = new ActivityDescriptor
         {
             TypeName = "DuplicateActivity",
@@ -151,7 +250,7 @@ public class ActivityRegistryTests
             Description = "From Provider 1",
             IsBrowsable = true
         };
-        
+
         var descriptor2 = new ActivityDescriptor
         {
             TypeName = "DuplicateActivity",
@@ -161,27 +260,53 @@ public class ActivityRegistryTests
             Description = "From Provider 2",
             IsBrowsable = true
         };
-        
-        mockProvider1.Setup(p => p.GetDescriptorsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { descriptor1 });
-        
-        mockProvider2.Setup(p => p.GetDescriptorsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { descriptor2 });
-        
-        var providers = new[] { mockProvider1.Object, mockProvider2.Object };
-        
+
+        var provider1 = new Provider1([descriptor1]);
+        var provider2 = new Provider2([descriptor2]);
+        var providers = new IActivityProvider[] { provider1, provider2 };
+
         // Act
-        await registry.RefreshDescriptorsAsync(providers);
-        
+        await _registry.RefreshDescriptorsAsync(providers);
+
         // Assert - Should log a warning for the duplicate
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("DuplicateActivity") && v.ToString()!.Contains("was already registered")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once,
-            "Expected one warning for duplicate activity from different providers");
+        _logger.Received(1).Log(
+            LogLevel.Warning,
+            Arg.Any<EventId>(),
+            Arg.Is<object>(v => v.ToString()!.Contains("DuplicateActivity") && v.ToString()!.Contains("was already registered")),
+            Arg.Any<Exception>(),
+            Arg.Any<Func<object, Exception?, string>>());
     }
+
+    
+    private ActivityDescriptor CreateDescriptor(string typeName, int version, string? tenantId) =>
+        new()
+        {
+            TypeName = typeName,
+            Version = version,
+            TenantId = tenantId,
+            Kind = ActivityKind.Action
+        };
+
+    private void RegisterDescriptors(params ActivityDescriptor[] descriptors)
+    {
+        foreach (var descriptor in descriptors)
+            _registry.Register(descriptor);
+    }
+
+    private static void AssertDescriptor(ActivityDescriptor? result, string? expectedTenantId, int expectedVersion)
+    {
+        Assert.NotNull(result);
+        Assert.Equal(expectedTenantId, result.TenantId);
+        Assert.Equal(expectedVersion, result.Version);
+    }
+    private sealed class Provider1(IEnumerable<ActivityDescriptor> descriptors) : IActivityProvider
+    {
+        public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default) => new(descriptors);
+    }
+
+    private sealed class Provider2(IEnumerable<ActivityDescriptor> descriptors) : IActivityProvider
+    {
+        public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default) => new(descriptors);
+    }
+    
 }

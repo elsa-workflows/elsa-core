@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
@@ -180,6 +181,7 @@ public class ActivityTestFixture
         services.AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>();
         services.AddSingleton<IWorkflowExecutionContextSchedulerStrategy, FakeWorkflowExecutionContextSchedulerStrategy>();
         services.AddSingleton<IActivityExecutionContextSchedulerStrategy, FakeActivityExecutionContextSchedulerStrategy>();
+        services.AddSingleton<ITenantAccessor, DefaultTenantAccessor>();
         services.AddScoped<IWorkflowStateExtractor, WorkflowStateExtractor>();
     }
 }

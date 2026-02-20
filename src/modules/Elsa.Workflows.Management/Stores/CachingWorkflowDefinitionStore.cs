@@ -129,7 +129,7 @@ public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedSt
     }
 
     /// <inheritdoc />
-    public async Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
+    public async Task<bool> GetIsNameUnique(string name, string? definitionId = null, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(nameof(GetIsNameUnique), name, definitionId);
         return await GetOrCreateAsync(cacheKey, () => decoratedStore.GetIsNameUnique(name, definitionId, cancellationToken));
@@ -137,7 +137,7 @@ public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedSt
 
     private async Task<T?> GetOrCreateAsync<T>(string key, Func<Task<T>> factory)
     {
-        var tenantId = tenantAccessor.Tenant?.Id;
+        var tenantId = tenantAccessor.TenantId;
         var tenantIdPrefix = !string.IsNullOrEmpty(tenantId) ? $"{tenantId}:" : string.Empty;
         var internalKey = $"{tenantIdPrefix}{typeof(T).Name}:{key}";
         return await cacheManager.FindOrCreateAsync(internalKey, async entry =>

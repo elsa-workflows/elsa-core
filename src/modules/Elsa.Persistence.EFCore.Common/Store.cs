@@ -182,11 +182,19 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         }
 
         // When doing a custom SQL query (Bulk Upsert), none of the installed query filters will be applied. Hence, we are assigning the current tenant ID explicitly.
-        var tenantId = serviceProvider.GetRequiredService<ITenantAccessor>().Tenant?.Id.NullIfEmpty();
+        var tenantId = serviceProvider.GetRequiredService<ITenantAccessor>().Tenant?.Id;
         foreach (var entity in entityList)
         {
             if (entity is Entity entityWithTenant)
-                entityWithTenant.TenantId = tenantId;
+            {
+                // Don't touch tenant-agnostic entities (marked with "*")
+                if (entityWithTenant.TenantId == Tenant.AgnosticTenantId)
+                    continue;
+
+                // Apply current tenant ID to entities without one
+                if (entityWithTenant.TenantId == null && tenantId != null)
+                    entityWithTenant.TenantId = tenantId;
+            }
         }
 
         try

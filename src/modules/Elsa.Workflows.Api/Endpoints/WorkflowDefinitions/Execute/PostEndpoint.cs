@@ -32,7 +32,7 @@ internal class PostEndpoint(
         if (HttpContext.Request.ContentType?.Contains("application/json") ?? false)
         {
             using var reader = new StreamReader(HttpContext.Request.Body);
-            var body = await reader.ReadToEndAsync();
+            var body = await reader.ReadToEndAsync(cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(body))
             {

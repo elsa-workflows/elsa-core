@@ -1,9 +1,10 @@
+using Elsa.Abstractions;
 using Elsa.Labels.Contracts;
 using FastEndpoints;
 
 namespace Elsa.Labels.Endpoints.Labels.Delete;
 
-public class Delete : Endpoint<Request>
+public class Delete : ElsaEndpoint<Request>
 {
     private readonly ILabelStore _store;
 
@@ -12,7 +13,7 @@ public class Delete : Endpoint<Request>
     public override void Configure()
     {
         Delete("/labels/{id}");
-        Policies(Constants.PolicyName);
+        ConfigurePermissions("delete:labels");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

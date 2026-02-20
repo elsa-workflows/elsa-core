@@ -1,4 +1,4 @@
-# ELSA 3
+# Elsa Workflows
 
 ![Elsa Workflows](./design/elsa-workflows-workflow-engine-for-dotnet.png)
 
@@ -209,5 +209,5 @@ Elsa has an active and helpful community where you can find support through mult
 - [Discord](https://discord.gg/hhChk5H472) for real-time support and interaction with the Elsa community.
 - [StackOverflow](https://stackoverflow.com/questions/tagged/elsa-workflows) for searching or asking technical questions.
 
-### Enterprise Support
-For organizations requiring professional support and long-term commitment, [ELSA-X](https://elsa-x.io) offers enterprise-level services and ensures continuity and future development of the Elsa framework, provides custom solutions, and develops commercial extensions tailored to enterprise needs.
+### Professional Support
+For organizations requiring professional support and long-term commitment, check out [Elsa+](https://www.elsa-workflows.io), a growing ecosystem of premium services, tooling, and extensions around Elsa Workflows.

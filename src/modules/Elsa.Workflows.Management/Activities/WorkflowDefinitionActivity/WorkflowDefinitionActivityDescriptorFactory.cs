@@ -10,6 +10,7 @@ public class WorkflowDefinitionActivityDescriptorFactory
     public ActivityDescriptor CreateDescriptor(WorkflowDefinition definition, WorkflowDefinition? latestPublishedDefinition = null)
     {
         var typeName = definition.Name!.Pascalize();
+        var tenantId = definition.TenantId;
         
         var ports = definition.Outcomes.Select(outcome => new Port
         {
@@ -31,6 +32,7 @@ public class WorkflowDefinitionActivityDescriptorFactory
 
         return new()
         {
+            TenantId = tenantId,
             TypeName = typeName,
             ClrType = typeof(WorkflowDefinitionActivity),
             Name = typeName,
