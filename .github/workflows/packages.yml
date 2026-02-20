@@ -52,9 +52,6 @@ jobs:
       - name: Restore solution
         run: dotnet restore Elsa.sln
 
-      - name: Build solution
-        run: dotnet build Elsa.sln --no-restore --configuration Release --framework net10.0
-
       - name: Prepare coverage directory
         run: |
           rm -rf artifacts/coverage
