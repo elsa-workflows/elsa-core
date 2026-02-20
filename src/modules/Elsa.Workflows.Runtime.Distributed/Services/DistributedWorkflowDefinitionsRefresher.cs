@@ -22,7 +22,15 @@ public class DistributedWorkflowDefinitionsRefresher(IWorkflowDefinitionsRefresh
         if (request.DefinitionIds == null 
             || request.DefinitionIds.Count < 1)
         {
-            return new RefreshWorkflowDefinitionsResponse(Array.Empty<string>(), Array.Empty<string>());
+            const string refreshAllLockKey = "WorkflowDefinitionsRefresher:All";
+            await using var distributedAllLock = await distributedLockProvider.TryAcquireLockAsync(
+                refreshAllLockKey,
+                TimeSpan.Zero,
+                cancellationToken);
+
+            return distributedAllLock != null 
+                ? new RefreshWorkflowDefinitionsResponse(Array.Empty<string>(), Array.Empty<string>()) 
+                : throw new InvalidOperationException("Could not acquire lock for refreshing all workflow definitions. Another instance is already refreshing all workflow definitions");
         }
         var definitionIdsKey = string.Join(",", request.DefinitionIds!.OrderBy(x => x));
         var lockKey = $"WorkflowDefinitionsRefresher:{definitionIdsKey}";
@@ -33,7 +41,7 @@ public class DistributedWorkflowDefinitionsRefresher(IWorkflowDefinitionsRefresh
         
         if (distributedLock == null)
         {
-            logger.LogInformation("Could not acquire lock for workflow definitions refresh. Another instance is already refreshing these workflow definitions");
+            logger.LogInformation("Could not acquire lock for refreshing workflow definitions. Another instance is already refreshing these workflow definitions");
             return new RefreshWorkflowDefinitionsResponse(Array.Empty<string>(), request.DefinitionIds!);
         }
         
