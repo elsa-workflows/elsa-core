@@ -50,7 +50,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore solution
-        run: dotnet restore Elsa.sln
+        run: dotnet restore Elsa.sln --ignore-failed-sources
 
       - name: Prepare coverage directory
         run: |
@@ -66,9 +66,16 @@ jobs:
             exit 1
           fi
 
-          mapfile -t projects < <(find test/unit -type f -name '*.csproj' -print0 | xargs -0 -n1 | sort)
+          # Discover test projects across unit/component/integration.
+          mapfile -t projects < <(
+            find test/unit test/component test/integration \
+              -type f -name '*.csproj' -print0 2>/dev/null \
+              | xargs -0 -n1 \
+              | sort
+          )
+
           if [ ${#projects[@]} -eq 0 ]; then
-            echo "No test projects were found in the test/unit directory." >&2
+            echo "No test projects were found in test/unit, test/component or test/integration." >&2
             exit 1
           fi
 
