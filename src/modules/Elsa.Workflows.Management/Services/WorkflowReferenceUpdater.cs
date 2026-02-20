@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
@@ -9,15 +8,13 @@ using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Management.Services;
 
-internal record WorkflowReferences(string ReferencedDefinitionId, ICollection<string> ReferencingDefinitionIds);
-
 internal record UpdatedWorkflowDefinition(WorkflowDefinition Definition, WorkflowGraph NewGraph);
 
 public class WorkflowReferenceUpdater(
     IWorkflowDefinitionPublisher publisher,
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowDefinitionStore workflowDefinitionStore,
-    IWorkflowReferenceQuery workflowReferenceQuery,
+    IWorkflowReferenceGraphBuilder workflowReferenceGraphBuilder,
     WorkflowDefinitionActivityDescriptorFactory workflowDefinitionActivityDescriptorFactory,
     IActivityRegistry activityRegistry,
     IApiSerializer serializer)
@@ -33,14 +30,14 @@ public class WorkflowReferenceUpdater(
             referencedDefinition.Options is not { UsableAsActivity: true, AutoUpdateConsumingWorkflows: true })
             return new([]);
 
-        var allWorkflowReferences = await GetReferencingWorkflowDefinitionIdsAsync(referencedDefinition.DefinitionId, cancellationToken).ToListAsync(cancellationToken);
-        var filteredWorkflowReferences = allWorkflowReferences
-            .Where(r => r.ReferencingDefinitionIds.Any())
-            .DistinctBy(r => r.ReferencedDefinitionId)
-            .ToList();
+        var referenceGraph = await workflowReferenceGraphBuilder.BuildGraphAsync(referencedDefinition.DefinitionId, cancellationToken);
+        
+        // Get all consumer (source) and referenced (target) IDs from the edges
+        var referencingIds = referenceGraph.Edges.Select(e => e.Source).Distinct().ToList();
+        var referencedIds = referenceGraph.Edges.Select(e => e.Target).Distinct().ToList();
 
-        var referencingIds = filteredWorkflowReferences.SelectMany(r => r.ReferencingDefinitionIds).Distinct().ToList();
-        var referencedIds = filteredWorkflowReferences.Select(r => r.ReferencedDefinitionId).Distinct().ToList();
+        if (referencingIds.Count == 0)
+            return new([]);
 
         var referencingWorkflowGraphs = (await workflowDefinitionService.FindWorkflowGraphsAsync(new()
             {
@@ -74,10 +71,8 @@ public class WorkflowReferenceUpdater(
         // Add the initially referenced definition
         referencedWorkflowDefinitionsPublished[referencedDefinition.DefinitionId] = referencedDefinition;
 
-        // Build dependency map for topological sorting
-        var dependencyMap = filteredWorkflowReferences
-            .SelectMany(r => r.ReferencingDefinitionIds.Select(id => (id, r.ReferencedDefinitionId)))
-            .ToLookup(x => x.id, x => x.ReferencedDefinitionId);
+        // Use the OutboundEdges lookup from the graph (Source → what it depends on)
+        var dependencyMap = referenceGraph.OutboundEdges;
 
         // Perform topological sort to ensure dependent workflows are processed in the right order
         var sortedWorkflowIds = referencingIds
@@ -127,26 +122,6 @@ public class WorkflowReferenceUpdater(
         return new(updatedWorkflows.Select(u => u.Value.Definition));
     }
 
-    private async IAsyncEnumerable<WorkflowReferences> GetReferencingWorkflowDefinitionIdsAsync(
-        string definitionId,
-        [EnumeratorCancellation] CancellationToken cancellationToken,
-        HashSet<string>? visitedIds = null)
-    {
-        visitedIds ??= new();
-
-        // If we've already processed this definition ID, skip it to prevent infinite recursion.
-        if (!visitedIds.Add(definitionId))
-            yield break;
-
-        var refs = (await workflowReferenceQuery.ExecuteAsync(definitionId, cancellationToken)).ToList();
-        yield return new(definitionId, refs);
-
-        foreach (var id in refs)
-        {
-            await foreach (var child in GetReferencingWorkflowDefinitionIdsAsync(id, cancellationToken, visitedIds))
-                yield return child;
-        }
-    }
 
     private async Task<UpdatedWorkflowDefinition?> UpdateWorkflowAsync(
         WorkflowGraph graph,
