@@ -78,19 +78,19 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                         .HasColumnType("BOOLEAN");
 
                     b.Property<string>("SchedulingActivityExecutionId")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NVARCHAR2(200)");
 
                     b.Property<string>("SchedulingActivityId")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NVARCHAR2(200)");
 
                     b.Property<string>("SchedulingWorkflowInstanceId")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NVARCHAR2(200)");
 
                     b.Property<string>("SerializedActivityState")
                         .HasColumnType("NCLOB");
 
                     b.Property<string>("SerializedActivityStateCompressionAlgorithm")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NVARCHAR2(200)");
 
                     b.Property<string>("SerializedException")
                         .HasColumnType("NCLOB");

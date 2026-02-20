@@ -29,21 +29,21 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                 name: "SchedulingActivityExecutionId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "NVARCHAR2(2000)",
+                type: "NVARCHAR2(200)",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "SchedulingActivityId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "NVARCHAR2(2000)",
+                type: "NVARCHAR2(200)",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "SchedulingWorkflowInstanceId",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                type: "NVARCHAR2(2000)",
+                type: "NVARCHAR2(200)",
                 nullable: true);
 
             migrationBuilder.CreateIndex(
