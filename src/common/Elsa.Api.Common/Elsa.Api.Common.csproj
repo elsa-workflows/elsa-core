@@ -9,8 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="CShells.AspNetCore.Abstractions" />
-        <PackageReference Include="CShells.FastEndpoints.Abstractions" />
+        <ProjectReference Include="..\..\..\..\cshells\src\CShells.AspNetCore.Abstractions\CShells.AspNetCore.Abstractions.csproj" />
+        <ProjectReference Include="..\..\..\..\cshells\src\CShells.FastEndpoints.Abstractions\CShells.FastEndpoints.Abstractions.csproj" />
         <PackageReference Include="FastEndpoints" />
         <PackageReference Include="FastEndpoints.Security" />
         <PackageReference Include="FastEndpoints.Swagger" />
