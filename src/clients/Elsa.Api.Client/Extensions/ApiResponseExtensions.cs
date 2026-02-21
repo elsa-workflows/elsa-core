@@ -13,8 +13,11 @@ public static class ApiResponseExtensions
     public static string GetDownloadedFileNameOrDefault(this IApiResponse response, string defaultFileName = "download.bin")
     {
         var fileName = defaultFileName;
+        
+        if (response.ContentHeaders is null)
+            return fileName;
 
-        if (response.Headers.TryGetValues("content-disposition", out var contentDispositionHeader)) // Only available if the Elsa Server exposes the "Content-Disposition" header.
+        if (response.ContentHeaders.TryGetValues("content-disposition", out var contentDispositionHeader)) // Only available if the Elsa Server exposes the "Content-Disposition" header.
         {
             // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
             var values = contentDispositionHeader.ToList() ?? [];
