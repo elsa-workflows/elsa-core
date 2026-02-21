@@ -10,6 +10,7 @@ using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Identity.ShellFeatures;
@@ -24,10 +25,15 @@ namespace Elsa.Identity.ShellFeatures;
 [UsedImplicitly]
 public class IdentityFeature : IFastEndpointsShellFeature
 {
+    public string TokenSigningKey { get; set; } = null!;
+    
     public void ConfigureServices(IServiceCollection services)
     {
         // Configure options - Note: SigningKey must be configured by the application for security
-        services.AddOptions<IdentityTokenOptions>().BindConfiguration("Identity");
+        services.AddOptions<IdentityTokenOptions>().Configure<IConfiguration>((options, c) =>
+        {
+            c.GetSection("Configuration").Bind(options);
+        });
         services.Configure<ApiKeyOptions>(ApiKeyDefaults.AuthenticationScheme, options =>
         {
             options.Realm = "Elsa Workflows";
