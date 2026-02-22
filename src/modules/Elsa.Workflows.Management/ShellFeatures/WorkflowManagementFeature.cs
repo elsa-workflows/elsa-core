@@ -11,6 +11,7 @@ using Elsa.Workflows.Features;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Features;
 using Elsa.Workflows.Management.Handlers.Notifications;
 using Elsa.Workflows.Management.Mappers;
@@ -118,42 +119,14 @@ public class WorkflowManagementFeature : IShellFeature
             .AddNotificationHandler<DeleteWorkflowInstances>()
             .AddNotificationHandler<RefreshActivityRegistry>()
             .AddNotificationHandler<UpdateConsumingWorkflows>()
-            .AddNotificationHandler<ValidateWorkflow>()
-            ;
+            .AddNotificationHandler<ValidateWorkflow>();
 
-        AddActivitiesFrom<WorkflowsFeature>();
-        AddActivitiesFrom<WorkflowManagementFeature>();
-        
+        // Register built-in activities from the Workflows and WorkflowManagement assemblies.
+        services
+            .AddActivitiesFrom<WorkflowsFeature>()
+            .AddActivitiesFrom<WorkflowManagementFeature>();
 
-        services.Configure<ManagementOptions>(options =>
-        {
-            foreach (var activityType in ActivityTypes.Distinct())
-                options.ActivityTypes.Add(activityType);
-
-            foreach (var descriptor in VariableDescriptors.DistinctBy(x => x.Type))
-                options.VariableDescriptors.Add(descriptor);
-        });
-    }
-
-    /// <summary>
-    /// A set of activity types to make available to the system. 
-    /// </summary>
-    private HashSet<Type> ActivityTypes { get; } = [];
-
-    /// <summary>
-    /// Adds the specified activity types to the system.
-    /// </summary>
-    private WorkflowManagementFeature AddActivities(IEnumerable<Type> activityTypes)
-    {
-        ActivityTypes.AddRange(activityTypes);
-        return this;
-    }
-
-    private WorkflowManagementFeature AddActivitiesFrom<TMarker>()
-    {
-        var activityTypes = typeof(TMarker).Assembly.GetExportedTypes()
-            .Where(x => typeof(IActivity).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, IsGenericType: false })
-            .ToList();
-        return AddActivities(activityTypes);
+        // Register the default variable descriptors declared on this feature.
+        services.AddVariableDescriptors(VariableDescriptors);
     }
 }

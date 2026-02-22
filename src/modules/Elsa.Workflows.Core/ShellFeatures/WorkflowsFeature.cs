@@ -120,6 +120,7 @@ public class WorkflowsFeature : IShellFeature
             .AddScoped<IActivityResolver, SwitchActivityResolver>()
             .AddSerializationOptionsConfigurator<AdditionalConvertersConfigurator>()
             .AddSerializationOptionsConfigurator<CustomConstructorConfigurator>()
+            .AddSerializationOptionsConfigurator<FlowchartSerializationOptionConfigurator>()
 
             // Domain event handlers.
             .AddHandlersFrom<WorkflowsFeature>()

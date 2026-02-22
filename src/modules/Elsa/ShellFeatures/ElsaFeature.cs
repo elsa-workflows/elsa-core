@@ -15,6 +15,6 @@ public class ElsaFeature : IShellFeature
     public void ConfigureServices(IServiceCollection services)
     {
         // Register the shell-based feature provider to bridge shell features to the Elsa feature API
-        services.AddSingleton<Elsa.Features.Contracts.IInstalledFeatureProvider, Elsa.Features.Services.ShellInstalledFeatureProvider>();
+        services.AddSingleton<Features.Contracts.IInstalledFeatureProvider, Features.Services.ShellInstalledFeatureProvider>();
     }
 }
