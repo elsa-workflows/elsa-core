@@ -9,12 +9,15 @@ using Elsa.Http.Handlers;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
+using Elsa.Http.Resilience;
 using Elsa.Http.Selectors;
 using Elsa.Http.Services;
 using Elsa.Http.Tasks;
 using Elsa.Http.TriggerPayloadValidators;
 using Elsa.Http.UIHints;
+using Elsa.Resilience.Extensions;
 using Elsa.Workflows;
+using Elsa.Workflows.Management.Extensions;
 using FluentStorage;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -99,6 +102,24 @@ public class HttpFeature : IShellFeature
 
     public void ConfigureServices(IServiceCollection services)
     {
+        // Register HTTP activities.
+        services.AddActivitiesFrom<HttpFeature>();
+
+        // Register HTTP variable types.
+        services.AddVariableDescriptors([
+            new(typeof(HttpRouteData), "HTTP", null),
+            new(typeof(HttpRequest), "HTTP", null),
+            new(typeof(HttpResponse), "HTTP", null),
+            new(typeof(HttpResponseMessage), "HTTP", null),
+            new(typeof(HttpHeaders), "HTTP", null),
+            new(typeof(IFormFile), "HTTP", null),
+            new(typeof(HttpFile), "HTTP", null),
+            new(typeof(Downloadable), "HTTP", null),
+        ]);
+
+        // Register the HTTP resilience strategy.
+        services.AddResilienceStrategy<HttpResilienceStrategy>();
+
         var configureOptions = ConfigureHttpOptions ?? (options =>
         {
             options.BasePath = "/workflows";
