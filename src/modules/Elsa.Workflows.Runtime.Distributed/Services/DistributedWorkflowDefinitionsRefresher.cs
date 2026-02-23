@@ -22,7 +22,7 @@ public class DistributedWorkflowDefinitionsRefresher(IWorkflowDefinitionsRefresh
     public async Task<RefreshWorkflowDefinitionsResponse> RefreshWorkflowDefinitionsAsync(RefreshWorkflowDefinitionsRequest request, CancellationToken cancellationToken = default)
     {
         if (request.DefinitionIds == null 
-            || request.DefinitionIds.Count < 1)
+            || request.DefinitionIds.Count == 0)
         {
             const string refreshAllLockKey = "WorkflowDefinitionsRefresher:All";
             await using var distributedAllLock = await distributedLockProvider.TryAcquireLockAsync(
