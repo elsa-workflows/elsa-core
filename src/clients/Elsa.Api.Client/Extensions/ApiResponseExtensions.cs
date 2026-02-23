@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using Refit;
 
 namespace Elsa.Api.Client.Extensions;
@@ -5,6 +6,7 @@ namespace Elsa.Api.Client.Extensions;
 /// <summary>
 /// Provides extension methods for <see cref="IApiResponse"/>.
 /// </summary>
+[UsedImplicitly]
 public static class ApiResponseExtensions
 {
     /// <summary>
@@ -13,14 +15,33 @@ public static class ApiResponseExtensions
     public static string GetDownloadedFileNameOrDefault(this IApiResponse response, string defaultFileName = "download.bin")
     {
         var fileName = defaultFileName;
+        
+        if (response.ContentHeaders is null)
+            return fileName;
 
-        if (response.Headers.TryGetValues("content-disposition", out var contentDispositionHeader)) // Only available if the Elsa Server exposes the "Content-Disposition" header.
+        if (!response.ContentHeaders.TryGetValues("content-disposition", out var contentDispositionHeader)) // Only available if the Elsa Server exposes the "Content-Disposition" header.
+            return fileName;
+
+        var contentDisposition = contentDispositionHeader.FirstOrDefault();
+
+        if (string.IsNullOrWhiteSpace(contentDisposition))
+            return fileName;
+
+        // Parse the Content-Disposition header value (e.g., "attachment; filename=workflow-definitions.zip; filename*=UTF-8''workflow-definitions.zip")
+        // Split by semicolon and look for the filename parameter
+        var parts = contentDisposition.Split(';', StringSplitOptions.RemoveEmptyEntries);
+                
+        foreach (var part in parts)
         {
-            // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
-            var values = contentDispositionHeader.ToList() ?? [];
+            var trimmedPart = part.Trim();
+                    
+            // Look for filename= (prefer this over filename* for simplicity)
+            if (!trimmedPart.StartsWith("filename=", StringComparison.OrdinalIgnoreCase) ||
+                trimmedPart.StartsWith("filename*=", StringComparison.OrdinalIgnoreCase))
+                continue;
 
-            if (values.Count >= 2)
-                fileName = values[1].Split('=')[1];
+            fileName = trimmedPart["filename=".Length..].Trim('"', '\'');
+            break;
         }
 
         return fileName;

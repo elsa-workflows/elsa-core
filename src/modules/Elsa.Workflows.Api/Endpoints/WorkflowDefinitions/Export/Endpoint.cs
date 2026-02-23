@@ -133,6 +133,12 @@ internal class Export : ElsaEndpoint<Request>
         var zipStream = new MemoryStream();
         var sortedDefinitions = definitions.OrderBy(d => d.DefinitionId).ToList();
         
+        // NOTE:
+        // - ZIP timestamps cannot be earlier than 1980-01-01 (the ZIP format's minimum).
+        // - We intentionally use a fixed timestamp (instead of DateTimeOffset.UtcNow) to keep exports deterministic.
+        //   This avoids producing different ZIP bytes for identical exports, which helps tests, caching, and diffing.
+        var zipEpoch = new DateTimeOffset(1980, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        
 #if NET10_0_OR_GREATER
         await using (var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
         {
@@ -143,7 +149,7 @@ internal class Export : ElsaEndpoint<Request>
                 var binaryJson = await SerializeWorkflowDefinitionAsync(model, cancellationToken);
                 var fileName = GetFileName(model);
                 var entry = zipArchive.CreateEntry(fileName, CompressionLevel.Optimal);
-                entry.LastWriteTime = DateTimeOffset.UnixEpoch;
+                entry.LastWriteTime = zipEpoch;
                 await using var entryStream = await entry.OpenAsync(cancellationToken);
                 await entryStream.WriteAsync(binaryJson, cancellationToken);
             }
@@ -158,7 +164,7 @@ internal class Export : ElsaEndpoint<Request>
                 var binaryJson = await SerializeWorkflowDefinitionAsync(model, cancellationToken);
                 var fileName = GetFileName(model);
                 var entry = zipArchive.CreateEntry(fileName, CompressionLevel.Optimal);
-                entry.LastWriteTime = DateTimeOffset.UnixEpoch;
+                entry.LastWriteTime = zipEpoch;
                 await using var entryStream = entry.Open();
                 await entryStream.WriteAsync(binaryJson, cancellationToken);
             }

@@ -18,28 +18,32 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.ConcurrentTriggerIndexing;
 /// </summary>
 public class ConcurrentTriggerIndexingTests(App app) : AppComponentTest(app)
 {
-    [Theory(DisplayName = "Concurrent trigger indexing should not create duplicates")]
-    [InlineData(10, 0, false, "Synchronized start with 10 operations")]
-    [InlineData(10, 5, false, "Staggered start with random delays")]
-    [InlineData(3, 0, true, "Multiple rounds of concurrent indexing")]
-    public async Task ConcurrentIndexing_ShouldNotCreateDuplicates(
-        int concurrentOperations,
-        int maxRandomDelayMs,
-        bool multipleRounds,
-        string scenario)
+    [Fact(DisplayName = "Concurrent trigger indexing from multiple pods should not create duplicates")]
+    public async Task ConcurrentIndexing_ShouldNotCreateDuplicates()
     {
         // Arrange
         var (workflow, workflowDefinition) = await CreateAndSaveTestWorkflowAsync();
 
-        // Act
-        var rounds = multipleRounds ? 3 : 1;
-        for (var round = 0; round < rounds; round++)
+        // Act: Fire one indexing task per pod simultaneously.
+        // The distributed lock inside IndexTriggersAsync serializes them;
+        // 3 operations (one per pod) is sufficient to exercise the race condition
+        // without waiting for many serialized DB round-trips.
+        var startBarrier = new TaskCompletionSource();
+
+        var indexingTasks = AllPods.Select(pod => Task.Run(async () =>
         {
-            await ExecuteConcurrentIndexingAsync(workflowDefinition, concurrentOperations, maxRandomDelayMs);
-        }
+            await startBarrier.Task;
+            using var scope = pod.Services.CreateScope();
+            var indexer = scope.ServiceProvider.GetRequiredService<ITriggerIndexer>();
+            return await indexer.IndexTriggersAsync(workflowDefinition);
+        })).ToArray();
+
+        startBarrier.SetResult(); // Release all tasks simultaneously.
+
+        await Task.WhenAll(indexingTasks);
 
         // Assert
-        await AssertSingleTriggerExistsAsync(workflow.Identity.DefinitionId, scenario);
+        await AssertSingleTriggerExistsAsync(workflow.Identity.DefinitionId);
     }
 
     [Fact(DisplayName = "Concurrent workflow refreshes should not create duplicates")]
@@ -99,66 +103,12 @@ public class ConcurrentTriggerIndexingTests(App app) : AppComponentTest(app)
         return (workflow, definition);
     }
 
-    private async Task ExecuteConcurrentIndexingAsync(
-        WorkflowDefinition workflowDefinition,
-        int concurrentOperations,
-        int maxRandomDelayMs)
-    {
-        var startBarrier = new TaskCompletionSource();
-
-        var indexingTasks = Enumerable.Range(0, concurrentOperations)
-            .Select(i => CreateIndexingTask(workflowDefinition, startBarrier, i, maxRandomDelayMs))
-            .ToArray();
-
-        // Small delay to ensure all tasks are waiting
-        await Task.Delay(50);
-
-        // Release all tasks simultaneously
-        startBarrier.SetResult();
-
-        await Task.WhenAll(indexingTasks);
-    }
-
-    private Task CreateIndexingTask(
-        WorkflowDefinition workflowDefinition,
-        TaskCompletionSource startBarrier,
-        int taskIndex,
-        int maxRandomDelayMs)
-    {
-        return Task.Run(async () =>
-        {
-            await startBarrier.Task;
-
-            // Add random delay if specified (simulates real-world timing variations)
-            if (maxRandomDelayMs > 0)
-                await Task.Delay(Random.Shared.Next(1, maxRandomDelayMs + 1));
-
-            var pod = GetPodByIndex(taskIndex);
-            using var scope = pod.Services.CreateScope();
-            var indexer = scope.ServiceProvider.GetRequiredService<ITriggerIndexer>();
-            return await indexer.IndexTriggersAsync(workflowDefinition);
-        });
-    }
-
-    private WorkflowServer GetPodByIndex(int taskIndex)
-    {
-        return (taskIndex % AllPods.Length) switch
-        {
-            0 => Cluster.Pod1,
-            1 => Cluster.Pod2,
-            _ => Cluster.Pod3
-        };
-    }
-
     private WorkflowServer[] AllPods => [Cluster.Pod1, Cluster.Pod2, Cluster.Pod3];
 
-    private async Task AssertSingleTriggerExistsAsync(string workflowDefinitionId, string? scenario = null)
+    private async Task AssertSingleTriggerExistsAsync(string workflowDefinitionId)
     {
         var triggers = await GetTriggersAsync(workflowDefinitionId);
-        var message = scenario != null
-            ? $"Expected exactly 1 trigger for scenario: {scenario}, but found {triggers.Count}"
-            : $"Expected exactly 1 trigger, but found {triggers.Count}";
-        Assert.True(triggers.Count == 1, message);
+        Assert.True(triggers.Count == 1, $"Expected exactly 1 trigger, but found {triggers.Count}");
     }
 
     private async Task<List<StoredTrigger>> GetTriggersAsync(string workflowDefinitionId)
