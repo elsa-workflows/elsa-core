@@ -52,6 +52,6 @@ public class DistributedWorkflowDefinitionsRefresher(IWorkflowDefinitionsRefresh
             }
         }
         
-        return await inner.RefreshWorkflowDefinitionsAsync(request, cancellationToken);`
+        return await inner.RefreshWorkflowDefinitionsAsync(request, cancellationToken);
     }
 }
