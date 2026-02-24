@@ -6,11 +6,11 @@ namespace Elsa.Extensions;
 
 public static class ConfigurationExtensions
 {
-    public static string GetSectionAsJson(this IConfiguration configuration, string sectionKey, JsonSerializerOptions? options = null)
+    public static string? GetSectionAsJson(this IConfiguration configuration, string sectionKey, JsonSerializerOptions? options = null)
     {
         var section = configuration.GetSection(sectionKey);
         var element = ConvertToJsonElement(section);
-        return JsonSerializer.Serialize(element, options);
+        return element.ValueKind == JsonValueKind.Null ? null : JsonSerializer.Serialize(element, options);
     }
 
     private static JsonElement ConvertToJsonElement(IConfigurationSection section)

@@ -98,6 +98,15 @@
         <None Update="Scenarios\RestApis\Workflows\hello-world.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="Scenarios\WorkflowReferenceGraph\Workflows\refgraph-grandchild.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowReferenceGraph\Workflows\refgraph-child.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\WorkflowReferenceGraph\Workflows\refgraph-parent.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>

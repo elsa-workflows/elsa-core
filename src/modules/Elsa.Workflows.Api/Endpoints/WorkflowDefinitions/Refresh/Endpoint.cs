@@ -20,7 +20,14 @@ internal class Refresh(IWorkflowDefinitionsRefresher workflowDefinitionsRefreshe
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var result = await RefreshWorkflowDefinitionsAsync(request.DefinitionIds, cancellationToken);
-        await Send.OkAsync(new Response(result.Refreshed, result.NotFound), cancellationToken);
+        if (result.Status == RefreshWorkflowDefinitionsStatus.Completed)
+        {
+            await Send.OkAsync(new Response(result.Refreshed, result.NotFound), cancellationToken);
+        }
+        else
+        {
+            await Send.AcceptedAtAsync<Refresh>(responseBody: new Response(result.Refreshed, result.NotFound), cancellation: cancellationToken);
+        }
     }
 
     private async Task<RefreshWorkflowDefinitionsResponse> RefreshWorkflowDefinitionsAsync(ICollection<string>? definitionIds, CancellationToken cancellationToken)

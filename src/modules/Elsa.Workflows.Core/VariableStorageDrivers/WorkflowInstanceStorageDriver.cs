@@ -59,7 +59,7 @@ public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer,
             SerializerOptions = payloadSerializer.GetOptions()  
         };
         var result = node.TryConvertTo(variableType, options);
-        var parsedValue = result.Success ? result.Value : node;
+        var parsedValue = result.IsSuccess ? result.Value : node;
         return new (parsedValue);
     }
 
