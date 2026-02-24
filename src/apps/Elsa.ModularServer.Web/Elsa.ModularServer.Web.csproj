@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
     <ItemGroup>
-        <ProjectReference Include="..\..\..\..\..\..\cshells\src\CShells.AspNetCore\CShells.AspNetCore.csproj"/>
-        <ProjectReference Include="..\..\..\..\..\..\cshells\src\CShells.FastEndpoints\CShells.FastEndpoints.csproj"/>
+        <ProjectReference Include="..\..\..\..\cshells\src\CShells.AspNetCore\CShells.AspNetCore.csproj" />
+        <ProjectReference Include="..\..\..\..\cshells\src\CShells.FastEndpoints\CShells.FastEndpoints.csproj" />
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
