@@ -27,13 +27,17 @@ namespace Elsa.Http.Middleware;
 /// An ASP.NET middleware component that tries to match the inbound request path to an associated workflow and then run that workflow.
 /// </summary>
 [PublicAPI]
-public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivityOptions> options)
+public class HttpWorkflowsMiddleware(RequestDelegate next)
 {
     /// <summary>
     /// Attempts to match the inbound request path to an associated workflow and then run that workflow.
     /// </summary>
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
-    public async Task InvokeAsync(HttpContext httpContext, IServiceProvider serviceProvider)
+    public async Task InvokeAsync(
+        HttpContext httpContext, 
+        IServiceProvider serviceProvider, 
+        IOptions<HttpActivityOptions> options, 
+        IHttpWorkflowLookupService httpWorkflowLookupService)
     {
         var path = httpContext.Request.Path.Value!.NormalizeRoute();
         var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
@@ -63,7 +67,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var cancellationToken = httpContext.RequestAborted;
         var request = httpContext.Request;
         var method = request.Method.ToLowerInvariant();
-        var httpWorkflowLookupService = serviceProvider.GetRequiredService<IHttpWorkflowLookupService>();
         var workflowInstanceId = await GetWorkflowInstanceIdAsync(serviceProvider, httpContext, cancellationToken);
         var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, cancellationToken);
         var bookmarkHash = ComputeBookmarkHash(serviceProvider, matchingPath, method);

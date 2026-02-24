@@ -1,3 +1,4 @@
+using CShells.AspNetCore.Features;
 using CShells.Features;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
@@ -6,6 +7,7 @@ using Elsa.Http.ContentWriters;
 using Elsa.Http.DownloadableContentHandlers;
 using Elsa.Http.FileCaches;
 using Elsa.Http.Handlers;
+using Elsa.Http.Middleware;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
@@ -20,9 +22,12 @@ using Elsa.Workflows;
 using Elsa.Workflows.Management.Extensions;
 using FluentStorage;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Http.ShellFeatures;
@@ -35,12 +40,12 @@ namespace Elsa.Http.ShellFeatures;
     Description = "Provides HTTP-related activities and services for workflow execution",
     DependsOn = ["HttpJavaScript", "Resilience"])]
 [UsedImplicitly]
-public class HttpFeature : IShellFeature
+public class HttpFeature : IMiddlewareShellFeature
 {
     /// <summary>
-    /// A delegate to configure <see cref="HttpActivityOptions"/>.
+    /// The <see cref="HttpActivityOptions"/> to configure.
     /// </summary>
-    public Action<HttpActivityOptions>? ConfigureHttpOptions { get; set; }
+    public HttpActivityOptions HttpActivityOptions { get; set; } = new();
 
     /// <summary>
     /// A delegate to configure <see cref="HttpFileCacheOptions"/>.
@@ -120,15 +125,16 @@ public class HttpFeature : IShellFeature
         // Register the HTTP resilience strategy.
         services.AddResilienceStrategy<HttpResilienceStrategy>();
 
-        var configureOptions = ConfigureHttpOptions ?? (options =>
-        {
-            options.BasePath = "/workflows";
-            options.BaseUrl = new Uri("http://localhost");
-        });
-
         var configureFileCacheOptions = ConfigureHttpFileCacheOptions ?? (options => { options.TimeToLive = TimeSpan.FromDays(7); });
 
-        services.Configure(configureOptions);
+        services.Configure<HttpActivityOptions>(options =>
+        {
+            options.BasePath = HttpActivityOptions.BasePath;
+            options.BaseUrl = HttpActivityOptions.BaseUrl;
+            options.AvailableContentTypes = HttpActivityOptions.AvailableContentTypes;
+            options.WriteHttpResponseSynchronously = HttpActivityOptions.WriteHttpResponseSynchronously;
+        });
+
         services.Configure(configureFileCacheOptions);
 
         var httpClientBuilder = services.AddHttpClient<SendHttpRequestBase>(HttpClient);
@@ -228,5 +234,10 @@ public class HttpFeature : IShellFeature
             options.AddTypeAlias<Downloadable[]>("Downloadable[]");
         });
     }
-}
 
+    /// <inheritdoc />
+    public void UseMiddleware(IApplicationBuilder app, IHostEnvironment? environment)
+    {
+        app.UseWorkflows();
+    }
+}
