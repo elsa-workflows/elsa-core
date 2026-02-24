@@ -75,7 +75,10 @@ public class LocalWorkflowClient(
             Properties = request.Properties,
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle,
-            IncludeWorkflowOutput = request.IncludeWorkflowOutput
+            IncludeWorkflowOutput = request.IncludeWorkflowOutput,
+            SchedulingActivityExecutionId = request.SchedulingActivityExecutionId,
+            SchedulingWorkflowInstanceId = request.SchedulingWorkflowInstanceId,
+            SchedulingCallStackDepth = request.SchedulingCallStackDepth
         }, cancellationToken);
     }
 
@@ -152,6 +155,9 @@ public class LocalWorkflowClient(
             BookmarkId = request.BookmarkId,
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle,
+            SchedulingActivityExecutionId = request.SchedulingActivityExecutionId,
+            SchedulingWorkflowInstanceId = request.SchedulingWorkflowInstanceId,
+            SchedulingCallStackDepth = request.SchedulingCallStackDepth
         };
 
         var workflowGraph = await GetWorkflowGraphAsync(workflowInstance, cancellationToken);

@@ -8,7 +8,6 @@ using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using Elsa.Workflows.State;
@@ -81,6 +80,7 @@ public class EFCoreActivityExecutionStore(
     {
         return await store.DeleteWhereAsync(queryable => Filter(queryable, filter), cancellationToken);
     }
+
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
     {

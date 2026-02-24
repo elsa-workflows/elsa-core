@@ -182,5 +182,6 @@ public class ActivityTestFixture
         services.AddSingleton<IWorkflowExecutionContextSchedulerStrategy, FakeWorkflowExecutionContextSchedulerStrategy>();
         services.AddSingleton<IActivityExecutionContextSchedulerStrategy, FakeActivityExecutionContextSchedulerStrategy>();
         services.AddSingleton<ITenantAccessor, DefaultTenantAccessor>();
+        services.AddScoped<IWorkflowStateExtractor, WorkflowStateExtractor>();
     }
 }

@@ -21,7 +21,7 @@ public interface IWorkflowDefinitionsApi
     /// <param name="versionOptions">The version options.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-definitions?versionOptions={versionOptions}")]
-    Task<PagedListResponse<WorkflowDefinitionSummary>> ListAsync([Query]ListWorkflowDefinitionsRequest request, [Query]VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
+    Task<PagedListResponse<WorkflowDefinitionSummary>> ListAsync([Query]ListWorkflowDefinitionsRequest request, [Query]VersionOptions? versionOptions = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets a workflow definition by definition ID.
@@ -30,7 +30,7 @@ public interface IWorkflowDefinitionsApi
     /// <param name="versionOptions">The version options.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-definitions/by-definition-id/{definitionId}?versionOptions={versionOptions}")]
-    Task<WorkflowDefinition?> GetByDefinitionIdAsync(string definitionId, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
+    Task<WorkflowDefinition?> GetByDefinitionIdAsync(string definitionId, VersionOptions? versionOptions = null, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Gets a workflow definition by ID.
@@ -74,13 +74,21 @@ public interface IWorkflowDefinitionsApi
     Task<CountWorkflowDefinitionsResponse> CountAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets all workflow definitions that consume (reference) the specified workflow definition, recursively.
+    /// </summary>
+    /// <param name="definitionId">The definition ID of the workflow definition to get consumers for.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Get("/workflow-definitions/{definitionId}/consumers")]
+    Task<GetConsumingWorkflowDefinitionsResponse> GetConsumersAsync(string definitionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets a value indicating whether a workflow definition name is unique.
     /// </summary>
     /// <param name="name">The name to check.</param>
     /// <param name="definitionId">The ID of the workflow definition to exclude from the check.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-definitions/validation/is-name-unique?name={name}")]
-    Task<GetIsNameUniqueResponse> GetIsNameUniqueAsync(string name, string? definitionId = default, CancellationToken cancellationToken = default);
+    Task<GetIsNameUniqueResponse> GetIsNameUniqueAsync(string name, string? definitionId = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Saves a workflow definition.
@@ -163,14 +171,15 @@ public interface IWorkflowDefinitionsApi
     /// </summary>
     /// <param name="definitionId">The ID of the workflow definition to export.</param>
     /// <param name="versionOptions">The version options.</param>
+    /// <param name="includeConsumingWorkflows">Whether to include all workflows that consume (reference) the specified workflow.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    [Get("/workflow-definitions/{definitionId}/export?versionOptions={versionOptions}")]
-    Task<IApiResponse<Stream>> ExportAsync(string definitionId, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
+    [Get("/workflow-definitions/{definitionId}/export?versionOptions={versionOptions}&includeConsumingWorkflows={includeConsumingWorkflows}")]
+    Task<IApiResponse<Stream>> ExportAsync(string definitionId, VersionOptions? versionOptions = null, bool includeConsumingWorkflows = false, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Exports a set of workflow definitions.
     /// </summary>
-    /// <param name="request">The request containing the IDs of the workflow definitions to export.</param>
+    /// <param name="request">The request containing the IDs of the workflow definitions to export and options.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/bulk-actions/export/workflow-definitions")]
     Task<IApiResponse<Stream>> BulkExportAsync(BulkExportWorkflowDefinitionsRequest request, CancellationToken cancellationToken = default);

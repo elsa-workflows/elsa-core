@@ -1,0 +1,51 @@
+{
+  "id": "refgraph-child-v1",
+  "definitionId": "refgraph-child",
+  "name": "RefGraphChild",
+  "createdAt": "2025-01-01T00:00:00+00:00",
+  "version": 1,
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "refgraph-child-flowchart",
+    "nodeId": "RefGraphChild:refgraph-child-flowchart",
+    "metadata": {},
+    "customProperties": {
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "workflowDefinitionId": "refgraph-grandchild",
+        "workflowDefinitionVersionId": "refgraph-grandchild-v1",
+        "latestAvailablePublishedVersion": 1,
+        "latestAvailablePublishedVersionId": "refgraph-grandchild-v1",
+        "id": "refgraph-child-gc-ref",
+        "nodeId": "RefGraphChild:refgraph-child-flowchart:refgraph-child-gc-ref",
+        "name": "RefGraphGrandchild1",
+        "type": "RefGraphGrandchild",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {}
+      }
+    ],
+    "connections": []
+  }
+}
+

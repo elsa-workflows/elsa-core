@@ -279,7 +279,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
             catch (JsonException e)
             {
                 await HandleInvalidJsonPayloadAsync(context, httpContext, e);
-                throw;
+                return;
             }
 
         }

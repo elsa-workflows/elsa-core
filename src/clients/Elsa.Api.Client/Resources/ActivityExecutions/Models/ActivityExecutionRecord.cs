@@ -85,9 +85,37 @@ public class ActivityExecutionRecord : Entity
     /// Gets or sets the status of the activity.
     /// </summary>
     public ActivityStatus Status { get; set; }
+
+    /// <summary>
+    /// Gets or sets the aggregated count of faults encountered during the execution of the activity instance and its descendants.
+    /// </summary>
+    public int AggregateFaultCount { get; set; }
     
     /// <summary>
     /// Gets or sets the time at which the activity execution completed.
     /// </summary>
     public DateTimeOffset? CompletedAt { get; set; }
+
+    /// <summary>
+    /// The ID of the activity execution context that scheduled this activity execution.
+    /// This represents the temporal/execution predecessor that directly triggered execution of this activity.
+    /// </summary>
+    public string? SchedulingActivityExecutionId { get; set; }
+
+    /// <summary>
+    /// The ID of the activity that scheduled this activity execution (denormalized for convenience).
+    /// </summary>
+    public string? SchedulingActivityId { get; set; }
+
+    /// <summary>
+    /// The workflow instance ID of the workflow that scheduled this activity execution.
+    /// This is set when crossing workflow boundaries (e.g., via ExecuteWorkflow or DispatchWorkflow).
+    /// </summary>
+    public string? SchedulingWorkflowInstanceId { get; set; }
+
+    /// <summary>
+    /// The depth of this activity in the call stack (0 for root activities).
+    /// Calculated by traversing the SchedulingActivityExecutionId chain until reaching null.
+    /// </summary>
+    public int? CallStackDepth { get; set; }
 }

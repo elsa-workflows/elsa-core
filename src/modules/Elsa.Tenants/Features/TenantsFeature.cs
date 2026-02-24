@@ -55,6 +55,7 @@ public class TenantsFeature(IModule serviceConfiguration) : FeatureBase(serviceC
     public override void Apply()
     {
         Services.Configure(MultitenancyOptions);
+        Services.Configure<TenantsOptions>(options => options.IsEnabled = true);
 
         Services
             .AddScoped<ITenantResolverPipelineInvoker, DefaultTenantResolverPipelineInvoker>()
