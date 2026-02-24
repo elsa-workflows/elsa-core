@@ -50,6 +50,9 @@ public class Configurations :
         builder.HasIndex(x => x.Status).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.Status)}");
         builder.HasIndex(x => x.CompletedAt).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.CompletedAt)}");
         builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.TenantId)}");
+        builder.HasIndex(x => x.SchedulingActivityExecutionId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.SchedulingActivityExecutionId)}");
+        builder.HasIndex(x => x.SchedulingActivityId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.SchedulingActivityId)}");
+        builder.HasIndex(x => x.SchedulingWorkflowInstanceId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.SchedulingWorkflowInstanceId)}");
     }
 
     public void Configure(EntityTypeBuilder<BookmarkQueueItem> builder)

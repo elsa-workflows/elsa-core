@@ -107,7 +107,8 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     public WorkflowExecutionContext WorkflowExecutionContext { get; }
 
     /// <summary>
-    /// The parent activity execution context, if any. 
+    /// The parent activity execution context, if any.
+    /// This represents the structural container activity (e.g., Flowchart contains all its children).
     /// </summary>
     public ActivityExecutionContext? ParentActivityExecutionContext
     {
@@ -118,6 +119,32 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
             _parentActivityExecutionContext?.Children.Add(this);
         }
     }
+
+    /// <summary>
+    /// The ID of the activity execution context that scheduled this activity execution.
+    /// This represents the temporal/execution predecessor that directly triggered execution of this activity,
+    /// distinct from <see cref="ParentActivityExecutionContext"/> which represents the structural container.
+    /// For example, in a Flowchart, Activity B might complete and schedule Activity C, making B the scheduling activity for C.
+    /// </summary>
+    public string? SchedulingActivityExecutionId { get; set; }
+
+    /// <summary>
+    /// The ID of the activity that scheduled this activity execution (denormalized for convenience).
+    /// This is the Activity.Id from the activity execution context identified by <see cref="SchedulingActivityExecutionId"/>.
+    /// </summary>
+    public string? SchedulingActivityId { get; set; }
+
+    /// <summary>
+    /// The workflow instance ID of the workflow that scheduled this activity execution.
+    /// This is set when crossing workflow boundaries (e.g., via ExecuteWorkflow or DispatchWorkflow).
+    /// For activities within the same workflow instance, this will be null.
+    /// </summary>
+    public string? SchedulingWorkflowInstanceId { get; set; }
+
+    /// <summary>
+    /// The depth of this activity in the call stack (0 for root activities).
+    /// </summary>
+    public int CallStackDepth { get; set; }
 
     /// <summary>
     /// The expression execution context.
@@ -788,3 +815,4 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     {
     }
 }
+

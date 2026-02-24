@@ -108,7 +108,10 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
             Input = input,
             Properties = properties,
             CorrelationId = correlationId,
-            WorkflowInstanceId = identityGenerator.GenerateId()
+            WorkflowInstanceId = identityGenerator.GenerateId(),
+            SchedulingActivityExecutionId = context.Id,
+            SchedulingWorkflowInstanceId = parentInstanceId,
+            SchedulingCallStackDepth = context.CallStackDepth
         };
 
         var workflowResult = await workflowInvoker.InvokeAsync(workflowGraph, options, context.CancellationToken);

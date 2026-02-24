@@ -28,6 +28,9 @@ public class BackgroundWorkflowDispatcher(ICommandSender commandSender, INotific
             InstanceId = request.InstanceId,
             TriggerActivityId = request.TriggerActivityId,
             ParentWorkflowInstanceId = request.ParentWorkflowInstanceId,
+            SchedulingActivityExecutionId = request.SchedulingActivityExecutionId,
+            SchedulingWorkflowInstanceId = request.SchedulingWorkflowInstanceId,
+            SchedulingCallStackDepth = request.SchedulingCallStackDepth
         };
         
         await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), cancellationToken);
