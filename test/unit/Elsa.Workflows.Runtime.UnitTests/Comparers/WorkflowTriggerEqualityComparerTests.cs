@@ -25,59 +25,17 @@ public class WorkflowTriggerEqualityComparerTests
     /// A simple payload class that mimics real trigger payloads like HttpEndpointBookmarkPayload.
     /// </summary>
     private record TestPayload(string Path, string Method);
-
-    /// <summary>
-    /// Simulates the IPayloadSerializer round-trip: serialize with camelCase, then deserialize to object.
-    /// This is what happens in TriggerStore.OnSaveAsync -> DB -> TriggerStore.OnLoadAsync.
-    /// </summary>
-    private static object SimulatePayloadRoundTrip(object payload)
-    {
-        // IPayloadSerializer uses camelCase and various converters
-        var serializerOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        };
-
-        // Serialize (OnSaveAsync)
-        var json = JsonSerializer.Serialize(payload, serializerOptions);
-
-        // Deserialize back to object (OnLoadAsync calls Deserialize<object>)
-        // System.Text.Json deserializes to JsonElement when target type is object.
-        var deserialized = JsonSerializer.Deserialize<object>(json, serializerOptions);
-
-        return deserialized!;
-    }
-
+    
     [Fact(DisplayName = "Fresh and round-tripped triggers with identical logical content should be considered equal")]
     public void FreshAndRoundTrippedTriggers_ShouldBeEqual()
     {
         // Arrange: a freshly computed trigger (as produced by TriggerIndexer.CreateWorkflowTriggersAsync)
         var freshPayload = new TestPayload("/api/test", "GET");
-        var freshTrigger = new StoredTrigger
-        {
-            Id = "trigger-1",
-            WorkflowDefinitionId = "workflow-1",
-            WorkflowDefinitionVersionId = "workflow-1:v1",
-            Name = "Elsa.HttpEndpoint",
-            ActivityId = "activity-1",
-            Hash = "some-hash",
-            Payload = freshPayload
-        };
+        var freshTrigger = CreateTrigger("trigger-1", freshPayload);
 
         // Arrange: the same trigger after a DB round-trip (save via IPayloadSerializer, then load)
         var roundTrippedPayload = SimulatePayloadRoundTrip(freshPayload);
-        var loadedTrigger = new StoredTrigger
-        {
-            Id = "trigger-1",
-            WorkflowDefinitionId = "workflow-1",
-            WorkflowDefinitionVersionId = "workflow-1:v1",
-            Name = "Elsa.HttpEndpoint",
-            ActivityId = "activity-1",
-            Hash = "some-hash",
-            Payload = roundTrippedPayload
-        };
+        var loadedTrigger = CreateTrigger("trigger-1", roundTrippedPayload);
 
         var comparer = new WorkflowTriggerEqualityComparer();
 
@@ -88,7 +46,7 @@ public class WorkflowTriggerEqualityComparerTests
         // Before the fix, they were NOT equal because:
         // - freshPayload serialized as: {"Path":"/api/test","Method":"GET"} (PascalCase)
         // - roundTrippedPayload (a JsonElement) serialized as: {"path":"/api/test","method":"GET"} (camelCase preserved from DB)
-        Assert.True(areEqual, 
+        Assert.True(areEqual,
             "Fresh trigger and DB-round-tripped trigger should be considered equal. " +
             "The payload serialization mismatch between WorkflowTriggerEqualityComparer (PascalCase) " +
             "and IPayloadSerializer (camelCase) causes them to differ.");
@@ -101,28 +59,10 @@ public class WorkflowTriggerEqualityComparerTests
         var payload = new TestPayload("/api/orders", "POST");
         var roundTrippedPayload = SimulatePayloadRoundTrip(payload);
 
-        var existingTrigger = new StoredTrigger
-        {
-            Id = "existing-id-from-pod-a",
-            WorkflowDefinitionId = "workflow-1",
-            WorkflowDefinitionVersionId = "workflow-1:v1",
-            Name = "Elsa.HttpEndpoint",
-            ActivityId = "activity-1",
-            Hash = "hash-1",
-            Payload = roundTrippedPayload
-        };
+        var existingTrigger = CreateTrigger("existing-id-from-pod-a", roundTrippedPayload, hash: "hash-1");
 
         // Arrange: Pod B freshly computes the same trigger (as TriggerIndexer would)
-        var freshTrigger = new StoredTrigger
-        {
-            Id = "new-id-from-pod-b", // Different ID, same logical trigger
-            WorkflowDefinitionId = "workflow-1",
-            WorkflowDefinitionVersionId = "workflow-1:v1",
-            Name = "Elsa.HttpEndpoint",
-            ActivityId = "activity-1",
-            Hash = "hash-1",
-            Payload = payload // Original typed object
-        };
+        var freshTrigger = CreateTrigger("new-id-from-pod-b", payload, hash: "hash-1"); // Different ID, same logical trigger
 
         var currentTriggers = new List<StoredTrigger> { existingTrigger };
         var newTriggers = new List<StoredTrigger> { freshTrigger };
@@ -147,29 +87,18 @@ public class WorkflowTriggerEqualityComparerTests
         var payload = new TestPayload("/api/test", "GET");
 
         // What WorkflowTriggerEqualityComparer produces for a fresh payload (PascalCase, no naming policy):
-        var comparerOptions = new JsonSerializerOptions
-        {
-            IncludeFields = true,
-            PropertyNameCaseInsensitive = true
-        };
-        var freshJson = JsonSerializer.Serialize(payload, comparerOptions);
+        var freshJson = JsonSerializer.Serialize(payload, ComparerOptions);
         // Result: {"Path":"/api/test","Method":"GET"}
 
         // What IPayloadSerializer stores in the DB (camelCase):
-        var payloadSerializerOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        };
-        var storedJson = JsonSerializer.Serialize(payload, payloadSerializerOptions);
+        var storedJson = JsonSerializer.Serialize(payload, PayloadSerializerOptions);
         // Result: {"path":"/api/test","method":"GET"}
 
         // After loading from DB, Deserialize<object> returns a JsonElement
-        var roundTrippedPayload = JsonSerializer.Deserialize<object>(storedJson, payloadSerializerOptions);
+        var roundTrippedPayload = JsonSerializer.Deserialize<object>(storedJson, PayloadSerializerOptions);
 
         // When WorkflowTriggerEqualityComparer serializes the round-tripped payload:
-        var roundTrippedJson = JsonSerializer.Serialize(roundTrippedPayload, comparerOptions);
+        var roundTrippedJson = JsonSerializer.Serialize(roundTrippedPayload, ComparerOptions);
         // Result: {"path":"/api/test","method":"GET"} — camelCase preserved from JsonElement!
 
         // The mismatch:
@@ -177,5 +106,61 @@ public class WorkflowTriggerEqualityComparerTests
         Assert.Equal("{\"Path\":\"/api/test\",\"Method\":\"GET\"}", freshJson);
         Assert.Equal("{\"path\":\"/api/test\",\"method\":\"GET\"}", roundTrippedJson);
     }
+    
+    /// <summary>
+    /// IPayloadSerializer options: camelCase with case-insensitive deserialization.
+    /// </summary>
+    private static readonly JsonSerializerOptions PayloadSerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
+    /// <summary>
+    /// Comparer options used by WorkflowTriggerEqualityComparer (without naming policy).
+    /// </summary>
+    private static readonly JsonSerializerOptions ComparerOptions = new()
+    {
+        IncludeFields = true,
+        PropertyNameCaseInsensitive = true
+    };
+
+    /// <summary>
+    /// Simulates the IPayloadSerializer round-trip: serialize with camelCase, then deserialize to object.
+    /// This is what happens in TriggerStore.OnSaveAsync -> DB -> TriggerStore.OnLoadAsync.
+    /// </summary>
+    private static object SimulatePayloadRoundTrip(object payload)
+    {
+        // Serialize (OnSaveAsync)
+        var json = JsonSerializer.Serialize(payload, PayloadSerializerOptions);
+
+        // Deserialize back to object (OnLoadAsync calls Deserialize<object>)
+        // System.Text.Json deserializes to JsonElement when target type is object.
+        var deserialized = JsonSerializer.Deserialize<object>(json, PayloadSerializerOptions);
+
+        return deserialized!;
+    }
+
+    /// <summary>
+    /// Creates a StoredTrigger with default values that can be overridden.
+    /// </summary>
+    private static StoredTrigger CreateTrigger(
+        string id,
+        object payload,
+        string workflowDefinitionId = "workflow-1",
+        string workflowDefinitionVersionId = "workflow-1:v1",
+        string name = "Elsa.HttpEndpoint",
+        string activityId = "activity-1",
+        string hash = "some-hash") => new()
+    {
+        Id = id,
+        WorkflowDefinitionId = workflowDefinitionId,
+        WorkflowDefinitionVersionId = workflowDefinitionVersionId,
+        Name = name,
+        ActivityId = activityId,
+        Hash = hash,
+        Payload = payload
+    };
 }
 
