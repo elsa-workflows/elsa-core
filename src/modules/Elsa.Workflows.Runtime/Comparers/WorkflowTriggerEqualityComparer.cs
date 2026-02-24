@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Elsa.Expressions.Services;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Serialization.Converters;
@@ -12,13 +13,13 @@ namespace Elsa.Workflows.Runtime.Comparers;
 public class WorkflowTriggerEqualityComparer : IEqualityComparer<StoredTrigger>
 {
     private readonly JsonSerializerOptions _settings;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowTriggerEqualityComparer"/> class.
     /// </summary>
     public WorkflowTriggerEqualityComparer()
     {
-        _settings = new JsonSerializerOptions
+        _settings = new()
         {
             // Enables serialization of ValueTuples, which use fields instead of properties.
             IncludeFields = true,
@@ -30,7 +31,12 @@ public class WorkflowTriggerEqualityComparer : IEqualityComparer<StoredTrigger>
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         };
-        
+
+        // Mirror the converters used by IPayloadSerializer so that enum, TimeSpan, and
+        // polymorphic object properties serialize identically to their stored representation.
+        _settings.Converters.Add(new JsonStringEnumConverter());
+        _settings.Converters.Add(JsonMetadataServices.TimeSpanConverter);
+        _settings.Converters.Add(new PolymorphicObjectConverterFactory());
         _settings.Converters.Add(new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()));
     }
 
@@ -54,7 +60,7 @@ public class WorkflowTriggerEqualityComparer : IEqualityComparer<StoredTrigger>
         // Normalize the payload to a canonical JSON string so that both typed CLR objects
         // and JsonElement instances (from DB round-trips) produce identical output.
         var normalizedPayload = NormalizePayload(storedTrigger.Payload);
-        
+
         var input = new
         {
             Payload = normalizedPayload,
@@ -66,7 +72,7 @@ public class WorkflowTriggerEqualityComparer : IEqualityComparer<StoredTrigger>
         };
         return JsonSerializer.Serialize(input, _settings);
     }
-    
+
     /// <summary>
     /// Normalizes a payload to a canonical JSON string representation.
     /// This ensures that typed CLR objects and JsonElements (which preserve their original
@@ -76,10 +82,11 @@ public class WorkflowTriggerEqualityComparer : IEqualityComparer<StoredTrigger>
     {
         if (payload == null)
             return null;
-            
+
         // Serialize to camelCase JSON — this normalizes both:
         // - CLR objects (whose PascalCase properties get converted to camelCase)
         // - JsonElement values (whose camelCase keys are preserved as-is)
         return JsonSerializer.Serialize(payload, _settings);
     }
 }
+
