@@ -54,6 +54,17 @@ public class ActivityJsonConverter(
             notFoundActivity.OriginalActivityJson = activityRoot.ToString();
             notFoundActivity.SetDisplayText($"Not Found: {activityTypeName}");
             notFoundActivity.SetDescription($"Could not find activity type {activityTypeName} with version {activityTypeVersion}");
+
+            // Extract and copy metadata from the not found activity JSON
+            if (doc.RootElement.TryGetProperty("metadata", out var metadataElement))
+            {
+                var metadata = JsonSerializer.Deserialize<IDictionary<string, object>>(metadataElement.GetRawText(), clonedOptions);
+                if (metadata != null)
+                {
+                    notFoundActivity.Metadata = metadata;
+                }
+            }
+
             return notFoundActivity;
         }
 
