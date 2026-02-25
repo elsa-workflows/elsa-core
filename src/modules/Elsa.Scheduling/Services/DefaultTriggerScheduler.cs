@@ -64,6 +64,12 @@ public class DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ISyst
         foreach (var trigger in cronTriggers)
         {
             var payload = trigger.GetPayload<CronTriggerPayload>();
+            if(payload is null)
+            {
+                logger.LogWarning("Cron expression payload  is empty. TriggerId: {TriggerId}. Skipping scheduling of this trigger", trigger.Id);
+                continue;
+            }
+
             var cronExpression = payload.CronExpression;
 
             if (string.IsNullOrWhiteSpace(cronExpression))
