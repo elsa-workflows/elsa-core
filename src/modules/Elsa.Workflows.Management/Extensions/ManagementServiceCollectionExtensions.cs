@@ -1,5 +1,5 @@
 using System.Reflection;
-using Elsa.Workflows;
+using Elsa.Expressions.Extensions;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
 using Microsoft.Extensions.DependencyInjection;
@@ -91,6 +91,15 @@ public static class ManagementServiceCollectionExtensions
         this IServiceCollection services,
         string category,
         string? description = null) =>
-        services.AddVariableDescriptor(new VariableDescriptor(typeof(T), category, description));
-}
+        services.AddVariableDescriptor(new(typeof(T), category, description));
 
+    /// <summary>
+    /// Adds a variable type and its alias to the specified service collection.
+    /// </summary>
+    public static IServiceCollection AddVariableTypeAndAlias<T>(this IServiceCollection services, string alias, string category)
+    {
+        return services
+            .AddVariableDescriptor<T>(category)
+            .AddTypeAlias<T>(alias);
+    }
+}
