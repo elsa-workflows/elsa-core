@@ -53,9 +53,10 @@ public class ActivityJsonConverter(
             notFoundActivity.MissingTypeVersion = activityTypeVersion;
             notFoundActivity.OriginalActivityJson = activityRoot.ToString();
 
-            // Extract and copy metadata from the outer NotFoundActivity JSON wrapper (doc.RootElement).
-            // Note: activityRoot may contain the inner originalActivityJson, so we must read from doc.RootElement
-            // to get the metadata that was added to the NotFoundActivity wrapper itself.
+            // Extract metadata from doc.RootElement rather than activityRoot.
+            // In round-trip scenarios, activityRoot may have been reassigned to the inner originalActivityJson (see line 37),
+            // but we want the metadata from the current activity being deserialized, which represents the NotFoundActivity
+            // placeholder's position and annotations in the designer.
             if (doc.RootElement.TryGetProperty("metadata", out var outerMetadataElement))
             {
                 var outerMetadata = JsonSerializer.Deserialize<IDictionary<string, object>>(outerMetadataElement.GetRawText(), clonedOptions);
