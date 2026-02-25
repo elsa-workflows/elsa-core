@@ -52,8 +52,6 @@ public class ActivityJsonConverter(
             notFoundActivity.MissingTypeName = activityTypeName;
             notFoundActivity.MissingTypeVersion = activityTypeVersion;
             notFoundActivity.OriginalActivityJson = activityRoot.ToString();
-            notFoundActivity.SetDisplayText($"Not Found: {activityTypeName}");
-            notFoundActivity.SetDescription($"Could not find activity type {activityTypeName} with version {activityTypeVersion}");
 
             // Extract and copy metadata from the outer NotFoundActivity JSON wrapper (doc.RootElement).
             // Note: activityRoot may contain the inner originalActivityJson, so we must read from doc.RootElement
@@ -66,6 +64,10 @@ public class ActivityJsonConverter(
                     notFoundActivity.Metadata = outerMetadata;
                 }
             }
+
+            // Set display text and description after metadata assignment to ensure they always reflect the current state
+            notFoundActivity.SetDisplayText($"Not Found: {activityTypeName}");
+            notFoundActivity.SetDescription($"Could not find activity type {activityTypeName} with version {activityTypeVersion}");
 
             return notFoundActivity;
         }
