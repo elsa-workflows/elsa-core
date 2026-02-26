@@ -12,7 +12,13 @@ namespace Elsa.Workflows.Models;
 
 public record ActivityConstructorContext(ActivityDescriptor ActivityDescriptor, Func<Type, ActivityConstructionResult> ActivityFactory)
 {
-    public ActivityConstructionResult<T> CreateActivity<T>() where T : IActivity => ActivityFactory(typeof(T)).Cast<T>();
+    public ActivityConstructionResult<T> CreateActivity<T>(Action<T>? configure = null) where T : IActivity
+    {
+        var result = ActivityFactory(typeof(T)).Cast<T>();
+        configure?.Invoke(result.Activity);
+        return result;
+    }
+
     public ActivityConstructionResult CreateActivity(Type type) => ActivityFactory(type);
 }
 
