@@ -83,10 +83,12 @@ public class WorkflowTriggerEqualityComparer : IEqualityComparer<StoredTrigger>
         if (payload == null)
             return null;
 
-        // Serialize to camelCase JSON — this normalizes both:
-        // - CLR objects (whose PascalCase properties get converted to camelCase)
-        // - JsonElement values (whose camelCase keys are preserved as-is)
-        return JsonSerializer.Serialize(payload, _settings);
+        // Serialize using the concrete runtime type rather than object, so that
+        // PolymorphicObjectConverterFactory (which only handles typeof(object)) does not
+        // inject a "_type" discriminator field into CLR payloads. Without this,
+        // fresh CLR payloads produce {"path":"...","_type":"..."} while DB-loaded
+        // JsonElement payloads produce {"path":"..."}, and the two never compare equal.
+        return JsonSerializer.Serialize(payload, payload.GetType(), _settings);
     }
 }
 
