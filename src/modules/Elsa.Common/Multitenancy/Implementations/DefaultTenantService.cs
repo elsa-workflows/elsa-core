@@ -77,7 +77,10 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
             var tenantsProvider = scope.ServiceProvider.GetRequiredService<ITenantsProvider>();
             var currentTenants = await GetTenantsDictionaryAsync(cancellationToken);
             var currentTenantIds = currentTenants.Keys;
-            var newTenants = (await tenantsProvider.ListAsync(cancellationToken)).ToDictionary(x => x.Id.EmptyIfNull());
+            var tenantsFromProvider = (await tenantsProvider.ListAsync(cancellationToken)).ToList();
+            var newTenants = tenantsFromProvider.Count == 0
+                ? new Dictionary<string, Tenant> { [Tenant.DefaultTenantId] = Tenant.Default }
+                : tenantsFromProvider.ToDictionary(x => x.Id.EmptyIfNull());
             var newTenantIds = newTenants.Keys;
             var removedTenantIds = currentTenantIds.Except(newTenantIds).ToArray();
             var addedTenantIds = newTenantIds.Except(currentTenantIds).ToArray();
@@ -112,7 +115,9 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
                     _tenantsDictionary = new Dictionary<string, Tenant>();
                     _tenantScopesDictionary = new Dictionary<Tenant, TenantScope>();
                     var tenantsProvider = _serviceScope.ServiceProvider.GetRequiredService<ITenantsProvider>();
-                    var tenants = await tenantsProvider.ListAsync(cancellationToken);
+                    var tenants = (await tenantsProvider.ListAsync(cancellationToken)).ToList();
+                    if (tenants.Count == 0)
+                        tenants = [Tenant.Default];
 
                     foreach (var tenant in tenants)
                         await RegisterTenantAsync(tenant, cancellationToken);
