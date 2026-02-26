@@ -74,21 +74,28 @@ public class BackgroundCommandSenderHostedService : BackgroundService
             {
                 try
                 {
+                    // Pre-execution check.
+                    // If the caller's token is already canceled, we skip the command to avoid 
+                    // downstream failures (like DB connection aborts) and log it appropriately.
+                    if (commandContext.CancellationToken.IsCancellationRequested)
+                    {
+                        _logger.LogInformation("Skipping command {CommandName} because it was already canceled by the caller", commandContext.Command.GetType().Name);
+                        continue;
+                    }
+
                     // Create a fresh scope for each command to ensure proper service lifetime
                     using var scope = _scopeFactory.CreateScope();
                     var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
 
-                    // Link the service cancellation token with the command's token to ensure proper cancellation
-                    using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
-                        cancellationToken,
-                        commandContext.CancellationToken);
-
-                    // Process the command using the command sender service with the linked token
+                    // Decouple from the caller's CancellationToken.
+                    // We use only the service's cancellationToken (the background worker's lifetime) 
+                    // to ensure that dispatched workflows are processed even if the original 
+                    // HTTP request or triggering context has timed out.
                     await commandSender.SendAsync(
                         commandContext.Command,
                         CommandStrategy.Default,
                         commandContext.Headers,
-                        linkedTokenSource.Token);
+                        cancellationToken);
                 }
                 catch (Exception e)
                 {
