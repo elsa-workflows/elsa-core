@@ -1,12 +1,13 @@
 using CShells.Features;
 using Elsa.Common.Multitenancy;
-using Elsa.Common.RecurringTasks;
+using Elsa.Common.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Scheduling.Bookmarks;
 using Elsa.Scheduling.Handlers;
 using Elsa.Scheduling.HostedServices;
 using Elsa.Scheduling.Services;
 using Elsa.Scheduling.TriggerPayloadValidators;
+using Elsa.Workflows.Management.Extensions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,7 +19,7 @@ namespace Elsa.Scheduling.ShellFeatures;
 [ShellFeature(
     DisplayName = "Scheduling",
     Description = "Provides scheduling capabilities for workflows including cron and delay-based triggers",
-    DependsOn = ["SystemClock"])]
+    DependsOn = [typeof(SystemClockFeature)])]
 [UsedImplicitly]
 public class SchedulingFeature : IShellFeature
 {
@@ -47,9 +48,8 @@ public class SchedulingFeature : IShellFeature
             .AddScoped(WorkflowScheduler)
             .AddBackgroundTask<CreateSchedulesBackgroundTask>()
             .AddHandlersFrom<ScheduleWorkflows>()
-
-            //Trigger payload validators.
-            .AddTriggerPayloadValidator<CronTriggerPayloadValidator, CronTriggerPayload>();
+            .AddTriggerPayloadValidator<CronTriggerPayloadValidator, CronTriggerPayload>()
+            .AddActivitiesFrom<SchedulingFeature>();
     }
 }
 

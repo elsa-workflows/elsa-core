@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Persistence.EFCore;
 
 public abstract class PersistenceShellFeatureBase<TDbContext> : IShellFeature
-    where TDbContext : ElsaDbContextBase
+    where TDbContext : DbContext
 {
     /// <summary>
     /// Gets or sets a value indicating whether to use context pooling.

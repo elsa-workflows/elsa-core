@@ -14,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Resilience.ShellFeatures;
 
 [ShellFeature]
-public class ResilienceShellFeature : IFastEndpointsShellFeature
+public class ResilienceFeature : IFastEndpointsShellFeature
 {
     public void ConfigureServices(IServiceCollection services)
     {
@@ -37,7 +37,7 @@ public class ResilienceShellFeature : IFastEndpointsShellFeature
             .AddScoped<IRetryAttemptRecorder, ActivityExecutionContextRetryAttemptRecorder>()
             .AddScoped<IRetryAttemptReader, ActivityExecutionContextRetryAttemptReader>()
             .AddScoped<ActivityExecutionContextRetryAttemptReader>()
-            .AddHandlersFrom<ResilienceShellFeature>();
+            .AddHandlersFrom<ResilienceFeature>();
 
         // Register transient exception detection infrastructure
         services

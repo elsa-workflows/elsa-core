@@ -15,6 +15,10 @@ namespace Elsa.Workflows.Management.UnitTests.Services;
 
 public class CachingWorkflowDefinitionServiceTests
 {
+    private const string DefaultDefinitionId = "def-1";
+    private const string DefaultVersionId = "version-id-1";
+    private const string DefaultMaterializerName = "materializer";
+
     private readonly IWorkflowDefinitionService _decoratedService = Substitute.For<IWorkflowDefinitionService>();
     private readonly IWorkflowDefinitionCacheManager _cacheManager = Substitute.For<IWorkflowDefinitionCacheManager>();
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore = Substitute.For<IWorkflowDefinitionStore>();
@@ -30,11 +34,9 @@ public class CachingWorkflowDefinitionServiceTests
     public async Task MaterializeWorkflowAsync_DelegatesToDecoratedService()
     {
         // Arrange
-        var definition = TestHelpers.CreateWorkflowDefinition("def-1", "materializer");
-        var (_, workflowGraph) = CreateWorkflowAndGraph("def-1");
-
+        var definition = TestHelpers.CreateWorkflowDefinition(DefaultDefinitionId, DefaultMaterializerName);
+        var (_, workflowGraph) = CreateWorkflowAndGraph(DefaultDefinitionId);
         _decoratedService.MaterializeWorkflowAsync(definition, Arg.Any<CancellationToken>()).Returns(workflowGraph);
-
         var service = CreateService();
 
         // Act
@@ -49,42 +51,35 @@ public class CachingWorkflowDefinitionServiceTests
     public async Task FindWorkflowDefinitionAsync_ByDefinitionIdAndVersionOptions_CreatesCacheKey()
     {
         // Arrange
-        var definition = TestHelpers.CreateWorkflowDefinition("def-1", "materializer");
-        var cacheKey = "cache-key-1";
-
-        _cacheManager.CreateWorkflowDefinitionVersionCacheKey("def-1", VersionOptions.Published).Returns(cacheKey);
-        _decoratedService.FindWorkflowDefinitionAsync("def-1", VersionOptions.Published, Arg.Any<CancellationToken>())
-            .Returns(definition);
-
+        var definition = TestHelpers.CreateWorkflowDefinition(DefaultDefinitionId, DefaultMaterializerName);
+        _cacheManager.CreateWorkflowDefinitionVersionCacheKey(DefaultDefinitionId, VersionOptions.Published).Returns("cache-key");
+        _decoratedService.FindWorkflowDefinitionAsync(DefaultDefinitionId, VersionOptions.Published, Arg.Any<CancellationToken>()).Returns(definition);
         var service = CreateService();
 
         // Act
-        var result = await service.FindWorkflowDefinitionAsync("def-1", VersionOptions.Published);
+        var result = await service.FindWorkflowDefinitionAsync(DefaultDefinitionId, VersionOptions.Published);
 
         // Assert
         Assert.Same(definition, result);
-        _cacheManager.Received(1).CreateWorkflowDefinitionVersionCacheKey("def-1", VersionOptions.Published);
+        _cacheManager.Received(1).CreateWorkflowDefinitionVersionCacheKey(DefaultDefinitionId, VersionOptions.Published);
     }
 
     [Fact]
     public async Task FindWorkflowDefinitionAsync_ByDefinitionVersionId_CreatesCacheKey()
     {
         // Arrange
-        var definition = TestHelpers.CreateWorkflowDefinition("def-1", "materializer");
-        definition.Id = "version-id-1";
-        var cacheKey = "cache-key-version-1";
-
-        _cacheManager.CreateWorkflowDefinitionVersionCacheKey("version-id-1").Returns(cacheKey);
-        _decoratedService.FindWorkflowDefinitionAsync("version-id-1", Arg.Any<CancellationToken>()).Returns(definition);
-
+        var definition = TestHelpers.CreateWorkflowDefinition(DefaultDefinitionId, DefaultMaterializerName);
+        definition.Id = DefaultVersionId;
+        _cacheManager.CreateWorkflowDefinitionVersionCacheKey(DefaultVersionId).Returns("cache-key");
+        _decoratedService.FindWorkflowDefinitionAsync(DefaultVersionId, Arg.Any<CancellationToken>()).Returns(definition);
         var service = CreateService();
 
         // Act
-        var result = await service.FindWorkflowDefinitionAsync("version-id-1");
+        var result = await service.FindWorkflowDefinitionAsync(DefaultVersionId);
 
         // Assert
         Assert.Same(definition, result);
-        _cacheManager.Received(1).CreateWorkflowDefinitionVersionCacheKey("version-id-1");
+        _cacheManager.Received(1).CreateWorkflowDefinitionVersionCacheKey(DefaultVersionId);
     }
 
     [Fact]
@@ -172,17 +167,18 @@ public class CachingWorkflowDefinitionServiceTests
     }
 
     [Fact]
-    public async Task FindWorkflowGraphAsync_ByHandle_ConvertsTFilterAndDelegates()
+    public async Task FindWorkflowGraphAsync_ByHandle_ConvertsTFilterAndResolvesDefinitionAndGraph()
     {
         // Arrange
-        var (_, workflowGraph) = CreateWorkflowAndGraph("def-1");
-        var handle = WorkflowDefinitionHandle.ByDefinitionId("def-1", VersionOptions.Latest);
-        var cacheKey = "cache-key-filter";
+        var definition = TestHelpers.CreateWorkflowDefinition(DefaultDefinitionId, DefaultMaterializerName);
+        definition.Id = DefaultVersionId;
+        var (_, workflowGraph) = CreateWorkflowAndGraph(DefaultDefinitionId);
+        var handle = WorkflowDefinitionHandle.ByDefinitionId(DefaultDefinitionId, VersionOptions.Latest);
 
-        _cacheManager.CreateWorkflowFilterCacheKey(Arg.Any<WorkflowDefinitionFilter>()).Returns(cacheKey);
-        _decoratedService.FindWorkflowGraphAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
-            .Returns(workflowGraph);
-
+        _cacheManager.CreateWorkflowDefinitionFilterCacheKey(Arg.Any<WorkflowDefinitionFilter>()).Returns("cache-key-def");
+        _cacheManager.CreateWorkflowVersionCacheKey(DefaultVersionId).Returns("cache-key-graph");
+        _decoratedService.FindWorkflowDefinitionAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>()).Returns(definition);
+        SetupDefinitionAndGraphMaterialization(definition, workflowGraph);
         var service = CreateService();
 
         // Act
@@ -190,20 +186,22 @@ public class CachingWorkflowDefinitionServiceTests
 
         // Assert
         Assert.Same(workflowGraph, result);
-        await _decoratedService.Received(1).FindWorkflowGraphAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>());
+        await _decoratedService.Received(1).FindWorkflowDefinitionAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task FindWorkflowGraphAsync_ByFilter_CreatesCacheKey()
+    public async Task FindWorkflowGraphAsync_ByFilter_ResolvesDefinitionFirstAndCachesGraph()
     {
         // Arrange
-        var (_, workflowGraph) = CreateWorkflowAndGraph("def-1");
-        var filter = new WorkflowDefinitionFilter { DefinitionId = "def-1" };
-        var cacheKey = "cache-key-filter";
+        var definition = TestHelpers.CreateWorkflowDefinition(DefaultDefinitionId, DefaultMaterializerName);
+        definition.Id = DefaultVersionId;
+        var (_, workflowGraph) = CreateWorkflowAndGraph(DefaultDefinitionId);
+        var filter = new WorkflowDefinitionFilter { DefinitionId = DefaultDefinitionId };
 
-        _cacheManager.CreateWorkflowFilterCacheKey(filter).Returns(cacheKey);
-        _decoratedService.FindWorkflowGraphAsync(filter, Arg.Any<CancellationToken>()).Returns(workflowGraph);
-
+        _cacheManager.CreateWorkflowDefinitionFilterCacheKey(filter).Returns("cache-key-def");
+        _cacheManager.CreateWorkflowVersionCacheKey(DefaultVersionId).Returns("cache-key-graph");
+        _decoratedService.FindWorkflowDefinitionAsync(filter, Arg.Any<CancellationToken>()).Returns(definition);
+        SetupDefinitionAndGraphMaterialization(definition, workflowGraph);
         var service = CreateService();
 
         // Act
@@ -211,31 +209,50 @@ public class CachingWorkflowDefinitionServiceTests
 
         // Assert
         Assert.Same(workflowGraph, result);
-        _cacheManager.Received(1).CreateWorkflowFilterCacheKey(filter);
+        _cacheManager.Received(1).CreateWorkflowDefinitionFilterCacheKey(filter);
+        _cacheManager.Received(1).CreateWorkflowVersionCacheKey(DefaultVersionId);
+    }
+
+    [Fact]
+    public async Task FindWorkflowGraphAsync_ByFilter_WithUnavailableMaterializer_ReturnsNull()
+    {
+        // Arrange
+        const string unavailableMaterializer = "unavailable-materializer";
+        var definition = TestHelpers.CreateWorkflowDefinition(DefaultDefinitionId, unavailableMaterializer);
+        definition.Id = DefaultVersionId;
+        var filter = new WorkflowDefinitionFilter { DefinitionId = DefaultDefinitionId };
+
+        _cacheManager.CreateWorkflowDefinitionFilterCacheKey(filter).Returns("cache-key");
+        _decoratedService.FindWorkflowDefinitionAsync(filter, Arg.Any<CancellationToken>()).Returns(definition);
+        _materializerRegistry.IsMaterializerAvailable(unavailableMaterializer).Returns(false);
+        var service = CreateService();
+
+        // Act
+        var result = await service.FindWorkflowGraphAsync(filter);
+
+        // Assert
+        Assert.Null(result);
+        _cacheManager.Received(1).CreateWorkflowDefinitionFilterCacheKey(filter);
+        await _decoratedService.DidNotReceive().MaterializeWorkflowAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task FindWorkflowGraphsAsync_WithMultipleDefinitions_CachesEachGraph()
     {
         // Arrange
-        var definition1 = TestHelpers.CreateWorkflowDefinition("def-1", "materializer");
+        var definition1 = TestHelpers.CreateWorkflowDefinition("def-1", DefaultMaterializerName);
         definition1.Id = "id-1";
-        var definition2 = TestHelpers.CreateWorkflowDefinition("def-2", "materializer");
+        var definition2 = TestHelpers.CreateWorkflowDefinition("def-2", DefaultMaterializerName);
         definition2.Id = "id-2";
-        var definitions = new[] { definition1, definition2 };
-
         var (_, graph1) = CreateWorkflowAndGraph("def-1");
         var (_, graph2) = CreateWorkflowAndGraph("def-2");
-
         var filter = new WorkflowDefinitionFilter();
-        _workflowDefinitionStore.FindManyAsync(filter, Arg.Any<CancellationToken>()).Returns(definitions);
 
+        _workflowDefinitionStore.FindManyAsync(filter, Arg.Any<CancellationToken>()).Returns(new[] { definition1, definition2 });
         _cacheManager.CreateWorkflowVersionCacheKey("id-1").Returns("cache-key-1");
         _cacheManager.CreateWorkflowVersionCacheKey("id-2").Returns("cache-key-2");
-
-        _decoratedService.MaterializeWorkflowAsync(definition1, Arg.Any<CancellationToken>()).Returns(graph1);
-        _decoratedService.MaterializeWorkflowAsync(definition2, Arg.Any<CancellationToken>()).Returns(graph2);
-
+        SetupDefinitionAndGraphMaterialization(definition1, graph1);
+        SetupDefinitionAndGraphMaterialization(definition2, graph2);
         var service = CreateService();
 
         // Act
@@ -251,106 +268,146 @@ public class CachingWorkflowDefinitionServiceTests
     }
 
     [Fact]
-    public async Task TryFindWorkflowGraphAsync_ByDefinitionIdAndVersionOptions_CreatesCacheKey()
+    public async Task FindWorkflowGraphsAsync_SkipsDefinitionsWithUnavailableMaterializer()
     {
         // Arrange
-        var findResult = CreateWorkflowGraphFindResult("def-1");
-        var cacheKey = "cache-key-try";
+        var definition1 = TestHelpers.CreateWorkflowDefinition("def-1", "available-materializer");
+        definition1.Id = "id-1";
+        var definition2 = TestHelpers.CreateWorkflowDefinition("def-2", "unavailable-materializer");
+        definition2.Id = "id-2";
+        var definitions = new[] { definition1, definition2 };
 
-        _cacheManager.CreateWorkflowVersionCacheKey("def-1", VersionOptions.Published).Returns(cacheKey);
-        _decoratedService.TryFindWorkflowGraphAsync("def-1", VersionOptions.Published, Arg.Any<CancellationToken>())
-            .Returns(findResult);
+        var (_, graph1) = CreateWorkflowAndGraph("def-1");
+
+        var filter = new WorkflowDefinitionFilter();
+        _workflowDefinitionStore.FindManyAsync(filter, Arg.Any<CancellationToken>()).Returns(definitions);
+
+        _cacheManager.CreateWorkflowVersionCacheKey("id-1").Returns("cache-key-1");
+        _materializerRegistry.IsMaterializerAvailable("available-materializer").Returns(true);
+        _materializerRegistry.IsMaterializerAvailable("unavailable-materializer").Returns(false);
+        _decoratedService.MaterializeWorkflowAsync(definition1, Arg.Any<CancellationToken>()).Returns(graph1);
 
         var service = CreateService();
 
         // Act
-        var result = await service.TryFindWorkflowGraphAsync("def-1", VersionOptions.Published);
+        var result = await service.FindWorkflowGraphsAsync(filter);
 
         // Assert
-        Assert.Same(findResult, result);
-        _cacheManager.Received(1).CreateWorkflowVersionCacheKey("def-1", VersionOptions.Published);
+        var graphs = result.ToList();
+        Assert.Single(graphs);
+        Assert.Same(graph1, graphs[0]);
+        await _decoratedService.DidNotReceive().MaterializeWorkflowAsync(definition2, Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task TryFindWorkflowGraphAsync_ByDefinitionVersionId_CreatesCacheKey()
+    public async Task TryFindWorkflowGraphAsync_ByDefinitionIdAndVersionOptions_ResolvesDefinitionAndGraph()
     {
         // Arrange
-        var findResult = CreateWorkflowGraphFindResult("def-1");
-        var cacheKey = "cache-key-try-version";
+        var definition = TestHelpers.CreateWorkflowDefinition(DefaultDefinitionId, DefaultMaterializerName);
+        definition.Id = DefaultVersionId;
+        var (_, workflowGraph) = CreateWorkflowAndGraph(DefaultDefinitionId);
 
-        _cacheManager.CreateWorkflowVersionCacheKey("version-id-1").Returns(cacheKey);
-        _decoratedService.TryFindWorkflowGraphAsync("version-id-1", Arg.Any<CancellationToken>()).Returns(findResult);
-
+        _cacheManager.CreateWorkflowDefinitionVersionCacheKey(DefaultDefinitionId, VersionOptions.Published).Returns("cache-key-def");
+        _cacheManager.CreateWorkflowVersionCacheKey(DefaultVersionId).Returns("cache-key-graph");
+        _decoratedService.FindWorkflowDefinitionAsync(DefaultDefinitionId, VersionOptions.Published, Arg.Any<CancellationToken>()).Returns(definition);
+        SetupDefinitionAndGraphMaterialization(definition, workflowGraph);
         var service = CreateService();
 
         // Act
-        var result = await service.TryFindWorkflowGraphAsync("version-id-1");
+        var result = await service.TryFindWorkflowGraphAsync(DefaultDefinitionId, VersionOptions.Published);
 
         // Assert
-        Assert.Same(findResult, result);
-        _cacheManager.Received(1).CreateWorkflowVersionCacheKey("version-id-1");
+        Assert.Same(definition, result.WorkflowDefinition);
+        Assert.Same(workflowGraph, result.WorkflowGraph);
+        _cacheManager.Received(1).CreateWorkflowDefinitionVersionCacheKey(DefaultDefinitionId, VersionOptions.Published);
+        _cacheManager.Received(1).CreateWorkflowVersionCacheKey(DefaultVersionId);
     }
 
     [Fact]
-    public async Task TryFindWorkflowGraphAsync_ByHandle_ConvertsTFilterAndDelegates()
+    public async Task TryFindWorkflowGraphAsync_ByDefinitionVersionId_ResolvesDefinitionAndGraph()
     {
         // Arrange
-        var findResult = CreateWorkflowGraphFindResult("def-1");
-        var handle = WorkflowDefinitionHandle.ByDefinitionId("def-1", VersionOptions.Latest);
-        var cacheKey = "cache-key-filter";
+        var definition = TestHelpers.CreateWorkflowDefinition(DefaultDefinitionId, DefaultMaterializerName);
+        definition.Id = DefaultVersionId;
+        var (_, workflowGraph) = CreateWorkflowAndGraph(DefaultDefinitionId);
 
-        _cacheManager.CreateWorkflowFilterCacheKey(Arg.Any<WorkflowDefinitionFilter>()).Returns(cacheKey);
-        _decoratedService.TryFindWorkflowGraphAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
-            .Returns(findResult);
+        _cacheManager.CreateWorkflowDefinitionVersionCacheKey(DefaultVersionId).Returns("cache-key-def");
+        _cacheManager.CreateWorkflowVersionCacheKey(DefaultVersionId).Returns("cache-key-graph");
+        _decoratedService.FindWorkflowDefinitionAsync(DefaultVersionId, Arg.Any<CancellationToken>()).Returns(definition);
+        SetupDefinitionAndGraphMaterialization(definition, workflowGraph);
+        var service = CreateService();
 
+        // Act
+        var result = await service.TryFindWorkflowGraphAsync(DefaultVersionId);
+
+        // Assert
+        Assert.Same(definition, result.WorkflowDefinition);
+        Assert.Same(workflowGraph, result.WorkflowGraph);
+        _cacheManager.Received(1).CreateWorkflowDefinitionVersionCacheKey(DefaultVersionId);
+        _cacheManager.Received(1).CreateWorkflowVersionCacheKey(DefaultVersionId);
+    }
+
+    [Fact]
+    public async Task TryFindWorkflowGraphAsync_ByHandle_ConvertsTFilterAndResolvesDefinitionAndGraph()
+    {
+        // Arrange
+        var definition = TestHelpers.CreateWorkflowDefinition(DefaultDefinitionId, DefaultMaterializerName);
+        definition.Id = DefaultVersionId;
+        var (_, workflowGraph) = CreateWorkflowAndGraph(DefaultDefinitionId);
+        var handle = WorkflowDefinitionHandle.ByDefinitionId(DefaultDefinitionId, VersionOptions.Latest);
+
+        _cacheManager.CreateWorkflowDefinitionFilterCacheKey(Arg.Any<WorkflowDefinitionFilter>()).Returns("cache-key-def");
+        _cacheManager.CreateWorkflowVersionCacheKey(DefaultVersionId).Returns("cache-key-graph");
+        _decoratedService.FindWorkflowDefinitionAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>()).Returns(definition);
+        SetupDefinitionAndGraphMaterialization(definition, workflowGraph);
         var service = CreateService();
 
         // Act
         var result = await service.TryFindWorkflowGraphAsync(handle);
 
         // Assert
-        Assert.Same(findResult, result);
-        await _decoratedService.Received(1).TryFindWorkflowGraphAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>());
+        Assert.Same(definition, result.WorkflowDefinition);
+        Assert.Same(workflowGraph, result.WorkflowGraph);
+        await _decoratedService.Received(1).FindWorkflowDefinitionAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task TryFindWorkflowGraphAsync_ByFilter_CreatesCacheKey()
+    public async Task TryFindWorkflowGraphAsync_ByFilter_ResolvesDefinitionAndGraph()
     {
         // Arrange
-        var findResult = CreateWorkflowGraphFindResult("def-1");
-        var filter = new WorkflowDefinitionFilter { DefinitionId = "def-1" };
-        var cacheKey = "cache-key-filter";
+        var definition = TestHelpers.CreateWorkflowDefinition(DefaultDefinitionId, DefaultMaterializerName);
+        definition.Id = DefaultVersionId;
+        var (_, workflowGraph) = CreateWorkflowAndGraph(DefaultDefinitionId);
+        var filter = new WorkflowDefinitionFilter { DefinitionId = DefaultDefinitionId };
 
-        _cacheManager.CreateWorkflowFilterCacheKey(filter).Returns(cacheKey);
-        _decoratedService.TryFindWorkflowGraphAsync(filter, Arg.Any<CancellationToken>()).Returns(findResult);
-
+        _cacheManager.CreateWorkflowDefinitionFilterCacheKey(filter).Returns("cache-key-def");
+        _cacheManager.CreateWorkflowVersionCacheKey(DefaultVersionId).Returns("cache-key-graph");
+        _decoratedService.FindWorkflowDefinitionAsync(filter, Arg.Any<CancellationToken>()).Returns(definition);
+        SetupDefinitionAndGraphMaterialization(definition, workflowGraph);
         var service = CreateService();
 
         // Act
         var result = await service.TryFindWorkflowGraphAsync(filter);
 
         // Assert
-        Assert.Same(findResult, result);
-        _cacheManager.Received(1).CreateWorkflowFilterCacheKey(filter);
+        Assert.Same(definition, result.WorkflowDefinition);
+        Assert.Same(workflowGraph, result.WorkflowGraph);
+        _cacheManager.Received(1).CreateWorkflowDefinitionFilterCacheKey(filter);
+        _cacheManager.Received(1).CreateWorkflowVersionCacheKey(DefaultVersionId);
     }
 
     [Fact]
     public async Task TryFindWorkflowGraphsAsync_WithAvailableMaterializer_CachesGraph()
     {
         // Arrange
-        var definition = TestHelpers.CreateWorkflowDefinition("def-1", "materializer");
+        var definition = TestHelpers.CreateWorkflowDefinition(DefaultDefinitionId, DefaultMaterializerName);
         definition.Id = "id-1";
-        var definitions = new[] { definition };
-
-        var (_, graph) = CreateWorkflowAndGraph("def-1");
-
+        var (_, graph) = CreateWorkflowAndGraph(DefaultDefinitionId);
         var filter = new WorkflowDefinitionFilter();
-        _workflowDefinitionStore.FindManyAsync(filter, Arg.Any<CancellationToken>()).Returns(definitions);
 
-        _cacheManager.CreateWorkflowVersionCacheKey("id-1").Returns("cache-key-1");
-        _materializerRegistry.IsMaterializerAvailable("materializer").Returns(true);
-        _decoratedService.MaterializeWorkflowAsync(definition, Arg.Any<CancellationToken>()).Returns(graph);
-
+        _workflowDefinitionStore.FindManyAsync(filter, Arg.Any<CancellationToken>()).Returns(new[] { definition });
+        _cacheManager.CreateWorkflowVersionCacheKey("id-1").Returns("cache-key");
+        SetupDefinitionAndGraphMaterialization(definition, graph);
         var service = CreateService();
 
         // Act
@@ -367,16 +424,14 @@ public class CachingWorkflowDefinitionServiceTests
     public async Task TryFindWorkflowGraphsAsync_WithUnavailableMaterializer_ReturnsNullGraph()
     {
         // Arrange
-        var definition = TestHelpers.CreateWorkflowDefinition("def-1", "unavailable-materializer");
+        const string unavailableMaterializer = "unavailable-materializer";
+        var definition = TestHelpers.CreateWorkflowDefinition(DefaultDefinitionId, unavailableMaterializer);
         definition.Id = "id-1";
-        var definitions = new[] { definition };
-
         var filter = new WorkflowDefinitionFilter();
-        _workflowDefinitionStore.FindManyAsync(filter, Arg.Any<CancellationToken>()).Returns(definitions);
 
-        _cacheManager.CreateWorkflowVersionCacheKey("id-1").Returns("cache-key-1");
-        _materializerRegistry.IsMaterializerAvailable("unavailable-materializer").Returns(false);
-
+        _workflowDefinitionStore.FindManyAsync(filter, Arg.Any<CancellationToken>()).Returns(new[] { definition });
+        _cacheManager.CreateWorkflowVersionCacheKey("id-1").Returns("cache-key");
+        _materializerRegistry.IsMaterializerAvailable(unavailableMaterializer).Returns(false);
         var service = CreateService();
 
         // Act
@@ -476,12 +531,16 @@ public class CachingWorkflowDefinitionServiceTests
     }
 
     /// <summary>
-    /// Creates a workflow graph find result for testing.
+    /// Sets up a complete workflow definition with graph materialization for testing scenarios
+    /// where definition needs to be resolved and materialized into a graph.
     /// </summary>
-    private WorkflowGraphFindResult CreateWorkflowGraphFindResult(string definitionId = "def-1", string materializerName = "materializer")
+    private void SetupDefinitionAndGraphMaterialization(
+        WorkflowDefinition definition,
+        WorkflowGraph workflowGraph,
+        string? materializerName = null)
     {
-        var definition = TestHelpers.CreateWorkflowDefinition(definitionId, materializerName);
-        var (_, workflowGraph) = CreateWorkflowAndGraph(definitionId);
-        return new(definition, workflowGraph);
+        materializerName ??= definition.MaterializerName;
+        _materializerRegistry.IsMaterializerAvailable(materializerName).Returns(true);
+        _decoratedService.MaterializeWorkflowAsync(definition, Arg.Any<CancellationToken>()).Returns(workflowGraph);
     }
 }

@@ -70,8 +70,10 @@ public class AutoUpdateTests : AppComponentTest
         {
             Id = ParentDefinitionVersionId
         };
-        var parentVersionCacheKey = _definitionCacheManager.CreateWorkflowFilterCacheKey(parentWorkflowDefinitionFilter);
-        Assert.True(_cache.TryGetValue(parentVersionCacheKey, out _));
+        var parentDefinitionCacheKey = _definitionCacheManager.CreateWorkflowDefinitionFilterCacheKey(parentWorkflowDefinitionFilter);
+        var parentGraphCacheKey = _definitionCacheManager.CreateWorkflowVersionCacheKey(ParentDefinitionVersionId);
+        Assert.True(_cache.TryGetValue(parentDefinitionCacheKey, out _));
+        Assert.True(_cache.TryGetValue(parentGraphCacheKey, out _));
 
         // Set change tokens.
         _httpChangeToken = _workflowCacheManager.CreateWorkflowDefinitionChangeTokenKey(ParentDefinitionId);
@@ -88,7 +90,8 @@ public class AutoUpdateTests : AppComponentTest
 
         Assert.False(_cache.TryGetValue($"http-workflow:{hash}", out _));
         Assert.False(_cache.TryGetValue($"IEnumerable`1:{hashedFilter}", out _));
-        Assert.False(_cache.TryGetValue(parentVersionCacheKey, out _));
+        Assert.False(_cache.TryGetValue(parentDefinitionCacheKey, out _));
+        Assert.False(_cache.TryGetValue(parentGraphCacheKey, out _));
     }
 
     private void OnChangeTokenSignalTriggered(object? sender, TriggerChangeTokenSignalEventArgs args)
