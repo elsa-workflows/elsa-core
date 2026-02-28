@@ -1,4 +1,5 @@
 using AspNetCore.Authentication.ApiKey;
+using CShells.Configuration;
 using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.Common.Multitenancy;
@@ -10,6 +11,7 @@ using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Identity.ShellFeatures;
@@ -26,8 +28,7 @@ public class IdentityFeature : IFastEndpointsShellFeature
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        // Configure options - Note: SigningKey must be configured by the application for security
-        services.AddOptions<IdentityTokenOptions>().BindConfiguration("Identity");
+        services.AddOptions<IdentityTokenOptions>().Configure<ShellConfiguration>((options, config) => config.GetSection("Identity").Bind(options));
         services.Configure<ApiKeyOptions>(ApiKeyDefaults.AuthenticationScheme, options =>
         {
             options.Realm = "Elsa Workflows";

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
     <ItemGroup>
-        <PackageReference Include="CShells.AspNetCore"/>
-        <PackageReference Include="CShells.FastEndpoints"/>
+        <PackageReference Include="CShells.AspNetCore" />
+        <PackageReference Include="CShells.FastEndpoints" />
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
