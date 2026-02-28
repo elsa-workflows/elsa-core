@@ -14,6 +14,11 @@ public class WorkflowState
     public string Id { get; set; } = null!;
 
     /// <summary>
+    /// Gets or sets the TenantId.
+    /// </summary>
+    public string TenantId { get; set; } = null!;
+
+    /// <summary>
     /// The workflow definition ID.
     /// </summary>
     public string DefinitionId { get; set; } = null!;
