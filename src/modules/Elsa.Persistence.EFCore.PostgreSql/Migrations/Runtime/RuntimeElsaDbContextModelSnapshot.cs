@@ -117,9 +117,6 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
                     b.HasIndex("ActivityName")
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityName");
 
-                    b.HasIndex("ActivityNodeId")
-                        .HasDatabaseName("IX_ActivityExecutionRecord_ActivityNodeId");
-
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType");
 
@@ -400,9 +397,6 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
 
                     b.HasIndex("ActivityName")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityName");
-
-                    b.HasIndex("ActivityNodeId")
-                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityNodeId");
 
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");
