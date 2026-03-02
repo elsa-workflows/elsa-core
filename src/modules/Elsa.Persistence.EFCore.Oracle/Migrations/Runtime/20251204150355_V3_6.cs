@@ -26,6 +26,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                 unique: true,
                 filter: "\"Hash\" IS NOT NULL");
 
+            // ORA-01418: specified index does not exist
             migrationBuilder.Sql(@"
                 BEGIN
                     EXECUTE IMMEDIATE 'DROP INDEX ""IX_WorkflowExecutionLogRecord_ActivityNodeId""';
