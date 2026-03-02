@@ -45,15 +45,23 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
                 unique: true,
                 filter: "[Hash] IS NOT NULL");
 
-            migrationBuilder.DropIndex(
-                name: "IX_WorkflowExecutionLogRecord_ActivityNodeId",
-                schema: _schema.Schema,
-                table: "WorkflowExecutionLogRecords");
+            migrationBuilder.Sql($@"
+                IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_WorkflowExecutionLogRecord_ActivityNodeId'
+                    AND object_id = OBJECT_ID('{_schema.Schema}.WorkflowExecutionLogRecords'))
+                BEGIN
+                    DROP INDEX [IX_WorkflowExecutionLogRecord_ActivityNodeId]
+                    ON [{_schema.Schema}].[WorkflowExecutionLogRecords]
+                END
+            ");
 
-            migrationBuilder.DropIndex(
-                name: "IX_ActivityExecutionRecord_ActivityNodeId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords");
+            migrationBuilder.Sql($@"
+                IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ActivityExecutionRecord_ActivityNodeId'
+                    AND object_id = OBJECT_ID('{_schema.Schema}.ActivityExecutionRecords'))
+                BEGIN
+                    DROP INDEX [IX_ActivityExecutionRecord_ActivityNodeId]
+                    ON [{_schema.Schema}].[ActivityExecutionRecords]
+                END
+            ");
 
             migrationBuilder.AlterColumn<string>(
                 name: "ActivityNodeId",

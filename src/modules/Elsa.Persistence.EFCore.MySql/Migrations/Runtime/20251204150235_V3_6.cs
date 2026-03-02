@@ -36,15 +36,27 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                 columns: new[] { "WorkflowDefinitionId", "Hash", "ActivityId", "TenantId" },
                 unique: true);
 
-            migrationBuilder.DropIndex(
-                name: "IX_WorkflowExecutionLogRecord_ActivityNodeId",
-                schema: _schema.Schema,
-                table: "WorkflowExecutionLogRecords");
+            var schemaFilter = _schema.Schema != null ? $"'{_schema.Schema}'" : "DATABASE()";
 
-            migrationBuilder.DropIndex(
-                name: "IX_ActivityExecutionRecord_ActivityNodeId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords");
+            migrationBuilder.Sql($@"
+                SET @exist := (SELECT COUNT(*) FROM information_schema.statistics
+                    WHERE table_schema = {schemaFilter} AND table_name = 'WorkflowExecutionLogRecords'
+                    AND index_name = 'IX_WorkflowExecutionLogRecord_ActivityNodeId');
+                SET @sqlstmt := IF(@exist > 0, 'DROP INDEX `IX_WorkflowExecutionLogRecord_ActivityNodeId` ON `WorkflowExecutionLogRecords`', 'SELECT 1');
+                PREPARE stmt FROM @sqlstmt;
+                EXECUTE stmt;
+                DEALLOCATE PREPARE stmt;
+            ");
+
+            migrationBuilder.Sql($@"
+                SET @exist := (SELECT COUNT(*) FROM information_schema.statistics
+                    WHERE table_schema = {schemaFilter} AND table_name = 'ActivityExecutionRecords'
+                    AND index_name = 'IX_ActivityExecutionRecord_ActivityNodeId');
+                SET @sqlstmt := IF(@exist > 0, 'DROP INDEX `IX_ActivityExecutionRecord_ActivityNodeId` ON `ActivityExecutionRecords`', 'SELECT 1');
+                PREPARE stmt FROM @sqlstmt;
+                EXECUTE stmt;
+                DEALLOCATE PREPARE stmt;
+            ");
 
             migrationBuilder.AlterColumn<string>(
                 name: "ActivityNodeId",

@@ -25,15 +25,9 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
                 columns: new[] { "WorkflowDefinitionId", "Hash", "ActivityId", "TenantId" },
                 unique: true);
 
-            migrationBuilder.DropIndex(
-                name: "IX_WorkflowExecutionLogRecord_ActivityNodeId",
-                schema: _schema.Schema,
-                table: "WorkflowExecutionLogRecords");
-
-            migrationBuilder.DropIndex(
-                name: "IX_ActivityExecutionRecord_ActivityNodeId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords");
+            var schemaPrefix = _schema.Schema != null ? $"\"{_schema.Schema}\"." : "";
+            migrationBuilder.Sql($"DROP INDEX IF EXISTS {schemaPrefix}\"IX_WorkflowExecutionLogRecord_ActivityNodeId\"");
+            migrationBuilder.Sql($"DROP INDEX IF EXISTS {schemaPrefix}\"IX_ActivityExecutionRecord_ActivityNodeId\"");
         }
 
         /// <inheritdoc />

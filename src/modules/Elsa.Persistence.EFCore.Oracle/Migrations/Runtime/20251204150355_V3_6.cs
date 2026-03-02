@@ -26,15 +26,23 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                 unique: true,
                 filter: "\"Hash\" IS NOT NULL");
 
-            migrationBuilder.DropIndex(
-                name: "IX_WorkflowExecutionLogRecord_ActivityNodeId",
-                schema: _schema.Schema,
-                table: "WorkflowExecutionLogRecords");
+            migrationBuilder.Sql(@"
+                BEGIN
+                    EXECUTE IMMEDIATE 'DROP INDEX ""IX_WorkflowExecutionLogRecord_ActivityNodeId""';
+                EXCEPTION
+                    WHEN OTHERS THEN
+                        IF SQLCODE != -1418 THEN RAISE; END IF;
+                END;
+            ");
 
-            migrationBuilder.DropIndex(
-                name: "IX_ActivityExecutionRecord_ActivityNodeId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords");
+            migrationBuilder.Sql(@"
+                BEGIN
+                    EXECUTE IMMEDIATE 'DROP INDEX ""IX_ActivityExecutionRecord_ActivityNodeId""';
+                EXCEPTION
+                    WHEN OTHERS THEN
+                        IF SQLCODE != -1418 THEN RAISE; END IF;
+                END;
+            ");
 
             migrationBuilder.AlterColumn<string>(
                 name: "ActivityNodeId",
