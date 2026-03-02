@@ -35,6 +35,38 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                 table: "Triggers",
                 columns: new[] { "WorkflowDefinitionId", "Hash", "ActivityId", "TenantId" },
                 unique: true);
+
+            migrationBuilder.DropIndex(
+                name: "IX_WorkflowExecutionLogRecord_ActivityNodeId",
+                schema: _schema.Schema,
+                table: "WorkflowExecutionLogRecords");
+
+            migrationBuilder.DropIndex(
+                name: "IX_ActivityExecutionRecord_ActivityNodeId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "ActivityNodeId",
+                schema: _schema.Schema,
+                table: "WorkflowExecutionLogRecords",
+                type: "longtext",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "varchar(255)")
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .OldAnnotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "ActivityNodeId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                type: "longtext",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "varchar(255)")
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .OldAnnotation("MySql:CharSet", "utf8mb4");
         }
 
         /// <inheritdoc />
@@ -55,6 +87,40 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                 oldType: "varchar(255)")
                 .Annotation("MySql:CharSet", "utf8mb4")
                 .OldAnnotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "ActivityNodeId",
+                schema: _schema.Schema,
+                table: "WorkflowExecutionLogRecords",
+                type: "varchar(255)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "longtext")
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .OldAnnotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "ActivityNodeId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                type: "varchar(255)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "longtext")
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .OldAnnotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowExecutionLogRecord_ActivityNodeId",
+                schema: _schema.Schema,
+                table: "WorkflowExecutionLogRecords",
+                column: "ActivityNodeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_ActivityNodeId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                column: "ActivityNodeId");
         }
     }
 }
