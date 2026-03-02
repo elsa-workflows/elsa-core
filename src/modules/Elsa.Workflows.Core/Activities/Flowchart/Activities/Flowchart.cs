@@ -352,11 +352,12 @@ public class Flowchart : Container
 
         if (flowScope.AnyInboundConnectionsFollowed(flowGraph, outboundActivity))
         {
+            // This is the first inbound connection followed; schedule the outbound activity
+            var scheduleResponse = await ScheduleOutboundActivityAsync(flowchartContext, outboundActivity, completionCallback);
             // An inbound connection has been followed; cancel remaining inbound activities
             await CancelRemainingInboundActivitiesAsync(flowchartContext, outboundActivity);
 
-            // This is the first inbound connection followed; schedule the outbound activity
-            return await ScheduleOutboundActivityAsync(flowchartContext, outboundActivity, completionCallback);
+            return scheduleResponse;
         }
 
         if (flowScope.AllInboundConnectionsVisited(flowGraph, outboundActivity))
