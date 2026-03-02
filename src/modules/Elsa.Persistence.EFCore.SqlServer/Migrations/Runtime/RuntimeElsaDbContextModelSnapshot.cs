@@ -18,7 +18,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.11")
+                .HasAnnotation("ProductVersion", "9.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -56,7 +56,8 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
@@ -340,7 +341,8 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()

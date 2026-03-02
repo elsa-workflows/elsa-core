@@ -56,7 +56,8 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasMaxLength(1024)
+                        .HasColumnType("NVARCHAR2(1024)");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
@@ -340,7 +341,8 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasMaxLength(1024)
+                        .HasColumnType("NVARCHAR2(1024)");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()

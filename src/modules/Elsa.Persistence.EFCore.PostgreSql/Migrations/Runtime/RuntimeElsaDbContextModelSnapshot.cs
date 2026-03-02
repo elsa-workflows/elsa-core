@@ -18,7 +18,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.11")
+                .HasAnnotation("ProductVersion", "9.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -56,7 +56,8 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
@@ -339,7 +340,8 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()

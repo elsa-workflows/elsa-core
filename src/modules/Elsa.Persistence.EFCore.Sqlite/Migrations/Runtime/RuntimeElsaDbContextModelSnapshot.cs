@@ -17,7 +17,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.11");
+                .HasAnnotation("ProductVersion", "9.0.13");
 
             modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
                 {
@@ -52,6 +52,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
+                        .HasMaxLength(1024)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ActivityType")
@@ -335,6 +336,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
+                        .HasMaxLength(1024)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ActivityType")
