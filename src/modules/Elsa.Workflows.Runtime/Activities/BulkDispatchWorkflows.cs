@@ -156,7 +156,8 @@ public class BulkDispatchWorkflows : Activity
             throw new($"No published version of workflow definition with ID {workflowDefinitionId} found.");
 
         var parentInstanceId = context.WorkflowExecutionContext.Id;
-        var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
+        var baseInput = Input.GetOrDefault(context);
+        var input = baseInput != null ? new Dictionary<string, object>(baseInput) : new Dictionary<string, object>();
         var channelName = ChannelName.GetOrDefault(context);
         var defaultInputItemKey = DefaultItemInputKey.GetOrDefault(context, () => "Item")!;
         var properties = new Dictionary<string, object>
