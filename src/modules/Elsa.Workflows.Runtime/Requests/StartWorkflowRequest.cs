@@ -57,4 +57,9 @@ public class StartWorkflowRequest
     /// The handle of the activity to schedule, if any.
     /// </summary>
     public ActivityHandle? ActivityHandle { get; set; }
+
+    /// <summary>
+    /// The name of the user making the request.
+    /// </summary>
+    public string? Initiator { get; set; }
 }
