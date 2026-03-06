@@ -88,4 +88,9 @@ public class WorkflowInstance : Entity
     /// The timestamp when the workflow instance was finished.
     /// </summary>
     public DateTimeOffset? FinishedAt { get; set; }
+
+    /// <summary>
+    /// The name of the user making the request.
+    /// </summary>
+    public string? Initiator { get; set; }
 }
