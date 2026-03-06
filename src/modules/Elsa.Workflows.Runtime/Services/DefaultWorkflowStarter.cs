@@ -35,7 +35,8 @@ public class DefaultWorkflowStarter(IWorkflowDefinitionService workflowDefinitio
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle,
             Properties = request.Properties,
-            ParentId = request.ParentId
+            ParentId = request.ParentId,
+            Initiator = request.Initiator
         };
 
         var runWorkflowResponse = await workflowClient.CreateAndRunInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
