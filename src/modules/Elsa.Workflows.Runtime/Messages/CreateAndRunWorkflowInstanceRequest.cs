@@ -60,6 +60,11 @@ public class CreateAndRunWorkflowInstanceRequest
     public bool IncludeWorkflowOutput { get; set; }
 
     /// <summary>
+    /// The name of the user making the request.
+    /// </summary>
+    public string? Initiator { get; set; }
+
+    /// <summary>
     /// The ID of the activity execution context that scheduled this workflow execution (for cross-workflow call stack tracking).
     /// This is set when a parent workflow invokes this workflow via ExecuteWorkflow or DispatchWorkflow.
     /// </summary>
