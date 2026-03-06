@@ -65,7 +65,8 @@ public class LocalWorkflowClient(
             Name = request.Name,
             Input = request.Input,
             WorkflowDefinitionHandle = request.WorkflowDefinitionHandle,
-            ParentId = request.ParentId
+            ParentId = request.ParentId,
+            Initiator = request.Initiator
         };
         var workflowInstance = await CreateInstanceInternalAsync(createRequest, cancellationToken);
         return await RunInstanceAsync(workflowInstance, new()
