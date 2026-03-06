@@ -38,4 +38,9 @@ public class CreateWorkflowInstanceRequest
     /// The ID of the parent workflow instance, if any.
     /// </summary>
     public string? ParentId { get; set; }
+
+    /// <summary>
+    /// The name of the user making the request.
+    /// </summary>
+    public string? Initiator { get; set; }
 }
