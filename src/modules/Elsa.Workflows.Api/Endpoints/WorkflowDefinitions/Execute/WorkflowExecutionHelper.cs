@@ -37,7 +37,8 @@ public static class WorkflowExecutionHelper
             Input = request.GetInputAsDictionary(),
             Variables = request.GetVariablesAsDictionary(),
             TriggerActivityId = request.TriggerActivityId,
-            ActivityHandle = request.ActivityHandle
+            ActivityHandle = request.ActivityHandle,
+            Initiator = HttpContext?.User?.Identity?.Name
         };
         
         var startResponse = await workflowStarter.StartWorkflowAsync(startRequest, cancellationToken);
