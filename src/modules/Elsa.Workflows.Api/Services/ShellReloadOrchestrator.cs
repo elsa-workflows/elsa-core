@@ -57,11 +57,10 @@ internal class ShellReloadOrchestrator(IServiceProvider serviceProvider, ILogger
 
             var itemResults = new List<ShellReloadItemResult>();
 
-            foreach (var currentShell in currentShells.Values.OrderBy(x => x.Id.Name, ShellIdComparer))
+            foreach (var currentShell in currentShells.Values
+                                                   .Where(x => !latestShells.ContainsKey(x.Id.Name))
+                                                   .OrderBy(x => x.Id.Name, ShellIdComparer))
             {
-                if (latestShells.ContainsKey(currentShell.Id.Name))
-                    continue;
-
                 var result = await RemoveShellAsync(shellManager, currentShell.Id, requested, cancellationToken);
                 itemResults.Add(result);
             }
