@@ -109,6 +109,40 @@ Compare: `<previous_tag>...<tag>`
 
 ---
 
+## Output location
+
+After generating the release notes, **save the Markdown file in the repository under**:
+
+```
+
+doc/changelogs
+
+```
+
+The filename must follow this convention:
+
+```
+
+doc/changelogs/<version>.md
+
+```
+
+Where `<version>` is the semantic version derived from the tag (without the leading `v`).
+
+Examples:
+
+```
+
+doc/changelogs/3.6.0.md
+doc/changelogs/3.6.1.md
+doc/changelogs/3.7.0-preview.1.md
+
+```
+
+If the directory does not exist, create it.
+
+---
+
 ## Style & correctness
 - Write for developers integrating Elsa packages.
 - Strong verbs; 1–2 line bullets in standard tone.

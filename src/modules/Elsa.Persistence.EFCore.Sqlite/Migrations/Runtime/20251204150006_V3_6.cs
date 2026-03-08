@@ -24,6 +24,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                 table: "Triggers",
                 columns: new[] { "WorkflowDefinitionId", "Hash", "ActivityId", "TenantId" },
                 unique: true);
+
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_WorkflowExecutionLogRecord_ActivityNodeId\"");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_ActivityExecutionRecord_ActivityNodeId\"");
         }
 
         /// <inheritdoc />
@@ -33,6 +36,18 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                 name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId",
                 schema: _schema.Schema,
                 table: "Triggers");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowExecutionLogRecord_ActivityNodeId",
+                schema: _schema.Schema,
+                table: "WorkflowExecutionLogRecords",
+                column: "ActivityNodeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_ActivityNodeId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                column: "ActivityNodeId");
         }
     }
 }
