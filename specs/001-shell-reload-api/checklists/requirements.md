@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-03-08
-**Feature**: [spec.md](/Users/sipke/Projects/Elsa/elsa-core/main/specs/001-shell-reload-api/spec.md)
+**Feature**: [spec.md](/specs/001-shell-reload-api/spec.md)
 
 ## Content Quality
 

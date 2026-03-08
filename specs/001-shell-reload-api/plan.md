@@ -1,6 +1,6 @@
 # Implementation Plan: Shell Reload API Endpoints
 
-**Branch**: `001-shell-reload-api` | **Date**: 2026-03-08 | **Spec**: `/Users/sipke/Projects/Elsa/elsa-core/main/specs/001-shell-reload-api/spec.md`
+**Branch**: `001-shell-reload-api` | **Date**: 2026-03-08 | **Spec**: `./spec.md`
 **Input**: Feature specification from `/specs/001-shell-reload-api/spec.md`
 
 ## Summary
@@ -89,4 +89,3 @@ Endpoint-specific request and response models remain collocated under `Endpoints
 ## Complexity Tracking
 
 No constitutional violations requiring justification.
-

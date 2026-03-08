@@ -23,11 +23,11 @@ public class ShellReloadFailureTests : AppComponentTest
     public async Task Post_WhenReloadIsBusy_ShouldReturnConflict()
     {
         _shellEnvironment.Reset([CreateShell("alpha", "v1")], [CreateShell("alpha", "v2")]);
-        var gate = _shellEnvironment.BlockProvider();
+        var (gate, entered) = _shellEnvironment.BlockProvider();
         var client = WorkflowServer.CreateHttpClient();
         var firstRequestTask = client.PostAsync("actions/shells/reload", content: null);
 
-        await Task.Delay(100);
+        await entered;
 
         using var secondResponse = await client.PostAsync("actions/shells/reload", content: null);
         var secondModel = await secondResponse.ReadAsJsonAsync<ShellReloadResponse>(WorkflowServer.Services);
