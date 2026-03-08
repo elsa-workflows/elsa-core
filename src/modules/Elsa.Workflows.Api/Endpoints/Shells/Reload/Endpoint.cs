@@ -20,9 +20,9 @@ internal class Reload(IShellReloadOrchestrator shellReloadOrchestrator, IApiSeri
         var shellId = Route<string>("shellId")!;
         var result = await shellReloadOrchestrator.ReloadAsync(shellId, cancellationToken);
         var serializerOptions = apiSerializer.GetOptions();
-
-        if (result.Status == ShellReloadStatus.NotFound)
-        {
+            case ShellReloadStatus.NotFound:
+                await Send.ResponseAsync(response, StatusCodes.Status404NotFound, cancellationToken);
+                break;
             await Send.NotFoundAsync(cancellationToken);
             return;
         }
