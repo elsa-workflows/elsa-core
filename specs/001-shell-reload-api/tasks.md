@@ -11,8 +11,8 @@
 
 **Purpose**: Add the minimum project references and client resource scaffolding required by the feature.
 
-- [ ] T001 Update `src/modules/Elsa.Workflows.Api/Elsa.Workflows.Api.csproj` to reference the `CShells` package needed for `IShellManager`, `IShellSettingsProvider`, and `IShellSettingsCache`
-- [ ] T002 [P] Create the shell API client contract scaffold in `src/clients/Elsa.Api.Client/Resources/Shells/Contracts/IShellsApi.cs`
+- [X] T001 Update `src/modules/Elsa.Workflows.Api/Elsa.Workflows.Api.csproj` to reference the `CShells` package needed for `IShellManager`, `IShellSettingsProvider`, and `IShellSettingsCache`
+- [X] T002 [P] Create the shell API client contract scaffold in `src/clients/Elsa.Api.Client/Resources/Shells/Contracts/IShellsApi.cs`
 
 ---
 
@@ -22,10 +22,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Create shared orchestration result contracts in `src/modules/Elsa.Workflows.Api/Contracts/ShellReloadStatus.cs`, `src/modules/Elsa.Workflows.Api/Contracts/ShellReloadItemResult.cs`, and `src/modules/Elsa.Workflows.Api/Contracts/ShellReloadResult.cs`
-- [ ] T004 [P] Create shared client-side reload DTOs in `src/clients/Elsa.Api.Client/Resources/Shells/Models/ShellReloadItemResult.cs`, `src/clients/Elsa.Api.Client/Resources/Shells/Models/ShellReloadStatus.cs`, and `src/clients/Elsa.Api.Client/Resources/Shells/Responses/ShellReloadResponse.cs`
-- [ ] T005 Create the reload orchestration contract and base implementation in `src/modules/Elsa.Workflows.Api/Contracts/IShellReloadOrchestrator.cs` and `src/modules/Elsa.Workflows.Api/Services/ShellReloadOrchestrator.cs`
-- [ ] T006 Register the shell reload orchestrator in `src/modules/Elsa.Workflows.Api/ShellFeatures/WorkflowsApiFeature.cs`
+- [X] T003 Create shared orchestration result contracts in `src/modules/Elsa.Workflows.Api/Contracts/ShellReloadStatus.cs`, `src/modules/Elsa.Workflows.Api/Contracts/ShellReloadItemResult.cs`, and `src/modules/Elsa.Workflows.Api/Contracts/ShellReloadResult.cs`
+- [X] T004 [P] Create shared client-side reload DTOs in `src/clients/Elsa.Api.Client/Resources/Shells/Models/ShellReloadItemResult.cs`, `src/clients/Elsa.Api.Client/Resources/Shells/Models/ShellReloadStatus.cs`, and `src/clients/Elsa.Api.Client/Resources/Shells/Responses/ShellReloadResponse.cs`
+- [X] T005 Create the reload orchestration contract and base implementation in `src/modules/Elsa.Workflows.Api/Contracts/IShellReloadOrchestrator.cs` and `src/modules/Elsa.Workflows.Api/Services/ShellReloadOrchestrator.cs`
+- [X] T006 Register the shell reload orchestrator in `src/modules/Elsa.Workflows.Api/ShellFeatures/WorkflowsApiFeature.cs`
 
 **Checkpoint**: Shared DTOs and orchestration infrastructure are ready for story implementation.
 
@@ -39,13 +39,13 @@
 
 ### Tests for User Story 1
 
-- [ ] T007 [P] [US1] Add component tests for successful full-shell reload results in `test/component/Elsa.Workflows.ComponentTests/Scenarios/RestApis/Endpoints/Shells/ReloadAllTests.cs`
+- [X] T007 [P] [US1] Add component tests for successful full-shell reload results in `test/component/Elsa.Workflows.ComponentTests/Scenarios/RestApis/Endpoints/Shells/ReloadAllTests.cs`
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Implement full-reload snapshotting and successful per-shell result mapping around the current full-reload fallback in `src/modules/Elsa.Workflows.Api/Services/ShellReloadOrchestrator.cs`
-- [ ] T009 [P] [US1] Implement the reload-all endpoint and collocated response handling in `src/modules/Elsa.Workflows.Api/Endpoints/Shells/ReloadAll/Endpoint.cs` and `src/modules/Elsa.Workflows.Api/Endpoints/Shells/ReloadAll/Models.cs`
-- [ ] T010 [P] [US1] Add the reload-all client method to `src/clients/Elsa.Api.Client/Resources/Shells/Contracts/IShellsApi.cs`
+- [X] T008 [US1] Implement full-reload snapshotting and successful per-shell result mapping around the current full-reload fallback in `src/modules/Elsa.Workflows.Api/Services/ShellReloadOrchestrator.cs`
+- [X] T009 [P] [US1] Implement the reload-all endpoint and collocated response handling in `src/modules/Elsa.Workflows.Api/Endpoints/Shells/ReloadAll/Endpoint.cs` and `src/modules/Elsa.Workflows.Api/Endpoints/Shells/ReloadAll/Models.cs`
+- [X] T010 [P] [US1] Add the reload-all client method to `src/clients/Elsa.Api.Client/Resources/Shells/Contracts/IShellsApi.cs`
 
 **Checkpoint**: User Story 1 is independently functional through the API and client surface.
 
@@ -59,13 +59,13 @@
 
 ### Tests for User Story 2
 
-- [ ] T011 [P] [US2] Add component tests for targeted reload success, unknown shell handling, and requested-shell strict outcomes in `test/component/Elsa.Workflows.ComponentTests/Scenarios/RestApis/Endpoints/Shells/ReloadTests.cs`
+- [X] T011 [P] [US2] Add component tests for targeted reload success, unknown shell handling, and requested-shell strict outcomes in `test/component/Elsa.Workflows.ComponentTests/Scenarios/RestApis/Endpoints/Shells/ReloadTests.cs`
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] Extend targeted reload validation and requested-shell strict result handling in `src/modules/Elsa.Workflows.Api/Services/ShellReloadOrchestrator.cs`
-- [ ] T013 [P] [US2] Implement the targeted reload endpoint and collocated models in `src/modules/Elsa.Workflows.Api/Endpoints/Shells/Reload/Endpoint.cs` and `src/modules/Elsa.Workflows.Api/Endpoints/Shells/Reload/Models.cs`
-- [ ] T014 [P] [US2] Add the targeted reload client method to `src/clients/Elsa.Api.Client/Resources/Shells/Contracts/IShellsApi.cs`
+- [X] T012 [US2] Extend targeted reload validation and requested-shell strict result handling in `src/modules/Elsa.Workflows.Api/Services/ShellReloadOrchestrator.cs`
+- [X] T013 [P] [US2] Implement the targeted reload endpoint and collocated models in `src/modules/Elsa.Workflows.Api/Endpoints/Shells/Reload/Endpoint.cs` and `src/modules/Elsa.Workflows.Api/Endpoints/Shells/Reload/Models.cs`
+- [X] T014 [P] [US2] Add the targeted reload client method to `src/clients/Elsa.Api.Client/Resources/Shells/Contracts/IShellsApi.cs`
 
 **Checkpoint**: User Story 2 works independently for known and unknown shell IDs.
 
@@ -79,13 +79,13 @@
 
 ### Tests for User Story 3
 
-- [ ] T015 [P] [US3] Add component tests for busy rejection, unavailable configuration, and partial-success reload behavior in `test/component/Elsa.Workflows.ComponentTests/Scenarios/RestApis/Endpoints/Shells/ShellReloadFailureTests.cs`
+- [X] T015 [P] [US3] Add component tests for busy rejection, unavailable configuration, and partial-success reload behavior in `test/component/Elsa.Workflows.ComponentTests/Scenarios/RestApis/Endpoints/Shells/ShellReloadFailureTests.cs`
 
 ### Implementation for User Story 3
 
-- [ ] T016 [US3] Implement busy-state rejection and provider-unavailable failure handling in `src/modules/Elsa.Workflows.Api/Services/ShellReloadOrchestrator.cs`
-- [ ] T017 [US3] Implement partial-success reconciliation for invalid shell configurations in `src/modules/Elsa.Workflows.Api/Services/ShellReloadOrchestrator.cs`
-- [ ] T018 [US3] Map busy, partial-success, requested-shell failure, and provider-failure outcomes to HTTP responses in `src/modules/Elsa.Workflows.Api/Endpoints/Shells/ReloadAll/Endpoint.cs` and `src/modules/Elsa.Workflows.Api/Endpoints/Shells/Reload/Endpoint.cs`
+- [X] T016 [US3] Implement busy-state rejection and provider-unavailable failure handling in `src/modules/Elsa.Workflows.Api/Services/ShellReloadOrchestrator.cs`
+- [X] T017 [US3] Implement partial-success reconciliation for invalid shell configurations in `src/modules/Elsa.Workflows.Api/Services/ShellReloadOrchestrator.cs`
+- [X] T018 [US3] Map busy, partial-success, requested-shell failure, and provider-failure outcomes to HTTP responses in `src/modules/Elsa.Workflows.Api/Endpoints/Shells/ReloadAll/Endpoint.cs` and `src/modules/Elsa.Workflows.Api/Endpoints/Shells/Reload/Endpoint.cs`
 
 **Checkpoint**: All failure and partial-success behaviors are independently testable through the API.
 

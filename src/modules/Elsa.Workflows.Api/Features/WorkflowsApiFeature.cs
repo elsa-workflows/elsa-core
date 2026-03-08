@@ -4,6 +4,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.SasTokens.Features;
 using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Contracts;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Serialization;
 using Elsa.Workflows.Api.Services;
@@ -42,5 +43,6 @@ public class WorkflowsApiFeature(IModule module) : FeatureBase(module)
             options.AddPolicy(AuthorizationPolicies.NotReadOnlyPolicy, policy => policy.AddRequirements(new NotReadOnlyRequirement()));
         });
         Services.AddScoped<IWorkflowInstanceExportNameProvider, DefaultWorkflowInstanceExportNameProvider>();
+        Services.AddSingleton<IShellReloadOrchestrator, ShellReloadOrchestrator>();
     }
 }
