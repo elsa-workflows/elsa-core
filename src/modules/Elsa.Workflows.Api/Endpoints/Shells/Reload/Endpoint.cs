@@ -19,27 +19,24 @@ internal class Reload(IShellReloadOrchestrator shellReloadOrchestrator, IApiSeri
     {
         var shellId = Route<string>("shellId")!;
         var result = await shellReloadOrchestrator.ReloadAsync(shellId, cancellationToken);
-        var response = Elsa.Workflows.Api.Endpoints.Shells.Reload.Response.FromResult(result);
         var serializerOptions = apiSerializer.GetOptions();
 
-        switch (result.Status)
+        if (result.Status == ShellReloadStatus.NotFound)
         {
-            case ShellReloadStatus.NotFound:
-                await Send.NotFoundAsync(cancellationToken);
-                break;
-            case ShellReloadStatus.Busy:
-                await SendJsonAsync(response, StatusCodes.Status409Conflict, serializerOptions, cancellationToken);
-                break;
-            case ShellReloadStatus.RequestedShellFailed:
-                await SendJsonAsync(response, StatusCodes.Status422UnprocessableEntity, serializerOptions, cancellationToken);
-                break;
-            case ShellReloadStatus.Failed:
-                await SendJsonAsync(response, StatusCodes.Status503ServiceUnavailable, serializerOptions, cancellationToken);
-                break;
-            default:
-                await SendJsonAsync(response, StatusCodes.Status200OK, serializerOptions, cancellationToken);
-                break;
+            await Send.NotFoundAsync(cancellationToken);
+            return;
         }
+
+        var response = Elsa.Workflows.Api.Endpoints.Shells.Reload.Response.FromResult(result);
+        var statusCode = result.Status switch
+        {
+            ShellReloadStatus.Busy => StatusCodes.Status409Conflict,
+            ShellReloadStatus.RequestedShellFailed => StatusCodes.Status422UnprocessableEntity,
+            ShellReloadStatus.Failed => StatusCodes.Status503ServiceUnavailable,
+            _ => StatusCodes.Status200OK
+        };
+
+        await SendJsonAsync(response, statusCode, serializerOptions, cancellationToken);
     }
 
     private async Task SendJsonAsync(Response response, int statusCode, System.Text.Json.JsonSerializerOptions serializerOptions, CancellationToken cancellationToken)

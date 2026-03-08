@@ -10,7 +10,7 @@ namespace Elsa.Workflows.Api.Services;
 internal class ShellReloadOrchestrator(IServiceProvider serviceProvider, ILogger<ShellReloadOrchestrator> logger) : IShellReloadOrchestrator
 {
     private static readonly StringComparer ShellIdComparer = StringComparer.OrdinalIgnoreCase;
-    private static readonly SemaphoreSlim ReloadLock = new(1, 1);
+    private readonly SemaphoreSlim _reloadLock = new(1, 1);
 
     public Task<ShellReloadResult> ReloadAllAsync(CancellationToken cancellationToken = default) =>
         ReloadInternalAsync(null, cancellationToken);
@@ -22,7 +22,7 @@ internal class ShellReloadOrchestrator(IServiceProvider serviceProvider, ILogger
     {
         var requested = string.IsNullOrWhiteSpace(requestedShellId) ? null : requestedShellId;
 
-        if (!await ReloadLock.WaitAsync(0, cancellationToken))
+        if (!await _reloadLock.WaitAsync(0, cancellationToken))
             return CreateBusyResult(requested);
 
         try
@@ -76,7 +76,7 @@ internal class ShellReloadOrchestrator(IServiceProvider serviceProvider, ILogger
         }
         finally
         {
-            ReloadLock.Release();
+            _reloadLock.Release();
         }
     }
 

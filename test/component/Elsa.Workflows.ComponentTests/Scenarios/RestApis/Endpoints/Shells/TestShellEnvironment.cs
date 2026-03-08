@@ -11,6 +11,7 @@ public class TestShellEnvironment : IShellManager, IShellSettingsProvider, IShel
     private Dictionary<string, ShellSettings> _currentShells = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, ShellSettings> _sourceShells = new(StringComparer.OrdinalIgnoreCase);
     private TaskCompletionSource<bool>? _providerGate;
+    private TaskCompletionSource<bool>? _providerEntered;
 
     public Exception? ProviderException { get; set; }
 
@@ -22,15 +23,17 @@ public class TestShellEnvironment : IShellManager, IShellSettingsProvider, IShel
             _sourceShells = (sourceShells ?? currentShells ?? []).Select(Clone).ToDictionary(x => x.Id.Name, StringComparer.OrdinalIgnoreCase);
             ProviderException = null;
             _providerGate = null;
+            _providerEntered = null;
         }
     }
 
-    public TaskCompletionSource<bool> BlockProvider()
+    public (TaskCompletionSource<bool> Gate, Task Entered) BlockProvider()
     {
         lock (_lock)
         {
             _providerGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            return _providerGate;
+            _providerEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            return (_providerGate, _providerEntered.Task);
         }
     }
 
@@ -43,17 +46,19 @@ public class TestShellEnvironment : IShellManager, IShellSettingsProvider, IShel
     public Task<IEnumerable<ShellSettings>> GetShellSettingsAsync(CancellationToken cancellationToken = default)
     {
         TaskCompletionSource<bool>? providerGate;
+        TaskCompletionSource<bool>? providerEntered;
         Exception? providerException;
         IEnumerable<ShellSettings> settings;
 
         lock (_lock)
         {
             providerGate = _providerGate;
+            providerEntered = _providerEntered;
             providerException = ProviderException;
             settings = _sourceShells.Values.Select(Clone).ToArray();
         }
 
-        return GetShellSettingsInternalAsync(providerGate, providerException, settings, cancellationToken);
+        return GetShellSettingsInternalAsync(providerGate, providerEntered, providerException, settings, cancellationToken);
     }
 
     public IReadOnlyCollection<ShellSettings> GetAll()
@@ -114,10 +119,13 @@ public class TestShellEnvironment : IShellManager, IShellSettingsProvider, IShel
     private static bool IsInvalid(ShellSettings settings) =>
         settings.ConfigurationData.TryGetValue(InvalidConfigurationKey, out var value) && value is true;
 
-    private static async Task<IEnumerable<ShellSettings>> GetShellSettingsInternalAsync(TaskCompletionSource<bool>? providerGate, Exception? providerException, IEnumerable<ShellSettings> settings, CancellationToken cancellationToken)
+    private static async Task<IEnumerable<ShellSettings>> GetShellSettingsInternalAsync(TaskCompletionSource<bool>? providerGate, TaskCompletionSource<bool>? providerEntered, Exception? providerException, IEnumerable<ShellSettings> settings, CancellationToken cancellationToken)
     {
         if (providerGate != null)
+        {
+            providerEntered?.TrySetResult(true);
             await providerGate.Task.WaitAsync(cancellationToken);
+        }
 
         if (providerException != null)
             throw providerException;
