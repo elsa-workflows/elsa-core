@@ -46,19 +46,18 @@ public class TestShellEnvironment : IShellManager, IShellSettingsProvider, IShel
     public Task<IEnumerable<ShellSettings>> GetShellSettingsAsync(CancellationToken cancellationToken = default)
     {
         TaskCompletionSource<bool>? providerGate;
-        TaskCompletionSource<bool>? providerEntered;
         Exception? providerException;
         IEnumerable<ShellSettings> settings;
 
         lock (_lock)
         {
             providerGate = _providerGate;
-            providerEntered = _providerEntered;
+            _providerEntered?.TrySetResult(true);
             providerException = ProviderException;
             settings = _sourceShells.Values.Select(Clone).ToArray();
         }
 
-        return GetShellSettingsInternalAsync(providerGate, providerEntered, providerException, settings, cancellationToken);
+        return GetShellSettingsInternalAsync(providerGate, providerException, settings, cancellationToken);
     }
 
     public IReadOnlyCollection<ShellSettings> GetAll()
@@ -119,13 +118,10 @@ public class TestShellEnvironment : IShellManager, IShellSettingsProvider, IShel
     private static bool IsInvalid(ShellSettings settings) =>
         settings.ConfigurationData.TryGetValue(InvalidConfigurationKey, out var value) && value is true;
 
-    private static async Task<IEnumerable<ShellSettings>> GetShellSettingsInternalAsync(TaskCompletionSource<bool>? providerGate, TaskCompletionSource<bool>? providerEntered, Exception? providerException, IEnumerable<ShellSettings> settings, CancellationToken cancellationToken)
+    private static async Task<IEnumerable<ShellSettings>> GetShellSettingsInternalAsync(TaskCompletionSource<bool>? providerGate, Exception? providerException, IEnumerable<ShellSettings> settings, CancellationToken cancellationToken)
     {
         if (providerGate != null)
-        {
-            providerEntered?.TrySetResult(true);
             await providerGate.Task.WaitAsync(cancellationToken);
-        }
 
         if (providerException != null)
             throw providerException;

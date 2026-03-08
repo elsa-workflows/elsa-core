@@ -11,6 +11,7 @@ internal class ShellReloadOrchestrator(IServiceProvider serviceProvider, ILogger
 {
     private static readonly StringComparer ShellIdComparer = StringComparer.OrdinalIgnoreCase;
     private readonly SemaphoreSlim _reloadLock = new(1, 1);
+    private bool _disposed;
 
     public Task<ShellReloadResult> ReloadAllAsync(CancellationToken cancellationToken = default) =>
         ReloadInternalAsync(null, cancellationToken);
@@ -248,5 +249,12 @@ internal class ShellReloadOrchestrator(IServiceProvider serviceProvider, ILogger
         return clone;
     }
 
-    public void Dispose() => _reloadLock.Dispose();
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _reloadLock.Dispose();
+        _disposed = true;
+    }
 }
