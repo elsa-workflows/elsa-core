@@ -19,14 +19,14 @@ internal class Reload(IShellReloadOrchestrator shellReloadOrchestrator, IApiSeri
     {
         var shellId = Route<string>("shellId")!;
         var result = await shellReloadOrchestrator.ReloadAsync(shellId, cancellationToken);
-        var serializerOptions = apiSerializer.GetOptions();
-            case ShellReloadStatus.NotFound:
-                await Send.ResponseAsync(response, StatusCodes.Status404NotFound, cancellationToken);
-                break;
+
+        if (result.Status == ShellReloadStatus.NotFound)
+        {
             await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
+        var serializerOptions = apiSerializer.GetOptions();
         var response = Elsa.Workflows.Api.Endpoints.Shells.Reload.Response.FromResult(result);
         var statusCode = result.Status switch
         {
