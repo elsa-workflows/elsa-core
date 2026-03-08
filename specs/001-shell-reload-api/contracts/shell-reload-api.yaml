@@ -51,10 +51,6 @@ paths:
                 $ref: '#/components/schemas/ShellReloadResponse'
         '404':
           description: The requested shell ID is unknown.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ShellReloadResponse'
         '409':
           description: Another reload is already in progress.
           content:

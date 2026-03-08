@@ -95,8 +95,8 @@
 
 **Purpose**: Bring implementation, client surface, and planning artifacts into final alignment.
 
-- [ ] T019 [P] Update `specs/001-shell-reload-api/contracts/shell-reload-api.yaml` to match the final implemented routes, statuses, and response payloads
-- [ ] T020 Run the quickstart validation against `specs/001-shell-reload-api/quickstart.md` using `test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj` and fix any mismatches in `src/modules/Elsa.Workflows.Api/Endpoints/Shells/` and `src/clients/Elsa.Api.Client/Resources/Shells/`
+- [X] T019 [P] Update `specs/001-shell-reload-api/contracts/shell-reload-api.yaml` to match the final implemented routes, statuses, and response payloads
+- [X] T020 Run the quickstart validation against `specs/001-shell-reload-api/quickstart.md` using `test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj` and fix any mismatches in `src/modules/Elsa.Workflows.Api/Endpoints/Shells/` and `src/clients/Elsa.Api.Client/Resources/Shells/`
 
 ---
 

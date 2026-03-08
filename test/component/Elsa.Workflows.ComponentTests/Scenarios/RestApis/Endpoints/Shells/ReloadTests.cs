@@ -52,12 +52,9 @@ public class ReloadTests : AppComponentTest
 
         var client = WorkflowServer.CreateHttpClient();
         using var response = await client.PostAsync("shells/missing/reload", content: null);
-        var model = await response.ReadAsJsonAsync<ShellReloadResponse>(WorkflowServer.Services);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Equal(ShellReloadStatus.NotFound, model.Status);
-        Assert.Single(model.Shells);
-        Assert.Equal(ShellReloadItemOutcome.Unknown, model.Shells.Single().Outcome);
+        Assert.Equal(string.Empty, await response.Content.ReadAsStringAsync());
     }
 
     [Fact]

@@ -2,11 +2,6 @@ using Elsa.Workflows.Api.Contracts;
 
 namespace Elsa.Workflows.Api.Endpoints.Shells.Reload;
 
-internal class Request
-{
-    public string ShellId { get; set; } = null!;
-}
-
 internal class Response
 {
     public ShellReloadStatus Status { get; init; }

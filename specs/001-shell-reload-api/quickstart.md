@@ -26,6 +26,7 @@ Implement and verify two administrative endpoints that refresh shell-backed conf
 1. Full reload returns `Completed` when every affected shell refreshes successfully.
 2. Full reload returns `Partial` and shell-level detail when at least one shell remains unchanged because of invalid configuration.
 3. Targeted reload returns `404` when the requested shell is unknown.
+   The `404` response does not include a JSON body.
 4. Targeted reload returns `422` with shell-level detail when the requested shell does not refresh successfully during the fallback full reload.
 5. Either endpoint returns `409` while another reload is already in progress.
 6. Either endpoint returns `503` when the configuration provider cannot supply usable shell settings.
@@ -33,7 +34,7 @@ Implement and verify two administrative endpoints that refresh shell-backed conf
 ## Suggested Validation Commands
 
 ```bash
-dotnet test test/component/Elsa.Workflows.ComponentTests/
+dotnet test test/component/Elsa.Workflows.ComponentTests/ --filter "FullyQualifiedName~Scenarios.RestApis.Endpoints.Shells" -p:CollectCoverage=false
 ```
 
 If the component suite is too broad during iteration, run the project with a test filter targeting the new shell reload scenario names.
