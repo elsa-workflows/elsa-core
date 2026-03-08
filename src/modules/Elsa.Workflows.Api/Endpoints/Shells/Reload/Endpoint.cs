@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Contracts;
+using Elsa.Workflows.Api.Endpoints.Shells;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Elsa.Workflows;
@@ -27,7 +28,7 @@ internal class Reload(IShellReloadOrchestrator shellReloadOrchestrator, IApiSeri
         }
 
         var serializerOptions = apiSerializer.GetOptions();
-        var response = Elsa.Workflows.Api.Endpoints.Shells.Reload.Response.FromResult(result);
+        var response = ShellReloadResponse.FromResult(result);
         var statusCode = result.Status switch
         {
             ShellReloadStatus.Busy => StatusCodes.Status409Conflict,
@@ -39,7 +40,7 @@ internal class Reload(IShellReloadOrchestrator shellReloadOrchestrator, IApiSeri
         await SendJsonAsync(response, statusCode, serializerOptions, cancellationToken);
     }
 
-    private async Task SendJsonAsync(Response response, int statusCode, System.Text.Json.JsonSerializerOptions serializerOptions, CancellationToken cancellationToken)
+    private async Task SendJsonAsync(ShellReloadResponse response, int statusCode, System.Text.Json.JsonSerializerOptions serializerOptions, CancellationToken cancellationToken)
     {
         HttpContext.Response.StatusCode = statusCode;
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);

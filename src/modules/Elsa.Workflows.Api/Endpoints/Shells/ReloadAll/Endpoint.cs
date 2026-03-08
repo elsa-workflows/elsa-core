@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Contracts;
+using Elsa.Workflows.Api.Endpoints.Shells;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
@@ -17,7 +18,7 @@ internal class ReloadAll(IShellReloadOrchestrator shellReloadOrchestrator) : Els
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
         var result = await shellReloadOrchestrator.ReloadAllAsync(cancellationToken);
-        var response = Elsa.Workflows.Api.Endpoints.Shells.ReloadAll.Response.FromResult(result);
+        var response = ShellReloadResponse.FromResult(result);
 
         switch (result.Status)
         {
