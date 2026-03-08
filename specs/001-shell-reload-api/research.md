@@ -40,7 +40,15 @@
   - Minimal boolean success responses: rejected because they cannot represent partial success or requested-shell strict failures.
   - Different response schemas per endpoint: rejected because both endpoints expose the same operational data with different scopes.
 
-## Decision 6: Cover the feature with component tests, not a new unit-test project
+## Decision 6: Keep endpoint request/response models collocated and move shared orchestration types into contracts
+
+- **Decision**: Keep endpoint request/response models collocated with each endpoint and place only shared orchestration result types in `Elsa.Workflows.Api/Contracts`.
+- **Rationale**: This preserves the repository’s single-endpoint-per-class convention while still avoiding duplication for shared internal result types consumed by both endpoints.
+- **Alternatives considered**:
+  - Put all reload models in a shared `Endpoints/Shells/Models.cs`: rejected because it weakens endpoint colocation and drifts from existing API conventions.
+  - Duplicate all result types per endpoint: rejected because both endpoints share the same outcome model and would diverge unnecessarily.
+
+## Decision 7: Cover the feature with component tests, not a new unit-test project
 
 - **Decision**: Add component tests under `Elsa.Workflows.ComponentTests` for the new endpoints and their observable runtime behavior.
 - **Rationale**: There is no existing dedicated `Elsa.Workflows.Api` unit-test project, and the repository already validates REST endpoint behavior through the hosted `WorkflowServer` fixture with authenticated HTTP clients. Component tests can verify routes, permissions, status handling, and the effect on active shell-backed behavior in one place.

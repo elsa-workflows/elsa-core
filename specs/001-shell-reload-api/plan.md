@@ -5,7 +5,7 @@
 
 ## Summary
 
-Add two administrative shell reload endpoints and a matching typed API client surface so operators can refresh shell-backed feature configuration without restarting the host. The implementation will use a dedicated shell reload orchestration service in `Elsa.Workflows.Api` to validate shell IDs, reject concurrent reloads, execute the current full-reload fallback for targeted requests, and return detailed per-shell outcomes that satisfy the clarified spec.
+Add two administrative shell reload endpoints and a matching typed API client surface so operators can refresh shell-backed feature configuration without restarting the host. The implementation will use a dedicated shell reload orchestration service in `Elsa.Workflows.Api` to validate shell IDs, reject concurrent reloads, wrap the current full-reload fallback for targeted requests, and return detailed per-shell outcomes that satisfy the clarified spec.
 
 ## Technical Context
 
@@ -35,7 +35,7 @@ Add two administrative shell reload endpoints and a matching typed API client su
 
 **Post-Phase 1 Design Review**
 
-- PASS. The design keeps the concern localized, introduces no extra module boundary, and uses only one new service abstraction because direct endpoint-to-`IShellManager` calls cannot satisfy partial-success reporting, busy rejection, and requested-shell strictness together.
+- PASS. The design keeps the concern localized, introduces no extra module boundary, uses collocated endpoint models, and adds only one new service abstraction because direct endpoint-to-`IShellManager` calls cannot satisfy partial-success reporting, busy rejection, and requested-shell strictness together.
 
 ## Project Structure
 
@@ -83,6 +83,8 @@ test/
 ```
 
 **Structure Decision**: Extend the existing workflow API module and first-party API client instead of adding a new shell-management module. This aligns with the repository’s established pattern where administrative REST endpoints and typed client contracts evolve together while component tests validate behavior through the hosted server fixture.
+
+Endpoint-specific request and response models remain collocated under `Endpoints/Shells/Reload/` and `Endpoints/Shells/ReloadAll/`. Shared orchestration result types belong under `Contracts/` so endpoint model colocation is preserved.
 
 ## Complexity Tracking
 

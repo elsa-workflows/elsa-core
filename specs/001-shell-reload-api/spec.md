@@ -13,6 +13,8 @@
 - Q: How should the API behave when a reload request arrives while another reload is already in progress? → A: Reject: return a conflict or busy outcome while a reload is already in progress, and require the caller to retry.
 - Q: For a targeted reload request, should the API succeed only if the requested shell itself refreshed successfully? → A: Requested-shell strict: if the requested shell's new configuration is invalid, the targeted reload returns a non-success outcome even if other shells reload successfully.
 - Q: Should reload responses include detailed per-shell outcome information or only an overall outcome? → A: Detailed results: reload responses include per-shell outcome details for affected shells, including which shells succeeded and which failed.
+- Q: Is first-party API client support part of this feature scope? → A: Yes, the first-party API client is part of the feature scope and should expose both shell reload actions.
+- Q: Is the observability timing target a hard acceptance gate? → A: No, the feature must make updated configuration observable after a successful reload, but the prior 1-minute value is guidance and not an enforceable acceptance threshold.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -89,6 +91,7 @@ An administrator needs clear failure behavior when reload cannot complete becaus
 - **FR-012**: If a reload request is received while another reload is already in progress, the system MUST reject the new request with a conflict or busy outcome and MUST NOT queue it automatically.
 - **FR-013**: The targeted reload action MUST return a non-success outcome if the requested shell does not refresh successfully, even if the underlying fallback reload updates other shells successfully.
 - **FR-014**: Reload responses MUST include per-shell outcome details for affected shells so callers can identify which shells refreshed successfully and which shells remained unchanged.
+- **FR-015**: The system MUST expose first-party API client support for both shell reload actions using request and response shapes aligned with the server API.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -111,7 +114,7 @@ An administrator needs clear failure behavior when reload cannot complete becaus
 ### Measurable Outcomes
 
 - **SC-001**: Administrators can apply configuration changes across all shells with a single API call and without restarting the host application.
-- **SC-002**: After a successful reload request, updated feature enablement and feature configuration are observable in affected shells within 1 minute.
+- **SC-002**: In validation scenarios for successful reload requests, updated feature enablement and feature configuration are observable in affected shells without restarting the host application.
 - **SC-003**: 100% of targeted reload requests for unknown shell identifiers return a non-success outcome.
 - **SC-004**: 100% of reload attempts where the configuration source is unavailable return a failure outcome rather than a false success, and 100% of partial full reloads caused by shell-specific invalid configuration report partial success.
 - **SC-005**: 100% of partial-success and targeted reload responses include shell-level outcome details for every affected shell.
