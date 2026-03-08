@@ -1,4 +1,5 @@
 using Elsa.Testing.Shared;
+using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
@@ -340,5 +341,68 @@ public class FlowchartCounterBasedTests
         Assert.Single(_output.Lines);
         Assert.Equal("Connected", _output.Lines.ElementAt(0));
         Assert.DoesNotContain("Unconnected", _output.Lines);
+    }
+
+    /// <summary>
+    /// Regression test for the ordering fix in <see cref="Flowchart.MaybeScheduleWaitAnyActivityAsync"/>:
+    /// the outbound activity must be scheduled <em>before</em> remaining inbound branches are canceled.
+    /// Previously, canceling first could trigger <c>CompleteIfNoPendingWorkAsync</c> while the outbound
+    /// activity was not yet in the scheduler, causing the flowchart to finish prematurely without running
+    /// the activity downstream of the join.
+    /// </summary>
+    [Fact(DisplayName = "WaitAny join schedules outbound before canceling blocked branch, preventing premature completion")]
+    public async Task WaitAnyJoin_SchedulesOutboundBeforeCancelingBlockedBranch()
+    {
+        // Arrange
+        // Flowchart structure:
+        //   Start
+        //   ├─► Branch1 (fast)  ─► Join (WaitAny) ─► AfterJoin
+        //   └─► Branch2 (blocking, creates a bookmark) ─►┘
+        //
+        // Because the scheduler is LIFO, Branch2 executes first and suspends with a bookmark.
+        // Branch1 then completes and triggers the WaitAny join.
+        // The join must schedule AfterJoin before canceling Branch2; otherwise
+        // CompleteIfNoPendingWorkAsync fires while AfterJoin is not yet queued,
+        // completing the flowchart prematurely without executing AfterJoin.
+        var start = new WriteLine("Start");
+        var branch1 = new WriteLine("Branch1");
+        var branch2 = new BlockingActivity { Id = "BlockingBranch" };
+        var join = new FlowJoin { Mode = new(FlowJoinMode.WaitAny) };
+        var afterJoin = new WriteLine("AfterJoin");
+
+        var flowchart = new Flowchart
+        {
+            Start = start,
+            Activities = { start, branch1, branch2, join, afterJoin },
+            Connections =
+            {
+                CreateConnection(start, branch1),
+                CreateConnection(start, branch2),
+                CreateConnection(branch1, join),
+                CreateConnection(branch2, join),
+                CreateConnection(join, afterJoin)
+            }
+        };
+
+        // Act
+        var result = await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
+
+        // Assert: the outbound path of the join must have executed
+        Assert.Contains("AfterJoin", _output.Lines);
+
+        // Assert: the workflow must have finished, not suspended waiting for the canceled bookmark
+        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
+
+        // Assert: the blocked branch's bookmark was cleared when it was canceled
+        Assert.Empty(result.WorkflowState.Bookmarks);
+    }
+
+    /// <summary>
+    /// A minimal activity that suspends by creating a bookmark, simulating a blocking activity
+    /// such as a Delay or Timer that would normally be resumed by an external stimulus.
+    /// </summary>
+    private sealed class BlockingActivity : Activity
+    {
+        protected override void Execute(ActivityExecutionContext context) => context.CreateBookmark();
     }
 }
