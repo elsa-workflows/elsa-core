@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Api.Services;
 
-internal class ShellReloadOrchestrator(IServiceProvider serviceProvider, ILogger<ShellReloadOrchestrator> logger) : IShellReloadOrchestrator
+internal class ShellReloadOrchestrator(IServiceProvider serviceProvider, ILogger<ShellReloadOrchestrator> logger) : IShellReloadOrchestrator, IDisposable
 {
     private static readonly StringComparer ShellIdComparer = StringComparer.OrdinalIgnoreCase;
     private readonly SemaphoreSlim _reloadLock = new(1, 1);
@@ -247,4 +247,6 @@ internal class ShellReloadOrchestrator(IServiceProvider serviceProvider, ILogger
 
         return clone;
     }
+
+    public void Dispose() => _reloadLock.Dispose();
 }
