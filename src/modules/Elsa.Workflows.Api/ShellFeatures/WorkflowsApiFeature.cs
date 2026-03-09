@@ -2,6 +2,7 @@ using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.Extensions;
 using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Contracts;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Serialization;
 using Elsa.Workflows.Api.Services;
@@ -42,5 +43,6 @@ public class WorkflowsApiFeature : IFastEndpointsShellFeature
             options.AddPolicy(AuthorizationPolicies.NotReadOnlyPolicy, policy => policy.AddRequirements(new NotReadOnlyRequirement()));
         });
         services.AddScoped<IWorkflowInstanceExportNameProvider, DefaultWorkflowInstanceExportNameProvider>();
+        services.AddSingleton<IShellReloadOrchestrator, ShellReloadOrchestrator>();
     }
 }
