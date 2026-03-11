@@ -64,8 +64,9 @@ public class WorkflowDefinitionExporterRegressionTests
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         var variableDefinitionMapper = new VariableDefinitionMapper(wellKnownTypeRegistry, scopeFactory, NullLogger<VariableDefinitionMapper>.Instance);
         var workflowDefinitionMapper = new WorkflowDefinitionMapper(activitySerializer, _workflowDefinitionService, variableDefinitionMapper);
+        var fileNameSanitizer = new DefaultFileNameSanitizer();
 
-        return new(_store, _serializer, workflowDefinitionMapper, _workflowReferenceGraphBuilder);
+        return new(_store, _serializer, workflowDefinitionMapper, _workflowReferenceGraphBuilder, fileNameSanitizer);
     }
 
     private static WorkflowGraph CreateWorkflowGraph()

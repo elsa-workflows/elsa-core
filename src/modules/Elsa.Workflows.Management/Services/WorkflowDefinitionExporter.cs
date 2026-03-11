@@ -13,7 +13,8 @@ public class WorkflowDefinitionExporter(
     IWorkflowDefinitionStore store,
     IApiSerializer serializer,
     WorkflowDefinitionMapper workflowDefinitionMapper,
-    IWorkflowReferenceGraphBuilder workflowReferenceGraphBuilder) : IWorkflowDefinitionExporter
+    IWorkflowReferenceGraphBuilder workflowReferenceGraphBuilder,
+    IFileNameSanitizer fileNameSanitizer) : IWorkflowDefinitionExporter
 {
     /// <inheritdoc />
     public async Task<WorkflowDefinitionExportResult?> ExportAsync(string definitionId, VersionOptions? versionOptions = null, bool includeConsumingWorkflows = false, CancellationToken cancellationToken = default)
@@ -141,42 +142,16 @@ public class WorkflowDefinitionExporter(
         return zipStream.ToArray();
     }
 
-    private static readonly char[] InvalidFileNameCharacters = Path.GetInvalidFileNameChars();
-
-    private static string GetFileName(WorkflowDefinitionModel definition)
+    private string GetFileName(WorkflowDefinitionModel definition)
     {
         var hasWorkflowName = !string.IsNullOrWhiteSpace(definition.Name);
         var workflowName = hasWorkflowName ? definition.Name!.Trim() : definition.DefinitionId;
         var workflowSlug = workflowName.Underscore().Dasherize().ToLowerInvariant();
         var dynamicFileNamePart = $"{workflowSlug}-{definition.DefinitionId}";
-        var sanitizedDynamicFileNamePart = SanitizeFileName(dynamicFileNamePart);
+        var sanitizedDynamicFileNamePart = fileNameSanitizer.Sanitize(dynamicFileNamePart);
 
-        return $"workflow-definition-{sanitizedDynamicFileNamePart}.json";
+        return $"workflow-definition-{sanitizedDynamicFileNamePart}-{definition.Id}.json";
     }
-
-    private static string SanitizeFileName(string value)
-    {
-        for (var i = 0; i < value.Length; i++)
-        {
-            if (!IsInvalidFileNameCharacter(value[i]))
-                continue;
-
-            return string.Create(value.Length, (value, i), static (buffer, state) =>
-            {
-                state.value.AsSpan(0, state.i).CopyTo(buffer);
-
-                for (var j = state.i; j < state.value.Length; j++)
-                {
-                    var character = state.value[j];
-                    buffer[j] = IsInvalidFileNameCharacter(character) ? '-' : character;
-                }
-            });
-        }
-
-        return value;
-    }
-
-    private static bool IsInvalidFileNameCharacter(char character) => character is '/' or '\\' || Array.IndexOf(InvalidFileNameCharacters, character) >= 0;
 
     private async Task<byte[]> SerializeWorkflowDefinitionAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
@@ -199,4 +174,3 @@ public class WorkflowDefinitionExporter(
         return output.ToArray();
     }
 }
-
