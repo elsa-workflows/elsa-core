@@ -54,7 +54,7 @@ public class WorkflowDefinitionExporterRegressionTests
         Assert.Equal(entry.Name, entry.FullName);
         Assert.DoesNotContain('/', entry.FullName);
         Assert.DoesNotContain('\\', entry.FullName);
-        Assert.Equal("workflow-definition-folder-child-slash-name-workflow.json", entry.FullName);
+        Assert.Equal("workflow-definition-folder-child-slash-name-workflow-slash-name-workflow-v1.json", entry.FullName);
     }
 
     private WorkflowDefinitionExporter CreateExporter()
