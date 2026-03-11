@@ -16,12 +16,6 @@ public class WorkflowDefinitionExporter(
     IWorkflowReferenceGraphBuilder workflowReferenceGraphBuilder) : IWorkflowDefinitionExporter
 {
     /// <inheritdoc />
-    public async Task<WorkflowDefinitionExportResult?> ExportAsync(string definitionId, VersionOptions? versionOptions = null, CancellationToken cancellationToken = default)
-    {
-        return await ExportAsync(definitionId, versionOptions, false, cancellationToken);
-    }
-
-    /// <inheritdoc />
     public async Task<WorkflowDefinitionExportResult?> ExportAsync(string definitionId, VersionOptions? versionOptions = null, bool includeConsumingWorkflows = false, CancellationToken cancellationToken = default)
     {
         var parsedVersionOptions = versionOptions ?? VersionOptions.Latest;

@@ -10,15 +10,6 @@ namespace Elsa.Workflows.Management;
 public interface IWorkflowDefinitionExporter
 {
     /// <summary>
-    /// Exports a single workflow definition as a JSON byte array.
-    /// </summary>
-    /// <param name="definitionId">The definition ID.</param>
-    /// <param name="versionOptions">The version options. Defaults to <see cref="VersionOptions.Latest"/>.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>An export result containing the binary JSON and a suggested file name, or null if the definition was not found.</returns>
-    Task<WorkflowDefinitionExportResult?> ExportAsync(string definitionId, VersionOptions? versionOptions = null, CancellationToken cancellationToken = default);
-    
-    /// <summary>
     /// Exports a single workflow definition as a JSON byte array, optionally including consuming workflows as a ZIP archive.
     /// </summary>
     /// <param name="definitionId">The definition ID.</param>
