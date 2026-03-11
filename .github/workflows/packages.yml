@@ -202,7 +202,7 @@ jobs:
     name: Deploy coverage to GitHub Pages
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop/3.6.0' || github.ref == 'refs/heads/release/3.6.0'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop/3.6.1' || github.ref == 'refs/heads/release/3.6.1'
     permissions:
       pages: write
       id-token: write
