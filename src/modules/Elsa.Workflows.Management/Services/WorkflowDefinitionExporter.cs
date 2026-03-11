@@ -147,10 +147,10 @@ public class WorkflowDefinitionExporter(
         var hasWorkflowName = !string.IsNullOrWhiteSpace(definition.Name);
         var workflowName = hasWorkflowName ? definition.Name!.Trim() : definition.DefinitionId;
         var workflowSlug = workflowName.Underscore().Dasherize().ToLowerInvariant();
-        var dynamicFileNamePart = $"{workflowSlug}-{definition.DefinitionId}";
+        var dynamicFileNamePart = $"{workflowSlug}-{definition.DefinitionId}-{definition.Id}";
         var sanitizedDynamicFileNamePart = fileNameSanitizer.Sanitize(dynamicFileNamePart);
 
-        return $"workflow-definition-{sanitizedDynamicFileNamePart}-{definition.Id}.json";
+        return $"workflow-definition-{sanitizedDynamicFileNamePart}.json";
     }
 
     private async Task<byte[]> SerializeWorkflowDefinitionAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
