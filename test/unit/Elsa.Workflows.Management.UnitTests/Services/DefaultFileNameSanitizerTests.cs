@@ -20,11 +20,13 @@ public class DefaultFileNameSanitizerTests
     [Fact]
     public void Sanitize_Replaces_Runtime_Invalid_File_Name_Characters()
     {
-        var invalidCharacter = Path.GetInvalidFileNameChars().FirstOrDefault(c => c is not '/' and not '\\');
+        var invalidChars = Path.GetInvalidFileNameChars();
+        var hasNonSeparatorInvalidChar = invalidChars.Any(c => c is not '/' and not '\\');
 
-        if (invalidCharacter == 0)
+        if (!hasNonSeparatorInvalidChar)
             return;
 
+        var invalidCharacter = invalidChars.First(c => c is not '/' and not '\\');
         var result = _sut.Sanitize($"before{invalidCharacter}after");
 
         Assert.Equal("before-after", result);
