@@ -181,7 +181,7 @@ public class WorkflowDefinitionExporter(
     private async Task<byte[]> SerializeWorkflowDefinitionAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
         var serializerOptions = serializer.GetOptions();
-        var document = JsonSerializer.SerializeToDocument(model, serializerOptions);
+        using var document = JsonSerializer.SerializeToDocument(model, serializerOptions);
         var rootElement = document.RootElement;
 
         using var output = new MemoryStream();
