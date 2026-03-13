@@ -9,6 +9,7 @@ using Elsa.Api.Client.Resources.Identity.Contracts;
 using Elsa.Api.Client.Resources.IncidentStrategies.Contracts;
 using Elsa.Api.Client.Resources.LogPersistenceStrategies;
 using Elsa.Api.Client.Resources.Resilience.Contracts;
+using Elsa.Api.Client.Resources.Shells.Contracts;
 using Elsa.Api.Client.Resources.Scripting.Contracts;
 using Elsa.Api.Client.Resources.StorageDrivers.Contracts;
 using Elsa.Api.Client.Resources.Tasks.Contracts;
@@ -82,6 +83,7 @@ public static class DependencyInjectionExtensions
             services.AddApi<IRetryAttemptsApi>(builderOptions);
             services.AddApi<ILoginApi>(builderOptions);
             services.AddApi<IFeaturesApi>(builderOptions);
+            services.AddApi<IShellsApi>(builderOptions);
             services.AddApi<IJavaScriptApi>(builderOptions);
             services.AddApi<IExpressionDescriptorsApi>(builderOptions);
             services.AddApi<IWorkflowContextProviderDescriptorsApi>(builderOptions);
@@ -127,7 +129,7 @@ public static class DependencyInjectionExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="httpClientBuilderOptions">An options object that can be used to configure the HTTP client builder.</param>
     /// <typeparam name="T">The type representing the API.</typeparam>
-    public static IServiceCollection AddApi<T>(this IServiceCollection services, ElsaClientBuilderOptions? httpClientBuilderOptions = default) where T : class
+    public static IServiceCollection AddApi<T>(this IServiceCollection services, ElsaClientBuilderOptions? httpClientBuilderOptions = null) where T : class
     {
         return services.AddApi(typeof(T), httpClientBuilderOptions);
     }
@@ -138,7 +140,7 @@ public static class DependencyInjectionExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="apiType">The type representing the API</param>
     /// <param name="httpClientBuilderOptions">An options object that can be used to configure the HTTP client builder.</param>
-    public static IServiceCollection AddApi(this IServiceCollection services, Type apiType, ElsaClientBuilderOptions? httpClientBuilderOptions = default)
+    public static IServiceCollection AddApi(this IServiceCollection services, Type apiType, ElsaClientBuilderOptions? httpClientBuilderOptions = null)
     {
         var builder = services.AddRefitClient(apiType, sp => CreateRefitSettings(sp, httpClientBuilderOptions?.ConfigureJsonSerializerOptions), apiType.Name).ConfigureHttpClient(ConfigureElsaApiHttpClient);
         httpClientBuilderOptions?.ConfigureHttpClientBuilder(builder);
@@ -152,7 +154,7 @@ public static class DependencyInjectionExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="httpClientBuilderOptions">An options object that can be used to configure the HTTP client builder.</param>
     /// <typeparam name="T">The type representing the API.</typeparam>
-    public static void AddApiWithoutRetryPolicy<T>(this IServiceCollection services, ElsaClientBuilderOptions? httpClientBuilderOptions = default) where T : class
+    public static void AddApiWithoutRetryPolicy<T>(this IServiceCollection services, ElsaClientBuilderOptions? httpClientBuilderOptions = null) where T : class
     {
         var builder = services
             .AddRefitClient<T>(sp => CreateRefitSettings(sp), typeof(T).Name)

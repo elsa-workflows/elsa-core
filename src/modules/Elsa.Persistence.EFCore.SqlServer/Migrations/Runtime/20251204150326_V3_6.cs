@@ -44,6 +44,42 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
                 columns: new[] { "WorkflowDefinitionId", "Hash", "ActivityId", "TenantId" },
                 unique: true,
                 filter: "[Hash] IS NOT NULL");
+
+            migrationBuilder.Sql($@"
+                IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_WorkflowExecutionLogRecord_ActivityNodeId'
+                    AND object_id = OBJECT_ID('{_schema.Schema}.WorkflowExecutionLogRecords'))
+                BEGIN
+                    DROP INDEX [IX_WorkflowExecutionLogRecord_ActivityNodeId]
+                    ON [{_schema.Schema}].[WorkflowExecutionLogRecords]
+                END
+            ");
+
+            migrationBuilder.Sql($@"
+                IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ActivityExecutionRecord_ActivityNodeId'
+                    AND object_id = OBJECT_ID('{_schema.Schema}.ActivityExecutionRecords'))
+                BEGIN
+                    DROP INDEX [IX_ActivityExecutionRecord_ActivityNodeId]
+                    ON [{_schema.Schema}].[ActivityExecutionRecords]
+                END
+            ");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "ActivityNodeId",
+                schema: _schema.Schema,
+                table: "WorkflowExecutionLogRecords",
+                type: "nvarchar(max)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(450)");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "ActivityNodeId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                type: "nvarchar(max)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(450)");
         }
 
         /// <inheritdoc />
@@ -62,6 +98,36 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "nvarchar(450)");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "ActivityNodeId",
+                schema: _schema.Schema,
+                table: "WorkflowExecutionLogRecords",
+                type: "nvarchar(450)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "ActivityNodeId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                type: "nvarchar(450)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowExecutionLogRecord_ActivityNodeId",
+                schema: _schema.Schema,
+                table: "WorkflowExecutionLogRecords",
+                column: "ActivityNodeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityExecutionRecord_ActivityNodeId",
+                schema: _schema.Schema,
+                table: "ActivityExecutionRecords",
+                column: "ActivityNodeId");
         }
     }
 }

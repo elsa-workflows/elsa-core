@@ -1,0 +1,128 @@
+openapi: 3.1.0
+info:
+  title: Shell Reload API
+  version: 0.1.0
+  description: Administrative endpoints for reloading shell-backed configuration.
+paths:
+  /actions/shells/reload:
+    post:
+      summary: Reload all shells
+      operationId: reloadAllShells
+      tags:
+        - Shells
+      responses:
+        '200':
+          description: Reload completed or partially completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShellReloadResponse'
+        '409':
+          description: Another reload is already in progress.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShellReloadResponse'
+        '503':
+          description: Shell configuration could not be loaded from the current provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShellReloadResponse'
+  /shells/{shellId}/reload:
+    post:
+      summary: Reload a specific shell
+      operationId: reloadShellById
+      tags:
+        - Shells
+      parameters:
+        - name: shellId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Case-insensitive shell identifier.
+      responses:
+        '200':
+          description: The fallback reload completed and the requested shell refreshed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShellReloadResponse'
+        '404':
+          description: The requested shell ID is unknown.
+        '409':
+          description: Another reload is already in progress.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShellReloadResponse'
+        '422':
+          description: The fallback reload did not refresh the requested shell successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShellReloadResponse'
+        '503':
+          description: Shell configuration could not be loaded from the current provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShellReloadResponse'
+components:
+  schemas:
+    ShellReloadResponse:
+      type: object
+      required:
+        - status
+        - shells
+        - reloadedAt
+      properties:
+        status:
+          $ref: '#/components/schemas/ShellReloadStatus'
+        requestedShellId:
+          type:
+            - string
+            - 'null'
+        reloadedAt:
+          type: string
+          format: date-time
+        shells:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShellReloadItemResult'
+    ShellReloadStatus:
+      type: string
+      enum:
+        - Completed
+        - Partial
+        - Failed
+        - Busy
+        - NotFound
+        - RequestedShellFailed
+    ShellReloadItemResult:
+      type: object
+      required:
+        - shellId
+        - outcome
+        - requested
+      properties:
+        shellId:
+          type: string
+        outcome:
+          $ref: '#/components/schemas/ShellReloadItemOutcome'
+        requested:
+          type: boolean
+        message:
+          type:
+            - string
+            - 'null'
+    ShellReloadItemOutcome:
+      type: string
+      enum:
+        - Reloaded
+        - Unchanged
+        - Removed
+        - InvalidConfiguration
+        - Unknown
+        - Skipped

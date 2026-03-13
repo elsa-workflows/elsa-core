@@ -56,7 +56,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
@@ -128,9 +128,6 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
 
                     b.HasIndex("ActivityName")
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityName");
-
-                    b.HasIndex("ActivityNodeId")
-                        .HasDatabaseName("IX_ActivityExecutionRecord_ActivityNodeId");
 
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType");
@@ -351,7 +348,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
@@ -412,9 +409,6 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
 
                     b.HasIndex("ActivityName")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityName");
-
-                    b.HasIndex("ActivityNodeId")
-                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityNodeId");
 
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");

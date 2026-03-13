@@ -1,0 +1,1 @@
+// Response models for this endpoint are defined in the shared ShellsResponseModels.cs file.
