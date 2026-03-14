@@ -1,5 +1,6 @@
 using CShells.AspNetCore.Configuration;
 using CShells.AspNetCore.Extensions;
+using CShells.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -7,6 +8,7 @@ var services = builder.Services;
 // Configure CShells for multi-tenancy with ASP.NET Core integration
 // This automatically registers shell-aware authentication and authorization providers
 builder.AddShells(shells => shells
+    .WithConfigurationProvider(builder.Configuration, "CShells") // Reads shell configurations from appsettings.json under "CShells" section
     .WithWebRouting(options => options.EnablePathRouting = true)
     .WithAuthenticationAndAuthorization());
 services.AddHealthChecks();

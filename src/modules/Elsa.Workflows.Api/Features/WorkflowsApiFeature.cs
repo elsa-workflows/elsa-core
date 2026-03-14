@@ -43,6 +43,5 @@ public class WorkflowsApiFeature(IModule module) : FeatureBase(module)
             options.AddPolicy(AuthorizationPolicies.NotReadOnlyPolicy, policy => policy.AddRequirements(new NotReadOnlyRequirement()));
         });
         Services.AddScoped<IWorkflowInstanceExportNameProvider, DefaultWorkflowInstanceExportNameProvider>();
-        Services.AddSingleton<IShellReloadOrchestrator, ShellReloadOrchestrator>();
     }
 }

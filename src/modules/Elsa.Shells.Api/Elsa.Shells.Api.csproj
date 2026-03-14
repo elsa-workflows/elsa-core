@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides API endpoints for shell management.
+        </Description>
+        <PackageTags>elsa module shells api</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CShells" />
+        <PackageReference Include="CShells.FastEndpoints.Abstractions" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Endpoints\" />
+    </ItemGroup>
+
+</Project>

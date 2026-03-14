@@ -1,0 +1,74 @@
+using Elsa.Common;
+using Elsa.Identity.Contracts;
+using JetBrains.Annotations;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+
+namespace Elsa.Identity.HostedServices;
+
+/// <summary>
+/// Hosted service that initializes the admin user and role from environment variables if configured.
+/// </summary>
+[UsedImplicitly]
+public class AdminUserInitializer(
+    IConfiguration configuration,
+    IUserStore userStore,
+    IRoleStore roleStore,
+    IUserManager userManager,
+    IRoleManager roleManager,
+    ILogger<AdminUserInitializer> logger)
+    : BackgroundTask
+{
+    public override async Task StartAsync(CancellationToken cancellationToken)
+    {
+        var adminUserName = configuration["ELSA_ADMIN_USER"];
+        var adminPassword = configuration["ELSA_ADMIN_PASSWORD"];
+        var adminRoleName = configuration["ELSA_ADMIN_ROLE_NAME"] ?? "Admin";
+        var adminRolePermissions = configuration.GetSection("ELSA_ADMIN_ROLE_PERMISSIONS").Get<string[]>() ?? ["*"];
+        var existingRole = await roleStore.FindAsync(new() { Id = adminRoleName }, cancellationToken);
+
+        if (existingRole == null)
+        {
+            var roleResult = await roleManager.CreateRoleAsync(
+                adminRoleName,
+                adminRolePermissions.ToList(),
+                adminRoleName,
+                cancellationToken);
+
+            logger.LogInformation("Admin role '{RoleName}' created successfully with {PermissionCount} permissions.",
+                roleResult.Role.Name,
+                roleResult.Role.Permissions.Count);
+        }
+        else
+        {
+            logger.LogInformation("Admin role '{RoleName}' already exists. Skipping creation.", adminRoleName);
+        }
+        
+        var roleToAssign = adminRoleName;
+
+        // Create user if configured
+        if (string.IsNullOrWhiteSpace(adminUserName) || string.IsNullOrWhiteSpace(adminPassword))
+        {
+            logger.LogWarning("ELSA_ADMIN_USER and/or ELSA_ADMIN_PASSWORD not configured. Skipping admin user creation.");
+            return;
+        }
+
+        // Check if user already exists
+        var existingUser = await userStore.FindAsync(new() { Name = adminUserName }, cancellationToken);
+
+        if (existingUser != null)
+        {
+            logger.LogInformation("Admin user '{User}' already exists. Skipping creation.", adminUserName);
+            return;
+        }
+
+        // Create the admin user
+        var result = await userManager.CreateUserAsync(
+            adminUserName,
+            adminPassword,
+            new List<string> { roleToAssign },
+            cancellationToken);
+
+        logger.LogInformation("Admin user '{Name}' created successfully with role '{Role}'.", result.User.Name, roleToAssign);
+    }
+}
