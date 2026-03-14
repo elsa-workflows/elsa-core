@@ -6,4 +6,4 @@ namespace Elsa.Api.Client.Shared.UIHints.DropDown;
 /// <param name="Items">The items.</param>
 /// <param name="IsFlagsEnum">Whether the select list represents a flags enum.</param>
 /// <param name="SortItems">Whether to sort the items alphabetically otherwise will just use the order provided.</param>
-public record SelectList(ICollection<SelectListItem> Items, bool IsFlagsEnum = false, bool SortItems = false);
+public record SelectList(ICollection<SelectListItem> Items, bool IsFlagsEnum = false, bool SortItems = true);
