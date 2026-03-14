@@ -25,6 +25,14 @@ public interface IUserStore
     Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Finds all users matching the specified filter.
+    /// </summary>
+    /// <param name="filter">The filter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The users matching the specified filter.</returns>
+    Task<IEnumerable<User>> FindManyAsync(UserFilter filter, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Finds the user matching the specified filter.
     /// </summary>
     /// <param name="filter">The filter.</param>
