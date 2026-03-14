@@ -1,8 +1,9 @@
 using Elsa.Common;
 using Elsa.Identity.Contracts;
+using Elsa.Identity.Options;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Identity.HostedServices;
 
@@ -11,20 +12,20 @@ namespace Elsa.Identity.HostedServices;
 /// </summary>
 [UsedImplicitly]
 public class AdminUserInitializer(
-    IConfiguration configuration,
     IUserStore userStore,
     IRoleStore roleStore,
     IUserManager userManager,
     IRoleManager roleManager,
+    IOptions<DefaultAdminUserOptions> options,
     ILogger<AdminUserInitializer> logger)
     : BackgroundTask
 {
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
-        var adminUserName = configuration["ELSA_ADMIN_USER"];
-        var adminPassword = configuration["ELSA_ADMIN_PASSWORD"];
-        var adminRoleName = configuration["ELSA_ADMIN_ROLE_NAME"] ?? "Admin";
-        var adminRolePermissions = configuration.GetSection("ELSA_ADMIN_ROLE_PERMISSIONS").Get<string[]>() ?? ["*"];
+        var adminUserName = options.Value.AdminUserName;
+        var adminPassword = options.Value.AdminPassword;
+        var adminRoleName = options.Value.AdminRoleName;
+        var adminRolePermissions = options.Value.AdminRolePermissions;
         var existingRole = await roleStore.FindAsync(new() { Id = adminRoleName }, cancellationToken);
 
         if (existingRole == null)
