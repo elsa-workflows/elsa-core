@@ -6,7 +6,7 @@ using JetBrains.Annotations;
 namespace Elsa.Identity.Endpoints.Users.List;
 
 /// <summary>
-/// An endpoint that lists all users. Requires the <code>SecurityRoot</code> policy.
+/// An endpoint that lists all users.
 /// </summary>
 [PublicAPI]
 internal class List(IUserStore userStore) : ElsaEndpointWithoutRequest<Response>
@@ -16,13 +16,12 @@ internal class List(IUserStore userStore) : ElsaEndpointWithoutRequest<Response>
     {
         Get("/identity/users");
         ConfigurePermissions("read:user");
-        Policies(IdentityPolicyNames.SecurityRoot);
     }
 
     /// <inheritdoc />
     public override async Task<Response> ExecuteAsync(CancellationToken cancellationToken)
     {
-        var users = await userStore.FindManyAsync(new UserFilter(), cancellationToken);
+        var users = await userStore.FindManyAsync(new(), cancellationToken);
 
         var response = new Response(users
             .Select(user => new UserSummary(user.Id, user.Name, user.Roles, user.TenantId))

@@ -1,12 +1,11 @@
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
-using Elsa.Identity.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Identity.Endpoints.Users.Delete;
 
 /// <summary>
-/// An endpoint that deletes a user by ID. Requires the <code>SecurityRoot</code> policy.
+/// An endpoint that deletes a user by ID.
 /// </summary>
 [PublicAPI]
 internal class Delete(IUserStore userStore) : ElsaEndpointWithoutRequest
@@ -16,7 +15,6 @@ internal class Delete(IUserStore userStore) : ElsaEndpointWithoutRequest
     {
         Delete("/identity/users/{id}");
         ConfigurePermissions("delete:user");
-        Policies(IdentityPolicyNames.SecurityRoot);
     }
 
     /// <inheritdoc />
@@ -24,7 +22,8 @@ internal class Delete(IUserStore userStore) : ElsaEndpointWithoutRequest
     {
         var id = Route<string>("id")!;
 
-        var user = await userStore.FindAsync(new UserFilter { Id = id }, cancellationToken);
+        var user = await userStore.FindAsync(new()
+            { Id = id }, cancellationToken);
 
         if (user == null)
         {
@@ -32,7 +31,8 @@ internal class Delete(IUserStore userStore) : ElsaEndpointWithoutRequest
             return;
         }
 
-        await userStore.DeleteAsync(new UserFilter { Id = id }, cancellationToken);
+        await userStore.DeleteAsync(new()
+            { Id = id }, cancellationToken);
         await Send.NoContentAsync(cancellationToken);
     }
 }

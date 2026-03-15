@@ -18,5 +18,7 @@ digraph {
     _7 -> _8 [style="dotted", weight=1];
     _9 [label="9. Asterisk Sentinel Value for Tenant-Agnostic Entities"; URL="0009-asterisk-sentinel-value-for-tenant-agnostic-entities.html"];
     _8 -> _9 [style="dotted", weight=1];
+    _10 [label="10. Default Admin User Bootstrap for Initial Identity Access"; URL="0010-default-admin-user-bootstrap-for-initial-identity-access.html"];
+    _9 -> _10 [style="dotted", weight=1];
   }
 }
