@@ -1,0 +1,241 @@
+name: Tag and Delete Stale Branches
+
+on:
+  workflow_dispatch:
+    inputs:
+      days_stale:
+        description: 'Days without activity to consider a branch stale'
+        required: false
+        default: '90'
+        type: string
+      dry_run:
+        description: 'Dry run (preview only, no changes made)'
+        required: false
+        default: 'true'
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    name: Tag and delete stale branches
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tag and delete stale branches
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const parsedDays = parseInt('${{ inputs.days_stale }}', 10);
+            const daysStale = isNaN(parsedDays) || parsedDays <= 0 ? 90 : parsedDays;
+            const dryRun = '${{ inputs.dry_run }}' === 'true';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - daysStale);
+
+            // Branches that should never be deleted regardless of staleness
+            const protectedBranches = new Set([
+              'main',
+              'master',
+            ]);
+
+            // Branch prefixes that should never be deleted
+            const protectedPrefixes = [
+              'release/',
+              'patch/',
+            ];
+
+            console.log(`Configuration:`);
+            console.log(`  Days stale threshold: ${daysStale}`);
+            console.log(`  Cutoff date: ${cutoffDate.toISOString()}`);
+            console.log(`  Dry run: ${dryRun}`);
+            console.log('');
+
+            // Get all open PR head branches
+            console.log('Fetching open pull requests...');
+            const openPrBranches = new Set();
+            let prPage = 1;
+            while (true) {
+              const prs = await github.rest.pulls.list({
+                owner,
+                repo,
+                state: 'open',
+                per_page: 100,
+                page: prPage,
+              });
+              if (prs.data.length === 0) break;
+              for (const pr of prs.data) {
+                openPrBranches.add(pr.head.ref);
+              }
+              if (prs.data.length < 100) break;
+              prPage++;
+            }
+            console.log(`Found ${openPrBranches.size} branches with open pull requests.`);
+            console.log('');
+
+            // Get all branches
+            console.log('Fetching all branches...');
+            const allBranches = [];
+            let branchPage = 1;
+            while (true) {
+              const branches = await github.rest.repos.listBranches({
+                owner,
+                repo,
+                per_page: 100,
+                page: branchPage,
+              });
+              if (branches.data.length === 0) break;
+              allBranches.push(...branches.data);
+              if (branches.data.length < 100) break;
+              branchPage++;
+            }
+            console.log(`Found ${allBranches.length} total branches.`);
+            console.log('');
+
+            // Get all existing tag names for collision detection
+            console.log('Fetching existing tags...');
+            const existingTags = new Set();
+            let tagPage = 1;
+            while (true) {
+              const tags = await github.rest.repos.listTags({
+                owner,
+                repo,
+                per_page: 100,
+                page: tagPage,
+              });
+              if (tags.data.length === 0) break;
+              for (const tag of tags.data) {
+                existingTags.add(tag.name);
+              }
+              if (tags.data.length < 100) break;
+              tagPage++;
+            }
+            console.log(`Found ${existingTags.size} existing tags.`);
+            console.log('');
+
+            // Process branches
+            const staleBranches = [];
+            const skippedBranches = [];
+
+            for (const branch of allBranches) {
+              const name = branch.name;
+              const sha = branch.commit.sha;
+
+              // Skip protected branch names
+              if (protectedBranches.has(name)) {
+                skippedBranches.push({ name, reason: 'protected branch name' });
+                continue;
+              }
+
+              // Skip branches with protected prefixes
+              if (protectedPrefixes.some(p => name.startsWith(p))) {
+                skippedBranches.push({ name, reason: 'protected prefix' });
+                continue;
+              }
+
+              // Skip branches with open pull requests
+              if (openPrBranches.has(name)) {
+                skippedBranches.push({ name, reason: 'has open pull request' });
+                continue;
+              }
+
+              // Get the last commit date
+              let commitDate;
+              try {
+                const commit = await github.rest.git.getCommit({
+                  owner,
+                  repo,
+                  commit_sha: sha,
+                });
+                commitDate = new Date(commit.data.author.date);
+              } catch (e) {
+                console.log(`  WARNING: Could not get commit date for branch '${name}': ${e.message}`);
+                skippedBranches.push({ name, reason: 'could not get commit date' });
+                continue;
+              }
+
+              // Check if the branch is stale
+              if (commitDate >= cutoffDate) {
+                skippedBranches.push({ name, reason: `recently active (${commitDate.toISOString().slice(0,10)})` });
+                continue;
+              }
+
+              staleBranches.push({ name, sha, commitDate });
+            }
+
+            console.log(`Stale branches to process: ${staleBranches.length}`);
+            console.log(`Skipped (active or protected): ${skippedBranches.length}`);
+            console.log('');
+
+            // Process stale branches
+            let tagged = 0;
+            let tagSkipped = 0;
+            let deleted = 0;
+            let errors = 0;
+
+            for (const { name, sha, commitDate } of staleBranches) {
+              console.log(`Processing: ${name} (last commit: ${commitDate.toISOString().slice(0,10)})`);
+
+              if (dryRun) {
+                const tagAction = existingTags.has(name) ? 'skip (tag exists)' : 'create tag';
+                console.log(`  [DRY RUN] Would: ${tagAction}, then delete branch`);
+                continue;
+              }
+
+              // Create tag if it doesn't already exist
+              if (existingTags.has(name)) {
+                console.log(`  Tag '${name}' already exists, skipping tag creation.`);
+                tagSkipped++;
+              } else {
+                try {
+                  await github.rest.git.createRef({
+                    owner,
+                    repo,
+                    ref: `refs/tags/${name}`,
+                    sha,
+                  });
+                  console.log(`  Created tag '${name}' at ${sha}.`);
+                  existingTags.add(name);
+                  tagged++;
+                } catch (e) {
+                  console.log(`  ERROR creating tag '${name}': ${e.message}`);
+                  errors++;
+                  continue;
+                }
+              }
+
+              // Delete the branch
+              try {
+                await github.rest.git.deleteRef({
+                  owner,
+                  repo,
+                  ref: `heads/${name}`,
+                });
+                console.log(`  Deleted branch '${name}'.`);
+                deleted++;
+              } catch (e) {
+                console.log(`  ERROR deleting branch '${name}': ${e.message}`);
+                errors++;
+              }
+            }
+
+            console.log('');
+            console.log('=== Summary ===');
+            if (dryRun) {
+              console.log(`  [DRY RUN] Stale branches found: ${staleBranches.length}`);
+              for (const { name, commitDate } of staleBranches) {
+                const tagAction = existingTags.has(name) ? '[tag exists]' : '[tag needed]';
+                console.log(`    - ${name} (${commitDate.toISOString().slice(0,10)}) ${tagAction}`);
+              }
+            } else {
+              console.log(`  Tags created:  ${tagged}`);
+              console.log(`  Tags skipped (already exist): ${tagSkipped}`);
+              console.log(`  Branches deleted: ${deleted}`);
+              console.log(`  Errors: ${errors}`);
+            }
+
+            if (errors > 0) {
+              core.setFailed(`Completed with ${errors} error(s).`);
+            }
