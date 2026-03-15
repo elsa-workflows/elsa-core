@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Reflection;
 using Elsa.Common.Helpers;
 using Elsa.Common.RecurringTasks;
@@ -10,60 +11,71 @@ namespace Elsa.Common.Multitenancy.EventHandlers;
 /// Manages the lifecycle of startup, background, and recurring tasks for tenants.
 /// Executes tasks in the proper sequence: startup tasks first, then background tasks, then recurring tasks.
 /// </summary>
-public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILogger<TenantTaskManager> logger) : ITenantActivatedEvent, ITenantDeactivatedEvent
+public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILogger<TenantTaskManager> logger) : ITenantActivatedEvent, ITenantDeactivatedEvent, IAsyncDisposable
 {
-    private readonly ICollection<Task> _runningBackgroundTasks = new List<Task>();
-    private readonly ICollection<ScheduledTimer> _scheduledTimers = new List<ScheduledTimer>();
-    private CancellationTokenSource _cancellationTokenSource = null!;
+    private readonly ConcurrentDictionary<string, TenantRuntimeState> _tenantStates = new();
+    private readonly CancellationTokenSource _shutdownCancellationTokenSource = new();
+    private int _disposeRequested;
 
     public async Task TenantActivatedAsync(TenantActivatedEventArgs args)
     {
-        var cancellationToken = args.CancellationToken;
+        if (Volatile.Read(ref _disposeRequested) == 1)
+            return;
+
+        using var activationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(args.CancellationToken, _shutdownCancellationTokenSource.Token);
+        var cancellationToken = activationTokenSource.Token;
         var tenantScope = args.TenantScope;
         var taskExecutor = tenantScope.ServiceProvider.GetRequiredService<ITaskExecutor>();
+        var tenantId = GetTenantId(args.Tenant);
+        var state = _tenantStates.GetOrAdd(tenantId, static _ => new TenantRuntimeState());
 
-        _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        await state.Gate.WaitAsync(cancellationToken);
 
-        // Step 1: Run startup tasks (with dependency ordering)
-        await RunStartupTasksAsync(tenantScope, taskExecutor, cancellationToken);
+        try
+        {
+            if (Volatile.Read(ref _disposeRequested) == 1)
+                return;
 
-        // Step 2: Run background tasks
-        await RunBackgroundTasksAsync(tenantScope, taskExecutor, cancellationToken);
+            await StopTenantCoreAsync(state, cancellationToken);
+            state.CancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-        // Step 3: Start recurring tasks
-        await StartRecurringTasksAsync(tenantScope, taskExecutor, cancellationToken);
+            // Step 1: Run startup tasks (with dependency ordering)
+            await RunStartupTasksAsync(tenantScope, taskExecutor, cancellationToken);
+
+            // Step 2: Run background tasks
+            await RunBackgroundTasksAsync(tenantScope, taskExecutor, state, cancellationToken);
+
+            // Step 3: Start recurring tasks
+            await StartRecurringTasksAsync(tenantScope, taskExecutor, state, cancellationToken);
+        }
+        catch
+        {
+            await StopTenantCoreAsync(state, cancellationToken);
+            throw;
+        }
+        finally
+        {
+            state.Gate.Release();
+        }
     }
 
     public async Task TenantDeactivatedAsync(TenantDeactivatedEventArgs args)
     {
-        var tenantScope = args.TenantScope;
+        var tenantId = GetTenantId(args.Tenant);
 
-        // Cancel all running tasks
-        _cancellationTokenSource.Cancel();
+        if (!_tenantStates.TryGetValue(tenantId, out var state))
+            return;
 
-        // Wait for background tasks to complete (with cancellation they should finish quickly)
-        if (_runningBackgroundTasks.Any())
+        await state.Gate.WaitAsync(args.CancellationToken);
+
+        try
         {
-            try
-            {
-                await Task.WhenAll(_runningBackgroundTasks);
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected when tasks are cancelled
-            }
-            _runningBackgroundTasks.Clear();
+            await StopTenantCoreAsync(state, args.CancellationToken);
         }
-
-        // Stop all recurring task timers
-        foreach (var timer in _scheduledTimers)
-            await timer.DisposeAsync();
-        _scheduledTimers.Clear();
-
-        // Stop recurring tasks
-        var recurringTasks = tenantScope.ServiceProvider.GetServices<IRecurringTask>();
-        foreach (var task in recurringTasks)
-            await task.StopAsync(args.CancellationToken);
+        finally
+        {
+            state.Gate.Release();
+        }
     }
 
     private async Task RunStartupTasksAsync(ITenantScope tenantScope, ITaskExecutor taskExecutor, CancellationToken cancellationToken)
@@ -79,40 +91,45 @@ public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILo
             await taskExecutor.ExecuteTaskAsync(task, cancellationToken);
     }
 
-    private Task RunBackgroundTasksAsync(ITenantScope tenantScope, ITaskExecutor taskExecutor, CancellationToken cancellationToken)
+    private Task RunBackgroundTasksAsync(ITenantScope tenantScope, ITaskExecutor taskExecutor, TenantRuntimeState state, CancellationToken cancellationToken)
     {
         var backgroundTasks = tenantScope.ServiceProvider.GetServices<IBackgroundTask>();
         var backgroundTaskStarter = tenantScope.ServiceProvider.GetRequiredService<IBackgroundTaskStarter>();
+        var tenantCancellationToken = state.CancellationTokenSource?.Token ?? cancellationToken;
 
         foreach (var backgroundTask in backgroundTasks)
         {
             var task = backgroundTaskStarter
-                .StartAsync(backgroundTask, _cancellationTokenSource.Token)
-                .ContinueWith(t => taskExecutor.ExecuteTaskAsync(backgroundTask, _cancellationTokenSource.Token),
+                .StartAsync(backgroundTask, tenantCancellationToken)
+                .ContinueWith(_ => taskExecutor.ExecuteTaskAsync(backgroundTask, tenantCancellationToken),
                     cancellationToken,
                     TaskContinuationOptions.RunContinuationsAsynchronously,
                     TaskScheduler.Default)
                 .Unwrap();
 
             if (!task.IsCompleted)
-                _runningBackgroundTasks.Add(task);
+                state.RunningBackgroundTasks.Add(task);
         }
 
         return Task.CompletedTask;
     }
 
-    private async Task StartRecurringTasksAsync(ITenantScope tenantScope, ITaskExecutor taskExecutor, CancellationToken cancellationToken)
+    private async Task StartRecurringTasksAsync(ITenantScope tenantScope, ITaskExecutor taskExecutor, TenantRuntimeState state, CancellationToken cancellationToken)
     {
         var recurringTasks = tenantScope.ServiceProvider.GetServices<IRecurringTask>().ToList();
+        var tenantCancellationToken = state.CancellationTokenSource?.Token ?? cancellationToken;
 
         foreach (var task in recurringTasks)
         {
             var schedule = scheduleManager.GetScheduleFor(task.GetType());
             var timer = schedule.CreateTimer(async () =>
             {
+                if (tenantCancellationToken.IsCancellationRequested)
+                    return;
+
                 try
                 {
-                    await taskExecutor.ExecuteTaskAsync(task, _cancellationTokenSource.Token);
+                    await taskExecutor.ExecuteTaskAsync(task, tenantCancellationToken);
                 }
                 catch (OperationCanceledException e)
                 {
@@ -125,8 +142,149 @@ public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILo
                 }
             }, logger);
 
-            _scheduledTimers.Add(timer);
+            state.ScheduledTimers.Add(timer);
+            state.RecurringTasks.Add(task);
             await task.StartAsync(cancellationToken);
         }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _disposeRequested, 1) == 1)
+            return;
+
+        try
+        {
+            await _shutdownCancellationTokenSource.CancelAsync();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Already disposed by a concurrent path.
+        }
+
+        foreach (var state in _tenantStates.Values)
+        {
+            await state.Gate.WaitAsync();
+
+            try
+            {
+                await StopTenantCoreAsync(state, CancellationToken.None);
+            }
+            finally
+            {
+                state.Gate.Release();
+            }
+        }
+
+        try
+        {
+            _shutdownCancellationTokenSource.Dispose();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Already disposed by a concurrent path.
+        }
+    }
+
+    private async Task StopTenantCoreAsync(TenantRuntimeState state, CancellationToken cancellationToken)
+    {
+        var cancellationTokenSource = state.CancellationTokenSource;
+
+        // Cancel first so callbacks and long-running tasks can drain while resources are being disposed.
+        if (cancellationTokenSource != null)
+        {
+            try
+            {
+                await cancellationTokenSource.CancelAsync();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Already disposed by a concurrent path.
+            }
+            catch (Exception e)
+            {
+                logger.LogWarning(e, "Failed to cancel tenant task cancellation token source while stopping tenant tasks");
+            }
+        }
+
+        foreach (var timer in state.ScheduledTimers)
+        {
+            try
+            {
+                await timer.DisposeAsync();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Timer is already disposed; this can happen during concurrent shutdown paths.
+            }
+            catch (Exception e)
+            {
+                logger.LogWarning(e, "Failed to dispose a recurring timer while stopping tenant tasks");
+            }
+        }
+        state.ScheduledTimers.Clear();
+
+        if (state.RunningBackgroundTasks.Count > 0)
+        {
+            try
+            {
+                await Task.WhenAll(state.RunningBackgroundTasks);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when cancellation is requested.
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "One or more background tasks failed while stopping tenant tasks");
+            }
+            state.RunningBackgroundTasks.Clear();
+        }
+
+        foreach (var recurringTask in state.RecurringTasks)
+        {
+            try
+            {
+                await recurringTask.StopAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected if caller requested cancellation during tenant deactivation.
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Failed to stop recurring task {TaskType}", recurringTask.GetType().Name);
+            }
+        }
+        state.RecurringTasks.Clear();
+
+        if (cancellationTokenSource == null)
+            return;
+
+        try
+        {
+            cancellationTokenSource.Dispose();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Already disposed by a concurrent path.
+        }
+        catch (Exception e)
+        {
+            logger.LogWarning(e, "Failed to dispose tenant task cancellation token source");
+        }
+
+        state.CancellationTokenSource = null;
+    }
+
+    private static string GetTenantId(Tenant tenant) => tenant.Id;
+
+    private class TenantRuntimeState
+    {
+        public SemaphoreSlim Gate { get; } = new(1, 1);
+        public List<Task> RunningBackgroundTasks { get; } = [];
+        public List<ScheduledTimer> ScheduledTimers { get; } = [];
+        public List<IRecurringTask> RecurringTasks { get; } = [];
+        public CancellationTokenSource? CancellationTokenSource { get; set; }
     }
 }
