@@ -9,7 +9,7 @@
 
     <ItemGroup>
         <PackageReference Include="AspNetCore.Authentication.ApiKey" />
-        <ProjectReference Include="..\..\..\..\cshells\src\CShells.FastEndpoints.Abstractions\CShells.FastEndpoints.Abstractions.csproj" />
+        <PackageReference Include="CShells.FastEndpoints.Abstractions" />
     </ItemGroup>
 
     <ItemGroup>
