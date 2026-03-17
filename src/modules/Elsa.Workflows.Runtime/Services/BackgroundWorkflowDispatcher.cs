@@ -33,7 +33,8 @@ public class BackgroundWorkflowDispatcher(ICommandSender commandSender, INotific
             SchedulingCallStackDepth = request.SchedulingCallStackDepth
         };
         
-        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), cancellationToken);
+        // Background commands run independently of caller's lifecycle.
+        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), CancellationToken.None);
         var response = DispatchWorkflowResponse.Success();
         
         // Emit dispatched notification
@@ -55,7 +56,8 @@ public class BackgroundWorkflowDispatcher(ICommandSender commandSender, INotific
             Properties = request.Properties,
             CorrelationId = request.CorrelationId};
 
-        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), cancellationToken);
+        // Background commands run independently of caller's lifecycle.
+        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), CancellationToken.None);
         var response = DispatchWorkflowResponse.Success();
         
         // Emit dispatched notification
@@ -75,7 +77,9 @@ public class BackgroundWorkflowDispatcher(ICommandSender commandSender, INotific
             Input = request.Input,
             Properties = request.Properties
         };
-        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), cancellationToken);
+        
+        // Background commands run independently of caller's lifecycle.
+        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), CancellationToken.None);
         return DispatchWorkflowResponse.Success();
     }
 
@@ -89,7 +93,9 @@ public class BackgroundWorkflowDispatcher(ICommandSender commandSender, INotific
             ActivityInstanceId = request.ActivityInstanceId,
             Input = request.Input
         };
-        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), cancellationToken);
+        
+        // Background commands run independently of caller's lifecycle.
+        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), CancellationToken.None);
         return DispatchWorkflowResponse.Success();
     }
     
