@@ -79,7 +79,7 @@
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
     "cssnano": "^5.1.4",
-    "eslint": "8.11.0",
+    "eslint": "^8.44.0",
     "postcss": "^8.4.8",
     "postcss-import": "^14.0.2",
     "postcss-preset-env": "^7.4.2",
