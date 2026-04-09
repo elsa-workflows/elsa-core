@@ -74,15 +74,6 @@ public class BackgroundCommandSenderHostedService : BackgroundService
             {
                 try
                 {
-                    // Pre-execution check.
-                    // If the caller's token is already canceled, we skip the command to avoid 
-                    // downstream failures (like DB connection aborts) and log it appropriately.
-                    if (commandContext.CancellationToken.IsCancellationRequested)
-                    {
-                        _logger.LogInformation("Skipping command {CommandName} because it was already canceled by the caller", commandContext.Command.GetType().Name);
-                        continue;
-                    }
-
                     // Create a fresh scope for each command to ensure proper service lifetime
                     using var scope = _scopeFactory.CreateScope();
                     var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
