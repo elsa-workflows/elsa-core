@@ -7,9 +7,12 @@ using Elsa.Server.Api.Extensions.SchemaFilters;
 using Elsa.Server.Api.Mapping;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
-using Microsoft.AspNetCore.Mvc;
+#if NET10_0_OR_GREATER
+using Microsoft.OpenApi;
+#else
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
@@ -73,17 +76,29 @@ namespace Microsoft.Extensions.DependencyInjection
                     //c.ExampleFilters(); I don't know why, this line will make swagger error
                     c.MapType<VersionOptions?>(() => new OpenApiSchema
                     {
+#if NET10_0_OR_GREATER
+                        Type = JsonSchemaType.String | JsonSchemaType.Null,
+                        Example = "Latest",
+                        Description = "Any of Latest, Published, Draft, LatestOrPublished or a specific version number.",
+                        Default = "Latest"
+#else
                         Type = PrimitiveType.String.ToString().ToLower(),
                         Example = new OpenApiString("Latest"),
                         Description = "Any of Latest, Published, Draft, LatestOrPublished or a specific version number.",
                         Nullable = true,
                         Default = new OpenApiString("Latest")
+#endif
                     });
 
                     c.MapType<Type>(() => new OpenApiSchema
                     {
+#if NET10_0_OR_GREATER
+                        Type = JsonSchemaType.String,
+                        Example = "System.String, mscorlib"
+#else
                         Type = PrimitiveType.String.ToString().ToLower(),
                         Example = new OpenApiString("System.String, mscorlib")
+#endif
                     });
 
                     //Allow enums to be displayed
