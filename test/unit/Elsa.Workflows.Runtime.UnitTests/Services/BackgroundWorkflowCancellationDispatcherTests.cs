@@ -95,22 +95,22 @@ public class BackgroundWorkflowCancellationDispatcherTests
     }
 
     [Fact]
-    public async Task DispatchAsync_PassesCancellationToken()
+    public async Task DispatchAsync_DoesNotPropagateCallerToken()
     {
         // Arrange
         var dispatcher = CreateDispatcher();
         var request = new DispatchCancelWorkflowRequest();
-        var cancellationToken = CancellationToken.None;
+        using var callerCts = new CancellationTokenSource();
 
         // Act
-        await dispatcher.DispatchAsync(request, cancellationToken);
+        await dispatcher.DispatchAsync(request, callerCts.Token);
 
-        // Assert
+        // Assert - background commands run independently of caller's lifecycle
         await _commandSender.Received(1).SendAsync(
             Arg.Any<CancelWorkflowsCommand>(),
             CommandStrategy.Background,
             Arg.Any<IDictionary<object, object>>(),
-            cancellationToken);
+            CancellationToken.None);
     }
 
     private BackgroundWorkflowCancellationDispatcher CreateDispatcher()
