@@ -210,4 +210,4 @@ Elsa has an active and helpful community where you can find support through mult
 - [StackOverflow](https://stackoverflow.com/questions/tagged/elsa-workflows) for searching or asking technical questions.
 
 ### Professional Support
-For organizations requiring professional support and long-term commitment, check out [Elsa+](https://www.elsa-workflows.io), a growing ecosystem of premium services, tooling, and extensions around Elsa Workflows.
+For organizations requiring professional support and long-term commitment, check out [Elsa+](https://www.elsaworkflows.io/elsa-plus), a growing ecosystem of premium services, tooling, and extensions around Elsa Workflows.
