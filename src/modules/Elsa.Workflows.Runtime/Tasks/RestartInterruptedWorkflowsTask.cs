@@ -31,18 +31,25 @@ public class RestartInterruptedWorkflowsTask(
         logger.LogInformation("Restarting interrupted workflows.");
         await foreach (var workflowInstance in workflowInstances)
         {
-            var tenantId = workflowInstance.TenantId ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(tenantId) || tenantId == Tenant.AgnosticTenantId)
+            try
             {
-                await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
-                continue;
+                var tenantId = workflowInstance.TenantId ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(tenantId) || tenantId == Tenant.AgnosticTenantId)
+                {
+                    await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
+                    continue;
+                }
+
+                var tenant = await tenantService.FindAsync(tenantId, cancellationToken) ?? new Tenant { Id = tenantId, Name = tenantId };
+
+                using (tenantAccessor.PushContext(tenant))
+                    await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
             }
-
-            var tenant = await tenantService.FindAsync(tenantId, cancellationToken) ?? new Tenant { Id = tenantId, Name = tenantId };
-
-            using (tenantAccessor.PushContext(tenant))
-                await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to restart interrupted workflow {WorkflowInstanceId}", workflowInstance.Id);
+            }
         }
         logger.LogInformation("Finished restarting interrupted workflows.");
     }
