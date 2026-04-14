@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Common.RecurringTasks;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
@@ -13,6 +14,8 @@ namespace Elsa.Workflows.Runtime.Tasks;
 [UsedImplicitly]
 public class RestartInterruptedWorkflowsTask(
     IWorkflowInstanceStore workflowInstanceStore, 
+    ITenantAccessor tenantAccessor,
+    ITenantService tenantService,
     IWorkflowRestarter workflowRestarter, 
     IOptions<RuntimeOptions> options, 
     ISystemClock systemClock,
@@ -28,7 +31,18 @@ public class RestartInterruptedWorkflowsTask(
         logger.LogInformation("Restarting interrupted workflows.");
         await foreach (var workflowInstance in workflowInstances)
         {
-            await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
+            var tenantId = workflowInstance.TenantId ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(tenantId) || tenantId == Tenant.AgnosticTenantId)
+            {
+                await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
+                continue;
+            }
+
+            var tenant = await tenantService.FindAsync(tenantId, cancellationToken) ?? new Tenant { Id = tenantId };
+
+            using (tenantAccessor.PushContext(tenant))
+                await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
         }
         logger.LogInformation("Finished restarting interrupted workflows.");
     }
