@@ -39,7 +39,7 @@ public class RestartInterruptedWorkflowsTask(
                 continue;
             }
 
-            var tenant = await tenantService.FindAsync(tenantId, cancellationToken) ?? new Tenant { Id = tenantId };
+            var tenant = await tenantService.FindAsync(tenantId, cancellationToken) ?? new Tenant { Id = tenantId, Name = tenantId };
 
             using (tenantAccessor.PushContext(tenant))
                 await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
