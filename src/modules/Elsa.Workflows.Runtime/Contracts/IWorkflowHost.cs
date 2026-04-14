@@ -8,6 +8,7 @@ namespace Elsa.Workflows.Runtime;
 /// <summary>
 /// Represents a single workflow instance that can be executed and takes care of publishing various lifecycle events.
 /// </summary>
+[Obsolete("Use IWorkflowRuntime and IWorkflowClient services instead.")]
 public interface IWorkflowHost
 {
     /// <summary>
