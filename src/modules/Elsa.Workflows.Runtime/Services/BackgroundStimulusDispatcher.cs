@@ -17,7 +17,9 @@ public class BackgroundStimulusDispatcher(ICommandSender commandSender, ITenantA
     public async Task<DispatchStimulusResponse> SendAsync(DispatchStimulusRequest request, CancellationToken cancellationToken = default)
     {
         var command = new DispatchStimulusCommand(request);
-        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), cancellationToken);
+        
+        // Background commands run independently of caller's lifecycle.
+        await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), CancellationToken.None);
         return DispatchStimulusResponse.Empty;
     }
 
