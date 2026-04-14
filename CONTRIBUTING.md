@@ -96,6 +96,55 @@ Thorough bug reports significantly increase the chance of a fast and accurate re
 
 ---
 
+## Feature Requests & Prioritization
+
+Elsa Workflows is an open source project, and as such, not all feature requests can be implemented immediately or on demand.
+
+Feature development is prioritized based on a combination of the following factors:
+
+### 1. Project Vision & Roadmap
+
+Some features align closely with the long-term direction of Elsa and are prioritized accordingly.
+
+### 2. Real-World Demand
+
+Features that are backed by concrete use cases, especially in production environments, are more likely to be prioritized.
+
+If a feature is important for your scenario, providing context about how you plan to use it is extremely helpful.
+
+### 3. Community Contributions
+
+Contributions from the community are strongly encouraged.
+
+If you are able to propose a design or submit a pull request, it can significantly accelerate progress. Maintainers are happy to collaborate and review contributions.
+
+### 4. Available Time & Maintainer Bandwidth
+
+Elsa is actively maintained, but development capacity is limited. As a result, some features may take time to be implemented.
+
+### 5. Sponsored / Paid Work
+
+Organizations that require specific features or timelines can engage through commercial support.
+
+This allows dedicated time to be allocated to specific work items and can accelerate development significantly.
+
+---
+
+### What This Means in Practice
+
+- There are no guaranteed timelines for feature requests
+- Some features may remain open until one of the above factors changes
+- The best way to move a feature forward is to:
+  - Contribute a proposal or implementation
+  - Provide a strong real-world use case
+  - Sponsor or fund the work
+
+---
+
+We appreciate all feature requests and feedback — they help shape the direction of Elsa Workflows.
+
+---
+
 ## License
 
 By contributing, you agree that your contributions will be licensed under the project's MIT License.
