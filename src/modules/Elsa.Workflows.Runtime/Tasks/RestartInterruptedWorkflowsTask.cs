@@ -13,13 +13,13 @@ namespace Elsa.Workflows.Runtime.Tasks;
 [SingleNodeTask]
 [UsedImplicitly]
 public class RestartInterruptedWorkflowsTask(
-    IWorkflowInstanceStore workflowInstanceStore, 
-    ITenantAccessor tenantAccessor,
-    ITenantService tenantService,
     IWorkflowRestarter workflowRestarter, 
+    IWorkflowInstanceStore workflowInstanceStore,
+    ILogger<RestartInterruptedWorkflowsTask> logger,
     IOptions<RuntimeOptions> options, 
     ISystemClock systemClock,
-    ILogger<RestartInterruptedWorkflowsTask> logger) : RecurringTask
+    ITenantService? tenantService = null,
+    ITenantAccessor? tenantAccessor = null) : RecurringTask
 {
     /// <inheritdoc />
     public override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -35,16 +35,17 @@ public class RestartInterruptedWorkflowsTask(
             {
                 var tenantId = workflowInstance.TenantId ?? string.Empty;
 
-                if (string.IsNullOrWhiteSpace(tenantId) || tenantId == Tenant.AgnosticTenantId)
+                if (tenantService != null && tenantAccessor != null && !string.IsNullOrWhiteSpace(tenantId) && tenantId != Tenant.AgnosticTenantId)
                 {
-                    await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
+                    var tenant = await tenantService.FindAsync(tenantId, cancellationToken) ?? new Tenant { Id = tenantId, Name = tenantId };
+
+                    using (tenantAccessor.PushContext(tenant))
+                        await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
+
                     continue;
                 }
 
-                var tenant = await tenantService.FindAsync(tenantId, cancellationToken) ?? new Tenant { Id = tenantId, Name = tenantId };
-
-                using (tenantAccessor.PushContext(tenant))
-                    await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
+                await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {

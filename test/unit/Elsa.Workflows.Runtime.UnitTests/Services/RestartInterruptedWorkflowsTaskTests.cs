@@ -51,7 +51,7 @@ public class RestartInterruptedWorkflowsTaskTests
             RestartInterruptedWorkflowsBatchSize = 10,
             InactivityThreshold = TimeSpan.FromMinutes(5)
         });
-        var task = new RestartInterruptedWorkflowsTask(workflowInstanceStore, tenantAccessor, tenantService, workflowRestarter, options, clock, logger);
+        var task = new RestartInterruptedWorkflowsTask(workflowRestarter, workflowInstanceStore, logger, options, clock, tenantService, tenantAccessor);
 
         await task.ExecuteAsync(CancellationToken.None);
 
@@ -99,7 +99,7 @@ public class RestartInterruptedWorkflowsTaskTests
             RestartInterruptedWorkflowsBatchSize = 10,
             InactivityThreshold = TimeSpan.FromMinutes(5)
         });
-        var task = new RestartInterruptedWorkflowsTask(workflowInstanceStore, tenantAccessor, tenantService, workflowRestarter, options, clock, logger);
+        var task = new RestartInterruptedWorkflowsTask(workflowRestarter, workflowInstanceStore, logger, options, clock, tenantService, tenantAccessor);
 
         await task.ExecuteAsync(CancellationToken.None);
 
@@ -143,12 +143,48 @@ public class RestartInterruptedWorkflowsTaskTests
             RestartInterruptedWorkflowsBatchSize = 10,
             InactivityThreshold = TimeSpan.FromMinutes(5)
         });
-        var task = new RestartInterruptedWorkflowsTask(workflowInstanceStore, tenantAccessor, tenantService, workflowRestarter, options, clock, logger);
+        var task = new RestartInterruptedWorkflowsTask(workflowRestarter, workflowInstanceStore, logger, options, clock, tenantService, tenantAccessor);
 
         await task.ExecuteAsync(CancellationToken.None);
 
         await workflowRestarter.DidNotReceive().RestartWorkflowAsync("workflow-1", Arg.Any<CancellationToken>());
         await workflowRestarter.Received(1).RestartWorkflowAsync("workflow-2", Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "ExecuteAsync restarts tenant-specific workflows when tenant services are unavailable")]
+    public async Task ExecuteAsync_WithoutTenantServices_RestartsWorkflow()
+    {
+        var workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();
+        var workflowRestarter = Substitute.For<IWorkflowRestarter>();
+        var clock = Substitute.For<ISystemClock>();
+        var logger = Substitute.For<ILogger<RestartInterruptedWorkflowsTask>>();
+        var now = DateTimeOffset.Parse("2026-04-14T12:00:00Z");
+        var workflowInstances = new List<WorkflowInstanceSummary>
+        {
+            CreateWorkflowInstance("workflow-1", "tenant-a", now)
+        };
+
+        clock.UtcNow.Returns(now);
+        workflowInstanceStore
+            .SummarizeManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<PageArgs>(), Arg.Any<CancellationToken>())
+            .Returns(
+                callInfo =>
+                {
+                    var pageArgs = callInfo.ArgAt<PageArgs>(1);
+                    var items = pageArgs.Offset == 0 ? workflowInstances : new List<WorkflowInstanceSummary>();
+                    return new ValueTask<Page<WorkflowInstanceSummary>>(Page.Of(items, workflowInstances.Count));
+                });
+
+        var options = Microsoft.Extensions.Options.Options.Create(new RuntimeOptions
+        {
+            RestartInterruptedWorkflowsBatchSize = 10,
+            InactivityThreshold = TimeSpan.FromMinutes(5)
+        });
+        var task = new RestartInterruptedWorkflowsTask(workflowRestarter, workflowInstanceStore, logger, options, clock);
+
+        await task.ExecuteAsync(CancellationToken.None);
+
+        await workflowRestarter.Received(1).RestartWorkflowAsync("workflow-1", Arg.Any<CancellationToken>());
     }
 
     private static WorkflowInstanceSummary CreateWorkflowInstance(string id, string? tenantId, DateTimeOffset updatedAt)
