@@ -7,16 +7,10 @@ using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests;
 
-public class ForEachTests
+public class ForEachTests(ITestOutputHelper testOutputHelper)
 {
-    private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly IServiceProvider _serviceProvider;
+    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
     private const string CurrentValueVar = "CurrentValue";
-
-    public ForEachTests(ITestOutputHelper testOutputHelper)
-    {
-        _serviceProvider = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-    }
 
     [Fact(DisplayName = "ForEach executes each activity for every item in the collection")]
     public async Task ForEach_ExecutesEachActivity_ForEveryItem()
@@ -54,7 +48,7 @@ public class ForEachTests
         {
             Body = WriteCurrentValue()
         };
-        var result = await _serviceProvider.RunActivityAsync(forEach);
+        var result = await _fixture.RunActivityAsync(forEach);
         var journal = result.Journal;
         var forEachContext = journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity is ForEach<string>);
         Assert.NotNull(forEachContext);
@@ -68,7 +62,7 @@ public class ForEachTests
         {
             Body = WriteCurrentValue()
         };
-        var result = await _serviceProvider.RunActivityAsync(forEach);
+        var result = await _fixture.RunActivityAsync(forEach);
         var journal = result.Journal;
         var forEachContext = journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity is ForEach<string>);
         Assert.NotNull(forEachContext);
@@ -245,10 +239,10 @@ public class ForEachTests
                 ]
             }
         };
-        var result = await _serviceProvider.RunActivityAsync(forEach);
+        var result = await _fixture.RunActivityAsync(forEach);
         var journal = result.Journal;
         var forEachContext = journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity is ForEach<string>);
-        Assert.Equal(expectedLines, _capturingTextWriter.Lines);
+        Assert.Equal(expectedLines, _fixture.CapturingTextWriter.Lines);
         Assert.NotNull(forEachContext);
         Assert.Equal(ActivityStatus.Running, forEachContext.Status);
         Assert.Equal(1, forEachContext.AggregateFaultCount);
@@ -258,8 +252,8 @@ public class ForEachTests
     
     private async Task RunAndAssertLines(IActivity activity, System.Collections.IEnumerable expected)
     {
-        await _serviceProvider.RunActivityAsync(activity);
-        Assert.Equal(expected, _capturingTextWriter.Lines);
+        await _fixture.RunActivityAsync(activity);
+        Assert.Equal(expected, _fixture.CapturingTextWriter.Lines);
     }
 }
 
