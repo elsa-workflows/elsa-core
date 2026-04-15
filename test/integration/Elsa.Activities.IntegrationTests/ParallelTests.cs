@@ -6,15 +6,9 @@ using Parallel = Elsa.Workflows.Activities.Parallel;
 
 namespace Elsa.Activities.IntegrationTests;
 
-public class ParallelTests
+public class ParallelTests(ITestOutputHelper testOutputHelper)
 {
-    private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly IServiceProvider _serviceProvider;
-
-    public ParallelTests(ITestOutputHelper testOutputHelper)
-    {
-        _serviceProvider = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-    }
+    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
 
     [Fact(DisplayName = "Parallel executes all child activities and completes")]
     public async Task Parallel_ExecutesAllChildren_AndCompletes()
@@ -27,7 +21,7 @@ public class ParallelTests
         );
 
         // Act
-        var result = await _serviceProvider.RunActivityAsync(parallel);
+        var result = await _fixture.RunActivityAsync(parallel);
 
         // Assert
         var journal = result.Journal;
@@ -35,10 +29,10 @@ public class ParallelTests
 
         Assert.NotNull(parallelContext);
         Assert.Equal(ActivityStatus.Completed, parallelContext.Status);
-        Assert.Equal(3, _capturingTextWriter.Lines.Count);
-        Assert.Contains("Activity 1", _capturingTextWriter.Lines);
-        Assert.Contains("Activity 2", _capturingTextWriter.Lines);
-        Assert.Contains("Activity 3", _capturingTextWriter.Lines);
+        Assert.Equal(3, _fixture.CapturingTextWriter.Lines.Count);
+        Assert.Contains("Activity 1", _fixture.CapturingTextWriter.Lines);
+        Assert.Contains("Activity 2", _fixture.CapturingTextWriter.Lines);
+        Assert.Contains("Activity 3", _fixture.CapturingTextWriter.Lines);
     }
 
     [Fact(DisplayName = "Parallel completes when empty")]
@@ -48,7 +42,7 @@ public class ParallelTests
         var parallel = new Parallel();
 
         // Act
-        var result = await _serviceProvider.RunActivityAsync(parallel);
+        var result = await _fixture.RunActivityAsync(parallel);
 
         // Assert
         var journal = result.Journal;
@@ -56,7 +50,7 @@ public class ParallelTests
 
         Assert.NotNull(parallelContext);
         Assert.Equal(ActivityStatus.Completed, parallelContext.Status);
-        Assert.Empty(_capturingTextWriter.Lines);
+        Assert.Empty(_fixture.CapturingTextWriter.Lines);
     }
 
     [Fact(DisplayName = "Parallel executes single child activity and completes")]
@@ -68,7 +62,7 @@ public class ParallelTests
         );
 
         // Act
-        var result = await _serviceProvider.RunActivityAsync(parallel);
+        var result = await _fixture.RunActivityAsync(parallel);
 
         // Assert
         var journal = result.Journal;
@@ -76,8 +70,8 @@ public class ParallelTests
 
         Assert.NotNull(parallelContext);
         Assert.Equal(ActivityStatus.Completed, parallelContext.Status);
-        Assert.Single(_capturingTextWriter.Lines);
-        Assert.Equal("Single Activity", _capturingTextWriter.Lines.Single());
+        Assert.Single(_fixture.CapturingTextWriter.Lines);
+        Assert.Equal("Single Activity", _fixture.CapturingTextWriter.Lines.Single());
     }
 
     [Fact(DisplayName = "Parallel executes multiple different activity types")]
@@ -91,7 +85,7 @@ public class ParallelTests
         );
 
         // Act
-        var result = await _serviceProvider.RunActivityAsync(parallel);
+        var result = await _fixture.RunActivityAsync(parallel);
 
         // Assert
         var journal = result.Journal;
@@ -99,9 +93,9 @@ public class ParallelTests
 
         Assert.NotNull(parallelContext);
         Assert.Equal(ActivityStatus.Completed, parallelContext.Status);
-        Assert.Equal(2, _capturingTextWriter.Lines.Count);
-        Assert.Contains("First", _capturingTextWriter.Lines);
-        Assert.Contains("Second", _capturingTextWriter.Lines);
+        Assert.Equal(2, _fixture.CapturingTextWriter.Lines.Count);
+        Assert.Contains("First", _fixture.CapturingTextWriter.Lines);
+        Assert.Contains("Second", _fixture.CapturingTextWriter.Lines);
     }
 
     [Fact(DisplayName = "Parallel completes only after all children complete")]
@@ -116,7 +110,7 @@ public class ParallelTests
         );
 
         // Act
-        var result = await _serviceProvider.RunActivityAsync(parallel);
+        var result = await _fixture.RunActivityAsync(parallel);
 
         // Assert
         var journal = result.Journal;
@@ -124,7 +118,7 @@ public class ParallelTests
 
         Assert.NotNull(parallelContext);
         Assert.Equal(ActivityStatus.Completed, parallelContext.Status);
-        Assert.Equal(4, _capturingTextWriter.Lines.Count);
+        Assert.Equal(4, _fixture.CapturingTextWriter.Lines.Count);
     }
 
     [Fact(DisplayName = "Parallel executes nested Parallel activities")]
@@ -143,7 +137,7 @@ public class ParallelTests
         );
 
         // Act
-        var result = await _serviceProvider.RunActivityAsync(outerParallel);
+        var result = await _fixture.RunActivityAsync(outerParallel);
 
         // Assert
         var journal = result.Journal;
@@ -154,11 +148,11 @@ public class ParallelTests
         Assert.NotNull(innerParallelContext);
         Assert.Equal(ActivityStatus.Completed, outerParallelContext.Status);
         Assert.Equal(ActivityStatus.Completed, innerParallelContext.Status);
-        Assert.Equal(4, _capturingTextWriter.Lines.Count);
-        Assert.Contains("Outer 1", _capturingTextWriter.Lines);
-        Assert.Contains("Outer 2", _capturingTextWriter.Lines);
-        Assert.Contains("Inner 1", _capturingTextWriter.Lines);
-        Assert.Contains("Inner 2", _capturingTextWriter.Lines);
+        Assert.Equal(4, _fixture.CapturingTextWriter.Lines.Count);
+        Assert.Contains("Outer 1", _fixture.CapturingTextWriter.Lines);
+        Assert.Contains("Outer 2", _fixture.CapturingTextWriter.Lines);
+        Assert.Contains("Inner 1", _fixture.CapturingTextWriter.Lines);
+        Assert.Contains("Inner 2", _fixture.CapturingTextWriter.Lines);
     }
 
     [Fact(DisplayName = "Parallel remains in Running state when a child activity faults")]
@@ -172,7 +166,7 @@ public class ParallelTests
         );
 
         // Act
-        var result = await _serviceProvider.RunActivityAsync(parallel);
+        var result = await _fixture.RunActivityAsync(parallel);
 
         // Assert
         var journal = result.Journal;
@@ -182,7 +176,7 @@ public class ParallelTests
         Assert.Equal(ActivityStatus.Running, parallelContext.Status);
         Assert.Equal(1, parallelContext.AggregateFaultCount);
         // The non-faulted activities should still execute
-        Assert.Contains("Before Fault", _capturingTextWriter.Lines);
-        Assert.Contains("After Fault", _capturingTextWriter.Lines);
+        Assert.Contains("Before Fault", _fixture.CapturingTextWriter.Lines);
+        Assert.Contains("After Fault", _fixture.CapturingTextWriter.Lines);
     }
 }

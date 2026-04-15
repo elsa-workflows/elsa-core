@@ -1,21 +1,12 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Activities;
 
-public class IfTests
+public class IfTests(ITestOutputHelper testOutputHelper)
 {
-    private readonly IWorkflowRunner _workflowRunner;
-    private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly IServiceProvider _services;
-
-    public IfTests(ITestOutputHelper testOutputHelper)
-    {
-        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
-    }
+    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
 
     [Theory(DisplayName = "The correct branch executes when condition is true")]
     [InlineData(true)]
@@ -29,7 +20,7 @@ public class IfTests
             Then = new Inline(() => result = true),
             Else = new Inline(() => result = false)
         };
-        await _services.RunActivityAsync(activity);
+        await _fixture.RunActivityAsync(activity);
         Assert.Equal(conditionResult, result);
     }
 
@@ -43,7 +34,7 @@ public class IfTests
             Then = new Inline(),
             Else = new Inline()
         };
-        var result = await _services.RunActivityAsync(activity);
+        var result = await _fixture.RunActivityAsync(activity);
         Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
     }
     
@@ -51,7 +42,7 @@ public class IfTests
     public async Task Test3()
     {
         var activity = new If(() => true);
-        var result = await _services.RunActivityAsync(activity);
+        var result = await _fixture.RunActivityAsync(activity);
         var activityResult = result.GetActivityOutput<bool>(activity);
         
         Assert.True(activityResult);

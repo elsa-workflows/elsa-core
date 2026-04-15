@@ -13,7 +13,7 @@ namespace Elsa.Resilience.IntegrationTests;
 
 public class FlowSendHttpRequestResilienceTests
 {
-    private readonly IServiceProvider _services;
+    private readonly WorkflowTestFixture _fixture;
     private readonly TestRetryAttemptRecorder _recorder = new();
 
     public FlowSendHttpRequestResilienceTests(ITestOutputHelper output)
@@ -31,7 +31,7 @@ public class FlowSendHttpRequestResilienceTests
             })
             .Build();
 
-        _services = new TestApplicationBuilder(output)
+        _fixture = new WorkflowTestFixture(output)
             .ConfigureServices(s =>
             {
                 s.AddSingleton<IConfiguration>(configuration);
@@ -47,8 +47,7 @@ public class FlowSendHttpRequestResilienceTests
                 {
                     resilience.WithRetryAttemptRecorder(_ => _recorder);
                 });
-            })
-            .Build();
+            });
     }
 
     [Fact(DisplayName = "FlowSendHttpRequest retries using selected resilience strategy")]
@@ -69,7 +68,7 @@ public class FlowSendHttpRequestResilienceTests
             }
         };
 
-        var result = await _services.RunActivityAsync(activity);
+        var result = await _fixture.RunActivityAsync(activity);
         var statusCode = result.GetActivityOutput<int>(activity, nameof(SendHttpRequestBase.StatusCode));
 
         Assert.Equal(200, statusCode);
