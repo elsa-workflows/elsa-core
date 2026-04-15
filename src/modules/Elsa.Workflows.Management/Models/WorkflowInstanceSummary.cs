@@ -16,6 +16,7 @@ public class WorkflowInstanceSummary
         return new()
         {
             Id = workflowInstance.Id,
+            TenantId = workflowInstance.TenantId,
             DefinitionId = workflowInstance.DefinitionId,
             DefinitionVersionId = workflowInstance.DefinitionVersionId,
             Version = workflowInstance.Version,
@@ -36,6 +37,7 @@ public class WorkflowInstanceSummary
     public static Expression<Func<WorkflowInstance, WorkflowInstanceSummary>> FromInstanceExpression() => workflowInstance => new()
     {
         Id = workflowInstance.Id,
+        TenantId = workflowInstance.TenantId,
         DefinitionId = workflowInstance.DefinitionId,
         DefinitionVersionId = workflowInstance.DefinitionVersionId,
         Version = workflowInstance.Version,
@@ -52,6 +54,9 @@ public class WorkflowInstanceSummary
 
     /// <summary>The ID of the workflow instance.</summary>
     public string Id { get; set; } = null!;
+
+    /// <summary>The ID of the tenant that owns the workflow instance.</summary>
+    public string? TenantId { get; set; }
 
     /// <summary>The ID of the workflow definition.</summary>
     public string DefinitionId { get; set; } = null!;
