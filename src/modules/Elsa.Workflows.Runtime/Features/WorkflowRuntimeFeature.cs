@@ -334,8 +334,8 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
 
-            // Workflow definition providers.
-            .AddWorkflowDefinitionProvider<ClrWorkflowsProvider>()
+            // Workflow providers.
+            .AddWorkflowsProvider<ClrWorkflowsProvider>()
             
             // UI property handlers.
             .AddScoped<IPropertyUIHandler, DispatcherChannelOptionsProvider>()

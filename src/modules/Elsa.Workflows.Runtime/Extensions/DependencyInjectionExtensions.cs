@@ -31,6 +31,6 @@ public static class DependencyInjectionExtensions
     /// <summary>
     /// Adds the specified workflows provider type to the service collection.
     /// </summary>
-    /// <typeparam name="T">The type of the workflow provider to add. Must implement <see cref="IWorkflowsProvider"/>.</typeparam>
+    /// <typeparam name="T">The type of the workflows provider to add. Must implement <see cref="IWorkflowsProvider"/>.</typeparam>
     public static IServiceCollection AddWorkflowsProvider<T>(this IServiceCollection services) where T : class, IWorkflowsProvider => services.AddScoped<IWorkflowsProvider, T>();
 }

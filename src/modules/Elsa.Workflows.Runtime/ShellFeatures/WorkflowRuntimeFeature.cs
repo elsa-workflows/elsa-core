@@ -227,8 +227,8 @@ public class WorkflowRuntimeFeature : IShellFeature
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
 
-            // Workflow definition providers.
-            .AddWorkflowDefinitionProvider<ClrWorkflowsProvider>()
+            // Workflow providers.
+            .AddWorkflowsProvider<ClrWorkflowsProvider>()
 
             // UI property handlers.
             .AddScoped<IPropertyUIHandler, DispatcherChannelOptionsProvider>()
