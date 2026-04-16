@@ -2,6 +2,9 @@
     <ItemGroup>
         <PackageReference Include="CShells.AspNetCore" />
         <PackageReference Include="CShells.FastEndpoints" />
+        <PackageReference Include="Nuplane" />
+        <PackageReference Include="Nuplane.Loading" />
+        <PackageReference Include="Nuplane.Sources.Directory" />
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
@@ -10,5 +13,8 @@
       <ProjectReference Include="..\..\modules\Elsa.Shells.Api\Elsa.Shells.Api.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
       <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="packages\" />
     </ItemGroup>
 </Project>

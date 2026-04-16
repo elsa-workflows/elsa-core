@@ -1,27 +1,52 @@
 using CShells.AspNetCore.Configuration;
 using CShells.AspNetCore.Extensions;
 using CShells.DependencyInjection;
+using CShells.Notifications;
+using Elsa.ModularServer.Web;
+using Elsa.ModularServer.Web.Catalog;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Nuplane;
+using Nuplane.Loading.Hosting.Builder;
+using Nuplane.Sources.Directory.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
+var configuration = builder.Configuration;
 
-// Configure CShells for multi-tenancy with ASP.NET Core integration
-// This automatically registers shell-aware authentication and authorization providers
+var nuplaneConfiguration = configuration.GetSection("Nuplane");
+
+services.AddNuplane(nuplaneConfiguration, nuplane =>
+{
+    nuplane.AddDirectoryFeedsFromConfiguration(nuplaneConfiguration);
+    nuplane.AutoloadPackages(nuplaneConfiguration.GetSection("Loading"));
+    nuplane.OnPackagesChanged<MyPackageObserver>();
+});
+
+services.AddSingleton<NuplaneAssemblyProvider>();
+
 builder.AddShells(shells => shells
-    .WithConfigurationProvider(builder.Configuration, "CShells") // Reads shell configurations from appsettings.json under "CShells" section
-    .WithWebRouting(options => options.EnablePathRouting = true)
+    .FromHostAssemblies()
+    .WithAssemblyProvider<NuplaneAssemblyProvider>()
+    .WithConfigurationProvider(configuration)
     .WithAuthenticationAndAuthorization());
+
+// Work around the current CShells package publishing a duplicate aggregate endpoint registration pass
+// on ShellsReloaded, which causes FastEndpoints to be mapped a second time during startup.
+services.RemoveAll<INotificationHandler<ShellsReloaded>>();
+
+services.AddSingleton<PluginCatalog>();
 services.AddHealthChecks();
 
-// Add minimal authentication and authorization services in root
-// These are required for middleware validation - shells provide the actual configurations
+
+
 services.AddAuthentication();
 services.AddAuthorization();
 
 var app = builder.Build();
 
 app.MapHealthChecks("/");
-app.MapShells();           // Sets HttpContext.RequestServices to shell's scoped provider
-app.UseAuthentication();   // Runs after MapShells to access shell-specific auth schemes
-app.UseAuthorization();    // Runs after MapShells to access shell-specific policies
+app.MapShells();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapSampleCatalog();
 app.Run();
