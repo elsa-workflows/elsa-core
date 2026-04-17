@@ -9,7 +9,7 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="CShells.Abstractions" />
+        <ProjectReference Include="/Users/sipke/Projects/ValenceWorks/cshells/main/src/CShells.Abstractions/CShells.Abstractions.csproj" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     </ItemGroup>
 
