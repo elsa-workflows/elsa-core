@@ -17,7 +17,7 @@ internal static class SampleCatalogEndpointExtensions
 
         endpoints.MapGet("/catalog/assemblies", async (IPackageAssemblyCatalog packageAssemblyCatalog, CancellationToken cancellationToken) =>
         {
-            var assemblies = (await packageAssemblyCatalog.GetAssembliesAsync(cancellationToken))
+            var assemblies = (await packageAssemblyCatalog.GetPackagedAssembliesAsync(cancellationToken))
                 .Select(AssemblyCatalogResponses.FromEntry)
                 .ToArray();
 
@@ -26,7 +26,7 @@ internal static class SampleCatalogEndpointExtensions
 
         endpoints.MapGet("/catalog/assemblies/{packageId}", async (string packageId, IPackageAssemblyCatalog packageAssemblyCatalog, CancellationToken cancellationToken) =>
         {
-            var package = await packageAssemblyCatalog.GetAssembliesAsync(packageId, cancellationToken);
+            var package = await packageAssemblyCatalog.GetPackagedAssembliesAsync(packageId, cancellationToken);
             return package is null
                 ? Results.NotFound(AssemblyCatalogResponses.MissingPackage(packageId))
                 : Results.Ok(AssemblyCatalogResponses.FromEntry(package));

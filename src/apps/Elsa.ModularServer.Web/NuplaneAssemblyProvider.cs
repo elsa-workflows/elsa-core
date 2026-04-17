@@ -10,8 +10,6 @@ internal sealed class NuplaneAssemblyProvider(IPackageAssemblyCatalog packageLoa
 {
     public async Task<IEnumerable<Assembly>> GetAssembliesAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
-        var packagedAssemblies = await packageLoader.GetAssembliesAsync(cancellationToken);
-        var assemblies = packagedAssemblies.SelectMany(x => x.Assemblies);
-        return assemblies;
+        return await packageLoader.GetAssembliesAsync(cancellationToken);
     }
 }
