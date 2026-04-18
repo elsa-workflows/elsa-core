@@ -38,11 +38,4 @@
         <!-- IL trimming warnings -->
         <NoWarn>$(NoWarn);IL2026;IL2046;IL2057;IL2067;IL2070;IL2072;IL2075;IL2087;IL2091;IL2111</NoWarn>
     </PropertyGroup>
-    <PropertyGroup>
-        <ValenceWorksRoot Condition="'$(ValenceWorksRoot)' == '' and Exists('/Users/sipke/Projects/ValenceWorks/')">/Users/sipke/Projects/ValenceWorks/</ValenceWorksRoot>
-        <LocalCShellsRoot Condition="'$(LocalCShellsRoot)' == '' and Exists('/Users/sipke/Projects/ValenceWorks/cshells/main/src/CShells/CShells.csproj')">/Users/sipke/Projects/ValenceWorks/cshells/main/</LocalCShellsRoot>
-        <LocalNuplaneRoot Condition="'$(LocalNuplaneRoot)' == '' and Exists('/Users/sipke/Projects/ValenceWorks/nuplane/main/src/Nuplane/Nuplane.csproj')">/Users/sipke/Projects/ValenceWorks/nuplane/main/</LocalNuplaneRoot>
-        <UseLocalCShells Condition="'$(UseLocalCShells)' == '' and '$(LocalCShellsRoot)' != ''">true</UseLocalCShells>
-        <UseLocalNuplane Condition="'$(UseLocalNuplane)' == '' and '$(LocalNuplaneRoot)' != ''">true</UseLocalNuplane>
-    </PropertyGroup>
 </Project>

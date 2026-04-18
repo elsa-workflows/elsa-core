@@ -135,7 +135,7 @@ public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILo
                 {
                     logger.LogInformation(e, "Recurring task {TaskType} was cancelled", task.GetType().Name);
                 }
-                catch (Exception e)
+                catch (Exception e) when (!e.IsFatal())
                 {
                     // Log but don't rethrow - recurring tasks should not crash the host
                     logger.LogError(e, "Recurring task {TaskType} failed with an error", task.GetType().Name);
@@ -255,7 +255,7 @@ public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILo
             {
                 // Expected if caller requested cancellation during tenant deactivation.
             }
-            catch (Exception e) when (e is not OutOfMemoryException and not StackOverflowException and not AccessViolationException and not AppDomainUnloadedException and not BadImageFormatException and not CannotUnloadAppDomainException and not InvalidProgramException and not ThreadAbortException)
+            catch (Exception e) when (!e.IsFatal())
             {
                 logger.LogError(e, "Failed to stop recurring task {TaskType}", recurringTask.GetType().Name);
             }
@@ -273,7 +273,7 @@ public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILo
         {
             // Already disposed by a concurrent path.
         }
-        catch (Exception e) when (e is not OutOfMemoryException and not StackOverflowException and not AccessViolationException and not AppDomainUnloadedException and not BadImageFormatException and not CannotUnloadAppDomainException and not InvalidProgramException and not ThreadAbortException)
+        catch (Exception e) when (!e.IsFatal())
         {
             logger.LogWarning(e, "Failed to dispose tenant task cancellation token source");
         }
