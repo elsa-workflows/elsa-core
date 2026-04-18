@@ -24,14 +24,15 @@ internal class Reload(IShellManager shellManager, IApiSerializer apiSerializer) 
         {
             await shellManager.ReloadShellAsync(shellId, cancellationToken);
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
             // Shell not found by the provider.
             var notFoundResponse = new ShellReloadResponse
             {
                 Status = ShellReloadStatus.NotFound,
                 RequestedShellId = shellId,
-                ReloadedAt = DateTimeOffset.UtcNow
+                Timestamp = DateTimeOffset.UtcNow,
+                Message = ex.Message
             };
             await SendResponseAsync(notFoundResponse, StatusCodes.Status404NotFound, cancellationToken);
             return;
@@ -41,7 +42,7 @@ internal class Reload(IShellManager shellManager, IApiSerializer apiSerializer) 
         {
             Status = ShellReloadStatus.Completed,
             RequestedShellId = shellId,
-            ReloadedAt = DateTimeOffset.UtcNow
+            Timestamp = DateTimeOffset.UtcNow
         };
         await SendResponseAsync(response, StatusCodes.Status200OK, cancellationToken);
     }

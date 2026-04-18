@@ -4,11 +4,12 @@ using Elsa.Shells.Api.Endpoints.Shells;
 using Elsa.Workflows;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Shells.Api.Endpoints.Shells.ReloadAll;
 
 [PublicAPI]
-internal class ReloadAll(IShellManager shellManager, IApiSerializer apiSerializer) : ElsaEndpointWithoutRequest
+internal class ReloadAll(IShellManager shellManager, IApiSerializer apiSerializer, ILogger<ReloadAll> logger) : ElsaEndpointWithoutRequest
 {
     public override void Configure()
     {
@@ -22,12 +23,14 @@ internal class ReloadAll(IShellManager shellManager, IApiSerializer apiSerialize
         {
             await shellManager.ReloadAllShellsAsync(cancellationToken);
         }
-        catch (Exception)
+        catch (InvalidOperationException ex)
         {
+            logger.LogError(ex, "Failed to reload all shells");
             var failedResponse = new ShellReloadResponse
             {
                 Status = ShellReloadStatus.Failed,
-                ReloadedAt = DateTimeOffset.UtcNow
+                Timestamp = DateTimeOffset.UtcNow,
+                Message = ex.Message
             };
             await SendResponseAsync(failedResponse, StatusCodes.Status503ServiceUnavailable, cancellationToken);
             return;
@@ -36,7 +39,7 @@ internal class ReloadAll(IShellManager shellManager, IApiSerializer apiSerialize
         var response = new ShellReloadResponse
         {
             Status = ShellReloadStatus.Completed,
-            ReloadedAt = DateTimeOffset.UtcNow
+            Timestamp = DateTimeOffset.UtcNow
         };
         await SendResponseAsync(response, StatusCodes.Status200OK, cancellationToken);
     }

@@ -1,3 +1,1 @@
-namespace Elsa.Shells.Api.Endpoints.Shells.Reload;
-
-internal record ReloadRequest(string ShellId);
+// Models for the Reload endpoint are defined in the shared ShellsResponseModels.cs file.

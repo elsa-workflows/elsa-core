@@ -4,7 +4,8 @@ internal class ShellReloadResponse
 {
     public ShellReloadStatus Status { get; init; }
     public string? RequestedShellId { get; init; }
-    public DateTimeOffset ReloadedAt { get; init; }
+    public DateTimeOffset Timestamp { get; init; }
+    public string? Message { get; init; }
 }
 
 internal enum ShellReloadStatus
