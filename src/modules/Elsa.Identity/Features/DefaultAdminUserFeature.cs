@@ -40,8 +40,8 @@ public class DefaultAdminUserFeature(IModule module) : FeatureBase(module)
         return this;
     }
 
-    public void ConfigureServices(IServiceCollection services)
+    public override void Apply()
     {
-        services.AddBackgroundTask<AdminUserInitializer>();
+        Services.AddBackgroundTask<AdminUserInitializer>();
     }
 }
