@@ -218,7 +218,7 @@ public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILo
             {
                 // Timer is already disposed; this can happen during concurrent shutdown paths.
             }
-            catch (Exception e)
+            catch (Exception e) when (!e.IsFatal())
             {
                 logger.LogWarning(e, "Failed to dispose a recurring timer while stopping tenant tasks");
             }
