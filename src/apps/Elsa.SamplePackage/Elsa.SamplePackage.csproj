@@ -9,15 +9,10 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\..\..\..\..\..\ValenceWorks\cshells\main\src\CShells.FastEndpoints.Abstractions\CShells.FastEndpoints.Abstractions.csproj" />
-        <ProjectReference Include="/Users/sipke/Projects/ValenceWorks/cshells/main/src/CShells.Abstractions/CShells.Abstractions.csproj" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+        <PackageReference Include="CShells.FastEndpoints.Abstractions" />
+        <PackageReference Include="CShells.Abstractions" />
+        <PackageReference Include="CShells.AspNetCore.Abstractions"/>
     </ItemGroup>
     
-    <ItemGroup>
-      <Reference Include="CShells.AspNetCore.Abstractions">
-        <HintPath>..\..\..\..\..\..\ValenceWorks\cshells\main\src\CShells.AspNetCore.Abstractions\bin\Debug\net10.0\CShells.AspNetCore.Abstractions.dll</HintPath>
-      </Reference>
-    </ItemGroup>
-
 </Project>

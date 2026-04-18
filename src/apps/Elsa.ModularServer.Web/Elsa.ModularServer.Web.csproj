@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
     <ItemGroup>
-        <ProjectReference Include="/Users/sipke/Projects/ValenceWorks/cshells/main/src/CShells.AspNetCore/CShells.AspNetCore.csproj" />
-        <ProjectReference Include="/Users/sipke/Projects/ValenceWorks/cshells/main/src/CShells.FastEndpoints/CShells.FastEndpoints.csproj" />
-        <ProjectReference Include="/Users/sipke/Projects/ValenceWorks/nuplane/main/src/Nuplane/Nuplane.csproj" />
-        <ProjectReference Include="/Users/sipke/Projects/ValenceWorks/nuplane/main/src/Nuplane.Loading/Nuplane.Loading.csproj" />
-        <ProjectReference Include="/Users/sipke/Projects/ValenceWorks/nuplane/main/src/Nuplane.Sources.Directory/Nuplane.Sources.Directory.csproj" />
+        <PackageReference Include="CShells.AspNetCore" />
+        <PackageReference Include="CShells.FastEndpoints" />
+        <PackageReference Include="Nuplane" />
+        <PackageReference Include="Nuplane.Loading" />
+        <PackageReference Include="Nuplane.Sources.Directory" />
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />

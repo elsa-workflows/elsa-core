@@ -8,8 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="/Users/sipke/Projects/ValenceWorks/cshells/main/src/CShells/CShells.csproj" />
-        <ProjectReference Include="/Users/sipke/Projects/ValenceWorks/cshells/main/src/CShells.FastEndpoints.Abstractions/CShells.FastEndpoints.Abstractions.csproj" />
+        <PackageReference Include="CShells" />
+        <PackageReference Include="CShells.FastEndpoints.Abstractions" />
     </ItemGroup>
 
     <ItemGroup>
