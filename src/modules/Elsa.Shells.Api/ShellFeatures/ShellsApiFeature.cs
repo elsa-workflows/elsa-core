@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Shells.Api.ShellFeatures;
 
 /// <summary>
-/// Adds workflows API features with FastEndpoints support.
+/// Adds shells API features with FastEndpoints support.
 /// </summary>
 /// <remarks>
 /// This feature implements <see cref="IFastEndpointsShellFeature"/> to indicate that this assembly

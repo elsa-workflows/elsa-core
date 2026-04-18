@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Identity.HostedServices;
 
 /// <summary>
-/// Hosted service that initializes the admin user and role from environment variables if configured.
+/// Hosted service that initializes the admin user and role from <see cref="DefaultAdminUserOptions"/> configuration if provided.
 /// </summary>
 [UsedImplicitly]
 public class AdminUserInitializer(
@@ -56,7 +56,7 @@ public class AdminUserInitializer(
         // Create user if configured
         if (string.IsNullOrWhiteSpace(adminUserName) || string.IsNullOrWhiteSpace(adminPassword))
         {
-            logger.LogWarning("ELSA_ADMIN_USER and/or ELSA_ADMIN_PASSWORD not configured. Skipping admin user creation.");
+            logger.LogWarning("AdminUserName and/or AdminPassword not configured in DefaultAdminUserOptions. Skipping admin user creation.");
             return;
         }
 

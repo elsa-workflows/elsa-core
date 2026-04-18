@@ -18,14 +18,14 @@ namespace Elsa.Identity.ShellFeatures;
 public class DefaultAdminUserFeature : IShellFeature
 {
     /// <summary>
-    /// Gets or sets the admin user name.
+    /// Gets or sets the admin user name. Must be explicitly configured to enable user bootstrap.
     /// </summary>
-    public string AdminUserName { get; set; } = "admin";
+    public string AdminUserName { get; set; } = "";
     
     /// <summary>
-    /// Gets or sets the admin user password.
+    /// Gets or sets the admin user password. Must be explicitly configured to enable user bootstrap.
     /// </summary>
-    public string AdminPassword { get; set; } = "password";
+    public string AdminPassword { get; set; } = "";
     
     /// <summary>
     /// Gets or sets the admin role name.

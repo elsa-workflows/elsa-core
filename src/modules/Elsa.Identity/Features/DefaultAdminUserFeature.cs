@@ -34,7 +34,7 @@ public class DefaultAdminUserFeature(IModule module) : FeatureBase(module)
         return this;
     }
 
-    public DefaultAdminUserFeature WithAdminRolePermissions(params ICollection<string> value)
+    public DefaultAdminUserFeature WithAdminRolePermissions(ICollection<string> value)
     {
         Services.Configure<DefaultAdminUserOptions>(options => options.AdminRolePermissions = value);
         return this;

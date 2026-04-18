@@ -1,1 +1,3 @@
-// Response models for this endpoint are defined in the shared ShellsResponseModels.cs file.
+namespace Elsa.Shells.Api.Endpoints.Shells.Reload;
+
+internal record ReloadRequest(string ShellId);
