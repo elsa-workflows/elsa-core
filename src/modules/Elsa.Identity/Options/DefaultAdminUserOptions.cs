@@ -8,12 +8,12 @@ public class DefaultAdminUserOptions
     /// <summary>
     /// Gets or sets the admin user name.
     /// </summary>
-    public string AdminUserName { get; set; } = "admin";
-    
+    public string AdminUserName { get; set; } = "";
+
     /// <summary>
     /// Gets or sets the admin user password.
     /// </summary>
-    public string AdminPassword { get; set; } = "password";
+    public string AdminPassword { get; set; } = "";
     
     /// <summary>
     /// Gets or sets the admin role name.

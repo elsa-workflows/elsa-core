@@ -26,6 +26,12 @@ public class AdminUserInitializer(
         var adminPassword = options.Value.AdminPassword;
         var adminRoleName = options.Value.AdminRoleName;
         var adminRolePermissions = options.Value.AdminRolePermissions;
+        if (string.IsNullOrWhiteSpace(adminRoleName))
+        {
+            logger.LogWarning("AdminRoleName is not configured. Skipping admin role and user creation.");
+            return;
+        }
+
         var existingRole = await roleStore.FindAsync(new() { Id = adminRoleName }, cancellationToken);
 
         if (existingRole == null)
