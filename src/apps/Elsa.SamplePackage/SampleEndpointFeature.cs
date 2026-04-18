@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.SamplePackage;
 
 [ShellFeature(DependsOn = [typeof(SampleFeature)])]
-public class SampleEndpointFeature(ILogger<SampleFeature> logger) : IWebShellFeature
+public class SampleEndpointFeature(ILogger<SampleEndpointFeature> logger) : IWebShellFeature
 {
     public void MapEndpoints(IEndpointRouteBuilder endpoints, IHostEnvironment? environment)
     {
