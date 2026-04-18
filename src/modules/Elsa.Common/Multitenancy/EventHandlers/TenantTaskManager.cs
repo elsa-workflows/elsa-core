@@ -63,13 +63,14 @@ public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILo
     {
         var tenantId = GetTenantId(args.Tenant);
 
-        if (!_tenantStates.TryRemove(tenantId, out var state))
+        if (!_tenantStates.TryGetValue(tenantId, out var state))
             return;
 
         await state.Gate.WaitAsync(args.CancellationToken);
 
         try
         {
+            _tenantStates.TryRemove(tenantId, out _);
             await StopTenantCoreAsync(state, args.CancellationToken);
         }
         finally
