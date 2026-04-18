@@ -202,7 +202,7 @@ public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILo
             {
                 // Already disposed by a concurrent path.
             }
-            catch (Exception e)
+            catch (Exception e) when (!e.IsFatal())
             {
                 logger.LogWarning(e, "Failed to cancel tenant task cancellation token source while stopping tenant tasks");
             }
