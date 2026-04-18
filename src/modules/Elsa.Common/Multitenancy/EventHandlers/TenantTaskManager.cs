@@ -273,7 +273,7 @@ public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILo
         {
             // Already disposed by a concurrent path.
         }
-        catch (Exception e)
+        catch (Exception e) when (e is not OutOfMemoryException and not StackOverflowException and not AccessViolationException and not AppDomainUnloadedException and not BadImageFormatException and not CannotUnloadAppDomainException and not InvalidProgramException and not ThreadAbortException)
         {
             logger.LogWarning(e, "Failed to dispose tenant task cancellation token source");
         }
