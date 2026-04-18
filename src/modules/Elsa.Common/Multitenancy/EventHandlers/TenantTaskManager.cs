@@ -255,7 +255,7 @@ public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILo
             {
                 // Expected if caller requested cancellation during tenant deactivation.
             }
-            catch (Exception e)
+            catch (Exception e) when (e is not OutOfMemoryException and not StackOverflowException and not AccessViolationException and not AppDomainUnloadedException and not BadImageFormatException and not CannotUnloadAppDomainException and not InvalidProgramException and not ThreadAbortException)
             {
                 logger.LogError(e, "Failed to stop recurring task {TaskType}", recurringTask.GetType().Name);
             }
