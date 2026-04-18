@@ -5,7 +5,7 @@ using JetBrains.Annotations;
 namespace Elsa.Identity.Endpoints.Users.Create;
 
 /// <summary>
-/// An endpoint that creates a new user. Requires the <code>SecurityRoot</code> policy.
+/// An endpoint that creates a new user.
 /// </summary>
 [PublicAPI]
 internal class Create(IUserManager userManager) : ElsaEndpoint<Request, Response>
@@ -15,7 +15,6 @@ internal class Create(IUserManager userManager) : ElsaEndpoint<Request, Response
     {
         Post("/identity/users");
         ConfigurePermissions("create:user");
-        Policies(IdentityPolicyNames.SecurityRoot);
     }
 
     /// <inheritdoc />

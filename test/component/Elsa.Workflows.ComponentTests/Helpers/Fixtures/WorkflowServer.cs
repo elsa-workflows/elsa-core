@@ -1,6 +1,4 @@
 using System.Reflection;
-using CShells.Configuration;
-using CShells.Management;
 using Elsa.Alterations.Extensions;
 using Elsa.Caching;
 using Elsa.Extensions;
@@ -16,7 +14,6 @@ using Elsa.Workflows.ComponentTests.Decorators;
 using Elsa.Workflows.ComponentTests.Materializers;
 using Elsa.Workflows.ComponentTests.Scenarios.DistributedLockResilience.Mocks;
 using Elsa.Workflows.ComponentTests.Scenarios.HostMethodActivities;
-using Elsa.Workflows.ComponentTests.Scenarios.RestApis.Endpoints.Shells;
 using Elsa.Workflows.ComponentTests.WorkflowProviders;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
@@ -31,7 +28,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Refit;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
@@ -150,14 +146,6 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
         builder.ConfigureTestServices(services =>
         {
-            services.RemoveAll<IShellManager>();
-            services.RemoveAll<IShellSettingsProvider>();
-            services.RemoveAll<IShellSettingsCache>();
-            services.AddSingleton<TestShellEnvironment>();
-            services.AddSingleton<IShellManager>(sp => sp.GetRequiredService<TestShellEnvironment>());
-            services.AddSingleton<IShellSettingsProvider>(sp => sp.GetRequiredService<TestShellEnvironment>());
-            services.AddSingleton<IShellSettingsCache>(sp => sp.GetRequiredService<TestShellEnvironment>());
-
             // Decorate IDistributedLockProvider with SelectiveMockLockProvider
             // This allows tests to selectively mock specific locks without affecting background operations
             services.Decorate<IDistributedLockProvider, SelectiveMockLockProvider>();

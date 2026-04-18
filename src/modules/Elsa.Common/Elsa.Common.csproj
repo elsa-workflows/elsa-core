@@ -22,8 +22,4 @@
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="DistributedHosting\" />
-    </ItemGroup>
-
 </Project>

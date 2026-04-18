@@ -1,0 +1,50 @@
+# Default HTTP profile from Properties/launchSettings.json.
+# Switch to https://localhost:7235 if you run the HTTPS profile instead.
+@host = https://localhost:5001
+@packageId = Nuplane.Sample.Plugin
+
+### Root instructions
+GET {{host}}/
+Accept: text/plain
+
+### Active packages
+GET {{host}}/catalog/packages
+Accept: application/json
+
+### Sample load state
+GET {{host}}/catalog/load-state
+Accept: application/json
+
+### Loaded assemblies across active packages
+# Response fields: `loadedAssemblies` contains the runtime-loaded assembly view;
+# `selectedAssemblyReferences` contains the durable loader-selected assembly metadata.
+GET {{host}}/catalog/assemblies
+Accept: application/json
+
+### Loaded assemblies for one package
+# Update the packageId variable above if your local package uses a different package id.
+# Response fields: `loadedAssemblies` contains the runtime-loaded assembly view;
+# `selectedAssemblyReferences` contains the durable loader-selected assembly metadata.
+GET {{host}}/catalog/assemblies/{{packageId}}
+Accept: application/json
+
+### Sample plugin discovery
+GET {{host}}/catalog/plugins
+Accept: application/json
+
+### Admin package catalog
+GET {{host}}/nuplane/admin/packages
+Accept: application/json
+
+### Admin operational state
+GET {{host}}/nuplane/admin/state
+Accept: application/json
+
+### Loading-owned admin load state
+GET {{host}}/nuplane/admin/load-state
+Accept: application/json
+
+### Trigger a manual reconcile
+POST {{host}}/nuplane/admin/reconcile
+Accept: application/json
+

@@ -51,7 +51,7 @@ public class DefaultAuthenticationFeature : FeatureBase
     
     /// <summary>
     /// Disables the local host requirement for the security root policy.
-    /// We are considering removing this requirement by default in the future, in favor of a new "setup mode" paradigm.
+    /// This is useful when privileged identity bootstrap is handled through features such as <see cref="DefaultAdminUserFeature"/>.
     /// </summary>
     public DefaultAuthenticationFeature DisableLocalHostRequirement()
     {

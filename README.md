@@ -85,6 +85,8 @@ docker run \
 
 [Elsa Documentation Website](https://docs.elsaworkflows.io/).
 
+- [Default Admin User bootstrap (shell + legacy feature system)](src/modules/Elsa.Identity/README.md)
+
 ## Known Issues and Limitations
 
 Elsa is continually evolving, and while it offers powerful capabilities, there are some known limitations and ongoing work:

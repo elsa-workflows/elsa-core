@@ -22,6 +22,12 @@ public class EFCoreUserStore(EntityStore<IdentityElsaDbContext, User> userStore)
     }
 
     /// <inheritdoc />
+    public async Task<IEnumerable<User>> FindManyAsync(UserFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await userStore.QueryAsync(query => Filter(query, filter), cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default)
     {
         return await userStore.FindAsync(query => Filter(query, filter), cancellationToken);

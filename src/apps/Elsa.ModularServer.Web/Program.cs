@@ -1,25 +1,48 @@
 using CShells.AspNetCore.Configuration;
 using CShells.AspNetCore.Extensions;
+using CShells.DependencyInjection;
+using Elsa.ModularServer.Web;
+using Elsa.ModularServer.Web.Catalog;
+using Nuplane;
+using Nuplane.Loading.Hosting.Builder;
+using Nuplane.Sources.Directory.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
+var configuration = builder.Configuration;
 
-// Configure CShells for multi-tenancy with ASP.NET Core integration
-// This automatically registers shell-aware authentication and authorization providers
+var nuplaneConfiguration = configuration.GetSection("Nuplane");
+
+services.AddNuplane(nuplaneConfiguration, nuplane =>
+{
+    nuplane.AddDirectoryFeedsFromConfiguration(nuplaneConfiguration);
+    nuplane.AutoloadPackages(nuplaneConfiguration.GetSection("Loading"));
+    nuplane.OnPackagesChanged<MyPackageObserver>();
+});
+
+services.AddSingleton<NuplaneAssemblyProvider>();
+
 builder.AddShells(shells => shells
+    .FromHostAssemblies()
+    .WithAssemblyProvider<NuplaneAssemblyProvider>()
+    .WithConfigurationProvider(configuration)
     .WithWebRouting(options => options.EnablePathRouting = true)
     .WithAuthenticationAndAuthorization());
+
+
+services.AddSingleton<PluginCatalog>();
 services.AddHealthChecks();
 
-// Add minimal authentication and authorization services in root
-// These are required for middleware validation - shells provide the actual configurations
+
+
 services.AddAuthentication();
 services.AddAuthorization();
 
 var app = builder.Build();
 
 app.MapHealthChecks("/");
-app.MapShells();           // Sets HttpContext.RequestServices to shell's scoped provider
-app.UseAuthentication();   // Runs after MapShells to access shell-specific auth schemes
-app.UseAuthorization();    // Runs after MapShells to access shell-specific policies
+app.MapShells();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapSampleCatalog();
 app.Run();

@@ -36,6 +36,13 @@ public class MemoryUserStore : IUserStore
     }
 
     /// <inheritdoc />
+    public Task<IEnumerable<User>> FindManyAsync(UserFilter filter, CancellationToken cancellationToken = default)
+    {
+        var result = _store.Query(query => Filter(query, filter)).ToList();
+        return Task.FromResult<IEnumerable<User>>(result);
+    }
+
+    /// <inheritdoc />
     public Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default)
     {
         var result = _store.Query(query => Filter(query, filter)).FirstOrDefault();
