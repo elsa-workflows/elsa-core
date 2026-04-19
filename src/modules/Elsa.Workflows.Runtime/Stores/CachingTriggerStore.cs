@@ -74,7 +74,7 @@ public class CachingTriggerStore(ITriggerStore decoratedStore, ICacheManager cac
 
     private async Task<T?> GetOrCreateAsync<T>(string key, Func<Task<T>> factory)
     {
-        var tenantId = tenantAccessor.Tenant?.Id;
+        var tenantId = tenantAccessor.TenantId;
         var tenantIdPrefix = !string.IsNullOrEmpty(tenantId) ? $"{tenantId}:" : string.Empty;
         var internalKey = $"{tenantIdPrefix}{typeof(T).Name}:{key}";
         return await cacheManager.FindOrCreateAsync(internalKey, async entry =>
