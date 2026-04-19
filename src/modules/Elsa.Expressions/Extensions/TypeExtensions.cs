@@ -85,6 +85,9 @@ public static class TypeExtensions
     /// </summary>
     public static string GetFriendlyTypeName(this Type type, Brackets brackets)
     {
+        if (type.IsArray)
+            return GetFriendlyTypeName(type.GetElementType()!, brackets) + "[]";
+
         if (!type.IsGenericType)
             return type.FullName!;
 
