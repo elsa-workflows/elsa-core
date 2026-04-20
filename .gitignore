@@ -84,3 +84,6 @@ docker/docker-compose-datadog.yml
 # Test results
 TestResults/
 artifacts/
+
+# Claude Code local config (per-dev overrides, never commit)
+.claude/settings.local.json
