@@ -1,6 +1,6 @@
 ---
 name: adr-writer
-description: Utilise ce skill quand tu dois rédiger un Architecture Decision Record pour ce projet. Déclenche sur "ADR", "decision record", "docs/adr", ou toute question architecture structurante (choix de techno, changement de pattern, breaking change, ajout de dépendance externe).
+description: Utilise ce skill quand tu dois rédiger un Architecture Decision Record pour ce projet. Déclenche sur "ADR", "decision record", "doc/adr", ou toute question architecture structurante (choix de techno, changement de pattern, breaking change, ajout de dépendance externe).
 ---
 
 # adr-writer
@@ -13,8 +13,8 @@ description: Utilise ce skill quand tu dois rédiger un Architecture Decision Re
 
 ## Procédure
 
-1. **Numéroter** : `ls docs/adr/` pour trouver le prochain `NNNN` (4 chiffres, zero-padded). Si le dossier n'existe pas, le créer.
-2. **Créer** `docs/adr/NNNN-<titre-kebab>.md` à partir de `references/adr-template.md`.
+1. **Numéroter** : `ls doc/adr/` pour trouver le prochain `NNNN` (4 chiffres, zero-padded). Le fork hérite de 10 ADR Elsa (0001-0010), donc au démarrage du projet **le prochain disponible est 0011**.
+2. **Créer** `doc/adr/NNNN-<titre-kebab>.md` à partir de `references/adr-template.md`.
 3. **Remplir uniquement à partir d'infos confirmées par l'utilisateur.** Ne pas inventer le contexte ou les alternatives.
 4. Laisser le statut en `Proposé` jusqu'à validation humaine explicite.
 

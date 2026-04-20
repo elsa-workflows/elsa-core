@@ -1,5 +1,5 @@
 ---
-description: Crée un nouvel ADR vierge dans docs/adr/
+description: Crée un nouvel ADR vierge dans doc/adr/
 argument-hint: <titre-kebab-case>
 ---
 
@@ -7,8 +7,8 @@ argument-hint: <titre-kebab-case>
 
 Crée un nouveau Architecture Decision Record :
 
-1. Lister les ADR existants : `ls docs/adr/` pour trouver le prochain numéro (format `NNNN-titre.md`, 4 chiffres zero-padded).
-2. Créer `docs/adr/<NNNN>-$ARGUMENTS.md` à partir du template du skill `adr-writer` (voir `.claude/skills/adr-writer/references/adr-template.md`).
+1. Lister les ADR existants : `ls doc/adr/` pour trouver le prochain numéro (format `NNNN-titre.md`, 4 chiffres zero-padded).
+2. Créer `doc/adr/<NNNN>-$ARGUMENTS.md` à partir du template du skill `adr-writer` (voir `.claude/skills/adr-writer/references/adr-template.md`).
 3. Remplir **uniquement à partir d'infos confirmées par l'utilisateur** :
    - Statut (Proposé par défaut)
    - Date (YYYY-MM-DD)

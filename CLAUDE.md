@@ -40,7 +40,7 @@ Ces 5 décisions sont verrouillées. Si une tâche semble les contredire, stoppe
 - Retry : backoff exponentiel avec jitter (1s base, factor 2, max 5min, jitter ±25%), max 5 tentatives par défaut configurable
 - Distinguer `RetriableException` (rejouer) de `BusinessException` (parker en incident)
 - Versioning workflow : instances en cours terminent sur leur version d’origine par défaut ; Migration API disponible mais opt-in
-- Secrets connecteurs : référencés par nom, résolus via coffre (Vault ou Azure Key Vault), jamais en clair dans le XML BPMN
+- Secrets connecteurs : référencés par nom, résolus via HashiCorp Vault, jamais en clair dans le XML BPMN
 
 -----
 ## 4. Livrables Phase 1 (J0–J90)
@@ -51,13 +51,13 @@ En ordre de priorité. Chaque livrable = du code mergé + tests + doc courte.
 
 - Cartographier le fork Elsa : modules, points d’extension, tests existants
 - Produire `ARCHITECTURE.md` (décisions acteées) et `CONVENTIONS.md` (code, tests, git)
-- Setup local dev : Docker Compose (Elsa + PostgreSQL 16 + Redis + Angular Designer)
+- Setup local dev : Docker Compose (Elsa + PostgreSQL 16 + Redis + RabbitMQ + Keycloak + Vault + smtp4dev + Angular Designer)
 - CI/CD : build .NET, tests unitaires, tests d’intégration, scan sécurité SAST
 
 **Sprint 3-4 — Multi-tenant & auth**
 
 - Modèle multi-tenant : `tenantId` propagé partout, résolution par subdomain ou header
-- OIDC (Azure AD par défaut, Keycloak en dev)
+- OIDC (Keycloak — dev + prod, tout on-premise)
 - RBAC : rôles `admin`, `designer`, `operator`, `observer` — policies par tenant
 
 **Sprint 5-6 — SDK Worker External Task**
@@ -82,7 +82,7 @@ En ordre de priorité. Chaque livrable = du code mergé + tests + doc courte.
 
 **Sprint 10 — Pilote métier**
 
-- Implémenter 1 process métier Mediawan concret (à définir avec sponsor)
+- Implémenter 1 process métier Mediawan concret — **cible : Ingest média** (sponsor à identifier début Phase 1)
 - Runbook SRE : procédures incident, rollback, escalade
 - Go-live en préprod
 
@@ -92,25 +92,28 @@ En ordre de priorité. Chaque livrable = du code mergé + tests + doc courte.
 ## 5. Stack technique
 
 ```
-Runtime         : .NET 9 / ASP.NET Core
+Runtime         : .NET 10 / ASP.NET Core (source + tests uniformes)
 Moteur          : Elsa Workflows 3 (fork)
-Base de données : PostgreSQL 16 (variables workflow en JSONB)
+Base de données : PostgreSQL 16 (variables workflow en JSONB) — provider unique
 Cache / locks   : Redis 7
-Bus d'événements: Azure Service Bus (prod) / Redis Streams (dev)
-Sidecar         : Dapr (pub/sub, state, secrets) — en évaluation
+Bus d'événements: RabbitMQ (prod + dev)
+Sidecar         : écarté — intégrations natives .NET (pas de Dapr en Phase 1)
 Observabilité   : OpenTelemetry → Prometheus + Grafana + Loki
-Secrets         : HashiCorp Vault OU Azure Key Vault
-Auth            : OIDC — Azure AD (prod) / Keycloak (dev)
+Secrets         : HashiCorp Vault
+Auth            : OIDC — Keycloak (dev + prod)
 API Gateway     : YARP
 Modeleur        : Elsa Designer (Angular) + bpmn-js
-CI/CD           : Azure DevOps ou GitHub Actions (à confirmer avec DSI)
+CI/CD           : GitHub Actions
+Hébergement     : on-premise (VMs Mediawan) — pas de K8s en Phase 1
+Tests           : xUnit + FluentAssertions + Testcontainers (scope Mediawan)
 ```
 
 **Justifications clés :**
 
-- PostgreSQL plutôt que SQL Server : JSONB natif (variables workflow), LISTEN/NOTIFY pour signaling léger, pas de licence. SQL Server reste supporté comme provider alternatif mais PG est la référence de dev.
-- Dapr en sidecar découplable — s’il pose problème en intégration Mediawan, on retire sans réécrire.
-- Pas de Kubernetes imposé en Phase 1. VMs + Docker Compose suffisent pour le pilote. K8s en Phase 2 pour la charge réelle.
+- **PostgreSQL seul** (pas de SQL Server alternatif) : JSONB natif, LISTEN/NOTIFY, pas de licence, RLS pour multi-tenant, une seule suite de migrations EF à maintenir.
+- **`net10.0` uniforme** (source + tests + packages) : LINQ async natif, perfs runtime, alignement direct avec la trajectoire upstream Elsa, zéro matrix CI.
+- **Dapr écarté en Phase 1** : intégrations natives .NET (SDK RabbitMQ, StackExchange.Redis, VaultSharp). Si Phase 2 exige portabilité multi-cloud, évaluation Dapr via `IJobQueue` / `ISecretStore` déjà abstraites.
+- **On-premise VMs Mediawan** : souveraineté des données, OPEX maîtrisé, DSI opère déjà Vault + Keycloak + RabbitMQ ailleurs. Docker Compose pour le dev local, VMs HA pour le pilote, K8s éventuel en Phase 2 si la charge réelle (1000 starts/s) le justifie.
 
 -----
 ## 6. Méthode de travail
@@ -124,7 +127,7 @@ CI/CD           : Azure DevOps ou GitHub Actions (à confirmer avec DSI)
 1. **Confirm** — si ambiguïté, pose la question AVANT de coder. Ne suppose pas.
 1. **Implement** — petits commits atomiques, messages conventionnels (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`)
 1. **Test** — chaque fonctionnalité = tests unitaires + intégration quand possible. Pas de merge sans tests passants.
-1. **Document** — ADR (`docs/adr/NNNN-titre.md`) pour toute décision architecturale non triviale.
+1. **Document** — ADR (`doc/adr/NNNN-titre.md`) pour toute décision architecturale non triviale.
 
 **Git workflow :**
 
@@ -134,7 +137,9 @@ CI/CD           : Azure DevOps ou GitHub Actions (à confirmer avec DSI)
 - Synchro régulière avec upstream Elsa (merge hebdomadaire de la branche stable Elsa dans une branche `elsa-sync`, puis merge dans `main` après validation tests)
 
 **ADR (Architecture Decision Records) :**
-Pour tout choix structurant (ajout d’une dépendance, pattern d’extension, breaking change), crée `docs/adr/NNNN-titre.md` avec format : Contexte / Décision / Conséquences / Alternatives rejetées. C’est le contrat avec les équipes futures.
+Pour tout choix structurant (ajout d’une dépendance, pattern d’extension, breaking change), crée `doc/adr/NNNN-titre.md` avec format : Contexte / Décision / Conséquences / Alternatives rejetées. C’est le contrat avec les équipes futures.
+
+Le fork hérite de 10 ADR Elsa existants (0001–0010). **Prochain numéro disponible : 0011.** Utilise le skill `adr-writer` ou la commande `/adr <titre>` pour générer un squelette.
 
 -----
 ## 7. Conventions de code
@@ -165,24 +170,31 @@ Pour tout choix structurant (ajout d’une dépendance, pattern d’extension, b
 1. Identifie les points d’extension principaux d’Elsa 3 (activities, middleware, modules)
 1. Repère les tests existants et leur niveau de couverture
 1. Note les divergences entre la branche main du fork et l’upstream Elsa (si fork déjà touché)
-1. Produis `docs/discovery.md` : cartographie du repo + points d’extension identifiés + questions ouvertes
+1. Produis `doc/discovery.md` : cartographie du repo + points d’extension identifiés + questions ouvertes
 1. Propose un plan détaillé des Sprints 1-2 (2 semaines) avec milestones mesurables
 1. **Attends validation** avant de créer le premier commit de code
 
 Le but : s’assurer que tu as une vision claire du terrain avant d’y construire.
 
 -----
-## 9. Questions ouvertes (à arbitrer tôt)
+## 9. Décisions de cadrage (arbitrées le 2026-04-20)
 
-Ces points nécessitent une décision humaine. Liste-les dans tes premiers échanges :
+Les 12 arbitrages pris post-`/discovery` sont actés ici. Trace détaillée dans `doc/discovery.md` §8 et dans l'ADR-0011.
 
-- [ ] Nom du produit interne (ex : “MediaFlow”, “Mediawan Workflow Platform”, autre)
-- [ ] Base de données cible production : PostgreSQL seul, ou PG + SQL Server supportés ?
-- [ ] Hébergement cible : on-prem, Azure, hybride ?
-- [ ] Fournisseur CI/CD (Azure DevOps vs GitHub Actions)
-- [ ] Politique de support Elsa : contrat payant avec mainteneurs, ou autonomie complète ?
-- [ ] 1er process métier pilote (à définir avec sponsor — probablement côté production éditoriale)
-- [ ] Dapr : on valide ou on part sur des intégrations natives ?
+- [x] **Nom produit** : Mediawan Workflow Platform (namespace `Mediawan.Workflow.*`)
+- [x] **Runtime .NET** : `net10.0` uniforme (source + tests + packages)
+- [x] **Dossier ADR** : `doc/adr/` (10 ADR existants, prochain = **0011**)
+- [x] **Base de données prod** : PostgreSQL 16 seul
+- [x] **Hébergement** : on-premise VMs Mediawan
+- [x] **CI/CD** : GitHub Actions (déjà en place dans le fork)
+- [x] **Auth** : Keycloak OIDC (dev + prod)
+- [x] **Bus d'événements** : RabbitMQ (dev + prod)
+- [x] **Secrets** : HashiCorp Vault
+- [x] **Sidecar Dapr** : écarté en Phase 1, ré-évaluable en Phase 2
+- [x] **Support Elsa** : autonomie complète (zero contrat externe)
+- [x] **Pilote Sprint 10** : Ingest média (sponsor à identifier)
+- [x] **Global query filter multi-tenant EF** : **Sprint 1-2 urgent** (gap sécurité)
+- [x] **Testcontainers** : scope Mediawan-only, pas d'impact `/sync-upstream`
 
 -----
 ## 10. Contacts & références
