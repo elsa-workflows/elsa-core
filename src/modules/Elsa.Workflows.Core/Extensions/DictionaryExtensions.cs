@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Models;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
@@ -9,13 +10,13 @@ public static class DictionaryExtensions
 {
     extension(IDictionary<string, object> dictionary)
     {
-        public bool TryGetValue<T>(string key, out T value) => dictionary.TryGetValue<string, T>(key, out value);
-        public bool TryGetValue<T>(IEnumerable<string> keys, out T value) => dictionary.TryGetValue<string, T>(keys, out value);
+        public bool TryGetValue<T>(string key, [MaybeNullWhen(false)] out T value) => dictionary.TryGetValue<string, T>(key, out value);
+        public bool TryGetValue<T>(IEnumerable<string> keys, [MaybeNullWhen(false)] out T value) => dictionary.TryGetValue<string, T>(keys, out value);
     }
 
-    public static bool TryGetValue<T>(this IDictionary<object, object> dictionary, string key, out T value) => dictionary.TryGetValue<object, T>(key, out value);
+    public static bool TryGetValue<T>(this IDictionary<object, object> dictionary, string key, [MaybeNullWhen(false)] out T value) => dictionary.TryGetValue<object, T>(key, out value);
 
-    public static bool TryGetValue<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key, out T value)
+    public static bool TryGetValue<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key, [MaybeNullWhen(false)] out T value)
     {
         if (!dictionary.TryGetValue(key, out var item))
         {
@@ -29,7 +30,7 @@ public static class DictionaryExtensions
     
     extension<TKey>(IDictionary<TKey, object> dictionary)
     {
-        public bool TryGetValue<T>(TKey key, out T value)
+        public bool TryGetValue<T>(TKey key, [MaybeNullWhen(false)] out T value)
         {
             if (!dictionary.TryGetValue(key, out var item))
             {
@@ -42,7 +43,7 @@ public static class DictionaryExtensions
             return result.IsSuccess;
         }
 
-        public bool TryGetValue<T>(IEnumerable<TKey> keys, out T value)
+        public bool TryGetValue<T>(IEnumerable<TKey> keys, [MaybeNullWhen(false)] out T value)
         {
             foreach (var key in keys)
             {

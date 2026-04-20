@@ -16,9 +16,13 @@ public class ActivityTestRunner(
     /// <inheritdoc />
     public async Task<ActivityExecutionContext> RunAsync(WorkflowGraph workflowGraph, IActivity activity, CancellationToken cancellationToken = default)
     {
+        // Tag the workflow as test execution so that activities can adjust their behavior if needed.
+
+
         var id = identityGenerator.GenerateId();
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(serviceProvider, workflowGraph, id, cancellationToken);
-        var variableTestValues = GetVariableTestValues(workflowGraph);
+        workflowExecutionContext.TransientProperties[ActivityTestRunner.VariableTestValuesPropertyName] = true;
+        var variableTestValues = workflowGraph.Workflow.GetTestVariables();
 
         foreach (var variable in workflowGraph.Workflow.Variables)
         {
@@ -34,33 +38,5 @@ public class ActivityTestRunner(
             .ActivityExecutionContexts
             .First(x => x.Activity == activity);
         return activityExecutionContext;
-    }
-
-    private IDictionary<string, object?> GetVariableTestValues(WorkflowGraph workflowGraph)
-    {
-        var variableTestValues = workflowGraph.Workflow.CustomProperties.TryGetValue("VariableTestValues", out var variableTestValuesObj) ? variableTestValuesObj : null;
-        
-        if(variableTestValues is null)
-            return new Dictionary<string, object?>();
-
-        if (variableTestValues is JsonElement jsonElement)
-            variableTestValues = JsonSerializer.Deserialize<ExpandoObject>(jsonElement.GetRawText())!;
-
-        var expandoObject = (ExpandoObject)variableTestValues;
-        var parsedValues = new Dictionary<string, object?>();
-
-        foreach (var (key, value) in expandoObject)
-        {
-            var variableDefinition = workflowGraph.Workflow.Variables.FirstOrDefault(x => x.Id == key);
-            
-            if (variableDefinition == null)
-                continue;
-
-            var variableType = variableDefinition.GetVariableType();
-            var variableValue = value.ConvertTo(variableType);
-            parsedValues[key] = variableValue;
-        }
-        
-        return parsedValues;
     }
 }

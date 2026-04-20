@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Extensions;
 using Elsa.Common.Codecs;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management.Options;

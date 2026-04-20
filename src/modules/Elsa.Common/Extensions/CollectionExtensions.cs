@@ -1,4 +1,6 @@
 // ReSharper disable once CheckNamespace
+using System.Collections;
+
 namespace Elsa.Extensions;
 
 /// <summary>
@@ -12,9 +14,10 @@ public static class CollectionExtensions
     /// <param name="target">The target collection.</param>
     /// <param name="source">The source collection.</param>
     /// <typeparam name="T">The type of items in the collection.</typeparam>
-    public static void AddRange<T>(this ICollection<T> target, IEnumerable<T> source)
+    public static ICollection<T> AddRange<T>(this ICollection<T> target, IEnumerable<T> source)
     {
         foreach (var item in source) target.Add(item);
+        return target;
     }
 
     /// <summary>
@@ -23,7 +26,7 @@ public static class CollectionExtensions
     /// <param name="target">The target collection.</param>
     /// <param name="source">The source collection.</param>
     /// <typeparam name="T">The type of items in the collection.</typeparam>
-    public static void AddRange<T>(this ICollection<T> target, params T[] source) => AddRange(target, source.AsEnumerable());
+    public static ICollection<T> AddRange<T>(this ICollection<T> target, params T[] source) => AddRange(target, source.AsEnumerable());
 
     /// <summary>
     /// Removes all items from a collection that match the specified predicate.
@@ -31,9 +34,10 @@ public static class CollectionExtensions
     /// <param name="collection">The collection.</param>
     /// <param name="predicate">The predicate.</param>
     /// <typeparam name="T">The type of items in the collection.</typeparam>
-    public static void RemoveWhere<T>(this ICollection<T> collection, Func<T, bool> predicate)
+    public static ICollection<T> RemoveWhere<T>(this ICollection<T> collection, Func<T, bool> predicate)
     {
         var itemsToRemove = collection.Where(predicate).ToList();
         foreach (var item in itemsToRemove) collection.Remove(item);
+        return collection;
     }
 }

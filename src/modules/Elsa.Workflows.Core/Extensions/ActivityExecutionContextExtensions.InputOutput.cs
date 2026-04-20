@@ -1,9 +1,12 @@
 using Elsa.Extensions;
+using Elsa.Workflows;
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
-public static class ActivityExecutionContextExtensions
+
+public static partial class ActivityExecutionContextExtensions
 {
     extension(ActivityExecutionContext context)
     {

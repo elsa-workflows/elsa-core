@@ -10,7 +10,7 @@ namespace Elsa.Extensions;
 /// <summary>
 /// Adds extension methods to <see cref="ActivityExecutionContext"/>.
 /// </summary>
-public static class WorkflowExecutionContextExtensions
+public static partial class WorkflowExecutionContextExtensions
 {
     extension(WorkflowExecutionContext workflowExecutionContext)
     {
