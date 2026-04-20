@@ -23,7 +23,7 @@ services.AddNuplane(nuplaneConfiguration, nuplane =>
 services.AddSingleton<NuplaneAssemblyProvider>();
 
 builder.AddShells(shells => shells
-    .FromHostAssemblies()
+    .WithHostAssemblies()
     .WithAssemblyProvider<NuplaneAssemblyProvider>()
     .WithConfigurationProvider(configuration)
     .WithWebRouting(options => options.EnablePathRouting = true)
