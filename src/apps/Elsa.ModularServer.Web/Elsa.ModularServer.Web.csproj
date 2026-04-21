@@ -12,6 +12,7 @@
       <ProjectReference Include="..\..\modules\Elsa.Resilience\Elsa.Resilience.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Shells.Api\Elsa.Shells.Api.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj" />
       <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
     </ItemGroup>
     <ItemGroup>
