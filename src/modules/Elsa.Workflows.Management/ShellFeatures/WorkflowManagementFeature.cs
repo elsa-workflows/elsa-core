@@ -98,6 +98,8 @@ public class WorkflowManagementFeature : IShellFeature
             .AddScoped<IWorkflowReferenceGraphBuilder, WorkflowReferenceGraphBuilder>()
             .AddScoped<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
             .AddScoped<IWorkflowDefinitionImporter, WorkflowDefinitionImporter>()
+            .AddScoped<IWorkflowDefinitionExporter, WorkflowDefinitionExporter>()
+            .AddSingleton<IFileNameSanitizer, DefaultFileNameSanitizer>()
             .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
             .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
             .AddScoped<IWorkflowReferenceUpdater, WorkflowReferenceUpdater>()
