@@ -159,7 +159,6 @@
         <PackageVersion Include="Polly" Version="8.6.5"/>
         <PackageVersion Include="Polly.Extensions" Version="8.6.5"/>
         <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0"/>
-        <PackageVersion Include="PolySharp" Version="1.15.0" PrivateAssets="All"/>
         <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0"/>
         <PackageVersion Include="pythonnet" Version="3.1.0-preview2024-09-06"/>
         <PackageVersion Include="Refit" Version="9.0.2"/>
