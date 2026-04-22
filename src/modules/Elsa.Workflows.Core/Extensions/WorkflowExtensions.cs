@@ -88,8 +88,9 @@ public static partial class WorkflowExtensions
             var workflowVariables = workflow.Variables
                 .ToDictionary(x => x.Id, x => x);
 
+            variables.RemoveWhere(x => !workflowVariables.ContainsKey(x.Key));
+
             return variables
-                .RemoveWhere(x => !workflowVariables.ContainsKey(x.Key))
                 .ToDictionary(x => x.Key, x =>
                 {
                     var variableDefinition = workflowVariables[x.Key];

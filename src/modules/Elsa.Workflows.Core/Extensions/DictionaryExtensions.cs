@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Models;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
@@ -10,13 +9,13 @@ public static class DictionaryExtensions
 {
     extension(IDictionary<string, object> dictionary)
     {
-        public bool TryGetValue<T>(string key, [MaybeNullWhen(false)] out T value) => dictionary.TryGetValue<string, T>(key, out value);
-        public bool TryGetValue<T>(IEnumerable<string> keys, [MaybeNullWhen(false)] out T value) => dictionary.TryGetValue<string, T>(keys, out value);
+        public bool TryGetValue<T>(string key, out T value) => dictionary.TryGetValue<string, T>(key, out value);
+        public bool TryGetValue<T>(IEnumerable<string> keys, out T value) => dictionary.TryGetValue<string, T>(keys, out value);
     }
 
-    public static bool TryGetValue<T>(this IDictionary<object, object> dictionary, string key, [MaybeNullWhen(false)] out T value) => dictionary.TryGetValue<object, T>(key, out value);
+    public static bool TryGetValue<T>(this IDictionary<object, object> dictionary, string key, out T value) => dictionary.TryGetValue<object, T>(key, out value);
 
-    public static bool TryGetValue<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key, [MaybeNullWhen(false)] out T value)
+    public static bool TryGetValue<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key, out T value)
     {
         if (!dictionary.TryGetValue(key, out var item))
         {
@@ -27,10 +26,10 @@ public static class DictionaryExtensions
         value = item;
         return true;
     }
-    
+
     extension<TKey>(IDictionary<TKey, object> dictionary)
     {
-        public bool TryGetValue<T>(TKey key, [MaybeNullWhen(false)] out T value)
+        public bool TryGetValue<T>(TKey key, out T value)
         {
             if (!dictionary.TryGetValue(key, out var item))
             {
@@ -43,7 +42,7 @@ public static class DictionaryExtensions
             return result.IsSuccess;
         }
 
-        public bool TryGetValue<T>(IEnumerable<TKey> keys, [MaybeNullWhen(false)] out T value)
+        public bool TryGetValue<T>(IEnumerable<TKey> keys, out T value)
         {
             foreach (var key in keys)
             {
@@ -54,7 +53,7 @@ public static class DictionaryExtensions
                 value = result.IsSuccess ? (T)result.Value : default!;
                 return result.IsSuccess;
             }
-        
+
             value = default!;
             return false;
         }
@@ -63,7 +62,7 @@ public static class DictionaryExtensions
     public static T? GetValue<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key) => ConvertValue<T>(dictionary[key]);
     public static T? GetValue<T>(this IDictionary<string, object> dictionary, string key) => ConvertValue<T>(dictionary[key]);
     public static T? GetValueOrDefault<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key, Func<T?> defaultValueFactory) => TryGetValue(dictionary, key, out var value) ? value : defaultValueFactory();
-    
+
     extension<TKey>(IDictionary<TKey, object> dictionary)
     {
         public T? GetValueOrDefault<T>(TKey key, Func<T?> defaultValueFactory) => dictionary.TryGetValue<TKey, T>(key, out var value) ? value : defaultValueFactory();
@@ -80,14 +79,14 @@ public static class DictionaryExtensions
 
     public static T GetOrAdd<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key, Func<T> valueFactory)
     {
-        if(dictionary.TryGetValue(key, out var value))
-           return value;
+        if (dictionary.TryGetValue(key, out var value))
+            return value;
 
         value = valueFactory()!;
         dictionary.Add(key, value);
         return value;
     }
-    
+
     public static T GetOrAdd<TKey, T>(this IDictionary<TKey, object> dictionary, TKey key, Func<T> valueFactory)
     {
         if (dictionary.TryGetValue<TKey, T>(key, out var value))
@@ -120,7 +119,7 @@ public static class DictionaryExtensions
     }
 
     private static T? ConvertValue<T>(object? value) => value.ConvertTo<T>();
-    
+
     private static Result TryConvertValue<T>(object? value)
     {
         return value.TryConvertTo<T>();
