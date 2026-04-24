@@ -8,6 +8,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Expressions\Elsa.Expressions.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Expressions.CSharp\Elsa.Expressions.CSharp.csproj" />
     </ItemGroup>
 
 </Project>
