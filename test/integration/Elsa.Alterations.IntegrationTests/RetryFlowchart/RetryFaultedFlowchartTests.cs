@@ -20,6 +20,7 @@ namespace Elsa.Alterations.IntegrationTests.RetryFlowchart;
 /// to run to completion. Previously the original faulted activity execution context was left in place,
 /// which prevented the Flowchart from completing even after all remaining activities had run.
 /// </summary>
+[Collection(FlakyActivityTestCollection.Name)]
 public class RetryFaultedFlowchartTests
 {
     private readonly IServiceProvider _services;
