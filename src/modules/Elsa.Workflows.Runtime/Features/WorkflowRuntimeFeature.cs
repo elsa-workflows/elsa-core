@@ -228,6 +228,12 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     }
 
     /// <inheritdoc />
+    /// <summary>
+    /// Callback that tunes the graceful-shutdown machinery (drain deadline, per-source pause timeout, stimulus-queue back-pressure,
+    /// pause-persistence policy). Applied when <see cref="Apply"/> binds <see cref="GracefulShutdownOptions"/>.
+    /// </summary>
+    public Action<GracefulShutdownOptions>? GracefulShutdown { get; set; }
+
     public override void Apply()
     {
         // Options.
@@ -240,6 +246,17 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         {
             options.Channels.AddRange(WorkflowDispatcherChannels.Values);
         });
+        Services.Configure<GracefulShutdownOptions>(options =>
+        {
+            GracefulShutdown?.Invoke(options);
+            options.Validate();
+        });
+
+        // Graceful-shutdown core (Phase 2 foundational).
+        Services
+            .AddSingleton<IQuiescenceSignal, Elsa.Workflows.Runtime.Services.QuiescenceSignal>()
+            .AddSingleton<IIngressSourceRegistry, Elsa.Workflows.Runtime.Services.IngressSourceRegistry>()
+            .AddSingleton<IBurstRegistry, Elsa.Workflows.Runtime.Services.BurstRegistry>();
 
         Services
             // Core.

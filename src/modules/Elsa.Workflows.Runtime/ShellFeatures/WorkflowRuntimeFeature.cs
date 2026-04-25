@@ -125,6 +125,12 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// </summary>
     public Func<IServiceProvider, IBookmarkQueueWorker> BookmarkQueueWorker { get; set; } = sp => sp.GetRequiredService<BookmarkQueueWorker>();
 
+    /// <summary>
+    /// Callback that tunes the graceful-shutdown machinery (drain deadline, per-source pause timeout, stimulus-queue back-pressure,
+    /// pause-persistence policy). Applied when <see cref="ConfigureServices"/> binds <see cref="GracefulShutdownOptions"/>.
+    /// </summary>
+    public Action<GracefulShutdownOptions>? GracefulShutdown { get; set; }
+
 
     public void ConfigureServices(IServiceCollection services)
     {
@@ -134,6 +140,17 @@ public class WorkflowRuntimeFeature : IShellFeature
         {
             options.Channels.AddRange(WorkflowDispatcherChannels.Values);
         });
+        services.Configure<GracefulShutdownOptions>(options =>
+        {
+            GracefulShutdown?.Invoke(options);
+            options.Validate();
+        });
+
+        // Graceful-shutdown core (Phase 2 foundational).
+        services
+            .AddSingleton<IQuiescenceSignal, Services.QuiescenceSignal>()
+            .AddSingleton<IIngressSourceRegistry, Services.IngressSourceRegistry>()
+            .AddSingleton<IBurstRegistry, Services.BurstRegistry>();
 
         services
             // Core.
