@@ -20,21 +20,21 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
     /// <inheritdoc />
     public async Task<ActivityDescriptor> DescribeActivityAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default)
     {
-        var activityAttr = activityType.GetCustomAttribute<ActivityAttribute>();
+        var activityAttr = activityType.GetCustomAttribute<ActivityAttribute>(false);
         var ns = activityAttr?.Namespace ?? ActivityTypeNameHelper.GenerateNamespace(activityType) ?? "Elsa";
         var friendlyName = GetFriendlyActivityName(activityType);
         var typeName = activityAttr?.Type ?? friendlyName;
         var typeVersion = activityAttr?.Version ?? 1;
         var fullTypeName = ActivityTypeNameHelper.GenerateTypeName(activityType);
-        var displayNameAttr = activityType.GetCustomAttribute<DisplayNameAttribute>();
+        var displayNameAttr = activityType.GetCustomAttribute<DisplayNameAttribute>(false);
         var displayName = displayNameAttr?.DisplayName ?? activityAttr?.DisplayName ?? friendlyName.Humanize(LetterCasing.Title);
-        var categoryAttr = activityType.GetCustomAttribute<CategoryAttribute>();
+        var categoryAttr = activityType.GetCustomAttribute<CategoryAttribute>(false);
         var category = categoryAttr?.Category ?? activityAttr?.Category ?? ActivityTypeNameHelper.GetCategoryFromNamespace(ns) ?? "Miscellaneous";
-        var descriptionAttr = activityType.GetCustomAttribute<DescriptionAttribute>();
+        var descriptionAttr = activityType.GetCustomAttribute<DescriptionAttribute>(false);
         var description = descriptionAttr?.Description ?? activityAttr?.Description;
 
         var embeddedPorts =
-            from prop in activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            from prop in GetPublicInstanceProperties(activityType)
             where typeof(IActivity).IsAssignableFrom(prop.PropertyType)
             let portAttr = prop.GetCustomAttribute<PortAttribute>()
             let portBrowsableAttr = prop.GetCustomAttribute<BrowsableAttribute>()
@@ -111,10 +111,10 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
     }
 
     /// <inheritdoc />
-    public IEnumerable<PropertyInfo> GetInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => activityType.GetProperties().Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null).DistinctBy(x => x.Name);
+    public IEnumerable<PropertyInfo> GetInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => GetPublicInstanceProperties(activityType).Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null);
 
     /// <inheritdoc />
-    public IEnumerable<PropertyInfo> GetOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => activityType.GetProperties().Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).DistinctBy(x => x.Name).ToList();
+    public IEnumerable<PropertyInfo> GetOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => GetPublicInstanceProperties(activityType).Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).ToList();
 
     /// <inheritdoc />
     public Task<OutputDescriptor> DescribeOutputPropertyAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken = default)
@@ -216,6 +216,26 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
         var baseName = t.Name.Substring(0, t.Name.IndexOf('`'));
         var argNames = string.Join(", ", t.GetGenericArguments().Select(a => a.Name));
         return $"{baseName}<{argNames}>";
+    }
+
+    private static IEnumerable<PropertyInfo> GetPublicInstanceProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) =>
+        activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .OrderBy(x => GetInheritanceDistance(activityType, x.DeclaringType))
+            .DistinctBy(x => x.Name);
+
+    private static int GetInheritanceDistance(Type type, Type? declaringType)
+    {
+        var distance = 0;
+
+        for (var currentType = type; currentType != null; currentType = currentType.BaseType)
+        {
+            if (currentType == declaringType)
+                return distance;
+
+            distance++;
+        }
+
+        return int.MaxValue;
     }
 
     private async Task<IEnumerable<InputDescriptor>> DescribeInputPropertiesAsync(IEnumerable<PropertyInfo> properties, CancellationToken cancellationToken = default)
