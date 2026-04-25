@@ -46,7 +46,7 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
                 IsBrowsable = portAttr != null && (portBrowsableAttr == null || portBrowsableAttr.Browsable),
             };
 
-        var flowNodeAttr = activityType.GetCustomAttribute<FlowNodeAttribute>();
+        var flowNodeAttr = activityType.GetCustomAttribute<FlowNodeAttribute>(false);
         var flowPorts =
             flowNodeAttr
                 ?.Outcomes.Select(x => new Port

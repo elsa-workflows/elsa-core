@@ -91,9 +91,19 @@ public class ActivityDescriberTests
         public new IActivity? Next { get; set; }
     }
 
+    [Fact]
+    public async Task DescribeActivityAsync_DerivedActivityWithoutFlowNode_DoesNotInheritBaseFlowPorts()
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(DerivedActivityWithoutFlowNode));
+
+        Assert.Empty(descriptor.Ports);
+    }
+
     [FlowNode("Done")]
     private class BaseActivityWithOutcomes : Activity;
 
     [FlowNode("Approved", "Rejected")]
     private class DerivedActivityWithCustomizedOutcomes : BaseActivityWithOutcomes;
+
+    private class DerivedActivityWithoutFlowNode : BaseActivityWithOutcomes;
 }
