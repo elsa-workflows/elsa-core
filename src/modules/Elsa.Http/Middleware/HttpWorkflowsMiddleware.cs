@@ -34,9 +34,9 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
     /// </summary>
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
     public async Task InvokeAsync(
-        HttpContext httpContext, 
-        IServiceProvider serviceProvider, 
-        IOptions<HttpActivityOptions> options, 
+        HttpContext httpContext,
+        IServiceProvider serviceProvider,
+        IOptions<HttpActivityOptions> options,
         IHttpWorkflowLookupService httpWorkflowLookupService)
     {
         var path = httpContext.Request.Path.Value!.NormalizeRoute();
@@ -54,6 +54,16 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
             // Strip the base path.
             matchingPath = matchingPath[basePath.Length..];
+        }
+
+        // Graceful-shutdown gate: when the runtime is paused or draining, we don't accept new HTTP-triggered work.
+        // The ingress source registry visibility is provided by HttpTriggerIngressSource — this is the actual mechanism.
+        var quiescenceSignal = serviceProvider.GetService<IQuiescenceSignal>();
+        if (quiescenceSignal is not null && !quiescenceSignal.IsAcceptingNewWork)
+        {
+            httpContext.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+            httpContext.Response.Headers.RetryAfter = "5";
+            return;
         }
 
         matchingPath = matchingPath.NormalizeRoute();

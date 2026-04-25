@@ -260,7 +260,15 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddSingleton<Elsa.Workflows.Runtime.Middleware.Workflows.BurstTrackingMiddleware>()
             // Drain orchestrator + hosted service (Phase 3, US1). See FR-029 / R5 — heartbeat must outlive drain.
             .AddSingleton<IDrainOrchestrator, Elsa.Workflows.Runtime.Services.DrainOrchestrator>()
-            .AddHostedService<Elsa.Workflows.Runtime.HostedServices.DrainOrchestratorHostedService>();
+            .AddHostedService<Elsa.Workflows.Runtime.HostedServices.DrainOrchestratorHostedService>()
+            // Interrupted-workflow recovery on shell activation (Phase 5, US3). Disjoint from the timeout-based
+            // RestartInterruptedWorkflowsTask: filter is SubStatus = Interrupted; that task's filter is IsExecuting=true.
+            .AddScoped<IInterruptedRecoveryScan, Elsa.Workflows.Runtime.Services.InterruptedRecoveryScan>()
+            .AddStartupTask<Elsa.Workflows.Runtime.StartupTasks.RecoverInterruptedWorkflowsStartupTask>()
+            // Internal bookmark-queue processor surfaced as an ingress source for diagnostic visibility (FR-006).
+            // Pause behaviour is enforced inside BookmarkQueueProcessor via IQuiescenceSignal (FR-024).
+            .AddSingleton<Func<IQuiescenceSignal>>(sp => sp.GetRequiredService<IQuiescenceSignal>)
+            .AddSingleton<IIngressSource, Elsa.Workflows.Runtime.IngressSources.InternalBookmarkQueueIngressSource>();
 
         Services
             // Core.

@@ -157,7 +157,15 @@ public class WorkflowRuntimeFeature : IShellFeature
             // graceful drain runs BEFORE the heartbeat (Elsa.Hosting.Management's InstanceHeartbeatService) stops.
             // This guarantees the timeout-based crash recovery on sibling nodes does not false-positive (FR-029).
             .AddSingleton<IDrainOrchestrator, Services.DrainOrchestrator>()
-            .AddHostedService<HostedServices.DrainOrchestratorHostedService>();
+            .AddHostedService<HostedServices.DrainOrchestratorHostedService>()
+            // Interrupted-workflow recovery on shell activation (Phase 5, US3). Disjoint from the timeout-based
+            // RestartInterruptedWorkflowsTask: filter is SubStatus = Interrupted; that task's filter is IsExecuting=true.
+            .AddScoped<IInterruptedRecoveryScan, Services.InterruptedRecoveryScan>()
+            .AddStartupTask<StartupTasks.RecoverInterruptedWorkflowsStartupTask>()
+            // Internal bookmark-queue processor surfaced as an ingress source for diagnostic visibility (FR-006).
+            // Pause behaviour is enforced inside BookmarkQueueProcessor via IQuiescenceSignal (FR-024).
+            .AddSingleton<Func<IQuiescenceSignal>>(sp => sp.GetRequiredService<IQuiescenceSignal>)
+            .AddSingleton<IIngressSource, IngressSources.InternalBookmarkQueueIngressSource>();
 
         services
             // Core.
