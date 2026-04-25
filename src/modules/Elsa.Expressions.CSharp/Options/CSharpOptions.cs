@@ -1,7 +1,9 @@
+using System.Dynamic;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Microsoft.CSharp.RuntimeBinder;
 using Elsa.Expressions.CSharp.Contexts;
 using Elsa.Expressions.CSharp.Models;
 using Elsa.Expressions.Models;
@@ -34,6 +36,8 @@ public class CSharpOptions
         typeof(Guid).Assembly, // System.Runtime
         typeof(JsonSerializer).Assembly, // System.Text.Json
         typeof(IDictionary<string, object>).Assembly, // System.Collections
+        typeof(ExpandoObject).Assembly, // System.Linq.Expressions (provides System.Dynamic.ExpandoObject)
+        typeof(CSharpArgumentInfo).Assembly, // Microsoft.CSharp (required for dynamic dispatch)
     });
 
     /// <summary>
@@ -48,6 +52,7 @@ public class CSharpOptions
         typeof(JsonConverter).Namespace!, // System.Text.Json.Serialization
         typeof(JsonNode).Namespace!, // System.Text.Json.Nodes
         typeof(IDictionary<string, object>).Namespace!, // System.Collections.Generic
+        typeof(ExpandoObject).Namespace!, // System.Dynamic
     });
 
     /// <summary>
