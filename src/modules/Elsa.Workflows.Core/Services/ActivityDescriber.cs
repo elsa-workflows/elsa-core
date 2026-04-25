@@ -225,6 +225,9 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
 
     private static int GetInheritanceDistance(Type type, Type? declaringType)
     {
+        if (declaringType == null)
+            return int.MaxValue;
+
         var distance = 0;
 
         for (var currentType = type; currentType != null; currentType = currentType.BaseType)
