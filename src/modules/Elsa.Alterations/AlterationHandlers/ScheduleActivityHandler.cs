@@ -80,6 +80,15 @@ public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
         if (alteration.ActivityInstanceId != null)
             return context.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == alteration.ActivityInstanceId);
 
+        // When only an activity ID is specified, prefer reusing an existing faulted execution context for that activity (if any).
+        // Otherwise, a new context would be created while the original faulted context lingers in the activity tree, which
+        // would prevent constructs like Flowchart from ever completing (they refuse to complete while any child is faulted).
+        if (alteration.ActivityId != null)
+        {
+            return context.WorkflowExecutionContext.ActivityExecutionContexts
+                .LastOrDefault(x => x.Activity.Id == alteration.ActivityId && x.Status == ActivityStatus.Faulted);
+        }
+
         return null;
     }
 }
