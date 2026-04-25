@@ -150,7 +150,14 @@ public class WorkflowRuntimeFeature : IShellFeature
         services
             .AddSingleton<IQuiescenceSignal, Services.QuiescenceSignal>()
             .AddSingleton<IIngressSourceRegistry, Services.IngressSourceRegistry>()
-            .AddSingleton<IBurstRegistry, Services.BurstRegistry>();
+            .AddSingleton<IBurstRegistry, Services.BurstRegistry>()
+            .AddSingleton<Middleware.Workflows.BurstTrackingMiddleware>()
+            // Drain orchestrator + hosted service (Phase 3, US1).
+            // Registration order matters: IHostedService.StopAsync runs in reverse registration order, so a
+            // graceful drain runs BEFORE the heartbeat (Elsa.Hosting.Management's InstanceHeartbeatService) stops.
+            // This guarantees the timeout-based crash recovery on sibling nodes does not false-positive (FR-029).
+            .AddSingleton<IDrainOrchestrator, Services.DrainOrchestrator>()
+            .AddHostedService<HostedServices.DrainOrchestratorHostedService>();
 
         services
             // Core.

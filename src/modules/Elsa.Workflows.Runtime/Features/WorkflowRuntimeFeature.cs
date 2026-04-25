@@ -256,7 +256,11 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         Services
             .AddSingleton<IQuiescenceSignal, Elsa.Workflows.Runtime.Services.QuiescenceSignal>()
             .AddSingleton<IIngressSourceRegistry, Elsa.Workflows.Runtime.Services.IngressSourceRegistry>()
-            .AddSingleton<IBurstRegistry, Elsa.Workflows.Runtime.Services.BurstRegistry>();
+            .AddSingleton<IBurstRegistry, Elsa.Workflows.Runtime.Services.BurstRegistry>()
+            .AddSingleton<Elsa.Workflows.Runtime.Middleware.Workflows.BurstTrackingMiddleware>()
+            // Drain orchestrator + hosted service (Phase 3, US1). See FR-029 / R5 — heartbeat must outlive drain.
+            .AddSingleton<IDrainOrchestrator, Elsa.Workflows.Runtime.Services.DrainOrchestrator>()
+            .AddHostedService<Elsa.Workflows.Runtime.HostedServices.DrainOrchestratorHostedService>();
 
         Services
             // Core.
