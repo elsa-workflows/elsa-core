@@ -17,7 +17,7 @@ public class DistributedBookmarkQueueWorkerTests
         var logger = Substitute.For<ILogger<DistributedBookmarkQueueWorker>>();
         var worker = new TestDistributedBookmarkQueueWorker(distributedLockProvider, signaler, scopeFactory, logger);
 
-        await worker.ProcessOnceAsync(CancellationToken.None);
+        await worker.InvokeProcessAsync(CancellationToken.None);
 
         await signaler.Received(1).TriggerAsync(Arg.Any<CancellationToken>());
         scopeFactory.DidNotReceive().CreateScope();
@@ -29,7 +29,7 @@ public class DistributedBookmarkQueueWorkerTests
         IServiceScopeFactory scopeFactory,
         ILogger<DistributedBookmarkQueueWorker> logger) : DistributedBookmarkQueueWorker(distributedLockProvider, signaler, scopeFactory, logger)
     {
-        public Task ProcessOnceAsync(CancellationToken cancellationToken) => ProcessAsync(cancellationToken);
+        public Task InvokeProcessAsync(CancellationToken cancellationToken) => ProcessAsync(cancellationToken);
     }
 
     private class UnavailableDistributedLockProvider : IDistributedLockProvider

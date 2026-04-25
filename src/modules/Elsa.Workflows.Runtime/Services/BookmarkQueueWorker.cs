@@ -12,6 +12,9 @@ public class BookmarkQueueWorker : IBookmarkQueueWorker
     private readonly IBookmarkQueueSignaler _signaler;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<BookmarkQueueWorker> _logger;
+
+    protected IBookmarkQueueSignaler Signaler => _signaler;
+    protected ILogger<BookmarkQueueWorker> Logger => _logger;
     
     public BookmarkQueueWorker(IBookmarkQueueSignaler signaler, IServiceScopeFactory scopeFactory, ILogger<BookmarkQueueWorker> logger)
     {

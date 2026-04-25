@@ -6,10 +6,8 @@ namespace Elsa.Workflows.Runtime.Distributed;
 
 public class DistributedBookmarkQueueWorker : BookmarkQueueWorker
 {
-    private static readonly TimeSpan LockUnavailableRetryDelay = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(1);
     private readonly IDistributedLockProvider _distributedLockProvider;
-    private readonly IBookmarkQueueSignaler _signaler;
-    private readonly ILogger<DistributedBookmarkQueueWorker> _logger;
 
     public DistributedBookmarkQueueWorker(
         IDistributedLockProvider distributedLockProvider,
@@ -18,8 +16,6 @@ public class DistributedBookmarkQueueWorker : BookmarkQueueWorker
         ILogger<DistributedBookmarkQueueWorker> logger) : base(signaler, scopeFactory, logger)
     {
         _distributedLockProvider = distributedLockProvider;
-        _signaler = signaler;
-        _logger = logger;
     }
 
     protected override async Task ProcessAsync(CancellationToken cancellationToken)
@@ -28,9 +24,9 @@ public class DistributedBookmarkQueueWorker : BookmarkQueueWorker
 
         if (handle == null)
         {
-            _logger.LogDebug("Could not acquire lock for distributed bookmark queue worker. This is usually an indication that another application instance is already processing.");
-            await Task.Delay(LockUnavailableRetryDelay, cancellationToken);
-            await _signaler.TriggerAsync(cancellationToken);
+            Logger.LogDebug("Could not acquire lock for distributed bookmark queue worker. This is usually an indication that another application instance is already processing.");
+            await Task.Delay(RetryDelay, cancellationToken);
+            await Signaler.TriggerAsync(cancellationToken);
             return;
         }
 
