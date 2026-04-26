@@ -23,8 +23,8 @@ public abstract class ActivityExecutionMiddlewareTestsBase<T> : IAsyncLifetime w
     [Activity(Type = "TestActivity", Namespace = "UnitTests")]
     public class TestActivity : Activity
     {
-        public Exception? ExectueThrows { get; set; }
-        public Exception? ExectueFaults { get; set; }
+        public Exception? ExecuteThrows { get; set; }
+        public Exception? ExecuteFaults { get; set; }
         public Exception? CanExecuteThrows { get; set; }
         public bool AutoComplete { get; set; } = false;
 
@@ -40,14 +40,14 @@ public abstract class ActivityExecutionMiddlewareTestsBase<T> : IAsyncLifetime w
 
         protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
         {
-            if (ExectueThrows is not null)
+            if (ExecuteThrows is not null)
             {
-                throw ExectueThrows;
+                throw ExecuteThrows;
             }
 
-            if (ExectueFaults is not null)
+            if (ExecuteFaults is not null)
             {
-                context.Fault(ExectueFaults);
+                context.Fault(ExecuteFaults);
             }
 
             if (AutoComplete)

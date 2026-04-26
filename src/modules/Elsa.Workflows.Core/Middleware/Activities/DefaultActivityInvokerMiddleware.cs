@@ -58,6 +58,11 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
                 return;
             }
         }
+        catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested)
+        {
+            await context.CancelActivityAsync();
+            return;
+        }
         catch (Exception ex)
         {
             logger.LogWarning(ex, "An unhandled exception was thrown while evaluating whether activity {ActivityType} {ActivityTypeId} can execute. Transitioning to faulted state.", 
@@ -83,6 +88,11 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
         try
         {
             await ExecuteActivityAsync(context);
+        }
+        catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested)
+        {
+            await context.CancelActivityAsync();
+            return;
         }
         catch (Exception ex)
         {

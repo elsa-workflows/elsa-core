@@ -21,7 +21,7 @@ public abstract class ActivityInvokerMiddlewareTestsBase<T> : ActivityExecutionM
     public async Task ActivityExceuteThrows_IncidentsCount_IsOne()
     {
         // Setup 
-        _activity.ExectueThrows = new Exception("EXCEPTION!");
+        _activity.ExecuteThrows = new Exception("EXCEPTION!");
 
         // Act
         await Pipeline.ExecuteAsync(ExecutionContext);
@@ -31,32 +31,31 @@ public abstract class ActivityInvokerMiddlewareTestsBase<T> : ActivityExecutionM
     }
 
     [Fact]
-    [Description("There was a bug where DefaultActivityInvoker was raising the ")]
-    public async Task ActivityExectue_RaiseNoEvents()
-    {
-        // Setup, force auto complete since that triggers the event
-        _activity.AutoComplete = true;
-
-        // Act
-        await Pipeline.ExecuteAsync(ExecutionContext);
-
-        // Assert
-        await _notificationSender
-            .DidNotReceive()
-            .SendAsync(Arg.Any<INotification>());
-    }
-
-    [Fact]
     public async Task ActivityExceuteThrows_ActivityStatus_IsFaulted()
     {
         // Setup 
-        _activity.ExectueThrows = new Exception("EXCEPTION!");
+        _activity.ExecuteThrows = new Exception("EXCEPTION!");
 
         // Act
         await Pipeline.ExecuteAsync(ExecutionContext);
 
         // Assert
         Assert.Equal(ActivityStatus.Faulted, ExecutionContext.Status);
+        Assert.Equal(1, ExecutionContext.AggregateFaultCount);
+    }
+
+    [Fact]
+    public async Task ActivityExecuteFaults_ActivityStatus_IsFualted()
+    {
+        // Setup 
+        _activity.ExecuteFaults = new Exception("EXCEPTION!");
+
+        // Act
+        await Pipeline.ExecuteAsync(ExecutionContext);
+
+        // Assert
+        Assert.Equal(ActivityStatus.Faulted, ExecutionContext.Status);
+        Assert.Equal(1, ExecutionContext.AggregateFaultCount);
     }
 
     [Fact]

@@ -14,7 +14,7 @@ public class NotificationPublishingMiddlewareTests : ActivityExecutionMiddleware
     }
 
     [Fact]
-    public async Task InvokeAsync_Rasies_ActivityExecutingEvent()
+    public async Task InvokeAsync_Raises_ActivityExecutingEvent()
     {
         // Act
         await Pipeline.ExecuteAsync(ExecutionContext);
@@ -24,7 +24,7 @@ public class NotificationPublishingMiddlewareTests : ActivityExecutionMiddleware
     }
 
     [Fact]
-    public async Task InvokeAsync_Rasies_ActivityExecutedEvent()
+    public async Task InvokeAsync_Raises_ActivityExecutedEvent()
     {
         // Act
         await Pipeline.ExecuteAsync(ExecutionContext);
