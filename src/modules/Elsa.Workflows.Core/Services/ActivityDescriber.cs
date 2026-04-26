@@ -213,7 +213,9 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
     {
         if (!t.IsGenericType)
             return t.Name;
-        var baseName = t.Name.Substring(0, t.Name.IndexOf('`'));
+        
+        var genericIndex = t.Name.IndexOf('`');
+        var baseName = genericIndex > 0 ? t.Name.Substring(0, genericIndex) : t.Name;
         var argNames = string.Join(", ", t.GetGenericArguments().Select(a => a.Name));
         return $"{baseName}<{argNames}>";
     }

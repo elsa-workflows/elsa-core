@@ -33,6 +33,8 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
     {
         context.CancellationToken.ThrowIfCancellationRequested();
 
+        var incidentStrategyResolver = context.GetRequiredService<IIncidentStrategyResolver>();
+
         var workflowExecutionContext = context.WorkflowExecutionContext;
 
         // Evaluate input properties.
@@ -46,11 +48,24 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
             return;
         }
 
-        // Check if the activity can be executed.
-        if (!await context.Activity.CanExecuteAsync(context))
+        try
         {
-            context.TransitionTo(ActivityStatus.Pending);
-            context.AddExecutionLogEntry("Precondition Failed", "Cannot execute at this time");
+            // Check if the activity can be executed.
+            if (!await context.Activity.CanExecuteAsync(context))
+            {
+                context.TransitionTo(ActivityStatus.Pending);
+                context.AddExecutionLogEntry("Precondition Failed", "Cannot execute at this time");
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "An unhandled exception was thrown while evaluating whether activity {ActivityType} {ActivityTypeId} can execute. Transitioning to faulted state.", 
+                context.Activity.Name, context.Activity.Id);
+
+            context.Fault(ex);
+            var strategy = await incidentStrategyResolver.ResolveStrategyAsync(context);
+            strategy.HandleIncident(context);
             return;
         }
 
@@ -65,7 +80,19 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
         context.TransitionTo(ActivityStatus.Running);
 
         // Execute activity.
-        await ExecuteActivityAsync(context);
+        try
+        {
+            await ExecuteActivityAsync(context);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "An unhandled exception was thrown while executing the activity {ActivityType} {ActivityTypeId}. Transitioning to faulted state.",
+                context.Activity.Name, context.Activity.Id);
+            context.Fault(ex);
+            var strategy = await incidentStrategyResolver.ResolveStrategyAsync(context);
+            strategy.HandleIncident(context);
+            return;
+        }
 
         var currentActivityStatus = context.Status;
         var activityDidComplete = previousActivityStatus != ActivityStatus.Completed && currentActivityStatus == ActivityStatus.Completed;
