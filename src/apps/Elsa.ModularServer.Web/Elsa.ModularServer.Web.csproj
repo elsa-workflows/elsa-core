@@ -7,11 +7,13 @@
         <PackageReference Include="Nuplane.Sources.Directory" />
     </ItemGroup>
     <ItemGroup>
+      <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Resilience\Elsa.Resilience.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Shells.Api\Elsa.Shells.Api.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj" />
       <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
     </ItemGroup>
     <ItemGroup>

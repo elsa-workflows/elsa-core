@@ -1,4 +1,5 @@
 using CShells.Features;
+using Elsa.Expressions.JavaScript.ShellFeatures;
 using Elsa.Http.Scripting.JavaScript;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,7 +11,8 @@ namespace Elsa.Http.ShellFeatures;
 /// </summary>
 [ShellFeature(
     DisplayName = "HTTP JavaScript",
-    Description = "Provides JavaScript integration for HTTP activities")]
+    Description = "Provides JavaScript integration for HTTP activities",
+    DependsOn = [typeof(JavaScriptFeature)])]
 [UsedImplicitly]
 public class HttpJavaScriptFeature : IShellFeature
 {

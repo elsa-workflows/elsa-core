@@ -78,17 +78,15 @@ public class BackgroundCommandSenderHostedService : BackgroundService
                     using var scope = _scopeFactory.CreateScope();
                     var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
 
-                    // Link the service cancellation token with the command's token to ensure proper cancellation
-                    using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
-                        cancellationToken,
-                        commandContext.CancellationToken);
-
-                    // Process the command using the command sender service with the linked token
+                    // Decouple from the caller's CancellationToken.
+                    // We use only the service's cancellationToken (the background worker's lifetime) 
+                    // to ensure that dispatched workflows are processed even if the original 
+                    // HTTP request or triggering context has timed out.
                     await commandSender.SendAsync(
                         commandContext.Command,
                         CommandStrategy.Default,
                         commandContext.Headers,
-                        linkedTokenSource.Token);
+                        cancellationToken);
                 }
                 catch (Exception e)
                 {

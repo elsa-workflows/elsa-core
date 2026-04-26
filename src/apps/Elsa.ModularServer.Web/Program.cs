@@ -3,6 +3,12 @@ using CShells.AspNetCore.Extensions;
 using CShells.DependencyInjection;
 using Elsa.ModularServer.Web;
 using Elsa.ModularServer.Web.Catalog;
+using Elsa.ShellFeatures;
+using Elsa.Workflows.Api.ShellFeatures;
+using Elsa.Workflows.Management.ShellFeatures;
+using Elsa.Workflows.Runtime.Distributed.ShellFeatures;
+using Elsa.Workflows.Runtime.ShellFeatures;
+using Elsa.Workflows.ShellFeatures;
 using Nuplane;
 using Nuplane.Loading.Hosting.Builder;
 using Nuplane.Sources.Directory.Configuration;
@@ -23,17 +29,24 @@ services.AddNuplane(nuplaneConfiguration, nuplane =>
 services.AddSingleton<NuplaneAssemblyProvider>();
 
 builder.AddShells(shells => shells
-    .FromHostAssemblies()
+    .WithHostAssemblies()
     .WithAssemblyProvider<NuplaneAssemblyProvider>()
     .WithConfigurationProvider(configuration)
     .WithWebRouting(options => options.EnablePathRouting = true)
-    .WithAuthenticationAndAuthorization());
-
+    .WithAuthenticationAndAuthorization()
+    .ConfigureAllShells(shell =>
+    {
+        shell.WithFeatures(
+            typeof(ElsaFeature),
+            typeof(WorkflowManagementFeature),
+            typeof(WorkflowRuntimeFeature),
+            typeof(WorkflowsFeature),
+            typeof(DistributedRuntimeFeature),
+            typeof(WorkflowsApiFeature));
+    }));
 
 services.AddSingleton<PluginCatalog>();
 services.AddHealthChecks();
-
-
 
 services.AddAuthentication();
 services.AddAuthorization();

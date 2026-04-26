@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Common.RecurringTasks;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
@@ -12,11 +13,13 @@ namespace Elsa.Workflows.Runtime.Tasks;
 [SingleNodeTask]
 [UsedImplicitly]
 public class RestartInterruptedWorkflowsTask(
-    IWorkflowInstanceStore workflowInstanceStore, 
     IWorkflowRestarter workflowRestarter, 
+    IWorkflowInstanceStore workflowInstanceStore,
+    ILogger<RestartInterruptedWorkflowsTask> logger,
     IOptions<RuntimeOptions> options, 
     ISystemClock systemClock,
-    ILogger<RestartInterruptedWorkflowsTask> logger) : RecurringTask
+    ITenantService? tenantService = null,
+    ITenantAccessor? tenantAccessor = null) : RecurringTask
 {
     /// <inheritdoc />
     public override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -28,7 +31,26 @@ public class RestartInterruptedWorkflowsTask(
         logger.LogInformation("Restarting interrupted workflows.");
         await foreach (var workflowInstance in workflowInstances)
         {
-            await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
+            try
+            {
+                var tenantId = workflowInstance.TenantId ?? string.Empty;
+
+                if (tenantService != null && tenantAccessor != null && !string.IsNullOrWhiteSpace(tenantId) && tenantId != Tenant.AgnosticTenantId)
+                {
+                    var tenant = await tenantService.FindAsync(tenantId, cancellationToken) ?? new Tenant { Id = tenantId, Name = tenantId };
+
+                    using (tenantAccessor.PushContext(tenant))
+                        await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
+
+                    continue;
+                }
+
+                await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to restart interrupted workflow {WorkflowInstanceId}", workflowInstance.Id);
+            }
         }
         logger.LogInformation("Finished restarting interrupted workflows.");
     }

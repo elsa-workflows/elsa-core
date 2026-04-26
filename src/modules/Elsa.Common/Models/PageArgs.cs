@@ -67,5 +67,5 @@ public record PageArgs
     /// Returns pagination arguments for the next page.
     /// </summary>
     /// <returns>The arguments for the next page.</returns>
-    public PageArgs Next() => this with { Offset = Page + 1 };
+    public PageArgs Next() => this with { Offset = Offset + Limit };
 }
