@@ -62,30 +62,30 @@ public static class RunWorkflowResultAssertions
         /// Asserts that all specified activities were executed.
         /// </summary>
         /// <param name="activities">The activities that should have been executed.</param>
-        public void AssertActivitiesExecuted(params IActivity[] activities)
+        public void AssertActivitiesExecuted(params IActivity?[] activities)
         {
             foreach (var activity in activities)
-                result.AssertActivityExecuted(activity);
+                if (activity is not null) result.AssertActivityExecuted(activity);
         }
 
         /// <summary>
         /// Asserts that all specified activities were not executed.
         /// </summary>
         /// <param name="activities">The activities that should not have been executed.</param>
-        public void AssertActivitiesNotExecuted(params IActivity[] activities)
+        public void AssertActivitiesNotExecuted(params IActivity?[] activities)
         {
             foreach (var activity in activities)
-                result.AssertActivityNotExecuted(activity);
+                if (activity is not null) result.AssertActivityNotExecuted(activity);
         }
 
         /// <summary>
         /// Asserts that all specified activities completed successfully.
         /// </summary>
         /// <param name="activities">The activities that should have completed.</param>
-        public void AssertActivitiesCompleted(params IActivity[] activities)
+        public void AssertActivitiesCompleted(params IActivity?[] activities)
         {
             foreach (var activity in activities)
-                result.AssertActivityCompleted(activity);
+                if (activity is not null) result.AssertActivityCompleted(activity);
         }
 
         /// <summary>

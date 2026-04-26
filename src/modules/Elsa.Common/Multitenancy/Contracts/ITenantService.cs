@@ -63,6 +63,7 @@ public interface ITenantService
     /// <summary>
     /// Invokes the <see cref="ITenantsProvider"/> and caches the result.
     /// When new tenants are added, lifecycle events are triggered to ensure background tasks are updated.
+    /// When the provider returns an empty list, <see cref="Tenant.Default"/> is activated so that startup tasks run.
     /// </summary>
     Task RefreshAsync(CancellationToken cancellationToken = default);
 }
