@@ -14,7 +14,7 @@ public class FlowSendHttpRequestDescriptorModifier : IActivityDescriptorModifier
     /// <inheritdoc />
     public void Modify(ActivityDescriptor descriptor)
     {
-        if (!typeof(FlowSendHttpRequest).IsAssignableFrom(descriptor.ClrType))
+        if (!descriptor.ClrType.IsAssignableTo(typeof(FlowSendHttpRequest)))
             return;
 
         var statusCodesInput = descriptor.Inputs.FirstOrDefault(x => x.Name == nameof(FlowSendHttpRequest.ExpectedStatusCodes));
