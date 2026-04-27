@@ -224,7 +224,10 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             .AddScoped<IActivityPropertyLogPersistenceEvaluator, ActivityPropertyLogPersistenceEvaluator>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
-            .AddScoped<ICommitStateHandler, DefaultCommitStateHandler>()
+            .AddScoped<DefaultCommitStateHandler>()
+            // Decorator: disposes the burst handle AFTER the workflow runner's terminal commit has persisted state,
+            // so the drain orchestrator's force-cancel path can sequence its Interrupted write to land last.
+            .AddScoped<ICommitStateHandler, Services.BurstAwareCommitStateHandler>()
             .AddScoped<WorkflowHeartbeatGeneratorFactory>()
 
             // Deprecated services.

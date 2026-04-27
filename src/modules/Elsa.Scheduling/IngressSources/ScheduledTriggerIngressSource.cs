@@ -15,7 +15,12 @@ public sealed class ScheduledTriggerIngressSource : IIngressSource
     public ScheduledTriggerIngressSource(Func<IQuiescenceSignal> signalFactory) => _signalFactory = signalFactory;
 
     /// <inheritdoc />
-    public string Name => "scheduling.cron";
+    /// <remarks>
+    /// Covers all scheduling-driven trigger types (Cron, Timer, StartAt, Delay) — not just Cron. Operators reading
+    /// <c>GET /admin/workflow-runtime/status</c> or <c>DrainOutcome.Sources</c> see this name verbatim, so the
+    /// generic <c>scheduling.triggers</c> avoids implying Cron-only coverage.
+    /// </remarks>
+    public string Name => "scheduling.triggers";
 
     /// <inheritdoc />
     public TimeSpan PauseTimeout => TimeSpan.FromMilliseconds(50);

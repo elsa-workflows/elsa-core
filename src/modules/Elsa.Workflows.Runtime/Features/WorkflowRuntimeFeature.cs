@@ -218,7 +218,9 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         Module.AddActivitiesFrom<WorkflowRuntimeFeature>();
         Module.Configure<WorkflowsFeature>(workflows =>
         {
-            workflows.CommitStateHandler = sp => sp.GetRequiredService<DefaultCommitStateHandler>();
+            // BurstAwareCommitStateHandler decorates DefaultCommitStateHandler — disposes the burst handle AFTER
+            // commit so the drain orchestrator's await-disposed sequencing can land its Interrupted write last.
+            workflows.CommitStateHandler = sp => sp.GetRequiredService<Elsa.Workflows.Runtime.Services.BurstAwareCommitStateHandler>();
         });
 
         Services.Configure<RecurringTaskOptions>(options =>
@@ -329,6 +331,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IActivityPropertyLogPersistenceEvaluator, ActivityPropertyLogPersistenceEvaluator>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
             .AddScoped<DefaultCommitStateHandler>()
+            .AddScoped<Elsa.Workflows.Runtime.Services.BurstAwareCommitStateHandler>()
             .AddScoped<WorkflowHeartbeatGeneratorFactory>()
 
             // Deprecated services.

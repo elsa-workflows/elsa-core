@@ -62,7 +62,10 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         if (quiescenceSignal is not null && !quiescenceSignal.IsAcceptingNewWork)
         {
             httpContext.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
-            httpContext.Response.Headers.RetryAfter = "5";
+            // Retry-After is reason-aware: drain is short (host is exiting and will be replaced shortly), but an
+            // administrative pause is indefinite, so a longer back-off avoids a tight retry loop while operators
+            // perform maintenance.
+            httpContext.Response.Headers.RetryAfter = quiescenceSignal.CurrentState.Reason.HasFlag(QuiescenceReason.Drain) ? "5" : "60";
             return;
         }
 

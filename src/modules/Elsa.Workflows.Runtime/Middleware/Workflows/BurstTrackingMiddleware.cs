@@ -24,6 +24,15 @@ public class BurstTrackingMiddleware(WorkflowMiddlewareDelegate next, IBurstRegi
     /// </summary>
     public const string IngressSourceNameKey = "Elsa.Workflows.Runtime.IngressSourceName";
 
+    /// <summary>
+    /// <see cref="WorkflowExecutionContext.TransientProperties"/> key under which the active <see cref="BurstHandle"/>
+    /// is stored for the duration of the workflow execution. <see cref="Services.BurstAwareCommitStateHandler"/>
+    /// retrieves and disposes the handle AFTER the runner's terminal commit has persisted the workflow state, so
+    /// the drain orchestrator's force-cancel path (which awaits <c>handle.Disposed</c>) sees the runner's commit
+    /// land BEFORE its own <see cref="WorkflowSubStatus.Interrupted"/> write — eliminating the runner-clobber race.
+    /// </summary>
+    public const string BurstHandleKey = "Elsa.Workflows.Runtime.BurstHandle";
+
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         var ingressSourceName = context.TransientProperties.TryGetValue(IngressSourceNameKey, out var raw) ? raw as string : null;
@@ -31,13 +40,27 @@ public class BurstTrackingMiddleware(WorkflowMiddlewareDelegate next, IBurstRegi
         // The cancelCallback bridges the BurstHandle's cancellation to the workflow execution itself: when the drain
         // orchestrator calls handle.Cancel() on deadline breach, WorkflowExecutionContext.Cancel() runs synchronously,
         // which fires the registered cancellation callback inside the context (transitioning the workflow to Cancelled
-        // and clearing its schedule). The runner stops scheduling new activities; the orchestrator subsequently
-        // awaits handle.Disposed (with timeout) and then overwrites the sub-status with Interrupted.
-        using var handle = burstRegistry.BeginBurst(
+        // and clearing its schedule). The runner stops scheduling new activities; the orchestrator awaits
+        // handle.Disposed (set by the BurstAwareCommitStateHandler decorator AFTER commit) and then overwrites the
+        // sub-status with Interrupted.
+        var handle = burstRegistry.BeginBurst(
             context.Id,
             ingressSourceName,
             context.CancellationToken,
             cancelCallback: context.Cancel);
-        await Next(context);
+        context.TransientProperties[BurstHandleKey] = handle;
+
+        try
+        {
+            await Next(context);
+        }
+        catch
+        {
+            // Exception path: the runner won't reach commitStateHandler.CommitAsync, so the decorator never disposes.
+            // We dispose here to free the registry slot. Disposal is idempotent (BurstHandle._disposed flag).
+            handle.Dispose();
+            throw;
+        }
+        // Success path: BurstAwareCommitStateHandler disposes the handle after the runner's commit completes.
     }
 }

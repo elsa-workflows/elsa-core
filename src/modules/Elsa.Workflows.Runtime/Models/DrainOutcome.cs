@@ -11,4 +11,13 @@ public sealed record DrainOutcome(
     TimeSpan WaitPhaseDuration,
     IReadOnlyList<IngressSourceFinalState> Sources,
     int BurstsForceCancelledCount,
-    IReadOnlyList<string> ForceCancelledInstanceIds);
+    IReadOnlyList<string> ForceCancelledInstanceIds)
+{
+    /// <summary>
+    /// <c>true</c> when this outcome was returned from the orchestrator's cache (i.e., a previous drain already
+    /// ran in this generation and the caller's request was answered with the cached result rather than triggering
+    /// a fresh drain). Audit consumers MUST skip publishing notifications when this flag is set, otherwise
+    /// repeated calls would emit spurious audit events and break the SC-007 idempotency guarantee.
+    /// </summary>
+    public bool WasCached { get; init; }
+}

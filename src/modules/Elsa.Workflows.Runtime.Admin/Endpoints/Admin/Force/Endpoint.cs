@@ -40,8 +40,10 @@ internal sealed class ForceEndpoint(
             return;
         }
 
-        // Audit. Skip when the call returned a cached outcome (i.e., a previous force already ran in this generation).
-        await mediator.SendAsync(new RuntimeForceRequested(requestedBy, req.Reason, DateTimeOffset.UtcNow, outcome), ct);
+        // Audit. Skip when the call returned a cached outcome (i.e., a previous force already ran in this generation),
+        // otherwise repeated POST /force calls would emit spurious audit events and break SC-007 idempotency.
+        if (!outcome.WasCached)
+            await mediator.SendAsync(new RuntimeForceRequested(requestedBy, req.Reason, DateTimeOffset.UtcNow, outcome), ct);
 
         await Send.OkAsync(new ForceResponse { Outcome = MapOutcome(outcome) }, ct);
     }

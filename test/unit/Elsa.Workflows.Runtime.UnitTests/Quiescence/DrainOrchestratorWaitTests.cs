@@ -85,13 +85,16 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await sut.DrainAsync(DrainTrigger.HostStopSignal));
     }
 
-    [Fact(DisplayName = "Operator force after a completed drain returns the previous outcome")]
+    [Fact(DisplayName = "Operator force after a completed drain returns the previous outcome with WasCached=true")]
     public async Task OperatorForceAfterPreviousReturnsCachedOutcome()
     {
         var sut = BuildSut();
         var first = await sut.DrainAsync(DrainTrigger.HostStopSignal);
         var second = await sut.DrainAsync(DrainTrigger.OperatorForce);
 
-        Assert.Same(first, second);
+        Assert.False(first.WasCached, "First (fresh) drain must not be flagged as cached.");
+        Assert.True(second.WasCached, "Second (force-after-completed) drain must be flagged as cached so the admin endpoint skips audit publishing.");
+        // Same payload modulo the WasCached flag.
+        Assert.Equal(first with { WasCached = true }, second);
     }
 }

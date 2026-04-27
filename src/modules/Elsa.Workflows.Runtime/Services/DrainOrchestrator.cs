@@ -77,12 +77,12 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             if (_drainInProgress)
             {
                 if (trigger == DrainTrigger.OperatorForce && _previousOutcome is not null)
-                    return _previousOutcome;
+                    return _previousOutcome with { WasCached = true };
                 throw new InvalidOperationException($"Drain already in progress; second invocation rejected (trigger={trigger}).");
             }
             if (_previousOutcome is not null)
             {
-                if (trigger == DrainTrigger.OperatorForce) return _previousOutcome;
+                if (trigger == DrainTrigger.OperatorForce) return _previousOutcome with { WasCached = true };
                 throw new InvalidOperationException("Drain already completed in this generation; subsequent non-force invocations are rejected.");
             }
             _drainInProgress = true;
@@ -310,13 +310,42 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
         if (instance is null)
         {
-            // No instance row to update and no instance metadata to populate the WorkflowInterrupted log entry's
-            // definition fields with. The burst handle's metadata (BurstId, WorkflowInstanceId, IngressSourceName,
-            // BurstDuration) is still in the orchestrator's logged drain outcome — that's the forensic trail for
-            // this case. The next runtime generation's recovery scan will see no row matching the instance ID and
-            // skip; if the row appears later (eventual-consistency on a sibling node), the existing timeout-based
-            // RestartInterruptedWorkflowsTask handles it.
-            _logger.LogWarning("Burst {BurstId} for instance {InstanceId} cancelled but no instance row found; forensic detail captured in the drain outcome only.", handle.Id, handle.WorkflowInstanceId);
+            // The instance row was never persisted (e.g., a burst whose runner never reached commitStateHandler).
+            // We cannot update a row that doesn't exist, but we MUST still write the forensic trail so postmortem
+            // recovery can audit what happened. Write a synthetic WorkflowInterrupted log entry with the
+            // PersistenceFailure discriminator — the workflow-definition fields are unknown so they remain empty.
+            var orphanPayload = new WorkflowInterruptedPayload(
+                InterruptedAt: _clock.UtcNow,
+                Reason: WorkflowInterruptedPayload.ReasonPersistenceFailure,
+                GenerationId: generationId,
+                LastActivityId: null,
+                LastActivityNodeId: null,
+                IngressSourceName: handle.IngressSourceName,
+                BurstDuration: _clock.UtcNow - handle.StartedAt);
+            try
+            {
+                await logStore.AddAsync(new Entities.WorkflowExecutionLogRecord
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    WorkflowInstanceId = handle.WorkflowInstanceId,
+                    WorkflowDefinitionId = string.Empty,
+                    WorkflowDefinitionVersionId = string.Empty,
+                    WorkflowVersion = 0,
+                    ActivityInstanceId = string.Empty,
+                    ActivityId = string.Empty,
+                    ActivityType = string.Empty,
+                    ActivityNodeId = string.Empty,
+                    Timestamp = orphanPayload.InterruptedAt,
+                    EventName = WorkflowInterruptedPayload.WorkflowInterruptedEventName,
+                    Source = "Elsa.Workflows.Runtime.GracefulShutdown",
+                    Message = $"Workflow burst force-cancelled by the runtime ({orphanPayload.Reason}); no instance row was persisted at the time of cancellation.",
+                    Payload = orphanPayload,
+                }, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to write WorkflowInterrupted log entry for orphan burst {BurstId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
+            }
             return;
         }
 

@@ -95,40 +95,58 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     /// <inheritdoc />
     public ValueTask<QuiescenceState> BeginDrainAsync(CancellationToken cancellationToken = default)
     {
+        QuiescenceState next;
+        bool transitioned;
         lock (_sync)
         {
             if ((_state.Reason & QuiescenceReason.Drain) != 0)
+            {
                 return new ValueTask<QuiescenceState>(_state);
+            }
 
-            TransitionUnderLock(_state with
+            next = _state with
             {
                 Reason = _state.Reason | QuiescenceReason.Drain,
                 DrainStartedAt = _clock.UtcNow,
-            });
-            return new ValueTask<QuiescenceState>(_state);
+            };
+            Volatile.Write(ref _state, next);
+            transitioned = true;
         }
+
+        // Raise StateChanged OUTSIDE the lock. Subscribers may synchronously call back into the signal
+        // (e.g., reading CurrentState) — invoking under the lock would deadlock such callers.
+        if (transitioned) RaiseStateChanged(next);
+        return new ValueTask<QuiescenceState>(next);
     }
 
     /// <inheritdoc />
     public async ValueTask<QuiescenceState> PauseAsync(string? reasonText, string? requestedBy, CancellationToken cancellationToken)
     {
         QuiescenceState next;
+        bool transitioned = false;
         lock (_sync)
         {
             if ((_state.Reason & QuiescenceReason.AdministrativePause) != 0)
-                return _state;
-
-            next = _state with
             {
-                Reason = _state.Reason | QuiescenceReason.AdministrativePause,
-                PausedAt = _clock.UtcNow,
-                PauseReasonText = reasonText,
-                PauseRequestedBy = requestedBy,
-            };
-            TransitionUnderLock(next);
+                next = _state;
+            }
+            else
+            {
+                next = _state with
+                {
+                    Reason = _state.Reason | QuiescenceReason.AdministrativePause,
+                    PausedAt = _clock.UtcNow,
+                    PauseReasonText = reasonText,
+                    PauseRequestedBy = requestedBy,
+                };
+                Volatile.Write(ref _state, next);
+                transitioned = true;
+            }
         }
 
-        if (_options.Value.PausePersistence == PausePersistencePolicy.AcrossReactivations && _keyValueStore is not null)
+        if (transitioned) RaiseStateChanged(next);
+
+        if (transitioned && _options.Value.PausePersistence == PausePersistencePolicy.AcrossReactivations && _keyValueStore is not null)
             await _keyValueStore.SaveAsync(new SerializedKeyValuePair { Key = _persistenceKey, SerializedValue = reasonText ?? string.Empty }, cancellationToken);
 
         return next;
@@ -138,11 +156,12 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     public async ValueTask<QuiescenceState> ResumeAsync(string? requestedBy, CancellationToken cancellationToken)
     {
         QuiescenceState next;
+        bool transitioned = false;
         lock (_sync)
         {
             // Resume is a no-op while drain is active — the runtime cannot return to normal operation within the same generation.
-            if ((_state.Reason & QuiescenceReason.Drain) != 0) return _state;
-            if ((_state.Reason & QuiescenceReason.AdministrativePause) == 0) return _state;
+            if ((_state.Reason & QuiescenceReason.Drain) != 0) { return _state; }
+            if ((_state.Reason & QuiescenceReason.AdministrativePause) == 0) { return _state; }
 
             next = _state with
             {
@@ -151,10 +170,13 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
                 PauseReasonText = null,
                 PauseRequestedBy = requestedBy,
             };
-            TransitionUnderLock(next);
+            Volatile.Write(ref _state, next);
+            transitioned = true;
         }
 
-        if (_options.Value.PausePersistence == PausePersistencePolicy.AcrossReactivations && _keyValueStore is not null)
+        if (transitioned) RaiseStateChanged(next);
+
+        if (transitioned && _options.Value.PausePersistence == PausePersistencePolicy.AcrossReactivations && _keyValueStore is not null)
             await _keyValueStore.DeleteAsync(_persistenceKey, cancellationToken);
 
         return next;
@@ -162,8 +184,16 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
 
     private void TransitionUnderLock(QuiescenceState next)
     {
-        // Caller MUST hold _sync.
+        // Used only by InitializePersistedStateAsync, which holds _sync. The init path runs once at startup before
+        // any external subscribers can race; raising synchronously here is safe.
         Volatile.Write(ref _state, next);
-        StateChanged?.Invoke(this, next);
+        RaiseStateChanged(next);
+    }
+
+    private void RaiseStateChanged(QuiescenceState next)
+    {
+        // Capture handler reference; iterate without the lock so subscribers cannot deadlock by calling back.
+        var handler = StateChanged;
+        handler?.Invoke(this, next);
     }
 }
