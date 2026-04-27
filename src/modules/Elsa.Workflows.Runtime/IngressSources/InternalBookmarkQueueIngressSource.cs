@@ -4,7 +4,7 @@ namespace Elsa.Workflows.Runtime.IngressSources;
 /// Surfaces the in-process bookmark-queue processor as an <see cref="IIngressSource"/> in the runtime's diagnostic
 /// registry. Pause/resume are observed automatically via <see cref="IQuiescenceSignal"/> — the
 /// <c>BookmarkQueueProcessor</c> consults the signal at the top of each invocation and skips dispatch when the
-/// runtime is paused or draining (FR-024). This adapter therefore has no behaviour of its own beyond reporting state.
+/// runtime is paused or draining (FR-024). This adapter therefore has no behavior of its own beyond reporting state.
 /// </summary>
 public sealed class InternalBookmarkQueueIngressSource(IQuiescenceSignal signal) : IIngressSource
 {

@@ -26,11 +26,11 @@ public class IngressSourceRegistryTests
         Assert.Contains(b, sut.Sources);
     }
 
-    [Fact(DisplayName = "Duplicate source names throw on first materialisation")]
+    [Fact(DisplayName = "Duplicate source names throw on first materialization")]
     public void DuplicateNamesThrow()
     {
         // The registry is constructed with a Lazy<IEnumerable<IIngressSource>> to break a DI cycle (see
-        // IngressSourceRegistry doc); materialisation, and therefore the duplicate-name check, is deferred
+        // IngressSourceRegistry doc); materialization, and therefore the duplicate-name check, is deferred
         // until the first call that needs the underlying sources.
         var a = CreateSource("same");
         var b = CreateSource("same");
@@ -76,6 +76,30 @@ public class IngressSourceRegistryTests
         await Task.WhenAll(Enumerable.Range(0, 100).Select(_ => sut.MarkPauseFailedAsync("a", "race").AsTask()));
 
         Assert.Equal(IngressSourceState.PauseFailed, sut.Snapshot().First().State);
+    }
+
+    [Fact(DisplayName = "Concurrent first access does not double-populate or throw duplicate")]
+    public async Task ConcurrentFirstAccessIsSafe()
+    {
+        // Regression for the race in EnsureMaterialized: without a double-checked lock, two threads observing
+        // _entries.Count == 0 would both iterate the source factory and the second TryAdd of every name would
+        // throw "Duplicate ingress source registration".
+        var a = CreateSource("a");
+        var b = CreateSource("b");
+        var c = CreateSource("c");
+        var sut = new IngressSourceRegistry(new Lazy<IEnumerable<IIngressSource>>(() => new[] { a, b, c }), _clock);
+
+        var startGate = new TaskCompletionSource();
+        var readers = Enumerable.Range(0, 16).Select(_ => Task.Run(async () =>
+        {
+            await startGate.Task;
+            return sut.Sources.Count;
+        })).ToArray();
+
+        startGate.SetResult();
+        var counts = await Task.WhenAll(readers);
+
+        Assert.All(counts, c => Assert.Equal(3, c));
     }
 
     private static IIngressSource CreateSource(string name)

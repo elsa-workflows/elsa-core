@@ -23,7 +23,7 @@ public class GracefulShutdownOptions
     /// <summary>
     /// Maximum stimulus-queue depth while the runtime is paused. Beyond this threshold, readiness degrades and
     /// <see cref="OverflowPolicy"/> determines whether new writes are rejected. <c>null</c> retains the unlimited
-    /// queue behaviour from before graceful shutdown shipped — useful when upstream transports already implement
+    /// queue behavior from before graceful shutdown shipped — useful when upstream transports already implement
     /// their own back-pressure and the operator does not want a runtime-side cap.
     /// </summary>
     public int? StimulusQueueMaxDepthWhilePaused { get; set; } = 10_000;

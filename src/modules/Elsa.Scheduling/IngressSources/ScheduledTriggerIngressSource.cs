@@ -6,7 +6,7 @@ namespace Elsa.Scheduling.IngressSources;
 /// Surfaces scheduled-trigger ingress (Cron, Timer, StartAt, Delay) as an <see cref="IIngressSource"/> in the runtime's
 /// diagnostic registry. Pause/resume is observed transitively via <see cref="IQuiescenceSignal"/> — scheduled triggers
 /// dispatch through the bookmark queue, whose processor consults the signal at the top of each invocation (FR-024).
-/// This adapter therefore has no behaviour of its own beyond reporting state.
+/// This adapter therefore has no behavior of its own beyond reporting state.
 /// </summary>
 public sealed class ScheduledTriggerIngressSource(IQuiescenceSignal signal) : IIngressSource
 {

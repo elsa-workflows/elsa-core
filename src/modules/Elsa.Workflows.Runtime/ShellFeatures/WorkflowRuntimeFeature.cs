@@ -154,7 +154,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddSingleton<Middleware.Workflows.BurstTrackingMiddleware>()
             // Lazy collection break the otherwise-circular dependency chain
             // QuiescenceSignal → IBurstRegistry → IIngressSourceRegistry → IEnumerable<IIngressSource> → IQuiescenceSignal.
-            // Adapter implementations can take a direct IQuiescenceSignal dependency; the registry materialises the
+            // Adapter implementations can take a direct IQuiescenceSignal dependency; the registry materializes the
             // collection on first read.
             .AddSingleton(sp => new Lazy<IEnumerable<IIngressSource>>(sp.GetServices<IIngressSource>))
             // Drain orchestrator + hosted service (US1).
@@ -172,7 +172,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<IInterruptedRecoveryScan, Services.InterruptedRecoveryScan>()
             .AddStartupTask<StartupTasks.RecoverInterruptedWorkflowsStartupTask>()
             // Internal bookmark-queue processor surfaced as an ingress source for diagnostic visibility (FR-006).
-            // Pause behaviour is enforced inside BookmarkQueueProcessor via IQuiescenceSignal (FR-024).
+            // Pause behavior is enforced inside BookmarkQueueProcessor via IQuiescenceSignal (FR-024).
             .AddSingleton<IIngressSource, IngressSources.InternalBookmarkQueueIngressSource>()
             // Re-applies persisted pause state on EVERY shell (re)activation when PausePersistence = AcrossReactivations
             // (FR-028). Uses CShells.Lifecycle.IShellInitializer rather than IStartupTask because shells can be

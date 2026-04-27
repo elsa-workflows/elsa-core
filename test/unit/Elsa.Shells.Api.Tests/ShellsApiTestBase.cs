@@ -41,7 +41,7 @@ public abstract class ShellsApiTestBase : IAsyncLifetime
         builder.Services.AddSingleton(apiSerializer);
         builder.Services.AddLogging();
 
-        // Default behaviour: every reload succeeds. Tests override per-call by re-stubbing on the substitute.
+        // Default behavior: every reload succeeds. Tests override per-call by re-stubbing on the substitute.
         ShellRegistry.ReloadActiveAsync(Arg.Any<ReloadOptions?>(), Arg.Any<CancellationToken>())
             .Returns(_ => Task.FromResult<IReadOnlyList<ReloadResult>>(Array.Empty<ReloadResult>()));
         ShellRegistry.ReloadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())

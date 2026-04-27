@@ -262,7 +262,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddSingleton<Elsa.Workflows.Runtime.Middleware.Workflows.BurstTrackingMiddleware>()
             // Lazy collection breaks the otherwise-circular DI chain QuiescenceSignal → IBurstRegistry →
             // IIngressSourceRegistry → IEnumerable<IIngressSource> → IQuiescenceSignal. Adapters take a direct
-            // IQuiescenceSignal dependency; the registry materialises the collection on first read.
+            // IQuiescenceSignal dependency; the registry materializes the collection on first read.
             .AddSingleton(sp => new Lazy<IEnumerable<IIngressSource>>(sp.GetServices<IIngressSource>))
             // Drain orchestrator + hosted service (US1). See FR-029 / R5 — heartbeat must outlive drain.
             .AddSingleton<IDrainOrchestrator, Elsa.Workflows.Runtime.Services.DrainOrchestrator>()
@@ -275,7 +275,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IInterruptedRecoveryScan, Elsa.Workflows.Runtime.Services.InterruptedRecoveryScan>()
             .AddStartupTask<Elsa.Workflows.Runtime.StartupTasks.RecoverInterruptedWorkflowsStartupTask>()
             // Internal bookmark-queue processor surfaced as an ingress source for diagnostic visibility (FR-006).
-            // Pause behaviour is enforced inside BookmarkQueueProcessor via IQuiescenceSignal (FR-024).
+            // Pause behavior is enforced inside BookmarkQueueProcessor via IQuiescenceSignal (FR-024).
             .AddSingleton<IIngressSource, Elsa.Workflows.Runtime.IngressSources.InternalBookmarkQueueIngressSource>()
             // Re-applies persisted pause state on activation when PausePersistence = AcrossReactivations (FR-028).
             .AddStartupTask<Elsa.Workflows.Runtime.StartupTasks.InitializePauseStateStartupTask>();
