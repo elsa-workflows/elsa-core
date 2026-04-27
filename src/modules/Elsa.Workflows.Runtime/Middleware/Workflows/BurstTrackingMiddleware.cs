@@ -28,7 +28,16 @@ public class BurstTrackingMiddleware(WorkflowMiddlewareDelegate next, IBurstRegi
     {
         var ingressSourceName = context.TransientProperties.TryGetValue(IngressSourceNameKey, out var raw) ? raw as string : null;
 
-        using var handle = burstRegistry.BeginBurst(context.Id, ingressSourceName, context.CancellationToken);
+        // The cancelCallback bridges the BurstHandle's cancellation to the workflow execution itself: when the drain
+        // orchestrator calls handle.Cancel() on deadline breach, WorkflowExecutionContext.Cancel() runs synchronously,
+        // which fires the registered cancellation callback inside the context (transitioning the workflow to Cancelled
+        // and clearing its schedule). The runner stops scheduling new activities; the orchestrator subsequently
+        // awaits handle.Disposed (with timeout) and then overwrites the sub-status with Interrupted.
+        using var handle = burstRegistry.BeginBurst(
+            context.Id,
+            ingressSourceName,
+            context.CancellationToken,
+            cancelCallback: context.Cancel);
         await Next(context);
     }
 }

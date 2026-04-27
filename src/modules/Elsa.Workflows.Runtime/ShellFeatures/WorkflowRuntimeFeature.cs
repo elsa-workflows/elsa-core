@@ -165,7 +165,9 @@ public class WorkflowRuntimeFeature : IShellFeature
             // Internal bookmark-queue processor surfaced as an ingress source for diagnostic visibility (FR-006).
             // Pause behaviour is enforced inside BookmarkQueueProcessor via IQuiescenceSignal (FR-024).
             .AddSingleton<Func<IQuiescenceSignal>>(sp => sp.GetRequiredService<IQuiescenceSignal>)
-            .AddSingleton<IIngressSource, IngressSources.InternalBookmarkQueueIngressSource>();
+            .AddSingleton<IIngressSource, IngressSources.InternalBookmarkQueueIngressSource>()
+            // Re-applies persisted pause state on activation when PausePersistence = AcrossReactivations (FR-028).
+            .AddStartupTask<StartupTasks.InitializePauseStateStartupTask>();
 
         services
             // Core.

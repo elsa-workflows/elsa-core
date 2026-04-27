@@ -24,7 +24,7 @@ public sealed class BurstRegistry : IBurstRegistry
     public int ActiveCount => _active.Count;
 
     /// <inheritdoc />
-    public BurstHandle BeginBurst(string workflowInstanceId, string? ingressSourceName, CancellationToken linkedToken)
+    public BurstHandle BeginBurst(string workflowInstanceId, string? ingressSourceName, CancellationToken linkedToken, Action? cancelCallback = null)
     {
         // FR-018: a source that reports Paused but starts a burst is inconsistent — flip it to PauseFailed.
         if (ingressSourceName is not null)
@@ -43,7 +43,8 @@ public sealed class BurstRegistry : IBurstRegistry
             ingressSourceName: ingressSourceName,
             startedAt: _clock.UtcNow,
             linkedToken: linkedToken,
-            onDisposed: h => _active.TryRemove(h.Id, out _));
+            onDisposed: h => _active.TryRemove(h.Id, out _),
+            cancelCallback: cancelCallback);
 
         _active[handle.Id] = handle;
         return handle;

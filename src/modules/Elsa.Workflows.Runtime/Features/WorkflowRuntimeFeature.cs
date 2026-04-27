@@ -268,7 +268,9 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             // Internal bookmark-queue processor surfaced as an ingress source for diagnostic visibility (FR-006).
             // Pause behaviour is enforced inside BookmarkQueueProcessor via IQuiescenceSignal (FR-024).
             .AddSingleton<Func<IQuiescenceSignal>>(sp => sp.GetRequiredService<IQuiescenceSignal>)
-            .AddSingleton<IIngressSource, Elsa.Workflows.Runtime.IngressSources.InternalBookmarkQueueIngressSource>();
+            .AddSingleton<IIngressSource, Elsa.Workflows.Runtime.IngressSources.InternalBookmarkQueueIngressSource>()
+            // Re-applies persisted pause state on activation when PausePersistence = AcrossReactivations (FR-028).
+            .AddStartupTask<Elsa.Workflows.Runtime.StartupTasks.InitializePauseStateStartupTask>();
 
         Services
             // Core.

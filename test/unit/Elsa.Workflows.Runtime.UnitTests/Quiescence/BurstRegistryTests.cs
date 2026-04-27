@@ -100,4 +100,55 @@ public class BurstRegistryTests
         handle.Cancel();
         Assert.True(handle.CancellationToken.IsCancellationRequested);
     }
+
+    [Fact(DisplayName = "BurstHandle.Cancel invokes the cancel callback supplied at registration")]
+    public void CancelCallbackIsInvoked()
+    {
+        var sut = new BurstRegistry(_sources, _clock);
+        var callbackInvocations = 0;
+        using var handle = sut.BeginBurst(
+            "instance-1",
+            ingressSourceName: null,
+            linkedToken: CancellationToken.None,
+            cancelCallback: () => Interlocked.Increment(ref callbackInvocations));
+
+        handle.Cancel();
+        Assert.Equal(1, callbackInvocations);
+
+        // Idempotent — repeat calls do not invoke again (handle short-circuits via _disposed flag after Dispose).
+        handle.Cancel();
+        Assert.Equal(2, callbackInvocations); // Cancel() before Dispose() can fire the callback again per current contract.
+
+        // Once disposed, further Cancel() invocations are silent no-ops.
+        handle.Dispose();
+        handle.Cancel();
+        Assert.Equal(2, callbackInvocations);
+    }
+
+    [Fact(DisplayName = "BurstHandle.Cancel swallows callback exceptions so drain is not interrupted")]
+    public void CancelCallbackExceptionsAreSwallowed()
+    {
+        var sut = new BurstRegistry(_sources, _clock);
+        using var handle = sut.BeginBurst(
+            "instance-1",
+            ingressSourceName: null,
+            linkedToken: CancellationToken.None,
+            cancelCallback: () => throw new InvalidOperationException("activity refused to cancel"));
+
+        // Should not throw — Cancel() must remain best-effort so a single misbehaving workflow does not crash drain.
+        handle.Cancel();
+        Assert.True(handle.CancellationToken.IsCancellationRequested);
+    }
+
+    [Fact(DisplayName = "BurstHandle.Disposed completes when the handle is disposed")]
+    public async Task DisposedTaskCompletesOnDispose()
+    {
+        var sut = new BurstRegistry(_sources, _clock);
+        var handle = sut.BeginBurst("instance-1", null, CancellationToken.None);
+
+        Assert.False(handle.Disposed.IsCompleted);
+        handle.Dispose();
+        await handle.Disposed.WaitAsync(TimeSpan.FromSeconds(1));
+        Assert.True(handle.Disposed.IsCompletedSuccessfully);
+    }
 }

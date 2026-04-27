@@ -245,6 +245,9 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         return true;
     }
 
+    /// <summary>Bound on how long the orchestrator waits for a runner to settle after invoking burst cancellation.</summary>
+    private static readonly TimeSpan ForceCancelSettleTimeout = TimeSpan.FromSeconds(2);
+
     private async Task<(int Count, IReadOnlyList<string> Ids)> ForceCancelActiveBurstsAsync(DrainTrigger trigger, string generationId, CancellationToken cancellationToken)
     {
         var cap = _options.Value.MaxForceCancelledInstanceIdsReported;
@@ -265,6 +268,20 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                 handle.Cancel();
                 totalCancelled++;
                 if (reportedIds.Count < cap) reportedIds.Add(handle.WorkflowInstanceId);
+
+                // Wait for the runner to settle so its terminal commit happens before we overwrite the sub-status with
+                // Interrupted. The handle disposes when BurstTrackingMiddleware exits its `using` block, which is after
+                // the workflow runner has finished its commit. The wait is bounded so a non-cancellable activity does
+                // not block drain — on timeout we proceed and accept the runner-clobber race for that one instance.
+                try
+                {
+                    await handle.Disposed.WaitAsync(ForceCancelSettleTimeout, cancellationToken);
+                }
+                catch (TimeoutException)
+                {
+                    _logger.LogWarning("Burst {BurstId} (instance={InstanceId}) did not settle within {Timeout}; persisting Interrupted now (the runner may overwrite — recovery scan picks it up).", handle.Id, handle.WorkflowInstanceId, ForceCancelSettleTimeout);
+                }
+                catch (OperationCanceledException) { /* drain CT fired — proceed to persist anyway */ }
 
                 var reason = trigger == DrainTrigger.OperatorForce
                     ? WorkflowInterruptedPayload.ReasonOperatorForce
@@ -290,15 +307,20 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         CancellationToken cancellationToken)
     {
         var instance = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = handle.WorkflowInstanceId }, cancellationToken);
-        var actualReason = reason;
 
         if (instance is null)
         {
-            // The instance row may not exist yet (e.g., burst was a fresh dispatch that had not been persisted).
-            // Emit a synthetic log entry with PersistenceFailure so the forensic trail is preserved.
-            actualReason = WorkflowInterruptedPayload.ReasonPersistenceFailure;
+            // No instance row to update and no instance metadata to populate the WorkflowInterrupted log entry's
+            // definition fields with. The burst handle's metadata (BurstId, WorkflowInstanceId, IngressSourceName,
+            // BurstDuration) is still in the orchestrator's logged drain outcome — that's the forensic trail for
+            // this case. The next runtime generation's recovery scan will see no row matching the instance ID and
+            // skip; if the row appears later (eventual-consistency on a sibling node), the existing timeout-based
+            // RestartInterruptedWorkflowsTask handles it.
+            _logger.LogWarning("Burst {BurstId} for instance {InstanceId} cancelled but no instance row found; forensic detail captured in the drain outcome only.", handle.Id, handle.WorkflowInstanceId);
             return;
         }
+
+        var actualReason = reason;
 
         try
         {
