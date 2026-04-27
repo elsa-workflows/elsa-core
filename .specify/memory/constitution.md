@@ -1,28 +1,22 @@
 <!--
   Sync Impact Report
   ===================
-  Version change: N/A → 1.0.0 (initial ratification)
-  
-  Added principles:
-    - I.   Modular Architecture
-    - II.  Composition & Extensibility
-    - III. Convention-Driven Design
-    - IV.  Async & Pipeline Execution
-    - V.   Testing Discipline
-    - VI.  Trunk-Based Development
-    - VII. Simplicity & Focus
-  
-  Added sections:
-    - Technology Stack & Constraints
-    - Development Workflow & Quality Gates
-    - Governance
-  
+  Version change: 1.0.0 → 1.0.1 (PATCH — clarification under existing principle)
+
+  Modified principles:
+    - III. Convention-Driven Design — added "Spelling & language" bullet requiring
+      American English for new code, comments, identifiers, and documentation;
+      established public API symbols are not renamed retroactively.
+
+  Added principles: none
+  Added sections: none
+
   Templates reviewed:
-    - .specify/templates/plan-template.md        ✅ compatible (Constitution Check section present)
-    - .specify/templates/spec-template.md         ✅ compatible (requirements, success criteria present)
-    - .specify/templates/tasks-template.md        ✅ compatible (phased structure, parallel markers present)
-    - .specify/templates/checklist-template.md    ✅ compatible (generic structure)
-  
+    - .specify/templates/plan-template.md        ✅ compatible (no spelling-specific guidance affected)
+    - .specify/templates/spec-template.md         ✅ compatible
+    - .specify/templates/tasks-template.md        ✅ compatible
+    - .specify/templates/checklist-template.md    ✅ compatible
+
   Follow-up TODOs: none
 -->
 
@@ -89,10 +83,19 @@ load and enable tooling automation.
   - Test classes: `{Subject}Tests`
 - C# latest language version, nullable reference types enabled, implicit usings
   enabled — enforced via `Directory.Build.props`.
+- **Spelling & language**: All new code, comments, identifiers, error messages,
+  XML doc, commit messages, and Speckit artifacts (spec.md, plan.md, research.md,
+  tasks.md, checklists, etc.) MUST use American English (e.g., `materialize`,
+  `behavior`, `analyze`, `color`, `center`). Existing public API symbols that
+  follow another convention (e.g., `WorkflowSubStatus.Cancelled` with double-L,
+  established by .NET / Elsa convention) are NOT renamed retroactively — keep
+  them stable, but every newly-introduced symbol and every line of new prose
+  MUST follow American English.
 
 **Rationale**: Predictable patterns make the large codebase navigable and reduce
 onboarding friction. Attribute-driven metadata enables automatic UI generation
-in the visual designer.
+in the visual designer. A single spelling convention prevents drift in
+identifiers and search results across the 100+ project solution.
 
 ### IV. Async & Pipeline Execution
 
@@ -238,4 +241,4 @@ and development practices in the Elsa Workflows repository.
 - **Runtime guidance**: See `.github/copilot-instructions.md` for build
   commands, troubleshooting, and CI details.
 
-**Version**: 1.0.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-03-08
+**Version**: 1.0.1 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-04-28
