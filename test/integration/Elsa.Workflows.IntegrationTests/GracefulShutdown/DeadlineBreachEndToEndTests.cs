@@ -1,3 +1,4 @@
+using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
@@ -66,7 +67,7 @@ public class DeadlineBreachEndToEndTests
 
         // Wait for the workflow runner to fully unwind.
         try { await workflowTask.WaitAsync(TimeSpan.FromSeconds(5)); }
-        catch { /* runner may complete normally or surface OCE; either is acceptable */ }
+        catch (Exception ex) when (!ex.IsFatal()) { /* runner may complete normally or surface OCE; either is acceptable */ }
 
         // Drain reports a deadline breach with exactly one force-cancelled burst.
         Assert.Equal(DrainResult.DeadlineExceeded, outcome.OverallResult);
