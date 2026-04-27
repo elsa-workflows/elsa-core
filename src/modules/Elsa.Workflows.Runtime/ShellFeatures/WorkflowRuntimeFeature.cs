@@ -158,6 +158,10 @@ public class WorkflowRuntimeFeature : IShellFeature
             // This guarantees the timeout-based crash recovery on sibling nodes does not false-positive (FR-029).
             .AddSingleton<IDrainOrchestrator, Services.DrainOrchestrator>()
             .AddHostedService<HostedServices.DrainOrchestratorHostedService>()
+            // CShells per-shell drain hook (FR-027). Invoked when a shell enters ShellLifecycleState.Draining;
+            // gives true per-shell scoping — sibling shells on the same host are unaffected. Coexists with the
+            // host-stop hosted service above; the orchestrator's DrainAsync is idempotent.
+            .AddTransient<CShells.Lifecycle.IDrainHandler, Lifecycle.ElsaShellDrainHandler>()
             // Interrupted-workflow recovery on shell activation (Phase 5, US3). Disjoint from the timeout-based
             // RestartInterruptedWorkflowsTask: filter is SubStatus = Interrupted; that task's filter is IsExecuting=true.
             .AddScoped<IInterruptedRecoveryScan, Services.InterruptedRecoveryScan>()
@@ -166,8 +170,12 @@ public class WorkflowRuntimeFeature : IShellFeature
             // Pause behaviour is enforced inside BookmarkQueueProcessor via IQuiescenceSignal (FR-024).
             .AddSingleton<Func<IQuiescenceSignal>>(sp => sp.GetRequiredService<IQuiescenceSignal>)
             .AddSingleton<IIngressSource, IngressSources.InternalBookmarkQueueIngressSource>()
-            // Re-applies persisted pause state on activation when PausePersistence = AcrossReactivations (FR-028).
-            .AddStartupTask<StartupTasks.InitializePauseStateStartupTask>();
+            // Re-applies persisted pause state on EVERY shell (re)activation when PausePersistence = AcrossReactivations
+            // (FR-028). Uses CShells.Lifecycle.IShellInitializer instead of IStartupTask because shells can be
+            // reactivated independently of the host process; the IStartupTask path only fires once per host startup
+            // and would miss subsequent shell reactivations. The IModule (Features/WorkflowRuntimeFeature) consumers
+            // continue to use the IStartupTask variant — there is no shell platform there to call IShellInitializer.
+            .AddTransient<CShells.Lifecycle.IShellInitializer, Lifecycle.InitializePauseStateShellInitializer>();
 
         services
             // Core.

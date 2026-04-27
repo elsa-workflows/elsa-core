@@ -1,4 +1,4 @@
-using CShells.Management;
+using CShells.Lifecycle;
 using Elsa.Abstractions;
 using Elsa.Shells.Api.Endpoints.Shells;
 using Elsa.Workflows;
@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Shells.Api.Endpoints.Shells.Reload;
 
 [PublicAPI]
-internal class Reload(IShellManager shellManager, IApiSerializer apiSerializer) : ElsaEndpointWithoutRequest
+internal class Reload(IShellRegistry shellRegistry, IApiSerializer apiSerializer) : ElsaEndpointWithoutRequest
 {
     public override void Configure()
     {
@@ -19,22 +19,20 @@ internal class Reload(IShellManager shellManager, IApiSerializer apiSerializer) 
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
         var shellId = Route<string>("shellId")!;
+        var result = await shellRegistry.ReloadAsync(shellId, cancellationToken);
 
-        try
+        // CShells 0.0.15 surfaces failures via ReloadResult.Error rather than throwing — translate to 404
+        // (which historically signalled "blueprint not found") for any composition / initialization error.
+        if (result.Error is not null)
         {
-            await shellManager.ReloadShellAsync(shellId, cancellationToken);
-        }
-        catch (InvalidOperationException ex)
-        {
-            // Shell not found by the provider.
-            var notFoundResponse = new ShellReloadResponse
+            var failedResponse = new ShellReloadResponse
             {
                 Status = ShellReloadStatus.NotFound,
                 RequestedShellId = shellId,
                 Timestamp = DateTimeOffset.UtcNow,
-                Message = ex.Message
+                Message = result.Error.Message
             };
-            await SendResponseAsync(notFoundResponse, StatusCodes.Status404NotFound, cancellationToken);
+            await SendResponseAsync(failedResponse, StatusCodes.Status404NotFound, cancellationToken);
             return;
         }
 
