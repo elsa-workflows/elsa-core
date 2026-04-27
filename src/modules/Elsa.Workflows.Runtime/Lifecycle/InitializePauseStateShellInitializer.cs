@@ -1,15 +1,13 @@
 using CShells.Lifecycle;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Services;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Lifecycle;
 
 /// <summary>
 /// CShells <see cref="IShellInitializer"/> that re-applies any persisted administrative pause state when a shell
-/// transitions from <see cref="ShellLifecycleState.Initializing"/> to <see cref="ShellLifecycleState.Active"/>.
-/// Without this hook, a shell configured for <see cref="PausePersistencePolicy.AcrossReactivations"/> pause
-/// persistence would write the persisted key on pause but never read it on subsequent reactivations — meaning
+/// is activated. Without this hook, a shell configured for <see cref="PausePersistencePolicy.AcrossReactivations"/>
+/// pause persistence would write the persisted key on pause but never read it on subsequent reactivations — meaning
 /// the runtime would resume dispatching even though an operator had explicitly paused it before the previous
 /// shell tear-down.
 /// </summary>
@@ -35,16 +33,9 @@ namespace Elsa.Workflows.Runtime.Lifecycle;
 ///   </item>
 /// </list>
 /// </remarks>
-public sealed class InitializePauseStateShellInitializer(
-    IQuiescenceSignal signal,
-    IOptions<GracefulShutdownOptions> options) : IShellInitializer
+public sealed class InitializePauseStateShellInitializer(IQuiescenceSignal signal) : IShellInitializer
 {
     /// <inheritdoc />
-    public async Task InitializeAsync(CancellationToken cancellationToken = default)
-    {
-        if (options.Value.PausePersistence != PausePersistencePolicy.AcrossReactivations) return;
-
-        if (signal is QuiescenceSignal concrete)
-            await concrete.InitializePersistedStateAsync(cancellationToken);
-    }
+    public Task InitializeAsync(CancellationToken cancellationToken = default) =>
+        signal.InitializePersistedStateAsync(cancellationToken).AsTask();
 }

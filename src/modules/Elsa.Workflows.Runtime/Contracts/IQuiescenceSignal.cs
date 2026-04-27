@@ -10,14 +10,11 @@ public interface IQuiescenceSignal
     /// <summary>Current composite state. Reads are lock-free.</summary>
     QuiescenceState CurrentState { get; }
 
-    /// <summary>Convenience: <c>true</c> iff the runtime is accepting new work.</summary>
+    /// <summary>Convenience: <c>true</c> if the runtime is accepting new work.</summary>
     bool IsAcceptingNewWork { get; }
 
     /// <summary>Number of active bursts currently running under this runtime.</summary>
     int ActiveBurstCount { get; }
-
-    /// <summary>Fires exactly once per effective state transition. Never fires on idempotent no-ops.</summary>
-    event EventHandler<QuiescenceState>? StateChanged;
 
     /// <summary>
     /// Enters <see cref="QuiescenceReason.Drain"/>. Forward-only within a runtime generation.
@@ -37,4 +34,14 @@ public interface IQuiescenceSignal
     /// Idempotent.
     /// </summary>
     ValueTask<QuiescenceState> ResumeAsync(string? requestedBy, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Loads any persisted administrative pause state and re-applies it to the in-memory state. Called once per
+    /// runtime generation by the runtime's startup lifecycle (an <c>IStartupTask</c> in IModule deployments and
+    /// an <c>IShellInitializer</c> in shell-aware deployments) when the configured pause-persistence policy
+    /// requires across-reactivation persistence. Implementations that do not persist state can return a
+    /// no-op task — the contract is intentionally lifecycle-aware so consumers don't need to type-check
+    /// against a concrete implementation.
+    /// </summary>
+    ValueTask InitializePersistedStateAsync(CancellationToken cancellationToken);
 }

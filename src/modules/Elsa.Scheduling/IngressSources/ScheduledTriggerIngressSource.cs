@@ -8,12 +8,8 @@ namespace Elsa.Scheduling.IngressSources;
 /// dispatch through the bookmark queue, whose processor consults the signal at the top of each invocation (FR-024).
 /// This adapter therefore has no behaviour of its own beyond reporting state.
 /// </summary>
-public sealed class ScheduledTriggerIngressSource : IIngressSource
+public sealed class ScheduledTriggerIngressSource(IQuiescenceSignal signal) : IIngressSource
 {
-    private readonly Func<IQuiescenceSignal> _signalFactory;
-
-    public ScheduledTriggerIngressSource(Func<IQuiescenceSignal> signalFactory) => _signalFactory = signalFactory;
-
     /// <inheritdoc />
     /// <remarks>
     /// Covers all scheduling-driven trigger types (Cron, Timer, StartAt, Delay) — not just Cron. Operators reading
@@ -27,7 +23,7 @@ public sealed class ScheduledTriggerIngressSource : IIngressSource
 
     /// <inheritdoc />
     public IngressSourceState CurrentState =>
-        _signalFactory().IsAcceptingNewWork ? IngressSourceState.Running : IngressSourceState.Paused;
+        signal.IsAcceptingNewWork ? IngressSourceState.Running : IngressSourceState.Paused;
 
     /// <inheritdoc />
     public ValueTask PauseAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;

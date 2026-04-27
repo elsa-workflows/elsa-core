@@ -33,7 +33,7 @@ public abstract class DrainOrchestratorTestsBase
         Registry.Sources.Returns(Array.Empty<IIngressSource>());
         Registry.Snapshot().Returns(Array.Empty<IngressSourceSnapshot>());
         BurstRegistry.ActiveCount.Returns(0);
-        BurstRegistry.EnumerateActive().Returns(Array.Empty<BurstHandle>());
+        BurstRegistry.ListActiveBursts().Returns(Array.Empty<BurstHandle>());
     }
 
     protected void AdvanceTime(TimeSpan span) => _now += span;
@@ -50,6 +50,9 @@ public abstract class DrainOrchestratorTestsBase
         scope.ServiceProvider.Returns(sp);
         scopeFactory.CreateScope().Returns(scope);
 
+        var identityGenerator = Substitute.For<IIdentityGenerator>();
+        identityGenerator.GenerateId().Returns(_ => Guid.NewGuid().ToString("N"));
+
         return new DrainOrchestrator(
             Signal,
             Registry,
@@ -58,6 +61,7 @@ public abstract class DrainOrchestratorTestsBase
             Microsoft.Extensions.Options.Options.Create(Options),
             Microsoft.Extensions.Options.Options.Create(HostOptionsValue),
             Clock,
+            identityGenerator,
             Substitute.For<ILogger<DrainOrchestrator>>());
     }
 

@@ -95,10 +95,10 @@ internal static class StatusResponseFactory
         LastTransitionAt = s.LastTransitionAt,
     };
 
-    public static StatusResponse Build(IQuiescenceSignal signal, IIngressSourceRegistry registry) => new()
+    public static StatusResponse Build(RuntimeAdminStatus status) => new()
     {
-        State = MapState(signal.CurrentState),
-        Sources = registry.Snapshot().Select(MapSource).ToList(),
-        ActiveBurstCount = signal.ActiveBurstCount,
+        State = MapState(status.State),
+        Sources = status.Sources.Select(MapSource).ToList(),
+        ActiveBurstCount = status.ActiveBurstCount,
     };
 }

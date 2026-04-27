@@ -25,7 +25,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
     {
         var handle = new BurstHandle(Guid.NewGuid(), "instance-1", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
         BurstRegistry.ActiveCount.Returns(1);
-        BurstRegistry.EnumerateActive().Returns(new[] { handle });
+        BurstRegistry.ListActiveBursts().Returns(new[] { handle });
         InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>(new WorkflowInstance
             {
@@ -52,7 +52,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
     {
         var handle = new BurstHandle(Guid.NewGuid(), "instance-2", ingressSourceName: null, startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
         BurstRegistry.ActiveCount.Returns(1);
-        BurstRegistry.EnumerateActive().Returns(new[] { handle });
+        BurstRegistry.ListActiveBursts().Returns(new[] { handle });
         InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>(new WorkflowInstance
             {

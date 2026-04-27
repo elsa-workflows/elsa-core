@@ -43,6 +43,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
     private readonly IOptions<GracefulShutdownOptions> _options;
     private readonly IOptions<HostOptions> _hostOptions;
     private readonly ISystemClock _clock;
+    private readonly IIdentityGenerator _identityGenerator;
     private readonly ILogger<DrainOrchestrator> _logger;
 
     private readonly object _sync = new();
@@ -57,6 +58,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         IOptions<GracefulShutdownOptions> options,
         IOptions<HostOptions> hostOptions,
         ISystemClock clock,
+        IIdentityGenerator identityGenerator,
         ILogger<DrainOrchestrator> logger)
     {
         _signal = signal;
@@ -66,6 +68,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         _options = options;
         _hostOptions = hostOptions;
         _clock = clock;
+        _identityGenerator = identityGenerator;
         _logger = logger;
     }
 
@@ -254,7 +257,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         var reportedIds = new List<string>(capacity: Math.Min(cap, 16));
         var totalCancelled = 0;
 
-        var live = _bursts.EnumerateActive();
+        var live = _bursts.ListActiveBursts();
         if (live.Count == 0) return (0, Array.Empty<string>());
 
         using var scope = _scopeFactory.CreateScope();
@@ -289,7 +292,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
                 await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, reason, cancellationToken);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!ex.IsFatal())
             {
                 _logger.LogError(ex, "Failed to force-cancel burst {BurstId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
             }
@@ -326,7 +329,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             {
                 await logStore.AddAsync(new Entities.WorkflowExecutionLogRecord
                 {
-                    Id = Guid.NewGuid().ToString("N"),
+                    Id = _identityGenerator.GenerateId(),
                     WorkflowInstanceId = handle.WorkflowInstanceId,
                     WorkflowDefinitionId = string.Empty,
                     WorkflowDefinitionVersionId = string.Empty,
@@ -342,7 +345,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                     Payload = orphanPayload,
                 }, cancellationToken);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!ex.IsFatal())
             {
                 _logger.LogWarning(ex, "Failed to write WorkflowInterrupted log entry for orphan burst {BurstId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
             }
@@ -374,7 +377,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
         try
         {
-            await logStore.LogWorkflowInterruptedAsync(instance, payload, cancellationToken);
+            await logStore.LogWorkflowInterruptedAsync(_identityGenerator, instance, payload, cancellationToken);
         }
         catch (Exception ex) when (!ex.IsFatal())
         {

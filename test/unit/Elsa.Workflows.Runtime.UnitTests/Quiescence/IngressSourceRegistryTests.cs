@@ -19,26 +19,30 @@ public class IngressSourceRegistryTests
     {
         var a = CreateSource("a");
         var b = CreateSource("b");
-        var sut = new IngressSourceRegistry(new[] { a, b }, _clock);
+        var sut = new IngressSourceRegistry(new Lazy<IEnumerable<IIngressSource>>(() => new[] { a, b }), _clock);
 
         Assert.Equal(2, sut.Sources.Count);
         Assert.Contains(a, sut.Sources);
         Assert.Contains(b, sut.Sources);
     }
 
-    [Fact(DisplayName = "Duplicate source names throw at construction")]
+    [Fact(DisplayName = "Duplicate source names throw on first materialisation")]
     public void DuplicateNamesThrow()
     {
+        // The registry is constructed with a Lazy<IEnumerable<IIngressSource>> to break a DI cycle (see
+        // IngressSourceRegistry doc); materialisation, and therefore the duplicate-name check, is deferred
+        // until the first call that needs the underlying sources.
         var a = CreateSource("same");
         var b = CreateSource("same");
-        Assert.Throws<InvalidOperationException>(() => new IngressSourceRegistry(new[] { a, b }, _clock));
+        var sut = new IngressSourceRegistry(new Lazy<IEnumerable<IIngressSource>>(() => new[] { a, b }), _clock);
+        Assert.Throws<InvalidOperationException>(() => sut.Sources);
     }
 
     [Fact(DisplayName = "Snapshot reports per-source state")]
     public void SnapshotIncludesState()
     {
         var a = CreateSource("a");
-        var sut = new IngressSourceRegistry(new[] { a }, _clock);
+        var sut = new IngressSourceRegistry(new Lazy<IEnumerable<IIngressSource>>(() => new[] { a }), _clock);
 
         sut.RecordTransition("a", IngressSourceState.Pausing);
 
@@ -53,7 +57,7 @@ public class IngressSourceRegistryTests
     public async Task MarkPauseFailedCapturesError()
     {
         var a = CreateSource("a");
-        var sut = new IngressSourceRegistry(new[] { a }, _clock);
+        var sut = new IngressSourceRegistry(new Lazy<IEnumerable<IIngressSource>>(() => new[] { a }), _clock);
         var error = new TimeoutException("ingress timed out");
 
         await sut.MarkPauseFailedAsync("a", "timeout", error);
@@ -67,7 +71,7 @@ public class IngressSourceRegistryTests
     public async Task MarkPauseFailedConcurrent()
     {
         var a = CreateSource("a");
-        var sut = new IngressSourceRegistry(new[] { a }, _clock);
+        var sut = new IngressSourceRegistry(new Lazy<IEnumerable<IIngressSource>>(() => new[] { a }), _clock);
 
         await Task.WhenAll(Enumerable.Range(0, 100).Select(_ => sut.MarkPauseFailedAsync("a", "race").AsTask()));
 

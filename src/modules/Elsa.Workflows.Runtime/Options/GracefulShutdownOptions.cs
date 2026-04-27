@@ -22,9 +22,11 @@ public class GracefulShutdownOptions
 
     /// <summary>
     /// Maximum stimulus-queue depth while the runtime is paused. Beyond this threshold, readiness degrades and
-    /// <see cref="OverflowPolicy"/> determines whether new writes are rejected.
+    /// <see cref="OverflowPolicy"/> determines whether new writes are rejected. <c>null</c> retains the unlimited
+    /// queue behaviour from before graceful shutdown shipped — useful when upstream transports already implement
+    /// their own back-pressure and the operator does not want a runtime-side cap.
     /// </summary>
-    public int StimulusQueueMaxDepthWhilePaused { get; set; } = 10_000;
+    public int? StimulusQueueMaxDepthWhilePaused { get; set; } = 10_000;
 
     /// <summary>
     /// Policy applied when the paused stimulus queue exceeds <see cref="StimulusQueueMaxDepthWhilePaused"/>.
@@ -49,7 +51,7 @@ public class GracefulShutdownOptions
     {
         if (DrainDeadline <= TimeSpan.Zero) throw new ValidationException($"{nameof(DrainDeadline)} must be greater than zero.");
         if (IngressPauseTimeout <= TimeSpan.Zero) throw new ValidationException($"{nameof(IngressPauseTimeout)} must be greater than zero.");
-        if (StimulusQueueMaxDepthWhilePaused <= 0) throw new ValidationException($"{nameof(StimulusQueueMaxDepthWhilePaused)} must be greater than zero.");
+        if (StimulusQueueMaxDepthWhilePaused is <= 0) throw new ValidationException($"{nameof(StimulusQueueMaxDepthWhilePaused)} must be null (unlimited) or greater than zero.");
         if (MaxForceCancelledInstanceIdsReported <= 0) throw new ValidationException($"{nameof(MaxForceCancelledInstanceIdsReported)} must be greater than zero.");
     }
 }

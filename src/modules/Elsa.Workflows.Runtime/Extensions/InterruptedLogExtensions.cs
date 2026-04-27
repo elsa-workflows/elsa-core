@@ -9,20 +9,22 @@ namespace Elsa.Workflows.Runtime;
 public static class InterruptedLogExtensions
 {
     /// <summary>
-    /// Writes a <c>WorkflowInterrupted</c> entry for the supplied instance with the typed payload. The activity-related
-    /// fields are populated from <paramref name="payload"/>.<see cref="WorkflowInterruptedPayload.LastActivityId"/> when
-    /// available; otherwise they are left empty (the forensic record still uniquely identifies the interrupted instance
-    /// via <see cref="WorkflowExecutionLogRecord.WorkflowInstanceId"/>).
+    /// Writes a <c>WorkflowInterrupted</c> entry for the supplied instance with the typed payload. The record's
+    /// <c>Id</c> is generated via <paramref name="identityGenerator"/> so the format stays consistent with every
+    /// other log record in the store. Activity-related fields are populated from <paramref name="payload"/>'s
+    /// <see cref="WorkflowInterruptedPayload.LastActivityId"/> when available; otherwise they are left empty
+    /// (the forensic record still uniquely identifies the interrupted instance via the workflow instance id).
     /// </summary>
     public static async Task LogWorkflowInterruptedAsync(
         this IWorkflowExecutionLogStore store,
+        IIdentityGenerator identityGenerator,
         WorkflowInstance instance,
         WorkflowInterruptedPayload payload,
         CancellationToken cancellationToken = default)
     {
         var record = new WorkflowExecutionLogRecord
         {
-            Id = Guid.NewGuid().ToString("N"),
+            Id = identityGenerator.GenerateId(),
             WorkflowInstanceId = instance.Id,
             WorkflowDefinitionId = instance.DefinitionId,
             WorkflowDefinitionVersionId = instance.DefinitionVersionId,

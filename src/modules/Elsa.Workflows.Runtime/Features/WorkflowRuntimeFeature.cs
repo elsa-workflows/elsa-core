@@ -254,22 +254,28 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             options.Validate();
         });
 
-        // Graceful-shutdown core (Phase 2 foundational).
+        // Graceful-shutdown core (US1 — quiescence machinery).
         Services
             .AddSingleton<IQuiescenceSignal, Elsa.Workflows.Runtime.Services.QuiescenceSignal>()
             .AddSingleton<IIngressSourceRegistry, Elsa.Workflows.Runtime.Services.IngressSourceRegistry>()
             .AddSingleton<IBurstRegistry, Elsa.Workflows.Runtime.Services.BurstRegistry>()
             .AddSingleton<Elsa.Workflows.Runtime.Middleware.Workflows.BurstTrackingMiddleware>()
-            // Drain orchestrator + hosted service (Phase 3, US1). See FR-029 / R5 — heartbeat must outlive drain.
+            // Lazy collection breaks the otherwise-circular DI chain QuiescenceSignal → IBurstRegistry →
+            // IIngressSourceRegistry → IEnumerable<IIngressSource> → IQuiescenceSignal. Adapters take a direct
+            // IQuiescenceSignal dependency; the registry materialises the collection on first read.
+            .AddSingleton(sp => new Lazy<IEnumerable<IIngressSource>>(sp.GetServices<IIngressSource>))
+            // Drain orchestrator + hosted service (US1). See FR-029 / R5 — heartbeat must outlive drain.
             .AddSingleton<IDrainOrchestrator, Elsa.Workflows.Runtime.Services.DrainOrchestrator>()
             .AddHostedService<Elsa.Workflows.Runtime.HostedServices.DrainOrchestratorHostedService>()
-            // Interrupted-workflow recovery on shell activation (Phase 5, US3). Disjoint from the timeout-based
+            // Domain service that backs all runtime-admin transports (US2). Encapsulates the audit-on-effective-
+            // transition rule (SC-007) so transports stay thin.
+            .AddSingleton<IWorkflowRuntimeAdminService, Elsa.Workflows.Runtime.Services.WorkflowRuntimeAdminService>()
+            // Interrupted-workflow recovery on shell activation (US3). Disjoint from the timeout-based
             // RestartInterruptedWorkflowsTask: filter is SubStatus = Interrupted; that task's filter is IsExecuting=true.
             .AddScoped<IInterruptedRecoveryScan, Elsa.Workflows.Runtime.Services.InterruptedRecoveryScan>()
             .AddStartupTask<Elsa.Workflows.Runtime.StartupTasks.RecoverInterruptedWorkflowsStartupTask>()
             // Internal bookmark-queue processor surfaced as an ingress source for diagnostic visibility (FR-006).
             // Pause behaviour is enforced inside BookmarkQueueProcessor via IQuiescenceSignal (FR-024).
-            .AddSingleton<Func<IQuiescenceSignal>>(sp => sp.GetRequiredService<IQuiescenceSignal>)
             .AddSingleton<IIngressSource, Elsa.Workflows.Runtime.IngressSources.InternalBookmarkQueueIngressSource>()
             // Re-applies persisted pause state on activation when PausePersistence = AcrossReactivations (FR-028).
             .AddStartupTask<Elsa.Workflows.Runtime.StartupTasks.InitializePauseStateStartupTask>();

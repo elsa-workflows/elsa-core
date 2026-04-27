@@ -8,12 +8,8 @@ namespace Elsa.Http.IngressSources;
 /// short-circuits to 503 Service Unavailable while the runtime is paused or draining (FR-006). This adapter therefore
 /// has no behaviour of its own beyond reporting state to the registry.
 /// </summary>
-public sealed class HttpTriggerIngressSource : IIngressSource
+public sealed class HttpTriggerIngressSource(IQuiescenceSignal signal) : IIngressSource
 {
-    private readonly Func<IQuiescenceSignal> _signalFactory;
-
-    public HttpTriggerIngressSource(Func<IQuiescenceSignal> signalFactory) => _signalFactory = signalFactory;
-
     /// <inheritdoc />
     public string Name => "http.trigger";
 
@@ -22,7 +18,7 @@ public sealed class HttpTriggerIngressSource : IIngressSource
 
     /// <inheritdoc />
     public IngressSourceState CurrentState =>
-        _signalFactory().IsAcceptingNewWork ? IngressSourceState.Running : IngressSourceState.Paused;
+        signal.IsAcceptingNewWork ? IngressSourceState.Running : IngressSourceState.Paused;
 
     /// <inheritdoc />
     public ValueTask PauseAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;

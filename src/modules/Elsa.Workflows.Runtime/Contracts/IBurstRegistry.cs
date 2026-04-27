@@ -17,6 +17,6 @@ public interface IBurstRegistry
     /// </summary>
     BurstHandle BeginBurst(string workflowInstanceId, string? ingressSourceName, CancellationToken linkedToken, Action? cancelCallback = null);
 
-    /// <summary>Enumerates a snapshot of currently active handles — safe to iterate during drain.</summary>
-    IReadOnlyCollection<BurstHandle> EnumerateActive();
+    /// <summary>Lists a snapshot of currently active burst handles — safe to iterate during drain.</summary>
+    IReadOnlyCollection<BurstHandle> ListActiveBursts();
 }

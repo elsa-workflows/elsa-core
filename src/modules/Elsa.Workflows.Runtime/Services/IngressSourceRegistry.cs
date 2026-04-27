@@ -10,13 +10,36 @@ namespace Elsa.Workflows.Runtime.Services;
 public sealed class IngressSourceRegistry : IIngressSourceRegistry
 {
     private readonly ConcurrentDictionary<string, Entry> _entries = new(StringComparer.Ordinal);
+    private readonly Lazy<IEnumerable<IIngressSource>> _sourcesFactory;
     private readonly ISystemClock _clock;
 
-    /// <summary>Creates the registry and registers every <see cref="IIngressSource"/> resolved from DI.</summary>
-    public IngressSourceRegistry(IEnumerable<IIngressSource> sources, ISystemClock clock)
+    /// <summary>
+    /// Creates the registry. The <paramref name="sourcesFactory"/> is materialised lazily so adapter
+    /// implementations can take a direct <see cref="IQuiescenceSignal"/> dependency without creating a DI cycle
+    /// (the signal depends on <see cref="IBurstRegistry"/>, which depends on this registry, which depends on
+    /// <c>IEnumerable&lt;IIngressSource&gt;</c>). The first call that requires <see cref="Sources"/> materialises
+    /// the enumerable; subsequent calls reuse the snapshot.
+    /// </summary>
+    public IngressSourceRegistry(Lazy<IEnumerable<IIngressSource>> sourcesFactory, ISystemClock clock)
     {
+        _sourcesFactory = sourcesFactory;
         _clock = clock;
-        foreach (var source in sources)
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyCollection<IIngressSource> Sources
+    {
+        get
+        {
+            EnsureMaterialised();
+            return _entries.Values.Select(e => e.Source).ToArray();
+        }
+    }
+
+    private void EnsureMaterialised()
+    {
+        if (_entries.Count > 0) return;
+        foreach (var source in _sourcesFactory.Value)
         {
             if (!_entries.TryAdd(source.Name, new Entry(source)))
                 throw new InvalidOperationException($"Duplicate ingress source registration for name '{source.Name}'.");
@@ -24,11 +47,9 @@ public sealed class IngressSourceRegistry : IIngressSourceRegistry
     }
 
     /// <inheritdoc />
-    public IReadOnlyCollection<IIngressSource> Sources => _entries.Values.Select(e => e.Source).ToArray();
-
-    /// <inheritdoc />
     public IReadOnlyCollection<IngressSourceSnapshot> Snapshot()
     {
+        EnsureMaterialised();
         return _entries.Values
             .Select(e => new IngressSourceSnapshot(e.Source.Name, e.State, e.LastError, e.LastTransitionAt))
             .ToArray();
@@ -37,6 +58,7 @@ public sealed class IngressSourceRegistry : IIngressSourceRegistry
     /// <inheritdoc />
     public ValueTask MarkPauseFailedAsync(string name, string reason, Exception? error = null)
     {
+        EnsureMaterialised();
         if (_entries.TryGetValue(name, out var entry))
         {
             lock (entry.Sync)
@@ -52,6 +74,7 @@ public sealed class IngressSourceRegistry : IIngressSourceRegistry
     /// <inheritdoc />
     public void RecordTransition(string name, IngressSourceState newState, Exception? error = null)
     {
+        EnsureMaterialised();
         if (_entries.TryGetValue(name, out var entry))
         {
             lock (entry.Sync)
@@ -63,7 +86,11 @@ public sealed class IngressSourceRegistry : IIngressSourceRegistry
         }
     }
 
-    internal IngressSourceState GetState(string name) => _entries.TryGetValue(name, out var e) ? e.State : IngressSourceState.Running;
+    internal IngressSourceState GetState(string name)
+    {
+        EnsureMaterialised();
+        return _entries.TryGetValue(name, out var e) ? e.State : IngressSourceState.Running;
+    }
 
     private sealed class Entry(IIngressSource source)
     {

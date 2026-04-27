@@ -18,4 +18,4 @@ public record RuntimeResumeRequested(string? RequestedBy, DateTimeOffset Timesta
 /// Published when an authorised operator invokes the force-drain endpoint and a force operation actually runs
 /// (a force call against an already-completed drain returns the cached outcome and does NOT publish this notification).
 /// </summary>
-public record RuntimeForceRequested(string? RequestedBy, string? Reason, DateTimeOffset Timestamp, DrainOutcome Outcome) : INotification;
+public record RuntimeForceDrainRequested(string? RequestedBy, string? Reason, DateTimeOffset Timestamp, DrainOutcome Outcome) : INotification;

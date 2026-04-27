@@ -10,8 +10,7 @@ namespace Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Status;
 /// and active-burst count. Always readable (subject to authorisation) — even during drain.
 /// </summary>
 [PublicAPI]
-internal sealed class StatusEndpoint(IQuiescenceSignal signal, IIngressSourceRegistry registry)
-    : ElsaEndpointWithoutRequest<StatusResponse>
+internal sealed class StatusEndpoint(IWorkflowRuntimeAdminService admin) : ElsaEndpointWithoutRequest<StatusResponse>
 {
     public override void Configure()
     {
@@ -21,6 +20,6 @@ internal sealed class StatusEndpoint(IQuiescenceSignal signal, IIngressSourceReg
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        await Send.OkAsync(StatusResponseFactory.Build(signal, registry), ct);
+        await Send.OkAsync(StatusResponseFactory.Build(admin.GetStatus()), ct);
     }
 }

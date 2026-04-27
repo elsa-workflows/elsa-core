@@ -146,13 +146,18 @@ public class WorkflowRuntimeFeature : IShellFeature
             options.Validate();
         });
 
-        // Graceful-shutdown core (Phase 2 foundational).
+        // Graceful-shutdown core (US1 — quiescence machinery).
         services
             .AddSingleton<IQuiescenceSignal, Services.QuiescenceSignal>()
             .AddSingleton<IIngressSourceRegistry, Services.IngressSourceRegistry>()
             .AddSingleton<IBurstRegistry, Services.BurstRegistry>()
             .AddSingleton<Middleware.Workflows.BurstTrackingMiddleware>()
-            // Drain orchestrator + hosted service (Phase 3, US1).
+            // Lazy collection break the otherwise-circular dependency chain
+            // QuiescenceSignal → IBurstRegistry → IIngressSourceRegistry → IEnumerable<IIngressSource> → IQuiescenceSignal.
+            // Adapter implementations can take a direct IQuiescenceSignal dependency; the registry materialises the
+            // collection on first read.
+            .AddSingleton(sp => new Lazy<IEnumerable<IIngressSource>>(sp.GetServices<IIngressSource>))
+            // Drain orchestrator + hosted service (US1).
             // Registration order matters: IHostedService.StopAsync runs in reverse registration order, so a
             // graceful drain runs BEFORE the heartbeat (Elsa.Hosting.Management's InstanceHeartbeatService) stops.
             // This guarantees the timeout-based crash recovery on sibling nodes does not false-positive (FR-029).
@@ -162,16 +167,15 @@ public class WorkflowRuntimeFeature : IShellFeature
             // gives true per-shell scoping — sibling shells on the same host are unaffected. Coexists with the
             // host-stop hosted service above; the orchestrator's DrainAsync is idempotent.
             .AddTransient<CShells.Lifecycle.IDrainHandler, Lifecycle.ElsaShellDrainHandler>()
-            // Interrupted-workflow recovery on shell activation (Phase 5, US3). Disjoint from the timeout-based
+            // Interrupted-workflow recovery on shell activation (US3). Disjoint from the timeout-based
             // RestartInterruptedWorkflowsTask: filter is SubStatus = Interrupted; that task's filter is IsExecuting=true.
             .AddScoped<IInterruptedRecoveryScan, Services.InterruptedRecoveryScan>()
             .AddStartupTask<StartupTasks.RecoverInterruptedWorkflowsStartupTask>()
             // Internal bookmark-queue processor surfaced as an ingress source for diagnostic visibility (FR-006).
             // Pause behaviour is enforced inside BookmarkQueueProcessor via IQuiescenceSignal (FR-024).
-            .AddSingleton<Func<IQuiescenceSignal>>(sp => sp.GetRequiredService<IQuiescenceSignal>)
             .AddSingleton<IIngressSource, IngressSources.InternalBookmarkQueueIngressSource>()
             // Re-applies persisted pause state on EVERY shell (re)activation when PausePersistence = AcrossReactivations
-            // (FR-028). Uses CShells.Lifecycle.IShellInitializer instead of IStartupTask because shells can be
+            // (FR-028). Uses CShells.Lifecycle.IShellInitializer rather than IStartupTask because shells can be
             // reactivated independently of the host process; the IStartupTask path only fires once per host startup
             // and would miss subsequent shell reactivations. The IModule (Features/WorkflowRuntimeFeature) consumers
             // continue to use the IStartupTask variant — there is no shell platform there to call IShellInitializer.

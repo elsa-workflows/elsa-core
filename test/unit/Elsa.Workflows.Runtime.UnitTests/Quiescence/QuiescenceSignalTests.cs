@@ -44,16 +44,11 @@ public class QuiescenceSignalTests
     [Fact(DisplayName = "Pause adds flag, second Pause is no-op")]
     public async Task PauseIdempotent()
     {
-        var events = 0;
-        _sut.StateChanged += (_, _) => events++;
-
         var first = await _sut.PauseAsync("maintenance", "op@ex.com", CancellationToken.None);
         Assert.True(first.Reason.HasFlag(QuiescenceReason.AdministrativePause));
-        Assert.Equal(1, events);
 
         var second = await _sut.PauseAsync("again", "op@ex.com", CancellationToken.None);
-        Assert.Equal(first.PausedAt, second.PausedAt);
-        Assert.Equal(1, events); // no additional transition
+        Assert.Equal(first.PausedAt, second.PausedAt); // unchanged — idempotent
     }
 
     [Fact(DisplayName = "Resume clears AdministrativePause")]
@@ -69,13 +64,9 @@ public class QuiescenceSignalTests
     [Fact(DisplayName = "Resume on already-running runtime is no-op")]
     public async Task ResumeIdempotent()
     {
-        var events = 0;
-        _sut.StateChanged += (_, _) => events++;
-
         var state = await _sut.ResumeAsync("op@ex.com", CancellationToken.None);
 
         Assert.Equal(QuiescenceReason.None, state.Reason);
-        Assert.Equal(0, events);
     }
 
     [Fact(DisplayName = "Resume during drain is a no-op and does NOT clear pause")]
@@ -99,22 +90,6 @@ public class QuiescenceSignalTests
         Assert.True(paused.Reason.HasFlag(QuiescenceReason.Drain));
         Assert.True(paused.Reason.HasFlag(QuiescenceReason.AdministrativePause));
         // Resume during drain is a no-op (guarantee from FR-002 + ResumeDuringDrainNoOp).
-    }
-
-    [Fact(DisplayName = "StateChanged fires exactly once per effective transition")]
-    public async Task StateChangedFiresOnEffectiveTransitions()
-    {
-        var events = 0;
-        _sut.StateChanged += (_, _) => events++;
-
-        await _sut.PauseAsync(null, null, CancellationToken.None);   // +1
-        await _sut.PauseAsync(null, null, CancellationToken.None);   // no-op
-        await _sut.ResumeAsync(null, CancellationToken.None);        // +1
-        await _sut.ResumeAsync(null, CancellationToken.None);        // no-op
-        await _sut.BeginDrainAsync();                                // +1
-        await _sut.BeginDrainAsync();                                // no-op
-
-        Assert.Equal(3, events);
     }
 
     [Fact(DisplayName = "ActiveBurstCount delegates to IBurstRegistry")]

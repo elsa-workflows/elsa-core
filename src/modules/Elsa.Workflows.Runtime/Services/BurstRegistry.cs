@@ -51,5 +51,5 @@ public sealed class BurstRegistry : IBurstRegistry
     }
 
     /// <inheritdoc />
-    public IReadOnlyCollection<BurstHandle> EnumerateActive() => _active.Values.ToArray();
+    public IReadOnlyCollection<BurstHandle> ListActiveBursts() => _active.Values.ToArray();
 }

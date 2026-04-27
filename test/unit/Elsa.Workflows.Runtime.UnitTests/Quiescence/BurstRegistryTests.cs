@@ -73,14 +73,14 @@ public class BurstRegistryTests
         _sources.DidNotReceive().MarkPauseFailedAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Exception?>());
     }
 
-    [Fact(DisplayName = "EnumerateActive returns a snapshot of live handles")]
-    public void EnumerateActiveReturnsSnapshot()
+    [Fact(DisplayName = "ListActiveBursts returns a snapshot of live handles")]
+    public void ListActiveBurstsReturnsSnapshot()
     {
         var sut = new BurstRegistry(_sources, _clock);
         var a = sut.BeginBurst("instance-1", null, CancellationToken.None);
         var b = sut.BeginBurst("instance-2", null, CancellationToken.None);
 
-        var snapshot = sut.EnumerateActive();
+        var snapshot = sut.ListActiveBursts();
 
         Assert.Equal(2, snapshot.Count);
         Assert.Contains(a, snapshot);
