@@ -1,8 +1,9 @@
 using Elsa.Abstractions;
+using Elsa.Workflows.Runtime;
 using FastEndpoints;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Runtime.Admin.Endpoints.Admin.Status;
+namespace Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Status;
 
 /// <summary>
 /// <c>GET /admin/workflow-runtime/status</c> — returns the composite quiescence state, per-ingress-source state,

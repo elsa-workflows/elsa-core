@@ -1,10 +1,11 @@
 using Elsa.Abstractions;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Notifications;
 using FastEndpoints;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Runtime.Admin.Endpoints.Admin.Pause;
+namespace Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Pause;
 
 /// <summary>
 /// <c>POST /admin/workflow-runtime/pause</c> — places the runtime into <see cref="QuiescenceReason.AdministrativePause"/>.

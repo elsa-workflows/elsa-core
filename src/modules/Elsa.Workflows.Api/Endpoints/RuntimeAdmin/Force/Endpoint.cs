@@ -1,10 +1,11 @@
 using Elsa.Abstractions;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Notifications;
 using FastEndpoints;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Runtime.Admin.Endpoints.Admin.Force;
+namespace Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Force;
 
 /// <summary>
 /// <c>POST /admin/workflow-runtime/force</c> — operator-escalation drain with zero deadline. Cancels every active
@@ -40,7 +41,7 @@ internal sealed class ForceEndpoint(
             return;
         }
 
-        // Audit. Skip when the call returned a cached outcome (i.e., a previous force already ran in this generation),
+        // Audit. Skip when the call returned a cached outcome (a previous force already ran in this generation),
         // otherwise repeated POST /force calls would emit spurious audit events and break SC-007 idempotency.
         if (!outcome.WasCached)
             await mediator.SendAsync(new RuntimeForceRequested(requestedBy, req.Reason, DateTimeOffset.UtcNow, outcome), ct);

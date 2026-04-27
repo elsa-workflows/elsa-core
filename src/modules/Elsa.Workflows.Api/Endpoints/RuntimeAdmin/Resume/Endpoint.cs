@@ -1,10 +1,11 @@
 using Elsa.Abstractions;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Notifications;
 using FastEndpoints;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Runtime.Admin.Endpoints.Admin.Resume;
+namespace Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Resume;
 
 /// <summary>
 /// <c>POST /admin/workflow-runtime/resume</c> — clears <see cref="QuiescenceReason.AdministrativePause"/>.
