@@ -144,7 +144,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                 outcome.OverallResult, outcome.PausePhaseDuration, outcome.WaitPhaseDuration, outcome.BurstsForceCancelledCount);
             return outcome;
         }
-        catch (Exception ex) when (ex is not InvalidOperationException)
+        catch (Exception ex) when (ex is not InvalidOperationException && !ex.IsFatal())
         {
             _logger.LogError(ex, "Drain aborted by unhandled exception.");
             var outcome = new DrainOutcome(
@@ -210,7 +210,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             await _registry.MarkPauseFailedAsync(source.Name, "timeout", new TimeoutException($"Source '{source.Name}' did not pause within {sourceDeadline}."));
             await TryForceStopAsync(source, overallDeadline, cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (!ex.IsFatal())
         {
             await _registry.MarkPauseFailedAsync(source.Name, "exception", ex);
             await TryForceStopAsync(source, overallDeadline, cancellationToken);
@@ -228,7 +228,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             await forceStoppable.ForceStopAsync(cts.Token);
             _logger.LogInformation("Force-stopped ingress source '{Name}'.", source.Name);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (!ex.IsFatal())
         {
             _logger.LogWarning(ex, "Force-stop of ingress source '{Name}' failed; drain continues.", source.Name);
         }
@@ -357,7 +357,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             instance.IsExecuting = false;
             await instanceStore.SaveAsync(instance, cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (!ex.IsFatal())
         {
             _logger.LogWarning(ex, "Failed to persist Interrupted sub-status for instance {InstanceId}; falling back to PersistenceFailure reason.", instance.Id);
             actualReason = WorkflowInterruptedPayload.ReasonPersistenceFailure;
@@ -376,7 +376,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         {
             await logStore.LogWorkflowInterruptedAsync(instance, payload, cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (!ex.IsFatal())
         {
             _logger.LogWarning(ex, "Failed to write WorkflowInterrupted log entry for instance {InstanceId}.", instance.Id);
         }

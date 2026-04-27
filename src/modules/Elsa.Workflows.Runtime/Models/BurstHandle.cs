@@ -1,3 +1,5 @@
+using Elsa.Common;
+
 namespace Elsa.Workflows.Runtime;
 
 /// <summary>
@@ -77,7 +79,7 @@ public sealed class BurstHandle : IDisposable
         // schedule, so the runner stops scheduling new activities). The orchestrator's subsequent Interrupted
         // persistence then overrides the Cancelled sub-status — see Disposed-await sequencing in DrainOrchestrator.
         try { _cancelCallback?.Invoke(); }
-        catch { /* Cancellation is best-effort; failures here must not break the drain. */ }
+        catch (Exception ex) when (!ex.IsFatal()) { /* Cancellation is best-effort; non-fatal failures here must not break the drain. */ }
 
         try { _burstCts.Cancel(); }
         catch (ObjectDisposedException) { /* Race with Dispose — acceptable. */ }

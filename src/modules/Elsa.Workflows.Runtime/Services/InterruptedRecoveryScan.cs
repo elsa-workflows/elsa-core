@@ -1,3 +1,4 @@
+using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
@@ -65,7 +66,7 @@ public sealed class InterruptedRecoveryScan : IInterruptedRecoveryScan
 
                 requeued++;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!ex.IsFatal())
             {
                 _logger.LogError(ex, "Failed to requeue interrupted workflow {WorkflowInstanceId}; will be retried by the timeout-based recovery task.", summary.Id);
             }
