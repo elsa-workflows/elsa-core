@@ -36,7 +36,7 @@ public class CSharpOptions
         typeof(Guid).Assembly, // System.Runtime
         typeof(JsonSerializer).Assembly, // System.Text.Json
         typeof(IDictionary<string, object>).Assembly, // System.Collections
-        typeof(ExpandoObject).Assembly, // System.Linq.Expressions (provides System.Dynamic.ExpandoObject)
+        typeof(ExpandoObject).Assembly, // System.Linq.Expressions assembly — hosts System.Dynamic.ExpandoObject in .NET 5+
         typeof(CSharpArgumentInfo).Assembly, // Microsoft.CSharp (required for dynamic dispatch)
     });
 
