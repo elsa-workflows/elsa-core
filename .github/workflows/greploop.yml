@@ -1,0 +1,70 @@
+name: Greploop
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Pull request number to optimize'
+        required: true
+        type: string
+  issue_comment:
+    types: [created]
+
+jobs:
+  greploop:
+    # Run on manual dispatch, or when a maintainer posts "/greploop" on a PR
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request != null &&
+       contains(github.event.comment.body, '/greploop') &&
+       (github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'MEMBER' ||
+        github.event.comment.author_association == 'COLLABORATOR'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # Needed: greploop pushes fix commits to the PR branch
+      pull-requests: write     # Needed: resolve review threads, post status comments
+      issues: read
+      id-token: write
+      actions: read            # Needed: Claude reads CI results on PRs
+    steps:
+      - name: Resolve PR number
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "pr_number=${{ inputs.pr_number }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "pr_number=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Checkout PR branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr checkout ${{ steps.resolve.outputs.pr_number }}
+
+      - name: Expose greploop skill to Claude Code
+        # Skill source is vendored in this repo at .claude/skills/greploop.
+        # Mirror it into the user-level skills dir Claude Code discovers.
+        run: |
+          mkdir -p ~/.claude/skills
+          ln -s "$GITHUB_WORKSPACE/.claude/skills/greploop" ~/.claude/skills/greploop
+
+      - name: Run greploop
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          additional_permissions: |
+            actions: read
+          prompt: '/greploop ${{ steps.resolve.outputs.pr_number }}'
+          claude_args: '--allowed-tools "Bash(gh:*),Bash(git:*)"'
