@@ -163,6 +163,11 @@ public class WorkflowRuntimeFeature : IShellFeature
             // This guarantees the timeout-based crash recovery on sibling nodes does not false-positive (FR-029).
             .AddSingleton<IDrainOrchestrator, Services.DrainOrchestrator>()
             .AddHostedService<HostedServices.DrainOrchestratorHostedService>()
+            // Operator-facing facade over IDrainOrchestrator + IQuiescenceSignal. Required by the Pause / Resume /
+            // Status / Force admin endpoints in Elsa.Workflows.Api; without it the shell DI graph throws
+            // InvalidOperationException at endpoint construction. The IModule-shaped Features/WorkflowRuntimeFeature
+            // registers the same service alongside the same graceful-shutdown singletons.
+            .AddSingleton<IWorkflowRuntimeAdminService, Services.WorkflowRuntimeAdminService>()
             // CShells per-shell drain hook (FR-027). Invoked when a shell enters ShellLifecycleState.Draining;
             // gives true per-shell scoping — sibling shells on the same host are unaffected. Coexists with the
             // host-stop hosted service above; the orchestrator's DrainAsync is idempotent.

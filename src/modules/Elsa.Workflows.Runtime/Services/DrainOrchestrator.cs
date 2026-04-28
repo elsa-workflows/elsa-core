@@ -264,6 +264,18 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
         var logStore = scope.ServiceProvider.GetRequiredService<IWorkflowExecutionLogStore>();
 
+        var reason = trigger == DrainTrigger.OperatorForce
+            ? WorkflowInterruptedPayload.ReasonOperatorForce
+            : WorkflowInterruptedPayload.ReasonDeadlineBreach;
+
+        // Force-cancel proceeds in three phases. The split exists because cancelling and
+        // awaiting in the same loop made every burst after the first run at full speed
+        // through the prior burst's settle window — total wall time was O(N × settle
+        // timeout), defeating the intent of force-cancel under concurrency.
+        //
+        // Phase A — cancel every handle synchronously. CancellationTokenSource.Cancel is
+        // cheap and we want every runner to observe cancellation simultaneously rather
+        // than serialised behind preceding settle waits.
         foreach (var handle in live)
         {
             try
@@ -271,30 +283,46 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                 handle.Cancel();
                 totalCancelled++;
                 if (reportedIds.Count < cap) reportedIds.Add(handle.WorkflowInstanceId);
+            }
+            catch (Exception ex) when (!ex.IsFatal())
+            {
+                _logger.LogError(ex, "Failed to cancel burst {BurstId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
+            }
+        }
 
-                // Wait for the runner to settle so its terminal commit happens before we overwrite the sub-status with
-                // Interrupted. The handle disposes when BurstTrackingMiddleware exits its `using` block, which is after
-                // the workflow runner has finished its commit. The wait is bounded so a non-cancellable activity does
-                // not block drain — on timeout we proceed and accept the runner-clobber race for that one instance.
-                try
-                {
-                    await handle.Disposed.WaitAsync(ForceCancelSettleTimeout, cancellationToken);
-                }
-                catch (TimeoutException)
-                {
-                    _logger.LogWarning("Burst {BurstId} (instance={InstanceId}) did not settle within {Timeout}; persisting Interrupted now (the runner may overwrite — recovery scan picks it up).", handle.Id, handle.WorkflowInstanceId, ForceCancelSettleTimeout);
-                }
-                catch (OperationCanceledException) { /* drain CT fired — proceed to persist anyway */ }
+        // Phase B — wait for every runner to settle in parallel under a shared deadline.
+        // The handle disposes when BurstTrackingMiddleware exits its `using` block, which
+        // is after the workflow runner has finished its commit. We want runners' terminal
+        // commits to land before we overwrite the sub-status with Interrupted — but we
+        // bound the wait so a non-cancellable activity cannot block drain, accepting the
+        // runner-clobber race for that one instance (the recovery scan picks it up).
+        // Total wall time for this phase is at most ForceCancelSettleTimeout regardless
+        // of N.
+        var settleTasks = live.Select(async handle =>
+        {
+            try
+            {
+                await handle.Disposed.WaitAsync(ForceCancelSettleTimeout, cancellationToken).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                _logger.LogWarning("Burst {BurstId} (instance={InstanceId}) did not settle within {Timeout}; persisting Interrupted now (the runner may overwrite — recovery scan picks it up).", handle.Id, handle.WorkflowInstanceId, ForceCancelSettleTimeout);
+            }
+            catch (OperationCanceledException) { /* drain CT fired — proceed to persist anyway */ }
+        });
+        await Task.WhenAll(settleTasks).ConfigureAwait(false);
 
-                var reason = trigger == DrainTrigger.OperatorForce
-                    ? WorkflowInterruptedPayload.ReasonOperatorForce
-                    : WorkflowInterruptedPayload.ReasonDeadlineBreach;
-
+        // Phase C — persist Interrupted for every handle. Sequential to keep DbContext
+        // usage single-threaded; per-handle persistence is small.
+        foreach (var handle in live)
+        {
+            try
+            {
                 await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, reason, cancellationToken);
             }
             catch (Exception ex) when (!ex.IsFatal())
             {
-                _logger.LogError(ex, "Failed to force-cancel burst {BurstId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
+                _logger.LogError(ex, "Failed to persist Interrupted for burst {BurstId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
             }
         }
 
