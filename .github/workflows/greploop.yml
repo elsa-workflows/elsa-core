@@ -38,6 +38,17 @@ jobs:
             echo "pr_number=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Resolve PR head metadata
+        id: pr_head
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pr_json="$(gh pr view "${{ steps.resolve.outputs.pr_number }}" --json headRefName,headRefOid,headRepository,headRepositoryOwner)"
+          echo "head_ref=$(echo "$pr_json" | jq -r '.headRefName')" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$(echo "$pr_json" | jq -r '.headRefOid')" >> "$GITHUB_OUTPUT"
+          echo "head_repo_owner=$(echo "$pr_json" | jq -r '.headRepositoryOwner.login')" >> "$GITHUB_OUTPUT"
+          echo "head_repo_name=$(echo "$pr_json" | jq -r '.headRepository.name')" >> "$GITHUB_OUTPUT"
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -51,7 +62,9 @@ jobs:
       - name: Checkout PR branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh pr checkout ${{ steps.resolve.outputs.pr_number }}
+        run: |
+          git fetch --no-tags --depth=1 "https://x-access-token:${GH_TOKEN}@github.com/${{ steps.pr_head.outputs.head_repo_owner }}/${{ steps.pr_head.outputs.head_repo_name }}.git" "${{ steps.pr_head.outputs.head_ref }}"
+          git checkout --detach "${{ steps.pr_head.outputs.head_sha }}"
 
       - name: Expose greploop skill to Claude Code
         # Skill source is vendored in this repo at .claude/skills/greploop.
