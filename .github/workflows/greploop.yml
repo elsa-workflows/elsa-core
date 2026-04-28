@@ -63,7 +63,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git fetch --no-tags --depth=1 "https://x-access-token:${GH_TOKEN}@github.com/${{ steps.pr_head.outputs.head_repo_owner }}/${{ steps.pr_head.outputs.head_repo_name }}.git" "${{ steps.pr_head.outputs.head_ref }}"
+          current_head_sha="$(gh pr view "${{ steps.resolve.outputs.pr_number }}" --json headRefOid -q '.headRefOid')"
+          if [ "$current_head_sha" != "${{ steps.pr_head.outputs.head_sha }}" ]; then
+            echo "PR head changed after initial resolution. Expected ${{ steps.pr_head.outputs.head_sha }}, got $current_head_sha." >&2
+            exit 1
+          fi
+          git fetch --no-tags --depth=1 "https://x-access-token:${GH_TOKEN}@github.com/${{ steps.pr_head.outputs.head_repo_owner }}/${{ steps.pr_head.outputs.head_repo_name }}.git" "${{ steps.pr_head.outputs.head_sha }}"
           git checkout --detach "${{ steps.pr_head.outputs.head_sha }}"
 
       - name: Expose greploop skill to Claude Code
