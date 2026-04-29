@@ -148,7 +148,15 @@ public class WorkflowRuntimeFeature : IShellFeature
 
         // Graceful-shutdown core (US1 — quiescence machinery).
         services
-            .AddSingleton<IQuiescenceSignal, Services.QuiescenceSignal>()
+            // Per-shell QuiescenceSignal: the persistence key includes the shell id so multi-shell deployments under
+            // PausePersistencePolicy.AcrossReactivations don't collide on a single key. Falls back to "default" only
+            // when ShellSettings isn't in the DI graph (degenerate single-shell or non-CShells host).
+            .AddSingleton<IQuiescenceSignal>(sp => new Services.QuiescenceSignal(
+                sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Options.GracefulShutdownOptions>>(),
+                sp.GetRequiredService<Common.ISystemClock>(),
+                sp.GetRequiredService<IExecutionCycleRegistry>(),
+                sp.GetService<KeyValues.Contracts.IKeyValueStore>(),
+                shellName: sp.GetService<CShells.ShellSettings>()?.Id))
             .AddSingleton<IIngressSourceRegistry, Services.IngressSourceRegistry>()
             .AddSingleton<IExecutionCycleRegistry, Services.ExecutionCycleRegistry>()
             .AddSingleton<Middleware.Workflows.ExecutionCycleTrackingMiddleware>()

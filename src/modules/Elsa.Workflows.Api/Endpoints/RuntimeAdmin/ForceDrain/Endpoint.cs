@@ -2,6 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
 using FastEndpoints;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.RuntimeAdmin.ForceDrain;
 
@@ -29,8 +30,13 @@ internal sealed class ForceDrainEndpoint(IWorkflowRuntimeAdminService admin) : E
         }
         catch (InvalidOperationException)
         {
-            // Non-force drain already in progress — orchestrator rejects parallel runs.
-            await Send.ResponseAsync(new ForceDrainResponse(), 409, ct);
+            // Non-force drain already in progress — orchestrator rejects parallel runs. Write the discriminated
+            // ConflictResponse directly: Send.ResponseAsync is constrained to the endpoint's TResponse and would
+            // force a null-Outcome ForceDrainResponse otherwise.
+            HttpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+            await HttpContext.Response.WriteAsJsonAsync(
+                new ConflictResponse { Code = "DrainInProgress", State = StatusResponseFactory.Build(admin.GetStatus()) },
+                ct);
             return;
         }
 

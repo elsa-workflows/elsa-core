@@ -68,6 +68,26 @@ public class QuiescenceSignalPersistenceTests
         Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.pause.default"));
     }
 
+    [Fact(DisplayName = "Persistence key is scoped to the supplied shell name (multi-shell isolation)")]
+    public async Task PersistenceKeyIncludesShellName()
+    {
+        // Regression: previously the DI registration did not pass a shellName, so all shells in a CShells
+        // deployment shared "elsa.quiescence.pause.default" — pausing shell A would re-pause shell B on next
+        // activation. The factory in ShellFeatures/WorkflowRuntimeFeature now injects ShellSettings.Id; this
+        // test locks in the constructor-level contract that shellName is reflected in the persistence key.
+        var sutA = new QuiescenceSignal(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, _kv, shellName: "shell-a");
+        var sutB = new QuiescenceSignal(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, _kv, shellName: "shell-b");
+
+        await sutA.PauseAsync("migration-a", "op@ex.com", CancellationToken.None);
+        await sutB.PauseAsync("migration-b", "op@ex.com", CancellationToken.None);
+
+        Assert.True(_kv.Pairs.ContainsKey("elsa.quiescence.pause.shell-a"));
+        Assert.True(_kv.Pairs.ContainsKey("elsa.quiescence.pause.shell-b"));
+        Assert.Equal("migration-a", _kv.Pairs["elsa.quiescence.pause.shell-a"].SerializedValue);
+        Assert.Equal("migration-b", _kv.Pairs["elsa.quiescence.pause.shell-b"].SerializedValue);
+        Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.pause.default"));
+    }
+
     [Fact(DisplayName = "Concurrent Pause/Resume converge: persisted state matches final in-memory state")]
     public async Task PauseResumeRaceConverges()
     {
