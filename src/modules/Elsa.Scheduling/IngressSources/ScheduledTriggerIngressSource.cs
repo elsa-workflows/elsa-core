@@ -15,8 +15,10 @@ public sealed class ScheduledTriggerIngressSource(IQuiescenceSignal signal) : Pa
     /// <inheritdoc />
     /// <remarks>
     /// Covers all scheduling-driven trigger types (Cron, Timer, StartAt, Delay) — not just Cron. Operators reading
-    /// <c>GET /admin/workflow-runtime/status</c> or <c>DrainOutcome.Sources</c> see this name verbatim, so the
-    /// generic <c>scheduling.triggers</c> avoids implying Cron-only coverage.
+    /// <c>GET /admin/workflow-runtime/status</c> or <c>DrainOutcome.Sources</c> see this name verbatim; the generic
+    /// <c>scheduling.trigger</c> avoids implying Cron-only coverage. Singular to match the rest of the suite
+    /// (<c>http.trigger</c>, <c>internal.bookmark-queue-worker</c>) — the name identifies the source, not the
+    /// number of trigger types it dispatches.
     /// </remarks>
-    public override string Name => "scheduling.triggers";
+    public override string Name => "scheduling.trigger";
 }
