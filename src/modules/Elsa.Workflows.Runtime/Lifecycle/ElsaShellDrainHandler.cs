@@ -34,7 +34,7 @@ public sealed class ElsaShellDrainHandler(IDrainOrchestrator orchestrator, ILogg
         {
             var outcome = await orchestrator.DrainAsync(DrainTrigger.ShellDeactivation, cancellationToken);
             if (outcome.OverallResult is DrainResult.DeadlineExceeded or DrainResult.AbortedByUnhandledException)
-                logger.LogWarning("Shell drain finished with non-clean result: {Result} (forceCancelled={Count}).", outcome.OverallResult, outcome.BurstsForceCancelledCount);
+                logger.LogWarning("Shell drain finished with non-clean result: {Result} (forceCancelled={Count}).", outcome.OverallResult, outcome.ExecutionCyclesForceCancelledCount);
             else
                 logger.LogInformation("Shell drain finished: {Result} (paused={Paused}, waited={Waited}).", outcome.OverallResult, outcome.PausePhaseDuration, outcome.WaitPhaseDuration);
         }

@@ -18,7 +18,7 @@ public sealed class IngressSourceRegistry : IIngressSourceRegistry
     /// <summary>
     /// Creates the registry. The <paramref name="sourcesFactory"/> is materialized lazily so adapter
     /// implementations can take a direct <see cref="IQuiescenceSignal"/> dependency without creating a DI cycle
-    /// (the signal depends on <see cref="IBurstRegistry"/>, which depends on this registry, which depends on
+    /// (the signal depends on <see cref="IExecutionCycleRegistry"/>, which depends on this registry, which depends on
     /// <c>IEnumerable&lt;IIngressSource&gt;</c>). The first call that requires <see cref="Sources"/> materializes
     /// the enumerable; subsequent calls reuse the snapshot.
     /// </summary>
@@ -42,7 +42,7 @@ public sealed class IngressSourceRegistry : IIngressSourceRegistry
     {
         // Double-checked lock: a `_entries.Count > 0` guard is not atomic with the population loop, so concurrent
         // first callers could both observe an empty dictionary, both iterate _sourcesFactory.Value, and both call
-        // TryAdd — losing the duplicate-name guarantee and crashing the second caller's burst start with
+        // TryAdd — losing the duplicate-name guarantee and crashing the second caller's execution cycle start with
         // "Duplicate ingress source registration". A short lock around the one-time population is sufficient;
         // steady-state reads short-circuit on the volatile flag without taking the lock.
         if (_materialized) return;

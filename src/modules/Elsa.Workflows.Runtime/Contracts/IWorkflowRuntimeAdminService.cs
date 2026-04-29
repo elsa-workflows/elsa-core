@@ -22,7 +22,7 @@ public interface IWorkflowRuntimeAdminService
     ValueTask<QuiescenceState> ResumeAsync(string? requestedBy, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Operator-escalation drain with zero deadline. Cancels every active burst, persists their instances as
+    /// Operator-escalation drain with zero deadline. Cancels every active execution cycle, persists their instances as
     /// <see cref="WorkflowSubStatus.Interrupted"/>, writes a <c>WorkflowInterrupted</c> log entry per affected
     /// instance, and returns the structured outcome. Throws <see cref="InvalidOperationException"/> when a
     /// non-force drain is already in progress in the same generation.
@@ -37,4 +37,4 @@ public interface IWorkflowRuntimeAdminService
 public sealed record RuntimeAdminStatus(
     QuiescenceState State,
     IReadOnlyCollection<IngressSourceSnapshot> Sources,
-    int ActiveBurstCount);
+    int ActiveExecutionCycleCount);

@@ -93,7 +93,7 @@ public enum IngressSourceState
 - `Pausing → Paused` ONLY via the source's own acknowledgement.
 - `Pausing → PauseFailed` after the per-source pause timeout elapses OR an exception is captured (FR-012).
 - `Resuming → ResumeFailed` after an exception. A `ResumeFailed` source stays in that state until the next successful resume, but does NOT block normal operation — it simply will not receive any work-start attempts until manually retried.
-- `PauseFailed` is reachable from `Running` without going through `Pausing` only when the burst-attribution check fires (FR-018) — a source that claims `Paused` but delivers is flipped directly.
+- `PauseFailed` is reachable from `Running` without going through `Pausing` only when the execution cycle-attribution check fires (FR-018) — a source that claims `Paused` but delivers is flipped directly.
 
 ---
 
@@ -113,18 +113,18 @@ Fields captured at `services.AddIngressSource(...)` time:
 
 ---
 
-## 5. `BurstHandle` (record, new)
+## 5. `ExecutionCycleHandle` (record, new)
 
 Fields:
-- `Guid Id` — unique per burst within a generation.
+- `Guid Id` — unique per execution cycle within a generation.
 - `string WorkflowInstanceId`.
-- `string? IngressSourceName` — null when the burst originated from direct API call (e.g., `IWorkflowRunner.RunAsync` from application code).
+- `string? IngressSourceName` — null when the execution cycle originated from direct API call (e.g., `IWorkflowRunner.RunAsync` from application code).
 - `DateTimeOffset StartedAt`.
-- `CancellationTokenSource BurstCts` — used to force-cancel on deadline breach (not exposed on the contract surface, kept internal to `BurstRegistry`).
+- `CancellationTokenSource CycleCts` — used to force-cancel on deadline breach (not exposed on the contract surface, kept internal to `ExecutionCycleRegistry`).
 
 **Invariants**
-- A `BurstHandle` is created exactly once per burst and disposed when the burst completes or is force-cancelled — no resurrection.
-- The active-burst count reported by `IQuiescenceSignal` equals the number of live `BurstHandle`s.
+- A `ExecutionCycleHandle` is created exactly once per execution cycle and disposed when the execution cycle completes or is force-cancelled — no resurrection.
+- The active-execution cycle count reported by `IQuiescenceSignal` equals the number of live `ExecutionCycleHandle`s.
 
 ---
 
@@ -146,7 +146,7 @@ public enum WorkflowSubStatus
 ```
 
 **Semantics**
-- `Interrupted` means "the last burst was force-cancelled by the runtime during graceful drain; the instance is resumable."
+- `Interrupted` means "the last execution cycle was force-cancelled by the runtime during graceful drain; the instance is resumable."
 - An `Interrupted` instance MUST have `IsExecuting = false` (that's what guarantees disjointness with `RestartInterruptedWorkflowsTask`'s filter).
 - When the instance is requeued by `RecoverInterruptedWorkflowsStartupTask`, the sub-status transitions back to `Pending` (or directly to `Executing` if immediate dispatch happens) — the forensic log entry persists (FR-023).
 
@@ -161,11 +161,11 @@ Typed payload stored in `WorkflowExecutionLogRecord.Payload` whenever `EventName
 - `string GenerationId` — the runtime generation that was draining.
 - `string? LastActivityId` — last activity observed executing when cancellation was requested.
 - `string? LastActivityNodeId`.
-- `string? IngressSourceName` — source that started the interrupted burst, if known.
-- `TimeSpan BurstDuration` — elapsed time from burst start to interruption.
+- `string? IngressSourceName` — source that started the interrupted execution cycle, if known.
+- `TimeSpan ExecutionCycleDuration` — elapsed time from execution cycle start to interruption. Persisted under the JSON wire key `"BurstDuration"` for backwards compatibility with pre-rename log records.
 
 **Invariants**
-- Written exactly once per force-cancelled burst, synchronously with the persistence of the `Interrupted` sub-status.
+- Written exactly once per force-cancelled execution cycle, synchronously with the persistence of the `Interrupted` sub-status.
 - Payload is immutable after write.
 
 ---
@@ -176,14 +176,14 @@ Fields:
 - `DrainResult OverallResult` — enum `{ CompletedWithinDeadline, DeadlineExceeded, Forced, AbortedByUnhandledException }`.
 - `DateTimeOffset StartedAt`, `DateTimeOffset CompletedAt`.
 - `TimeSpan PausePhaseDuration` — wall time for the parallel pause step.
-- `TimeSpan WaitPhaseDuration` — wall time waiting for active-burst count to reach zero.
+- `TimeSpan WaitPhaseDuration` — wall time waiting for active-execution cycle count to reach zero.
 - `IReadOnlyList<IngressSourceFinalState> Sources` — per-source final `State`, `LastError`, `WasForceStopped`.
-- `int BurstsForceCancelledCount`.
+- `int ExecutionCyclesForceCancelledCount`.
 - `IReadOnlyList<string> ForceCancelledInstanceIds` — capped at a configurable maximum (default 100) to avoid unbounded payloads in logs; count still reflects the true total.
 
 **Invariants**
 - `PausePhaseDuration + WaitPhaseDuration ≤ configured drain deadline + small epsilon` (allows for persistence latency on the terminal flush).
-- `BurstsForceCancelledCount == 0` ⇒ `OverallResult ∈ { CompletedWithinDeadline, AbortedByUnhandledException }`.
+- `ExecutionCyclesForceCancelledCount == 0` ⇒ `OverallResult ∈ { CompletedWithinDeadline, AbortedByUnhandledException }`.
 
 ---
 
@@ -211,7 +211,7 @@ Validation:
 | `WorkflowInstance.SubStatus` | existing EF entity | No schema change (int column); adding an enum value extends the value domain only. Compatibility verified per provider during QA. |
 | `WorkflowExecutionLogRecord` for `WorkflowInterrupted` events | existing `IWorkflowExecutionLogStore` | No schema change — uses existing `EventName` + JSON `Payload` columns. |
 | Persisted pause state (when enabled) | existing `Elsa.KeyValues` store | No schema change — one key per shell name. |
-| Active-burst registry | in-memory only | Never persisted. Bursts that were force-cancelled are recovered via the `Interrupted` sub-status, not via a registry replay. |
+| Active-execution cycle registry | in-memory only | Never persisted. Execution cycles that were force-cancelled are recovered via the `Interrupted` sub-status, not via a registry replay. |
 | `IngressSourceRegistry` state | in-memory only | Rebuilt on each generation from DI registrations. |
 
 No migrations are required. Provider-specific EF projects are unaffected unless QA on any given provider reveals an integer-width or enum-conversion anomaly, in which case a migration would be scoped to that provider only.
@@ -222,7 +222,7 @@ No migrations are required. Provider-specific EF projects are unaffected unless 
 
 - FR-001..FR-005 map to `IQuiescenceSignal` + `QuiescenceState` + `QuiescenceReason`.
 - FR-006..FR-013, FR-018 map to `IIngressSource` + `IngressSourceState` + registration record.
-- FR-014..FR-017 map to `BurstHandle` + `IBurstRegistry` + `DrainOutcome`.
+- FR-014..FR-017 map to `ExecutionCycleHandle` + `IExecutionCycleRegistry` + `DrainOutcome`.
 - FR-019..FR-023 map to `WorkflowSubStatus.Interrupted` + `WorkflowInterruptedPayload`.
 - FR-024..FR-026 map to `StimulusQueueOverflowPolicy` + the decorator in R6.
 - FR-027..FR-029 map to the hosted-service registration order in R5 and the scoped `IQuiescenceSignal` in R3.

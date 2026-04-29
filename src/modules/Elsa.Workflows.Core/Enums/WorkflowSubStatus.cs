@@ -36,7 +36,7 @@ public enum WorkflowSubStatus
     Faulted,
 
     /// <summary>
-    /// The workflow's last burst of execution was force-cancelled by the runtime during a graceful drain
+    /// The workflow's last execution cycle was force-cancelled by the runtime during a graceful drain
     /// (deadline breach or operator force). The instance is resumable and is picked up by the shell-activation
     /// recovery scan on the next runtime generation. Distinct from <see cref="Cancelled"/> (user-initiated) and
     /// from instances recovered by the timeout-based crash-recovery task, which remain in the <see cref="Executing"/>

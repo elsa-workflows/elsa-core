@@ -18,7 +18,7 @@ public abstract class DrainOrchestratorTestsBase
     protected readonly ISystemClock Clock = Substitute.For<ISystemClock>();
     protected readonly IQuiescenceSignal Signal = Substitute.For<IQuiescenceSignal>();
     protected readonly IIngressSourceRegistry Registry = Substitute.For<IIngressSourceRegistry>();
-    protected readonly IBurstRegistry BurstRegistry = Substitute.For<IBurstRegistry>();
+    protected readonly IExecutionCycleRegistry ExecutionCycleRegistry = Substitute.For<IExecutionCycleRegistry>();
     protected readonly IWorkflowInstanceStore InstanceStore = Substitute.For<IWorkflowInstanceStore>();
     protected readonly IWorkflowExecutionLogStore LogStore = Substitute.For<IWorkflowExecutionLogStore>();
     protected readonly GracefulShutdownOptions Options = new();
@@ -32,8 +32,8 @@ public abstract class DrainOrchestratorTestsBase
         Signal.BeginDrainAsync(Arg.Any<CancellationToken>()).Returns(_ => new ValueTask<QuiescenceState>(QuiescenceState.Initial("gen-1")));
         Registry.Sources.Returns(Array.Empty<IIngressSource>());
         Registry.Snapshot().Returns(Array.Empty<IngressSourceSnapshot>());
-        BurstRegistry.ActiveCount.Returns(0);
-        BurstRegistry.ListActiveBursts().Returns(Array.Empty<BurstHandle>());
+        ExecutionCycleRegistry.ActiveCount.Returns(0);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(Array.Empty<ExecutionCycleHandle>());
     }
 
     protected void AdvanceTime(TimeSpan span) => _now += span;
@@ -56,7 +56,7 @@ public abstract class DrainOrchestratorTestsBase
         return new DrainOrchestrator(
             Signal,
             Registry,
-            BurstRegistry,
+            ExecutionCycleRegistry,
             scopeFactory,
             Microsoft.Extensions.Options.Options.Create(Options),
             Microsoft.Extensions.Options.Options.Create(HostOptionsValue),

@@ -29,16 +29,16 @@ public class DrainOrchestratorIntegrationTests
             .Build();
     }
 
-    [Fact(DisplayName = "Full DI graph resolves IDrainOrchestrator, IQuiescenceSignal, IIngressSourceRegistry, IBurstRegistry")]
+    [Fact(DisplayName = "Full DI graph resolves IDrainOrchestrator, IQuiescenceSignal, IIngressSourceRegistry, IExecutionCycleRegistry")]
     public void ServicesResolveCleanly()
     {
         Assert.NotNull(_services.GetRequiredService<IDrainOrchestrator>());
         Assert.NotNull(_services.GetRequiredService<IQuiescenceSignal>());
         Assert.NotNull(_services.GetRequiredService<IIngressSourceRegistry>());
-        Assert.NotNull(_services.GetRequiredService<IBurstRegistry>());
+        Assert.NotNull(_services.GetRequiredService<IExecutionCycleRegistry>());
     }
 
-    [Fact(DisplayName = "Drain with no active bursts returns CompletedWithinDeadline")]
+    [Fact(DisplayName = "Drain with no active execution cycles returns CompletedWithinDeadline")]
     public async Task EmptyGraphDrainsCleanly()
     {
         var orchestrator = _services.GetRequiredService<IDrainOrchestrator>();
@@ -50,7 +50,7 @@ public class DrainOrchestratorIntegrationTests
         // The default registration includes the internal bookmark-queue-worker as an ingress source for diagnostic
         // visibility — it is paused as a no-op. We assert that all sources reach a terminal "paused" state.
         Assert.All(outcome.Sources, s => Assert.True(s.State == IngressSourceState.Paused || s.State == IngressSourceState.PauseFailed));
-        Assert.Equal(0, outcome.BurstsForceCancelledCount);
+        Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
         Assert.True(signal.CurrentState.Reason.HasFlag(QuiescenceReason.Drain), "Drain flag should be set after drain.");
     }
 

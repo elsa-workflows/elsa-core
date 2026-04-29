@@ -60,5 +60,5 @@ public sealed class WorkflowRuntimeAdminService(
     }
 
     /// <inheritdoc />
-    public RuntimeAdminStatus GetStatus() => new(signal.CurrentState, registry.Snapshot(), signal.ActiveBurstCount);
+    public RuntimeAdminStatus GetStatus() => new(signal.CurrentState, registry.Snapshot(), signal.ActiveExecutionCycleCount);
 }

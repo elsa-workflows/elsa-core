@@ -12,14 +12,14 @@ namespace Elsa.Workflows.Runtime.UnitTests.Quiescence;
 public class QuiescenceSignalPersistenceTests
 {
     private readonly ISystemClock _clock;
-    private readonly IBurstRegistry _burstRegistry;
+    private readonly IExecutionCycleRegistry _cycleRegistry;
     private readonly FakeKeyValueStore _kv;
 
     public QuiescenceSignalPersistenceTests()
     {
         _clock = Substitute.For<ISystemClock>();
         _clock.UtcNow.Returns(DateTimeOffset.Parse("2026-04-24T10:00:00Z"));
-        _burstRegistry = Substitute.For<IBurstRegistry>();
+        _cycleRegistry = Substitute.For<IExecutionCycleRegistry>();
         _kv = new FakeKeyValueStore();
     }
 
@@ -27,7 +27,7 @@ public class QuiescenceSignalPersistenceTests
     public async Task SessionScopedIgnoresKey()
     {
         _kv.Pairs["elsa.quiescence.pause.default"] = new SerializedKeyValuePair { Key = "elsa.quiescence.pause.default", SerializedValue = "prior" };
-        var sut = new QuiescenceSignal(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.SessionScoped }), _clock, _burstRegistry, _kv);
+        var sut = new QuiescenceSignal(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.SessionScoped }), _clock, _cycleRegistry, _kv);
 
         await sut.InitializePersistedStateAsync(CancellationToken.None);
 
@@ -38,7 +38,7 @@ public class QuiescenceSignalPersistenceTests
     public async Task AcrossReactivationsRestoresPause()
     {
         _kv.Pairs["elsa.quiescence.pause.default"] = new SerializedKeyValuePair { Key = "elsa.quiescence.pause.default", SerializedValue = "maintenance" };
-        var sut = new QuiescenceSignal(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _burstRegistry, _kv);
+        var sut = new QuiescenceSignal(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, _kv);
 
         await sut.InitializePersistedStateAsync(CancellationToken.None);
 
@@ -49,7 +49,7 @@ public class QuiescenceSignalPersistenceTests
     [Fact(DisplayName = "Pause writes the persisted key when policy is AcrossReactivations")]
     public async Task PauseWritesKey()
     {
-        var sut = new QuiescenceSignal(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _burstRegistry, _kv);
+        var sut = new QuiescenceSignal(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, _kv);
 
         await sut.PauseAsync("migration", "op@ex.com", CancellationToken.None);
 
@@ -60,7 +60,7 @@ public class QuiescenceSignalPersistenceTests
     [Fact(DisplayName = "Resume clears the persisted key when policy is AcrossReactivations")]
     public async Task ResumeClearsKey()
     {
-        var sut = new QuiescenceSignal(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _burstRegistry, _kv);
+        var sut = new QuiescenceSignal(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, _kv);
         await sut.PauseAsync("migration", "op@ex.com", CancellationToken.None);
 
         await sut.ResumeAsync("op@ex.com", CancellationToken.None);
@@ -71,7 +71,7 @@ public class QuiescenceSignalPersistenceTests
     [Fact(DisplayName = "Null key-value store is tolerated under AcrossReactivations")]
     public async Task NullKeyValueStoreTolerated()
     {
-        var sut = new QuiescenceSignal(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _burstRegistry, keyValueStore: null);
+        var sut = new QuiescenceSignal(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, keyValueStore: null);
 
         await sut.InitializePersistedStateAsync(CancellationToken.None);
         await sut.PauseAsync("migration", null, CancellationToken.None);

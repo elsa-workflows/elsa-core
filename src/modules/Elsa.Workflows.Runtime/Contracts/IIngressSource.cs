@@ -1,7 +1,7 @@
 namespace Elsa.Workflows.Runtime;
 
 /// <summary>
-/// An adapter through which external events enter the workflow engine. Every component that initiates bursts
+/// An adapter through which external events enter the workflow engine. Every component that initiates execution cycles
 /// from an external event — message consumers, schedulers, HTTP trigger handlers, internal durable-queue processors,
 /// internal recurring tasks that enqueue work, and third-party modules — implements this contract so the runtime
 /// can pause them uniformly during drain or administrative pause. See FR-006..FR-013.

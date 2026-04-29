@@ -20,8 +20,8 @@ namespace Elsa.Workflows.Runtime.Services;
 /// 2. Pause every registered ingress source in parallel, each bounded by its own per-source timeout. Sources that
 ///    fail to pause are recorded as <see cref="IngressSourceState.PauseFailed"/> and, if they implement
 ///    <see cref="IForceStoppable"/>, are escalated.
-/// 3. Wait for <see cref="IBurstRegistry.ActiveCount"/> to reach zero, polling on a short interval.
-/// 4. On deadline breach (or on operator force, where deadline is zero), iterate live bursts, cancel each,
+/// 3. Wait for <see cref="IExecutionCycleRegistry.ActiveCount"/> to reach zero, polling on a short interval.
+/// 4. On deadline breach (or on operator force, where deadline is zero), iterate live cycles, cancel each,
 ///    persist the corresponding instance in <see cref="WorkflowSubStatus.Interrupted"/>, and write a
 ///    <c>WorkflowInterrupted</c> entry in the per-instance execution log.
 /// 5. Return a <see cref="DrainOutcome"/>.
@@ -38,7 +38,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
     private readonly IQuiescenceSignal _signal;
     private readonly IIngressSourceRegistry _registry;
-    private readonly IBurstRegistry _bursts;
+    private readonly IExecutionCycleRegistry _cycles;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IOptions<GracefulShutdownOptions> _options;
     private readonly IOptions<HostOptions> _hostOptions;
@@ -53,7 +53,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
     public DrainOrchestrator(
         IQuiescenceSignal signal,
         IIngressSourceRegistry registry,
-        IBurstRegistry bursts,
+        IExecutionCycleRegistry cycles,
         IServiceScopeFactory scopeFactory,
         IOptions<GracefulShutdownOptions> options,
         IOptions<HostOptions> hostOptions,
@@ -63,7 +63,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
     {
         _signal = signal;
         _registry = registry;
-        _bursts = bursts;
+        _cycles = cycles;
         _scopeFactory = scopeFactory;
         _options = options;
         _hostOptions = hostOptions;
@@ -107,10 +107,10 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             pausePhase = sw.Elapsed;
             _logger.LogInformation("Ingress pause phase complete in {Elapsed}.", pausePhase);
 
-            // Phase 2: wait for active bursts to drain.
+            // Phase 2: wait for active execution cycles to drain.
             var waitStart = sw.Elapsed;
             var deadlineAt = startedAt + deadline;
-            var deadlineBreach = !await WaitForBurstsAsync(deadlineAt, cancellationToken);
+            var deadlineBreach = !await WaitForCyclesAsync(deadlineAt, cancellationToken);
             waitPhase = sw.Elapsed - waitStart;
 
             // Phase 3: outcome assembly.
@@ -119,9 +119,9 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
             if (deadlineBreach || trigger == DrainTrigger.OperatorForce)
             {
-                _logger.LogWarning("Drain {What}; force-cancelling {Count} active burst(s).",
-                    deadlineBreach ? "deadline exceeded" : "operator-forced", _bursts.ActiveCount);
-                (forceCancelled, forceCancelledIds) = await ForceCancelActiveBurstsAsync(trigger, _signal.CurrentState.GenerationId, cancellationToken);
+                _logger.LogWarning("Drain {What}; force-cancelling {Count} active execution cycle(s).",
+                    deadlineBreach ? "deadline exceeded" : "operator-forced", _cycles.ActiveCount);
+                (forceCancelled, forceCancelledIds) = await ForceCancelActiveCyclesAsync(trigger, _signal.CurrentState.GenerationId, cancellationToken);
             }
 
             // OperatorForce always reports Forced regardless of zero-deadline breach mechanics.
@@ -139,12 +139,12 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                 PausePhaseDuration: pausePhase,
                 WaitPhaseDuration: waitPhase,
                 Sources: BuildSourceFinalStates(),
-                BurstsForceCancelledCount: forceCancelled,
+                ExecutionCyclesForceCancelledCount: forceCancelled,
                 ForceCancelledInstanceIds: forceCancelledIds);
 
             lock (_sync) _previousOutcome = outcome;
             _logger.LogInformation("Drain completed: {Result} (paused={Paused}, waited={Waited}, forceCancelled={ForceCancelled}).",
-                outcome.OverallResult, outcome.PausePhaseDuration, outcome.WaitPhaseDuration, outcome.BurstsForceCancelledCount);
+                outcome.OverallResult, outcome.PausePhaseDuration, outcome.WaitPhaseDuration, outcome.ExecutionCyclesForceCancelledCount);
             return outcome;
         }
         catch (Exception ex) when (ex is not InvalidOperationException && !ex.IsFatal())
@@ -157,7 +157,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                 PausePhaseDuration: pausePhase,
                 WaitPhaseDuration: waitPhase,
                 Sources: BuildSourceFinalStates(),
-                BurstsForceCancelledCount: 0,
+                ExecutionCyclesForceCancelledCount: 0,
                 ForceCancelledInstanceIds: Array.Empty<string>());
             lock (_sync) _previousOutcome = outcome;
             return outcome;
@@ -237,18 +237,18 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         }
     }
 
-    private async Task<bool> WaitForBurstsAsync(DateTimeOffset deadlineAt, CancellationToken cancellationToken)
+    private async Task<bool> WaitForCyclesAsync(DateTimeOffset deadlineAt, CancellationToken cancellationToken)
     {
-        while (_bursts.ActiveCount > 0)
+        while (_cycles.ActiveCount > 0)
         {
             if (_clock.UtcNow >= deadlineAt) return false;
             try { await Task.Delay(PollInterval, cancellationToken); }
-            catch (OperationCanceledException) { return _bursts.ActiveCount == 0; }
+            catch (OperationCanceledException) { return _cycles.ActiveCount == 0; }
         }
         return true;
     }
 
-    /// <summary>Bound on how long the orchestrator waits for a runner to settle after invoking burst cancellation.</summary>
+    /// <summary>Bound on how long the orchestrator waits for a runner to settle after invoking execution cycle cancellation.</summary>
     private static readonly TimeSpan ForceCancelSettleTimeout = TimeSpan.FromSeconds(2);
 
     /// <summary>
@@ -259,13 +259,13 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
     /// </summary>
     private static readonly TimeSpan PersistInterruptedTimeout = TimeSpan.FromSeconds(5);
 
-    private async Task<(int Count, IReadOnlyList<string> Ids)> ForceCancelActiveBurstsAsync(DrainTrigger trigger, string generationId, CancellationToken cancellationToken)
+    private async Task<(int Count, IReadOnlyList<string> Ids)> ForceCancelActiveCyclesAsync(DrainTrigger trigger, string generationId, CancellationToken cancellationToken)
     {
         var cap = _options.Value.MaxForceCancelledInstanceIdsReported;
         var reportedIds = new List<string>(capacity: Math.Min(cap, 16));
         var totalCancelled = 0;
 
-        var live = _bursts.ListActiveBursts();
+        var live = _cycles.ListActiveCycles();
         if (live.Count == 0) return (0, Array.Empty<string>());
 
         using var scope = _scopeFactory.CreateScope();
@@ -277,8 +277,8 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             : WorkflowInterruptedPayload.ReasonDeadlineBreach;
 
         // Force-cancel proceeds in three phases. The split exists because cancelling and
-        // awaiting in the same loop made every burst after the first run at full speed
-        // through the prior burst's settle window — total wall time was O(N × settle
+        // awaiting in the same loop made every execution cycle after the first run at full speed
+        // through the prior execution cycle's settle window — total wall time was O(N × settle
         // timeout), defeating the intent of force-cancel under concurrency.
         //
         // Phase A — cancel every handle synchronously. CancellationTokenSource.Cancel is
@@ -294,12 +294,12 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             }
             catch (Exception ex) when (!ex.IsFatal())
             {
-                _logger.LogError(ex, "Failed to cancel burst {BurstId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
+                _logger.LogError(ex, "Failed to cancel execution cycle {ExecutionCycleId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
             }
         }
 
         // Phase B — wait for every runner to settle in parallel under a shared deadline.
-        // The handle disposes when BurstTrackingMiddleware exits its `using` block, which
+        // The handle disposes when ExecutionCycleTrackingMiddleware exits its `using` block, which
         // is after the workflow runner has finished its commit. We want runners' terminal
         // commits to land before we overwrite the sub-status with Interrupted — but we
         // bound the wait so a non-cancellable activity cannot block drain, accepting the
@@ -314,7 +314,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             }
             catch (TimeoutException)
             {
-                _logger.LogWarning("Burst {BurstId} (instance={InstanceId}) did not settle within {Timeout}; persisting Interrupted now (the runner may overwrite — recovery scan picks it up).", handle.Id, handle.WorkflowInstanceId, ForceCancelSettleTimeout);
+                _logger.LogWarning("Execution cycle {ExecutionCycleId} (instance={InstanceId}) did not settle within {Timeout}; persisting Interrupted now (the runner may overwrite — recovery scan picks it up).", handle.Id, handle.WorkflowInstanceId, ForceCancelSettleTimeout);
             }
             catch (OperationCanceledException) { /* drain CT fired — proceed to persist anyway */ }
         });
@@ -327,7 +327,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         // Phase B's catch on OperationCanceledException explicitly comments "drain CT fired —
         // proceed to persist anyway"; reusing the cancelled token here would have made that
         // a lie — the very first await inside PersistInterruptedAsync would observe the
-        // cancelled token and throw. Result: every burst would be left in an unrecovered
+        // cancelled token and throw. Result: every execution cycle would be left in an unrecovered
         // executing state on host shutdown. The bounded non-drain token preserves the
         // forensic write while preventing a stuck DB from hanging shutdown indefinitely.
         foreach (var handle in live)
@@ -339,7 +339,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             }
             catch (Exception ex) when (!ex.IsFatal())
             {
-                _logger.LogError(ex, "Failed to persist Interrupted for burst {BurstId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
+                _logger.LogError(ex, "Failed to persist Interrupted for execution cycle {ExecutionCycleId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
             }
         }
 
@@ -349,7 +349,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
     private async Task PersistInterruptedAsync(
         IWorkflowInstanceStore instanceStore,
         IWorkflowExecutionLogStore logStore,
-        BurstHandle handle,
+        ExecutionCycleHandle handle,
         string generationId,
         string reason,
         CancellationToken cancellationToken)
@@ -358,7 +358,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
         if (instance is null)
         {
-            // The instance row was never persisted (e.g., a burst whose runner never reached commitStateHandler).
+            // The instance row was never persisted (e.g., a execution cycle whose runner never reached commitStateHandler).
             // We cannot update a row that doesn't exist, but we MUST still write the forensic trail so postmortem
             // recovery can audit what happened. Write a synthetic WorkflowInterrupted log entry with the
             // PersistenceFailure discriminator — the workflow-definition fields are unknown so they remain empty.
@@ -369,7 +369,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                 LastActivityId: null,
                 LastActivityNodeId: null,
                 IngressSourceName: handle.IngressSourceName,
-                BurstDuration: _clock.UtcNow - handle.StartedAt);
+                ExecutionCycleDuration: _clock.UtcNow - handle.StartedAt);
             try
             {
                 await logStore.AddAsync(new Entities.WorkflowExecutionLogRecord
@@ -386,13 +386,13 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                     Timestamp = orphanPayload.InterruptedAt,
                     EventName = WorkflowInterruptedPayload.WorkflowInterruptedEventName,
                     Source = "Elsa.Workflows.Runtime.GracefulShutdown",
-                    Message = $"Workflow burst force-cancelled by the runtime ({orphanPayload.Reason}); no instance row was persisted at the time of cancellation.",
+                    Message = $"Workflow execution cycle force-cancelled by the runtime ({orphanPayload.Reason}); no instance row was persisted at the time of cancellation.",
                     Payload = orphanPayload,
                 }, cancellationToken);
             }
             catch (Exception ex) when (!ex.IsFatal())
             {
-                _logger.LogWarning(ex, "Failed to write WorkflowInterrupted log entry for orphan burst {BurstId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
+                _logger.LogWarning(ex, "Failed to write WorkflowInterrupted log entry for orphan execution cycle {ExecutionCycleId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
             }
             return;
         }
@@ -418,7 +418,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             LastActivityId: null,
             LastActivityNodeId: null,
             IngressSourceName: handle.IngressSourceName,
-            BurstDuration: _clock.UtcNow - handle.StartedAt);
+            ExecutionCycleDuration: _clock.UtcNow - handle.StartedAt);
 
         try
         {

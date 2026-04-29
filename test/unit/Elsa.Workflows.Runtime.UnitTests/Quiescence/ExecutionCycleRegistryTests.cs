@@ -4,12 +4,12 @@ using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Quiescence;
 
-public class BurstRegistryTests
+public class ExecutionCycleRegistryTests
 {
     private readonly ISystemClock _clock;
     private readonly IIngressSourceRegistry _sources;
 
-    public BurstRegistryTests()
+    public ExecutionCycleRegistryTests()
     {
         _clock = Substitute.For<ISystemClock>();
         _clock.UtcNow.Returns(DateTimeOffset.Parse("2026-04-24T10:00:00Z"));
@@ -18,16 +18,16 @@ public class BurstRegistryTests
     }
 
     [Fact(DisplayName = "Active count increases and decreases with begin/dispose")]
-    public void ActiveCountFollowsBurstLifecycle()
+    public void ActiveCountFollowsExecutionCycleLifecycle()
     {
-        var sut = new BurstRegistry(_sources, _clock);
+        var sut = new ExecutionCycleRegistry(_sources, _clock);
 
         Assert.Equal(0, sut.ActiveCount);
 
-        var a = sut.BeginBurst("instance-1", ingressSourceName: null, CancellationToken.None);
+        var a = sut.BeginCycle("instance-1", ingressSourceName: null, CancellationToken.None);
         Assert.Equal(1, sut.ActiveCount);
 
-        var b = sut.BeginBurst("instance-2", ingressSourceName: null, CancellationToken.None);
+        var b = sut.BeginCycle("instance-2", ingressSourceName: null, CancellationToken.None);
         Assert.Equal(2, sut.ActiveCount);
 
         a.Dispose();
@@ -40,9 +40,9 @@ public class BurstRegistryTests
     [Fact(DisplayName = "Begin with null ingress name does NOT flip any source")]
     public void NullIngressNameDoesNotFlip()
     {
-        var sut = new BurstRegistry(_sources, _clock);
+        var sut = new ExecutionCycleRegistry(_sources, _clock);
 
-        using var _ = sut.BeginBurst("instance-1", ingressSourceName: null, CancellationToken.None);
+        using var _ = sut.BeginCycle("instance-1", ingressSourceName: null, CancellationToken.None);
 
         _sources.DidNotReceive().MarkPauseFailedAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Exception?>());
     }
@@ -53,9 +53,9 @@ public class BurstRegistryTests
         var now = _clock.UtcNow;
         var snapshot = new[] { new IngressSourceSnapshot("http.trigger", IngressSourceState.Paused, null, now) };
         _sources.Snapshot().Returns(snapshot);
-        var sut = new BurstRegistry(_sources, _clock);
+        var sut = new ExecutionCycleRegistry(_sources, _clock);
 
-        using var _ = sut.BeginBurst("instance-1", ingressSourceName: "http.trigger", CancellationToken.None);
+        using var _ = sut.BeginCycle("instance-1", ingressSourceName: "http.trigger", CancellationToken.None);
 
         _sources.Received(1).MarkPauseFailedAsync("http.trigger", "delivered-while-paused", Arg.Any<Exception?>());
     }
@@ -66,21 +66,21 @@ public class BurstRegistryTests
         var now = _clock.UtcNow;
         var snapshot = new[] { new IngressSourceSnapshot("http.trigger", IngressSourceState.Running, null, now) };
         _sources.Snapshot().Returns(snapshot);
-        var sut = new BurstRegistry(_sources, _clock);
+        var sut = new ExecutionCycleRegistry(_sources, _clock);
 
-        using var _ = sut.BeginBurst("instance-1", ingressSourceName: "http.trigger", CancellationToken.None);
+        using var _ = sut.BeginCycle("instance-1", ingressSourceName: "http.trigger", CancellationToken.None);
 
         _sources.DidNotReceive().MarkPauseFailedAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Exception?>());
     }
 
-    [Fact(DisplayName = "ListActiveBursts returns a snapshot of live handles")]
-    public void ListActiveBurstsReturnsSnapshot()
+    [Fact(DisplayName = "ListActiveCycles returns a snapshot of live handles")]
+    public void ListActiveCyclesReturnsSnapshot()
     {
-        var sut = new BurstRegistry(_sources, _clock);
-        var a = sut.BeginBurst("instance-1", null, CancellationToken.None);
-        var b = sut.BeginBurst("instance-2", null, CancellationToken.None);
+        var sut = new ExecutionCycleRegistry(_sources, _clock);
+        var a = sut.BeginCycle("instance-1", null, CancellationToken.None);
+        var b = sut.BeginCycle("instance-2", null, CancellationToken.None);
 
-        var snapshot = sut.ListActiveBursts();
+        var snapshot = sut.ListActiveCycles();
 
         Assert.Equal(2, snapshot.Count);
         Assert.Contains(a, snapshot);
@@ -90,23 +90,23 @@ public class BurstRegistryTests
         b.Dispose();
     }
 
-    [Fact(DisplayName = "BurstHandle.Cancel triggers the cancellation token")]
-    public void BurstHandleCancelFiresToken()
+    [Fact(DisplayName = "ExecutionCycleHandle.Cancel triggers the cancellation token")]
+    public void ExecutionCycleHandleCancelFiresToken()
     {
-        var sut = new BurstRegistry(_sources, _clock);
-        using var handle = sut.BeginBurst("instance-1", null, CancellationToken.None);
+        var sut = new ExecutionCycleRegistry(_sources, _clock);
+        using var handle = sut.BeginCycle("instance-1", null, CancellationToken.None);
 
         Assert.False(handle.CancellationToken.IsCancellationRequested);
         handle.Cancel();
         Assert.True(handle.CancellationToken.IsCancellationRequested);
     }
 
-    [Fact(DisplayName = "BurstHandle.Cancel invokes the cancel callback supplied at registration")]
+    [Fact(DisplayName = "ExecutionCycleHandle.Cancel invokes the cancel callback supplied at registration")]
     public void CancelCallbackIsInvoked()
     {
-        var sut = new BurstRegistry(_sources, _clock);
+        var sut = new ExecutionCycleRegistry(_sources, _clock);
         var callbackInvocations = 0;
-        using var handle = sut.BeginBurst(
+        using var handle = sut.BeginCycle(
             "instance-1",
             ingressSourceName: null,
             linkedToken: CancellationToken.None,
@@ -125,11 +125,11 @@ public class BurstRegistryTests
         Assert.Equal(2, callbackInvocations);
     }
 
-    [Fact(DisplayName = "BurstHandle.Cancel swallows callback exceptions so drain is not interrupted")]
+    [Fact(DisplayName = "ExecutionCycleHandle.Cancel swallows callback exceptions so drain is not interrupted")]
     public void CancelCallbackExceptionsAreSwallowed()
     {
-        var sut = new BurstRegistry(_sources, _clock);
-        using var handle = sut.BeginBurst(
+        var sut = new ExecutionCycleRegistry(_sources, _clock);
+        using var handle = sut.BeginCycle(
             "instance-1",
             ingressSourceName: null,
             linkedToken: CancellationToken.None,
@@ -140,11 +140,11 @@ public class BurstRegistryTests
         Assert.True(handle.CancellationToken.IsCancellationRequested);
     }
 
-    [Fact(DisplayName = "BurstHandle.Disposed completes when the handle is disposed")]
+    [Fact(DisplayName = "ExecutionCycleHandle.Disposed completes when the handle is disposed")]
     public async Task DisposedTaskCompletesOnDispose()
     {
-        var sut = new BurstRegistry(_sources, _clock);
-        var handle = sut.BeginBurst("instance-1", null, CancellationToken.None);
+        var sut = new ExecutionCycleRegistry(_sources, _clock);
+        var handle = sut.BeginCycle("instance-1", null, CancellationToken.None);
 
         Assert.False(handle.Disposed.IsCompleted);
         handle.Dispose();

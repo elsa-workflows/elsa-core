@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Runtime.Options;
 public class GracefulShutdownOptions
 {
     /// <summary>
-    /// Maximum wall time a drain is allowed to take before outstanding bursts are force-cancelled.
+    /// Maximum wall time a drain is allowed to take before outstanding execution cycles are force-cancelled.
     /// The effective deadline is clamped to the host's own shutdown timeout minus a small safety epsilon.
     /// </summary>
     public TimeSpan DrainDeadline { get; set; } = TimeSpan.FromSeconds(30);

@@ -20,7 +20,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     private readonly IOptions<GracefulShutdownOptions> _options;
     private readonly ISystemClock _clock;
     private readonly IKeyValueStore? _keyValueStore;
-    private readonly IBurstRegistry _burstRegistry;
+    private readonly IExecutionCycleRegistry _cycleRegistry;
     private readonly string _persistenceKey;
 
     private QuiescenceState _state;
@@ -33,14 +33,14 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     public QuiescenceSignal(
         IOptions<GracefulShutdownOptions> options,
         ISystemClock clock,
-        IBurstRegistry burstRegistry,
+        IExecutionCycleRegistry cycleRegistry,
         IKeyValueStore? keyValueStore = null,
         string? shellName = null,
         string? generationId = null)
     {
         _options = options;
         _clock = clock;
-        _burstRegistry = burstRegistry;
+        _cycleRegistry = cycleRegistry;
         _keyValueStore = keyValueStore;
         _persistenceKey = PersistenceKeyPrefix + (shellName ?? "default");
         _state = QuiescenceState.Initial(generationId ?? Guid.NewGuid().ToString("N"));
@@ -60,7 +60,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     public bool IsAcceptingNewWork => CurrentState.IsAcceptingNewWork;
 
     /// <inheritdoc />
-    public int ActiveBurstCount => _burstRegistry.ActiveCount;
+    public int ActiveExecutionCycleCount => _cycleRegistry.ActiveCount;
 
     /// <summary>
     /// Loads any persisted administrative pause state. Called once per runtime generation by a startup task when

@@ -8,7 +8,7 @@ public class DispatchStimulusRequest
     public StimulusMetadata? Metadata { get; set; }
 
     /// <summary>
-    /// Name of the ingress source that initiated this dispatch. Carried through to the burst registry for
+    /// Name of the ingress source that initiated this dispatch. Carried through to the execution cycle registry for
     /// drain-time accounting and the FR-018 inconsistency detection. Null when no attribution is available.
     /// </summary>
     public string? IngressSourceName { get; set; }

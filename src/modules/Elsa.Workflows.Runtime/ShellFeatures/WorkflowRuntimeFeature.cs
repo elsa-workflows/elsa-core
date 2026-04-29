@@ -150,10 +150,10 @@ public class WorkflowRuntimeFeature : IShellFeature
         services
             .AddSingleton<IQuiescenceSignal, Services.QuiescenceSignal>()
             .AddSingleton<IIngressSourceRegistry, Services.IngressSourceRegistry>()
-            .AddSingleton<IBurstRegistry, Services.BurstRegistry>()
-            .AddSingleton<Middleware.Workflows.BurstTrackingMiddleware>()
+            .AddSingleton<IExecutionCycleRegistry, Services.ExecutionCycleRegistry>()
+            .AddSingleton<Middleware.Workflows.ExecutionCycleTrackingMiddleware>()
             // Lazy collection break the otherwise-circular dependency chain
-            // QuiescenceSignal → IBurstRegistry → IIngressSourceRegistry → IEnumerable<IIngressSource> → IQuiescenceSignal.
+            // QuiescenceSignal → IExecutionCycleRegistry → IIngressSourceRegistry → IEnumerable<IIngressSource> → IQuiescenceSignal.
             // Adapter implementations can take a direct IQuiescenceSignal dependency; the registry materializes the
             // collection on first read.
             .AddSingleton(sp => new Lazy<IEnumerable<IIngressSource>>(sp.GetServices<IIngressSource>))
@@ -242,9 +242,9 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<IActivityPropertyLogPersistenceEvaluator, ActivityPropertyLogPersistenceEvaluator>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
             .AddScoped<DefaultCommitStateHandler>()
-            // Decorator: disposes the burst handle AFTER the workflow runner's terminal commit has persisted state,
+            // Decorator: disposes the execution cycle handle AFTER the workflow runner's terminal commit has persisted state,
             // so the drain orchestrator's force-cancel path can sequence its Interrupted write to land last.
-            .AddScoped<ICommitStateHandler, Services.BurstAwareCommitStateHandler>()
+            .AddScoped<ICommitStateHandler, Services.ExecutionCycleAwareCommitStateHandler>()
             .AddScoped<WorkflowHeartbeatGeneratorFactory>()
 
             // Deprecated services.

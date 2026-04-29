@@ -218,9 +218,9 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         Module.AddActivitiesFrom<WorkflowRuntimeFeature>();
         Module.Configure<WorkflowsFeature>(workflows =>
         {
-            // BurstAwareCommitStateHandler decorates DefaultCommitStateHandler — disposes the burst handle AFTER
+            // ExecutionCycleAwareCommitStateHandler decorates DefaultCommitStateHandler — disposes the execution cycle handle AFTER
             // commit so the drain orchestrator's await-disposed sequencing can land its Interrupted write last.
-            workflows.CommitStateHandler = sp => sp.GetRequiredService<Elsa.Workflows.Runtime.Services.BurstAwareCommitStateHandler>();
+            workflows.CommitStateHandler = sp => sp.GetRequiredService<Elsa.Workflows.Runtime.Services.ExecutionCycleAwareCommitStateHandler>();
         });
 
         Services.Configure<RecurringTaskOptions>(options =>
@@ -258,9 +258,9 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         Services
             .AddSingleton<IQuiescenceSignal, Elsa.Workflows.Runtime.Services.QuiescenceSignal>()
             .AddSingleton<IIngressSourceRegistry, Elsa.Workflows.Runtime.Services.IngressSourceRegistry>()
-            .AddSingleton<IBurstRegistry, Elsa.Workflows.Runtime.Services.BurstRegistry>()
-            .AddSingleton<Elsa.Workflows.Runtime.Middleware.Workflows.BurstTrackingMiddleware>()
-            // Lazy collection breaks the otherwise-circular DI chain QuiescenceSignal → IBurstRegistry →
+            .AddSingleton<IExecutionCycleRegistry, Elsa.Workflows.Runtime.Services.ExecutionCycleRegistry>()
+            .AddSingleton<Elsa.Workflows.Runtime.Middleware.Workflows.ExecutionCycleTrackingMiddleware>()
+            // Lazy collection breaks the otherwise-circular DI chain QuiescenceSignal → IExecutionCycleRegistry →
             // IIngressSourceRegistry → IEnumerable<IIngressSource> → IQuiescenceSignal. Adapters take a direct
             // IQuiescenceSignal dependency; the registry materializes the collection on first read.
             .AddSingleton(sp => new Lazy<IEnumerable<IIngressSource>>(sp.GetServices<IIngressSource>))
@@ -337,7 +337,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IActivityPropertyLogPersistenceEvaluator, ActivityPropertyLogPersistenceEvaluator>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
             .AddScoped<DefaultCommitStateHandler>()
-            .AddScoped<Elsa.Workflows.Runtime.Services.BurstAwareCommitStateHandler>()
+            .AddScoped<Elsa.Workflows.Runtime.Services.ExecutionCycleAwareCommitStateHandler>()
             .AddScoped<WorkflowHeartbeatGeneratorFactory>()
 
             // Deprecated services.

@@ -10,7 +10,7 @@ public sealed record DrainOutcome(
     TimeSpan PausePhaseDuration,
     TimeSpan WaitPhaseDuration,
     IReadOnlyList<IngressSourceFinalState> Sources,
-    int BurstsForceCancelledCount,
+    int ExecutionCyclesForceCancelledCount,
     IReadOnlyList<string> ForceCancelledInstanceIds)
 {
     /// <summary>

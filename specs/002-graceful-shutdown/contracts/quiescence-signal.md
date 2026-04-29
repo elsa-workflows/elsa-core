@@ -25,7 +25,7 @@ public interface IQuiescenceSignal
     ValueTask<QuiescenceState> PauseAsync(string? reasonText, string? requestedBy, CancellationToken ct);
     ValueTask<QuiescenceState> ResumeAsync(string? requestedBy, CancellationToken ct);
 
-    int ActiveBurstCount { get; }                          // FR-032
+    int ActiveExecutionCycleCount { get; }                          // FR-032
 }
 ```
 

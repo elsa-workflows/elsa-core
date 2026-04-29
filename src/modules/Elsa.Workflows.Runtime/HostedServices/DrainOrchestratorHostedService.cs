@@ -29,7 +29,7 @@ public sealed class DrainOrchestratorHostedService : IHostedService
         {
             var outcome = await _orchestrator.DrainAsync(DrainTrigger.HostStopSignal, cancellationToken);
             if (outcome.OverallResult is DrainResult.DeadlineExceeded or DrainResult.AbortedByUnhandledException)
-                _logger.LogWarning("Graceful drain finished with non-clean result: {Result} (forceCancelled={Count}).", outcome.OverallResult, outcome.BurstsForceCancelledCount);
+                _logger.LogWarning("Graceful drain finished with non-clean result: {Result} (forceCancelled={Count}).", outcome.OverallResult, outcome.ExecutionCyclesForceCancelledCount);
             else
                 _logger.LogInformation("Graceful drain finished: {Result}.", outcome.OverallResult);
         }

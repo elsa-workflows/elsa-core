@@ -13,7 +13,7 @@ public class DrainOrchestratorPauseTests : DrainOrchestratorTestsBase
 
         Assert.Equal(DrainResult.CompletedWithinDeadline, outcome.OverallResult);
         Assert.Empty(outcome.Sources);
-        Assert.Equal(0, outcome.BurstsForceCancelledCount);
+        Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
     }
 
     [Fact(DisplayName = "All sources pause successfully — outcome is CompletedWithinDeadline")]

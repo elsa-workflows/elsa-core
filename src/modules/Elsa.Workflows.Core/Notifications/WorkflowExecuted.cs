@@ -5,6 +5,6 @@ using Elsa.Workflows.State;
 namespace Elsa.Workflows.Notifications;
 
 /// <summary>
-/// A domain event that is published everytime a burst of execution completes.  
+/// A domain event that is published every time an execution cycle completes.
 /// </summary>
 public record WorkflowExecuted(Workflow Workflow, WorkflowState WorkflowState, WorkflowExecutionContext WorkflowExecutionContext) : INotification;

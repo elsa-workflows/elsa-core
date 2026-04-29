@@ -46,7 +46,7 @@ description: "Task list for 002-graceful-shutdown feature implementation"
 ### Core models
 
 - [X] T010 [P] Create `QuiescenceState` record (Reason, IsAcceptingNewWork derived, PausedAt, DrainStartedAt, PauseReasonText, PauseRequestedBy, GenerationId) in `src/modules/Elsa.Workflows.Runtime/Models/QuiescenceState.cs`
-- [X] T011 [P] Create `BurstHandle` internal class (Id, WorkflowInstanceId, IngressSourceName?, StartedAt, internal `CancellationTokenSource`) in `src/modules/Elsa.Workflows.Runtime/Models/BurstHandle.cs`
+- [X] T011 [P] Create `ExecutionCycleHandle` internal class (Id, WorkflowInstanceId, IngressSourceName?, StartedAt, internal `CancellationTokenSource`) in `src/modules/Elsa.Workflows.Runtime/Models/ExecutionCycleHandle.cs`
 - [X] T012 [P] Create `IngressSourceSnapshot` record (Name, State, LastError?, LastTransitionAt) in `src/modules/Elsa.Workflows.Runtime/Models/IngressSourceSnapshot.cs`
 - [X] T013 [P] Create `IngressSourceFinalState` record (Name, State, LastError?, WasForceStopped) in `src/modules/Elsa.Workflows.Runtime/Models/IngressSourceFinalState.cs`
 - [X] T014 [P] Create `DrainResult` enum (`CompletedWithinDeadline`, `DeadlineExceeded`, `Forced`, `AbortedByUnhandledException`) in `src/modules/Elsa.Workflows.Runtime/Enums/DrainResult.cs`
@@ -59,26 +59,26 @@ description: "Task list for 002-graceful-shutdown feature implementation"
 - [X] T018 [P] Create `IQuiescenceSignal` contract per `contracts/quiescence-signal.md` in `src/modules/Elsa.Workflows.Runtime/Contracts/IQuiescenceSignal.cs`
 - [X] T019 [P] Create `IIngressSource` + `IForceStoppable` contracts per `contracts/ingress-source.md` in `src/modules/Elsa.Workflows.Runtime/Contracts/IIngressSource.cs`
 - [X] T020 [P] Create `IIngressSourceRegistry` contract (`Snapshot()`, `MarkPauseFailedAsync`) in `src/modules/Elsa.Workflows.Runtime/Contracts/IIngressSourceRegistry.cs`
-- [X] T021 [P] Create `IBurstRegistry` contract (`BeginBurstAsync(instanceId, ingressSourceName?)`, `CompleteBurst(handle)`, `ActiveCount`, `EnumerateActive()`) in `src/modules/Elsa.Workflows.Runtime/Contracts/IBurstRegistry.cs`
+- [X] T021 [P] Create `IExecutionCycleRegistry` contract (`BeginBurstAsync(instanceId, ingressSourceName?)`, `CompleteBurst(handle)`, `ActiveCount`, `EnumerateActive()`) in `src/modules/Elsa.Workflows.Runtime/Contracts/IExecutionCycleRegistry.cs`
 - [X] T022 [P] Create `IngressSourceRegistrationOptions` (with `PauseTimeoutOverride?`) in `src/modules/Elsa.Workflows.Runtime/Options/IngressSourceRegistrationOptions.cs`
 
 ### Core service implementations
 
 - [X] T023 [US-foundational] Implement `QuiescenceSignal` thread-safe state-machine (single lock for transitions, volatile read of state reference, `StateChanged` event fires only on effective transitions, reads pause-persistence key in ctor when policy = `AcrossReactivations`, writes on pause, clears on resume; resume while `Drain` flag set is a no-op returning unchanged state) in `src/modules/Elsa.Workflows.Runtime/Services/QuiescenceSignal.cs`
 - [X] T024 [US-foundational] Implement `IngressSourceRegistry` (name uniqueness on registration, per-source state tracking via `ConcurrentDictionary`, atomic `MarkPauseFailedAsync`) in `src/modules/Elsa.Workflows.Runtime/Services/IngressSourceRegistry.cs`
-- [X] T025 [US-foundational] Implement `BurstRegistry` (allocates `BurstHandle.Id`, increments counter, attributes to ingress source; on burst start checks `IIngressSourceRegistry` and flips source to `PauseFailed` with reason `"delivered-while-paused"` if the source reports `Paused`) in `src/modules/Elsa.Workflows.Runtime/Services/BurstRegistry.cs`
+- [X] T025 [US-foundational] Implement `ExecutionCycleRegistry` (allocates `ExecutionCycleHandle.Id`, increments counter, attributes to ingress source; on execution cycle start checks `IIngressSourceRegistry` and flips source to `PauseFailed` with reason `"delivered-while-paused"` if the source reports `Paused`) in `src/modules/Elsa.Workflows.Runtime/Services/ExecutionCycleRegistry.cs`
 
 ### DI registration & static extension for ingress adapters
 
 - [X] T026 Add `AddIngressSource<TSource>(Action<IngressSourceRegistrationOptions>?)` extension on `IServiceCollection` in `src/modules/Elsa.Workflows.Runtime/Extensions/IngressSourceServiceCollectionExtensions.cs` that registers the source as `IIngressSource` scoped-singleton, reads `IForceStoppable` via type-check, registers options, and queues the registration for `IIngressSourceRegistry` activation-time discovery
-- [X] T027 Wire DI registrations for `IQuiescenceSignal` → `QuiescenceSignal`, `IIngressSourceRegistry` → `IngressSourceRegistry`, `IBurstRegistry` → `BurstRegistry` (all singletons) inside `WorkflowRuntimeFeature.ConfigureServices` at `src/modules/Elsa.Workflows.Runtime/ShellFeatures/WorkflowRuntimeFeature.cs`
+- [X] T027 Wire DI registrations for `IQuiescenceSignal` → `QuiescenceSignal`, `IIngressSourceRegistry` → `IngressSourceRegistry`, `IExecutionCycleRegistry` → `ExecutionCycleRegistry` (all singletons) inside `WorkflowRuntimeFeature.ConfigureServices` at `src/modules/Elsa.Workflows.Runtime/ShellFeatures/WorkflowRuntimeFeature.cs`
 
 ### Unit tests for foundational primitives
 
 - [X] T028 [P] Unit tests for `QuiescenceSignal` state-machine (drain forward-only, pause idempotent, resume idempotent, resume-during-drain rejected, `StateChanged` fires exactly once per effective transition, composite reason flags) in `test/unit/Elsa.Workflows.Runtime.UnitTests/Quiescence/QuiescenceSignalTests.cs`
 - [X] T029 [P] Unit tests for `QuiescenceSignal` pause persistence (`SessionScoped` ignores key-value; `AcrossReactivations` reads key in ctor, writes on pause, clears on resume; uses an in-memory `IKeyValueStore` fake) in `test/unit/Elsa.Workflows.Runtime.UnitTests/Quiescence/QuiescenceSignalPersistenceTests.cs`
 - [X] T030 [P] Unit tests for `IngressSourceRegistry` (duplicate-name registration throws; `MarkPauseFailedAsync` is atomic under concurrent calls; snapshot returns consistent state) in `test/unit/Elsa.Workflows.Runtime.UnitTests/Quiescence/IngressSourceRegistryTests.cs`
-- [X] T031 [P] Unit tests for `BurstRegistry` (active count monotonic per pair of begin/complete calls, attribution recorded, detects `Paused`-but-delivering inconsistency by flipping source to `PauseFailed`) in `test/unit/Elsa.Workflows.Runtime.UnitTests/Quiescence/BurstRegistryTests.cs`
+- [X] T031 [P] Unit tests for `ExecutionCycleRegistry` (active count monotonic per pair of begin/complete calls, attribution recorded, detects `Paused`-but-delivering inconsistency by flipping source to `PauseFailed`) in `test/unit/Elsa.Workflows.Runtime.UnitTests/Quiescence/BurstRegistryTests.cs`
 
 **Checkpoint**: Foundational primitives in place. Runtime still behaves as before — no drain, no pause, no recovery scan.
 
@@ -86,21 +86,21 @@ description: "Task list for 002-graceful-shutdown feature implementation"
 
 ## Phase 3: User Story 1 — Host stop drain (Priority: P1) 🎯 MVP
 
-**Goal**: When the host receives a stop signal, ongoing workflow bursts finish at their natural persistence boundary within the drain deadline; breaches are force-cancelled and marked `Interrupted`.
+**Goal**: When the host receives a stop signal, ongoing workflow execution cycles finish at their natural persistence boundary within the drain deadline; breaches are force-cancelled and marked `Interrupted`.
 
-**Independent Test**: Start a long-running workflow; SIGTERM the host; verify no new bursts start after SIGTERM, active burst completes, instance is persisted at a clean state. In a second run with `DrainDeadline = 1s`, confirm deadline breach produces an `Interrupted` instance + `WorkflowInterrupted` log entry.
+**Independent Test**: Start a long-running workflow; SIGTERM the host; verify no new execution cycles start after SIGTERM, active execution cycle completes, instance is persisted at a clean state. In a second run with `DrainDeadline = 1s`, confirm deadline breach produces an `Interrupted` instance + `WorkflowInterrupted` log entry.
 
 ### Contracts & orchestration
 
 - [X] T032 [US1] Create `IDrainOrchestrator` contract with `DrainAsync(DrainTrigger, CancellationToken) : ValueTask<DrainOutcome>` in `src/modules/Elsa.Workflows.Runtime/Contracts/IDrainOrchestrator.cs`
-- [X] T033 [US1] Implement `DrainOrchestrator` protocol per `contracts/drain-orchestrator.md` (1. `BeginDrainAsync`; 2. parallel `IIngressSource.PauseAsync` with linked tokens and `IForceStoppable` escalation on timeout, including a fake source WITHOUT `IForceStoppable` left in `PauseFailed` with no escalation; 3. poll `ActiveCount` at 10 ms; 4. on deadline breach, iterate live bursts, cancel, persist `SubStatus = Interrupted`, write `WorkflowInterrupted` log via the T038 helper; 5. return `DrainOutcome` — all failures captured, never propagated) in `src/modules/Elsa.Workflows.Runtime/Services/DrainOrchestrator.cs`. **Prerequisite**: T038 (the log helper) MUST be completed before T033 begins.
+- [X] T033 [US1] Implement `DrainOrchestrator` protocol per `contracts/drain-orchestrator.md` (1. `BeginDrainAsync`; 2. parallel `IIngressSource.PauseAsync` with linked tokens and `IForceStoppable` escalation on timeout, including a fake source WITHOUT `IForceStoppable` left in `PauseFailed` with no escalation; 3. poll `ActiveCount` at 10 ms; 4. on deadline breach, iterate live execution cycles, cancel, persist `SubStatus = Interrupted`, write `WorkflowInterrupted` log via the T038 helper; 5. return `DrainOutcome` — all failures captured, never propagated) in `src/modules/Elsa.Workflows.Runtime/Services/DrainOrchestrator.cs`. **Prerequisite**: T038 (the log helper) MUST be completed before T033 begins.
 - [X] T034 [US1] Enforce deadline clamping: effective deadline = `min(GracefulShutdownOptions.DrainDeadline, HostOptions.ShutdownTimeout - 500ms)`; inject `IOptions<HostOptions>` into `DrainOrchestrator` in `src/modules/Elsa.Workflows.Runtime/Services/DrainOrchestrator.cs`
 - [X] T035 [US1] Implement `DrainOrchestratorHostedService : IHostedService` that subscribes to `IHostApplicationLifetime.ApplicationStopping` and invokes `IDrainOrchestrator.DrainAsync(DrainTrigger.HostStopSignal, ct)` in `StopAsync`, logging the `DrainOutcome` at `Information` / `Warning` level in `src/modules/Elsa.Workflows.Runtime/HostedServices/DrainOrchestratorHostedService.cs`
 
-### Burst attribution plumbing
+### Execution cycle attribution plumbing
 
 - [X] T036 [US1] Add optional `string? IngressSourceName` property to `DispatchWorkflowRequest` (and any symmetric request/response types in the runtime dispatch path) in `src/modules/Elsa.Workflows.Runtime/Messages/` — preserve existing API (property is optional, default null)
-- [X] T037 [US1] Wrap the three burst choke points (`IStimulusDispatcher.DispatchAsync`, `IWorkflowRunner.RunAsync`, `IWorkflowRestarter.RestartWorkflowAsync`) with `IBurstRegistry.BeginBurstAsync` / `CompleteBurst` calls, passing through `IngressSourceName` where present. Files touched: `src/modules/Elsa.Workflows.Runtime/Services/BackgroundStimulusDispatcher.cs`, plus the entry-point files identified by `grep -rn "IWorkflowRunner\|IWorkflowRestarter" src/modules/Elsa.Workflows.Runtime/Services/ | head`
+- [X] T037 [US1] Wrap the three execution cycle choke points (`IStimulusDispatcher.DispatchAsync`, `IWorkflowRunner.RunAsync`, `IWorkflowRestarter.RestartWorkflowAsync`) with `IExecutionCycleRegistry.BeginBurstAsync` / `CompleteBurst` calls, passing through `IngressSourceName` where present. Files touched: `src/modules/Elsa.Workflows.Runtime/Services/BackgroundStimulusDispatcher.cs`, plus the entry-point files identified by `grep -rn "IWorkflowRunner\|IWorkflowRestarter" src/modules/Elsa.Workflows.Runtime/Services/ | head`
 
 ### Execution-log integration
 
@@ -113,11 +113,11 @@ description: "Task list for 002-graceful-shutdown feature implementation"
 ### Tests
 
 - [X] T040 [P] [US1] Unit tests for `DrainOrchestrator` parallel pause (succeeds fast when all sources return; fails one source without blocking the others; invokes `IForceStoppable.ForceStopAsync` on timeout) using fake `IIngressSource` implementations in `test/unit/Elsa.Workflows.Runtime.UnitTests/Quiescence/DrainOrchestratorPauseTests.cs`
-- [X] T041 [P] [US1] Unit tests for `DrainOrchestrator` wait-for-bursts (returns `CompletedWithinDeadline` when bursts finish, `DeadlineExceeded` + cancel + persist + log when not; `AbortedByUnhandledException` swallowed into outcome) in `test/unit/Elsa.Workflows.Runtime.UnitTests/Quiescence/DrainOrchestratorWaitTests.cs`
-- [X] T042 [P] [US1] Integration test covering US1 scenarios 1 & 2 (host stop completes within deadline; ingress sources pause before wait phase starts). Use `[Theory]` with ≥ 3 representative workflow shapes (single-activity burst, composite-activity burst, tight-loop burst bounded by deadline) and assert 100% of bursts that CAN complete within the deadline DO complete — this is the SC-001 verification. File: `test/integration/Elsa.Workflows.IntegrationTests/GracefulShutdown/HostStopDrainTests.cs`
+- [X] T041 [P] [US1] Unit tests for `DrainOrchestrator` wait-for-execution cycles (returns `CompletedWithinDeadline` when execution cycles finish, `DeadlineExceeded` + cancel + persist + log when not; `AbortedByUnhandledException` swallowed into outcome) in `test/unit/Elsa.Workflows.Runtime.UnitTests/Quiescence/DrainOrchestratorWaitTests.cs`
+- [X] T042 [P] [US1] Integration test covering US1 scenarios 1 & 2 (host stop completes within deadline; ingress sources pause before wait phase starts). Use `[Theory]` with ≥ 3 representative workflow shapes (single-activity execution cycle, composite-activity execution cycle, tight-loop execution cycle bounded by deadline) and assert 100% of execution cycles that CAN complete within the deadline DO complete — this is the SC-001 verification. File: `test/integration/Elsa.Workflows.IntegrationTests/GracefulShutdown/HostStopDrainTests.cs`
 - [X] T043 [P] [US1] Integration test covering US1 scenario 3 + persistence-failure edge case. `[Theory]` with two cases: (a) clean deadline breach → `Interrupted` sub-status + `WorkflowInterrupted` log entry with `Reason = "DeadlineBreach"`; (b) persistence layer fails during drain (use a store decorator that throws on `SaveAsync`) → in-memory `Interrupted` marking + `WorkflowInterruptedPayload.Reason = "PersistenceFailure"` surfaced in the drain outcome. File: `test/integration/Elsa.Workflows.IntegrationTests/GracefulShutdown/DeadlineBreachTests.cs`
 - [X] T044 [P] [US1] Integration test covering US1 scenario 4 (failing ingress source reported in `DrainOutcome.Sources` with `PauseFailed`; drain completes within deadline regardless) in `test/integration/Elsa.Workflows.IntegrationTests/GracefulShutdown/FailingIngressSourceTests.cs`
-- [X] T045 [P] [US1] Unit test for burst attribution inconsistency detection (FR-018 / SC-009): a fake source reports `Paused` but starts a burst; registry flips the source to `PauseFailed` within one burst in `test/unit/Elsa.Workflows.Runtime.UnitTests/Quiescence/BurstAttributionInconsistencyTests.cs`
+- [X] T045 [P] [US1] Unit test for execution cycle attribution inconsistency detection (FR-018 / SC-009): a fake source reports `Paused` but starts a execution cycle; registry flips the source to `PauseFailed` within one execution cycle in `test/unit/Elsa.Workflows.Runtime.UnitTests/Quiescence/BurstAttributionInconsistencyTests.cs`
 
 **Checkpoint**: US1 fully functional. Host stop produces clean drains; deadline breaches produce `Interrupted` instances. No admin API yet; no automatic recovery on next start yet.
 
@@ -197,7 +197,7 @@ description: "Task list for 002-graceful-shutdown feature implementation"
 - [X] T072 [P] Implement `HttpTriggerIngressSource : IIngressSource` that pauses/resumes `HttpWorkflowsMiddleware` dispatch (pause causes middleware to short-circuit to a 503 Service Unavailable response with a `Retry-After` header; resume restores normal pass-through). Register via `AddIngressSource` in `HttpFeature.ConfigureServices`. Files: `src/modules/Elsa.Http/IngressSources/HttpTriggerIngressSource.cs`, edit `src/modules/Elsa.Http/Middleware/HttpWorkflowsMiddleware.cs`, edit `src/modules/Elsa.Http/Features/HttpFeature.cs`
 - [X] T073 [P] Implement `ScheduledTriggerIngressSource : IIngressSource` that pauses/resumes the scheduler tick loop in `Elsa.Scheduling`. Register via `AddIngressSource` in the Scheduling feature. Files: `src/modules/Elsa.Scheduling/IngressSources/ScheduledTriggerIngressSource.cs`, edit the scheduler's hosted-service/tick class (grep for `IHostedService` in `src/modules/Elsa.Scheduling/`)
 - [X] T074 [P] Make `DistributedBookmarkQueueWorker` consult `IQuiescenceSignal` at the top of each dequeue iteration (mirrors T056); register it as an `IIngressSource` named `"internal.distributed-bookmark-queue-worker"` in `src/modules/Elsa.Workflows.Runtime.Distributed/Services/DistributedBookmarkQueueWorker.cs`
-- [X] T075 [P] Integration test covering US1 scenario 5 + US2 scenario 5 (multi-shell isolation: pausing one shell does not affect another shell's active-burst throughput; draining one shell does not drain another) — uses `Elsa.Shells.Api` reload to simulate shell boundaries in `test/integration/Elsa.Workflows.IntegrationTests/GracefulShutdown/MultiShellIsolationTests.cs`
+- [X] T075 [P] Integration test covering US1 scenario 5 + US2 scenario 5 (multi-shell isolation: pausing one shell does not affect another shell's active-execution cycle throughput; draining one shell does not drain another) — uses `Elsa.Shells.Api` reload to simulate shell boundaries in `test/integration/Elsa.Workflows.IntegrationTests/GracefulShutdown/MultiShellIsolationTests.cs`
 
 ### Cross-cutting
 
@@ -280,7 +280,7 @@ Each PR is a single concern per Constitution VI.
 Task: T006 Create QuiescenceReason enum
 Task: T007 Create IngressSourceState enum
 Task: T010 Create QuiescenceState record
-Task: T011 Create BurstHandle class
+Task: T011 Create ExecutionCycleHandle class
 Task: T012 Create IngressSourceSnapshot record
 Task: T013 Create IngressSourceFinalState record
 Task: T014 Create DrainResult enum
@@ -297,7 +297,7 @@ Then a second wave for contracts:
 Task: T018 IQuiescenceSignal
 Task: T019 IIngressSource + IForceStoppable
 Task: T020 IIngressSourceRegistry
-Task: T021 IBurstRegistry
+Task: T021 IExecutionCycleRegistry
 Task: T022 IngressSourceRegistrationOptions
 ```
 
@@ -311,7 +311,7 @@ Task: T022 IngressSourceRegistrationOptions
 2. Finish Phase 2 (Foundational).
 3. Finish Phase 3 (US1 host-stop drain).
 4. **STOP** and validate US1's Independent Test manually from quickstart.md.
-5. Ship PR 1 + PR 2 as the MVP. The runtime now drains gracefully on shutdown and marks breached bursts `Interrupted` — even without the recovery scan, the timeout-based `RestartInterruptedWorkflowsTask` will eventually recover them (regression-free per SC-008).
+5. Ship PR 1 + PR 2 as the MVP. The runtime now drains gracefully on shutdown and marks breached execution cycles `Interrupted` — even without the recovery scan, the timeout-based `RestartInterruptedWorkflowsTask` will eventually recover them (regression-free per SC-008).
 
 ### Incremental delivery
 

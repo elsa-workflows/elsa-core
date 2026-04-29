@@ -61,7 +61,7 @@ Each research item resolves to a single **Decision** the implementation follows,
 
 **Decision**: `InstanceHeartbeatService` MUST remain running throughout drain and stop only after the drain orchestrator signals completion. Registered `StartAsync`/`StopAsync` ordering in `WorkflowRuntimeFeature` guarantees this by listing `DrainOrchestratorHostedService` **after** `InstanceHeartbeatService` — `IHostedService.StopAsync` runs in reverse registration order, so drain stops first, heartbeat stops last.
 
-**Rationale**: FR-029 exists because the timeout-based `RestartInterruptedWorkflowsTask` on a sibling node uses the heartbeat to decide whether a "stale" instance truly indicates a dead host. If the heartbeat stopped before drain completed, another node could false-positive-recover a workflow that is quietly finishing its burst here. Ordering via hosted-service registration is the idiomatic .NET way to enforce this without extra coordination primitives.
+**Rationale**: FR-029 exists because the timeout-based `RestartInterruptedWorkflowsTask` on a sibling node uses the heartbeat to decide whether a "stale" instance truly indicates a dead host. If the heartbeat stopped before drain completed, another node could false-positive-recover a workflow that is quietly finishing its execution cycle here. Ordering via hosted-service registration is the idiomatic .NET way to enforce this without extra coordination primitives.
 
 **Alternatives considered**:
 - Let both services stop in parallel and have the drain orchestrator write the heartbeat directly — unnecessary coupling; two services writing the same row invites a race.
@@ -81,15 +81,15 @@ Each research item resolves to a single **Decision** the implementation follows,
 
 ---
 
-## R7 — Per-burst ingress attribution plumbing
+## R7 — Per-execution cycle ingress attribution plumbing
 
-**Decision**: Threading the originating `IIngressSource` name through the dispatcher is done by adding an optional `string? IngressSourceName` property to the existing `DispatchWorkflowRequest`/`DispatchWorkflowResponse` message shape (already flowing through `IStimulusDispatcher` / `BackgroundStimulusDispatcher`). When a burst starts, the `BurstRegistry` records the pair `(BurstHandle, IngressSourceName)`. When a burst completes, the registry compares the recorded name against the source's current state — if a burst starts while the source's registry entry says `Paused`, the registry calls `IIngressSourceRegistry.MarkPauseFailed(sourceName, reason: "delivered-while-paused")`.
+**Decision**: Threading the originating `IIngressSource` name through the dispatcher is done by adding an optional `string? IngressSourceName` property to the existing `DispatchWorkflowRequest`/`DispatchWorkflowResponse` message shape (already flowing through `IStimulusDispatcher` / `BackgroundStimulusDispatcher`). When a execution cycle starts, the `ExecutionCycleRegistry` records the pair `(ExecutionCycleHandle, IngressSourceName)`. When a execution cycle completes, the registry compares the recorded name against the source's current state — if a execution cycle starts while the source's registry entry says `Paused`, the registry calls `IIngressSourceRegistry.MarkPauseFailed(sourceName, reason: "delivered-while-paused")`.
 
 **Rationale**: Attribution is cheap (an optional string) and the alternative — a side-channel diagnostic queue — duplicates state. The detection logic lives entirely inside the runtime module, so ingress adapters only need to set the name correctly at dispatch time.
 
 **Alternatives considered**:
 - AsyncLocal attribution set by the adapter when it calls `IStimulusSender` — works but is brittle across `Task.Run` boundaries.
-- Pass attribution only via mediator notifications — adds ordering requirements between the notification and the burst registration.
+- Pass attribution only via mediator notifications — adds ordering requirements between the notification and the execution cycle registration.
 
 ---
 
@@ -139,7 +139,7 @@ Each research item resolves to a single **Decision** the implementation follows,
 | R4 | Keep `RestartInterruptedWorkflowsTask` unchanged; add disjoint `RecoverInterruptedWorkflowsStartupTask` |
 | R5 | Register heartbeat service before drain orchestrator so stop order is drain → heartbeat |
 | R6 | Back-pressure = decorator pattern on `IBookmarkQueue`; readiness via `IHealthCheck` |
-| R7 | Thread `IngressSourceName` through `DispatchWorkflowRequest`; detect inconsistencies in `BurstRegistry` |
+| R7 | Thread `IngressSourceName` through `DispatchWorkflowRequest`; detect inconsistencies in `ExecutionCycleRegistry` |
 | R8 | Pause persistence via `Elsa.KeyValues` under a container-scoped key; default off |
 | R9 | Single `ManageWorkflowRuntime` permission for all admin endpoints |
 | R10 | Internal workers consult `IQuiescenceSignal` and register as ingress sources |

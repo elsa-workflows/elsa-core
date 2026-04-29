@@ -6,26 +6,26 @@ namespace Elsa.Workflows.Runtime.UnitTests.Quiescence;
 
 public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
 {
-    [Fact(DisplayName = "Wait returns CompletedWithinDeadline when burst count reaches zero before deadline")]
-    public async Task BurstsCompleteBeforeDeadline()
+    [Fact(DisplayName = "Wait returns CompletedWithinDeadline when execution cycle count reaches zero before deadline")]
+    public async Task ExecutionCyclesCompleteBeforeDeadline()
     {
-        // Simulate two active bursts that drain to zero on the second poll iteration.
+        // Simulate two active execution cycles that drain to zero on the second poll iteration.
         var calls = 0;
-        BurstRegistry.ActiveCount.Returns(_ => calls++ switch { 0 => 2, 1 => 0, _ => 0 });
+        ExecutionCycleRegistry.ActiveCount.Returns(_ => calls++ switch { 0 => 2, 1 => 0, _ => 0 });
 
         var sut = BuildSut();
         var outcome = await sut.DrainAsync(DrainTrigger.HostStopSignal);
 
         Assert.Equal(DrainResult.CompletedWithinDeadline, outcome.OverallResult);
-        Assert.Equal(0, outcome.BurstsForceCancelledCount);
+        Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
     }
 
-    [Fact(DisplayName = "Operator force trigger always reports Forced result and force-cancels live bursts")]
-    public async Task OperatorForceCancelsAllBursts()
+    [Fact(DisplayName = "Operator force trigger always reports Forced result and force-cancels live execution cycles")]
+    public async Task ForceTriggerCancelsAllCycles()
     {
-        var handle = new BurstHandle(Guid.NewGuid(), "instance-1", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
-        BurstRegistry.ActiveCount.Returns(1);
-        BurstRegistry.ListActiveBursts().Returns(new[] { handle });
+        var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-1", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        ExecutionCycleRegistry.ActiveCount.Returns(1);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
         InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>(new WorkflowInstance
             {
@@ -40,7 +40,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce);
 
         Assert.Equal(DrainResult.Forced, outcome.OverallResult);
-        Assert.Equal(1, outcome.BurstsForceCancelledCount);
+        Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
         Assert.Contains("instance-1", outcome.ForceCancelledInstanceIds);
         Assert.True(handle.CancellationToken.IsCancellationRequested);
         await InstanceStore.Received(1).SaveAsync(Arg.Is<WorkflowInstance>(i => i.SubStatus == WorkflowSubStatus.Interrupted && !i.IsExecuting), Arg.Any<CancellationToken>());
@@ -50,9 +50,9 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
     [Fact(DisplayName = "Persistence failure during drain produces Reason=PersistenceFailure in payload")]
     public async Task PersistenceFailureRecordsReason()
     {
-        var handle = new BurstHandle(Guid.NewGuid(), "instance-2", ingressSourceName: null, startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
-        BurstRegistry.ActiveCount.Returns(1);
-        BurstRegistry.ListActiveBursts().Returns(new[] { handle });
+        var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-2", ingressSourceName: null, startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        ExecutionCycleRegistry.ActiveCount.Returns(1);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
         InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>(new WorkflowInstance
             {

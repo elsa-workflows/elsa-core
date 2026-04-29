@@ -19,7 +19,7 @@ namespace Elsa.Workflows.IntegrationTests.GracefulShutdown;
 ///
 /// This is the integration-level companion to the unit tests in <c>DrainOrchestratorWaitTests</c> — it exercises the
 /// production DI graph, the real <see cref="Pipelines.WorkflowExecution.IWorkflowExecutionPipeline"/>, and the
-/// <c>BurstHandle.Disposed</c>-await sequencing that ensures the orchestrator's <c>Interrupted</c> persistence wins
+/// <c>ExecutionCycleHandle.Disposed</c>-await sequencing that ensures the orchestrator's <c>Interrupted</c> persistence wins
 /// the race against the workflow runner's terminal commit.
 /// </summary>
 public class DeadlineBreachEndToEndTests
@@ -69,13 +69,13 @@ public class DeadlineBreachEndToEndTests
         try { await workflowTask.WaitAsync(TimeSpan.FromSeconds(5)); }
         catch (Exception ex) when (!ex.IsFatal()) { /* runner may complete normally or surface OCE; either is acceptable */ }
 
-        // Drain reports a deadline breach with exactly one force-cancelled burst.
+        // Drain reports a deadline breach with exactly one force-cancelled execution cycle.
         Assert.Equal(DrainResult.DeadlineExceeded, outcome.OverallResult);
-        Assert.Equal(1, outcome.BurstsForceCancelledCount);
+        Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
         Assert.Single(outcome.ForceCancelledInstanceIds);
 
-        // The workflow instance ends up persisted as Interrupted. The BurstAwareCommitStateHandler decorator
-        // disposes the burst handle AFTER the runner's commit, so the orchestrator's await-disposed sequencing
+        // The workflow instance ends up persisted as Interrupted. The ExecutionCycleAwareCommitStateHandler decorator
+        // disposes the execution cycle handle AFTER the runner's commit, so the orchestrator's await-disposed sequencing
         // correctly lands the Interrupted write last (no runner-clobber).
         using var scope = _services.CreateScope();
         var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
@@ -87,7 +87,7 @@ public class DeadlineBreachEndToEndTests
         Assert.False(interruptedInstances[0].IsExecuting,
             "An Interrupted instance must have IsExecuting=false so the existing timeout-based crash recovery does not also pick it up.");
 
-        // A WorkflowInterrupted forensic log entry was written for the force-cancelled burst.
+        // A WorkflowInterrupted forensic log entry was written for the force-cancelled execution cycle.
         var logStore = scope.ServiceProvider.GetRequiredService<IWorkflowExecutionLogStore>();
         var logRecords = await logStore.FindManyAsync(
             new WorkflowExecutionLogRecordFilter(),
@@ -106,11 +106,11 @@ public class DeadlineBreachEndToEndTests
     {
         await _services.PopulateRegistriesAsync();
 
-        // No workflow running — drain finds zero active bursts and returns immediately.
+        // No workflow running — drain finds zero active execution cycles and returns immediately.
         var outcome = await _orchestrator.DrainAsync(DrainTrigger.HostStopSignal);
 
         Assert.Equal(DrainResult.CompletedWithinDeadline, outcome.OverallResult);
-        Assert.Equal(0, outcome.BurstsForceCancelledCount);
+        Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
     }
 }
 

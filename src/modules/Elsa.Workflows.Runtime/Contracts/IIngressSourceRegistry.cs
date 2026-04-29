@@ -2,7 +2,7 @@ namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Central inventory of ingress sources discovered via DI and surfaced to the drain orchestrator,
-/// the admin status endpoint, and the burst-attribution detector.
+/// the admin status endpoint, and the execution cycle-attribution detector.
 /// </summary>
 public interface IIngressSourceRegistry
 {
@@ -14,8 +14,8 @@ public interface IIngressSourceRegistry
 
     /// <summary>
     /// Atomically flips a source's recorded state to <see cref="IngressSourceState.PauseFailed"/> and captures the
-    /// supplied reason and error. Used by the orchestrator when a pause times out and by <c>IBurstRegistry</c>
-    /// when a source claiming <see cref="IngressSourceState.Paused"/> initiates a burst anyway.
+    /// supplied reason and error. Used by the orchestrator when a pause times out and by <c>IExecutionCycleRegistry</c>
+    /// when a source claiming <see cref="IngressSourceState.Paused"/> initiates a execution cycle anyway.
     /// </summary>
     ValueTask MarkPauseFailedAsync(string name, string reason, Exception? error = null);
 

@@ -312,6 +312,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\packages.yml = .github\workflows\packages.yml
 		.github\workflows\bounty.yml = .github\workflows\bounty.yml
 		.github\workflows\copilot-setup-steps.yml = .github\workflows\copilot-setup-steps.yml
+		.github\workflows\greploop.yml = .github\workflows\greploop.yml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "issue_templates", "issue_templates", "{36556068-64BF-4D4B-827E-EC8CDC23D516}"

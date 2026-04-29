@@ -45,7 +45,7 @@ public class StatusResponse
 {
     public QuiescenceStateDto State { get; set; } = null!;
     public List<IngressSourceStateDto> Sources { get; set; } = new();
-    public int ActiveBurstCount { get; set; }
+    public int ActiveExecutionCycleCount { get; set; }
 }
 
 /// <summary>Force-drain outcome surfaced by the force endpoint.</summary>
@@ -57,7 +57,7 @@ public class DrainOutcomeDto
     public TimeSpan PausePhaseDuration { get; set; }
     public TimeSpan WaitPhaseDuration { get; set; }
     public List<IngressSourceStateDto> Sources { get; set; } = new();
-    public int BurstsForceCancelledCount { get; set; }
+    public int ExecutionCyclesForceCancelledCount { get; set; }
     public List<string> ForceCancelledInstanceIds { get; set; } = new();
 }
 
@@ -99,6 +99,6 @@ internal static class StatusResponseFactory
     {
         State = MapState(status.State),
         Sources = status.Sources.Select(MapSource).ToList(),
-        ActiveBurstCount = status.ActiveBurstCount,
+        ActiveExecutionCycleCount = status.ActiveExecutionCycleCount,
     };
 }

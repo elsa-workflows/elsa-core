@@ -31,8 +31,8 @@ Send SIGTERM to the host process (or hit `Ctrl+C` in development). You will see 
 1. `Drain initiated (trigger=HostStopSignal)`.
 2. `Pause requested on 3 ingress sources`.
 3. `All ingress sources paused` (or `1 source(s) failed to pause within timeout`).
-4. `Waiting for 2 active burst(s) to complete`.
-5. `Drain completed within deadline` (or `Drain deadline exceeded; 1 burst(s) force-cancelled`).
+4. `Waiting for 2 active execution cycle(s) to complete`.
+5. `Drain completed within deadline` (or `Drain deadline exceeded; 1 execution cycle(s) force-cancelled`).
 6. `Instance heartbeat stopped`.
 7. Normal .NET host shutdown messages.
 
@@ -79,7 +79,7 @@ POST /admin/workflow-runtime/force
 Authorization: Bearer <token>
 ```
 
-This immediately cancels active bursts and marks their instances `Interrupted`. The host keeps running but will accept no new work until restart.
+This immediately cancels active execution cycles and marks their instances `Interrupted`. The host keeps running but will accept no new work until restart.
 
 ---
 
@@ -133,7 +133,7 @@ That is the entire integration. The runtime handles:
 - Pause timeout enforcement,
 - Force-stop escalation when the pause timeout elapses,
 - State publication in the admin status endpoint,
-- Per-burst attribution (if the consumer sets `IngressSourceName = "kafka.consumer"` on the dispatch it initiates).
+- Per-execution cycle attribution (if the consumer sets `IngressSourceName = "kafka.consumer"` on the dispatch it initiates).
 
 ---
 
@@ -141,7 +141,7 @@ That is the entire integration. The runtime handles:
 
 | Story | Manual check |
 |-------|--------------|
-| US1 (host stop) | Run a workflow with a 10 s activity; send SIGTERM mid-burst; observe the process waiting up to the deadline and the instance reaching a clean persisted state. |
+| US1 (host stop) | Run a workflow with a 10 s activity; send SIGTERM mid-execution cycle; observe the process waiting up to the deadline and the instance reaching a clean persisted state. |
 | US2 (admin pause/resume) | Hit `pause`, schedule a stimulus (external event); observe the execution log shows the stimulus was buffered but not dispatched. Hit `resume`; observe dispatch. |
 | US3 (interrupted recovery) | Set `DrainDeadline = 1s`; run a 10 s activity; SIGTERM; confirm `SubStatus = Interrupted` + `WorkflowInterrupted` log entry; restart host; observe immediate requeue without waiting for `RestartInterruptedWorkflowsTask`'s cadence. |
 

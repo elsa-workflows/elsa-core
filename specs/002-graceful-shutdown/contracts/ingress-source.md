@@ -46,7 +46,7 @@ public interface IIngressSourceRegistry
 1. **Idempotence** — `PauseAsync` on an already-paused source returns immediately (no-op); `ResumeAsync` on an already-running source returns immediately (FR-010).
 2. **Concurrency safety** — concurrent `PauseAsync`/`ResumeAsync` calls MUST converge to a single state; implementations typically guard with a semaphore or CAS on their internal state field.
 3. **Timeout model** — the orchestrator enforces `PauseTimeout` by racing the source's `PauseAsync` against a linked `CancellationTokenSource`. The source itself SHOULD observe the token but is not required to — a source that hangs past its timeout is marked `PauseFailed` regardless.
-4. **State-query truthfulness** — `CurrentState` MUST be consistent with whether the source is actively delivering. A source that reports `Paused` but continues to start bursts is detected via the burst-attribution mechanism (FR-018, R7) and its registry entry is flipped to `PauseFailed`.
+4. **State-query truthfulness** — `CurrentState` MUST be consistent with whether the source is actively delivering. A source that reports `Paused` but continues to start execution cycles is detected via the execution cycle-attribution mechanism (FR-018, R7) and its registry entry is flipped to `PauseFailed`.
 5. **No resume during drain** — implementations MAY refuse `ResumeAsync` if they can see the ambient quiescence signal indicates `Drain`. In practice the orchestrator never calls `ResumeAsync` during drain.
 
 ## Error semantics

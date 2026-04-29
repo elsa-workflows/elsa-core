@@ -5,7 +5,7 @@
 
 ## Summary
 
-Introduce a container-scoped **Quiescence Signal** inside the workflow runtime, an **Ingress Source** contract that every component feeding external events into the engine implements, and a **Drain Orchestrator** that, on host stop or shell deactivation, pauses all ingress sources, waits for active bursts to reach their natural persistence boundary within a configured deadline, and marks any bursts that breach the deadline with a new `Interrupted` sub-status. On next host start or shell activation, a scoped startup scan immediately requeues `Interrupted` instances, bypassing the existing timeout-based `RestartInterruptedWorkflowsTask` (which continues unchanged as a safety net for ungraceful crashes). An authenticated admin surface exposes pause/resume/status over the same quiescence machinery. The mechanism plugs into the existing `IShellFeature` lifecycle and the existing `Elsa.Hosting.Management` heartbeat so that graceful drain never false-positives crash recovery.
+Introduce a container-scoped **Quiescence Signal** inside the workflow runtime, an **Ingress Source** contract that every component feeding external events into the engine implements, and a **Drain Orchestrator** that, on host stop or shell deactivation, pauses all ingress sources, waits for active execution cycles to reach their natural persistence boundary within a configured deadline, and marks any execution cycles that breach the deadline with a new `Interrupted` sub-status. On next host start or shell activation, a scoped startup scan immediately requeues `Interrupted` instances, bypassing the existing timeout-based `RestartInterruptedWorkflowsTask` (which continues unchanged as a safety net for ungraceful crashes). An authenticated admin surface exposes pause/resume/status over the same quiescence machinery. The mechanism plugs into the existing `IShellFeature` lifecycle and the existing `Elsa.Hosting.Management` heartbeat so that graceful drain never false-positives crash recovery.
 
 ## Technical Context
 
@@ -16,7 +16,7 @@ Introduce a container-scoped **Quiescence Signal** inside the workflow runtime, 
 **Target Platform**: Multi-target `.NET 8.0`, `.NET 9.0`, `.NET 10.0` (primary) via `src/Directory.Build.props`. Runs in any ASP.NET Core / hosted-service process; both single-runtime hosts and multi-shell hosts (`Elsa.Shells.Api`).
 **Project Type**: Modular .NET library — the 100+ project solution already described by the constitution. This feature adds no new modules; all changes land in existing modules.
 **Performance Goals**: Drain MUST complete within a configured deadline (default researched in Phase 0: 30 s). Pause must propagate to every registered ingress source in parallel, bounded by each source's own timeout (default researched in Phase 0: 5 s). Shell-activation recovery of `Interrupted` instances MUST requeue 100% of affected instances before the shell begins accepting new work — target < 2 s for ≤ 1 000 interrupted instances per shell.
-**Constraints**: (1) Host process MUST NOT exit before either drain completes or the drain deadline elapses. (2) The existing `RestartInterruptedWorkflowsTask` (timeout-based crash recovery) MUST continue to operate unchanged; no regression in its behaviour or latency (SC-008). (3) The existing `InstanceHeartbeatService` MUST continue emitting heartbeats throughout drain (FR-029). (4) In distributed deployments, drain is node-local; no cross-node burst handoff. (5) Pause, resume, force-stop, and status actions MUST be idempotent (SC-007). (6) No new storage entity is introduced (clarification decision 6).
+**Constraints**: (1) Host process MUST NOT exit before either drain completes or the drain deadline elapses. (2) The existing `RestartInterruptedWorkflowsTask` (timeout-based crash recovery) MUST continue to operate unchanged; no regression in its behaviour or latency (SC-008). (3) The existing `InstanceHeartbeatService` MUST continue emitting heartbeats throughout drain (FR-029). (4) In distributed deployments, drain is node-local; no cross-node execution cycle handoff. (5) Pause, resume, force-stop, and status actions MUST be idempotent (SC-007). (6) No new storage entity is introduced (clarification decision 6).
 **Scale/Scope**: Applies to every deployment of `Elsa.Workflows.Runtime`. New code surface: 1 core contract group (`IQuiescenceSignal`, `IIngressSource`, `IDrainOrchestrator`, admin endpoints), 1 new enum value, 1 new execution-log event name, 2 first-party ingress-source adapters (HTTP, Scheduling), and a shell-activation startup scan. Estimate: 25–35 new/modified source files; all confined to existing modules.
 
 ## Constitution Check
@@ -69,13 +69,13 @@ src/
 │   │   │   ├── IIngressSourceRegistry.cs          # NEW — registration + enumeration
 │   │   │   ├── IForceStoppable.cs                 # NEW — optional escalation capability
 │   │   │   ├── IDrainOrchestrator.cs              # NEW — runs the drain protocol
-│   │   │   ├── IBurstRegistry.cs                  # NEW — active-burst accounting
+│   │   │   ├── IExecutionCycleRegistry.cs                  # NEW — active-execution cycle accounting
 │   │   │   └── IInterruptedRecoveryScan.cs        # NEW — activation-time scan
 │   │   ├── Services/
 │   │   │   ├── QuiescenceSignal.cs                # NEW — thread-safe state-machine
 │   │   │   ├── IngressSourceRegistry.cs           # NEW
 │   │   │   ├── DrainOrchestrator.cs               # NEW
-│   │   │   ├── BurstRegistry.cs                   # NEW — wraps existing dispatcher entry points
+│   │   │   ├── ExecutionCycleRegistry.cs                   # NEW — wraps existing dispatcher entry points
 │   │   │   └── InterruptedRecoveryScan.cs         # NEW
 │   │   ├── HostedServices/
 │   │   │   └── DrainOrchestratorHostedService.cs  # NEW — hooks IHostApplicationLifetime.StopRequested
@@ -91,7 +91,7 @@ src/
 │   │   ├── Models/
 │   │   │   ├── QuiescenceState.cs                 # NEW — composite signal type
 │   │   │   ├── QuiescenceReason.cs                # NEW — flags enum
-│   │   │   ├── BurstHandle.cs                     # NEW
+│   │   │   ├── ExecutionCycleHandle.cs                     # NEW
 │   │   │   ├── DrainOutcome.cs                    # NEW
 │   │   │   └── Payloads/
 │   │   │       └── WorkflowInterruptedPayload.cs  # NEW — typed log-event payload
@@ -135,7 +135,7 @@ test/
 │       ├── Quiescence/
 │       │   ├── QuiescenceSignalTests.cs          # NEW
 │       │   ├── IngressSourceStateMachineTests.cs # NEW
-│       │   └── DrainOrchestratorTests.cs         # NEW — fake ingress sources + fake bursts
+│       │   └── DrainOrchestratorTests.cs         # NEW — fake ingress sources + fake execution cycles
 │       └── Recovery/
 │           └── RecoverInterruptedWorkflowsStartupTaskTests.cs  # NEW
 ├── integration/
@@ -162,7 +162,7 @@ See [research.md](./research.md) — resolves the ten research items below:
 - **R4** Distinguishing the new `Interrupted` sub-status from the existing `RestartInterruptedWorkflowsTask` (naming & filter)
 - **R5** Interaction of the existing `InstanceHeartbeatService` with drain
 - **R6** Stimulus-queue back-pressure policy representation
-- **R7** Per-burst ingress attribution plumbing
+- **R7** Per-execution cycle ingress attribution plumbing
 - **R8** Pause persistence across shell reactivation (storage location)
 - **R9** Authorization permission name for admin endpoints
 - **R10** Distributed runtime worker integration (`BookmarkQueueWorker`, `BackgroundStimulusDispatcher`)
@@ -198,7 +198,7 @@ Re-evaluated against v1.0.0 after Phase 1 artifacts exist:
 
 The task command should slice work into these PR-shaped buckets, in order:
 
-1. **Core quiescence machinery** — `IQuiescenceSignal`, `IIngressSource`, `IIngressSourceRegistry`, `BurstRegistry`, unit tests. No behaviour change to running workflows yet.
+1. **Core quiescence machinery** — `IQuiescenceSignal`, `IIngressSource`, `IIngressSourceRegistry`, `ExecutionCycleRegistry`, unit tests. No behaviour change to running workflows yet.
 2. **Drain orchestrator + host-stop integration** — `IDrainOrchestrator`, `DrainOrchestratorHostedService`, `GracefulShutdownOptions`, unit + integration tests exercising US1.
 3. **`Interrupted` sub-status + execution-log event + activation scan** — enum edits (core + API client), `WorkflowInterruptedPayload`, `RecoverInterruptedWorkflowsStartupTask`, log-extension helper, US3 integration tests. The existing `RestartInterruptedWorkflowsTask` is untouched.
 4. **Admin endpoints** — pause/resume/status/force, permission name, US2 integration tests.

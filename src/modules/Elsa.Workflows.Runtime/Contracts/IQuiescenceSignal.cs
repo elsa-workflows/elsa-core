@@ -13,8 +13,8 @@ public interface IQuiescenceSignal
     /// <summary>Convenience: <c>true</c> if the runtime is accepting new work.</summary>
     bool IsAcceptingNewWork { get; }
 
-    /// <summary>Number of active bursts currently running under this runtime.</summary>
-    int ActiveBurstCount { get; }
+    /// <summary>Number of active execution cycles currently running under this runtime.</summary>
+    int ActiveExecutionCycleCount { get; }
 
     /// <summary>
     /// Enters <see cref="QuiescenceReason.Drain"/>. Forward-only within a runtime generation.

@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Status;
 
 /// <summary>
 /// <c>GET /admin/workflow-runtime/status</c> — returns the composite quiescence state, per-ingress-source state,
-/// and active-burst count. Always readable (subject to authorisation) — even during drain.
+/// and active-execution cycle count. Always readable (subject to authorisation) — even during drain.
 /// </summary>
 [PublicAPI]
 internal sealed class StatusEndpoint(IWorkflowRuntimeAdminService admin) : ElsaEndpointWithoutRequest<StatusResponse>

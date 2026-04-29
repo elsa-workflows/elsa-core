@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Api.Endpoints.RuntimeAdmin.ForceDrain;
 
 /// <summary>
 /// <c>POST /admin/workflow-runtime/force-drain</c> — operator-escalation drain with zero deadline. Cancels every
-/// active burst, persists their instances as <see cref="WorkflowSubStatus.Interrupted"/>, and writes a
+/// active execution cycle, persists their instances as <see cref="WorkflowSubStatus.Interrupted"/>, and writes a
 /// <c>WorkflowInterrupted</c> log entry per affected instance. The host process is NOT exited; the runtime is left
 /// in <see cref="QuiescenceReason.Drain"/> until the next runtime generation.
 /// </summary>
@@ -50,7 +50,7 @@ internal sealed class ForceDrainEndpoint(IWorkflowRuntimeAdminService admin) : E
             State = s.State.ToString(),
             LastError = s.LastError?.Message,
         }).ToList(),
-        BurstsForceCancelledCount = o.BurstsForceCancelledCount,
+        ExecutionCyclesForceCancelledCount = o.ExecutionCyclesForceCancelledCount,
         ForceCancelledInstanceIds = o.ForceCancelledInstanceIds.ToList(),
     };
 }

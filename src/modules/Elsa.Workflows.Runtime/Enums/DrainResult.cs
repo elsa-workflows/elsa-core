@@ -5,15 +5,15 @@ namespace Elsa.Workflows.Runtime;
 /// </summary>
 public enum DrainResult
 {
-    /// <summary>All active bursts reached a natural persistence boundary within the drain deadline.</summary>
+    /// <summary>All active execution cycles reached a natural persistence boundary within the drain deadline.</summary>
     CompletedWithinDeadline,
 
-    /// <summary>The drain deadline elapsed while bursts were still active; they were force-cancelled and marked Interrupted.</summary>
+    /// <summary>The drain deadline elapsed while execution cycles were still active; they were force-cancelled and marked Interrupted.</summary>
     DeadlineExceeded,
 
-    /// <summary>An operator invoked the force endpoint — drain completed with zero deadline, cancelling all active bursts.</summary>
+    /// <summary>An operator invoked the force endpoint — drain completed with zero deadline, cancelling all active execution cycles.</summary>
     Forced,
 
-    /// <summary>An unexpected exception escaped the drain protocol. Bursts already marked Interrupted remain so; recovery relies on the timeout-based path.</summary>
+    /// <summary>An unexpected exception escaped the drain protocol. Execution cycles already marked Interrupted remain so; recovery relies on the timeout-based path.</summary>
     AbortedByUnhandledException,
 }

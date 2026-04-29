@@ -36,7 +36,7 @@ public static class InterruptedLogExtensions
             Timestamp = payload.InterruptedAt,
             EventName = WorkflowInterruptedPayload.WorkflowInterruptedEventName,
             Source = "Elsa.Workflows.Runtime.GracefulShutdown",
-            Message = $"Workflow burst was force-cancelled by the runtime ({payload.Reason}).",
+            Message = $"Workflow execution cycle was force-cancelled by the runtime ({payload.Reason}).",
             Payload = payload,
         };
 

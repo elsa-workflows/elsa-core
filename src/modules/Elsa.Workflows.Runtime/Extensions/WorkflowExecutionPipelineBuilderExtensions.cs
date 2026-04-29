@@ -17,7 +17,7 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     public static IWorkflowExecutionPipelineBuilder UseDefaultPipeline(this IWorkflowExecutionPipelineBuilder pipelineBuilder) =>
         pipelineBuilder
             .Reset()
-            .UseBurstTracking()
+            .UseExecutionCycleTracking()
             .UseWorkflowHeartbeat()
             .UseEngineExceptionHandling()
             .UsePersistentVariables()
@@ -32,10 +32,11 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     public static IWorkflowExecutionPipelineBuilder UseWorkflowHeartbeat(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<WorkflowHeartbeatMiddleware>();
 
     /// <summary>
-    /// Installs middleware that registers a <see cref="Elsa.Workflows.Runtime.BurstHandle"/> for the duration of each
-    /// workflow burst, so the drain orchestrator can count active executions and force-cancel them on deadline breach.
+    /// Installs middleware that registers an <see cref="Elsa.Workflows.Runtime.ExecutionCycleHandle"/> for the duration of
+    /// each workflow execution cycle, so the drain orchestrator can count active executions and force-cancel them on
+    /// deadline breach.
     /// </summary>
-    public static IWorkflowExecutionPipelineBuilder UseBurstTracking(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<BurstTrackingMiddleware>();
+    public static IWorkflowExecutionPipelineBuilder UseExecutionCycleTracking(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<ExecutionCycleTrackingMiddleware>();
 
     /// <summary>
     /// Installs middleware that persists bookmarks after workflow execution.

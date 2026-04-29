@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Runtime.UnitTests.Quiescence;
 public class QuiescenceSignalTests
 {
     private readonly ISystemClock _clock;
-    private readonly IBurstRegistry _burstRegistry;
+    private readonly IExecutionCycleRegistry _cycleRegistry;
     private readonly IOptions<GracefulShutdownOptions> _options;
     private readonly QuiescenceSignal _sut;
 
@@ -17,10 +17,10 @@ public class QuiescenceSignalTests
     {
         _clock = Substitute.For<ISystemClock>();
         _clock.UtcNow.Returns(DateTimeOffset.Parse("2026-04-24T10:00:00Z"));
-        _burstRegistry = Substitute.For<IBurstRegistry>();
-        _burstRegistry.ActiveCount.Returns(0);
+        _cycleRegistry = Substitute.For<IExecutionCycleRegistry>();
+        _cycleRegistry.ActiveCount.Returns(0);
         _options = Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions());
-        _sut = new QuiescenceSignal(_options, _clock, _burstRegistry);
+        _sut = new QuiescenceSignal(_options, _clock, _cycleRegistry);
     }
 
     [Fact(DisplayName = "Initial state is None and accepting new work")]
@@ -92,10 +92,10 @@ public class QuiescenceSignalTests
         // Resume during drain is a no-op (guarantee from FR-002 + ResumeDuringDrainNoOp).
     }
 
-    [Fact(DisplayName = "ActiveBurstCount delegates to IBurstRegistry")]
-    public void ActiveBurstCountDelegates()
+    [Fact(DisplayName = "ActiveExecutionCycleCount delegates to IBurstRegistry")]
+    public void ActiveExecutionCycleCountDelegates()
     {
-        _burstRegistry.ActiveCount.Returns(7);
-        Assert.Equal(7, _sut.ActiveBurstCount);
+        _cycleRegistry.ActiveCount.Returns(7);
+        Assert.Equal(7, _sut.ActiveExecutionCycleCount);
     }
 }

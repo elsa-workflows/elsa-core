@@ -34,7 +34,7 @@ All endpoints are **idempotent** (FR-033) and **return the post-request state**,
     { "name": "scheduling.cron", "state": "Paused", "lastError": null, "lastTransitionAt": "..." },
     { "name": "internal.bookmark-queue-worker", "state": "Paused", "lastError": null, "lastTransitionAt": "..." }
   ],
-  "activeBurstCount": 3
+  "activeExecutionCycleCount": 3
 }
 ```
 
@@ -97,7 +97,7 @@ Identical shape to the pause response. The endpoint is always readable (subject 
     "pausePhaseDuration": "00:00:00.1234",
     "waitPhaseDuration": "00:00:00.0001",
     "sources": [ ... ],
-    "burstsForceCancelledCount": 2,
+    "executionCyclesForceCancelledCount": 2,
     "forceCancelledInstanceIds": [ "..." ]
   }
 }
@@ -105,7 +105,7 @@ Identical shape to the pause response. The endpoint is always readable (subject 
 
 **Semantics**
 
-- Triggers `IDrainOrchestrator.DrainAsync(DrainTrigger.OperatorForce, ct)` with a deadline of zero — all active bursts are immediately cancelled and marked `Interrupted`. This is the operator-escalation path referenced in FR-017.
+- Triggers `IDrainOrchestrator.DrainAsync(DrainTrigger.OperatorForce, ct)` with a deadline of zero — all active execution cycles are immediately cancelled and marked `Interrupted`. This is the operator-escalation path referenced in FR-017.
 - Calling this ends normal operation. The runtime is in `Drain` state afterwards; the host process is NOT exited (that is only done by the host-stop path) — but no new work will be accepted until the host is restarted or the shell is reactivated.
 - Returns 409 Conflict if a drain is already in progress via a different trigger.
 - Audit event: `RuntimeForceRequested { RequestedBy, Reason, Timestamp, Outcome }`.

@@ -4,17 +4,17 @@ using Elsa.Common;
 namespace Elsa.Workflows.Runtime.Services;
 
 /// <summary>
-/// Default implementation of <see cref="IBurstRegistry"/>. Tracks active bursts with a thread-safe dictionary
-/// and detects the FR-018 invariant violation (a source that reports <see cref="IngressSourceState.Paused"/>
-/// but initiates a burst).
+/// Default implementation of <see cref="IExecutionCycleRegistry"/>. Tracks active execution cycles with a
+/// thread-safe dictionary and detects the FR-018 invariant violation (a source that reports
+/// <see cref="IngressSourceState.Paused"/> but initiates an execution cycle).
 /// </summary>
-public sealed class BurstRegistry : IBurstRegistry
+public sealed class ExecutionCycleRegistry : IExecutionCycleRegistry
 {
-    private readonly ConcurrentDictionary<Guid, BurstHandle> _active = new();
+    private readonly ConcurrentDictionary<Guid, ExecutionCycleHandle> _active = new();
     private readonly IIngressSourceRegistry _sources;
     private readonly ISystemClock _clock;
 
-    public BurstRegistry(IIngressSourceRegistry sources, ISystemClock clock)
+    public ExecutionCycleRegistry(IIngressSourceRegistry sources, ISystemClock clock)
     {
         _sources = sources;
         _clock = clock;
@@ -24,9 +24,9 @@ public sealed class BurstRegistry : IBurstRegistry
     public int ActiveCount => _active.Count;
 
     /// <inheritdoc />
-    public BurstHandle BeginBurst(string workflowInstanceId, string? ingressSourceName, CancellationToken linkedToken, Action? cancelCallback = null)
+    public ExecutionCycleHandle BeginCycle(string workflowInstanceId, string? ingressSourceName, CancellationToken linkedToken, Action? cancelCallback = null)
     {
-        // FR-018: a source that reports Paused but starts a burst is inconsistent — flip it to PauseFailed.
+        // FR-018: a source that reports Paused but starts an execution cycle is inconsistent — flip it to PauseFailed.
         if (ingressSourceName is not null)
         {
             var snapshot = _sources.Snapshot().FirstOrDefault(s => s.Name == ingressSourceName);
@@ -37,7 +37,7 @@ public sealed class BurstRegistry : IBurstRegistry
             }
         }
 
-        var handle = new BurstHandle(
+        var handle = new ExecutionCycleHandle(
             id: Guid.NewGuid(),
             workflowInstanceId: workflowInstanceId,
             ingressSourceName: ingressSourceName,
@@ -51,5 +51,5 @@ public sealed class BurstRegistry : IBurstRegistry
     }
 
     /// <inheritdoc />
-    public IReadOnlyCollection<BurstHandle> ListActiveBursts() => _active.Values.ToArray();
+    public IReadOnlyCollection<ExecutionCycleHandle> ListActiveCycles() => _active.Values.ToArray();
 }

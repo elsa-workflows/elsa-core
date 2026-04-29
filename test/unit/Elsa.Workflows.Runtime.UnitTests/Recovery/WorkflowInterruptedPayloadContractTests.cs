@@ -18,7 +18,7 @@ public class WorkflowInterruptedPayloadContractTests
             LastActivityId: "activity-1",
             LastActivityNodeId: "node-2",
             IngressSourceName: "http.trigger",
-            BurstDuration: TimeSpan.FromSeconds(7));
+            ExecutionCycleDuration: TimeSpan.FromSeconds(7));
 
         var json = JsonSerializer.Serialize(original);
         var deserialized = JsonSerializer.Deserialize<WorkflowInterruptedPayload>(json);
@@ -36,7 +36,7 @@ public class WorkflowInterruptedPayloadContractTests
             LastActivityId: null,
             LastActivityNodeId: null,
             IngressSourceName: null,
-            BurstDuration: TimeSpan.FromMilliseconds(50));
+            ExecutionCycleDuration: TimeSpan.FromMilliseconds(50));
 
         var json = JsonSerializer.Serialize(original);
         var deserialized = JsonSerializer.Deserialize<WorkflowInterruptedPayload>(json);
@@ -66,7 +66,7 @@ public class WorkflowInterruptedPayloadContractTests
             LastActivityId: "a",
             LastActivityNodeId: "n",
             IngressSourceName: "src",
-            BurstDuration: TimeSpan.FromSeconds(1));
+            ExecutionCycleDuration: TimeSpan.FromSeconds(1));
 
         var json = JsonSerializer.Serialize(payload);
 
