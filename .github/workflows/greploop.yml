@@ -79,9 +79,9 @@ jobs:
           HEAD_REPO_OWNER: ${{ steps.pr_head.outputs.head_repo_owner }}
           HEAD_REPO_NAME: ${{ steps.pr_head.outputs.head_repo_name }}
         run: |
-          # All step outputs are funnelled through env vars rather than ${{ }} shell interpolation
-          # so PR-author-controlled values (head ref name, repo name, etc.) cannot inject shell
-          # commands. CodeQL's "Code injection" rule for GitHub Actions enforces this pattern.
+          # All step outputs are funnelled through env vars rather than inline workflow-expression
+          # interpolation, so PR-author-controlled values (head ref name, repo name, etc.) cannot
+          # inject shell commands. CodeQL's "Code injection" rule for GitHub Actions enforces this.
           current_head_sha="$(gh pr view "$PR_NUMBER" --json headRefOid -q '.headRefOid')"
           if [ "$current_head_sha" != "$HEAD_SHA" ]; then
             echo "PR head changed after initial resolution. Expected $HEAD_SHA, got $current_head_sha." >&2
