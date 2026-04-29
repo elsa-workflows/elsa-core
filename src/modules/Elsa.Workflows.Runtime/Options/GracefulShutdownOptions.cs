@@ -15,9 +15,16 @@ public class GracefulShutdownOptions
     public TimeSpan DrainDeadline { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
-    /// Default per-ingress-source pause timeout. A source that does not complete its pause within this window is marked
+    /// Default per-ingress-source pause timeout. Used by the drain orchestrator whenever a source's
+    /// own <see cref="IIngressSource.PauseTimeout"/> is <see cref="TimeSpan.Zero"/> (or negative).
+    /// A source that does not complete its pause within the resolved window is marked
     /// <c>PauseFailed</c> and — if it implements force-stop — escalated.
     /// </summary>
+    /// <remarks>
+    /// Sources may opt out of this default by exposing their own positive <see cref="IIngressSource.PauseTimeout"/>;
+    /// the per-source value wins. The orchestrator additionally caps every per-source deadline at the overall
+    /// drain deadline so a single misbehaving source cannot exceed the host's shutdown budget.
+    /// </remarks>
     public TimeSpan IngressPauseTimeout { get; set; } = TimeSpan.FromSeconds(5);
 
     /// <summary>

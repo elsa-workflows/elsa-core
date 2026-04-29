@@ -196,7 +196,13 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
     private async Task PauseOneSourceAsync(IIngressSource source, TimeSpan overallDeadline, CancellationToken cancellationToken)
     {
-        var sourceDeadline = source.PauseTimeout > overallDeadline ? overallDeadline : source.PauseTimeout;
+        // Precedence: a positive per-source PauseTimeout wins; Zero (or negative) defers to the
+        // configured GracefulShutdownOptions.IngressPauseTimeout. The resolved value is then
+        // clamped to the overall drain deadline, with a 1 ms floor so a misconfigured zero
+        // configured-default still produces a non-zero CancelAfter.
+        var configured = _options.Value.IngressPauseTimeout;
+        var sourceDeadline = source.PauseTimeout > TimeSpan.Zero ? source.PauseTimeout : configured;
+        if (sourceDeadline > overallDeadline) sourceDeadline = overallDeadline;
         if (sourceDeadline <= TimeSpan.Zero) sourceDeadline = TimeSpan.FromMilliseconds(1);
 
         _registry.RecordTransition(source.Name, IngressSourceState.Pausing);

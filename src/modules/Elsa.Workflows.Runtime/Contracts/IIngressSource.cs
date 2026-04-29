@@ -11,7 +11,12 @@ public interface IIngressSource
     /// <summary>Stable, dot-separated identifier (e.g., <c>http.trigger</c>, <c>scheduling.cron</c>).</summary>
     string Name { get; }
 
-    /// <summary>Per-source pause timeout. The orchestrator enforces this independently of the overall drain deadline.</summary>
+    /// <summary>
+    /// Per-source pause timeout. Return <see cref="TimeSpan.Zero"/> (or negative) to defer to the
+    /// configured <c>GracefulShutdownOptions.IngressPauseTimeout</c> default; return a positive
+    /// value to override the default for this specific source. The orchestrator additionally caps
+    /// the resolved value at the overall drain deadline.
+    /// </summary>
     TimeSpan PauseTimeout { get; }
 
     /// <summary>Observable state, backed by the source's internal state machine.</summary>

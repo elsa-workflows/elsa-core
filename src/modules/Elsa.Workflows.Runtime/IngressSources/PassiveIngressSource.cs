@@ -36,11 +36,13 @@ public abstract class PassiveIngressSource(IQuiescenceSignal signal) : IIngressS
 
     /// <inheritdoc />
     /// <remarks>
-    /// Default is 50 ms. Passive sources do no work at pause time, so the timeout only bounds
-    /// the orchestrator's parallel pause-await; sub-second is correct. Override if a subclass
-    /// has a reason to differ.
+    /// Returns <see cref="TimeSpan.Zero"/> by default, which defers to the configured
+    /// <c>GracefulShutdownOptions.IngressPauseTimeout</c>. Passive sources do no work at pause
+    /// time, so any sub-second value is correct in practice; deferring to the option lets
+    /// operators tune the value globally without per-source overrides. Subclasses may override
+    /// to return a positive value if they have a reason to set their own per-source timeout.
     /// </remarks>
-    public virtual TimeSpan PauseTimeout => TimeSpan.FromMilliseconds(50);
+    public virtual TimeSpan PauseTimeout => TimeSpan.Zero;
 
     /// <inheritdoc />
     public IngressSourceState CurrentState =>
