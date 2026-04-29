@@ -251,6 +251,14 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
     /// <summary>Bound on how long the orchestrator waits for a runner to settle after invoking burst cancellation.</summary>
     private static readonly TimeSpan ForceCancelSettleTimeout = TimeSpan.FromSeconds(2);
 
+    /// <summary>
+    /// Per-handle bound on the forensic Interrupted persist write in Phase C. Decoupled from the drain
+    /// cancellation token: when the host's drain CT has already fired, the persist still has up to this long
+    /// to land the row + log entry. Keeps "proceed to persist anyway" honest while preventing a stuck DB
+    /// from hanging shutdown indefinitely.
+    /// </summary>
+    private static readonly TimeSpan PersistInterruptedTimeout = TimeSpan.FromSeconds(5);
+
     private async Task<(int Count, IReadOnlyList<string> Ids)> ForceCancelActiveBurstsAsync(DrainTrigger trigger, string generationId, CancellationToken cancellationToken)
     {
         var cap = _options.Value.MaxForceCancelledInstanceIdsReported;
@@ -314,11 +322,20 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
         // Phase C — persist Interrupted for every handle. Sequential to keep DbContext
         // usage single-threaded; per-handle persistence is small.
+        //
+        // Each persist runs under its own bounded token that is NOT linked to the drain CT.
+        // Phase B's catch on OperationCanceledException explicitly comments "drain CT fired —
+        // proceed to persist anyway"; reusing the cancelled token here would have made that
+        // a lie — the very first await inside PersistInterruptedAsync would observe the
+        // cancelled token and throw. Result: every burst would be left in an unrecovered
+        // executing state on host shutdown. The bounded non-drain token preserves the
+        // forensic write while preventing a stuck DB from hanging shutdown indefinitely.
         foreach (var handle in live)
         {
             try
             {
-                await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, reason, cancellationToken);
+                using var persistCts = new CancellationTokenSource(PersistInterruptedTimeout);
+                await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, reason, persistCts.Token);
             }
             catch (Exception ex) when (!ex.IsFatal())
             {
