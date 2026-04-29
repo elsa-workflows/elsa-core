@@ -17,6 +17,9 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     private const string PersistenceKeyPrefix = "elsa.quiescence.pause.";
 
     private readonly object _sync = new();
+    // Serializes persistence I/O so racing Pause/Resume can't reorder writes in the store. Held only across
+    // the I/O — the in-memory transition still uses the fast _sync lock, and pause/resume aren't hot paths.
+    private readonly SemaphoreSlim _persistenceMutex = new(1, 1);
     private readonly IOptions<GracefulShutdownOptions> _options;
     private readonly ISystemClock _clock;
     private readonly IKeyValueStore? _keyValueStore;
@@ -136,8 +139,8 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
             }
         }
 
-        if (transitioned && _options.Value.PausePersistence == PausePersistencePolicy.AcrossReactivations && _keyValueStore is not null)
-            await _keyValueStore.SaveAsync(new SerializedKeyValuePair { Key = _persistenceKey, SerializedValue = reasonText ?? string.Empty }, cancellationToken);
+        if (transitioned)
+            await PersistAsync(cancellationToken);
 
         return next;
     }
@@ -164,9 +167,35 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
             transitioned = true;
         }
 
-        if (transitioned && _options.Value.PausePersistence == PausePersistencePolicy.AcrossReactivations && _keyValueStore is not null)
-            await _keyValueStore.DeleteAsync(_persistenceKey, cancellationToken);
+        if (transitioned)
+            await PersistAsync(cancellationToken);
 
         return next;
+    }
+
+    /// <summary>
+    /// Persists the current administrative-pause state. Serialized via <see cref="_persistenceMutex"/> so racing
+    /// Pause/Resume can't reorder writes in the store. The live state is re-read inside the semaphore — each I/O
+    /// writes whatever the latest in-memory transition was, so N racing transitions produce N serialized writes
+    /// and the final persisted state always matches the final in-memory state.
+    /// </summary>
+    private async ValueTask PersistAsync(CancellationToken cancellationToken)
+    {
+        if (_options.Value.PausePersistence != PausePersistencePolicy.AcrossReactivations || _keyValueStore is null)
+            return;
+
+        await _persistenceMutex.WaitAsync(cancellationToken);
+        try
+        {
+            var live = Volatile.Read(ref _state);
+            if ((live.Reason & QuiescenceReason.AdministrativePause) != 0)
+                await _keyValueStore.SaveAsync(new SerializedKeyValuePair { Key = _persistenceKey, SerializedValue = live.PauseReasonText ?? string.Empty }, cancellationToken);
+            else
+                await _keyValueStore.DeleteAsync(_persistenceKey, cancellationToken);
+        }
+        finally
+        {
+            _persistenceMutex.Release();
+        }
     }
 }

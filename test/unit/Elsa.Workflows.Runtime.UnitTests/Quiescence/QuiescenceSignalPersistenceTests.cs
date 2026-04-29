@@ -68,6 +68,34 @@ public class QuiescenceSignalPersistenceTests
         Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.pause.default"));
     }
 
+    [Fact(DisplayName = "Concurrent Pause/Resume converge: persisted state matches final in-memory state")]
+    public async Task PauseResumeRaceConverges()
+    {
+        // Regression: previously PauseAsync and ResumeAsync released the inner lock before issuing the persistence
+        // I/O, so a Pause whose SaveAsync was slow could land AFTER a subsequent Resume's DeleteAsync — leaving the
+        // store reporting "paused" while in-memory state was None. On host restart the runtime would resume in the
+        // paused state the operator had already cancelled. The fix serializes persistence on a dedicated semaphore
+        // and re-reads live state inside it, so each I/O writes the most recent in-memory transition.
+        var gatedStore = new GatedFakeKeyValueStore();
+        var sut = new QuiescenceSignal(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, gatedStore);
+
+        var pauseTask = sut.PauseAsync("migration", "op@ex.com", CancellationToken.None).AsTask();
+        await gatedStore.SaveStarted.Task; // Pause has won the persistence mutex; its SaveAsync is in flight (blocked).
+
+        var resumeTask = sut.ResumeAsync("op@ex.com", CancellationToken.None).AsTask();
+        // Resume's in-memory transition runs synchronously in the inner lock; it then queues on the persistence
+        // mutex. Spin briefly to give the resume task a chance to reach the WaitAsync before we release Pause.
+        while (sut.CurrentState.Reason.HasFlag(QuiescenceReason.AdministrativePause))
+            await Task.Yield();
+
+        gatedStore.ReleaseSave(); // Unblocks Pause's SaveAsync; Resume then acquires the mutex and runs DeleteAsync.
+
+        await Task.WhenAll(pauseTask, resumeTask);
+
+        Assert.Equal(QuiescenceReason.None, sut.CurrentState.Reason);
+        Assert.False(gatedStore.Pairs.ContainsKey("elsa.quiescence.pause.default"));
+    }
+
     [Fact(DisplayName = "Null key-value store is tolerated under AcrossReactivations")]
     public async Task NullKeyValueStoreTolerated()
     {
@@ -89,6 +117,38 @@ public class QuiescenceSignalPersistenceTests
         {
             Pairs[keyValuePair.Key] = keyValuePair;
             return Task.CompletedTask;
+        }
+
+        public Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken)
+        {
+            SerializedKeyValuePair? match = filter.Key is not null && Pairs.TryGetValue(filter.Key, out var p) ? p : null;
+            return Task.FromResult(match);
+        }
+
+        public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
+            => Task.FromResult<IEnumerable<SerializedKeyValuePair>>(Pairs.Values.ToArray());
+
+        public Task DeleteAsync(string key, CancellationToken cancellationToken)
+        {
+            Pairs.Remove(key);
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>Fake store whose <see cref="SaveAsync"/> blocks on a gate so a racing Resume can interleave.</summary>
+    private sealed class GatedFakeKeyValueStore : IKeyValueStore
+    {
+        public readonly Dictionary<string, SerializedKeyValuePair> Pairs = new(StringComparer.Ordinal);
+        public readonly TaskCompletionSource SaveStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _saveGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public void ReleaseSave() => _saveGate.TrySetResult();
+
+        public async Task SaveAsync(SerializedKeyValuePair keyValuePair, CancellationToken cancellationToken)
+        {
+            SaveStarted.TrySetResult();
+            await _saveGate.Task;
+            Pairs[keyValuePair.Key] = keyValuePair;
         }
 
         public Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken)
