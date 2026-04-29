@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Runtime;
 /// (which has <c>IsExecuting = false</c>). The two filters never overlap, so an instance is recovered by exactly
 /// one mechanism — see FR-022 and research R4.
 /// </remarks>
-public interface IInterruptedRecoveryScan
+public interface IInterruptedRecoveryScanner
 {
     /// <summary>
     /// Enumerates instances in the <see cref="WorkflowSubStatus.Interrupted"/> sub-status, requeues each via

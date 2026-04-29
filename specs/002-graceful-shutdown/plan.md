@@ -70,13 +70,13 @@ src/
 │   │   │   ├── IForceStoppable.cs                 # NEW — optional escalation capability
 │   │   │   ├── IDrainOrchestrator.cs              # NEW — runs the drain protocol
 │   │   │   ├── IExecutionCycleRegistry.cs                  # NEW — active-execution cycle accounting
-│   │   │   └── IInterruptedRecoveryScan.cs        # NEW — activation-time scan
+│   │   │   └── IInterruptedRecoveryScanner.cs        # NEW — activation-time scan
 │   │   ├── Services/
 │   │   │   ├── QuiescenceSignal.cs                # NEW — thread-safe state-machine
 │   │   │   ├── IngressSourceRegistry.cs           # NEW
 │   │   │   ├── DrainOrchestrator.cs               # NEW
 │   │   │   ├── ExecutionCycleRegistry.cs                   # NEW — wraps existing dispatcher entry points
-│   │   │   └── InterruptedRecoveryScan.cs         # NEW
+│   │   │   └── InterruptedRecoveryScanner.cs         # NEW
 │   │   ├── HostedServices/
 │   │   │   └── DrainOrchestratorHostedService.cs  # NEW — hooks IHostApplicationLifetime.StopRequested
 │   │   ├── Tasks/

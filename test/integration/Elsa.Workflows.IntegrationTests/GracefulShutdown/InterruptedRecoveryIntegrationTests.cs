@@ -12,7 +12,7 @@ namespace Elsa.Workflows.IntegrationTests.GracefulShutdown;
 
 /// <summary>
 /// Integration tests for the activation-time recovery of <see cref="WorkflowSubStatus.Interrupted"/> instances
-/// (Phase 5 / US3). The scan runs against the real <see cref="IWorkflowInstanceStore"/> — backed by the in-memory
+/// (Phase 5 / US3). The scanner runs against the real <see cref="IWorkflowInstanceStore"/> — backed by the in-memory
 /// store in this test setup — and exercises the same code path as production.
 /// </summary>
 public class InterruptedRecoveryIntegrationTests
@@ -37,8 +37,8 @@ public class InterruptedRecoveryIntegrationTests
         var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
         await SeedInstancesAsync(instanceStore, count, WorkflowSubStatus.Interrupted, isExecuting: false);
 
-        var scan = ActivatorUtilities.CreateInstance<Elsa.Workflows.Runtime.Services.InterruptedRecoveryScan>(scope.ServiceProvider, fakeRestarter);
-        var requeued = await scan.ScanAndRequeueAsync(CancellationToken.None);
+        var scanner = ActivatorUtilities.CreateInstance<Elsa.Workflows.Runtime.Services.InterruptedRecoveryScanner>(scope.ServiceProvider, fakeRestarter);
+        var requeued = await scanner.ScanAndRequeueAsync(CancellationToken.None);
 
         Assert.Equal(count, requeued);
         Assert.Equal(count, fakeRestarter.RestartedIds.Count);
@@ -58,8 +58,8 @@ public class InterruptedRecoveryIntegrationTests
         // Stale-executing instance — handled by the existing RestartInterruptedWorkflowsTask, not by the new scan.
         await SeedInstancesAsync(instanceStore, 1, WorkflowSubStatus.Executing, isExecuting: true, idPrefix: "stale-");
 
-        var scan = ActivatorUtilities.CreateInstance<Elsa.Workflows.Runtime.Services.InterruptedRecoveryScan>(scope.ServiceProvider, fakeRestarter);
-        var requeued = await scan.ScanAndRequeueAsync(CancellationToken.None);
+        var scanner = ActivatorUtilities.CreateInstance<Elsa.Workflows.Runtime.Services.InterruptedRecoveryScanner>(scope.ServiceProvider, fakeRestarter);
+        var requeued = await scanner.ScanAndRequeueAsync(CancellationToken.None);
 
         Assert.Equal(3, requeued);
         Assert.All(fakeRestarter.RestartedIds, id => Assert.StartsWith("interrupted-", id));
@@ -78,8 +78,8 @@ public class InterruptedRecoveryIntegrationTests
         await SeedInstancesAsync(instanceStore, 2, WorkflowSubStatus.Interrupted, isExecuting: false, idPrefix: "graceful-");
         await SeedInstancesAsync(instanceStore, 2, WorkflowSubStatus.Executing, isExecuting: true, idPrefix: "ungraceful-");
 
-        var scan = ActivatorUtilities.CreateInstance<Elsa.Workflows.Runtime.Services.InterruptedRecoveryScan>(scope.ServiceProvider, fakeRestarter);
-        var requeued = await scan.ScanAndRequeueAsync(CancellationToken.None);
+        var scanner = ActivatorUtilities.CreateInstance<Elsa.Workflows.Runtime.Services.InterruptedRecoveryScanner>(scope.ServiceProvider, fakeRestarter);
+        var requeued = await scanner.ScanAndRequeueAsync(CancellationToken.None);
 
         Assert.Equal(2, requeued);
         Assert.All(fakeRestarter.RestartedIds, id => Assert.StartsWith("graceful-", id));

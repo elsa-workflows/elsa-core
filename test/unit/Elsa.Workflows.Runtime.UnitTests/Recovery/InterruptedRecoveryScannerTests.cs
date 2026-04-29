@@ -10,11 +10,11 @@ using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Recovery;
 
-public class InterruptedRecoveryScanTests
+public class InterruptedRecoveryScannerTests
 {
     private readonly IWorkflowRestarter _restarter = Substitute.For<IWorkflowRestarter>();
     private readonly IWorkflowInstanceStore _instanceStore = Substitute.For<IWorkflowInstanceStore>();
-    private readonly ILogger<InterruptedRecoveryScan> _logger = Substitute.For<ILogger<InterruptedRecoveryScan>>();
+    private readonly ILogger<InterruptedRecoveryScanner> _logger = Substitute.For<ILogger<InterruptedRecoveryScanner>>();
     private readonly RuntimeOptions _runtimeOptions = new() { RestartInterruptedWorkflowsBatchSize = 10 };
 
     [Fact(DisplayName = "Scan filters by SubStatus = Interrupted")]
@@ -112,7 +112,7 @@ public class InterruptedRecoveryScanTests
         await tenantService.DidNotReceive().FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    private InterruptedRecoveryScan BuildSut(ITenantService? tenantService = null, ITenantAccessor? tenantAccessor = null) =>
+    private InterruptedRecoveryScanner BuildSut(ITenantService? tenantService = null, ITenantAccessor? tenantAccessor = null) =>
         new(_restarter, _instanceStore, Microsoft.Extensions.Options.Options.Create(_runtimeOptions), _logger, tenantService, tenantAccessor);
 
     private void StubInstances(IReadOnlyList<WorkflowInstanceSummary> all)

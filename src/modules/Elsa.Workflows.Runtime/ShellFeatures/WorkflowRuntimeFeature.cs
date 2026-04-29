@@ -174,7 +174,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddTransient<CShells.Lifecycle.IDrainHandler, Lifecycle.ElsaShellDrainHandler>()
             // Interrupted-workflow recovery on shell activation (US3). Disjoint from the timeout-based
             // RestartInterruptedWorkflowsTask: filter is SubStatus = Interrupted; that task's filter is IsExecuting=true.
-            .AddScoped<IInterruptedRecoveryScan, Services.InterruptedRecoveryScan>()
+            .AddScoped<IInterruptedRecoveryScanner, Services.InterruptedRecoveryScanner>()
             .AddStartupTask<StartupTasks.RecoverInterruptedWorkflowsStartupTask>()
             // Internal bookmark-queue processor surfaced as an ingress source for diagnostic visibility (FR-006).
             // Pause behavior is enforced inside BookmarkQueueProcessor via IQuiescenceSignal (FR-024).

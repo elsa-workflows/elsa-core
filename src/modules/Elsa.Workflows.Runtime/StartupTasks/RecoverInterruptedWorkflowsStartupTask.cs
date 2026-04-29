@@ -11,11 +11,11 @@ namespace Elsa.Workflows.Runtime.StartupTasks;
 /// </summary>
 [UsedImplicitly]
 [SingleNodeTask]
-public sealed class RecoverInterruptedWorkflowsStartupTask(IInterruptedRecoveryScan scan) : IStartupTask
+public sealed class RecoverInterruptedWorkflowsStartupTask(IInterruptedRecoveryScanner scanner) : IStartupTask
 {
     /// <inheritdoc />
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await scan.ScanAndRequeueAsync(cancellationToken);
+        await scanner.ScanAndRequeueAsync(cancellationToken);
     }
 }

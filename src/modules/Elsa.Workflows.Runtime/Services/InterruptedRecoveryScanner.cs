@@ -9,22 +9,22 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Workflows.Runtime.Services;
 
 /// <summary>
-/// Default implementation of <see cref="IInterruptedRecoveryScan"/>.
+/// Default implementation of <see cref="IInterruptedRecoveryScanner"/>.
 /// </summary>
-public sealed class InterruptedRecoveryScan : IInterruptedRecoveryScan
+public sealed class InterruptedRecoveryScanner : IInterruptedRecoveryScanner
 {
     private readonly IWorkflowRestarter _restarter;
     private readonly IWorkflowInstanceStore _instanceStore;
     private readonly IOptions<RuntimeOptions> _runtimeOptions;
-    private readonly ILogger<InterruptedRecoveryScan> _logger;
+    private readonly ILogger<InterruptedRecoveryScanner> _logger;
     private readonly ITenantService? _tenantService;
     private readonly ITenantAccessor? _tenantAccessor;
 
-    public InterruptedRecoveryScan(
+    public InterruptedRecoveryScanner(
         IWorkflowRestarter restarter,
         IWorkflowInstanceStore instanceStore,
         IOptions<RuntimeOptions> runtimeOptions,
-        ILogger<InterruptedRecoveryScan> logger,
+        ILogger<InterruptedRecoveryScanner> logger,
         ITenantService? tenantService = null,
         ITenantAccessor? tenantAccessor = null)
     {
