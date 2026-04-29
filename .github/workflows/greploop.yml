@@ -62,9 +62,13 @@ jobs:
           echo "head_repo_name=$(echo "$pr_json" | jq -r '.headRepository.name')" >> "$GITHUB_OUTPUT"
 
       - name: Checkout repository
+          HEAD_REPO_OWNER: ${{ steps.pr_head.outputs.head_repo_owner }}
+          HEAD_REPO_NAME: ${{ steps.pr_head.outputs.head_repo_name }}
+          HEAD_REF: ${{ steps.pr_head.outputs.head_ref }}
+          HEAD_SHA: ${{ steps.pr_head.outputs.head_sha }}
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+          git fetch --no-tags --depth=1 "https://x-access-token:${GH_TOKEN}@github.com/${HEAD_REPO_OWNER}/${HEAD_REPO_NAME}.git" "$HEAD_REF"
+          git checkout --detach "$HEAD_SHA"
 
       - name: Configure git identity
         run: |
