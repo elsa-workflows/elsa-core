@@ -55,13 +55,13 @@ public class ExecutionCycleTrackingMiddleware(WorkflowMiddlewareDelegate next, I
         {
             await Next(context);
         }
-        catch
+        finally
         {
-            // Exception path: the runner won't reach commitStateHandler.CommitAsync, so the decorator never disposes.
-            // We dispose here to free the registry slot. Disposal is idempotent (ExecutionCycleHandle._disposed flag).
+            // ExecutionCycleAwareCommitStateHandler disposes the handle after the runner's commit on the normal path;
+            // this finally is the safety net for both exceptions AND runners that elide commit (custom dispatchers,
+            // test doubles). Without it the registry slot would leak and drain would spin to deadline. Idempotent
+            // via the ExecutionCycleHandle._disposed Interlocked guard.
             handle.Dispose();
-            throw;
         }
-        // Success path: ExecutionCycleAwareCommitStateHandler disposes the handle after the runner's commit completes.
     }
 }
