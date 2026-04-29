@@ -1,4 +1,5 @@
 using CShells.Lifecycle;
+using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Lifecycle;
@@ -28,22 +29,6 @@ namespace Elsa.Workflows.Runtime.Lifecycle;
 public sealed class ElsaShellDrainHandler(IDrainOrchestrator orchestrator, ILogger<ElsaShellDrainHandler> logger) : IDrainHandler
 {
     /// <inheritdoc />
-    public async Task DrainAsync(IDrainExtensionHandle extensionHandle, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var outcome = await orchestrator.DrainAsync(DrainTrigger.ShellDeactivation, cancellationToken);
-            if (outcome.OverallResult is DrainResult.DeadlineExceeded or DrainResult.AbortedByUnhandledException)
-                logger.LogWarning("Shell drain finished with non-clean result: {Result} (forceCancelled={Count}).", outcome.OverallResult, outcome.ExecutionCyclesForceCancelledCount);
-            else
-                logger.LogInformation("Shell drain finished: {Result} (paused={Paused}, waited={Waited}).", outcome.OverallResult, outcome.PausePhaseDuration, outcome.WaitPhaseDuration);
-        }
-        catch (InvalidOperationException ex)
-        {
-            // Another drain trigger (e.g., the host-stop hosted service) already drained this generation.
-            // The orchestrator rejects parallel non-force drains with InvalidOperationException; log and swallow
-            // so this handler does not block the shell platform's drain phase.
-            logger.LogInformation("Shell drain skipped: {Reason}", ex.Message);
-        }
-    }
+    public Task DrainAsync(IDrainExtensionHandle extensionHandle, CancellationToken cancellationToken) =>
+        DrainTriggerExecutor.RunAsync(orchestrator, DrainTrigger.ShellDeactivation, logger, "Shell drain", cancellationToken);
 }
