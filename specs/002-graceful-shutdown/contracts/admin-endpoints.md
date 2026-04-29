@@ -76,7 +76,7 @@ Identical shape to the pause response. The endpoint is always readable (subject 
 
 ---
 
-## `POST /admin/workflow-runtime/force`
+## `POST /admin/workflow-runtime/force-drain`
 
 **Request**
 
