@@ -3,24 +3,24 @@ using Elsa.Workflows.Runtime;
 using FastEndpoints;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Force;
+namespace Elsa.Workflows.Api.Endpoints.RuntimeAdmin.ForceDrain;
 
 /// <summary>
-/// <c>POST /admin/workflow-runtime/force</c> — operator-escalation drain with zero deadline. Cancels every active
-/// burst, persists their instances as <see cref="WorkflowSubStatus.Interrupted"/>, and writes a <c>WorkflowInterrupted</c>
-/// log entry per affected instance. The host process is NOT exited; the runtime is left in
-/// <see cref="QuiescenceReason.Drain"/> until the next runtime generation.
+/// <c>POST /admin/workflow-runtime/force-drain</c> — operator-escalation drain with zero deadline. Cancels every
+/// active burst, persists their instances as <see cref="WorkflowSubStatus.Interrupted"/>, and writes a
+/// <c>WorkflowInterrupted</c> log entry per affected instance. The host process is NOT exited; the runtime is left
+/// in <see cref="QuiescenceReason.Drain"/> until the next runtime generation.
 /// </summary>
 [PublicAPI]
-internal sealed class ForceEndpoint(IWorkflowRuntimeAdminService admin) : ElsaEndpoint<ForceRequest, ForceResponse>
+internal sealed class ForceDrainEndpoint(IWorkflowRuntimeAdminService admin) : ElsaEndpoint<ForceDrainRequest, ForceDrainResponse>
 {
     public override void Configure()
     {
-        Post("/admin/workflow-runtime/force");
+        Post("/admin/workflow-runtime/force-drain");
         ConfigurePermissions(PermissionNames.ManageWorkflowRuntime);
     }
 
-    public override async Task HandleAsync(ForceRequest req, CancellationToken ct)
+    public override async Task HandleAsync(ForceDrainRequest req, CancellationToken ct)
     {
         DrainOutcome outcome;
         try
@@ -30,11 +30,11 @@ internal sealed class ForceEndpoint(IWorkflowRuntimeAdminService admin) : ElsaEn
         catch (InvalidOperationException)
         {
             // Non-force drain already in progress — orchestrator rejects parallel runs.
-            await Send.ResponseAsync(new ForceResponse(), 409, ct);
+            await Send.ResponseAsync(new ForceDrainResponse(), 409, ct);
             return;
         }
 
-        await Send.OkAsync(new ForceResponse { Outcome = MapOutcome(outcome) }, ct);
+        await Send.OkAsync(new ForceDrainResponse { Outcome = MapOutcome(outcome) }, ct);
     }
 
     private static DrainOutcomeDto MapOutcome(DrainOutcome o) => new()

@@ -14,7 +14,7 @@ public class ResumeRequest
 }
 
 /// <summary>Body for the operator-force drain endpoint.</summary>
-public class ForceRequest
+public class ForceDrainRequest
 {
     public string? Reason { get; set; }
 }
@@ -61,8 +61,8 @@ public class DrainOutcomeDto
     public List<string> ForceCancelledInstanceIds { get; set; } = new();
 }
 
-/// <summary>Force endpoint response.</summary>
-public class ForceResponse
+/// <summary>Force-drain endpoint response.</summary>
+public class ForceDrainResponse
 {
     public DrainOutcomeDto Outcome { get; set; } = null!;
 }
