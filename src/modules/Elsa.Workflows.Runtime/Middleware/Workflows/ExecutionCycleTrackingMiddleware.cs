@@ -57,10 +57,7 @@ public class ExecutionCycleTrackingMiddleware(WorkflowMiddlewareDelegate next, I
         }
         finally
         {
-            // ExecutionCycleAwareCommitStateHandler disposes the handle after the runner's commit on the normal path;
-            // this finally is the safety net for both exceptions AND runners that elide commit (custom dispatchers,
-            // test doubles). Without it the registry slot would leak and drain would spin to deadline. Idempotent
-            // via the ExecutionCycleHandle._disposed Interlocked guard.
+            // Fallback: dispose if ExecutionCycleAwareCommitStateHandler didn't already (e.g., commit elided).
             handle.Dispose();
         }
     }
