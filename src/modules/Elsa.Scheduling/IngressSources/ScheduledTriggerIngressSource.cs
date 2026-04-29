@@ -1,4 +1,5 @@
 using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.IngressSources;
 
 namespace Elsa.Scheduling.IngressSources;
 
@@ -6,9 +7,10 @@ namespace Elsa.Scheduling.IngressSources;
 /// Surfaces scheduled-trigger ingress (Cron, Timer, StartAt, Delay) as an <see cref="IIngressSource"/> in the runtime's
 /// diagnostic registry. Pause/resume is observed transitively via <see cref="IQuiescenceSignal"/> — scheduled triggers
 /// dispatch through the bookmark queue, whose processor consults the signal at the top of each invocation (FR-024).
-/// This adapter therefore has no behavior of its own beyond reporting state.
+/// This adapter therefore has no behavior of its own beyond reporting state, which is what
+/// <see cref="PassiveIngressSource"/> is for.
 /// </summary>
-public sealed class ScheduledTriggerIngressSource(IQuiescenceSignal signal) : IIngressSource
+public sealed class ScheduledTriggerIngressSource(IQuiescenceSignal signal) : PassiveIngressSource(signal)
 {
     /// <inheritdoc />
     /// <remarks>
@@ -16,18 +18,5 @@ public sealed class ScheduledTriggerIngressSource(IQuiescenceSignal signal) : II
     /// <c>GET /admin/workflow-runtime/status</c> or <c>DrainOutcome.Sources</c> see this name verbatim, so the
     /// generic <c>scheduling.triggers</c> avoids implying Cron-only coverage.
     /// </remarks>
-    public string Name => "scheduling.triggers";
-
-    /// <inheritdoc />
-    public TimeSpan PauseTimeout => TimeSpan.FromMilliseconds(50);
-
-    /// <inheritdoc />
-    public IngressSourceState CurrentState =>
-        signal.IsAcceptingNewWork ? IngressSourceState.Running : IngressSourceState.Paused;
-
-    /// <inheritdoc />
-    public ValueTask PauseAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
-
-    /// <inheritdoc />
-    public ValueTask ResumeAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
+    public override string Name => "scheduling.triggers";
 }
