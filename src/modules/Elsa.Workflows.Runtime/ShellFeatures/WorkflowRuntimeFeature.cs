@@ -157,20 +157,16 @@ public class WorkflowRuntimeFeature : IShellFeature
             // Adapter implementations can take a direct IQuiescenceSignal dependency; the registry materializes the
             // collection on first read.
             .AddSingleton(sp => new Lazy<IEnumerable<IIngressSource>>(sp.GetServices<IIngressSource>))
-            // Drain orchestrator + hosted service (US1).
-            // Registration order matters: IHostedService.StopAsync runs in reverse registration order, so a
-            // graceful drain runs BEFORE the heartbeat (Elsa.Hosting.Management's InstanceHeartbeatService) stops.
-            // This guarantees the timeout-based crash recovery on sibling nodes does not false-positive (FR-029).
+            // Drain orchestrator (US1). Per-shell singleton; the per-shell IDrainHandler below is the sole drain trigger
+            // in CShells deployments — host stop reaches us via CShells's shell-drain pipeline, not via IHostedService.
             .AddSingleton<IDrainOrchestrator, Services.DrainOrchestrator>()
-            .AddHostedService<HostedServices.DrainOrchestratorHostedService>()
             // Operator-facing facade over IDrainOrchestrator + IQuiescenceSignal. Required by the Pause / Resume /
             // Status / Force admin endpoints in Elsa.Workflows.Api; without it the shell DI graph throws
             // InvalidOperationException at endpoint construction. The IModule-shaped Features/WorkflowRuntimeFeature
             // registers the same service alongside the same graceful-shutdown singletons.
             .AddSingleton<IWorkflowRuntimeAdminService, Services.WorkflowRuntimeAdminService>()
             // CShells per-shell drain hook (FR-027). Invoked when a shell enters ShellLifecycleState.Draining;
-            // gives true per-shell scoping — sibling shells on the same host are unaffected. Coexists with the
-            // host-stop hosted service above; the orchestrator's DrainAsync is idempotent.
+            // gives true per-shell scoping — sibling shells on the same host are unaffected.
             .AddTransient<CShells.Lifecycle.IDrainHandler, Lifecycle.ElsaShellDrainHandler>()
             // Interrupted-workflow recovery on shell activation (US3). Disjoint from the timeout-based
             // RestartInterruptedWorkflowsTask: filter is SubStatus = Interrupted; that task's filter is IsExecuting=true.

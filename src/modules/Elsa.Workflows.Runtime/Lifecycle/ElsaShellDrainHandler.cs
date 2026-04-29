@@ -1,5 +1,6 @@
 using CShells.Lifecycle;
 using Elsa.Workflows.Runtime.Services;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Lifecycle;
@@ -20,10 +21,10 @@ namespace Elsa.Workflows.Runtime.Lifecycle;
 /// the earlier R3 design that relied on <c>IHostApplicationLifetime.ApplicationStopping</c>.
 /// </para>
 /// <para>
-/// The <c>DrainOrchestratorHostedService</c> registration remains so non-CShells deployments (the IModule
-/// <c>Features/WorkflowRuntimeFeature</c> consumers) still drain on host stop. In CShells-hosted deployments
-/// both paths can fire; the orchestrator's <c>DrainAsync</c> is idempotent — a second non-force invocation
-/// throws <see cref="InvalidOperationException"/> which this handler catches and logs.
+/// In CShells-hosted deployments this is the sole drain trigger: host stop reaches the runtime via CShells's
+/// shell-drain pipeline (<c>CShellsStartupHostedService.StopAsync</c>), not via a host-level
+/// <see cref="IHostedService"/>. The host-stop <c>DrainOrchestratorHostedService</c> registration only lives on
+/// the IModule <c>Features/WorkflowRuntimeFeature</c> path, where there is no shell platform.
 /// </para>
 /// </remarks>
 public sealed class ElsaShellDrainHandler(IDrainOrchestrator orchestrator, ILogger<ElsaShellDrainHandler> logger) : IDrainHandler
