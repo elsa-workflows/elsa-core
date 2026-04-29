@@ -53,8 +53,8 @@ public class QuiescenceSignalPersistenceTests
 
         await sut.PauseAsync("migration", "op@ex.com", CancellationToken.None);
 
-        Assert.True(_kv.Pairs.ContainsKey("elsa.quiescence.pause.default"));
-        Assert.Equal("migration", _kv.Pairs["elsa.quiescence.pause.default"].SerializedValue);
+        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.pause.default", out var pair));
+        Assert.Equal("migration", pair.SerializedValue);
     }
 
     [Fact(DisplayName = "Resume clears the persisted key when policy is AcrossReactivations")]
@@ -81,10 +81,10 @@ public class QuiescenceSignalPersistenceTests
         await sutA.PauseAsync("migration-a", "op@ex.com", CancellationToken.None);
         await sutB.PauseAsync("migration-b", "op@ex.com", CancellationToken.None);
 
-        Assert.True(_kv.Pairs.ContainsKey("elsa.quiescence.pause.shell-a"));
-        Assert.True(_kv.Pairs.ContainsKey("elsa.quiescence.pause.shell-b"));
-        Assert.Equal("migration-a", _kv.Pairs["elsa.quiescence.pause.shell-a"].SerializedValue);
-        Assert.Equal("migration-b", _kv.Pairs["elsa.quiescence.pause.shell-b"].SerializedValue);
+        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.pause.shell-a", out var pairA));
+        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.pause.shell-b", out var pairB));
+        Assert.Equal("migration-a", pairA.SerializedValue);
+        Assert.Equal("migration-b", pairB.SerializedValue);
         Assert.False(_kv.Pairs.ContainsKey("elsa.quiescence.pause.default"));
     }
 
