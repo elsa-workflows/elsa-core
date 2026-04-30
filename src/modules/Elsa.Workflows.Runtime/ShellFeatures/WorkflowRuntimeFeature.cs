@@ -159,7 +159,6 @@ public class WorkflowRuntimeFeature : IShellFeature
                 shellName: sp.GetService<CShells.ShellSettings>()?.Id))
             .AddSingleton<IIngressSourceRegistry, Services.IngressSourceRegistry>()
             .AddSingleton<IExecutionCycleRegistry, Services.ExecutionCycleRegistry>()
-            .AddSingleton<Middleware.Workflows.ExecutionCycleTrackingMiddleware>()
             // Lazy collection break the otherwise-circular dependency chain
             // QuiescenceSignal → IExecutionCycleRegistry → IIngressSourceRegistry → IEnumerable<IIngressSource> → IQuiescenceSignal.
             // Adapter implementations can take a direct IQuiescenceSignal dependency; the registry materializes the
@@ -169,10 +168,9 @@ public class WorkflowRuntimeFeature : IShellFeature
             // in CShells deployments — host stop reaches us via CShells's shell-drain pipeline, not via IHostedService.
             .AddSingleton<IDrainOrchestrator, Services.DrainOrchestrator>()
             // Operator-facing facade over IDrainOrchestrator + IQuiescenceSignal. Required by the Pause / Resume /
-            // Status / Force admin endpoints in Elsa.Workflows.Api; without it the shell DI graph throws
-            // InvalidOperationException at endpoint construction. The IModule-shaped Features/WorkflowRuntimeFeature
-            // registers the same service alongside the same graceful-shutdown singletons.
-            .AddSingleton<IWorkflowRuntimeAdminService, Services.WorkflowRuntimeAdminService>()
+            // Status / Force admin endpoints in Elsa.Workflows.Api. Scoped because INotificationSender is scoped
+            // (mediator dispatches per-request) — endpoints are scoped too, so this is the right alignment.
+            .AddScoped<IWorkflowRuntimeAdminService, Services.WorkflowRuntimeAdminService>()
             // CShells per-shell drain hook (FR-027). Invoked when a shell enters ShellLifecycleState.Draining;
             // gives true per-shell scoping — sibling shells on the same host are unaffected.
             .AddTransient<CShells.Lifecycle.IDrainHandler, Lifecycle.ElsaShellDrainHandler>()

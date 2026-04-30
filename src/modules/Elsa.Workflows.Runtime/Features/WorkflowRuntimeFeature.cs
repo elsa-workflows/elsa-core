@@ -259,7 +259,6 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddSingleton<IQuiescenceSignal, Elsa.Workflows.Runtime.Services.QuiescenceSignal>()
             .AddSingleton<IIngressSourceRegistry, Elsa.Workflows.Runtime.Services.IngressSourceRegistry>()
             .AddSingleton<IExecutionCycleRegistry, Elsa.Workflows.Runtime.Services.ExecutionCycleRegistry>()
-            .AddSingleton<Elsa.Workflows.Runtime.Middleware.Workflows.ExecutionCycleTrackingMiddleware>()
             // Lazy collection breaks the otherwise-circular DI chain QuiescenceSignal → IExecutionCycleRegistry →
             // IIngressSourceRegistry → IEnumerable<IIngressSource> → IQuiescenceSignal. Adapters take a direct
             // IQuiescenceSignal dependency; the registry materializes the collection on first read.
@@ -268,8 +267,8 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddSingleton<IDrainOrchestrator, Elsa.Workflows.Runtime.Services.DrainOrchestrator>()
             .AddHostedService<Elsa.Workflows.Runtime.HostedServices.DrainOrchestratorHostedService>()
             // Domain service that backs all runtime-admin transports (US2). Encapsulates the audit-on-effective-
-            // transition rule (SC-007) so transports stay thin.
-            .AddSingleton<IWorkflowRuntimeAdminService, Elsa.Workflows.Runtime.Services.WorkflowRuntimeAdminService>()
+            // transition rule (SC-007) so transports stay thin. Scoped because INotificationSender is scoped.
+            .AddScoped<IWorkflowRuntimeAdminService, Elsa.Workflows.Runtime.Services.WorkflowRuntimeAdminService>()
             // Interrupted-workflow recovery on shell activation (US3). Disjoint from the timeout-based
             // RestartInterruptedWorkflowsTask: filter is SubStatus = Interrupted; that task's filter is IsExecuting=true.
             .AddScoped<IInterruptedRecoveryScanner, Elsa.Workflows.Runtime.Services.InterruptedRecoveryScanner>()
