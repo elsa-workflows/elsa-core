@@ -61,7 +61,7 @@ GET /admin/workflow-runtime/status
 Authorization: Bearer <token>
 ```
 
-Response includes per-source state. A `PauseFailed` entry is expected behaviour if one source is misbehaving — it does not block pause.
+Response includes per-source state. A `PauseFailed` entry is expected behavior if one source is misbehaving — it does not block pause.
 
 **Resume**
 
@@ -75,7 +75,7 @@ Returns 409 if a drain has been initiated — that is the edge case "Resume is r
 **Force drain (operator escalation)**
 
 ```http
-POST /admin/workflow-runtime/force
+POST /admin/workflow-runtime/force-drain
 Authorization: Bearer <token>
 ```
 

@@ -35,7 +35,7 @@ internal sealed class ForceDrainEndpoint(IWorkflowRuntimeAdminService admin) : E
             // force a null-Outcome ForceDrainResponse otherwise.
             HttpContext.Response.StatusCode = StatusCodes.Status409Conflict;
             await HttpContext.Response.WriteAsJsonAsync(
-                new ConflictResponse { Code = "DrainInProgress", State = StatusResponseFactory.Build(admin.GetStatus()) },
+                new ConflictResponse { Code = "drain-in-progress", State = StatusResponseFactory.Build(admin.GetStatus()) },
                 ct);
             return;
         }

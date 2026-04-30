@@ -7,9 +7,9 @@ namespace Elsa.Workflows.Runtime;
 /// by the runtime. Stored under <see cref="WorkflowInterruptedEventName"/>.
 /// </summary>
 /// <remarks>
-/// The <see cref="ExecutionCycleDuration"/> property is serialised under the JSON key <c>"BurstDuration"</c> for
+/// The <see cref="ExecutionCycleDuration"/> property is serialized under the JSON key <c>"BurstDuration"</c> for
 /// backwards compatibility — that key was already present in records persisted by pre-merge testers of this PR
-/// before the execution cycle → execution-cycle rename, and we preserve it so existing rows continue to deserialise. The C#
+/// before the execution cycle → execution-cycle rename, and we preserve it so existing rows continue to deserialize. The C#
 /// property name uses the new vocabulary; the wire format keeps the old one.
 /// </remarks>
 public sealed record WorkflowInterruptedPayload(

@@ -31,6 +31,6 @@
 
 ## Notes
 
-All clarifications from the 2026-04-23 session are resolved and captured in the Clarifications section. Six Q&A pairs decided: execution cycle completion semantics, pause scoping, durable stimulus queue write behaviour, per-source pause-timeout policy, the `Interrupted` sub-status, and the forensic-record location. FR-001 through FR-035 all map to at least one acceptance scenario across User Stories 1–3 and are bounded by SC-001 through SC-010. The spec stays at the "what/why" level — it references platform-level concepts ("shell lifecycle", "per-instance execution log", "durable stimulus queue") only as integration points named in the dependency list, not as implementation prescriptions.
+All clarifications from the 2026-04-23 session are resolved and captured in the Clarifications section. Six Q&A pairs decided: execution cycle completion semantics, pause scoping, durable stimulus queue write behavior, per-source pause-timeout policy, the `Interrupted` sub-status, and the forensic-record location. FR-001 through FR-035 all map to at least one acceptance scenario across User Stories 1–3 and are bounded by SC-001 through SC-010. The spec stays at the "what/why" level — it references platform-level concepts ("shell lifecycle", "per-instance execution log", "durable stimulus queue") only as integration points named in the dependency list, not as implementation prescriptions.
 
 Ready for `/speckit.clarify` (none needed) or `/speckit.plan`.

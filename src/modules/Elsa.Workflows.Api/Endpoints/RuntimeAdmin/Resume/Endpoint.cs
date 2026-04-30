@@ -2,6 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
 using FastEndpoints;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Resume;
 
@@ -24,7 +25,12 @@ internal sealed class ResumeEndpoint(IWorkflowRuntimeAdminService admin) : ElsaE
         var status = admin.GetStatus();
         if ((status.State.Reason & QuiescenceReason.Drain) != 0)
         {
-            await Send.ResponseAsync(StatusResponseFactory.Build(status), 409, ct);
+            // Use the discriminated ConflictResponse shape to match ForceDrain's 409 contract; routed via
+            // HttpContext.Response.WriteAsJsonAsync because Send.ResponseAsync is constrained to TResponse.
+            HttpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+            await HttpContext.Response.WriteAsJsonAsync(
+                new ConflictResponse { Code = "runtime-draining", State = StatusResponseFactory.Build(status) },
+                ct);
             return;
         }
 

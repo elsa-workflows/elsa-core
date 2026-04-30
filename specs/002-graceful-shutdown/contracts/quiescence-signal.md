@@ -16,8 +16,6 @@ public interface IQuiescenceSignal
 
     bool IsAcceptingNewWork { get; }                       // derived: CurrentState.Reason == None
 
-    event EventHandler<QuiescenceState>? StateChanged;
-
     // Drain is forward-only (FR-002). Returns the composite post-call state.
     ValueTask<QuiescenceState> BeginDrainAsync(CancellationToken ct = default);
 
@@ -36,7 +34,6 @@ public interface IQuiescenceSignal
 3. **Idempotent pause** — a second `PauseAsync` while `Reason HAS AdministrativePause` is a no-op with no new audit event (SC-007).
 4. **Idempotent resume** — a `ResumeAsync` while `Reason !HAS AdministrativePause` is a no-op.
 5. **Resume rejected during drain** — per Edge Cases: `ResumeAsync` MUST NOT transition out of pause if `Drain` is still set. Implementation returns the unchanged state; callers can detect via `CurrentState.Reason`.
-6. **Event firing** — `StateChanged` fires exactly once per effective transition, never on no-ops.
 
 ## Failure modes
 
@@ -45,7 +42,7 @@ public interface IQuiescenceSignal
 
 ## Persistence
 
-When `GracefulShutdownOptions.PausePersistence == AcrossReactivations`, the implementation reads persisted pause state in its constructor (via `IKeyValueStore`) and initialises `CurrentState.Reason` to `AdministrativePause` if set. `PauseAsync` writes the key; `ResumeAsync` clears it. `BeginDrainAsync` does NOT persist — drain is a per-generation event.
+When `GracefulShutdownOptions.PausePersistence == AcrossReactivations`, the implementation re-applies any persisted pause state via `InitializePersistedStateAsync`, invoked at runtime startup by `InitializePauseStateStartupTask` (IModule path) or `InitializePauseStateShellInitializer` (CShells path). On a hit, `CurrentState.Reason` is initialized to `AdministrativePause`. `PauseAsync` writes the key (under a per-shell discriminator: `elsa.quiescence.pause.{shellId}`); `ResumeAsync` clears it. `BeginDrainAsync` does NOT persist — drain is a per-generation event.
 
 ## Concrete implementation
 

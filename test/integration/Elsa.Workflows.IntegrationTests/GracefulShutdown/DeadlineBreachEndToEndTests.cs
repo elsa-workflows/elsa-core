@@ -129,7 +129,7 @@ public sealed class ObservableActivityState
 /// </summary>
 public class ObservableActivity : CodeActivity
 {
-    /// <summary>Delay in milliseconds — using <c>int</c> so the activity remains serialisable.</summary>
+    /// <summary>Delay in milliseconds — using <c>int</c> so the activity remains serializable.</summary>
     public int DelayMs { get; set; }
 
     /// <summary>Out-of-band signalling channel for the test (set by the test before scheduling).</summary>

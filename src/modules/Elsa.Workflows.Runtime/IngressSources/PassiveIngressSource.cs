@@ -21,7 +21,7 @@ namespace Elsa.Workflows.Runtime.IngressSources;
 /// </para>
 /// <para>
 /// Implement <see cref="IIngressSource"/> directly — not via this base — when the source owns
-/// concrete pause/resume behaviour. For example, a message-queue consumer that needs to call
+/// concrete pause/resume behavior. For example, a message-queue consumer that needs to call
 /// <c>Pause()</c> on its underlying client, or an HTTP poller that must stop a background
 /// loop, has work to do at pause time and should encode that work in its own
 /// <c>PauseAsync</c> / <c>ResumeAsync</c> implementations.

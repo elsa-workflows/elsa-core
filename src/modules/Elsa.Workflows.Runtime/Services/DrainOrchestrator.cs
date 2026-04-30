@@ -102,14 +102,17 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             await _signal.BeginDrainAsync(cancellationToken);
             _logger.LogInformation("Drain initiated (trigger={Trigger}, deadline={Deadline}).", trigger, deadline);
 
-            // Phase 1: parallel pause. Each source has its own timeout independent of the overall deadline.
-            await PauseAllSourcesAsync(deadline, cancellationToken);
+            var deadlineAt = startedAt + deadline;
+
+            // Phase 1: parallel pause. Each source has its own timeout independent of the overall deadline,
+            // but force-stop fallbacks are clamped to the *remaining* overall budget (deadlineAt - now), not
+            // the full TimeSpan, so a slow per-source pause can't extend the total shutdown window.
+            await PauseAllSourcesAsync(deadlineAt, cancellationToken);
             pausePhase = sw.Elapsed;
             _logger.LogInformation("Ingress pause phase complete in {Elapsed}.", pausePhase);
 
             // Phase 2: wait for active execution cycles to drain.
             var waitStart = sw.Elapsed;
-            var deadlineAt = startedAt + deadline;
             var deadlineBreach = !await WaitForCyclesAsync(deadlineAt, cancellationToken);
             waitPhase = sw.Elapsed - waitStart;
 
@@ -147,8 +150,12 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                 outcome.OverallResult, outcome.PausePhaseDuration, outcome.WaitPhaseDuration, outcome.ExecutionCyclesForceCancelledCount);
             return outcome;
         }
-        catch (Exception ex) when (ex is not InvalidOperationException && !ex.IsFatal())
+        catch (Exception ex) when (!ex.IsFatal())
         {
+            // The "drain already in progress / completed" InvalidOperationExceptions are thrown OUTSIDE this
+            // try block (during the lock-protected setup), so they bubble out without triggering this handler.
+            // Any IOE that lands here is incidental — from a store/dispatcher inside the protocol — and should
+            // be captured into the outcome rather than escaping the whole drain.
             _logger.LogError(ex, "Drain aborted by unhandled exception.");
             var outcome = new DrainOutcome(
                 OverallResult: DrainResult.AbortedByUnhandledException,
@@ -185,24 +192,25 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         return configured;
     }
 
-    private async Task PauseAllSourcesAsync(TimeSpan overallDeadline, CancellationToken cancellationToken)
+    private async Task PauseAllSourcesAsync(DateTimeOffset deadlineAt, CancellationToken cancellationToken)
     {
         var sources = _registry.Sources;
         if (sources.Count == 0) return;
 
-        var pauseTasks = sources.Select(source => PauseOneSourceAsync(source, overallDeadline, cancellationToken)).ToArray();
+        var pauseTasks = sources.Select(source => PauseOneSourceAsync(source, deadlineAt, cancellationToken)).ToArray();
         await Task.WhenAll(pauseTasks);
     }
 
-    private async Task PauseOneSourceAsync(IIngressSource source, TimeSpan overallDeadline, CancellationToken cancellationToken)
+    private async Task PauseOneSourceAsync(IIngressSource source, DateTimeOffset deadlineAt, CancellationToken cancellationToken)
     {
         // Precedence: a positive per-source PauseTimeout wins; Zero (or negative) defers to the
         // configured GracefulShutdownOptions.IngressPauseTimeout. The resolved value is then
-        // clamped to the overall drain deadline, with a 1 ms floor so a misconfigured zero
+        // clamped to the overall remaining budget, with a 1 ms floor so a misconfigured zero
         // configured-default still produces a non-zero CancelAfter.
         var configured = _options.Value.IngressPauseTimeout;
         var sourceDeadline = source.PauseTimeout > TimeSpan.Zero ? source.PauseTimeout : configured;
-        if (sourceDeadline > overallDeadline) sourceDeadline = overallDeadline;
+        var overallRemaining = deadlineAt - _clock.UtcNow;
+        if (sourceDeadline > overallRemaining) sourceDeadline = overallRemaining;
         if (sourceDeadline <= TimeSpan.Zero) sourceDeadline = TimeSpan.FromMilliseconds(1);
 
         _registry.RecordTransition(source.Name, IngressSourceState.Pausing);
@@ -217,23 +225,32 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         catch (OperationCanceledException) when (perSourceCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
         {
             await _registry.MarkPauseFailedAsync(source.Name, "timeout", new TimeoutException($"Source '{source.Name}' did not pause within {sourceDeadline}."));
-            await TryForceStopAsync(source, overallDeadline, cancellationToken);
+            await TryForceStopAsync(source, deadlineAt, cancellationToken);
         }
         catch (Exception ex) when (!ex.IsFatal())
         {
             await _registry.MarkPauseFailedAsync(source.Name, "exception", ex);
-            await TryForceStopAsync(source, overallDeadline, cancellationToken);
+            await TryForceStopAsync(source, deadlineAt, cancellationToken);
         }
     }
 
-    private async Task TryForceStopAsync(IIngressSource source, TimeSpan deadline, CancellationToken cancellationToken)
+    private async Task TryForceStopAsync(IIngressSource source, DateTimeOffset deadlineAt, CancellationToken cancellationToken)
     {
         if (source is not IForceStoppable forceStoppable) return;
+
+        // Use the *remaining* budget — not the full overall deadline — so a per-source pause that already
+        // burned most of the window can't get another full deadline's worth of force-stop runway.
+        var remaining = deadlineAt - _clock.UtcNow;
+        if (remaining <= TimeSpan.Zero)
+        {
+            _logger.LogWarning("Skipping force-stop of ingress source '{Name}': overall drain deadline already exceeded.", source.Name);
+            return;
+        }
 
         try
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            cts.CancelAfter(deadline);
+            cts.CancelAfter(remaining);
             await forceStoppable.ForceStopAsync(cts.Token);
             _logger.LogInformation("Force-stopped ingress source '{Name}'.", source.Name);
         }
@@ -289,7 +306,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         //
         // Phase A — cancel every handle synchronously. CancellationTokenSource.Cancel is
         // cheap and we want every runner to observe cancellation simultaneously rather
-        // than serialised behind preceding settle waits.
+        // than serialized behind preceding settle waits.
         foreach (var handle in live)
         {
             try
