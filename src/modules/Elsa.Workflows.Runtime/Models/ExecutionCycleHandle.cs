@@ -13,6 +13,7 @@ public sealed class ExecutionCycleHandle : IDisposable
     private readonly Action<ExecutionCycleHandle>? _onDisposed;
     private readonly Action? _cancelCallback;
     private readonly TaskCompletionSource _disposedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private int _cancelled;
     private int _disposed;
 
     /// <summary>
@@ -76,6 +77,10 @@ public sealed class ExecutionCycleHandle : IDisposable
     public void Cancel()
     {
         if (_disposed != 0) return;
+        // Idempotent guard: ensures the cancel callback and CTS cancellation run AT MOST once even if Cancel() is
+        // called repeatedly before disposal. Without this the drain orchestrator (or any other future caller) could
+        // accidentally trigger a non-idempotent cancellation side effect multiple times.
+        if (Interlocked.Exchange(ref _cancelled, 1) != 0) return;
 
         // Propagate to the workflow execution first (this typically marks the workflow as Cancelled and clears its
         // schedule, so the runner stops scheduling new activities). The orchestrator's subsequent Interrupted

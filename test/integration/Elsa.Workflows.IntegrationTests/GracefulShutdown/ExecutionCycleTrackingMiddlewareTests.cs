@@ -1,9 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
-using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Middleware.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
@@ -56,29 +54,6 @@ public class ExecutionCycleTrackingMiddlewareTests
         Assert.NotEmpty(observedActiveCounts);
         Assert.All(observedActiveCounts, count => Assert.True(count >= 1, $"Expected ≥ 1 active execution cycle during execution; saw {count}."));
         // After the execution cycle completes, count is back to zero.
-        Assert.Equal(0, _cycleRegistry.ActiveCount);
-    }
-
-    [Fact(DisplayName = "Handle is released even when downstream pipeline returns without invoking commit")]
-    public async Task HandleReleasedWhenCommitIsElided()
-    {
-        // Regression test for the leak that would occur if a custom dispatcher / test double exits the pipeline
-        // without invoking the commit handler chain. Without the finally-block in InvokeAsync, the registry slot
-        // would stay registered and drain would spin until the deadline fires, force-cancelling instances that
-        // had already finished cleanly.
-        await _services.PopulateRegistriesAsync();
-
-        var builder = _services.GetRequiredService<IWorkflowBuilderFactory>().CreateBuilder();
-        var workflow = await builder.BuildWorkflowAsync(new TestWorkflow(b => b.Root = new WriteLine("hello")));
-        var workflowGraph = await _services.GetRequiredService<IWorkflowGraphBuilder>().BuildAsync(workflow);
-        var context = await WorkflowExecutionContext.CreateAsync(_services, workflowGraph, "test-instance");
-
-        // Stub `Next` returns immediately without invoking ICommitStateHandler.CommitAsync (and therefore without
-        // ExecutionCycleAwareCommitStateHandler ever disposing the handle). The middleware itself must release it.
-        var sut = new ExecutionCycleTrackingMiddleware(_ => default, _cycleRegistry);
-
-        await sut.InvokeAsync(context);
-
         Assert.Equal(0, _cycleRegistry.ActiveCount);
     }
 

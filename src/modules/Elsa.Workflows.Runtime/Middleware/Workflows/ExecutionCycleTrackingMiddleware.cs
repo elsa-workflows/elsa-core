@@ -44,14 +44,27 @@ public class ExecutionCycleTrackingMiddleware(WorkflowMiddlewareDelegate next, I
         // workflow to Cancelled and clearing its schedule). The runner stops scheduling new activities; the
         // orchestrator awaits handle.Disposed (set by the ExecutionCycleAwareCommitStateHandler decorator AFTER
         // commit) and then overwrites the sub-status with Interrupted.
-        // `using` is the safety net — primary dispose happens in ExecutionCycleAwareCommitStateHandler after commit lands.
-        using var handle = cycleRegistry.BeginCycle(
+        var handle = cycleRegistry.BeginCycle(
             context.Id,
             ingressSourceName,
             context.CancellationToken,
             cancelCallback: context.Cancel);
         context.TransientProperties[ExecutionCycleHandleKey] = handle;
 
-        await Next(context);
+        try
+        {
+            await Next(context);
+        }
+        catch
+        {
+            // Exception path only: WorkflowRunner won't reach commitStateHandler.CommitAsync, so the
+            // ExecutionCycleAwareCommitStateHandler decorator never runs and the handle would leak. On the success
+            // path we deliberately DO NOT dispose here — the runner commits AFTER pipeline.ExecuteAsync returns
+            // (WorkflowRunner.cs:235), and the decorator must dispose AFTER that commit lands. Disposing here on
+            // success would reintroduce the runner-clobber race: the drain orchestrator's wait on handle.Disposed
+            // would complete before state was persisted.
+            handle.Dispose();
+            throw;
+        }
     }
 }

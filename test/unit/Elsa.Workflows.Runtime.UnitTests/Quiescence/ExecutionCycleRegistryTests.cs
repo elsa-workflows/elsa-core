@@ -115,14 +115,15 @@ public class ExecutionCycleRegistryTests
         handle.Cancel();
         Assert.Equal(1, callbackInvocations);
 
-        // Idempotent — repeat calls do not invoke again (handle short-circuits via _disposed flag after Dispose).
+        // Truly idempotent: a second Cancel() before Dispose() must NOT re-invoke the callback. The handle uses an
+        // Interlocked _cancelled flag so callers can't accidentally trigger non-idempotent cancellation side effects.
         handle.Cancel();
-        Assert.Equal(2, callbackInvocations); // Cancel() before Dispose() can fire the callback again per current contract.
+        Assert.Equal(1, callbackInvocations);
 
-        // Once disposed, further Cancel() invocations are silent no-ops.
+        // Once disposed, further Cancel() invocations remain silent no-ops.
         handle.Dispose();
         handle.Cancel();
-        Assert.Equal(2, callbackInvocations);
+        Assert.Equal(1, callbackInvocations);
     }
 
     [Fact(DisplayName = "ExecutionCycleHandle.Cancel swallows callback exceptions so drain is not interrupted")]
