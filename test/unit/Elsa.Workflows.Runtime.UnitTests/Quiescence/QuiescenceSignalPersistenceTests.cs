@@ -116,6 +116,25 @@ public class QuiescenceSignalPersistenceTests
         Assert.False(gatedStore.Pairs.ContainsKey("elsa.quiescence.pause.default"));
     }
 
+    [Fact(DisplayName = "Persistence completes even when caller's CancellationToken is already cancelled")]
+    public async Task PersistenceIgnoresCallerCancellation()
+    {
+        // Regression: previously PersistAsync forwarded the caller's CT to both the semaphore wait and the
+        // store I/O. If the HTTP request was cancelled between the in-memory transition (which had already
+        // committed under _sync) and PersistAsync's WaitAsync, the I/O was silently skipped — leaving
+        // AdministrativePause set in memory with no persisted record. The idempotent fast-path on subsequent
+        // PauseAsync calls (transitioned == false) meant no retry; on the next host restart the runtime came
+        // back unpaused, defeating PausePersistencePolicy.AcrossReactivations.
+        var sut = new QuiescenceSignal(Microsoft.Extensions.Options.Options.Create(new GracefulShutdownOptions { PausePersistence = PausePersistencePolicy.AcrossReactivations }), _clock, _cycleRegistry, _kv);
+        var cancelled = new CancellationToken(canceled: true);
+
+        var state = await sut.PauseAsync("migration", "op@ex.com", cancelled);
+
+        Assert.True(state.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        Assert.True(_kv.Pairs.TryGetValue("elsa.quiescence.pause.default", out var pair));
+        Assert.Equal("migration", pair.SerializedValue);
+    }
+
     [Fact(DisplayName = "Null key-value store is tolerated under AcrossReactivations")]
     public async Task NullKeyValueStoreTolerated()
     {

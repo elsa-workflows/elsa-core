@@ -140,7 +140,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         }
 
         if (transitioned)
-            await PersistAsync(cancellationToken);
+            await PersistAsync();
 
         return next;
     }
@@ -168,7 +168,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         }
 
         if (transitioned)
-            await PersistAsync(cancellationToken);
+            await PersistAsync();
 
         return next;
     }
@@ -179,19 +179,26 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     /// writes whatever the latest in-memory transition was, so N racing transitions produce N serialized writes
     /// and the final persisted state always matches the final in-memory state.
     /// </summary>
-    private async ValueTask PersistAsync(CancellationToken cancellationToken)
+    /// <remarks>
+    /// Uses <see cref="CancellationToken.None"/> deliberately for both the semaphore wait and the store I/O.
+    /// By the time this runs the in-memory transition has already committed; if a cancelled HTTP request token
+    /// caused the persistence to skip, in-memory state would diverge from the store — and the idempotent
+    /// fast-path in <see cref="PauseAsync"/>/<see cref="ResumeAsync"/> (transitioned == false) means a later call
+    /// would not retry the write. So persistence must complete regardless of caller cancellation.
+    /// </remarks>
+    private async ValueTask PersistAsync()
     {
         if (_options.Value.PausePersistence != PausePersistencePolicy.AcrossReactivations || _keyValueStore is null)
             return;
 
-        await _persistenceMutex.WaitAsync(cancellationToken);
+        await _persistenceMutex.WaitAsync(CancellationToken.None);
         try
         {
             var live = Volatile.Read(ref _state);
             if ((live.Reason & QuiescenceReason.AdministrativePause) != 0)
-                await _keyValueStore.SaveAsync(new SerializedKeyValuePair { Key = _persistenceKey, SerializedValue = live.PauseReasonText ?? string.Empty }, cancellationToken);
+                await _keyValueStore.SaveAsync(new SerializedKeyValuePair { Key = _persistenceKey, SerializedValue = live.PauseReasonText ?? string.Empty }, CancellationToken.None);
             else
-                await _keyValueStore.DeleteAsync(_persistenceKey, cancellationToken);
+                await _keyValueStore.DeleteAsync(_persistenceKey, CancellationToken.None);
         }
         finally
         {
