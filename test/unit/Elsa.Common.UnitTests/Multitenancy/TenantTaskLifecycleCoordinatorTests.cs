@@ -1,5 +1,4 @@
 using Elsa.Common.Multitenancy;
-using Elsa.Common.Multitenancy.EventHandlers;
 using Elsa.Common.RecurringTasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -8,17 +7,17 @@ using NSubstitute;
 
 namespace Elsa.Common.UnitTests.Multitenancy;
 
-public class TenantTaskManagerTests : IAsyncDisposable
+public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
 {
-    private readonly TenantTaskManager _manager = CreateManager();
+    private readonly TenantTaskLifecycleCoordinator _coordinator = CreateCoordinator();
     private readonly Tenant _tenant = new() { Id = "test-tenant" };
     private readonly TrackingRecurringTask _recurringTask = new();
     private readonly IServiceProvider _serviceProvider;
 
-    public TenantTaskManagerTests() =>
+    public TenantTaskLifecycleCoordinatorTests() =>
         _serviceProvider = BuildTenantServiceProvider(recurringTasks: [_recurringTask]);
 
-    public ValueTask DisposeAsync() => _manager.DisposeAsync();
+    public ValueTask DisposeAsync() => _coordinator.DisposeAsync();
 
     /// <summary>
     /// Regression test: before the fix, <c>TryRemove</c> was called before <c>WaitAsync</c>,
@@ -36,10 +35,10 @@ public class TenantTaskManagerTests : IAsyncDisposable
 
         // WaitAsync throws immediately for an already-cancelled token, before TryRemove is reached.
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => _manager.TenantDeactivatedAsync(DeactivationArgs(cancelledCts.Token)));
+            () => _coordinator.DeactivateTenantAsync(DeactivationArgs(cancelledCts.Token)));
 
         // DisposeAsync must still find the state and stop the recurring task.
-        await _manager.DisposeAsync();
+        await _coordinator.DisposeAsync();
 
         Assert.True(_recurringTask.WasStopCalled);
     }
@@ -48,7 +47,7 @@ public class TenantTaskManagerTests : IAsyncDisposable
     public async Task DeactivateAsync_AfterActivation_StopsRecurringTasks()
     {
         await ActivateAsync();
-        await _manager.TenantDeactivatedAsync(DeactivationArgs());
+        await _coordinator.DeactivateTenantAsync(DeactivationArgs());
         Assert.True(_recurringTask.WasStopCalled);
     }
 
@@ -56,24 +55,24 @@ public class TenantTaskManagerTests : IAsyncDisposable
     public async Task DisposeAsync_WithActiveTenant_StopsRecurringTasks()
     {
         await ActivateAsync();
-        await _manager.DisposeAsync();
+        await _coordinator.DisposeAsync();
         Assert.True(_recurringTask.WasStopCalled);
     }
 
     // === Instance helpers ===
 
     private Task ActivateAsync() =>
-        _manager.TenantActivatedAsync(new TenantActivatedEventArgs(_tenant, CreateTenantScope(_tenant, _serviceProvider), CancellationToken.None));
+        _coordinator.ActivateTenantAsync(new TenantActivatedEventArgs(_tenant, CreateTenantScope(_tenant, _serviceProvider), CancellationToken.None));
 
     private TenantDeactivatedEventArgs DeactivationArgs(CancellationToken cancellationToken = default) =>
         new(_tenant, CreateTenantScope(_tenant, _serviceProvider), cancellationToken);
 
     // === Static helpers ===
 
-    private static TenantTaskManager CreateManager()
+    private static TenantTaskLifecycleCoordinator CreateCoordinator()
     {
         var scheduleManager = new RecurringTaskScheduleManager(Options.Create(new RecurringTaskOptions()), Substitute.For<ISystemClock>());
-        return new TenantTaskManager(scheduleManager, NullLogger<TenantTaskManager>.Instance);
+        return new TenantTaskLifecycleCoordinator(scheduleManager, NullLogger<TenantTaskLifecycleCoordinator>.Instance);
     }
 
     private static IServiceProvider BuildTenantServiceProvider(IEnumerable<IRecurringTask>? recurringTasks = null)
@@ -116,3 +115,4 @@ public class TenantTaskManagerTests : IAsyncDisposable
         public Task ExecuteTaskAsync(ITask task, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }
+

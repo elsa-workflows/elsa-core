@@ -22,10 +22,11 @@ public class MultitenancyFeature : IShellFeature
             .AddSingleton<ITenantFinder, DefaultTenantFinder>()
             .AddSingleton<ITenantService, DefaultTenantService>()
             
-            // TenantTaskManager handles all task lifecycle in the correct order
-            .AddSingleton<TenantTaskManager>()
-            .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<TenantTaskManager>())
-            .AddSingleton<ITenantDeactivatedEvent>(sp => sp.GetRequiredService<TenantTaskManager>())
+            // Coordinate tenant task lifecycle separately from the tenant event pipeline.
+            .AddSingleton<TenantTaskLifecycleCoordinator>()
+            .AddSingleton<TenantTaskLifecycleEventHandler>()
+            .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<TenantTaskLifecycleEventHandler>())
+            .AddSingleton<ITenantDeactivatedEvent>(sp => sp.GetRequiredService<TenantTaskLifecycleEventHandler>())
             
             .AddSingleton<RecurringTaskScheduleManager>()
             .AddSingleton<TenantEventsManager>()

@@ -5,19 +5,19 @@ using Elsa.Common.RecurringTasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Common.Multitenancy.EventHandlers;
+namespace Elsa.Common.Multitenancy;
 
 /// <summary>
-/// Manages the lifecycle of startup, background, and recurring tasks for tenants.
+/// Coordinates the lifecycle of startup, background, and recurring tasks for tenants.
 /// Executes tasks in the proper sequence: startup tasks first, then background tasks, then recurring tasks.
 /// </summary>
-public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILogger<TenantTaskManager> logger) : ITenantActivatedEvent, ITenantDeactivatedEvent, IAsyncDisposable
+public class TenantTaskLifecycleCoordinator(RecurringTaskScheduleManager scheduleManager, ILogger<TenantTaskLifecycleCoordinator> logger) : IAsyncDisposable
 {
     private readonly ConcurrentDictionary<string, TenantRuntimeState> _tenantStates = new();
     private readonly CancellationTokenSource _shutdownCancellationTokenSource = new();
     private int _disposeRequested;
 
-    public async Task TenantActivatedAsync(TenantActivatedEventArgs args)
+    public async Task ActivateTenantAsync(TenantActivatedEventArgs args)
     {
         if (Volatile.Read(ref _disposeRequested) == 1)
             return;
@@ -59,7 +59,7 @@ public class TenantTaskManager(RecurringTaskScheduleManager scheduleManager, ILo
         }
     }
 
-    public async Task TenantDeactivatedAsync(TenantDeactivatedEventArgs args)
+    public async Task DeactivateTenantAsync(TenantDeactivatedEventArgs args)
     {
         var tenantId = GetTenantId(args.Tenant);
 
