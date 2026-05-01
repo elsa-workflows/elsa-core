@@ -172,10 +172,16 @@ public partial class Flowchart
     {
         bool hasScheduledActivity = false;
 
+        // Get the outbound connections for this activity
+        var outboundConnections = flowGraph.GetOutboundConnections(activity);
+        
         // Check if the activity is dangling (i.e., it is not reachable from the flowchart graph)
-        if (flowGraph.IsDanglingActivity(activity))
+        // Only throw an exception if the activity is truly dangling (has no outbound connections)
+        // In multi-trigger scenarios, an activity may appear dangling from one trigger's perspective
+        // but was legitimately scheduled by another trigger
+        if (flowGraph.IsDanglingActivity(activity) && outboundConnections.Count == 0)
         {
-            throw new($"Activity {activity.Id} is not reachable from the flowchart graph. Unable to schedule it's outbound activities.");
+            throw new($"Activity {activity.Id} is not reachable from the flowchart graph and has no outbound connections. Unable to schedule its outbound activities.");
         }
 
         // Register the activity as visited unless it was executed due to a backward connection
@@ -185,7 +191,7 @@ public partial class Flowchart
         }
 
         // Process each outbound connection from the current activity
-        foreach (var outboundConnection in flowGraph.GetOutboundConnections(activity))
+        foreach (var outboundConnection in outboundConnections)
         {
             var connectionFollowed = outcomes.Names.Contains(outboundConnection.Source.Port);
             flowScope.RegisterConnectionVisit(outboundConnection, connectionFollowed);
