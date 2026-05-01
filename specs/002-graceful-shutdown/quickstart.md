@@ -26,15 +26,20 @@ builder.Services.AddElsa(elsa =>
 });
 ```
 
-Send SIGTERM to the host process (or hit `Ctrl+C` in development). You will see in the logs, in order:
+Send SIGTERM to the host process (or hit `Ctrl+C` in development). The graceful-drain implementation does run on shutdown, but the current log messages are slightly different from the original design notes.
 
-1. `Drain initiated (trigger=HostStopSignal)`.
-2. `Pause requested on 3 ingress sources`.
-3. `All ingress sources paused` (or `1 source(s) failed to pause within timeout`).
-4. `Waiting for 2 active execution cycle(s) to complete`.
-5. `Drain completed within deadline` (or `Drain deadline exceeded; 1 execution cycle(s) force-cancelled`).
-6. `Instance heartbeat stopped`.
-7. Normal .NET host shutdown messages.
+What you should expect today is:
+
+1. `Drain initiated (trigger=HostStopSignal, deadline=...)` on the legacy host-level runtime path, or `Drain initiated (trigger=ShellDeactivation, deadline=...)` in CShells-hosted deployments.
+2. `Ingress pause phase complete in ...` after ingress-source pause attempts finish.
+3. If the deadline is exceeded (or an operator forces a drain), `Drain deadline exceeded; force-cancelling N active execution cycle(s).`
+4. `Drain completed: CompletedWithinDeadline ...` (or `Drain completed: DeadlineExceeded ...`).
+5. A caller-level summary such as `Graceful drain finished: CompletedWithinDeadline ...` or `Shell drain finished: CompletedWithinDeadline ...`.
+6. Normal host shutdown messages.
+
+There are currently no separate informational log entries for “pause requested”, “all ingress sources paused”, “waiting for active execution cycles”, or “instance heartbeat stopped”. Those phases are still part of the shutdown protocol; they are just summarized differently in the current implementation.
+
+These messages are emitted at `Information`/`Warning` level from the `Elsa.Workflows.Runtime` categories, so make sure your logging filters are not excluding them.
 
 If any workflow was force-cancelled, it will have `SubStatus = Interrupted` in the database and a `WorkflowInterrupted` entry in its execution log. On next host start, `RecoverInterruptedWorkflowsStartupTask` will requeue it immediately — no waiting for the timeout-based crash recovery.
 
