@@ -1,4 +1,5 @@
 using CShells.Features;
+using Elsa.Common;
 using Elsa.Common.RecurringTasks;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
@@ -11,12 +12,14 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
+using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.Runtime.Stores;
 using Elsa.Workflows.Runtime.Tasks;
 using Elsa.Workflows.Runtime.UIHints;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.ShellFeatures;
 
@@ -129,7 +132,7 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// Callback that tunes the graceful-shutdown machinery (drain deadline, per-source pause timeout, stimulus-queue back-pressure,
     /// pause-persistence policy). Applied when <see cref="ConfigureServices"/> binds <see cref="GracefulShutdownOptions"/>.
     /// </summary>
-    public Action<GracefulShutdownOptions>? GracefulShutdown { get; set; }
+    public GracefulShutdownOptions? GracefulShutdown { get; set; }
 
 
     public void ConfigureServices(IServiceCollection services)
@@ -142,53 +145,40 @@ public class WorkflowRuntimeFeature : IShellFeature
         });
         services.Configure<GracefulShutdownOptions>(options =>
         {
-            GracefulShutdown?.Invoke(options);
+            if(GracefulShutdown != null)
+            {
+                options.DrainDeadline = GracefulShutdown.DrainDeadline;
+                options.IngressPauseTimeout = GracefulShutdown.IngressPauseTimeout;
+                options.StimulusQueueMaxDepthWhilePaused = GracefulShutdown.StimulusQueueMaxDepthWhilePaused;
+                options.OverflowPolicy = GracefulShutdown.OverflowPolicy;
+                options.PausePersistence = GracefulShutdown.PausePersistence;
+                options.MaxForceCancelledInstanceIdsReported = GracefulShutdown.MaxForceCancelledInstanceIdsReported;
+            }
             options.Validate();
         });
 
-        // Graceful-shutdown core (US1 — quiescence machinery).
         services
+            // Graceful-shutdown core (US1 — quiescence machinery).
             // Per-shell QuiescenceSignal: the persistence key includes the shell id so multi-shell deployments under
             // PausePersistencePolicy.AcrossReactivations don't collide on a single key. Falls back to "default" only
             // when ShellSettings isn't in the DI graph (degenerate single-shell or non-CShells host).
-            .AddSingleton<IQuiescenceSignal>(sp => new Services.QuiescenceSignal(
-                sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Options.GracefulShutdownOptions>>(),
-                sp.GetRequiredService<Common.ISystemClock>(),
+            .AddSingleton<IQuiescenceSignal>(sp => new QuiescenceSignal(
+                sp.GetRequiredService<IOptions<GracefulShutdownOptions>>(),
+                sp.GetRequiredService<ISystemClock>(),
                 sp.GetRequiredService<IExecutionCycleRegistry>(),
                 sp.GetService<KeyValues.Contracts.IKeyValueStore>(),
                 shellName: sp.GetService<CShells.ShellSettings>()?.Id))
-            .AddSingleton<IIngressSourceRegistry, Services.IngressSourceRegistry>()
-            .AddSingleton<IExecutionCycleRegistry, Services.ExecutionCycleRegistry>()
-            // Lazy collection break the otherwise-circular dependency chain
-            // QuiescenceSignal → IExecutionCycleRegistry → IIngressSourceRegistry → IEnumerable<IIngressSource> → IQuiescenceSignal.
-            // Adapter implementations can take a direct IQuiescenceSignal dependency; the registry materializes the
-            // collection on first read.
+            .AddSingleton<IIngressSourceRegistry, IngressSourceRegistry>()
+            .AddSingleton<IExecutionCycleRegistry, ExecutionCycleRegistry>()
             .AddSingleton(sp => new Lazy<IEnumerable<IIngressSource>>(sp.GetServices<IIngressSource>))
-            // Drain orchestrator (US1). Per-shell singleton; the per-shell IDrainHandler below is the sole drain trigger
-            // in CShells deployments — host stop reaches us via CShells's shell-drain pipeline, not via IHostedService.
-            .AddSingleton<IDrainOrchestrator, Services.DrainOrchestrator>()
-            // Operator-facing facade over IDrainOrchestrator + IQuiescenceSignal. Required by the Pause / Resume /
-            // Status / Force admin endpoints in Elsa.Workflows.Api. Scoped because INotificationSender is scoped
-            // (mediator dispatches per-request) — endpoints are scoped too, so this is the right alignment.
-            .AddScoped<IWorkflowRuntimeAdminService, Services.WorkflowRuntimeAdminService>()
-            // CShells per-shell drain hook (FR-027). Invoked when a shell enters ShellLifecycleState.Draining;
-            // gives true per-shell scoping — sibling shells on the same host are unaffected.
+            .AddSingleton<IDrainOrchestrator, DrainOrchestrator>()
+            .AddScoped<IWorkflowRuntimeAdminService, WorkflowRuntimeAdminService>()
             .AddTransient<CShells.Lifecycle.IDrainHandler, Lifecycle.ElsaShellDrainHandler>()
-            // Interrupted-workflow recovery on shell activation (US3). Disjoint from the timeout-based
-            // RestartInterruptedWorkflowsTask: filter is SubStatus = Interrupted; that task's filter is IsExecuting=true.
-            .AddScoped<IInterruptedRecoveryScanner, Services.InterruptedRecoveryScanner>()
+            .AddScoped<IInterruptedRecoveryScanner, InterruptedRecoveryScanner>()
             .AddStartupTask<StartupTasks.RecoverInterruptedWorkflowsStartupTask>()
-            // Internal bookmark-queue processor surfaced as an ingress source for diagnostic visibility (FR-006).
-            // Pause behavior is enforced inside BookmarkQueueProcessor via IQuiescenceSignal (FR-024).
             .AddSingleton<IIngressSource, IngressSources.InternalBookmarkQueueIngressSource>()
-            // Re-applies persisted pause state on EVERY shell (re)activation when PausePersistence = AcrossReactivations
-            // (FR-028). Uses CShells.Lifecycle.IShellInitializer rather than IStartupTask because shells can be
-            // reactivated independently of the host process; the IStartupTask path only fires once per host startup
-            // and would miss subsequent shell reactivations. The IModule (Features/WorkflowRuntimeFeature) consumers
-            // continue to use the IStartupTask variant — there is no shell platform there to call IShellInitializer.
-            .AddTransient<CShells.Lifecycle.IShellInitializer, Lifecycle.InitializePauseStateShellInitializer>();
-
-        services
+            .AddTransient<CShells.Lifecycle.IShellInitializer, Lifecycle.InitializePauseStateShellInitializer>()
+            
             // Core.
             .AddScoped<ITriggerIndexer, TriggerIndexer>()
             .AddScoped<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
@@ -246,7 +236,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<DefaultCommitStateHandler>()
             // Decorator: disposes the execution cycle handle AFTER the workflow runner's terminal commit has persisted state,
             // so the drain orchestrator's force-cancel path can sequence its Interrupted write to land last.
-            .AddScoped<ICommitStateHandler, Services.ExecutionCycleAwareCommitStateHandler>()
+            .AddScoped<ICommitStateHandler, ExecutionCycleAwareCommitStateHandler>()
             .AddScoped<WorkflowHeartbeatGeneratorFactory>()
 
             // Deprecated services.

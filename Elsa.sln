@@ -21,8 +21,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}"
@@ -191,29 +189,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "multitenancy", "multitenanc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Tenants.AspNetCore", "src\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj", "{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{0A04B1FD-06C0-4271-A910-A08C263DBC44}"
-	ProjectSection(SolutionItems) = preProject
-		doc\adr\0001-record-architecture-decisions.md = doc\adr\0001-record-architecture-decisions.md
-		doc\adr\0002-fault-propagation-from-child-to-parent-activities.md = doc\adr\0002-fault-propagation-from-child-to-parent-activities.md
-		doc\adr\0003-direct-bookmark-management-in-workflowexecutioncontext.md = doc\adr\0003-direct-bookmark-management-in-workflowexecutioncontext.md
-		doc\adr\graph.dot = doc\adr\graph.dot
-		doc\adr\toc.md = doc\adr\toc.md
-		doc\adr\0005-activity-execution-snapshots.md = doc\adr\0005-activity-execution-snapshots.md
-		doc\adr\0005-token-centric-flowchart-execution-model.md = doc\adr\0005-token-centric-flowchart-execution-model.md
-		doc\adr\0006-tenant-deleted-event.md = doc\adr\0006-tenant-deleted-event.md
-		doc\adr\0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md = doc\adr\0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md
-		doc\adr\0008-empty-string-as-default-tenant-id.md = doc\adr\0008-empty-string-as-default-tenant-id.md
-		doc\adr\0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md = doc\adr\0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md
-		doc\adr\0010-default-admin-user-bootstrap-for-initial-identity-access.md = doc\adr\0010-default-admin-user-bootstrap-for-initial-identity-access.md
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bounty", "bounty", "{9B80A705-2E31-4012-964A-83963DCDB384}"
-	ProjectSection(SolutionItems) = preProject
-		doc\bounty\bounty-announcement-template.md = doc\bounty\bounty-announcement-template.md
-		doc\bounty\bounty-footer.md = doc\bounty\bounty-footer.md
-		doc\bounty\bounty-quality-standards.md = doc\bounty\bounty-quality-standards.md
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "caching", "caching", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching", "src\modules\Elsa.Caching\Elsa.Caching.csproj", "{6F14B066-DF7B-2409-59D8-CCCA90A4974C}"
@@ -279,11 +254,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.IntegrationTests", "test\integration\Elsa.Alterations.IntegrationTests\Elsa.Alterations.IntegrationTests.csproj", "{51C39AF0-4F41-4FC1-AEBD-D1494407D3F9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.UnitTests", "test\unit\Elsa.Activities.UnitTests\Elsa.Activities.UnitTests.csproj", "{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "qa", "qa", "{0478E6EA-DCB2-4667-ADC2-37C62C9C2574}"
-	ProjectSection(SolutionItems) = preProject
-		doc\qa\test-guidelines.md = doc\qa\test-guidelines.md
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Management.UnitTests", "test\unit\Elsa.Workflows.Management.UnitTests\Elsa.Workflows.Management.UnitTests.csproj", "{20C75446-CAE0-48D1-85D9-459541C4D8B6}"
 EndProject
@@ -1260,8 +1230,6 @@ Global
 		{DFFE6199-B5A7-4BA8-A5E1-77D0426C6468} = {B32DB9B2-AD6C-48A5-8682-4373CB045185}
 		{2F3E1026-5054-4E1F-899B-F1A7F70F9912} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C} = {2F3E1026-5054-4E1F-899B-F1A7F70F9912}
-		{0A04B1FD-06C0-4271-A910-A08C263DBC44} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
-		{9B80A705-2E31-4012-964A-83963DCDB384} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
 		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{6F14B066-DF7B-2409-59D8-CCCA90A4974C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{C55015F0-E9DF-4BF9-8131-D7539E938220} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
@@ -1295,7 +1263,6 @@ Global
 		{698051E0-7981-43D4-B7BA-F3D8B65004A1} = {3D0A6C71-4B96-411B-80DB-DDFAFF77C748}
 		{51C39AF0-4F41-4FC1-AEBD-D1494407D3F9} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
 		{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA} = {18453B51-25EB-4317-A4B3-B10518252E92}
-		{0478E6EA-DCB2-4667-ADC2-37C62C9C2574} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
 		{20C75446-CAE0-48D1-85D9-459541C4D8B6} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{67E1F0CC-C436-4D71-AD2C-AE42E3AA8A0B} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{9AEE941A-3F23-4E4B-9B59-1A2F57FC762D} = {18453B51-25EB-4317-A4B3-B10518252E92}
