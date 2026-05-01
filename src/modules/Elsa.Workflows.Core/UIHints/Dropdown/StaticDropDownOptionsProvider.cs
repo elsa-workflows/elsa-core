@@ -39,7 +39,11 @@ public class StaticDropDownOptionsProvider : IPropertyUIHandler
                 }
             }
 
-            var enumValues = Enum.GetValues(wrappedPropertyType).Cast<object>().ToList();
+            var enumValues = Enum.GetValues(wrappedPropertyType)
+                .Cast<Enum>()
+                .GroupBy(Convert.ToInt32)
+                .Select(g => g.First())
+                .ToList();
             var enumSelectListItems = enumValues.Select(x => new SelectListItem(x.ToString()!, x.ToString()!)).ToList();
             if (isNullableEnum)
                 enumSelectListItems.Insert(0, new SelectListItem("-",""));
