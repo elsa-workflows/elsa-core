@@ -143,18 +143,17 @@ public class WorkflowRuntimeFeature : IShellFeature
         {
             options.Channels.AddRange(WorkflowDispatcherChannels.Values);
         });
-        services.Configure<GracefulShutdownOptions>(options =>
+        services.AddGracefulShutdownOptions(options =>
         {
-            if(GracefulShutdown != null)
-            {
-                options.DrainDeadline = GracefulShutdown.DrainDeadline;
-                options.IngressPauseTimeout = GracefulShutdown.IngressPauseTimeout;
-                options.StimulusQueueMaxDepthWhilePaused = GracefulShutdown.StimulusQueueMaxDepthWhilePaused;
-                options.OverflowPolicy = GracefulShutdown.OverflowPolicy;
-                options.PausePersistence = GracefulShutdown.PausePersistence;
-                options.MaxForceCancelledInstanceIdsReported = GracefulShutdown.MaxForceCancelledInstanceIdsReported;
-            }
-            options.Validate();
+            if (GracefulShutdown == null)
+                return;
+
+            options.DrainDeadline = GracefulShutdown.DrainDeadline;
+            options.IngressPauseTimeout = GracefulShutdown.IngressPauseTimeout;
+            options.StimulusQueueMaxDepthWhilePaused = GracefulShutdown.StimulusQueueMaxDepthWhilePaused;
+            options.OverflowPolicy = GracefulShutdown.OverflowPolicy;
+            options.PausePersistence = GracefulShutdown.PausePersistence;
+            options.MaxForceCancelledInstanceIdsReported = GracefulShutdown.MaxForceCancelledInstanceIdsReported;
         });
 
         services

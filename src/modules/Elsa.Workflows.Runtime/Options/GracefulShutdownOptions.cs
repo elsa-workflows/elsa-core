@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace Elsa.Workflows.Runtime.Options;
 
 /// <summary>
@@ -51,14 +49,4 @@ public class GracefulShutdownOptions
     /// </summary>
     public int MaxForceCancelledInstanceIdsReported { get; set; } = 100;
 
-    /// <summary>
-    /// Validates that every configured duration is strictly positive and that integer caps are greater than zero.
-    /// </summary>
-    internal void Validate()
-    {
-        if (DrainDeadline <= TimeSpan.Zero) throw new ValidationException($"{nameof(DrainDeadline)} must be greater than zero.");
-        if (IngressPauseTimeout <= TimeSpan.Zero) throw new ValidationException($"{nameof(IngressPauseTimeout)} must be greater than zero.");
-        if (StimulusQueueMaxDepthWhilePaused is <= 0) throw new ValidationException($"{nameof(StimulusQueueMaxDepthWhilePaused)} must be null (unlimited) or greater than zero.");
-        if (MaxForceCancelledInstanceIdsReported <= 0) throw new ValidationException($"{nameof(MaxForceCancelledInstanceIdsReported)} must be greater than zero.");
-    }
 }

@@ -248,11 +248,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         {
             options.Channels.AddRange(WorkflowDispatcherChannels.Values);
         });
-        Services.Configure<GracefulShutdownOptions>(options =>
-        {
-            GracefulShutdown?.Invoke(options);
-            options.Validate();
-        });
+        Services.AddGracefulShutdownOptions(GracefulShutdown);
 
         // Graceful-shutdown core (US1 — quiescence machinery).
         Services

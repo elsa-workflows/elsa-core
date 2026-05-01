@@ -1,6 +1,9 @@
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
@@ -10,6 +13,21 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// </summary>
 public static class DependencyInjectionExtensions
 {
+    /// <summary>
+    /// Registers and validates <see cref="GracefulShutdownOptions"/>.
+    /// </summary>
+    public static IServiceCollection AddGracefulShutdownOptions(this IServiceCollection services, Action<GracefulShutdownOptions>? configure = null)
+    {
+        var builder = services.AddOptions<GracefulShutdownOptions>().ValidateOnStart();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<GracefulShutdownOptions>, Elsa.Extensions.ValidateGracefulShutdownOptions>());
+
+        if (configure != null)
+            builder.Configure(configure);
+
+
+        return services;
+    }
+
     /// <summary>
     /// Adds the specified workflow provider type to the service collection.
     /// </summary>

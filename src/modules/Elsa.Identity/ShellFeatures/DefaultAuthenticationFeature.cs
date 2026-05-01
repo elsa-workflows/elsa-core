@@ -4,7 +4,6 @@ using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.Requirements;
 using JetBrains.Annotations;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,7 +30,7 @@ public class DefaultAuthenticationFeature : IShellFeature
     public void ConfigureServices(IServiceCollection services)
     {
         services.ConfigureOptions<ConfigureJwtBearerOptions>();
-        services.ConfigureOptions<ValidateIdentityTokenOptions>();
+        services.AddIdentityTokenOptionsValidation();
 
         var authBuilder = services
             .AddAuthentication(MultiScheme)
