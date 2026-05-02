@@ -65,18 +65,14 @@ public class Fork : Activity
         var childContext = context.ChildContext;
         var completedChildActivityId = childContext.Activity.Id;
 
-        // Append activity to the list of completed activities.
-        var completedActivityIds = targetContext.UpdateProperty<List<string>>("Completed", list =>
+        // Append activity to the set of completed activities.
+        var completedActivityIds = targetContext.UpdateProperty<HashSet<string>>("Completed", set =>
         {
-            list ??= new();
-
-            if (!list.Contains(completedChildActivityId))
-                list.Add(completedChildActivityId);
-
-            return list;
+            set ??= new();
+            set.Add(completedChildActivityId);
+            return set;
         });
 
-        var completedActivityIdsLookup = completedActivityIds.ToImmutableHashSet();
         var allChildActivityIds = Branches.Select(x => x.Id).ToImmutableHashSet();
         var joinMode = JoinMode;
 
@@ -86,7 +82,7 @@ public class Fork : Activity
                 await CompleteAsync(targetContext);
                 break;
             case ForkJoinMode.WaitAll:
-                var allSet = allChildActivityIds.All(completedActivityIdsLookup.Contains);
+                var allSet = allChildActivityIds.All(x => completedActivityIds.Contains(x));
                 if (allSet) await CompleteAsync(targetContext);
                 break;
         }

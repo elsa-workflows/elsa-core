@@ -85,31 +85,9 @@ public class ForkTests
 
         // Assert
         Assert.Equal(ActivityStatus.Completed, targetContext.Status);
-        Assert.Equal(new[] { branches[0].Id, branches[1].Id }, targetContext.GetProperty<List<string>>("Completed"));
-    }
-
-    [Fact(DisplayName = "Fork does not duplicate completed activity IDs")]
-    public async Task Fork_DoesNotDuplicateCompletedActivityIds()
-    {
-        // Arrange
-        var branch = CreateBranches(1).Single();
-        var fork = new Fork
-        {
-            JoinMode = ForkJoinMode.WaitAll,
-            Branches = { branch }
-        };
-        var fixture = new ActivityTestFixture(fork);
-        var targetContext = await fixture.BuildAsync();
-        await fixture.ExecuteAsync(targetContext);
-        targetContext.SetProperty("Completed", new List<string> { branch.Id });
-        var childContext = await targetContext.WorkflowExecutionContext.CreateActivityExecutionContextAsync(branch);
-
-        // Act
-        await CompleteChildAsync(fork, targetContext, childContext);
-
-        // Assert
-        Assert.Single(targetContext.GetProperty<List<string>>("Completed")!);
-        Assert.Equal(branch.Id, targetContext.GetProperty<List<string>>("Completed")!.Single());
+        var completedActivityIds = targetContext.GetProperty<HashSet<string>>("Completed");
+        Assert.NotNull(completedActivityIds);
+        Assert.True(completedActivityIds.SetEquals([branches[0].Id, branches[1].Id]));
     }
 
     private static Task<ActivityExecutionContext> ExecuteForkAsync(Fork fork) =>
