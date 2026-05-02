@@ -267,16 +267,20 @@ public static class ObjectConverter
             {
                 var desiredCollectionItemType = targetType.GenericTypeArguments[0];
                 var desiredCollectionType = typeof(ICollection<>).MakeGenericType(desiredCollectionItemType);
+                var desiredSetType = typeof(ISet<>).MakeGenericType(desiredCollectionItemType);
 
                 if (underlyingTargetType.IsAssignableFrom(desiredCollectionType) || desiredCollectionType.IsAssignableFrom(underlyingTargetType))
                 {
-                    var collectionType = typeof(List<>).MakeGenericType(desiredCollectionItemType);
-                    var collection = (IList)Activator.CreateInstance(collectionType)!;
+                    var collectionType = desiredSetType.IsAssignableFrom(underlyingTargetType)
+                        ? typeof(HashSet<>).MakeGenericType(desiredCollectionItemType)
+                        : typeof(List<>).MakeGenericType(desiredCollectionItemType);
+                    var collection = Activator.CreateInstance(collectionType)!;
+                    var addMethod = collectionType.GetMethod("Add", [desiredCollectionItemType]) ?? throw new InvalidOperationException($"Type {collectionType} does not expose an Add method for {desiredCollectionItemType}.");
 
                     foreach (var item in enumerable)
                     {
                         var convertedItem = ConvertTo(item, desiredCollectionItemType);
-                        collection.Add(convertedItem);
+                        addMethod.Invoke(collection, [convertedItem]);
                     }
 
                     return collection;

@@ -189,6 +189,23 @@ public class Tests
     }
 
     [Fact]
+    public void ConvertTo_EnumerableToHashSet_ReturnsConvertedHashSet()
+    {
+        // Arrange
+        var value = new[]
+        {
+            "1", "2", "2", "3"
+        };
+
+        // Act
+        var result = value.ConvertTo<HashSet<int>>(_objectConverterOptions);
+
+        // Assert
+        Assert.IsType<HashSet<int>>(result);
+        Assert.True(result.SetEquals([1, 2, 3]));
+    }
+
+    [Fact]
     public void ConvertTo_DateTimeToDateOnly_ReturnsDateOnly()
     {
         // Arrange
