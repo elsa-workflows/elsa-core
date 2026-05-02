@@ -1,3 +1,4 @@
+using System.Reflection;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 
@@ -63,8 +64,67 @@ public class ForkTests
         Assert.True(context.HasScheduledActivity(branch));
     }
 
+    [Fact(DisplayName = "Fork resumes when completed activity IDs are restored as a list")]
+    public async Task Fork_Resumes_WhenCompletedActivityIdsAreRestoredAsList()
+    {
+        // Arrange
+        var branches = CreateBranches(2);
+        var fork = new Fork
+        {
+            JoinMode = ForkJoinMode.WaitAll,
+            Branches = branches.Cast<IActivity>().ToList()
+        };
+        var fixture = new ActivityTestFixture(fork);
+        var targetContext = await fixture.BuildAsync();
+        await fixture.ExecuteAsync(targetContext);
+        targetContext.SetProperty("Completed", new List<string> { branches[0].Id });
+        var childContext = await targetContext.WorkflowExecutionContext.CreateActivityExecutionContextAsync(branches[1]);
+
+        // Act
+        await CompleteChildAsync(fork, targetContext, childContext);
+
+        // Assert
+        Assert.Equal(ActivityStatus.Completed, targetContext.Status);
+        Assert.Equal(new[] { branches[0].Id, branches[1].Id }, targetContext.GetProperty<List<string>>("Completed"));
+    }
+
+    [Fact(DisplayName = "Fork does not duplicate completed activity IDs")]
+    public async Task Fork_DoesNotDuplicateCompletedActivityIds()
+    {
+        // Arrange
+        var branch = CreateBranches(1).Single();
+        var fork = new Fork
+        {
+            JoinMode = ForkJoinMode.WaitAll,
+            Branches = { branch }
+        };
+        var fixture = new ActivityTestFixture(fork);
+        var targetContext = await fixture.BuildAsync();
+        await fixture.ExecuteAsync(targetContext);
+        targetContext.SetProperty("Completed", new List<string> { branch.Id });
+        var childContext = await targetContext.WorkflowExecutionContext.CreateActivityExecutionContextAsync(branch);
+
+        // Act
+        await CompleteChildAsync(fork, targetContext, childContext);
+
+        // Assert
+        Assert.Single(targetContext.GetProperty<List<string>>("Completed")!);
+        Assert.Equal(branch.Id, targetContext.GetProperty<List<string>>("Completed")!.Single());
+    }
+
     private static Task<ActivityExecutionContext> ExecuteForkAsync(Fork fork) =>
         new ActivityTestFixture(fork).ExecuteAsync();
+
+    private static async Task CompleteChildAsync(Fork fork, ActivityExecutionContext targetContext, ActivityExecutionContext childContext)
+    {
+        var method = typeof(Fork).GetMethod("CompleteChildAsync", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var result = method!.Invoke(fork, [new ActivityCompletedContext(targetContext, childContext)]);
+
+        if (result is ValueTask task)
+            await task;
+    }
 
     private static WriteLine[] CreateBranches(int count) =>
         Enumerable.Range(1, count)

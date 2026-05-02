@@ -65,12 +65,15 @@ public class Fork : Activity
         var childContext = context.ChildContext;
         var completedChildActivityId = childContext.Activity.Id;
 
-        // Append activity to the set of completed activities.
-        var completedActivityIds = targetContext.UpdateProperty<HashSet<string>>("Completed", set =>
+        // Append activity to the list of completed activities.
+        var completedActivityIds = targetContext.UpdateProperty<List<string>>("Completed", list =>
         {
-            set ??= new();
-            set.Add(completedChildActivityId);
-            return set;
+            list ??= new();
+
+            if (!list.Contains(completedChildActivityId))
+                list.Add(completedChildActivityId);
+
+            return list;
         });
 
         var allChildActivityIds = Branches.Select(x => x.Id).ToImmutableHashSet();
