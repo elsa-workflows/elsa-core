@@ -1,6 +1,6 @@
-using System.Reflection;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using Elsa.Extensions;
 
 namespace Elsa.Activities.UnitTests.Flow;
 
@@ -117,13 +117,14 @@ public class ForkTests
 
     private static async Task CompleteChildAsync(Fork fork, ActivityExecutionContext targetContext, ActivityExecutionContext childContext)
     {
-        var method = typeof(Fork).GetMethod("CompleteChildAsync", BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.NotNull(method);
+        var childNode = targetContext.WorkflowExecutionContext.FindNodeByActivity(childContext.Activity);
+        Assert.NotNull(childNode);
 
-        var result = method!.Invoke(fork, [new ActivityCompletedContext(targetContext, childContext)]);
+        targetContext.WorkflowExecutionContext.AddCompletionCallback(targetContext, childNode!, fork.GetActivityCompletionCallback("CompleteChildAsync"));
+        var callback = targetContext.WorkflowExecutionContext.PopCompletionCallback(targetContext, childNode!);
 
-        if (result is ValueTask task)
-            await task;
+        Assert.NotNull(callback?.CompletionCallback);
+        await callback!.CompletionCallback!(new ActivityCompletedContext(targetContext, childContext));
     }
 
     private static WriteLine[] CreateBranches(int count) =>

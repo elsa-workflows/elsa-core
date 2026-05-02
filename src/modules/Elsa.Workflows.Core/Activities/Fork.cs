@@ -76,6 +76,7 @@ public class Fork : Activity
             return list;
         });
 
+        var completedActivityIdsLookup = completedActivityIds.ToImmutableHashSet();
         var allChildActivityIds = Branches.Select(x => x.Id).ToImmutableHashSet();
         var joinMode = JoinMode;
 
@@ -85,7 +86,7 @@ public class Fork : Activity
                 await CompleteAsync(targetContext);
                 break;
             case ForkJoinMode.WaitAll:
-                var allSet = allChildActivityIds.All(x => completedActivityIds.Contains(x));
+                var allSet = allChildActivityIds.All(completedActivityIdsLookup.Contains);
                 if (allSet) await CompleteAsync(targetContext);
                 break;
         }
