@@ -34,4 +34,10 @@ public enum WorkflowSubStatus
     /// The workflow has faulted.
     /// </summary>
     Faulted,
+
+    /// <summary>
+    /// The workflow's last execution cycle was force-cancelled by the runtime during a graceful drain.
+    /// The instance is resumable and will be picked up by the runtime's shell-activation recovery scan.
+    /// </summary>
+    Interrupted,
 }

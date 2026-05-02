@@ -176,6 +176,10 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             // Handlers.
             .AddNotificationHandler<UpdateRouteTable>()
 
+            // Graceful shutdown: register HTTP ingress for diagnostic visibility in the runtime's IIngressSourceRegistry.
+            // The middleware short-circuits to 503 when paused (FR-006).
+            .AddSingleton<Elsa.Workflows.Runtime.IIngressSource, Elsa.Http.IngressSources.HttpTriggerIngressSource>()
+
             // Content parsers.
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()

@@ -63,7 +63,7 @@ public class DefaultAuthenticationFeature : FeatureBase
     public override void Apply()
     {
         Services.ConfigureOptions<ConfigureJwtBearerOptions>();
-        Services.ConfigureOptions<ValidateIdentityTokenOptions>();
+        Services.AddIdentityTokenOptionsValidation();
 
         var authBuilder = Services
             .AddAuthentication(MultiScheme)

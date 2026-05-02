@@ -1,4 +1,6 @@
 using CShells.Features;
+using Elsa.Workflows.Management.ShellFeatures;
+using Elsa.Workflows.Runtime.ShellFeatures;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.ShellFeatures;
@@ -7,8 +9,8 @@ namespace Elsa.ShellFeatures;
     DisplayName = "Elsa Core",
     Description = "Core Elsa workflow system functionality",
     DependsOn = [
-    "WorkflowManagement",
-    "WorkflowRuntime"
+    typeof(WorkflowManagementFeature),
+    typeof(WorkflowRuntimeFeature)
 ])]
 public class ElsaFeature : IShellFeature
 {

@@ -1,28 +1,39 @@
 <!--
   Sync Impact Report
   ===================
-  Version change: N/A → 1.0.0 (initial ratification)
-  
-  Added principles:
-    - I.   Modular Architecture
-    - II.  Composition & Extensibility
-    - III. Convention-Driven Design
-    - IV.  Async & Pipeline Execution
-    - V.   Testing Discipline
-    - VI.  Trunk-Based Development
-    - VII. Simplicity & Focus
-  
-  Added sections:
-    - Technology Stack & Constraints
-    - Development Workflow & Quality Gates
-    - Governance
-  
+  Version change: 1.0.1 → 1.1.0 (MINOR — materially expanded guidance under
+  existing Principle VII; adds named SRP/DRY/KISS sub-rules and an explicit
+  conciseness rule that previously was implicit.)
+
+  Modified principles:
+    - VII. Simplicity & Focus → VII. Simplicity, SRP, DRY & KISS
+        - Existing rules retained (YAGNI, direct-over-indirect, singular-
+          purpose modules, proportional error handling).
+        - Added explicit SRP rule: classes/modules/functions have one reason
+          to change; multi-concern classes MUST be split.
+        - Added explicit DRY rule with rule-of-three guidance to prevent
+          premature abstraction of incidentally-similar code.
+        - Added explicit KISS framing of the existing simplicity rules.
+        - Added explicit conciseness rule covering design docs, plan/spec
+          artifacts, and code (one well-named function over pass-through
+          chains; comments explain WHY not WHAT).
+
+  Added principles: none
+  Added sections: none
+  Removed sections: none
+
   Templates reviewed:
-    - .specify/templates/plan-template.md        ✅ compatible (Constitution Check section present)
-    - .specify/templates/spec-template.md         ✅ compatible (requirements, success criteria present)
-    - .specify/templates/tasks-template.md        ✅ compatible (phased structure, parallel markers present)
-    - .specify/templates/checklist-template.md    ✅ compatible (generic structure)
-  
+    - .specify/templates/plan-template.md         ✅ compatible (Constitution
+      Check gate is generic; new sub-rules surface naturally during review)
+    - .specify/templates/spec-template.md         ✅ compatible
+    - .specify/templates/tasks-template.md        ✅ compatible
+    - .specify/templates/checklist-template.md    ✅ compatible
+
+  Runtime guidance reviewed:
+    - .github/copilot-instructions.md             ✅ no Principle-VII references
+    - CLAUDE.md                                   ✅ no Principle-VII references
+    - README.md                                   ✅ no Principle-VII references
+
   Follow-up TODOs: none
 -->
 
@@ -89,10 +100,19 @@ load and enable tooling automation.
   - Test classes: `{Subject}Tests`
 - C# latest language version, nullable reference types enabled, implicit usings
   enabled — enforced via `Directory.Build.props`.
+- **Spelling & language**: All new code, comments, identifiers, error messages,
+  XML doc, commit messages, and Speckit artifacts (spec.md, plan.md, research.md,
+  tasks.md, checklists, etc.) MUST use American English (e.g., `materialize`,
+  `behavior`, `analyze`, `color`, `center`). Existing public API symbols that
+  follow another convention (e.g., `WorkflowSubStatus.Cancelled` with double-L,
+  established by .NET / Elsa convention) are NOT renamed retroactively — keep
+  them stable, but every newly-introduced symbol and every line of new prose
+  MUST follow American English.
 
 **Rationale**: Predictable patterns make the large codebase navigable and reduce
 onboarding friction. Attribute-driven metadata enables automatic UI generation
-in the visual designer.
+in the visual designer. A single spelling convention prevents drift in
+identifiers and search results across the 100+ project solution.
 
 ### IV. Async & Pipeline Execution
 
@@ -145,22 +165,40 @@ All changes MUST flow through Pull Requests targeting the `main` branch.
 **Rationale**: Trunk-based development with focused PRs maintains velocity
 while keeping the codebase stable for the large contributor community.
 
-### VII. Simplicity & Focus
+### VII. Simplicity, SRP, DRY & KISS
 
-Complexity MUST be justified. Start simple; avoid speculative generalisation.
+Architecture and code MUST be as concise as accuracy allows. Complexity MUST be
+justified. SRP, DRY, and KISS MUST be applied wherever appropriate.
 
-- YAGNI: do not add features, abstractions, or configuration for hypothetical
-  future requirements.
-- Prefer direct implementations over indirection layers unless the indirection
-  serves a documented extensibility need.
-- Each module MUST have a clear, singular purpose — no "grab bag" utility
-  modules without justification.
-- Error handling SHOULD be proportional: validate at system boundaries (user
-  input, external APIs); trust internal code and framework guarantees.
+- **KISS (Keep It Simple)**: Start simple; avoid speculative generalization.
+  YAGNI — do not add features, abstractions, or configuration for hypothetical
+  future requirements. Prefer direct implementations over indirection layers
+  unless the indirection serves a documented extensibility need.
+- **SRP (Single Responsibility)**: Each class, module, and function MUST have
+  one well-defined reason to change. Modules MUST have a clear, singular purpose
+  — no "grab bag" utility modules without justification. A class that mixes
+  persistence, validation, and orchestration concerns MUST be split.
+- **DRY (Don't Repeat Yourself)**: Repeated logic, configuration, or knowledge
+  SHOULD be extracted into a shared abstraction by the third occurrence (rule
+  of three) — earlier when the duplication is structural rather than incidental.
+  Do NOT prematurely DRY code that is only incidentally similar and likely to
+  diverge; duplication is cheaper than the wrong abstraction.
+- **Conciseness**: Design docs, Speckit artifacts (spec.md, plan.md, tasks.md,
+  research.md, checklists), and code MUST be as short as accuracy allows.
+  Prefer one well-named function over a chain of pass-through wrappers.
+  Inline trivially small helpers rather than wrapping them in extra methods.
+  Comments explain WHY (non-obvious constraints, invariants, workarounds), not
+  WHAT — well-named identifiers already convey what.
+- **Proportional error handling**: Validate at system boundaries (user input,
+  external APIs); trust internal code and framework guarantees. Do not add
+  defensive checks for conditions that cannot occur.
 
 **Rationale**: A 100+ project solution is only sustainable when each part earns
-its existence. Unnecessary abstraction increases maintenance burden and
-onboarding cost.
+its existence. SRP keeps modules navigable and testable; DRY keeps fixes in one
+place; KISS keeps the system understandable to new contributors; conciseness
+keeps reviews fast and intent legible. The rule-of-three guard on DRY prevents
+premature abstraction — the inverse failure mode of duplication, and one that
+is harder to undo once entrenched.
 
 ## Technology Stack & Constraints
 
@@ -238,4 +276,4 @@ and development practices in the Elsa Workflows repository.
 - **Runtime guidance**: See `.github/copilot-instructions.md` for build
   commands, troubleshooting, and CI details.
 
-**Version**: 1.0.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-03-08
+**Version**: 1.1.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-05-01

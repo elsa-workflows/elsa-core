@@ -1,0 +1,123 @@
+name: Greploop
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Pull request number to optimize'
+        required: true
+        type: string
+  issue_comment:
+    types: [created]
+
+jobs:
+  greploop:
+    # Run on manual dispatch, or when a maintainer posts "/greploop" on a PR
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request != null &&
+       contains(github.event.comment.body, '/greploop') &&
+       (github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'MEMBER' ||
+        github.event.comment.author_association == 'COLLABORATOR'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # Needed: greploop pushes fix commits to the PR branch
+      pull-requests: write     # Needed: resolve review threads, post status comments
+      issues: read
+      id-token: write
+      actions: read            # Needed: Claude reads CI results on PRs
+    steps:
+      - name: Resolve PR number
+        id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PR_NUMBER: ${{ inputs.pr_number }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            raw="$INPUT_PR_NUMBER"
+          else
+            raw="$ISSUE_NUMBER"
+          fi
+          # Defence-in-depth: only digits, length-bounded. PR numbers are always positive integers;
+          # this rejects any attempt to smuggle shell metacharacters through later step interpolations.
+          if ! [[ "$raw" =~ ^[0-9]{1,10}$ ]]; then
+            echo "Invalid PR number '$raw' — must be 1-10 digits." >&2
+            exit 1
+          fi
+          echo "pr_number=$raw" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve PR head metadata
+        id: pr_head
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
+        run: |
+          # GH_REPO supplies the repo context so gh does not require a checked-out git
+          # repository — actions/checkout runs in a later step.
+          pr_json="$(gh pr view "$PR_NUMBER" --json headRefName,headRefOid,headRepository,headRepositoryOwner)"
+          echo "head_ref=$(echo "$pr_json" | jq -r '.headRefName')" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$(echo "$pr_json" | jq -r '.headRefOid')" >> "$GITHUB_OUTPUT"
+          echo "head_repo_owner=$(echo "$pr_json" | jq -r '.headRepositoryOwner.login')" >> "$GITHUB_OUTPUT"
+          echo "head_repo_name=$(echo "$pr_json" | jq -r '.headRepository.name')" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Checkout PR branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
+          HEAD_SHA: ${{ steps.pr_head.outputs.head_sha }}
+          HEAD_REPO_OWNER: ${{ steps.pr_head.outputs.head_repo_owner }}
+          HEAD_REPO_NAME: ${{ steps.pr_head.outputs.head_repo_name }}
+        run: |
+          # All step outputs are funnelled through env vars rather than inline workflow-expression
+          # interpolation, so PR-author-controlled values (head ref name, repo name, etc.) cannot
+          # inject shell commands. CodeQL's "Code injection" rule for GitHub Actions enforces this.
+          current_head_sha="$(gh pr view "$PR_NUMBER" --json headRefOid -q '.headRefOid')"
+          if [ "$current_head_sha" != "$HEAD_SHA" ]; then
+            echo "PR head changed after initial resolution. Expected $HEAD_SHA, got $current_head_sha." >&2
+            exit 1
+          fi
+          # Validate SHA shape and repo identifiers before they hit any URL or git command.
+          if ! [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Invalid head SHA '$HEAD_SHA'." >&2
+            exit 1
+          fi
+          if ! [[ "$HEAD_REPO_OWNER" =~ ^[A-Za-z0-9_.-]+$ ]] || ! [[ "$HEAD_REPO_NAME" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+            echo "Invalid head repo identifier '$HEAD_REPO_OWNER/$HEAD_REPO_NAME'." >&2
+            exit 1
+          fi
+          git fetch --no-tags --depth=1 "https://x-access-token:${GH_TOKEN}@github.com/${HEAD_REPO_OWNER}/${HEAD_REPO_NAME}.git" "$HEAD_SHA"
+          git checkout --detach "$HEAD_SHA"
+
+      - name: Expose greploop skill to Claude Code
+        # Skill source is vendored in this repo at .claude/skills/greploop.
+        # Mirror it into the user-level skills dir Claude Code discovers.
+        run: |
+          mkdir -p ~/.claude/skills
+          ln -s "$GITHUB_WORKSPACE/.claude/skills/greploop" ~/.claude/skills/greploop
+
+      - name: Run greploop
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          additional_permissions: |
+            actions: read
+          # pr_number is the digit-validated value from the resolve step (regex ^[0-9]{1,10}$),
+          # so the prompt template is "/greploop " + a sanitised integer — no path for untrusted
+          # content to reach Claude Code via the prompt argument.
+          prompt: /greploop ${{ steps.resolve.outputs.pr_number }}
+          claude_args: '--allowed-tools "Bash(gh:*),Bash(git:*)"'

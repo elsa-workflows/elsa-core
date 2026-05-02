@@ -21,8 +21,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}"
@@ -191,29 +189,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "multitenancy", "multitenanc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Tenants.AspNetCore", "src\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj", "{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{0A04B1FD-06C0-4271-A910-A08C263DBC44}"
-	ProjectSection(SolutionItems) = preProject
-		doc\adr\0001-record-architecture-decisions.md = doc\adr\0001-record-architecture-decisions.md
-		doc\adr\0002-fault-propagation-from-child-to-parent-activities.md = doc\adr\0002-fault-propagation-from-child-to-parent-activities.md
-		doc\adr\0003-direct-bookmark-management-in-workflowexecutioncontext.md = doc\adr\0003-direct-bookmark-management-in-workflowexecutioncontext.md
-		doc\adr\graph.dot = doc\adr\graph.dot
-		doc\adr\toc.md = doc\adr\toc.md
-		doc\adr\0005-activity-execution-snapshots.md = doc\adr\0005-activity-execution-snapshots.md
-		doc\adr\0005-token-centric-flowchart-execution-model.md = doc\adr\0005-token-centric-flowchart-execution-model.md
-		doc\adr\0006-tenant-deleted-event.md = doc\adr\0006-tenant-deleted-event.md
-		doc\adr\0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md = doc\adr\0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md
-		doc\adr\0008-empty-string-as-default-tenant-id.md = doc\adr\0008-empty-string-as-default-tenant-id.md
-		doc\adr\0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md = doc\adr\0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md
-		doc\adr\0010-default-admin-user-bootstrap-for-initial-identity-access.md = doc\adr\0010-default-admin-user-bootstrap-for-initial-identity-access.md
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bounty", "bounty", "{9B80A705-2E31-4012-964A-83963DCDB384}"
-	ProjectSection(SolutionItems) = preProject
-		doc\bounty\bounty-announcement-template.md = doc\bounty\bounty-announcement-template.md
-		doc\bounty\bounty-footer.md = doc\bounty\bounty-footer.md
-		doc\bounty\bounty-quality-standards.md = doc\bounty\bounty-quality-standards.md
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "caching", "caching", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching", "src\modules\Elsa.Caching\Elsa.Caching.csproj", "{6F14B066-DF7B-2409-59D8-CCCA90A4974C}"
@@ -280,11 +255,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Integratio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.UnitTests", "test\unit\Elsa.Activities.UnitTests\Elsa.Activities.UnitTests.csproj", "{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "qa", "qa", "{0478E6EA-DCB2-4667-ADC2-37C62C9C2574}"
-	ProjectSection(SolutionItems) = preProject
-		doc\qa\test-guidelines.md = doc\qa\test-guidelines.md
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Management.UnitTests", "test\unit\Elsa.Workflows.Management.UnitTests\Elsa.Workflows.Management.UnitTests.csproj", "{20C75446-CAE0-48D1-85D9-459541C4D8B6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions.UnitTests", "test\unit\Elsa.Expressions.UnitTests\Elsa.Expressions.UnitTests.csproj", "{67E1F0CC-C436-4D71-AD2C-AE42E3AA8A0B}"
@@ -312,6 +282,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\packages.yml = .github\workflows\packages.yml
 		.github\workflows\bounty.yml = .github\workflows\bounty.yml
 		.github\workflows\copilot-setup-steps.yml = .github\workflows\copilot-setup-steps.yml
+		.github\workflows\greploop.yml = .github\workflows\greploop.yml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "issue_templates", "issue_templates", "{36556068-64BF-4D4B-827E-EC8CDC23D516}"
@@ -343,6 +314,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.SamplePackage", "src\apps\Elsa.SamplePackage\Elsa.SamplePackage.csproj", "{85E81AC4-10EF-4A93-A7A3-930087621ACC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Shells.Api.Tests", "test\unit\Elsa.Shells.Api.Tests\Elsa.Shells.Api.Tests.csproj", "{42FFCACD-5A9D-462B-AC84-7E1D14CDBDF0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Identity.UnitTests", "test\unit\Elsa.Identity.UnitTests\Elsa.Identity.UnitTests.csproj", "{B314D549-DD53-4D1B-A88E-934A72FA0BCB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1204,6 +1177,18 @@ Global
 		{42FFCACD-5A9D-462B-AC84-7E1D14CDBDF0}.Release|x64.Build.0 = Release|Any CPU
 		{42FFCACD-5A9D-462B-AC84-7E1D14CDBDF0}.Release|x86.ActiveCfg = Release|Any CPU
 		{42FFCACD-5A9D-462B-AC84-7E1D14CDBDF0}.Release|x86.Build.0 = Release|Any CPU
+		{B314D549-DD53-4D1B-A88E-934A72FA0BCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B314D549-DD53-4D1B-A88E-934A72FA0BCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B314D549-DD53-4D1B-A88E-934A72FA0BCB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B314D549-DD53-4D1B-A88E-934A72FA0BCB}.Debug|x64.Build.0 = Debug|Any CPU
+		{B314D549-DD53-4D1B-A88E-934A72FA0BCB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B314D549-DD53-4D1B-A88E-934A72FA0BCB}.Debug|x86.Build.0 = Debug|Any CPU
+		{B314D549-DD53-4D1B-A88E-934A72FA0BCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B314D549-DD53-4D1B-A88E-934A72FA0BCB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B314D549-DD53-4D1B-A88E-934A72FA0BCB}.Release|x64.ActiveCfg = Release|Any CPU
+		{B314D549-DD53-4D1B-A88E-934A72FA0BCB}.Release|x64.Build.0 = Release|Any CPU
+		{B314D549-DD53-4D1B-A88E-934A72FA0BCB}.Release|x86.ActiveCfg = Release|Any CPU
+		{B314D549-DD53-4D1B-A88E-934A72FA0BCB}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1259,8 +1244,6 @@ Global
 		{DFFE6199-B5A7-4BA8-A5E1-77D0426C6468} = {B32DB9B2-AD6C-48A5-8682-4373CB045185}
 		{2F3E1026-5054-4E1F-899B-F1A7F70F9912} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C} = {2F3E1026-5054-4E1F-899B-F1A7F70F9912}
-		{0A04B1FD-06C0-4271-A910-A08C263DBC44} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
-		{9B80A705-2E31-4012-964A-83963DCDB384} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
 		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{6F14B066-DF7B-2409-59D8-CCCA90A4974C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{C55015F0-E9DF-4BF9-8131-D7539E938220} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
@@ -1294,7 +1277,6 @@ Global
 		{698051E0-7981-43D4-B7BA-F3D8B65004A1} = {3D0A6C71-4B96-411B-80DB-DDFAFF77C748}
 		{51C39AF0-4F41-4FC1-AEBD-D1494407D3F9} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
 		{2DA466EB-CBF0-46EC-8B86-45CAF2B68BBA} = {18453B51-25EB-4317-A4B3-B10518252E92}
-		{0478E6EA-DCB2-4667-ADC2-37C62C9C2574} = {0354F050-3992-4DD4-B0EE-5FBA04AC72B6}
 		{20C75446-CAE0-48D1-85D9-459541C4D8B6} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{67E1F0CC-C436-4D71-AD2C-AE42E3AA8A0B} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{9AEE941A-3F23-4E4B-9B59-1A2F57FC762D} = {18453B51-25EB-4317-A4B3-B10518252E92}
@@ -1314,6 +1296,7 @@ Global
 		{23BBF2CE-D2BA-43D4-8C78-A0B7B4AD6219} = {FD31E565-A5D9-4F25-B484-2F27FAB99B17}
 		{85E81AC4-10EF-4A93-A7A3-930087621ACC} = {D92BEAB2-60D6-4BB4-885A-6BA681C6CCF1}
 		{42FFCACD-5A9D-462B-AC84-7E1D14CDBDF0} = {18453B51-25EB-4317-A4B3-B10518252E92}
+		{B314D549-DD53-4D1B-A88E-934A72FA0BCB} = {18453B51-25EB-4317-A4B3-B10518252E92}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

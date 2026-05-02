@@ -1,6 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
-using CShells;
+using CShells.Lifecycle;
 using NSubstitute;
 
 namespace Elsa.Shells.Api.Tests.Endpoints.Reload;
@@ -24,9 +24,11 @@ public class ReloadTests : ShellsApiTestBase
     [Fact]
     public async Task Post_WhenShellNotFound_Returns404WithNotFoundStatus()
     {
-        ShellManager
-            .ReloadShellAsync(Arg.Any<ShellId>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromException(new InvalidOperationException("Shell 'test-shell' not found")));
+        // CShells 0.0.15 surfaces failures via ReloadResult.Error rather than throwing — the endpoint maps any
+        // non-null Error to a 404 (the historical "blueprint not found" response).
+        ShellRegistry
+            .ReloadAsync(ShellId, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new ReloadResult(ShellId, null, null, new InvalidOperationException("Shell 'test-shell' not found"))));
 
         var response = await HttpClient.PostAsync($"/shells/{ShellId}/reload", null);
 

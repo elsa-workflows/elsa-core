@@ -34,9 +34,9 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
     /// </summary>
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
     public async Task InvokeAsync(
-        HttpContext httpContext, 
-        IServiceProvider serviceProvider, 
-        IOptions<HttpActivityOptions> options, 
+        HttpContext httpContext,
+        IServiceProvider serviceProvider,
+        IOptions<HttpActivityOptions> options,
         IHttpWorkflowLookupService httpWorkflowLookupService)
     {
         var path = httpContext.Request.Path.Value!.NormalizeRoute();
@@ -54,6 +54,19 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
             // Strip the base path.
             matchingPath = matchingPath[basePath.Length..];
+        }
+
+        // Graceful-shutdown gate: when the runtime is paused or draining, we don't accept new HTTP-triggered work.
+        // The ingress source registry visibility is provided by HttpTriggerIngressSource — this is the actual mechanism.
+        var quiescenceSignal = serviceProvider.GetService<IQuiescenceSignal>();
+        if (quiescenceSignal is not null && !quiescenceSignal.IsAcceptingNewWork)
+        {
+            httpContext.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+            // Retry-After is reason-aware: drain is short (host is exiting and will be replaced shortly), but an
+            // administrative pause is indefinite, so a longer back-off avoids a tight retry loop while operators
+            // perform maintenance.
+            httpContext.Response.Headers.RetryAfter = quiescenceSignal.CurrentState.Reason.HasFlag(QuiescenceReason.Drain) ? "5" : "60";
+            return;
         }
 
         matchingPath = matchingPath.NormalizeRoute();

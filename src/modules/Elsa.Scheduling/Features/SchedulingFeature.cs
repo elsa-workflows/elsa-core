@@ -53,7 +53,10 @@ public class SchedulingFeature : FeatureBase
             .AddHandlersFrom<ScheduleWorkflows>()
 
             //Trigger payload validators.
-            .AddTriggerPayloadValidator<CronTriggerPayloadValidator, CronTriggerPayload>();
+            .AddTriggerPayloadValidator<CronTriggerPayloadValidator, CronTriggerPayload>()
+
+            // Graceful shutdown: register scheduled-trigger ingress for diagnostic visibility (FR-006).
+            .AddSingleton<Elsa.Workflows.Runtime.IIngressSource, Elsa.Scheduling.IngressSources.ScheduledTriggerIngressSource>();
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());
     }

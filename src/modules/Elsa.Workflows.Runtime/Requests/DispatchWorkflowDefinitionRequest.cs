@@ -78,4 +78,10 @@ public class DispatchWorkflowDefinitionRequest
     /// Should be set to the depth of the scheduling activity (not depth + 1, as the increment is applied automatically).
     /// </summary>
     public int? SchedulingCallStackDepth { get; set; }
+
+    /// <summary>
+    /// Name of the ingress source that initiated this dispatch. Carried through to the execution cycle registry for
+    /// drain-time accounting and the FR-018 inconsistency detection. Null when no attribution is available.
+    /// </summary>
+    public string? IngressSourceName { get; set; }
 }

@@ -218,7 +218,9 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         Module.AddActivitiesFrom<WorkflowRuntimeFeature>();
         Module.Configure<WorkflowsFeature>(workflows =>
         {
-            workflows.CommitStateHandler = sp => sp.GetRequiredService<DefaultCommitStateHandler>();
+            // ExecutionCycleAwareCommitStateHandler decorates DefaultCommitStateHandler — disposes the execution cycle handle AFTER
+            // commit so the drain orchestrator's await-disposed sequencing can land its Interrupted write last.
+            workflows.CommitStateHandler = sp => sp.GetRequiredService<Elsa.Workflows.Runtime.Services.ExecutionCycleAwareCommitStateHandler>();
         });
 
         Services.Configure<RecurringTaskOptions>(options =>
@@ -228,6 +230,12 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     }
 
     /// <inheritdoc />
+    /// <summary>
+    /// Callback that tunes the graceful-shutdown machinery (drain deadline, per-source pause timeout, stimulus-queue back-pressure,
+    /// pause-persistence policy). Applied when <see cref="Apply"/> binds <see cref="GracefulShutdownOptions"/>.
+    /// </summary>
+    public Action<GracefulShutdownOptions>? GracefulShutdown { get; set; }
+
     public override void Apply()
     {
         // Options.
@@ -240,6 +248,32 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         {
             options.Channels.AddRange(WorkflowDispatcherChannels.Values);
         });
+        Services.AddGracefulShutdownOptions(GracefulShutdown);
+
+        // Graceful-shutdown core (US1 — quiescence machinery).
+        Services
+            .AddSingleton<IQuiescenceSignal, Elsa.Workflows.Runtime.Services.QuiescenceSignal>()
+            .AddSingleton<IIngressSourceRegistry, Elsa.Workflows.Runtime.Services.IngressSourceRegistry>()
+            .AddSingleton<IExecutionCycleRegistry, Elsa.Workflows.Runtime.Services.ExecutionCycleRegistry>()
+            // Lazy collection breaks the otherwise-circular DI chain QuiescenceSignal → IExecutionCycleRegistry →
+            // IIngressSourceRegistry → IEnumerable<IIngressSource> → IQuiescenceSignal. Adapters take a direct
+            // IQuiescenceSignal dependency; the registry materializes the collection on first read.
+            .AddSingleton(sp => new Lazy<IEnumerable<IIngressSource>>(sp.GetServices<IIngressSource>))
+            // Drain orchestrator + hosted service (US1). See FR-029 / R5 — heartbeat must outlive drain.
+            .AddSingleton<IDrainOrchestrator, Elsa.Workflows.Runtime.Services.DrainOrchestrator>()
+            .AddHostedService<Elsa.Workflows.Runtime.HostedServices.DrainOrchestratorHostedService>()
+            // Domain service that backs all runtime-admin transports (US2). Encapsulates the audit-on-effective-
+            // transition rule (SC-007) so transports stay thin. Scoped because INotificationSender is scoped.
+            .AddScoped<IWorkflowRuntimeAdminService, Elsa.Workflows.Runtime.Services.WorkflowRuntimeAdminService>()
+            // Interrupted-workflow recovery on shell activation (US3). Disjoint from the timeout-based
+            // RestartInterruptedWorkflowsTask: filter is SubStatus = Interrupted; that task's filter is IsExecuting=true.
+            .AddScoped<IInterruptedRecoveryScanner, Elsa.Workflows.Runtime.Services.InterruptedRecoveryScanner>()
+            .AddStartupTask<Elsa.Workflows.Runtime.StartupTasks.RecoverInterruptedWorkflowsStartupTask>()
+            // Internal bookmark-queue processor surfaced as an ingress source for diagnostic visibility (FR-006).
+            // Pause behavior is enforced inside BookmarkQueueProcessor via IQuiescenceSignal (FR-024).
+            .AddSingleton<IIngressSource, Elsa.Workflows.Runtime.IngressSources.InternalBookmarkQueueIngressSource>()
+            // Re-applies persisted pause state on activation when PausePersistence = AcrossReactivations (FR-028).
+            .AddStartupTask<Elsa.Workflows.Runtime.StartupTasks.InitializePauseStateStartupTask>();
 
         Services
             // Core.
@@ -298,6 +332,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IActivityPropertyLogPersistenceEvaluator, ActivityPropertyLogPersistenceEvaluator>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
             .AddScoped<DefaultCommitStateHandler>()
+            .AddScoped<Elsa.Workflows.Runtime.Services.ExecutionCycleAwareCommitStateHandler>()
             .AddScoped<WorkflowHeartbeatGeneratorFactory>()
 
             // Deprecated services.

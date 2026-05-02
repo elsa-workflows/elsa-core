@@ -4,6 +4,6 @@ using Elsa.Workflows.Activities;
 namespace Elsa.Workflows.Notifications;
 
 /// <summary>
-/// A domain event that is published before a burst of execution begins.  
+/// A domain event that is published before an execution cycle begins.
 /// </summary>
 public record WorkflowExecuting(Workflow Workflow, WorkflowExecutionContext WorkflowExecutionContext) : INotification;

@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using CShells.Management;
+using CShells.Lifecycle;
 using Elsa.Shells.Api.ShellFeatures;
 using Elsa.Workflows;
 using FastEndpoints;
@@ -16,7 +16,7 @@ public abstract class ShellsApiTestBase : IAsyncLifetime
     private WebApplication? _app;
     private bool _wasSecurityEnabled;
 
-    protected IShellManager ShellManager { get; } = Substitute.For<IShellManager>();
+    protected IShellRegistry ShellRegistry { get; } = Substitute.For<IShellRegistry>();
     protected HttpClient HttpClient { get; private set; } = null!;
 
     // Shared options that match the mock IApiSerializer — used when deserializing responses in tests.
@@ -37,8 +37,15 @@ public abstract class ShellsApiTestBase : IAsyncLifetime
         builder.WebHost.UseTestServer();
 
         builder.Services.AddFastEndpoints(o => o.Assemblies = [typeof(ShellsApiFeature).Assembly]);
-        builder.Services.AddSingleton(ShellManager);
+        builder.Services.AddSingleton(ShellRegistry);
         builder.Services.AddSingleton(apiSerializer);
+        builder.Services.AddLogging();
+
+        // Default behavior: every reload succeeds. Tests override per-call by re-stubbing on the substitute.
+        ShellRegistry.ReloadActiveAsync(Arg.Any<ReloadOptions?>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult<IReadOnlyList<ReloadResult>>(Array.Empty<ReloadResult>()));
+        ShellRegistry.ReloadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(ci => Task.FromResult(new ReloadResult(ci.Arg<string>(), null, null, null)));
 
         _app = builder.Build();
         _app.UseFastEndpoints();

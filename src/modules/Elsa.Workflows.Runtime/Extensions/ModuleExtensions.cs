@@ -2,6 +2,7 @@ using System.Reflection;
 using Elsa.Features.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime.Features;
+using Elsa.Workflows.Runtime.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -61,6 +62,15 @@ public static class ModuleExtensions
     public static WorkflowRuntimeFeature UseCache(this WorkflowRuntimeFeature feature, Action<CachingWorkflowRuntimeFeature>? configure = default)
     {
         feature.Module.Configure(configure);
+        return feature;
+    }
+
+    /// <summary>
+    /// Configures the graceful-shutdown machinery of the workflow runtime.
+    /// </summary>
+    public static WorkflowRuntimeFeature ConfigureGracefulShutdown(this WorkflowRuntimeFeature feature, Action<GracefulShutdownOptions> configure)
+    {
+        feature.GracefulShutdown = configure;
         return feature;
     }
 }

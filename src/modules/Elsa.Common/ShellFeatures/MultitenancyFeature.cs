@@ -1,5 +1,5 @@
 using CShells.Features;
-using CShells.Hosting;
+using CShells.Lifecycle;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.Multitenancy.EventHandlers;
 using Elsa.Common.Multitenancy.HostedServices;
@@ -22,10 +22,11 @@ public class MultitenancyFeature : IShellFeature
             .AddSingleton<ITenantFinder, DefaultTenantFinder>()
             .AddSingleton<ITenantService, DefaultTenantService>()
             
-            // TenantTaskManager handles all task lifecycle in the correct order
-            .AddSingleton<TenantTaskManager>()
-            .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<TenantTaskManager>())
-            .AddSingleton<ITenantDeactivatedEvent>(sp => sp.GetRequiredService<TenantTaskManager>())
+            // Coordinate tenant task lifecycle separately from the tenant event pipeline.
+            .AddSingleton<TenantTaskLifecycleCoordinator>()
+            .AddSingleton<TenantTaskLifecycleEventHandler>()
+            .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<TenantTaskLifecycleEventHandler>())
+            .AddSingleton<ITenantDeactivatedEvent>(sp => sp.GetRequiredService<TenantTaskLifecycleEventHandler>())
             
             .AddSingleton<RecurringTaskScheduleManager>()
             .AddSingleton<TenantEventsManager>()
@@ -35,8 +36,10 @@ public class MultitenancyFeature : IShellFeature
             .AddScoped<IBackgroundTaskStarter, TaskExecutor>()
             .AddScoped(_tenantsProviderFactory)
             
-            .AddSingleton<IShellActivatedHandler, ActivateShellTenants>()
-            .AddSingleton<IShellDeactivatingHandler, ActivateShellTenants>()
+            // Transient per CShells 0.0.15 convention — the registry resolves IEnumerable<IShellInitializer> and
+            // IEnumerable<IDrainHandler> on demand from the shell's IServiceProvider during activation/draining.
+            .AddTransient<IShellInitializer, ActivateShellTenants>()
+            .AddTransient<IDrainHandler, ActivateShellTenants>()
             ;
     }
 }

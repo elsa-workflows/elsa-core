@@ -1,4 +1,3 @@
-using Elsa.Common.Exceptions;
 using Elsa.Identity.Options;
 using Microsoft.Extensions.Options;
 
@@ -8,12 +7,14 @@ namespace Elsa.Extensions;
 /// <summary>
 /// Validates the <see cref="IdentityTokenOptions"/>.
 /// </summary>
-public class ValidateIdentityTokenOptions : IPostConfigureOptions<IdentityTokenOptions>
+public class ValidateIdentityTokenOptions : IValidateOptions<IdentityTokenOptions>
 {
     /// <inheritdoc />
-    public void PostConfigure(string? name, IdentityTokenOptions options)
+    public ValidateOptionsResult Validate(string? name, IdentityTokenOptions options)
     {
         if (string.IsNullOrWhiteSpace(options.SigningKey))
-            throw new MissingConfigurationException("SigningKey is required");
+            return ValidateOptionsResult.Fail("SigningKey is required");
+
+        return ValidateOptionsResult.Success;
     }
 }

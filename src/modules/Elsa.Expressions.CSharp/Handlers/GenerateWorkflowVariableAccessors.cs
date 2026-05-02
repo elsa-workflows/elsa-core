@@ -8,7 +8,6 @@ using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Humanizer;
 using JetBrains.Annotations;
-using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Expressions.CSharp.Handlers;
@@ -24,14 +23,6 @@ public class GenerateWorkflowVariableAccessors(IOptions<CSharpOptions> options) 
     {
         var expressionExecutionContext = notification.Context;
         var variables = expressionExecutionContext.GetVariablesInScope().ToList();
-        var hasExpandoVariables = variables.Any(x => x.GetVariableType() == typeof(ExpandoObject));
-
-        if (hasExpandoVariables && !options.Value.DisableWrappers)
-        {
-            notification.ConfigureScriptOptions(scriptOptions => scriptOptions
-                .AddReferences(typeof(ExpandoObject).Assembly)
-                .AddImports(typeof(ExpandoObject).Namespace!));
-        }
 
         var sb = new StringBuilder();
         sb.AppendLine("public partial class WorkflowVariablesProxy {");

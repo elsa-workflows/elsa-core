@@ -1,4 +1,4 @@
-using CShells.Management;
+using CShells.Lifecycle;
 using Elsa.Abstractions;
 using Elsa.Shells.Api.Endpoints.Shells;
 using Elsa.Workflows;
@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.Shells.Api.Endpoints.Shells.ReloadAll;
 
 [PublicAPI]
-internal class ReloadAll(IShellManager shellManager, IApiSerializer apiSerializer, ILogger<ReloadAll> logger) : ElsaEndpointWithoutRequest
+internal class ReloadAll(IShellRegistry shellRegistry, IApiSerializer apiSerializer, ILogger<ReloadAll> logger) : ElsaEndpointWithoutRequest
 {
     public override void Configure()
     {
@@ -19,18 +19,20 @@ internal class ReloadAll(IShellManager shellManager, IApiSerializer apiSerialize
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
-        try
+        // CShells 0.0.15: ReloadActiveAsync replaces the old ReloadAllShellsAsync. Per-shell failures are surfaced
+        // in each ReloadResult.Error rather than thrown; aggregate any errors into a single 503 response.
+        var results = await shellRegistry.ReloadActiveAsync(cancellationToken: cancellationToken);
+        var errors = results.Where(r => r.Error is not null).ToList();
+
+        if (errors.Count > 0)
         {
-            await shellManager.ReloadAllShellsAsync(cancellationToken);
-        }
-        catch (InvalidOperationException ex)
-        {
-            logger.LogError(ex, "Failed to reload all shells");
+            var summary = string.Join("; ", errors.Select(r => $"{r.Name}: {r.Error!.Message}"));
+            logger.LogError("Failed to reload {Count} shell(s): {Summary}", errors.Count, summary);
             var failedResponse = new ShellReloadResponse
             {
                 Status = ShellReloadStatus.Failed,
                 Timestamp = DateTimeOffset.UtcNow,
-                Message = ex.Message
+                Message = summary
             };
             await SendResponseAsync(failedResponse, StatusCodes.Status503ServiceUnavailable, cancellationToken);
             return;
