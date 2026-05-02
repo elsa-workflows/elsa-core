@@ -275,7 +275,7 @@ public static class ObjectConverter
                         ? typeof(HashSet<>).MakeGenericType(desiredCollectionItemType)
                         : typeof(List<>).MakeGenericType(desiredCollectionItemType);
                     var collection = Activator.CreateInstance(collectionType)!;
-                    var addMethod = collectionType.GetMethod("Add", [desiredCollectionItemType])!;
+                    var addMethod = collectionType.GetMethod("Add", [desiredCollectionItemType]) ?? throw new InvalidOperationException($"Type {collectionType} does not expose an Add method for {desiredCollectionItemType}.");
 
                     foreach (var item in enumerable)
                     {
