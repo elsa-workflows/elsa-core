@@ -2,6 +2,7 @@ using Elsa.Diagnostics.Contracts;
 using Elsa.Diagnostics.Logging;
 using Elsa.Diagnostics.Options;
 using Elsa.Diagnostics.Providers.InMemory;
+using Elsa.Diagnostics.RealTime;
 using Elsa.Diagnostics.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -31,6 +32,7 @@ public class ServerLogStreamingFeature(IModule module) : FeatureBase(module)
         Services.TryAddSingleton<IServerLogSourceRegistry, ServerLogSourceRegistry>();
         Services.TryAddSingleton<IServerLogRedactor, ServerLogRedactor>();
         Services.TryAddSingleton<IServerLogProvider, InMemoryServerLogProvider>();
+        Services.TryAddSingleton<ServerLogSubscriptionManager>();
         Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, ServerLogLoggerProvider>());
         Module.AddFastEndpointsFromModule();
     }
