@@ -117,14 +117,14 @@
 ### Tests for User Story 3
 
 - [X] T046 [P] [US3] Add source registry tests in `test/unit/Elsa.Diagnostics.UnitTests/Sources/ServerLogSourceRegistryTests.cs`.
-- [ ] T047 [P] [US3] Add multi-source provider tests in `test/unit/Elsa.Diagnostics.UnitTests/InMemory/InMemoryServerLogProviderSourceTests.cs`.
+- [X] T047 [P] [US3] Add multi-source provider tests in `test/unit/Elsa.Diagnostics.UnitTests/InMemory/InMemoryServerLogProviderSourceTests.cs`.
 - [ ] T048 [P] [US3] Add source-list endpoint integration tests in `test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsSourcesEndpointTests.cs`.
 
 ### Implementation for User Story 3
 
 - [X] T049 [US3] Detect container and Kubernetes environment metadata in `src/modules/Elsa.Diagnostics/Services/ServerLogSourceRegistry.cs`.
 - [X] T050 [US3] Track `LastSeen`, stale, disconnected, and unknown health states in `src/modules/Elsa.Diagnostics/Services/ServerLogSourceRegistry.cs`.
-- [ ] T051 [US3] Add source-aware merged ordering and deterministic tiebreakers in `src/modules/Elsa.Diagnostics/Providers/InMemory/InMemoryServerLogProvider.cs`.
+- [X] T051 [US3] Add source-aware merged ordering and deterministic tiebreakers in `src/modules/Elsa.Diagnostics/Providers/InMemory/InMemoryServerLogProvider.cs`.
 - [X] T052 [US3] Implement source-list endpoint in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Sources/Endpoint.cs`.
 - [X] T053 [US3] Secure source-list endpoint with `read:server-logs` in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Sources/Endpoint.cs`.
 - [ ] T054 [US3] Broadcast source changes from the hub in `src/modules/Elsa.Diagnostics/RealTime/ServerLogsHub.cs`.

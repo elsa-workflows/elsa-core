@@ -45,7 +45,10 @@ public class InMemoryServerLogProvider : IServerLogProvider
             .Snapshot()
             .Where(x => ServerLogFilterEvaluator.Matches(x, filter))
             .OrderBy(x => x.Timestamp)
+            .ThenBy(x => x.ReceivedAt)
+            .ThenBy(x => x.SourceId, StringComparer.OrdinalIgnoreCase)
             .ThenBy(x => x.Sequence)
+            .ThenBy(x => x.Id, StringComparer.Ordinal)
             .TakeLast(take)
             .ToList();
         
