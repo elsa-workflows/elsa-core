@@ -24,7 +24,7 @@ public class ServerLogSourceRegistry : IServerLogSourceRegistry
     {
         _sources.AddOrUpdate(
             sourceId,
-            Current with { LastSeen = timestamp, Status = ServerLogSourceStatus.Connected },
+            Current with { Id = sourceId, DisplayName = sourceId, LastSeen = timestamp, Status = ServerLogSourceStatus.Connected },
             (_, existing) => existing with { LastSeen = timestamp, Status = ServerLogSourceStatus.Connected });
     }
     

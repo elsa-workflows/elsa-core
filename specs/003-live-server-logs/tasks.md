@@ -59,7 +59,7 @@
 
 - [X] T019 [P] [US1] Add ring buffer capacity and ordering tests in `test/unit/Elsa.Diagnostics.UnitTests/InMemory/RingBufferTests.cs`.
 - [X] T020 [P] [US1] Add in-memory provider recent/live tests in `test/unit/Elsa.Diagnostics.UnitTests/InMemory/InMemoryServerLogProviderTests.cs`.
-- [ ] T021 [P] [US1] Add logger provider capture tests in `test/unit/Elsa.Diagnostics.UnitTests/Logging/ServerLogLoggerProviderTests.cs`.
+- [X] T021 [P] [US1] Add logger provider capture tests in `test/unit/Elsa.Diagnostics.UnitTests/Logging/ServerLogLoggerProviderTests.cs`.
 - [ ] T022 [P] [US1] Add recent endpoint integration test in `test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsRecentEndpointTests.cs`.
 - [ ] T023 [P] [US1] Add SignalR live subscription integration test in `test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsHubTests.cs`.
 
@@ -116,7 +116,7 @@
 
 ### Tests for User Story 3
 
-- [ ] T046 [P] [US3] Add source registry tests in `test/unit/Elsa.Diagnostics.UnitTests/Sources/ServerLogSourceRegistryTests.cs`.
+- [X] T046 [P] [US3] Add source registry tests in `test/unit/Elsa.Diagnostics.UnitTests/Sources/ServerLogSourceRegistryTests.cs`.
 - [ ] T047 [P] [US3] Add multi-source provider tests in `test/unit/Elsa.Diagnostics.UnitTests/InMemory/InMemoryServerLogProviderSourceTests.cs`.
 - [ ] T048 [P] [US3] Add source-list endpoint integration tests in `test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsSourcesEndpointTests.cs`.
 
