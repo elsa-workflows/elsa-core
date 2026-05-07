@@ -19,9 +19,9 @@
 
 - [X] T001 Create `src/modules/Elsa.Diagnostics/Elsa.Diagnostics.csproj` with target/import settings matching existing Elsa modules.
 - [X] T002 Add `src/modules/Elsa.Diagnostics/Elsa.Diagnostics.csproj` to `Elsa.sln`.
-- [ ] T003 [P] Create `test/unit/Elsa.Diagnostics.UnitTests/Elsa.Diagnostics.UnitTests.csproj` with xUnit dependencies matching adjacent unit test projects.
+- [X] T003 [P] Create `test/unit/Elsa.Diagnostics.UnitTests/Elsa.Diagnostics.UnitTests.csproj` with xUnit dependencies matching adjacent unit test projects.
 - [ ] T004 [P] Create `test/integration/Elsa.Diagnostics.IntegrationTests/Elsa.Diagnostics.IntegrationTests.csproj` with test host dependencies matching adjacent integration test projects.
-- [ ] T005 Add diagnostics test projects to `Elsa.sln`.
+- [X] T005 Add diagnostics test projects to `Elsa.sln`.
 
 ---
 
@@ -57,8 +57,8 @@
 
 ### Tests for User Story 1
 
-- [ ] T019 [P] [US1] Add ring buffer capacity and ordering tests in `test/unit/Elsa.Diagnostics.UnitTests/InMemory/RingBufferTests.cs`.
-- [ ] T020 [P] [US1] Add in-memory provider recent/live tests in `test/unit/Elsa.Diagnostics.UnitTests/InMemory/InMemoryServerLogProviderTests.cs`.
+- [X] T019 [P] [US1] Add ring buffer capacity and ordering tests in `test/unit/Elsa.Diagnostics.UnitTests/InMemory/RingBufferTests.cs`.
+- [X] T020 [P] [US1] Add in-memory provider recent/live tests in `test/unit/Elsa.Diagnostics.UnitTests/InMemory/InMemoryServerLogProviderTests.cs`.
 - [ ] T021 [P] [US1] Add logger provider capture tests in `test/unit/Elsa.Diagnostics.UnitTests/Logging/ServerLogLoggerProviderTests.cs`.
 - [ ] T022 [P] [US1] Add recent endpoint integration test in `test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsRecentEndpointTests.cs`.
 - [ ] T023 [P] [US1] Add SignalR live subscription integration test in `test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsHubTests.cs`.
@@ -87,8 +87,8 @@
 
 ### Tests for User Story 2
 
-- [ ] T033 [P] [US2] Add filter predicate tests in `test/unit/Elsa.Diagnostics.UnitTests/Filtering/ServerLogFilterTests.cs`.
-- [ ] T034 [P] [US2] Add redaction tests in `test/unit/Elsa.Diagnostics.UnitTests/Redaction/ServerLogRedactorTests.cs`.
+- [X] T033 [P] [US2] Add filter predicate tests in `test/unit/Elsa.Diagnostics.UnitTests/Filtering/ServerLogFilterTests.cs`.
+- [X] T034 [P] [US2] Add redaction tests in `test/unit/Elsa.Diagnostics.UnitTests/Redaction/ServerLogRedactorTests.cs`.
 - [ ] T035 [P] [US2] Add recent endpoint authorization tests in `test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsAuthorizationTests.cs`.
 - [ ] T036 [P] [US2] Add hub authorization and filter-update tests in `test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsHubAuthorizationTests.cs`.
 
@@ -142,7 +142,7 @@
 - [ ] T057 Add diagnostics module reference to any intended sample host in `src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj`.
 - [ ] T058 Add sample `UseServerLogStreaming` wiring comment or disabled example in `src/apps/Elsa.Server.Web/Program.cs`.
 - [ ] T059 Run quickstart validation and record notes in `specs/003-live-server-logs/quickstart.md`.
-- [ ] T060 Run targeted unit tests with `dotnet test test/unit/Elsa.Diagnostics.UnitTests/Elsa.Diagnostics.UnitTests.csproj`.
+- [X] T060 Run targeted unit tests with `dotnet test test/unit/Elsa.Diagnostics.UnitTests/Elsa.Diagnostics.UnitTests.csproj`.
 - [ ] T061 Run targeted integration tests with `dotnet test test/integration/Elsa.Diagnostics.IntegrationTests/Elsa.Diagnostics.IntegrationTests.csproj`.
 
 ---
