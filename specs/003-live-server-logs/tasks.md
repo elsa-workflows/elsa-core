@@ -17,8 +17,8 @@
 
 **Purpose**: Create the diagnostics module and test project shells.
 
-- [ ] T001 Create `src/modules/Elsa.Diagnostics/Elsa.Diagnostics.csproj` with target/import settings matching existing Elsa modules.
-- [ ] T002 Add `src/modules/Elsa.Diagnostics/Elsa.Diagnostics.csproj` to `Elsa.sln`.
+- [X] T001 Create `src/modules/Elsa.Diagnostics/Elsa.Diagnostics.csproj` with target/import settings matching existing Elsa modules.
+- [X] T002 Add `src/modules/Elsa.Diagnostics/Elsa.Diagnostics.csproj` to `Elsa.sln`.
 - [ ] T003 [P] Create `test/unit/Elsa.Diagnostics.UnitTests/Elsa.Diagnostics.UnitTests.csproj` with xUnit dependencies matching adjacent unit test projects.
 - [ ] T004 [P] Create `test/integration/Elsa.Diagnostics.IntegrationTests/Elsa.Diagnostics.IntegrationTests.csproj` with test host dependencies matching adjacent integration test projects.
 - [ ] T005 Add diagnostics test projects to `Elsa.sln`.
@@ -31,19 +31,19 @@
 
 **Critical**: No user story work should begin until this phase is complete.
 
-- [ ] T006 Create `src/modules/Elsa.Diagnostics/Models/ServerLogLevel.cs` for log level values exposed over API contracts.
-- [ ] T007 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogException.cs` for redacted exception summary/detail.
-- [ ] T008 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogSource.cs` for process, machine, pod, container, namespace, node, and health metadata.
-- [ ] T009 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogEvent.cs` with fields from `data-model.md`.
-- [ ] T010 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogFilter.cs` with recent/live filter fields.
-- [ ] T011 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogDroppedEventSummary.cs` for dropped-event reporting.
-- [ ] T012 Create `src/modules/Elsa.Diagnostics/Contracts/IServerLogProvider.cs` from `contracts/provider-contract.md`.
-- [ ] T013 [P] Create `src/modules/Elsa.Diagnostics/Contracts/IServerLogRedactor.cs` for message, exception, scope, and property redaction.
-- [ ] T014 [P] Create `src/modules/Elsa.Diagnostics/Contracts/IServerLogSourceRegistry.cs` for source identity and health updates.
-- [ ] T015 Create `src/modules/Elsa.Diagnostics/Options/ServerLogStreamingOptions.cs` with bounded defaults for recent capacity, channel capacity, query limit, heartbeat timeout, and redaction rules.
-- [ ] T016 Create `src/modules/Elsa.Diagnostics/Features/ServerLogStreamingFeature.cs` that registers options and shared diagnostics services.
-- [ ] T017 Create `src/modules/Elsa.Diagnostics/Extensions/ModuleExtensions.cs` with `UseServerLogStreaming`.
-- [ ] T018 Create `src/modules/Elsa.Diagnostics/Extensions/ApplicationBuilderExtensions.cs` with placeholder hub/endpoint mapping for later phases.
+- [X] T006 Create `src/modules/Elsa.Diagnostics/Models/ServerLogLevel.cs` for log level values exposed over API contracts.
+- [X] T007 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogException.cs` for redacted exception summary/detail.
+- [X] T008 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogSource.cs` for process, machine, pod, container, namespace, node, and health metadata.
+- [X] T009 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogEvent.cs` with fields from `data-model.md`.
+- [X] T010 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogFilter.cs` with recent/live filter fields.
+- [X] T011 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogDroppedEventSummary.cs` for dropped-event reporting.
+- [X] T012 Create `src/modules/Elsa.Diagnostics/Contracts/IServerLogProvider.cs` from `contracts/provider-contract.md`.
+- [X] T013 [P] Create `src/modules/Elsa.Diagnostics/Contracts/IServerLogRedactor.cs` for message, exception, scope, and property redaction.
+- [X] T014 [P] Create `src/modules/Elsa.Diagnostics/Contracts/IServerLogSourceRegistry.cs` for source identity and health updates.
+- [X] T015 Create `src/modules/Elsa.Diagnostics/Options/ServerLogStreamingOptions.cs` with bounded defaults for recent capacity, channel capacity, query limit, heartbeat timeout, and redaction rules.
+- [X] T016 Create `src/modules/Elsa.Diagnostics/Features/ServerLogStreamingFeature.cs` that registers options and shared diagnostics services.
+- [X] T017 Create `src/modules/Elsa.Diagnostics/Extensions/ModuleExtensions.cs` with `UseServerLogStreaming`.
+- [X] T018 Create `src/modules/Elsa.Diagnostics/Extensions/ApplicationBuilderExtensions.cs` with placeholder hub/endpoint mapping for later phases.
 
 **Checkpoint**: Module shell, contracts, models, options, and registration APIs compile.
 
@@ -65,15 +65,15 @@
 
 ### Implementation for User Story 1
 
-- [ ] T024 [P] [US1] Implement bounded storage in `src/modules/Elsa.Diagnostics/Providers/InMemory/RingBuffer.cs`.
-- [ ] T025 [US1] Implement recent query and live subscribe/publish flow in `src/modules/Elsa.Diagnostics/Providers/InMemory/InMemoryServerLogProvider.cs`.
-- [ ] T026 [P] [US1] Implement source metadata defaults in `src/modules/Elsa.Diagnostics/Services/ServerLogSourceRegistry.cs`.
-- [ ] T027 [US1] Implement `ILoggerProvider` capture in `src/modules/Elsa.Diagnostics/Logging/ServerLogLoggerProvider.cs`.
-- [ ] T028 [US1] Implement logger event creation and recursion guard in `src/modules/Elsa.Diagnostics/Logging/ServerLogLogger.cs`.
-- [ ] T029 [US1] Register the logger provider and in-memory provider in `src/modules/Elsa.Diagnostics/Features/ServerLogStreamingFeature.cs`.
-- [ ] T030 [US1] Implement recent-log endpoint in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Recent/Endpoint.cs`.
-- [ ] T031 [US1] Implement SignalR hub subscribe/unsubscribe/live event methods in `src/modules/Elsa.Diagnostics/RealTime/ServerLogsHub.cs`.
-- [ ] T032 [US1] Map `/elsa/hubs/server-logs` in `src/modules/Elsa.Diagnostics/Extensions/ApplicationBuilderExtensions.cs`.
+- [X] T024 [P] [US1] Implement bounded storage in `src/modules/Elsa.Diagnostics/Providers/InMemory/RingBuffer.cs`.
+- [X] T025 [US1] Implement recent query and live subscribe/publish flow in `src/modules/Elsa.Diagnostics/Providers/InMemory/InMemoryServerLogProvider.cs`.
+- [X] T026 [P] [US1] Implement source metadata defaults in `src/modules/Elsa.Diagnostics/Services/ServerLogSourceRegistry.cs`.
+- [X] T027 [US1] Implement `ILoggerProvider` capture in `src/modules/Elsa.Diagnostics/Logging/ServerLogLoggerProvider.cs`.
+- [X] T028 [US1] Implement logger event creation and recursion guard in `src/modules/Elsa.Diagnostics/Logging/ServerLogLogger.cs`.
+- [X] T029 [US1] Register the logger provider and in-memory provider in `src/modules/Elsa.Diagnostics/Features/ServerLogStreamingFeature.cs`.
+- [X] T030 [US1] Implement recent-log endpoint in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Recent/Endpoint.cs`.
+- [X] T031 [US1] Implement SignalR hub subscribe/unsubscribe/live event methods in `src/modules/Elsa.Diagnostics/RealTime/ServerLogsHub.cs`.
+- [X] T032 [US1] Map `/elsa/hubs/server-logs` in `src/modules/Elsa.Diagnostics/Extensions/ApplicationBuilderExtensions.cs`.
 
 **Checkpoint**: User Story 1 is functional and testable with recent backfill plus live stream in a single-process backend.
 

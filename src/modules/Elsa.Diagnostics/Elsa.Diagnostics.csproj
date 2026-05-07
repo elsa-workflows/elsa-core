@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides live server log streaming diagnostics for Elsa hosts.
+        </Description>
+        <PackageTags>elsa module diagnostics logging signalr</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Logging" />
+        <PackageReference Include="Microsoft.Extensions.Options" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
+    </ItemGroup>
+
+</Project>
