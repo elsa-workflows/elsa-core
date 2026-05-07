@@ -2,6 +2,7 @@ using Elsa.Diagnostics.Contracts;
 using Elsa.Diagnostics.Models;
 using Elsa.Diagnostics.Options;
 using Microsoft.Extensions.Options;
+using System.Text.RegularExpressions;
 
 namespace Elsa.Diagnostics.Services;
 
@@ -9,6 +10,9 @@ public class ServerLogRedactor(IOptions<ServerLogStreamingOptions> options) : IS
 {
     private const string Redacted = "[Redacted]";
     private readonly HashSet<string> _sensitiveNames = options.Value.SensitiveNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
+    private readonly IReadOnlyCollection<Regex> _sensitiveTextPatterns = options.Value.SensitiveTextPatterns
+        .Select(pattern => new Regex(pattern, RegexOptions.Compiled | RegexOptions.CultureInvariant))
+        .ToList();
     
     public ServerLogEvent Redact(ServerLogEvent logEvent)
     {
@@ -44,8 +48,11 @@ public class ServerLogRedactor(IOptions<ServerLogStreamingOptions> options) : IS
         if (value == null)
             return null;
         
-        return IsSensitiveName(name) ? Redacted : value;
+        if (IsSensitiveName(name))
+            return Redacted;
+
+        return _sensitiveTextPatterns.Aggregate(value, (current, pattern) => pattern.Replace(current, Redacted));
     }
     
-    private bool IsSensitiveName(string name) => _sensitiveNames.Any(name.Contains);
+    private bool IsSensitiveName(string name) => _sensitiveNames.Any(sensitiveName => name.Contains(sensitiveName, StringComparison.OrdinalIgnoreCase));
 }

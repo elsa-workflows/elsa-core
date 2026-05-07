@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Diagnostics.Contracts;
 using Elsa.Diagnostics.Models;
+using Elsa.Diagnostics.Permissions;
 using JetBrains.Annotations;
 
 namespace Elsa.Diagnostics.Endpoints.ServerLogs.Recent;
@@ -12,7 +13,7 @@ internal class Endpoint(IServerLogProvider logProvider) : ElsaEndpoint<ServerLog
     {
         Verbs(FastEndpoints.Http.GET, FastEndpoints.Http.POST);
         Routes("/server-logs/recent");
-        ConfigurePermissions("read:server-logs");
+        ConfigurePermissions(ServerLogPermissions.Read);
     }
     
     public override async Task<RecentServerLogsResult> ExecuteAsync(ServerLogFilter request, CancellationToken cancellationToken)

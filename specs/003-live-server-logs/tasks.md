@@ -94,15 +94,15 @@
 
 ### Implementation for User Story 2
 
-- [ ] T037 [P] [US2] Implement level, category, text, tenant, workflow, trace, correlation, source, and time filter matching in `src/modules/Elsa.Diagnostics/Services/ServerLogFilterEvaluator.cs`.
-- [ ] T038 [US2] Apply filter evaluation to recent and live provider paths in `src/modules/Elsa.Diagnostics/Providers/InMemory/InMemoryServerLogProvider.cs`.
-- [ ] T039 [US2] Implement default sensitive-name and text-pattern redaction in `src/modules/Elsa.Diagnostics/Services/ServerLogRedactor.cs`.
-- [ ] T040 [US2] Apply redaction before publish/buffering in `src/modules/Elsa.Diagnostics/Logging/ServerLogLogger.cs`.
-- [ ] T041 [US2] Add `read:server-logs` permission constant in `src/modules/Elsa.Diagnostics/Permissions/ServerLogPermissions.cs`.
-- [ ] T042 [US2] Secure recent endpoint with `read:server-logs` in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Recent/Endpoint.cs`.
+- [X] T037 [P] [US2] Implement level, category, text, tenant, workflow, trace, correlation, source, and time filter matching in `src/modules/Elsa.Diagnostics/Services/ServerLogFilterEvaluator.cs`.
+- [X] T038 [US2] Apply filter evaluation to recent and live provider paths in `src/modules/Elsa.Diagnostics/Providers/InMemory/InMemoryServerLogProvider.cs`.
+- [X] T039 [US2] Implement default sensitive-name and text-pattern redaction in `src/modules/Elsa.Diagnostics/Services/ServerLogRedactor.cs`.
+- [X] T040 [US2] Apply redaction before publish/buffering in `src/modules/Elsa.Diagnostics/Logging/ServerLogLogger.cs`.
+- [X] T041 [US2] Add `read:server-logs` permission constant in `src/modules/Elsa.Diagnostics/Permissions/ServerLogPermissions.cs`.
+- [X] T042 [US2] Secure recent endpoint with `read:server-logs` in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Recent/Endpoint.cs`.
 - [ ] T043 [US2] Secure SignalR hub with `read:server-logs` in `src/modules/Elsa.Diagnostics/RealTime/ServerLogsHub.cs`.
 - [ ] T044 [US2] Add `UpdateFilterAsync` validation and subscription replacement in `src/modules/Elsa.Diagnostics/RealTime/ServerLogsHub.cs`.
-- [ ] T045 [US2] Clamp recent query size to options in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Recent/Endpoint.cs`.
+- [X] T045 [US2] Clamp recent query size to options in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Recent/Endpoint.cs`.
 
 **Checkpoint**: User Stories 1 and 2 work together with filtering, redaction, and authorization.
 
@@ -122,11 +122,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T049 [US3] Detect container and Kubernetes environment metadata in `src/modules/Elsa.Diagnostics/Services/ServerLogSourceRegistry.cs`.
-- [ ] T050 [US3] Track `LastSeen`, stale, disconnected, and unknown health states in `src/modules/Elsa.Diagnostics/Services/ServerLogSourceRegistry.cs`.
+- [X] T049 [US3] Detect container and Kubernetes environment metadata in `src/modules/Elsa.Diagnostics/Services/ServerLogSourceRegistry.cs`.
+- [X] T050 [US3] Track `LastSeen`, stale, disconnected, and unknown health states in `src/modules/Elsa.Diagnostics/Services/ServerLogSourceRegistry.cs`.
 - [ ] T051 [US3] Add source-aware merged ordering and deterministic tiebreakers in `src/modules/Elsa.Diagnostics/Providers/InMemory/InMemoryServerLogProvider.cs`.
-- [ ] T052 [US3] Implement source-list endpoint in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Sources/Endpoint.cs`.
-- [ ] T053 [US3] Secure source-list endpoint with `read:server-logs` in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Sources/Endpoint.cs`.
+- [X] T052 [US3] Implement source-list endpoint in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Sources/Endpoint.cs`.
+- [X] T053 [US3] Secure source-list endpoint with `read:server-logs` in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Sources/Endpoint.cs`.
 - [ ] T054 [US3] Broadcast source changes from the hub in `src/modules/Elsa.Diagnostics/RealTime/ServerLogsHub.cs`.
 
 **Checkpoint**: All stories are independently functional with single-node and simulated clustered source scenarios.
