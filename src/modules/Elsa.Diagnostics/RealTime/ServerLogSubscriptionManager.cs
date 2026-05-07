@@ -11,15 +11,16 @@ public class ServerLogSubscriptionManager(
     IHubContext<ServerLogsHub, IServerLogsClient> hubContext,
     ILogger<ServerLogSubscriptionManager> logger)
 {
-    private readonly ConcurrentDictionary<string, CancellationTokenSource> _subscriptions = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, ServerLogSubscription> _subscriptions = new(StringComparer.Ordinal);
     
     public Task SubscribeAsync(string connectionId, ServerLogFilter filter, CancellationToken cancellationToken)
     {
         Unsubscribe(connectionId);
         var subscriptionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _subscriptions[connectionId] = subscriptionCancellation;
+        var subscription = new ServerLogSubscription(subscriptionCancellation);
+        _subscriptions[connectionId] = subscription;
         
-        _ = StreamAsync(connectionId, filter, subscriptionCancellation.Token);
+        _ = StreamAsync(connectionId, filter, subscription, subscriptionCancellation.Token);
         return Task.CompletedTask;
     }
     
@@ -34,7 +35,7 @@ public class ServerLogSubscriptionManager(
         return Task.CompletedTask;
     }
     
-    private async Task StreamAsync(string connectionId, ServerLogFilter filter, CancellationToken cancellationToken)
+    private async Task StreamAsync(string connectionId, ServerLogFilter filter, ServerLogSubscription subscription, CancellationToken cancellationToken)
     {
         try
         {
@@ -50,16 +51,24 @@ public class ServerLogSubscriptionManager(
         }
         finally
         {
-            Unsubscribe(connectionId);
+            Remove(connectionId, subscription);
         }
     }
     
     private void Unsubscribe(string connectionId)
     {
-        if (!_subscriptions.TryRemove(connectionId, out var cancellationTokenSource))
+        if (!_subscriptions.TryRemove(connectionId, out var subscription))
             return;
         
-        cancellationTokenSource.Cancel();
-        cancellationTokenSource.Dispose();
+        subscription.CancellationTokenSource.Cancel();
+        subscription.CancellationTokenSource.Dispose();
     }
+    
+    private void Remove(string connectionId, ServerLogSubscription subscription)
+    {
+        var entry = new KeyValuePair<string, ServerLogSubscription>(connectionId, subscription);
+        ((ICollection<KeyValuePair<string, ServerLogSubscription>>)_subscriptions).Remove(entry);
+    }
+    
+    private sealed record ServerLogSubscription(CancellationTokenSource CancellationTokenSource);
 }

@@ -6,12 +6,12 @@ namespace Elsa.Diagnostics.RealTime;
 
 public class ServerLogsHub(ServerLogSubscriptionManager subscriptionManager) : Hub<IServerLogsClient>
 {
-    public async Task SubscribeAsync(ServerLogFilter filter)
+    public async Task SubscribeAsync(ServerLogFilter? filter)
     {
-        await subscriptionManager.SubscribeAsync(Context.ConnectionId, filter, Context.ConnectionAborted);
+        await subscriptionManager.SubscribeAsync(Context.ConnectionId, ValidateFilter(filter), Context.ConnectionAborted);
     }
     
-    public Task UpdateFilterAsync(ServerLogFilter filter) => subscriptionManager.UpdateFilterAsync(Context.ConnectionId, filter, Context.ConnectionAborted);
+    public Task UpdateFilterAsync(ServerLogFilter? filter) => subscriptionManager.UpdateFilterAsync(Context.ConnectionId, ValidateFilter(filter), Context.ConnectionAborted);
     
     public Task UnsubscribeAsync()
     {
@@ -22,5 +22,15 @@ public class ServerLogsHub(ServerLogSubscriptionManager subscriptionManager) : H
     {
         await UnsubscribeAsync();
         await base.OnDisconnectedAsync(exception);
+    }
+    
+    private static ServerLogFilter ValidateFilter(ServerLogFilter? filter)
+    {
+        filter ??= new();
+        
+        if (filter.From is { } from && filter.To is { } to && from > to)
+            throw new HubException("The log filter 'from' timestamp must be earlier than or equal to 'to'.");
+        
+        return filter;
     }
 }

@@ -101,7 +101,7 @@
 - [X] T041 [US2] Add `read:server-logs` permission constant in `src/modules/Elsa.Diagnostics/Permissions/ServerLogPermissions.cs`.
 - [X] T042 [US2] Secure recent endpoint with `read:server-logs` in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Recent/Endpoint.cs`.
 - [X] T043 [US2] Secure SignalR hub with `read:server-logs` in `src/modules/Elsa.Diagnostics/Extensions/ApplicationBuilderExtensions.cs`.
-- [ ] T044 [US2] Add `UpdateFilterAsync` validation and subscription replacement in `src/modules/Elsa.Diagnostics/RealTime/ServerLogsHub.cs`.
+- [X] T044 [US2] Add `UpdateFilterAsync` validation and subscription replacement in `src/modules/Elsa.Diagnostics/RealTime/ServerLogsHub.cs`.
 - [X] T045 [US2] Clamp recent query size to options in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Recent/Endpoint.cs`.
 
 **Checkpoint**: User Stories 1 and 2 work together with filtering, redaction, and authorization.
