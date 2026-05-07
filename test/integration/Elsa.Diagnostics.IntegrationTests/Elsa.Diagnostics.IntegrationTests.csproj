@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.Diagnostics]*</Include>
+        <Threshold>0</Threshold>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Integration\Elsa.Testing.Shared.Integration.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Diagnostics\Elsa.Diagnostics.csproj" />
+    </ItemGroup>
+
+</Project>

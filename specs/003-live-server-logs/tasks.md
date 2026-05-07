@@ -20,7 +20,7 @@
 - [X] T001 Create `src/modules/Elsa.Diagnostics/Elsa.Diagnostics.csproj` with target/import settings matching existing Elsa modules.
 - [X] T002 Add `src/modules/Elsa.Diagnostics/Elsa.Diagnostics.csproj` to `Elsa.sln`.
 - [X] T003 [P] Create `test/unit/Elsa.Diagnostics.UnitTests/Elsa.Diagnostics.UnitTests.csproj` with xUnit dependencies matching adjacent unit test projects.
-- [ ] T004 [P] Create `test/integration/Elsa.Diagnostics.IntegrationTests/Elsa.Diagnostics.IntegrationTests.csproj` with test host dependencies matching adjacent integration test projects.
+- [X] T004 [P] Create `test/integration/Elsa.Diagnostics.IntegrationTests/Elsa.Diagnostics.IntegrationTests.csproj` with test host dependencies matching adjacent integration test projects.
 - [X] T005 Add diagnostics test projects to `Elsa.sln`.
 
 ---
