@@ -38,10 +38,12 @@ public class ServerLogSourceRegistry : IServerLogSourceRegistry
                 return;
             }
 
-            var source = Current with
+            var source = new ServerLogSource
             {
                 Id = sourceId,
                 DisplayName = sourceId,
+                MachineName = sourceId,
+                ProcessId = 0,
                 LastSeen = timestamp,
                 Status = ServerLogSourceStatus.Connected
             };

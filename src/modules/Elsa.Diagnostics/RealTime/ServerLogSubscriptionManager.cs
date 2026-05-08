@@ -66,15 +66,22 @@ public class ServerLogSubscriptionManager : IDisposable
     {
         try
         {
-            await foreach (var logEvent in _logProvider.SubscribeAsync(filter, cancellationToken))
-                await _hubContext.Clients.Client(connectionId).ReceiveLogEventAsync(logEvent, cancellationToken);
+            if (_logProvider is IServerLogStreamProvider streamProvider)
+                await StreamWithDroppedEventsAsync(connectionId, filter, streamProvider, cancellationToken);
+            else
+                await StreamLogEventsAsync(connectionId, filter, cancellationToken);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException e)
         {
+            _logger.LogDebug(e, "Server log subscription for connection {ConnectionId} was canceled", connectionId);
         }
-        catch (Exception e)
+        catch (HubException e)
         {
-            _logger.LogDebug(e, "Server log subscription for connection {ConnectionId} stopped unexpectedly", connectionId);
+            _logger.LogWarning(e, "Server log subscription for connection {ConnectionId} stopped unexpectedly", connectionId);
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogWarning(e, "Server log subscription for connection {ConnectionId} stopped unexpectedly", connectionId);
         }
         finally
         {
@@ -102,13 +109,35 @@ public class ServerLogSubscriptionManager : IDisposable
         _ = BroadcastSourceChangedAsync(source);
     }
 
+    private async Task StreamLogEventsAsync(string connectionId, ServerLogFilter filter, CancellationToken cancellationToken)
+    {
+        await foreach (var logEvent in _logProvider.SubscribeAsync(filter, cancellationToken))
+            await _hubContext.Clients.Client(connectionId).ReceiveLogEventAsync(logEvent, cancellationToken);
+    }
+
+    private async Task StreamWithDroppedEventsAsync(string connectionId, ServerLogFilter filter, IServerLogStreamProvider streamProvider, CancellationToken cancellationToken)
+    {
+        await foreach (var item in streamProvider.SubscribeWithDroppedEventsAsync(filter, cancellationToken))
+        {
+            if (item.LogEvent != null)
+                await _hubContext.Clients.Client(connectionId).ReceiveLogEventAsync(item.LogEvent, cancellationToken);
+
+            if (item.DroppedEvents != null)
+                await _hubContext.Clients.Client(connectionId).ReceiveDroppedEventsAsync(item.DroppedEvents, cancellationToken);
+        }
+    }
+
     private async Task BroadcastSourceChangedAsync(ServerLogSource source)
     {
         try
         {
             await _hubContext.Clients.All.ReceiveSourceChangedAsync(source);
         }
-        catch (Exception e)
+        catch (OperationCanceledException e)
+        {
+            _logger.LogDebug(e, "Server log source change broadcast for source {SourceId} was canceled", source.Id);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
         {
             _logger.LogDebug(e, "Failed to broadcast server log source change for source {SourceId}", source.Id);
         }

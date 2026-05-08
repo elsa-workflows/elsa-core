@@ -53,6 +53,28 @@ public class ServerLogSourceRegistryTests : IDisposable
     }
 
     [Fact]
+    public void MarkSeen_WhenSourceIsUnknown_DoesNotCopyLocalContainerMetadata()
+    {
+        SetEnvironment("HOSTNAME", "local-pod");
+        SetEnvironment("OTEL_SERVICE_NAME", "local-service");
+        SetEnvironment("POD_NAMESPACE", "local-namespace");
+        SetEnvironment("CONTAINER_NAME", "local-container");
+        SetEnvironment("NODE_NAME", "local-node");
+        var registry = CreateRegistry();
+
+        registry.MarkSeen("pod-b", DateTimeOffset.UtcNow);
+
+        var source = Assert.Single(registry.List(), x => x.Id == "pod-b");
+        Assert.Equal("pod-b", source.MachineName);
+        Assert.Equal(0, source.ProcessId);
+        Assert.Null(source.ServiceName);
+        Assert.Null(source.PodName);
+        Assert.Null(source.Namespace);
+        Assert.Null(source.ContainerName);
+        Assert.Null(source.NodeName);
+    }
+
+    [Fact]
     public void MarkSeen_WhenSourceIsUnknown_RaisesSourceChanged()
     {
         var registry = CreateRegistry();

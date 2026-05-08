@@ -61,6 +61,25 @@ public class InMemoryServerLogProviderTests
         Assert.Equal(2, subscription.Current.Sequence);
     }
 
+    [Fact]
+    public async Task SubscribeWithDroppedEventsAsync_WhenSubscriberCapacityIsReached_YieldsDroppedSummary()
+    {
+        _options.SubscriberChannelCapacity = 1;
+        using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await using var subscription = _provider.SubscribeWithDroppedEventsAsync(new(), cancellationTokenSource.Token).GetAsyncEnumerator();
+        var next = subscription.MoveNextAsync().AsTask();
+
+        await _provider.PublishAsync(CreateLog(1, ServerLogLevel.Information));
+        await _provider.PublishAsync(CreateLog(2, ServerLogLevel.Information));
+
+        Assert.True(await next.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.Equal(1, subscription.Current.LogEvent!.Sequence);
+
+        Assert.True(await subscription.MoveNextAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.Equal(1, subscription.Current.DroppedEvents!.DroppedCount);
+        Assert.Equal("SubscriberChannelFull", subscription.Current.DroppedEvents.Reason);
+    }
+
     private static ServerLogEvent CreateLog(long sequence, ServerLogLevel level, string category = "Elsa", string sourceId = "source-a") =>
         new()
         {
