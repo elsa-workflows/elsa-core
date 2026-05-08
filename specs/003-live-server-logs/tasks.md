@@ -127,7 +127,7 @@
 - [X] T051 [US3] Add source-aware merged ordering and deterministic tiebreakers in `src/modules/Elsa.Diagnostics/Providers/InMemory/InMemoryServerLogProvider.cs`.
 - [X] T052 [US3] Implement source-list endpoint in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Sources/Endpoint.cs`.
 - [X] T053 [US3] Secure source-list endpoint with `read:server-logs` in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Sources/Endpoint.cs`.
-- [ ] T054 [US3] Broadcast source changes from the hub in `src/modules/Elsa.Diagnostics/RealTime/ServerLogsHub.cs`.
+- [X] T054 [US3] Broadcast source changes from the hub in `src/modules/Elsa.Diagnostics/RealTime/ServerLogSubscriptionManager.cs`.
 
 **Checkpoint**: All stories are independently functional with single-node and simulated clustered source scenarios.
 

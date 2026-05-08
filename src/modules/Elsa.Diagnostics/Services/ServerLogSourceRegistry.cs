@@ -10,24 +10,50 @@ public class ServerLogSourceRegistry : IServerLogSourceRegistry
 {
     private readonly ConcurrentDictionary<string, ServerLogSource> _sources = new();
     private readonly ServerLogStreamingOptions _options;
-    
+
     public ServerLogSourceRegistry(IOptions<ServerLogStreamingOptions> options)
     {
         _options = options.Value;
         Current = CreateCurrentSource();
         _sources[Current.Id] = Current;
     }
-    
+
+    public event Action<ServerLogSource>? SourceChanged;
+
     public ServerLogSource Current { get; }
-    
+
     public void MarkSeen(string sourceId, DateTimeOffset timestamp)
     {
-        _sources.AddOrUpdate(
-            sourceId,
-            Current with { Id = sourceId, DisplayName = sourceId, LastSeen = timestamp, Status = ServerLogSourceStatus.Connected },
-            (_, existing) => existing with { LastSeen = timestamp, Status = ServerLogSourceStatus.Connected });
+        while (true)
+        {
+            if (_sources.TryGetValue(sourceId, out var existing))
+            {
+                var updated = existing with { LastSeen = timestamp, Status = ServerLogSourceStatus.Connected };
+                if (!_sources.TryUpdate(sourceId, updated, existing))
+                    continue;
+
+                if (existing.Status != updated.Status)
+                    SourceChanged?.Invoke(updated);
+
+                return;
+            }
+
+            var source = Current with
+            {
+                Id = sourceId,
+                DisplayName = sourceId,
+                LastSeen = timestamp,
+                Status = ServerLogSourceStatus.Connected
+            };
+
+            if (!_sources.TryAdd(sourceId, source))
+                continue;
+
+            SourceChanged?.Invoke(source);
+            return;
+        }
     }
-    
+
     public IReadOnlyCollection<ServerLogSource> List()
     {
         var staleBefore = DateTimeOffset.UtcNow.Subtract(_options.SourceHeartbeatTimeout);
@@ -36,14 +62,14 @@ public class ServerLogSourceRegistry : IServerLogSourceRegistry
             .OrderBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
-    
+
     private static ServerLogSource CreateCurrentSource()
     {
         var podName = Environment.GetEnvironmentVariable("HOSTNAME");
         var serviceName = Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME") ?? AppDomain.CurrentDomain.FriendlyName;
         var sourceId = $"{Environment.MachineName}-{Environment.ProcessId}";
         var displayName = !string.IsNullOrWhiteSpace(podName) ? podName : sourceId;
-        
+
         return new()
         {
             Id = sourceId,

@@ -53,6 +53,33 @@ public class ServerLogSourceRegistryTests : IDisposable
     }
 
     [Fact]
+    public void MarkSeen_WhenSourceIsUnknown_RaisesSourceChanged()
+    {
+        var registry = CreateRegistry();
+        ServerLogSource? changedSource = null;
+        registry.SourceChanged += source => changedSource = source;
+
+        registry.MarkSeen("pod-b", DateTimeOffset.UtcNow);
+
+        Assert.NotNull(changedSource);
+        Assert.Equal("pod-b", changedSource.Id);
+        Assert.Equal(ServerLogSourceStatus.Connected, changedSource.Status);
+    }
+
+    [Fact]
+    public void MarkSeen_WhenSourceIsKnown_DoesNotRaiseSourceChanged()
+    {
+        var registry = CreateRegistry();
+        registry.MarkSeen("pod-b", DateTimeOffset.UtcNow);
+        ServerLogSource? changedSource = null;
+        registry.SourceChanged += source => changedSource = source;
+
+        registry.MarkSeen("pod-b", DateTimeOffset.UtcNow.AddSeconds(1));
+
+        Assert.Null(changedSource);
+    }
+
+    [Fact]
     public void List_WhenSourceHasNotBeenSeenRecently_MarksSourceAsStale()
     {
         _options.SourceHeartbeatTimeout = TimeSpan.FromSeconds(5);
