@@ -139,8 +139,8 @@
 
 - [X] T055 [P] Update package metadata and tags in `src/modules/Elsa.Diagnostics/Elsa.Diagnostics.csproj`.
 - [X] T056 [P] Add setup documentation from quickstart to `src/modules/Elsa.Diagnostics/README.md`.
-- [ ] T057 Add diagnostics module reference to any intended sample host in `src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj`.
-- [ ] T058 Add sample `UseServerLogStreaming` wiring comment or disabled example in `src/apps/Elsa.Server.Web/Program.cs`.
+- [X] T057 Add diagnostics module reference to any intended sample host in `src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj`.
+- [X] T058 Add sample `UseServerLogStreaming` wiring comment or disabled example in `src/apps/Elsa.Server.Web/Program.cs`.
 - [ ] T059 Run quickstart validation and record notes in `specs/003-live-server-logs/quickstart.md`.
 - [X] T060 Run targeted unit tests with `dotnet test test/unit/Elsa.Diagnostics.UnitTests/Elsa.Diagnostics.UnitTests.csproj`.
 - [ ] T061 Run targeted integration tests with `dotnet test test/integration/Elsa.Diagnostics.IntegrationTests/Elsa.Diagnostics.IntegrationTests.csproj`.
