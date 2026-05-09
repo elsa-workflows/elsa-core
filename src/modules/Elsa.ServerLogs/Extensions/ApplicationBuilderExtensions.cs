@@ -1,6 +1,4 @@
-using System.Security.Claims;
-using Elsa.ServerLogs.Permissions;
-using Elsa.ServerLogs.RealTime;
+using Elsa.ServerLogs.Extensions;
 using Microsoft.AspNetCore.Builder;
 
 // ReSharper disable once CheckNamespace
@@ -12,17 +10,7 @@ public static class ServerLogStreamingApplicationBuilderExtensions
     {
         return app.UseEndpoints(endpoints =>
         {
-            var hub = endpoints.MapHub<ServerLogsHub>("/elsa/hubs/server-logs");
-
-            if (EndpointSecurityOptions.SecurityIsEnabled)
-                hub.RequireAuthorization(policy => policy
-                    .RequireAuthenticatedUser()
-                    .RequireAssertion(context => HasServerLogPermission(context.User)));
+            endpoints.MapServerLogStreamingHub();
         });
-    }
-
-    private static bool HasServerLogPermission(ClaimsPrincipal user)
-    {
-        return user.HasClaim("permissions", PermissionNames.All) || user.HasClaim("permissions", ServerLogPermissions.Read);
     }
 }
