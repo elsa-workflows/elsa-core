@@ -14,7 +14,7 @@
 - `Exception`: optional redacted exception summary/detail.
 - `Scopes`: redacted scope values.
 - `Properties`: redacted structured log properties.
-- `TraceId`, `SpanId`, `CorrelationId`: diagnostic correlation.
+- `TraceId`, `SpanId`, `CorrelationId`: trace and request correlation.
 - `TenantId`, `WorkflowDefinitionId`, `WorkflowInstanceId`: Elsa context when present.
 - `SourceId`: foreign key to `ServerLogSource`.
 

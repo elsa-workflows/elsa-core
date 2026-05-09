@@ -11,7 +11,7 @@
 
 - Q: Should the feature mirror raw `Console.Out` or structured logs? -> A: Capture structured `ILogger` events and render them console-style. Raw console capture is not the primary contract.
 - Q: Should clustered deployments show one merged stream or pod-specific streams? -> A: Both. The merged stream is the default; source-specific filtering is a first-class capability.
-- Q: Is this durable audit logging? -> A: No. It is live diagnostics with bounded recent history. Durable retention belongs to existing observability systems.
+- Q: Is this durable audit logging? -> A: No. It is live server log streaming with bounded recent history. Durable retention belongs to existing observability systems.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -82,7 +82,7 @@ An operator running Elsa in Kubernetes or another clustered environment views a 
 - **FR-002**: The feature MUST capture timestamp, level, category, event ID, rendered message, exception summary, exception detail, scopes, structured properties, trace ID, span ID, correlation ID, tenant ID, workflow definition ID, workflow instance ID, and source ID when available.
 - **FR-003**: The feature MUST keep a bounded recent-history buffer with configurable capacity and MUST never grow memory without bound.
 - **FR-004**: The feature MUST track dropped-event counts when buffer or channel capacity is exceeded.
-- **FR-005**: The feature MUST avoid recursively streaming its own internal diagnostic logs unless explicitly enabled for troubleshooting.
+- **FR-005**: The feature MUST avoid recursively streaming its own internal server log module logs unless explicitly enabled for troubleshooting.
 
 **Streaming and query surface**
 
@@ -118,7 +118,7 @@ An operator running Elsa in Kubernetes or another clustered environment views a 
 
 ### Key Entities
 
-- **Log Event**: A structured diagnostic event captured from `ILogger`.
+- **Log Event**: A structured server log event captured from `ILogger`.
 - **Log Source**: The process, pod, container, or external provider source that produced a log event.
 - **Log Subscription**: A SignalR connection with mutable filters and backpressure state.
 - **Recent Log Buffer**: Bounded storage of redacted recent events used for initial backfill.
@@ -142,5 +142,5 @@ An operator running Elsa in Kubernetes or another clustered environment views a 
 - Studio will implement a separate paired spec under the same feature ID.
 - SignalR is the preferred live transport because Studio already has authentication hooks for SignalR connections.
 - Shared cluster aggregation is provider-driven; Kubernetes API access is not required for the MVP.
-- Log events are operational diagnostics, not compliance/audit records.
+- Log events are operational server telemetry, not compliance/audit records.
 - Existing external observability products remain the long-term retention mechanism.

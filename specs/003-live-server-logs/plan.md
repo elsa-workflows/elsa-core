@@ -5,7 +5,7 @@
 
 ## Summary
 
-Add an opt-in backend diagnostics feature that captures structured `ILogger` events, redacts sensitive data, keeps bounded recent history, and exposes source-aware REST and SignalR contracts for Elsa Studio. The MVP ships with an in-memory provider for development and single-node deployments while every event carries source topology so Redis, OpenTelemetry, Loki, Seq, Elasticsearch, or other clustered providers can be added later without changing Studio.
+Add an opt-in backend server logs feature that captures structured `ILogger` events, redacts sensitive data, keeps bounded recent history, and exposes source-aware REST and SignalR contracts for Elsa Studio. The MVP ships with an in-memory provider for development and single-node deployments while every event carries source topology so Redis, OpenTelemetry, Loki, Seq, Elasticsearch, or other clustered providers can be added later without changing Studio.
 
 ## Technical Context
 
@@ -17,7 +17,7 @@ Add an opt-in backend diagnostics feature that captures structured `ILogger` eve
 **Project Type**: Modular .NET library inside the existing Elsa solution.  
 **Performance Goals**: Sustain at least 10,000 small log events per minute in-process without unbounded memory growth; deliver live events to local subscribers within 1 second under normal development load.  
 **Constraints**: Must be opt-in, bounded, authorized, redacted before buffering, and safe under subscriber backpressure. Kubernetes API access and durable retention are out of scope for MVP.  
-**Scale/Scope**: New diagnostics module, backend contracts, one in-memory provider, REST endpoints, SignalR hub, feature registration, and setup docs.
+**Scale/Scope**: New server logs module, backend contracts, one in-memory provider, REST endpoints, SignalR hub, feature registration, and setup docs.
 
 ## Constitution Check
 
@@ -25,7 +25,7 @@ Evaluated against `.specify/memory/constitution.md` v1.1.0:
 
 | Principle | Verdict | Evidence |
 |-----------|---------|----------|
-| I. Modular Architecture | PASS | New code belongs in a focused diagnostics module under `src/modules/` with contracts, services, extensions, models, and feature registration. |
+| I. Modular Architecture | PASS | New code belongs in a focused server logs module under `src/modules/` with contracts, services, extensions, models, and feature registration. |
 | II. Composition & Extensibility | PASS | `IServerLogProvider` is the provider boundary; redaction, limits, and source metadata are options-driven. |
 | III. Convention-Driven Design | PASS | REST endpoints follow Elsa endpoint conventions; feature class and extension names follow existing module patterns; new prose uses American English. |
 | IV. Async & Pipeline Execution | PASS | Provider query/subscribe operations, SignalR hub methods, and endpoint handlers are async and cancellation-aware. |
@@ -57,7 +57,7 @@ specs/003-live-server-logs/
 
 ```text
 src/modules/
-└── Elsa.Diagnostics/
+└── Elsa.ServerLogs/
     ├── Contracts/
     │   ├── IServerLogProvider.cs
     │   ├── IServerLogRedactor.cs
@@ -87,18 +87,18 @@ src/modules/
         └── ApplicationBuilderExtensions.cs
 
 test/unit/
-└── Elsa.Diagnostics.UnitTests/
+└── Elsa.ServerLogs.UnitTests/
     ├── InMemoryServerLogProviderTests.cs
     ├── ServerLogFilterTests.cs
     └── ServerLogRedactorTests.cs
 
 test/integration/
-└── Elsa.Diagnostics.IntegrationTests/
+└── Elsa.ServerLogs.IntegrationTests/
     ├── ServerLogsEndpointTests.cs
     └── ServerLogsHubTests.cs
 ```
 
-**Structure Decision**: Add a focused diagnostics module instead of placing log streaming inside `Elsa.Workflows.Api`. The module can be used by non-workflow Elsa hosts and can enrich events with workflow/tenant context when that context exists.
+**Structure Decision**: Add a focused server logs module instead of placing log streaming inside `Elsa.Workflows.Api`. The module can be used by non-workflow Elsa hosts and can enrich events with workflow/tenant context when that context exists.
 
 ## Phase 0 Output
 
@@ -125,7 +125,7 @@ Resolved decisions:
 
 | Principle | Verdict | Post-design evidence |
 |-----------|---------|----------------------|
-| I. Modular Architecture | PASS | Contracts, provider, endpoints, and hub stay within `Elsa.Diagnostics`; external integrations use published contracts. |
+| I. Modular Architecture | PASS | Contracts, provider, endpoints, and hub stay within `Elsa.ServerLogs`; external integrations use published contracts. |
 | II. Composition & Extensibility | PASS | Future clustered providers can implement `IServerLogProvider` without Studio or hub contract changes. |
 | III. Convention-Driven Design | PASS | Endpoint, feature, extension, model, and test names follow repository conventions. |
 | IV. Async & Pipeline Execution | PASS | Provider and hub contracts are asynchronous and cancellation-aware. |

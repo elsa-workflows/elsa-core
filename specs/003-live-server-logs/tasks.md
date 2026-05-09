@@ -15,13 +15,13 @@
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Create the diagnostics module and test project shells.
+**Purpose**: Create the server logs module and test project shells.
 
-- [X] T001 Create `src/modules/Elsa.Diagnostics/Elsa.Diagnostics.csproj` with target/import settings matching existing Elsa modules.
-- [X] T002 Add `src/modules/Elsa.Diagnostics/Elsa.Diagnostics.csproj` to `Elsa.sln`.
-- [X] T003 [P] Create `test/unit/Elsa.Diagnostics.UnitTests/Elsa.Diagnostics.UnitTests.csproj` with xUnit dependencies matching adjacent unit test projects.
-- [X] T004 [P] Create `test/integration/Elsa.Diagnostics.IntegrationTests/Elsa.Diagnostics.IntegrationTests.csproj` with test host dependencies matching adjacent integration test projects.
-- [X] T005 Add diagnostics test projects to `Elsa.sln`.
+- [X] T001 Create `src/modules/Elsa.ServerLogs/Elsa.ServerLogs.csproj` with target/import settings matching existing Elsa modules.
+- [X] T002 Add `src/modules/Elsa.ServerLogs/Elsa.ServerLogs.csproj` to `Elsa.sln`.
+- [X] T003 [P] Create `test/unit/Elsa.ServerLogs.UnitTests/Elsa.ServerLogs.UnitTests.csproj` with xUnit dependencies matching adjacent unit test projects.
+- [X] T004 [P] Create `test/integration/Elsa.ServerLogs.IntegrationTests/Elsa.ServerLogs.IntegrationTests.csproj` with test host dependencies matching adjacent integration test projects.
+- [X] T005 Add server logs test projects to `Elsa.sln`.
 
 ---
 
@@ -31,19 +31,19 @@
 
 **Critical**: No user story work should begin until this phase is complete.
 
-- [X] T006 Create `src/modules/Elsa.Diagnostics/Models/ServerLogLevel.cs` for log level values exposed over API contracts.
-- [X] T007 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogException.cs` for redacted exception summary/detail.
-- [X] T008 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogSource.cs` for process, machine, pod, container, namespace, node, and health metadata.
-- [X] T009 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogEvent.cs` with fields from `data-model.md`.
-- [X] T010 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogFilter.cs` with recent/live filter fields.
-- [X] T011 [P] Create `src/modules/Elsa.Diagnostics/Models/ServerLogDroppedEventSummary.cs` for dropped-event reporting.
-- [X] T012 Create `src/modules/Elsa.Diagnostics/Contracts/IServerLogProvider.cs` from `contracts/provider-contract.md`.
-- [X] T013 [P] Create `src/modules/Elsa.Diagnostics/Contracts/IServerLogRedactor.cs` for message, exception, scope, and property redaction.
-- [X] T014 [P] Create `src/modules/Elsa.Diagnostics/Contracts/IServerLogSourceRegistry.cs` for source identity and health updates.
-- [X] T015 Create `src/modules/Elsa.Diagnostics/Options/ServerLogStreamingOptions.cs` with bounded defaults for recent capacity, channel capacity, query limit, heartbeat timeout, and redaction rules.
-- [X] T016 Create `src/modules/Elsa.Diagnostics/Features/ServerLogStreamingFeature.cs` that registers options and shared diagnostics services.
-- [X] T017 Create `src/modules/Elsa.Diagnostics/Extensions/ModuleExtensions.cs` with `UseServerLogStreaming`.
-- [X] T018 Create `src/modules/Elsa.Diagnostics/Extensions/ApplicationBuilderExtensions.cs` with placeholder hub/endpoint mapping for later phases.
+- [X] T006 Create `src/modules/Elsa.ServerLogs/Models/ServerLogLevel.cs` for log level values exposed over API contracts.
+- [X] T007 [P] Create `src/modules/Elsa.ServerLogs/Models/ServerLogException.cs` for redacted exception summary/detail.
+- [X] T008 [P] Create `src/modules/Elsa.ServerLogs/Models/ServerLogSource.cs` for process, machine, pod, container, namespace, node, and health metadata.
+- [X] T009 [P] Create `src/modules/Elsa.ServerLogs/Models/ServerLogEvent.cs` with fields from `data-model.md`.
+- [X] T010 [P] Create `src/modules/Elsa.ServerLogs/Models/ServerLogFilter.cs` with recent/live filter fields.
+- [X] T011 [P] Create `src/modules/Elsa.ServerLogs/Models/ServerLogDroppedEventSummary.cs` for dropped-event reporting.
+- [X] T012 Create `src/modules/Elsa.ServerLogs/Contracts/IServerLogProvider.cs` from `contracts/provider-contract.md`.
+- [X] T013 [P] Create `src/modules/Elsa.ServerLogs/Contracts/IServerLogRedactor.cs` for message, exception, scope, and property redaction.
+- [X] T014 [P] Create `src/modules/Elsa.ServerLogs/Contracts/IServerLogSourceRegistry.cs` for source identity and health updates.
+- [X] T015 Create `src/modules/Elsa.ServerLogs/Options/ServerLogStreamingOptions.cs` with bounded defaults for recent capacity, channel capacity, query limit, heartbeat timeout, and redaction rules.
+- [X] T016 Create `src/modules/Elsa.ServerLogs/Features/ServerLogStreamingFeature.cs` that registers options and shared server log services.
+- [X] T017 Create `src/modules/Elsa.ServerLogs/Extensions/ModuleExtensions.cs` with `UseServerLogStreaming`.
+- [X] T018 Create `src/modules/Elsa.ServerLogs/Extensions/ApplicationBuilderExtensions.cs` with placeholder hub/endpoint mapping for later phases.
 
 **Checkpoint**: Module shell, contracts, models, options, and registration APIs compile.
 
@@ -57,23 +57,23 @@
 
 ### Tests for User Story 1
 
-- [X] T019 [P] [US1] Add ring buffer capacity and ordering tests in `test/unit/Elsa.Diagnostics.UnitTests/InMemory/RingBufferTests.cs`.
-- [X] T020 [P] [US1] Add in-memory provider recent/live tests in `test/unit/Elsa.Diagnostics.UnitTests/InMemory/InMemoryServerLogProviderTests.cs`.
-- [X] T021 [P] [US1] Add logger provider capture tests in `test/unit/Elsa.Diagnostics.UnitTests/Logging/ServerLogLoggerProviderTests.cs`.
-- [ ] T022 [P] [US1] Add recent endpoint integration test in `test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsRecentEndpointTests.cs`.
-- [ ] T023 [P] [US1] Add SignalR live subscription integration test in `test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsHubTests.cs`.
+- [X] T019 [P] [US1] Add ring buffer capacity and ordering tests in `test/unit/Elsa.ServerLogs.UnitTests/InMemory/RingBufferTests.cs`.
+- [X] T020 [P] [US1] Add in-memory provider recent/live tests in `test/unit/Elsa.ServerLogs.UnitTests/InMemory/InMemoryServerLogProviderTests.cs`.
+- [X] T021 [P] [US1] Add logger provider capture tests in `test/unit/Elsa.ServerLogs.UnitTests/Logging/ServerLogLoggerProviderTests.cs`.
+- [ ] T022 [P] [US1] Add recent endpoint integration test in `test/integration/Elsa.ServerLogs.IntegrationTests/ServerLogsRecentEndpointTests.cs`.
+- [ ] T023 [P] [US1] Add SignalR live subscription integration test in `test/integration/Elsa.ServerLogs.IntegrationTests/ServerLogsHubTests.cs`.
 
 ### Implementation for User Story 1
 
-- [X] T024 [P] [US1] Implement bounded storage in `src/modules/Elsa.Diagnostics/Providers/InMemory/RingBuffer.cs`.
-- [X] T025 [US1] Implement recent query and live subscribe/publish flow in `src/modules/Elsa.Diagnostics/Providers/InMemory/InMemoryServerLogProvider.cs`.
-- [X] T026 [P] [US1] Implement source metadata defaults in `src/modules/Elsa.Diagnostics/Services/ServerLogSourceRegistry.cs`.
-- [X] T027 [US1] Implement `ILoggerProvider` capture in `src/modules/Elsa.Diagnostics/Logging/ServerLogLoggerProvider.cs`.
-- [X] T028 [US1] Implement logger event creation and recursion guard in `src/modules/Elsa.Diagnostics/Logging/ServerLogLogger.cs`.
-- [X] T029 [US1] Register the logger provider and in-memory provider in `src/modules/Elsa.Diagnostics/Features/ServerLogStreamingFeature.cs`.
-- [X] T030 [US1] Implement recent-log endpoint in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Recent/Endpoint.cs`.
-- [X] T031 [US1] Implement SignalR hub subscribe/unsubscribe/live event methods in `src/modules/Elsa.Diagnostics/RealTime/ServerLogsHub.cs`.
-- [X] T032 [US1] Map `/elsa/hubs/server-logs` in `src/modules/Elsa.Diagnostics/Extensions/ApplicationBuilderExtensions.cs`.
+- [X] T024 [P] [US1] Implement bounded storage in `src/modules/Elsa.ServerLogs/Providers/InMemory/RingBuffer.cs`.
+- [X] T025 [US1] Implement recent query and live subscribe/publish flow in `src/modules/Elsa.ServerLogs/Providers/InMemory/InMemoryServerLogProvider.cs`.
+- [X] T026 [P] [US1] Implement source metadata defaults in `src/modules/Elsa.ServerLogs/Services/ServerLogSourceRegistry.cs`.
+- [X] T027 [US1] Implement `ILoggerProvider` capture in `src/modules/Elsa.ServerLogs/Logging/ServerLogLoggerProvider.cs`.
+- [X] T028 [US1] Implement logger event creation and recursion guard in `src/modules/Elsa.ServerLogs/Logging/ServerLogLogger.cs`.
+- [X] T029 [US1] Register the logger provider and in-memory provider in `src/modules/Elsa.ServerLogs/Features/ServerLogStreamingFeature.cs`.
+- [X] T030 [US1] Implement recent-log endpoint in `src/modules/Elsa.ServerLogs/Endpoints/ServerLogs/Recent/Endpoint.cs`.
+- [X] T031 [US1] Implement SignalR hub subscribe/unsubscribe/live event methods in `src/modules/Elsa.ServerLogs/RealTime/ServerLogsHub.cs`.
+- [X] T032 [US1] Map `/elsa/hubs/server-logs` in `src/modules/Elsa.ServerLogs/Extensions/ApplicationBuilderExtensions.cs`.
 
 **Checkpoint**: User Story 1 is functional and testable with recent backfill plus live stream in a single-process backend.
 
@@ -87,22 +87,22 @@
 
 ### Tests for User Story 2
 
-- [X] T033 [P] [US2] Add filter predicate tests in `test/unit/Elsa.Diagnostics.UnitTests/Filtering/ServerLogFilterTests.cs`.
-- [X] T034 [P] [US2] Add redaction tests in `test/unit/Elsa.Diagnostics.UnitTests/Redaction/ServerLogRedactorTests.cs`.
-- [ ] T035 [P] [US2] Add recent endpoint authorization tests in `test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsAuthorizationTests.cs`.
-- [ ] T036 [P] [US2] Add hub authorization and filter-update tests in `test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsHubAuthorizationTests.cs`.
+- [X] T033 [P] [US2] Add filter predicate tests in `test/unit/Elsa.ServerLogs.UnitTests/Filtering/ServerLogFilterTests.cs`.
+- [X] T034 [P] [US2] Add redaction tests in `test/unit/Elsa.ServerLogs.UnitTests/Redaction/ServerLogRedactorTests.cs`.
+- [ ] T035 [P] [US2] Add recent endpoint authorization tests in `test/integration/Elsa.ServerLogs.IntegrationTests/ServerLogsAuthorizationTests.cs`.
+- [ ] T036 [P] [US2] Add hub authorization and filter-update tests in `test/integration/Elsa.ServerLogs.IntegrationTests/ServerLogsHubAuthorizationTests.cs`.
 
 ### Implementation for User Story 2
 
-- [X] T037 [P] [US2] Implement level, category, text, tenant, workflow, trace, correlation, source, and time filter matching in `src/modules/Elsa.Diagnostics/Services/ServerLogFilterEvaluator.cs`.
-- [X] T038 [US2] Apply filter evaluation to recent and live provider paths in `src/modules/Elsa.Diagnostics/Providers/InMemory/InMemoryServerLogProvider.cs`.
-- [X] T039 [US2] Implement default sensitive-name and text-pattern redaction in `src/modules/Elsa.Diagnostics/Services/ServerLogRedactor.cs`.
-- [X] T040 [US2] Apply redaction before publish/buffering in `src/modules/Elsa.Diagnostics/Logging/ServerLogLogger.cs`.
-- [X] T041 [US2] Add `read:server-logs` permission constant in `src/modules/Elsa.Diagnostics/Permissions/ServerLogPermissions.cs`.
-- [X] T042 [US2] Secure recent endpoint with `read:server-logs` in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Recent/Endpoint.cs`.
-- [X] T043 [US2] Secure SignalR hub with `read:server-logs` in `src/modules/Elsa.Diagnostics/Extensions/ApplicationBuilderExtensions.cs`.
-- [X] T044 [US2] Add `UpdateFilterAsync` validation and subscription replacement in `src/modules/Elsa.Diagnostics/RealTime/ServerLogsHub.cs`.
-- [X] T045 [US2] Clamp recent query size to options in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Recent/Endpoint.cs`.
+- [X] T037 [P] [US2] Implement level, category, text, tenant, workflow, trace, correlation, source, and time filter matching in `src/modules/Elsa.ServerLogs/Services/ServerLogFilterEvaluator.cs`.
+- [X] T038 [US2] Apply filter evaluation to recent and live provider paths in `src/modules/Elsa.ServerLogs/Providers/InMemory/InMemoryServerLogProvider.cs`.
+- [X] T039 [US2] Implement default sensitive-name and text-pattern redaction in `src/modules/Elsa.ServerLogs/Services/ServerLogRedactor.cs`.
+- [X] T040 [US2] Apply redaction before publish/buffering in `src/modules/Elsa.ServerLogs/Logging/ServerLogLogger.cs`.
+- [X] T041 [US2] Add `read:server-logs` permission constant in `src/modules/Elsa.ServerLogs/Permissions/ServerLogPermissions.cs`.
+- [X] T042 [US2] Secure recent endpoint with `read:server-logs` in `src/modules/Elsa.ServerLogs/Endpoints/ServerLogs/Recent/Endpoint.cs`.
+- [X] T043 [US2] Secure SignalR hub with `read:server-logs` in `src/modules/Elsa.ServerLogs/Extensions/ApplicationBuilderExtensions.cs`.
+- [X] T044 [US2] Add `UpdateFilterAsync` validation and subscription replacement in `src/modules/Elsa.ServerLogs/RealTime/ServerLogsHub.cs`.
+- [X] T045 [US2] Clamp recent query size to options in `src/modules/Elsa.ServerLogs/Endpoints/ServerLogs/Recent/Endpoint.cs`.
 
 **Checkpoint**: User Stories 1 and 2 work together with filtering, redaction, and authorization.
 
@@ -116,18 +116,18 @@
 
 ### Tests for User Story 3
 
-- [X] T046 [P] [US3] Add source registry tests in `test/unit/Elsa.Diagnostics.UnitTests/Sources/ServerLogSourceRegistryTests.cs`.
-- [X] T047 [P] [US3] Add multi-source provider tests in `test/unit/Elsa.Diagnostics.UnitTests/InMemory/InMemoryServerLogProviderSourceTests.cs`.
-- [ ] T048 [P] [US3] Add source-list endpoint integration tests in `test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsSourcesEndpointTests.cs`.
+- [X] T046 [P] [US3] Add source registry tests in `test/unit/Elsa.ServerLogs.UnitTests/Sources/ServerLogSourceRegistryTests.cs`.
+- [X] T047 [P] [US3] Add multi-source provider tests in `test/unit/Elsa.ServerLogs.UnitTests/InMemory/InMemoryServerLogProviderSourceTests.cs`.
+- [ ] T048 [P] [US3] Add source-list endpoint integration tests in `test/integration/Elsa.ServerLogs.IntegrationTests/ServerLogsSourcesEndpointTests.cs`.
 
 ### Implementation for User Story 3
 
-- [X] T049 [US3] Detect container and Kubernetes environment metadata in `src/modules/Elsa.Diagnostics/Services/ServerLogSourceRegistry.cs`.
-- [X] T050 [US3] Track `LastSeen`, stale, disconnected, and unknown health states in `src/modules/Elsa.Diagnostics/Services/ServerLogSourceRegistry.cs`.
-- [X] T051 [US3] Add source-aware merged ordering and deterministic tiebreakers in `src/modules/Elsa.Diagnostics/Providers/InMemory/InMemoryServerLogProvider.cs`.
-- [X] T052 [US3] Implement source-list endpoint in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Sources/Endpoint.cs`.
-- [X] T053 [US3] Secure source-list endpoint with `read:server-logs` in `src/modules/Elsa.Diagnostics/Endpoints/ServerLogs/Sources/Endpoint.cs`.
-- [X] T054 [US3] Broadcast source changes from the hub in `src/modules/Elsa.Diagnostics/RealTime/ServerLogSubscriptionManager.cs`.
+- [X] T049 [US3] Detect container and Kubernetes environment metadata in `src/modules/Elsa.ServerLogs/Services/ServerLogSourceRegistry.cs`.
+- [X] T050 [US3] Track `LastSeen`, stale, disconnected, and unknown health states in `src/modules/Elsa.ServerLogs/Services/ServerLogSourceRegistry.cs`.
+- [X] T051 [US3] Add source-aware merged ordering and deterministic tiebreakers in `src/modules/Elsa.ServerLogs/Providers/InMemory/InMemoryServerLogProvider.cs`.
+- [X] T052 [US3] Implement source-list endpoint in `src/modules/Elsa.ServerLogs/Endpoints/ServerLogs/Sources/Endpoint.cs`.
+- [X] T053 [US3] Secure source-list endpoint with `read:server-logs` in `src/modules/Elsa.ServerLogs/Endpoints/ServerLogs/Sources/Endpoint.cs`.
+- [X] T054 [US3] Broadcast source changes from the hub in `src/modules/Elsa.ServerLogs/RealTime/ServerLogSubscriptionManager.cs`.
 
 **Checkpoint**: All stories are independently functional with single-node and simulated clustered source scenarios.
 
@@ -137,13 +137,13 @@
 
 **Purpose**: Documentation, packaging, validation, and final integration checks.
 
-- [X] T055 [P] Update package metadata and tags in `src/modules/Elsa.Diagnostics/Elsa.Diagnostics.csproj`.
-- [X] T056 [P] Add setup documentation from quickstart to `src/modules/Elsa.Diagnostics/README.md`.
-- [X] T057 Add diagnostics module reference to any intended sample host in `src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj`.
+- [X] T055 [P] Update package metadata and tags in `src/modules/Elsa.ServerLogs/Elsa.ServerLogs.csproj`.
+- [X] T056 [P] Add setup documentation from quickstart to `src/modules/Elsa.ServerLogs/README.md`.
+- [X] T057 Add server logs module reference to any intended sample host in `src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj`.
 - [X] T058 Add sample `UseServerLogStreaming` wiring comment or disabled example in `src/apps/Elsa.Server.Web/Program.cs`.
 - [X] T059 Run quickstart validation and record notes in `specs/003-live-server-logs/quickstart.md`.
-- [X] T060 Run targeted unit tests with `dotnet test test/unit/Elsa.Diagnostics.UnitTests/Elsa.Diagnostics.UnitTests.csproj`.
-- [X] T061 Run targeted integration tests with `dotnet test test/integration/Elsa.Diagnostics.IntegrationTests/Elsa.Diagnostics.IntegrationTests.csproj`.
+- [X] T060 Run targeted unit tests with `dotnet test test/unit/Elsa.ServerLogs.UnitTests/Elsa.ServerLogs.UnitTests.csproj`.
+- [X] T061 Run targeted integration tests with `dotnet test test/integration/Elsa.ServerLogs.IntegrationTests/Elsa.ServerLogs.IntegrationTests.csproj`.
 
 ---
 
@@ -176,11 +176,11 @@
 ## Parallel Example: User Story 1
 
 ```text
-Task: "Add ring buffer capacity and ordering tests in test/unit/Elsa.Diagnostics.UnitTests/InMemory/RingBufferTests.cs"
-Task: "Add in-memory provider recent/live tests in test/unit/Elsa.Diagnostics.UnitTests/InMemory/InMemoryServerLogProviderTests.cs"
-Task: "Add logger provider capture tests in test/unit/Elsa.Diagnostics.UnitTests/Logging/ServerLogLoggerProviderTests.cs"
-Task: "Add recent endpoint integration test in test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsRecentEndpointTests.cs"
-Task: "Add SignalR live subscription integration test in test/integration/Elsa.Diagnostics.IntegrationTests/ServerLogsHubTests.cs"
+Task: "Add ring buffer capacity and ordering tests in test/unit/Elsa.ServerLogs.UnitTests/InMemory/RingBufferTests.cs"
+Task: "Add in-memory provider recent/live tests in test/unit/Elsa.ServerLogs.UnitTests/InMemory/InMemoryServerLogProviderTests.cs"
+Task: "Add logger provider capture tests in test/unit/Elsa.ServerLogs.UnitTests/Logging/ServerLogLoggerProviderTests.cs"
+Task: "Add recent endpoint integration test in test/integration/Elsa.ServerLogs.IntegrationTests/ServerLogsRecentEndpointTests.cs"
+Task: "Add SignalR live subscription integration test in test/integration/Elsa.ServerLogs.IntegrationTests/ServerLogsHubTests.cs"
 ```
 
 ## Implementation Strategy

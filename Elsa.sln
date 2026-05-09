@@ -317,11 +317,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Shells.Api.Tests", "te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Identity.UnitTests", "test\unit\Elsa.Identity.UnitTests\Elsa.Identity.UnitTests.csproj", "{B314D549-DD53-4D1B-A88E-934A72FA0BCB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics", "src\modules\Elsa.Diagnostics\Elsa.Diagnostics.csproj", "{72A70AAA-67EA-4454-9AEF-0C08654B8B4E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ServerLogs", "src\modules\Elsa.ServerLogs\Elsa.ServerLogs.csproj", "{72A70AAA-67EA-4454-9AEF-0C08654B8B4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.UnitTests", "test\unit\Elsa.Diagnostics.UnitTests\Elsa.Diagnostics.UnitTests.csproj", "{96C2CA98-5CFA-4983-A551-CD570CD8CFA7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ServerLogs.UnitTests", "test\unit\Elsa.ServerLogs.UnitTests\Elsa.ServerLogs.UnitTests.csproj", "{96C2CA98-5CFA-4983-A551-CD570CD8CFA7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.IntegrationTests", "test\integration\Elsa.Diagnostics.IntegrationTests\Elsa.Diagnostics.IntegrationTests.csproj", "{2530E106-A168-4C57-9DFC-AB3F2CBD36AE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ServerLogs.IntegrationTests", "test\integration\Elsa.ServerLogs.IntegrationTests\Elsa.ServerLogs.IntegrationTests.csproj", "{2530E106-A168-4C57-9DFC-AB3F2CBD36AE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
