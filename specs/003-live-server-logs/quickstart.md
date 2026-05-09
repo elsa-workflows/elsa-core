@@ -40,7 +40,7 @@ Grant operational users the `read:server-logs` permission.
 - `dotnet build src/modules/Elsa.ServerLogs/Elsa.ServerLogs.csproj --no-restore` passes.
 - `dotnet restore src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj` passes.
 - `dotnet build src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj --no-restore` passes.
-- `dotnet test test/integration/Elsa.ServerLogs.IntegrationTests/Elsa.ServerLogs.IntegrationTests.csproj --no-restore` passes with 3 server logs smoke tests.
+- `dotnet test test/integration/Elsa.ServerLogs.IntegrationTests/Elsa.ServerLogs.IntegrationTests.csproj --no-restore` passes with 4 server logs smoke tests.
 - The commands currently report existing repository warnings, including `NU1903` for `Snappier` and nullable/analyzer warnings in unrelated modules.
 
 ## Clustered deployments
