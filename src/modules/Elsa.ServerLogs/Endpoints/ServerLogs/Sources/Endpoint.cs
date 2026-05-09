@@ -12,7 +12,7 @@ internal class Endpoint(IServerLogProvider logProvider) : ElsaEndpointWithoutReq
     public override void Configure()
     {
         Get("/server-logs/sources");
-        ConfigurePermissions(ServerLogPermissions.Read);
+        ConfigurePermissions(ServerLogPermissions.ReadAll, ServerLogPermissions.Read);
     }
     
     public override async Task<IReadOnlyCollection<ServerLogSource>> ExecuteAsync(CancellationToken cancellationToken)

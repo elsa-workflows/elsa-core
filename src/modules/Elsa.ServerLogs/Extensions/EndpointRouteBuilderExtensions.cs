@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Elsa.ServerLogs.Permissions;
 using Elsa.ServerLogs.RealTime;
 using Microsoft.AspNetCore.Builder;
@@ -15,11 +14,6 @@ internal static class EndpointRouteBuilderExtensions
         if (EndpointSecurityOptions.SecurityIsEnabled)
             hub.RequireAuthorization(policy => policy
                 .RequireAuthenticatedUser()
-                .RequireAssertion(context => HasServerLogPermission(context.User)));
-    }
-
-    private static bool HasServerLogPermission(ClaimsPrincipal user)
-    {
-        return user.HasClaim("permissions", PermissionNames.All) || user.HasClaim("permissions", ServerLogPermissions.Read);
+                .RequireAssertion(context => ServerLogPermissions.CanRead(context.User)));
     }
 }

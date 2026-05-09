@@ -28,7 +28,7 @@ This maps the server logs hub at `/elsa/hubs/server-logs` and the REST endpoints
 
 ## Authorization
 
-The recent-log endpoint, source-list endpoint, and SignalR hub require the `read:server-logs` permission. Grant this permission only to operators and developers who are allowed to inspect backend logs.
+The recent-log endpoint, source-list endpoint, and SignalR hub require either the `read:server-logs` permission, the broad `read:*` permission, or the administrator `*` permission. Grant `read:server-logs` only to operators and developers who are allowed to inspect backend logs.
 
 ## Studio Integration
 

@@ -13,7 +13,7 @@ internal class Endpoint(IServerLogProvider logProvider) : ElsaEndpoint<ServerLog
     {
         Verbs(FastEndpoints.Http.GET, FastEndpoints.Http.POST);
         Routes("/server-logs/recent");
-        ConfigurePermissions(ServerLogPermissions.Read);
+        ConfigurePermissions(ServerLogPermissions.ReadAll, ServerLogPermissions.Read);
     }
     
     public override async Task<RecentServerLogsResult> ExecuteAsync(ServerLogFilter request, CancellationToken cancellationToken)
