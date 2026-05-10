@@ -1,22 +1,22 @@
 using System.Reflection;
 using CShells.Features;
 using Elsa.Persistence.EFCore.Extensions;
-using Elsa.Persistence.EFCore.Modules.Alterations;
+using Elsa.Persistence.EFCore.Modules.Identity;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
-namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Alterations;
+namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Identity;
 
 /// <summary>
-/// Configures the alterations feature to use PostgreSql persistence.
+/// Configures the identity feature to use PostgreSql persistence.
 /// </summary>
 [ShellFeature(
-    DisplayName = "PostgreSql Alterations Persistence",
-    Description = "Provides PostgreSql persistence for workflow alterations",
-    DependsOn = ["Alterations"])]
+    DisplayName = "PostgreSql Identity Persistence",
+    Description = "Provides PostgreSql persistence for identity management",
+    DependsOn = ["Identity"])]
 [UsedImplicitly]
-public class PostgreSqlAlterationsPersistenceShellFeature
-    : EFCoreAlterationsPersistenceShellFeatureBase
+public class PostgreSqlIdentityPersistenceFeature
+    : EFCoreIdentityPersistenceShellFeatureBase
 {
     /// <inheritdoc />
     protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
