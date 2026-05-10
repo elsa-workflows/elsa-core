@@ -9,6 +9,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.Persistence.EFCore.PostgreSql\Elsa.Persistence.EFCore.PostgreSql.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Resilience\Elsa.Resilience.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.ServerLogs\Elsa.ServerLogs.csproj" />
