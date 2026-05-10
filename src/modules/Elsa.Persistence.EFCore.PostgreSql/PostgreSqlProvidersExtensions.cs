@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using Elsa.Extensions;
 using Elsa.Persistence.EFCore.PostgreSql.Handlers;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
 
 // ReSharper disable once CheckNamespace
@@ -12,6 +13,9 @@ namespace Elsa.Persistence.EFCore.Extensions;
 public static class PostgreSqlProvidersExtensions
 {
     private static Assembly Assembly => typeof(PostgreSqlProvidersExtensions).Assembly;
+
+    public static IServiceCollection AddPostgreSqlEntityModelCreatingHandlers(this IServiceCollection services) =>
+        services.TryAddScopedImplementation<IEntityModelCreatingHandler, SetupForPostgreSql>();
 
     public static TFeature UsePostgreSql<TFeature, TDbContext>(this PersistenceFeatureBase<TFeature, TDbContext> feature,
         string connectionString,
@@ -52,7 +56,7 @@ public static class PostgreSqlProvidersExtensions
         where TDbContext : ElsaDbContextBase
         where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
     {
-        feature.Module.Services.TryAddScopedImplementation<IEntityModelCreatingHandler, SetupForPostgreSql>();
+        feature.Module.Services.AddPostgreSqlEntityModelCreatingHandlers();
         feature.DbContextOptionsBuilder = (sp, db) => db.UseElsaPostgreSql(migrationsAssembly, connectionStringFunc(sp), options, configure: configure);
         return (TFeature)feature;
     }

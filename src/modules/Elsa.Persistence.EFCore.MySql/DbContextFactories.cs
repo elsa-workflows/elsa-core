@@ -6,7 +6,6 @@ using Elsa.Persistence.EFCore.Modules.Labels;
 using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
 using Elsa.Persistence.EFCore.Modules.Tenants;
-using Elsa.Persistence.EFCore.MySql.Handlers;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,7 +36,7 @@ public class MySqlDesignTimeDbContextFactory<TDbContext> : DesignTimeDbContextFa
 {
     protected override void ConfigureServices(IServiceCollection services)
     {
-        services.AddScoped<IEntityModelCreatingHandler, SetupForMySql>();
+        services.AddMySqlEntityModelCreatingHandlers();
     }
 
     protected override void ConfigureBuilder(DbContextOptionsBuilder<TDbContext> builder, string connectionString)

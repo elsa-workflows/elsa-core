@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34003.232
@@ -317,15 +317,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Shells.Api.Tests", "te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Identity.UnitTests", "test\unit\Elsa.Identity.UnitTests\Elsa.Identity.UnitTests.csproj", "{B314D549-DD53-4D1B-A88E-934A72FA0BCB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics", "src\modules\Elsa.Diagnostics\Elsa.Diagnostics.csproj", "{72A70AAA-67EA-4454-9AEF-0C08654B8B4E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs", "src\modules\Elsa.Diagnostics.StructuredLogs\Elsa.Diagnostics.StructuredLogs.csproj", "{72A70AAA-67EA-4454-9AEF-0C08654B8B4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.UnitTests", "test\unit\Elsa.Diagnostics.UnitTests\Elsa.Diagnostics.UnitTests.csproj", "{96C2CA98-5CFA-4983-A551-CD570CD8CFA7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.UnitTests", "test\unit\Elsa.Diagnostics.StructuredLogs.UnitTests\Elsa.Diagnostics.StructuredLogs.UnitTests.csproj", "{96C2CA98-5CFA-4983-A551-CD570CD8CFA7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.IntegrationTests", "test\integration\Elsa.Diagnostics.IntegrationTests\Elsa.Diagnostics.IntegrationTests.csproj", "{2530E106-A168-4C57-9DFC-AB3F2CBD36AE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Diagnostics.StructuredLogs.IntegrationTests", "test\integration\Elsa.Diagnostics.StructuredLogs.IntegrationTests\Elsa.Diagnostics.StructuredLogs.IntegrationTests.csproj", "{2530E106-A168-4C57-9DFC-AB3F2CBD36AE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "diagnostics", "diagnostics", "{78FD90A4-90A5-445F-97F2-74BA835AFA5D}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ServerLogs", "src\modules\Elsa.ServerLogs\Elsa.ServerLogs.csproj", "{1729C157-2F29-410B-9773-EA6EC646F247}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1235,18 +1233,6 @@ Global
 		{2530E106-A168-4C57-9DFC-AB3F2CBD36AE}.Release|x64.Build.0 = Release|Any CPU
 		{2530E106-A168-4C57-9DFC-AB3F2CBD36AE}.Release|x86.ActiveCfg = Release|Any CPU
 		{2530E106-A168-4C57-9DFC-AB3F2CBD36AE}.Release|x86.Build.0 = Release|Any CPU
-		{1729C157-2F29-410B-9773-EA6EC646F247}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1729C157-2F29-410B-9773-EA6EC646F247}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1729C157-2F29-410B-9773-EA6EC646F247}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{1729C157-2F29-410B-9773-EA6EC646F247}.Debug|x64.Build.0 = Debug|Any CPU
-		{1729C157-2F29-410B-9773-EA6EC646F247}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{1729C157-2F29-410B-9773-EA6EC646F247}.Debug|x86.Build.0 = Debug|Any CPU
-		{1729C157-2F29-410B-9773-EA6EC646F247}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1729C157-2F29-410B-9773-EA6EC646F247}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1729C157-2F29-410B-9773-EA6EC646F247}.Release|x64.ActiveCfg = Release|Any CPU
-		{1729C157-2F29-410B-9773-EA6EC646F247}.Release|x64.Build.0 = Release|Any CPU
-		{1729C157-2F29-410B-9773-EA6EC646F247}.Release|x86.ActiveCfg = Release|Any CPU
-		{1729C157-2F29-410B-9773-EA6EC646F247}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1355,11 +1341,10 @@ Global
 		{85E81AC4-10EF-4A93-A7A3-930087621ACC} = {D92BEAB2-60D6-4BB4-885A-6BA681C6CCF1}
 		{42FFCACD-5A9D-462B-AC84-7E1D14CDBDF0} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{B314D549-DD53-4D1B-A88E-934A72FA0BCB} = {18453B51-25EB-4317-A4B3-B10518252E92}
-		{72A70AAA-67EA-4454-9AEF-0C08654B8B4E} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{96C2CA98-5CFA-4983-A551-CD570CD8CFA7} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{2530E106-A168-4C57-9DFC-AB3F2CBD36AE} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
 		{78FD90A4-90A5-445F-97F2-74BA835AFA5D} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
-		{1729C157-2F29-410B-9773-EA6EC646F247} = {78FD90A4-90A5-445F-97F2-74BA835AFA5D}
+		{72A70AAA-67EA-4454-9AEF-0C08654B8B4E} = {78FD90A4-90A5-445F-97F2-74BA835AFA5D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

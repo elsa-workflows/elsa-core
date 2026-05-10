@@ -21,6 +21,7 @@ public class OracleWorkflowDefinitionPersistenceShellFeature
     /// <inheritdoc />
     protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        options = options.ConfigureOracle();
         builder.UseElsaOracle(migrationsAssembly, connectionString, options);
     }
 }
