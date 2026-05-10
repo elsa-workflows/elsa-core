@@ -13,6 +13,7 @@
 - Q: What should the diagnostic namespace umbrella be? -> A: Use `Elsa.Diagnostics.*`.
 - Q: What should this module be called? -> A: `Elsa.Diagnostics.StructuredLogs`.
 - Q: Should OpenTelemetry visualization be part of this module? -> A: No. This module should expose trace/span correlation fields and links, while a future `Elsa.Diagnostics.OpenTelemetry` module owns trace and metric exploration.
+- Manual clarification pass: No remaining high-impact ambiguities were found; implementation should proceed with a consistent breaking rename from the unpublished `Elsa.ServerLogs` feature to `Elsa.Diagnostics.StructuredLogs`.
 
 ## User Scenarios & Testing *(mandatory)*
 
