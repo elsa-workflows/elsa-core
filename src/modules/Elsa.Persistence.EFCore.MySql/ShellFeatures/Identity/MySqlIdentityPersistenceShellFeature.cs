@@ -4,6 +4,7 @@ using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Identity;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Identity;
 
@@ -22,5 +23,12 @@ public class MySqlIdentityPersistenceShellFeature
     protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
         builder.UseElsaMySql(migrationsAssembly, connectionString, options);
+    }
+
+    /// <inheritdoc />
+    protected override void OnConfiguring(IServiceCollection services)
+    {
+        services.AddMySqlEntityModelCreatingHandlers();
+        base.OnConfiguring(services);
     }
 }

@@ -4,6 +4,7 @@ using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Labels;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Labels;
 
@@ -22,5 +23,12 @@ public class MySqlLabelPersistenceShellFeature
     protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
         builder.UseElsaMySql(migrationsAssembly, connectionString, options);
+    }
+
+    /// <inheritdoc />
+    protected override void OnConfiguring(IServiceCollection services)
+    {
+        services.AddMySqlEntityModelCreatingHandlers();
+        base.OnConfiguring(services);
     }
 }

@@ -60,14 +60,15 @@ public static class OracleProvidersExtensions
         where TDbContext : ElsaDbContextBase
         where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
     {
-        options ??= new();
-        options.Configure();
+        options = options.ConfigureOracle();
         feature.DbContextOptionsBuilder = (sp, db) => db.UseElsaOracle(migrationsAssembly, connectionStringFunc(sp), options, configure: configure);
         return (TFeature)feature;
     }
     
-    public static ElsaDbContextOptions Configure(this ElsaDbContextOptions options)
+    public static ElsaDbContextOptions ConfigureOracle(this ElsaDbContextOptions? options)
     {
+        options ??= new();
+        
         var management = new Management();
         var runtime = new Runtime();
         
@@ -84,4 +85,6 @@ public static class OracleProvidersExtensions
         
         return options;
     }
+
+    public static ElsaDbContextOptions Configure(this ElsaDbContextOptions options) => options.ConfigureOracle();
 }

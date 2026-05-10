@@ -1,10 +1,8 @@
 ﻿using System.Reflection;
-using Elsa.Persistence.EFCore.EntityHandlers;
 using Elsa.Persistence.EFCore.Sqlite;
 using Elsa.Extensions;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Persistence.EFCore.Extensions;
@@ -15,6 +13,9 @@ namespace Elsa.Persistence.EFCore.Extensions;
 public static class SqliteProvidersExtensions
 {
     private static Assembly Assembly => typeof(SqliteProvidersExtensions).Assembly;
+
+    public static IServiceCollection AddSqliteEntityModelCreatingHandlers(this IServiceCollection services) =>
+        services.TryAddScopedImplementation<IEntityModelCreatingHandler, SetupForSqlite>();
 
     /// <summary>
     /// Configures the feature to use Sqlite.
@@ -68,7 +69,7 @@ public static class SqliteProvidersExtensions
         where TDbContext : ElsaDbContextBase
         where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
     {
-        feature.Module.Services.TryAddScopedImplementation<IEntityModelCreatingHandler, SetupForSqlite>();
+        feature.Module.Services.AddSqliteEntityModelCreatingHandlers();
         feature.DbContextOptionsBuilder = (sp, db) => db.UseElsaSqlite(migrationsAssembly, connectionStringFunc(sp), options, configure: configure);
         return (TFeature)feature;
     }

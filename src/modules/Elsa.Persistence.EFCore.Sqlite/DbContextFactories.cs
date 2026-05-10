@@ -8,6 +8,7 @@ using Elsa.Persistence.EFCore.Modules.Runtime;
 using Elsa.Persistence.EFCore.Modules.Tenants;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
@@ -33,6 +34,11 @@ public class TenantsDbContextFactories : SqliteDesignTimeDbContextFactory<Tenant
 
 public class SqliteDesignTimeDbContextFactory<TDbContext> : DesignTimeDbContextFactoryBase<TDbContext> where TDbContext : DbContext
 {
+    protected override void ConfigureServices(IServiceCollection services)
+    {
+        services.AddSqliteEntityModelCreatingHandlers();
+    }
+
     protected override void ConfigureBuilder(DbContextOptionsBuilder<TDbContext> builder, string connectionString)
     {
         builder.UseElsaSqlite(GetType().Assembly, connectionString);
