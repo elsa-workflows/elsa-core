@@ -1,9 +1,11 @@
 using Elsa.ServerLogs.Contracts;
 using Elsa.ServerLogs.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Elsa.ServerLogs.RealTime;
 
+[Authorize]
 public class ServerLogsHub(ServerLogSubscriptionManager subscriptionManager) : Hub<IServerLogsClient>
 {
     public async Task SubscribeAsync(ServerLogFilter? filter)
