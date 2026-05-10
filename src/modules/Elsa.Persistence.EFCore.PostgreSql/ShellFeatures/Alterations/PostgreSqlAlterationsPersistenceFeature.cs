@@ -4,6 +4,7 @@ using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Alterations;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Alterations;
 
@@ -22,5 +23,12 @@ public class PostgreSqlAlterationsPersistenceFeature
     protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
         builder.UseElsaPostgreSql(migrationsAssembly, connectionString, options);
+    }
+
+    /// <inheritdoc />
+    protected override void OnConfiguring(IServiceCollection services)
+    {
+        services.AddPostgreSqlEntityModelCreatingHandlers();
+        base.OnConfiguring(services);
     }
 }
