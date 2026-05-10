@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Management;
     Description = "Provides PostgreSql persistence for workflow instances",
     DependsOn = ["WorkflowManagement", "WorkflowInstances"])]
 [UsedImplicitly]
-public class PostgreSqlWorkflowInstancePersistenceShellFeature
+public class PostgreSqlWorkflowInstancePersistenceFeature
     : EFCoreWorkflowInstancePersistenceShellFeatureBase
 {
     /// <inheritdoc />

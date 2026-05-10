@@ -1,22 +1,22 @@
 using System.Reflection;
 using CShells.Features;
 using Elsa.Persistence.EFCore.Extensions;
-using Elsa.Persistence.EFCore.Modules.Labels;
+using Elsa.Persistence.EFCore.Modules.Tenants;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
-namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Labels;
+namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Tenants;
 
 /// <summary>
-/// Configures the labels feature to use PostgreSql persistence.
+/// Configures the tenants feature to use PostgreSql persistence.
 /// </summary>
 [ShellFeature(
-    DisplayName = "PostgreSql Label Persistence",
-    Description = "Provides PostgreSql persistence for label management",
-    DependsOn = ["Labels"])]
+    DisplayName = "PostgreSql Tenant Persistence",
+    Description = "Provides PostgreSql persistence for tenant management",
+    DependsOn = ["TenantManagement"])]
 [UsedImplicitly]
-public class PostgreSqlLabelPersistenceShellFeature
-    : EFCoreLabelPersistenceShellFeatureBase
+public class PostgreSqlTenantPersistenceFeature
+    : EFCoreTenantManagementShellFeatureBase
 {
     /// <inheritdoc />
     protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)

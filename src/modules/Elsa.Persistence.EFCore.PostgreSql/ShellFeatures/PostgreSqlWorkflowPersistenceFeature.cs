@@ -1,5 +1,6 @@
 using CShells.Features;
-using Elsa.Persistence.EFCore;
+using Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Management;
+using Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Runtime;
 using JetBrains.Annotations;
 
 namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures;
@@ -33,8 +34,12 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures;
 [ShellFeature(
     DisplayName = "PostgreSql Workflow Persistence",
     Description = "Provides PostgreSQL persistence for workflow definitions, instances, and runtime data with unified configuration",
-    DependsOn = ["PostgreSqlWorkflowDefinitionPersistence", "PostgreSqlWorkflowInstancePersistence", "PostgreSqlWorkflowRuntimePersistence"])]
+    DependsOn =
+    [
+        typeof(PostgreSqlWorkflowDefinitionPersistenceFeature),
+        typeof(PostgreSqlWorkflowInstancePersistenceFeature),
+        typeof(PostgreSqlWorkflowRuntimePersistenceFeature)
+    ]
+)]
 [UsedImplicitly]
-public class PostgreSqlWorkflowPersistenceShellFeature : CombinedPersistenceShellFeatureBase
-{
-}
+public class PostgreSqlWorkflowPersistenceFeature : CombinedPersistenceShellFeatureBase;
