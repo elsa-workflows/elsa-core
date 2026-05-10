@@ -2,6 +2,7 @@
 using Elsa.Extensions;
 using Elsa.Persistence.EFCore.MySql.Handlers;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Persistence.EFCore.Extensions;
@@ -12,6 +13,9 @@ namespace Elsa.Persistence.EFCore.Extensions;
 public static class MySqlProvidersExtensions
 {
     private static Assembly Assembly => typeof(MySqlProvidersExtensions).Assembly;
+
+    public static IServiceCollection AddMySqlEntityModelCreatingHandlers(this IServiceCollection services) =>
+        services.TryAddScopedImplementation<IEntityModelCreatingHandler, SetupForMySql>();
     
     public static TFeature UseMySql<TFeature, TDbContext>(this PersistenceFeatureBase<TFeature, TDbContext> feature, 
         string connectionString, 
@@ -55,7 +59,7 @@ public static class MySqlProvidersExtensions
         where TDbContext : ElsaDbContextBase
         where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
     {
-        feature.Module.Services.TryAddScopedImplementation<IEntityModelCreatingHandler, SetupForMySql>();
+        feature.Module.Services.AddMySqlEntityModelCreatingHandlers();
         feature.DbContextOptionsBuilder = (sp, db) => db.UseElsaMySql(migrationsAssembly, connectionStringFunc(sp), options, configure: configure);
         return (TFeature)feature;
     }

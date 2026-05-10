@@ -28,7 +28,7 @@ public class SqliteWorkflowDefinitionPersistenceShellFeature
     /// <inheritdoc />
     protected override void OnConfiguring(IServiceCollection services)
     {
-        services.AddScoped<IEntityModelCreatingHandler, SetupForSqlite>();
+        services.AddSqliteEntityModelCreatingHandlers();
         base.OnConfiguring(services);
     }
 }
