@@ -31,7 +31,7 @@ using Microsoft.Extensions.Options;
 // ReSharper disable RedundantAssignment
 const bool useReadOnlyMode = false;
 const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated requests.
-const bool useServerLogStreaming = false; // Enable to inspect backend logs from Elsa Studio.
+const bool useStructuredLogs = false; // Enable to inspect backend logs from Elsa Studio.
 const bool useMultitenancy = true;
 const bool disableVariableWrappers = false;
 
@@ -131,8 +131,8 @@ services
             });
         }
 
-        if(useServerLogStreaming)
-            elsa.UseServerLogStreaming();
+        if(useStructuredLogs)
+            elsa.UseStructuredLogs();
         
         ConfigureForTest?.Invoke(elsa);
     });
@@ -205,10 +205,10 @@ if (useSignalR)
     app.UseWorkflowsSignalRHubs();
 }
 
-// Server log streaming for Studio diagnostics.
-if (useServerLogStreaming)
+// Structured log streaming for Studio diagnostics.
+if (useStructuredLogs)
 {
-    app.UseServerLogStreaming();
+    app.UseStructuredLogs();
 }
 
 // Run.

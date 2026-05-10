@@ -17,11 +17,11 @@
 
 **Purpose**: Move the existing unpublished module and tests to the diagnostics structured logs identity.
 
-- [ ] T001 Rename `src/modules/Elsa.ServerLogs/Elsa.ServerLogs.csproj` to `src/modules/Elsa.Diagnostics.StructuredLogs/Elsa.Diagnostics.StructuredLogs.csproj`.
-- [ ] T002 Rename `test/unit/Elsa.ServerLogs.UnitTests/Elsa.ServerLogs.UnitTests.csproj` to `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Elsa.Diagnostics.StructuredLogs.UnitTests.csproj`.
-- [ ] T003 Rename `test/integration/Elsa.ServerLogs.IntegrationTests/Elsa.ServerLogs.IntegrationTests.csproj` to `test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/Elsa.Diagnostics.StructuredLogs.IntegrationTests.csproj`.
-- [ ] T004 Update `Elsa.sln` project names and paths for the renamed module and test projects.
-- [ ] T005 Update sample host references in `src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj`.
+- [X] T001 Rename `src/modules/Elsa.ServerLogs/Elsa.ServerLogs.csproj` to `src/modules/Elsa.Diagnostics.StructuredLogs/Elsa.Diagnostics.StructuredLogs.csproj`.
+- [X] T002 Rename `test/unit/Elsa.ServerLogs.UnitTests/Elsa.ServerLogs.UnitTests.csproj` to `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Elsa.Diagnostics.StructuredLogs.UnitTests.csproj`.
+- [X] T003 Rename `test/integration/Elsa.ServerLogs.IntegrationTests/Elsa.ServerLogs.IntegrationTests.csproj` to `test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/Elsa.Diagnostics.StructuredLogs.IntegrationTests.csproj`.
+- [X] T004 Update `Elsa.sln` project names and paths for the renamed module and test projects.
+- [X] T005 Update sample host references in `src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj`.
 
 ---
 
@@ -31,14 +31,14 @@
 
 **Critical**: No story work should begin until these shared names compile.
 
-- [ ] T006 Rename namespaces from `Elsa.ServerLogs` to `Elsa.Diagnostics.StructuredLogs` across `src/modules/Elsa.Diagnostics.StructuredLogs`.
-- [ ] T007 [P] Rename model types in `src/modules/Elsa.Diagnostics.StructuredLogs/Models` from `ServerLog*` to `StructuredLog*`.
-- [ ] T008 [P] Rename provider contracts in `src/modules/Elsa.Diagnostics.StructuredLogs/Contracts` from `IServerLog*` to `IStructuredLog*`.
-- [ ] T009 [P] Rename option type `ServerLogStreamingOptions` to `StructuredLogsOptions` in `src/modules/Elsa.Diagnostics.StructuredLogs/Options/StructuredLogsOptions.cs`.
-- [ ] T010 [P] Rename permission type and value in `src/modules/Elsa.Diagnostics.StructuredLogs/Permissions/StructuredLogsPermissions.cs`.
-- [ ] T011 Rename service, logging, provider, and real-time types in `src/modules/Elsa.Diagnostics.StructuredLogs` to structured-log names.
-- [ ] T012 Update source code references after renames in `src/modules/Elsa.Diagnostics.StructuredLogs`.
-- [ ] T013 Update test namespaces and project references in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests` and `test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests`.
+- [X] T006 Rename namespaces from `Elsa.ServerLogs` to `Elsa.Diagnostics.StructuredLogs` across `src/modules/Elsa.Diagnostics.StructuredLogs`.
+- [X] T007 [P] Rename model types in `src/modules/Elsa.Diagnostics.StructuredLogs/Models` from `ServerLog*` to `StructuredLog*`.
+- [X] T008 [P] Rename provider contracts in `src/modules/Elsa.Diagnostics.StructuredLogs/Contracts` from `IServerLog*` to `IStructuredLog*`.
+- [X] T009 [P] Rename option type `ServerLogStreamingOptions` to `StructuredLogsOptions` in `src/modules/Elsa.Diagnostics.StructuredLogs/Options/StructuredLogsOptions.cs`.
+- [X] T010 [P] Rename permission type and value in `src/modules/Elsa.Diagnostics.StructuredLogs/Permissions/StructuredLogsPermissions.cs`.
+- [X] T011 Rename service, logging, provider, and real-time types in `src/modules/Elsa.Diagnostics.StructuredLogs` to structured-log names.
+- [X] T012 Update source code references after renames in `src/modules/Elsa.Diagnostics.StructuredLogs`.
+- [X] T013 Update test namespaces and project references in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests` and `test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests`.
 
 **Checkpoint**: Renamed projects and test projects should compile far enough to expose behavior-specific failures.
 
@@ -52,19 +52,19 @@
 
 ### Tests for User Story 1
 
-- [ ] T014 [P] [US1] Update module identity assertions in `test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/StructuredLogsModuleTests.cs`.
-- [ ] T015 [P] [US1] Add route and permission naming assertions in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/StructuredLogsNamingTests.cs`.
-- [ ] T016 [P] [US1] Add shell feature option binding assertions in `test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/StructuredLogsModuleTests.cs`.
+- [X] T014 [P] [US1] Update module identity assertions in `test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/StructuredLogsModuleTests.cs`.
+- [X] T015 [P] [US1] Add route and permission naming assertions in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/StructuredLogsNamingTests.cs`.
+- [X] T016 [P] [US1] Add shell feature option binding assertions in `test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/StructuredLogsModuleTests.cs`.
 
 ### Implementation for User Story 1
 
-- [ ] T017 [US1] Rename Core feature to `StructuredLogsFeature` in `src/modules/Elsa.Diagnostics.StructuredLogs/Features/StructuredLogsFeature.cs`.
-- [ ] T018 [US1] Rename fluent module extension to `UseStructuredLogs` in `src/modules/Elsa.Diagnostics.StructuredLogs/Extensions/ModuleExtensions.cs`.
-- [ ] T019 [US1] Rename application/hub mapping extension to `UseStructuredLogs` and `MapStructuredLogsHub` in `src/modules/Elsa.Diagnostics.StructuredLogs/Extensions`.
-- [ ] T020 [US1] Move FastEndpoints folders/routes to diagnostics structured-log names in `src/modules/Elsa.Diagnostics.StructuredLogs/Endpoints/StructuredLogs`.
-- [ ] T021 [US1] Rename shell feature to diagnostics structured logs and keep bindable public option properties in `src/modules/Elsa.Diagnostics.StructuredLogs/ShellFeatures/StructuredLogsFeature.cs`.
-- [ ] T022 [US1] Update sample host wiring to `UseStructuredLogs` in `src/apps/Elsa.Server.Web/Program.cs`.
-- [ ] T023 [US1] Update package metadata in `src/modules/Elsa.Diagnostics.StructuredLogs/Elsa.Diagnostics.StructuredLogs.csproj`.
+- [X] T017 [US1] Rename Core feature to `StructuredLogsFeature` in `src/modules/Elsa.Diagnostics.StructuredLogs/Features/StructuredLogsFeature.cs`.
+- [X] T018 [US1] Rename fluent module extension to `UseStructuredLogs` in `src/modules/Elsa.Diagnostics.StructuredLogs/Extensions/ModuleExtensions.cs`.
+- [X] T019 [US1] Rename application/hub mapping extension to `UseStructuredLogs` and `MapStructuredLogsHub` in `src/modules/Elsa.Diagnostics.StructuredLogs/Extensions`.
+- [X] T020 [US1] Move FastEndpoints folders/routes to diagnostics structured-log names in `src/modules/Elsa.Diagnostics.StructuredLogs/Endpoints/StructuredLogs`.
+- [X] T021 [US1] Rename shell feature to diagnostics structured logs and keep bindable public option properties in `src/modules/Elsa.Diagnostics.StructuredLogs/ShellFeatures/StructuredLogsFeature.cs`.
+- [X] T022 [US1] Update sample host wiring to `UseStructuredLogs` in `src/apps/Elsa.Server.Web/Program.cs`.
+- [X] T023 [US1] Update package metadata in `src/modules/Elsa.Diagnostics.StructuredLogs/Elsa.Diagnostics.StructuredLogs.csproj`.
 
 **Checkpoint**: User Story 1 is functional through code-based and shell-based module activation.
 
@@ -78,19 +78,19 @@
 
 ### Tests for User Story 2
 
-- [ ] T024 [P] [US2] Add message template capture tests in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Logging/StructuredLogLoggerProviderTests.cs`.
-- [ ] T025 [P] [US2] Add active scope capture tests in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Logging/StructuredLogLoggerProviderTests.cs`.
-- [ ] T026 [P] [US2] Update redaction tests for renamed scope/property models in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Redaction/StructuredLogRedactorTests.cs`.
-- [ ] T027 [P] [US2] Update filter/provider tests for renamed semantic fields in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests`.
+- [X] T024 [P] [US2] Add message template capture tests in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Logging/StructuredLogLoggerProviderTests.cs`.
+- [X] T025 [P] [US2] Add active scope capture tests in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Logging/StructuredLogLoggerProviderTests.cs`.
+- [X] T026 [P] [US2] Update redaction tests for renamed scope/property models in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Redaction/StructuredLogRedactorTests.cs`.
+- [X] T027 [P] [US2] Update filter/provider tests for renamed semantic fields in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests`.
 
 ### Implementation for User Story 2
 
-- [ ] T028 [US2] Implement `ISupportExternalScope` in `src/modules/Elsa.Diagnostics.StructuredLogs/Logging/StructuredLogLoggerProvider.cs`.
-- [ ] T029 [US2] Capture active scopes in `src/modules/Elsa.Diagnostics.StructuredLogs/Logging/StructuredLogLogger.cs`.
-- [ ] T030 [US2] Populate `MessageTemplate` from `{OriginalFormat}` in `src/modules/Elsa.Diagnostics.StructuredLogs/Logging/StructuredLogLogger.cs`.
-- [ ] T031 [US2] Keep `{OriginalFormat}` out of structured properties in `src/modules/Elsa.Diagnostics.StructuredLogs/Logging/StructuredLogLogger.cs`.
-- [ ] T032 [US2] Preserve redaction of messages, exceptions, scopes, and structured properties in `src/modules/Elsa.Diagnostics.StructuredLogs/Services/StructuredLogRedactor.cs`.
-- [ ] T033 [US2] Preserve recursion guard for internal structured-log categories in `src/modules/Elsa.Diagnostics.StructuredLogs/Logging/StructuredLogLogger.cs`.
+- [X] T028 [US2] Implement `ISupportExternalScope` in `src/modules/Elsa.Diagnostics.StructuredLogs/Logging/StructuredLogLoggerProvider.cs`.
+- [X] T029 [US2] Capture active scopes in `src/modules/Elsa.Diagnostics.StructuredLogs/Logging/StructuredLogLogger.cs`.
+- [X] T030 [US2] Populate `MessageTemplate` from `{OriginalFormat}` in `src/modules/Elsa.Diagnostics.StructuredLogs/Logging/StructuredLogLogger.cs`.
+- [X] T031 [US2] Keep `{OriginalFormat}` out of structured properties in `src/modules/Elsa.Diagnostics.StructuredLogs/Logging/StructuredLogLogger.cs`.
+- [X] T032 [US2] Preserve redaction of messages, exceptions, scopes, and structured properties in `src/modules/Elsa.Diagnostics.StructuredLogs/Services/StructuredLogRedactor.cs`.
+- [X] T033 [US2] Preserve recursion guard for internal structured-log categories in `src/modules/Elsa.Diagnostics.StructuredLogs/Logging/StructuredLogLogger.cs`.
 
 **Checkpoint**: User Stories 1 and 2 work together with semantic template/scope capture and existing safety behavior.
 
@@ -104,16 +104,16 @@
 
 ### Tests for User Story 3
 
-- [ ] T034 [P] [US3] Add README boundary assertions or doc smoke coverage in `test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/StructuredLogsModuleTests.cs`.
-- [ ] T035 [P] [US3] Add route contract assertions for diagnostics paths in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/StructuredLogsNamingTests.cs`.
+- [X] T034 [P] [US3] Add README boundary assertions or doc smoke coverage in `test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/StructuredLogsModuleTests.cs`.
+- [X] T035 [P] [US3] Add route contract assertions for diagnostics paths in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/StructuredLogsNamingTests.cs`.
 
 ### Implementation for User Story 3
 
-- [ ] T036 [US3] Update README boundary language in `src/modules/Elsa.Diagnostics.StructuredLogs/README.md`.
-- [ ] T037 [US3] Ensure REST routes use `/diagnostics/structured-logs` in `src/modules/Elsa.Diagnostics.StructuredLogs/Endpoints/StructuredLogs`.
-- [ ] T038 [US3] Ensure SignalR route uses `/elsa/hubs/diagnostics/structured-logs` in `src/modules/Elsa.Diagnostics.StructuredLogs/Extensions/EndpointRouteBuilderExtensions.cs`.
-- [ ] T039 [US3] Ensure permission value is `read:diagnostics:structured-logs` in `src/modules/Elsa.Diagnostics.StructuredLogs/Permissions/StructuredLogsPermissions.cs`.
-- [ ] T040 [US3] Update Speckit quickstart validation notes in `specs/004-diagnostics-structured-logs/quickstart.md`.
+- [X] T036 [US3] Update README boundary language in `src/modules/Elsa.Diagnostics.StructuredLogs/README.md`.
+- [X] T037 [US3] Ensure REST routes use `/diagnostics/structured-logs` in `src/modules/Elsa.Diagnostics.StructuredLogs/Endpoints/StructuredLogs`.
+- [X] T038 [US3] Ensure SignalR route uses `/elsa/hubs/diagnostics/structured-logs` in `src/modules/Elsa.Diagnostics.StructuredLogs/Extensions/EndpointRouteBuilderExtensions.cs`.
+- [X] T039 [US3] Ensure permission value is `read:diagnostics:structured-logs` in `src/modules/Elsa.Diagnostics.StructuredLogs/Permissions/StructuredLogsPermissions.cs`.
+- [X] T040 [US3] Update Speckit quickstart validation notes in `specs/004-diagnostics-structured-logs/quickstart.md`.
 
 **Checkpoint**: Structured logs, console streaming, and OpenTelemetry exploration have clean documented boundaries.
 
@@ -123,13 +123,13 @@
 
 **Purpose**: Search cleanup, validation, and implementation commit readiness.
 
-- [ ] T041 [P] Remove active `Elsa.ServerLogs` references from production source, tests, projects, README, and sample host wiring.
-- [ ] T042 [P] Remove active `ServerLogStreaming` references from production source, tests, projects, README, and sample host wiring.
-- [ ] T043 [P] Update generated XML include filters in renamed test `.csproj` files.
-- [ ] T044 Run `dotnet build src/modules/Elsa.Diagnostics.StructuredLogs/Elsa.Diagnostics.StructuredLogs.csproj`.
-- [ ] T045 Run `dotnet test test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Elsa.Diagnostics.StructuredLogs.UnitTests.csproj`.
-- [ ] T046 Run `dotnet test test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/Elsa.Diagnostics.StructuredLogs.IntegrationTests.csproj`.
-- [ ] T047 Run `rg "Elsa\\.ServerLogs|ServerLogStreaming|server-logs|read:server-logs" src test specs/004-diagnostics-structured-logs`.
+- [X] T041 [P] Remove active `Elsa.ServerLogs` references from production source, tests, projects, README, and sample host wiring.
+- [X] T042 [P] Remove active `ServerLogStreaming` references from production source, tests, projects, README, and sample host wiring.
+- [X] T043 [P] Update generated XML include filters in renamed test `.csproj` files.
+- [X] T044 Run `dotnet build src/modules/Elsa.Diagnostics.StructuredLogs/Elsa.Diagnostics.StructuredLogs.csproj`.
+- [X] T045 Run `dotnet test test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Elsa.Diagnostics.StructuredLogs.UnitTests.csproj`.
+- [X] T046 Run `dotnet test test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/Elsa.Diagnostics.StructuredLogs.IntegrationTests.csproj`.
+- [X] T047 Run `rg "Elsa\\.ServerLogs|ServerLogStreaming|server-logs|read:server-logs" src test`.
 
 ---
 

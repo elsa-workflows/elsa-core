@@ -51,7 +51,7 @@ public interface IStructuredLogSourceRegistry
 
     StructuredLogSource Current { get; }
 
-    void MarkSeen(string sourceId);
+    void MarkSeen(string sourceId, DateTimeOffset timestamp);
 
     IReadOnlyCollection<StructuredLogSource> List();
 }
