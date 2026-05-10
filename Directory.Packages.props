@@ -138,12 +138,12 @@
         <PackageVersion Include="NSubstitute" Version="5.3.0"/>
         <PackageVersion Include="NuGet.Packaging" Version="7.0.1"/>
         <PackageVersion Include="NuGet.Protocol" Version="7.0.1"/>
-        <PackageVersion Include="Nuplane" Version="0.0.1"/>
-        <PackageVersion Include="Nuplane.Abstractions" Version="0.0.1"/>
-        <PackageVersion Include="Nuplane.Admin" Version="0.0.1"/>
-        <PackageVersion Include="Nuplane.Loading" Version="0.0.1"/>
-        <PackageVersion Include="Nuplane.Loading.Abstractions" Version="0.0.1"/>
-        <PackageVersion Include="Nuplane.Sources.Directory" Version="0.0.1"/>
+        <PackageVersion Include="Nuplane" Version="0.0.6"/>
+        <PackageVersion Include="Nuplane.Abstractions" Version="0.0.6"/>
+        <PackageVersion Include="Nuplane.Admin" Version="0.0.6"/>
+        <PackageVersion Include="Nuplane.Loading" Version="0.0.6"/>
+        <PackageVersion Include="Nuplane.Loading.Abstractions" Version="0.0.6"/>
+        <PackageVersion Include="Nuplane.Sources.Directory" Version="0.0.6"/>
         <PackageVersion Include="Nuke.Components" Version="10.1.0"/>
         <PackageVersion Include="Open.Linq.AsyncExtensions" Version="1.2.0"/>
         <PackageVersion Include="OpenTelemetry" Version="1.14.0"/>
@@ -184,7 +184,7 @@
         <PackageVersion Include="Testcontainers.RabbitMq" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.Redis" Version="4.9.0"/>
         <PackageVersion Include="ThrottleDebounce" Version="2.0.1"/>
-        <PackageVersion Include="WebhooksCore" Version="0.0.1"/>
+        <PackageVersion Include="WebhooksCore" Version="0.0.6"/>
         <PackageVersion Include="xunit" Version="2.9.3"/>
         <PackageVersion Include="xunit.abstractions" Version="2.0.3"/>
         <PackageVersion Include="xunit.assert" Version="2.9.3"/>
