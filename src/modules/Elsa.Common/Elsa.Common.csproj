@@ -20,6 +20,7 @@
         <PackageReference Include="DistributedLock.Core" />
         <PackageReference Include="Microsoft.Extensions.Configuration" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+        <PackageReference Include="Snappier" />
     </ItemGroup>
 
 </Project>
