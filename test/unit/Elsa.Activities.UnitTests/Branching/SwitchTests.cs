@@ -1,6 +1,7 @@
 using Elsa.Expressions.Models;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
 namespace Elsa.Activities.UnitTests.Branching;
@@ -102,6 +103,32 @@ public class SwitchTests
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
         Assert.Single(scheduledActivities);
         Assert.Equal(firstTrueActivity, scheduledActivities.First().Activity);
+    }
+
+    [Fact]
+    public async Task Should_Complete_When_Scheduled_Activity_Ids_Are_Restored_As_List()
+    {
+        // Arrange
+        var childActivity = new WriteLine("Child") { Id = "child" };
+        var switchActivity = new Switch
+        {
+            Cases = new List<SwitchCase>
+            {
+                new("True", Expression.LiteralExpression(true), childActivity)
+            }
+        };
+        var fixture = new ActivityTestFixture(switchActivity)
+            .ConfigureServices(services => services.AddSingleton<IWorkflowExecutionContextSchedulerStrategy, WorkflowExecutionContextSchedulerStrategy>());
+        var targetContext = await fixture.ExecuteAsync();
+        var callbackEntry = targetContext.WorkflowExecutionContext.CompletionCallbacks.Single();
+        var childContext = await targetContext.WorkflowExecutionContext.CreateActivityExecutionContextAsync(childActivity);
+        targetContext.SetProperty("ScheduledActivityIds", new List<string> { childActivity.Id });
+
+        // Act
+        await callbackEntry.CompletionCallback!(new ActivityCompletedContext(targetContext, childContext));
+
+        // Assert
+        Assert.Equal(ActivityStatus.Completed, targetContext.Status);
     }
 
     [Theory]
