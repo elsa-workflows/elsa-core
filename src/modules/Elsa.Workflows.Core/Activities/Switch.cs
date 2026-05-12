@@ -112,7 +112,7 @@ public class Switch : Activity
     /// </summary>
     private async ValueTask OnChildActivityCompletedAsync(ActivityCompletedContext context)
     {
-        var scheduledActivityIds = context.TargetContext.GetProperty<HashSet<string>>("ScheduledActivityIds");
+        var scheduledActivityIds = context.TargetContext.GetProperty<ICollection<string>>("ScheduledActivityIds");
 
         if (scheduledActivityIds != null 
             && scheduledActivityIds.Remove(context.ChildContext.Activity.Id) 
