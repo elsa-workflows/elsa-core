@@ -11,3 +11,5 @@ To add a new relational provider such as SQL Server or PostgreSQL:
 5. Register those services and call `AddRelationalStructuredLogPersistence`.
 
 The core `Elsa.Diagnostics.StructuredLogs` package must remain unaware of provider packages. Provider-specific SQL and migration runner dependencies belong in provider packages.
+
+`StructuredLogWriteBuffer` reports dropped durable writes through the core `IStructuredLogStorageDiagnostics` contract. The core endpoint `GET /diagnostics/structured-logs/storage` returns that provider-neutral count for Studio and other diagnostics clients.

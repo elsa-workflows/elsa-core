@@ -2,9 +2,7 @@ using Elsa.Diagnostics.StructuredLogs.Contracts;
 
 namespace Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
 
-public interface IStructuredLogWriteBuffer : IStructuredLogSink
+public interface IStructuredLogWriteBuffer : IStructuredLogSink, IStructuredLogStorageDiagnostics
 {
-    long DroppedWriteCount { get; }
-
     ValueTask FlushAsync(CancellationToken cancellationToken = default);
 }

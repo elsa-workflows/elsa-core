@@ -30,7 +30,7 @@ This maps the structured logs hub at `/elsa/hubs/diagnostics/structured-logs` an
 
 ## Authorization
 
-The recent-log endpoint and source-list endpoint require the `read:diagnostics:structured-logs` permission. The SignalR hub requires an authenticated user, matching the existing Elsa workflow hub authorization pattern. Grant `read:diagnostics:structured-logs` only to operators and developers who are allowed to inspect backend logs.
+The recent-log endpoint, source-list endpoint, and storage-diagnostics endpoint require the `read:diagnostics:structured-logs` permission. The SignalR hub requires an authenticated user, matching the existing Elsa workflow hub authorization pattern. Grant `read:diagnostics:structured-logs` only to operators and developers who are allowed to inspect backend logs.
 
 ## Studio Integration
 
@@ -40,6 +40,7 @@ Elsa Studio can use this module to show:
 - Live log events as the server emits them.
 - Level, category, message, tenant, workflow, trace, correlation, source, and time filters.
 - Cluster/source metadata such as source ID, pod name, namespace, container name, node name, machine name, process ID, and source health.
+- Storage pressure metadata such as dropped durable write counts and whether the active store reports storage diagnostics.
 
 ## Clustered Deployments
 
@@ -57,7 +58,7 @@ services.AddElsa(elsa =>
 });
 ```
 
-The core module remains storage-provider neutral. Custom stores can replace `IStructuredLogStore` while live updates continue through `IStructuredLogLiveFeed`; Studio continues to use the same REST and SignalR contracts, including source filtering and source-change notifications.
+The core module remains storage-provider neutral. Custom stores can replace `IStructuredLogStore` while live updates continue through `IStructuredLogLiveFeed`; Studio continues to use the same REST and SignalR contracts, including source filtering, source-change notifications, and storage diagnostics.
 
 ## Redaction
 
