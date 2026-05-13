@@ -16,6 +16,14 @@
 - Q: Should EF Core be used for persistence? -> A: No. Avoid EF Core and per-provider EF migrations for this feature.
 - Q: Should FluentMigrator manage schema creation and upgrades? -> A: Yes. Use FluentMigrator for schema versioning and migration execution; use explicit SQL/Dapper-style access for the hot storage path.
 
+### Session 2026-05-13
+
+- Q: What durability guarantee should SQLite writes provide on the logging hot path? -> A: Async batched writes with graceful-shutdown flush; a crash may lose queued events.
+- Q: What should happen when the SQLite write queue is full? -> A: Drop newest queued events and report dropped counts/metrics.
+- Q: Should SQLite migrations run automatically on startup? -> A: Run migrations on startup by default, with opt-out.
+- Q: How should SQLite persist timestamps? -> A: Store timestamps as UTC ISO-8601 text.
+- Q: What default retention policy should SQLite use? -> A: No default deletion; retention runs only when max age or max rows is configured.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Preserve the existing in-memory structured logs behavior (Priority: P1)
@@ -48,6 +56,8 @@ An Elsa host developer opts into SQLite persistence so structured log entries su
 2. **Given** the host restarts with the same SQLite database, **When** recent structured logs are queried, **Then** persisted events are returned according to the filter.
 3. **Given** retention settings are configured, **When** cleanup runs, **Then** old or excess records are deleted without breaking recent queries.
 4. **Given** schema migrations have not run, **When** the SQLite provider starts, **Then** FluentMigrator creates or upgrades the structured log schema.
+5. **Given** an operator disables startup migrations, **When** the SQLite provider starts, **Then** it does not run migrations and requires the schema to be prepared separately.
+6. **Given** no SQLite retention settings are configured, **When** cleanup runs, **Then** no persisted log entries are deleted by default.
 
 ---
 
@@ -67,7 +77,8 @@ An Elsa maintainer can add SQL Server, PostgreSQL, MySQL, or another relational 
 
 ### Edge Cases
 
-- Durable writes must not block `ILogger` callers on slow disk I/O.
+- Durable writes must not block `ILogger` callers on slow disk I/O; SQLite persistence accepts possible loss of queued-but-unflushed events after process crashes.
+- If the SQLite write queue reaches capacity, newest events are dropped and loss counts are reported instead of blocking logging calls or growing memory without bound.
 - A host can emit logs before migrations complete if startup ordering is wrong.
 - Multiple app instances can start against a shared future relational database and attempt migrations concurrently.
 - SQLite file paths can be missing, relative, or point to directories without write permissions.
@@ -100,28 +111,36 @@ An Elsa maintainer can add SQL Server, PostgreSQL, MySQL, or another relational 
 - **FR-010**: SQLite storage MUST support the existing `StructuredLogFilter` fields used by the REST recent-log endpoint.
 - **FR-011**: SQLite storage MUST persist scalar filter fields as queryable columns and persist exception, scopes, and properties as serialized JSON.
 - **FR-012**: SQLite storage MUST provide configurable retention by maximum age and/or maximum row count.
-- **FR-013**: SQLite writes SHOULD be batched or queued so logging calls do not synchronously wait on disk I/O.
-- **FR-014**: SQLite storage MUST flush queued events during graceful shutdown where possible.
+- **FR-013**: SQLite storage MUST persist `Timestamp` and `ReceivedAt` as UTC ISO-8601 text values.
+- **FR-014**: SQLite writes MUST be batched or queued so logging calls do not synchronously wait on disk I/O.
+- **FR-015**: SQLite storage MUST flush queued events during graceful shutdown where possible.
+- **FR-016**: SQLite storage MAY lose events that were queued but not flushed before an ungraceful process crash.
+- **FR-017**: SQLite storage MUST use a bounded write queue.
+- **FR-018**: When the SQLite write queue is full, SQLite storage MUST drop newly received events instead of blocking logging calls or using unbounded memory.
+- **FR-019**: SQLite storage MUST expose dropped-write counts through logs, metrics, or the structured log provider result surface.
+- **FR-020**: SQLite retention MUST delete no records by default unless `MaxAge`, `MaxRows`, or both are configured.
 
 **Relational extensibility**
 
-- **FR-015**: Shared relational persistence code MUST be reusable by future SQL Server, PostgreSQL, MySQL, and similar providers.
-- **FR-016**: Provider-specific SQL syntax MUST be isolated behind dialect or provider services.
-- **FR-017**: The first SQLite provider MUST not introduce SQLite-only assumptions into the core structured logs module.
-- **FR-018**: Future relational providers MUST be able to supply their own connection factory, dialect, and migration runner configuration without changing REST, SignalR, or Studio contracts.
+- **FR-021**: Shared relational persistence code MUST be reusable by future SQL Server, PostgreSQL, MySQL, and similar providers.
+- **FR-022**: Provider-specific SQL syntax MUST be isolated behind dialect or provider services.
+- **FR-023**: The first SQLite provider MUST not introduce SQLite-only assumptions into the core structured logs module.
+- **FR-024**: Future relational providers MUST be able to supply their own connection factory, dialect, and migration runner configuration without changing REST, SignalR, or Studio contracts.
 
 **Schema management**
 
-- **FR-019**: Relational schema creation and upgrades MUST use FluentMigrator.
-- **FR-020**: Migrations MUST be versioned and idempotently executable by the host.
-- **FR-021**: Provider packages MUST register only the FluentMigrator runner dependencies they need.
-- **FR-022**: The feature MUST document startup migration behavior and the multi-instance locking consideration for future shared database providers.
+- **FR-025**: Relational schema creation and upgrades MUST use FluentMigrator.
+- **FR-026**: Migrations MUST be versioned and idempotently executable by the host.
+- **FR-027**: Provider packages MUST register only the FluentMigrator runner dependencies they need.
+- **FR-028**: SQLite storage MUST run migrations on startup by default.
+- **FR-029**: SQLite storage MUST provide an option to disable startup migrations for hosts that prepare schemas separately.
+- **FR-030**: The feature MUST document startup migration behavior and the multi-instance locking consideration for future shared database providers.
 
 **Configuration and safety**
 
-- **FR-023**: Host configuration MUST make the active storage mode explicit when SQLite is selected.
-- **FR-024**: The existing no-configuration in-memory setup MUST continue to work.
-- **FR-025**: The feature MUST document that OpenTelemetry/exporter sinks are deferred and out of scope for this persistence slice.
+- **FR-031**: Host configuration MUST make the active storage mode explicit when SQLite is selected.
+- **FR-032**: The existing no-configuration in-memory setup MUST continue to work.
+- **FR-033**: The feature MUST document that OpenTelemetry/exporter sinks are deferred and out of scope for this persistence slice.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -140,9 +159,14 @@ An Elsa maintainer can add SQL Server, PostgreSQL, MySQL, or another relational 
 - **SC-002**: New tests verify SQLite persistence survives service-provider or process recreation with the same database file.
 - **SC-003**: New tests verify SQLite recent queries honor level, category, source, workflow, correlation, trace/span, time range, and limit filters.
 - **SC-004**: New tests verify FluentMigrator creates the SQLite schema from an empty database.
-- **SC-005**: New tests verify retention cleanup removes expired or excess records.
-- **SC-006**: Documentation shows both zero-configuration in-memory setup and opt-in SQLite setup.
-- **SC-007**: The core structured logs module does not reference SQLite-specific types.
+- **SC-005**: New tests verify retention cleanup removes expired or excess records only when retention settings are configured.
+- **SC-006**: New tests verify queued SQLite writes are flushed during graceful shutdown.
+- **SC-007**: New tests verify a full SQLite write queue drops newest events and reports dropped-write counts.
+- **SC-008**: New tests verify SQLite startup migrations run by default and can be disabled.
+- **SC-009**: New tests verify SQLite stores and filters UTC ISO-8601 timestamp text values consistently.
+- **SC-010**: New tests verify SQLite retention deletes no records by default.
+- **SC-011**: Documentation shows both zero-configuration in-memory setup and opt-in SQLite setup.
+- **SC-012**: The core structured logs module does not reference SQLite-specific types.
 
 ## Assumptions
 
