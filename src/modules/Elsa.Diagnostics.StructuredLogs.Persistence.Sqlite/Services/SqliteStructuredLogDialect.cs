@@ -16,4 +16,9 @@ public class SqliteStructuredLogDialect : IRelationalStructuredLogDialect
     {
         return $"{sql} LIMIT {limit}";
     }
+
+    public string ApplyOffset(string sql, int offset)
+    {
+        return $"{sql} LIMIT -1 OFFSET {offset}";
+    }
 }

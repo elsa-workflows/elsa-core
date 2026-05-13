@@ -43,8 +43,9 @@ public class RelationalStructuredLogSqlBuilder(IRelationalStructuredLogDialect d
         var id = dialect.QuoteIdentifier("Id");
         var receivedAt = dialect.QuoteIdentifier("ReceivedAt");
         var sequence = dialect.QuoteIdentifier("Sequence");
-        var sql = $"DELETE FROM {_table} WHERE {id} IN (SELECT {id} FROM {_table} ORDER BY {receivedAt} DESC, {sequence} DESC, {id} DESC LIMIT -1 OFFSET {dialect.ParameterPrefix}MaxRows)";
-        return new(sql, new Dictionary<string, object?> { ["MaxRows"] = maxRows });
+        var selectSql = $"SELECT {id} FROM {_table} ORDER BY {receivedAt} DESC, {sequence} DESC, {id} DESC";
+        var sql = $"DELETE FROM {_table} WHERE {id} IN ({dialect.ApplyOffset(selectSql, maxRows)})";
+        return new(sql, new Dictionary<string, object?>());
     }
 
     private List<string> BuildFilterPredicates(StructuredLogFilter filter, IDictionary<string, object?> parameters)
@@ -84,10 +85,10 @@ public class RelationalStructuredLogSqlBuilder(IRelationalStructuredLogDialect d
         AddStringPredicate(predicates, parameters, "SourceId", filter.SourceId);
 
         if (filter.From is { } from)
-            AddPredicate(predicates, parameters, "Timestamp", ">=", RelationalStructuredLogMapper.FormatTimestamp(from));
+            AddPredicate(predicates, parameters, "Timestamp", ">=", RelationalStructuredLogMapper.FormatTimestamp(from), "TimestampFrom");
 
         if (filter.To is { } to)
-            AddPredicate(predicates, parameters, "Timestamp", "<=", RelationalStructuredLogMapper.FormatTimestamp(to));
+            AddPredicate(predicates, parameters, "Timestamp", "<=", RelationalStructuredLogMapper.FormatTimestamp(to), "TimestampTo");
 
         return predicates;
     }
@@ -100,10 +101,11 @@ public class RelationalStructuredLogSqlBuilder(IRelationalStructuredLogDialect d
         AddPredicate(predicates, parameters, column, "=", value);
     }
 
-    private void AddPredicate(ICollection<string> predicates, IDictionary<string, object?> parameters, string column, string op, object value)
+    private void AddPredicate(ICollection<string> predicates, IDictionary<string, object?> parameters, string column, string op, object value, string? parameterName = null)
     {
-        predicates.Add($"{dialect.QuoteIdentifier(column)} {op} {dialect.ParameterPrefix}{column}");
-        parameters[column] = value;
+        var name = parameterName ?? column;
+        predicates.Add($"{dialect.QuoteIdentifier(column)} {op} {dialect.ParameterPrefix}{name}");
+        parameters[name] = value;
     }
 
     private static readonly string[] Columns =

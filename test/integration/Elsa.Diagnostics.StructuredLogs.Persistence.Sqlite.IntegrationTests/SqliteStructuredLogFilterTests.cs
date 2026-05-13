@@ -54,4 +54,27 @@ public class SqliteStructuredLogFilterTests
         var item = Assert.Single(result.Items);
         Assert.Equal("error", item.Id);
     }
+
+    [Fact]
+    public async Task QueryAsync_AppliesTimeRangeInSqlBeforeLimiting()
+    {
+        await using var host = new SqliteStructuredLogTestHost();
+        var target = StructuredLogTestEvents.Create("old-target", _baseTime);
+        var recentEvents = Enumerable
+            .Range(0, 1005)
+            .Select(i => StructuredLogTestEvents.Create($"recent-{i}", _baseTime.AddDays(1).AddMinutes(i)))
+            .ToArray();
+
+        await host.WriteAsync([target, .. recentEvents]);
+
+        var result = await host.Store.QueryAsync(new()
+        {
+            From = _baseTime.AddMinutes(-1),
+            To = _baseTime.AddMinutes(1),
+            Take = 10
+        });
+
+        var item = Assert.Single(result.Items);
+        Assert.Equal("old-target", item.Id);
+    }
 }

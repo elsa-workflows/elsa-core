@@ -5,7 +5,6 @@ using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Models;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
-using Elsa.Diagnostics.StructuredLogs.Services;
 
 namespace Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Stores;
 
@@ -37,8 +36,7 @@ public class RelationalStructuredLogStore(
 
     public async ValueTask<RecentStructuredLogsResult> QueryAsync(StructuredLogFilter filter, CancellationToken cancellationToken = default)
     {
-        var queryFilter = filter with { From = null, To = null, Take = filter.From != null || filter.To != null ? 1000 : filter.Take };
-        var query = sqlBuilder.BuildQuery(queryFilter);
+        var query = sqlBuilder.BuildQuery(filter);
         await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
         await using var command = CreateCommand(connection, query.Sql, query.Parameters);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -48,11 +46,6 @@ public class RelationalStructuredLogStore(
             items.Add(mapper.Map(reader));
 
         items.Reverse();
-        items = items
-            .Where(x => StructuredLogFilterEvaluator.Matches(x, filter))
-            .TakeLast(Math.Clamp(filter.Take ?? 100, 0, 1000))
-            .ToList();
-
         return new(items, 0);
     }
 

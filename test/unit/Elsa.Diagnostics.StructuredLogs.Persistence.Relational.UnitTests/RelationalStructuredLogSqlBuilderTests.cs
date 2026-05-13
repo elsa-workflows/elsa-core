@@ -44,8 +44,21 @@ public class RelationalStructuredLogSqlBuilderTests
         Assert.Contains("[WorkflowInstanceId] = @WorkflowInstanceId", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[CorrelationId] = @CorrelationId", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[TraceId] = @TraceId", query.Sql, StringComparison.Ordinal);
+        Assert.Contains("[Timestamp] >= @TimestampFrom", query.Sql, StringComparison.Ordinal);
+        Assert.Contains("[Timestamp] <= @TimestampTo", query.Sql, StringComparison.Ordinal);
         Assert.Contains("FETCH 42", query.Sql, StringComparison.Ordinal);
         Assert.Equal("Elsa.Workflow%", query.Parameters["Category"]);
+        Assert.Contains("TimestampFrom", query.Parameters.Keys);
+        Assert.Contains("TimestampTo", query.Parameters.Keys);
+    }
+
+    [Fact]
+    public void BuildDeleteRowsBeyondMax_DelegatesOffsetSyntaxToDialect()
+    {
+        var query = _builder.BuildDeleteRowsBeyondMax(250);
+
+        Assert.Contains("SKIP 250", query.Sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("LIMIT -1", query.Sql, StringComparison.Ordinal);
     }
 
     private class FakeDialect : IRelationalStructuredLogDialect
@@ -54,5 +67,6 @@ public class RelationalStructuredLogSqlBuilderTests
         public string ParameterPrefix => "@";
         public string QuoteIdentifier(string identifier) => $"[{identifier}]";
         public string ApplyLimit(string sql, int limit) => $"{sql} FETCH {limit}";
+        public string ApplyOffset(string sql, int offset) => $"{sql} SKIP {offset}";
     }
 }

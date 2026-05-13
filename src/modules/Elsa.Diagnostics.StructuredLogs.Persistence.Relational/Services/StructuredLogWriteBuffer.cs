@@ -23,6 +23,8 @@ public class StructuredLogWriteBuffer(
 
     public ValueTask WriteAsync(StructuredLogEvent logEvent, CancellationToken cancellationToken = default)
     {
+        var shouldSignal = false;
+
         lock (_queue)
         {
             if (_queue.Count >= Math.Max(1, options.Value.WriteQueue.Capacity))
@@ -31,10 +33,13 @@ public class StructuredLogWriteBuffer(
                 return ValueTask.CompletedTask;
             }
 
+            shouldSignal = _queue.Count == 0;
             _queue.Enqueue(logEvent);
         }
 
-        _signal.Release();
+        if (shouldSignal)
+            _signal.Release();
+
         return ValueTask.CompletedTask;
     }
 
@@ -70,8 +75,9 @@ public class StructuredLogWriteBuffer(
             {
                 await _backgroundTask.WaitAsync(cancellationToken);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _stopTokenSource.IsCancellationRequested)
             {
+                // Expected during shutdown; remaining queued writes are flushed below.
             }
         }
 
@@ -81,8 +87,9 @@ public class StructuredLogWriteBuffer(
         {
             await FlushAsync(timeoutTokenSource.Token);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested)
         {
+            CountPendingWritesAsDropped();
         }
     }
 
@@ -94,7 +101,15 @@ public class StructuredLogWriteBuffer(
             if (batch.Count == 0)
                 return;
 
-            await store.WriteManyAsync(batch, cancellationToken);
+            try
+            {
+                await store.WriteManyAsync(batch, cancellationToken);
+            }
+            catch
+            {
+                Interlocked.Add(ref _droppedWriteCount, batch.Count);
+                throw;
+            }
         }
     }
 
@@ -104,6 +119,20 @@ public class StructuredLogWriteBuffer(
             return;
 
         await _stopTokenSource.CancelAsync();
+
+        if (_backgroundTask != null)
+        {
+            using var timeoutTokenSource = new CancellationTokenSource(options.Value.WriteQueue.ShutdownFlushTimeout);
+            try
+            {
+                await _backgroundTask.WaitAsync(timeoutTokenSource.Token);
+            }
+            catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested || _stopTokenSource.IsCancellationRequested)
+            {
+                CountPendingWritesAsDropped();
+            }
+        }
+
         _signal.Dispose();
         _stopTokenSource.Dispose();
     }
@@ -120,15 +149,15 @@ public class StructuredLogWriteBuffer(
                 var signalTask = _signal.WaitAsync(cancellationToken);
                 var timerTask = timer.WaitForNextTickAsync(cancellationToken).AsTask();
                 await Task.WhenAny(signalTask, timerTask);
-                await FlushAsync(CancellationToken.None);
+                await FlushAsync(cancellationToken);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 return;
             }
-            catch (Exception e)
+            catch (ObjectDisposedException) when (cancellationToken.IsCancellationRequested)
             {
-                _ = e;
+                return;
             }
         }
     }
@@ -145,5 +174,17 @@ public class StructuredLogWriteBuffer(
         }
 
         return batch;
+    }
+
+    private void CountPendingWritesAsDropped()
+    {
+        lock (_queue)
+        {
+            if (_queue.Count == 0)
+                return;
+
+            Interlocked.Add(ref _droppedWriteCount, _queue.Count);
+            _queue.Clear();
+        }
     }
 }

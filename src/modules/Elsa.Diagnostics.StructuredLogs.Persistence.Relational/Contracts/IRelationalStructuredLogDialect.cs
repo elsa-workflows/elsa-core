@@ -9,4 +9,6 @@ public interface IRelationalStructuredLogDialect
     string QuoteIdentifier(string identifier);
 
     string ApplyLimit(string sql, int limit);
+
+    string ApplyOffset(string sql, int offset);
 }
