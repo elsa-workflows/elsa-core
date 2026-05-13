@@ -42,11 +42,11 @@ public static class SqliteStructuredLogsModuleExtensions
         services.AddOptions<SqliteStructuredLogOptions>();
         services.AddOptions<RelationalStructuredLogOptions>().Configure<IOptions<SqliteStructuredLogOptions>>((relational, sqlite) => Copy(sqlite.Value.Relational, relational));
 
-        services.AddRelationalStructuredLogPersistence();
         services.TryAddSingleton<IRelationalStructuredLogConnectionFactory, SqliteStructuredLogConnectionFactory>();
         services.TryAddSingleton<IRelationalStructuredLogDialect, SqliteStructuredLogDialect>();
         services.TryAddSingleton<IStructuredLogSchemaMigrator, SqliteStructuredLogSchemaMigrator>();
         services.AddHostedService<SqliteStructuredLogStartupService>();
+        services.AddRelationalStructuredLogPersistence();
 
         return services;
     }
