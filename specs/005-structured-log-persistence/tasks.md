@@ -17,14 +17,14 @@
 
 **Purpose**: Add package skeletons, package references, and solution entries for relational and SQLite persistence.
 
-- [ ] T001 [P] Create relational persistence project in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.csproj`.
-- [ ] T002 [P] Create SQLite persistence project in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.csproj`.
-- [ ] T003 [P] Create relational unit test project in `test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.csproj`.
-- [ ] T004 [P] Create SQLite integration test project in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj`.
-- [ ] T005 [P] Create relational module shell feature skeleton in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/ShellFeatures/StructuredLogRelationalPersistenceFeature.cs`.
-- [ ] T006 [P] Create SQLite module shell feature skeleton in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/ShellFeatures/SqliteStructuredLogPersistenceFeature.cs`.
-- [ ] T007 Add new projects to `Elsa.sln`.
-- [ ] T008 Add centrally managed package versions for FluentMigrator and SQLite dependencies in `Directory.Packages.props`.
+- [X] T001 [P] Create relational persistence project in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.csproj`.
+- [X] T002 [P] Create SQLite persistence project in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.csproj`.
+- [X] T003 [P] Create relational unit test project in `test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.csproj`.
+- [X] T004 [P] Create SQLite integration test project in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj`.
+- [X] T005 [P] Create relational module shell feature skeleton in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/ShellFeatures/StructuredLogRelationalPersistenceFeature.cs`.
+- [X] T006 [P] Create SQLite module shell feature skeleton in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/ShellFeatures/SqliteStructuredLogPersistenceFeature.cs`.
+- [X] T007 Add new projects to `Elsa.sln`.
+- [X] T008 Add centrally managed package versions for FluentMigrator and SQLite dependencies in `Directory.Packages.props`.
 
 ---
 
@@ -34,14 +34,14 @@
 
 **Critical**: No SQLite story work should begin until the in-memory default still passes existing structured log tests.
 
-- [ ] T009 [P] Add append-only sink contract in `src/modules/Elsa.Diagnostics.StructuredLogs/Contracts/IStructuredLogSink.cs`.
-- [ ] T010 [P] Add queryable store contract in `src/modules/Elsa.Diagnostics.StructuredLogs/Contracts/IStructuredLogStore.cs`.
-- [ ] T011 [P] Add live feed contract in `src/modules/Elsa.Diagnostics.StructuredLogs/Contracts/IStructuredLogLiveFeed.cs`.
-- [ ] T012 Refactor in-memory recent-history behavior into `src/modules/Elsa.Diagnostics.StructuredLogs/Providers/InMemory/InMemoryStructuredLogStore.cs`.
-- [ ] T013 Refactor in-memory subscriber behavior into `src/modules/Elsa.Diagnostics.StructuredLogs/Providers/InMemory/InMemoryStructuredLogLiveFeed.cs`.
-- [ ] T014 Preserve `InMemoryStructuredLogProvider` compatibility facade in `src/modules/Elsa.Diagnostics.StructuredLogs/Providers/InMemory/InMemoryStructuredLogProvider.cs`.
-- [ ] T015 Add composed provider facade in `src/modules/Elsa.Diagnostics.StructuredLogs/Services/DefaultStructuredLogProvider.cs`.
-- [ ] T016 Update default DI registration in `src/modules/Elsa.Diagnostics.StructuredLogs/Extensions/ServiceCollectionExtensions.cs`.
+- [X] T009 [P] Add append-only sink contract in `src/modules/Elsa.Diagnostics.StructuredLogs/Contracts/IStructuredLogSink.cs`.
+- [X] T010 [P] Add queryable store contract in `src/modules/Elsa.Diagnostics.StructuredLogs/Contracts/IStructuredLogStore.cs`.
+- [X] T011 [P] Add live feed contract in `src/modules/Elsa.Diagnostics.StructuredLogs/Contracts/IStructuredLogLiveFeed.cs`.
+- [X] T012 Refactor in-memory recent-history behavior into `src/modules/Elsa.Diagnostics.StructuredLogs/Providers/InMemory/InMemoryStructuredLogStore.cs`.
+- [X] T013 Refactor in-memory subscriber behavior into `src/modules/Elsa.Diagnostics.StructuredLogs/Providers/InMemory/InMemoryStructuredLogLiveFeed.cs`.
+- [X] T014 Preserve `InMemoryStructuredLogProvider` compatibility facade in `src/modules/Elsa.Diagnostics.StructuredLogs/Providers/InMemory/InMemoryStructuredLogProvider.cs`.
+- [X] T015 Add composed provider facade in `src/modules/Elsa.Diagnostics.StructuredLogs/Services/DefaultStructuredLogProvider.cs`.
+- [X] T016 Update default DI registration in `src/modules/Elsa.Diagnostics.StructuredLogs/Extensions/ServiceCollectionExtensions.cs`.
 
 **Checkpoint**: Existing structured logs behavior is preserved behind the new abstractions.
 
@@ -55,17 +55,17 @@
 
 ### Tests for User Story 1
 
-- [ ] T017 [P] [US1] Add default registration compatibility tests in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/StructuredLogsStorageRegistrationTests.cs`.
-- [ ] T018 [P] [US1] Update in-memory recent query tests in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/InMemory/InMemoryStructuredLogProviderTests.cs`.
-- [ ] T019 [P] [US1] Update in-memory source listing tests in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/InMemory/InMemoryStructuredLogProviderSourceTests.cs`.
-- [ ] T020 [P] [US1] Update live dropped-event tests in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/InMemory/InMemoryStructuredLogProviderTests.cs`.
+- [X] T017 [P] [US1] Add default registration compatibility tests in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/StructuredLogsStorageRegistrationTests.cs`.
+- [X] T018 [P] [US1] Update in-memory recent query tests in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/InMemory/InMemoryStructuredLogProviderTests.cs`.
+- [X] T019 [P] [US1] Update in-memory source listing tests in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/InMemory/InMemoryStructuredLogProviderSourceTests.cs`.
+- [X] T020 [P] [US1] Update live dropped-event tests in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/InMemory/InMemoryStructuredLogProviderTests.cs`.
 
 ### Implementation for User Story 1
 
-- [ ] T021 [US1] Ensure REST endpoints continue using `IStructuredLogProvider` in `src/modules/Elsa.Diagnostics.StructuredLogs/Endpoints/StructuredLogs/Recent/Endpoint.cs`.
-- [ ] T022 [US1] Ensure source endpoint continues using `IStructuredLogProvider` in `src/modules/Elsa.Diagnostics.StructuredLogs/Endpoints/StructuredLogs/Sources/Endpoint.cs`.
-- [ ] T023 [US1] Ensure SignalR subscriptions stream through the composed provider in `src/modules/Elsa.Diagnostics.StructuredLogs/RealTime/StructuredLogSubscriptionManager.cs`.
-- [ ] T024 [US1] Run `dotnet test test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Elsa.Diagnostics.StructuredLogs.UnitTests.csproj`.
+- [X] T021 [US1] Ensure REST endpoints continue using `IStructuredLogProvider` in `src/modules/Elsa.Diagnostics.StructuredLogs/Endpoints/StructuredLogs/Recent/Endpoint.cs`.
+- [X] T022 [US1] Ensure source endpoint continues using `IStructuredLogProvider` in `src/modules/Elsa.Diagnostics.StructuredLogs/Endpoints/StructuredLogs/Sources/Endpoint.cs`.
+- [X] T023 [US1] Ensure SignalR subscriptions stream through the composed provider in `src/modules/Elsa.Diagnostics.StructuredLogs/RealTime/StructuredLogSubscriptionManager.cs`.
+- [X] T024 [US1] Run `dotnet test test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Elsa.Diagnostics.StructuredLogs.UnitTests.csproj`.
 
 **Checkpoint**: User Story 1 is fully functional and independently testable.
 
@@ -79,40 +79,40 @@
 
 ### Tests for User Story 2
 
-- [ ] T025 [P] [US2] Add SQLite migration-from-empty-database test in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogMigrationTests.cs`.
-- [ ] T026 [P] [US2] Add SQLite persistence-across-provider-recreation test in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogStoreTests.cs`.
-- [ ] T027 [P] [US2] Add SQLite persisted redaction test in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogStoreTests.cs`.
-- [ ] T028 [P] [US2] Add SQLite filter coverage for level, category, source, workflow, correlation, trace, time, and limit in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogFilterTests.cs`.
-- [ ] T029 [P] [US2] Add SQLite write queue flush and overflow tests for `DroppedWriteCount` in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogWriteQueueTests.cs`.
-- [ ] T030 [P] [US2] Add SQLite startup migration opt-out tests in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogMigrationTests.cs`.
-- [ ] T031 [P] [US2] Add SQLite ISO-8601 timestamp storage tests in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogTimestampTests.cs`.
-- [ ] T032 [P] [US2] Add SQLite retention tests for opt-in cleanup and default no-delete behavior in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogRetentionTests.cs`.
+- [X] T025 [P] [US2] Add SQLite migration-from-empty-database test in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogMigrationTests.cs`.
+- [X] T026 [P] [US2] Add SQLite persistence-across-provider-recreation test in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogStoreTests.cs`.
+- [X] T027 [P] [US2] Add SQLite persisted redaction test in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogStoreTests.cs`.
+- [X] T028 [P] [US2] Add SQLite filter coverage for level, category, source, workflow, correlation, trace, time, and limit in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogFilterTests.cs`.
+- [X] T029 [P] [US2] Add SQLite write queue flush and overflow tests for `DroppedWriteCount` in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogWriteQueueTests.cs`.
+- [X] T030 [P] [US2] Add SQLite startup migration opt-out tests in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogMigrationTests.cs`.
+- [X] T031 [P] [US2] Add SQLite ISO-8601 timestamp storage tests in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogTimestampTests.cs`.
+- [X] T032 [P] [US2] Add SQLite retention tests for opt-in cleanup and default no-delete behavior in `test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/SqliteStructuredLogRetentionTests.cs`.
 
 ### Implementation for User Story 2
 
-- [ ] T033 [US2] Add relational record model in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Models/RelationalStructuredLogRecord.cs`.
-- [ ] T034 [US2] Add relational persistence options in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Options/RelationalStructuredLogOptions.cs`.
-- [ ] T035 [US2] Add relational connection factory contract in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Contracts/IRelationalStructuredLogConnectionFactory.cs`.
-- [ ] T036 [US2] Add relational dialect contract in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Contracts/IRelationalStructuredLogDialect.cs`.
-- [ ] T037 [US2] Add schema migrator contract in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Contracts/IStructuredLogSchemaMigrator.cs`.
-- [ ] T038 [US2] Add SQL builder for inserts, filters, sources, and retention in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Services/RelationalStructuredLogSqlBuilder.cs`.
-- [ ] T039 [US2] Add JSON/timestamp mapper in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Services/RelationalStructuredLogMapper.cs`.
-- [ ] T040 [US2] Add FluentMigrator migration for structured log tables and indexes in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Migrations/M001_CreateStructuredLogTables.cs`.
-- [ ] T041 [US2] Add relational structured log store in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Stores/RelationalStructuredLogStore.cs`.
-- [ ] T042 [US2] Add bounded write buffer with graceful shutdown flush and dropped-write warning summaries in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Services/StructuredLogWriteBuffer.cs`.
-- [ ] T043 [US2] Add retention cleanup service in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Services/StructuredLogRetentionService.cs`.
-- [ ] T044 [US2] Add relational service registration extensions in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Extensions/RelationalStructuredLogsServiceCollectionExtensions.cs`.
-- [ ] T045 [US2] Add relational persistence feature registration in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Features/StructuredLogRelationalPersistenceFeature.cs`.
-- [ ] T046 [US2] Complete relational module shell feature in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/ShellFeatures/StructuredLogRelationalPersistenceFeature.cs`.
-- [ ] T047 [US2] Add SQLite options in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Options/SqliteStructuredLogOptions.cs`.
-- [ ] T048 [US2] Add SQLite connection factory in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Services/SqliteStructuredLogConnectionFactory.cs`.
-- [ ] T049 [US2] Add SQLite dialect in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Services/SqliteStructuredLogDialect.cs`.
-- [ ] T050 [US2] Add FluentMigrator runner integration in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Services/SqliteStructuredLogSchemaMigrator.cs`.
-- [ ] T051 [US2] Add SQLite hosted startup service for migrations and cleanup in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Services/SqliteStructuredLogStartupService.cs`.
-- [ ] T052 [US2] Add SQLite fluent configuration extension in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Extensions/SqliteStructuredLogsModuleExtensions.cs`.
-- [ ] T053 [US2] Add SQLite persistence feature registration in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Features/SqliteStructuredLogPersistenceFeature.cs`.
-- [ ] T054 [US2] Complete SQLite module shell feature in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/ShellFeatures/SqliteStructuredLogPersistenceFeature.cs`.
-- [ ] T055 [US2] Run `dotnet test test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj`.
+- [X] T033 [US2] Add relational record model in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Models/RelationalStructuredLogRecord.cs`.
+- [X] T034 [US2] Add relational persistence options in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Options/RelationalStructuredLogOptions.cs`.
+- [X] T035 [US2] Add relational connection factory contract in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Contracts/IRelationalStructuredLogConnectionFactory.cs`.
+- [X] T036 [US2] Add relational dialect contract in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Contracts/IRelationalStructuredLogDialect.cs`.
+- [X] T037 [US2] Add schema migrator contract in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Contracts/IStructuredLogSchemaMigrator.cs`.
+- [X] T038 [US2] Add SQL builder for inserts, filters, sources, and retention in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Services/RelationalStructuredLogSqlBuilder.cs`.
+- [X] T039 [US2] Add JSON/timestamp mapper in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Services/RelationalStructuredLogMapper.cs`.
+- [X] T040 [US2] Add FluentMigrator migration for structured log tables and indexes in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Migrations/M001_CreateStructuredLogTables.cs`.
+- [X] T041 [US2] Add relational structured log store in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Stores/RelationalStructuredLogStore.cs`.
+- [X] T042 [US2] Add bounded write buffer with graceful shutdown flush and dropped-write warning summaries in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Services/StructuredLogWriteBuffer.cs`.
+- [X] T043 [US2] Add retention cleanup service in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Services/StructuredLogRetentionService.cs`.
+- [X] T044 [US2] Add relational service registration extensions in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Extensions/RelationalStructuredLogsServiceCollectionExtensions.cs`.
+- [X] T045 [US2] Add relational persistence feature registration in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/Features/StructuredLogRelationalPersistenceFeature.cs`.
+- [X] T046 [US2] Complete relational module shell feature in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/ShellFeatures/StructuredLogRelationalPersistenceFeature.cs`.
+- [X] T047 [US2] Add SQLite options in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Options/SqliteStructuredLogOptions.cs`.
+- [X] T048 [US2] Add SQLite connection factory in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Services/SqliteStructuredLogConnectionFactory.cs`.
+- [X] T049 [US2] Add SQLite dialect in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Services/SqliteStructuredLogDialect.cs`.
+- [X] T050 [US2] Add FluentMigrator runner integration in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Services/SqliteStructuredLogSchemaMigrator.cs`.
+- [X] T051 [US2] Add SQLite hosted startup service for migrations and cleanup in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Services/SqliteStructuredLogStartupService.cs`.
+- [X] T052 [US2] Add SQLite fluent configuration extension in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Extensions/SqliteStructuredLogsModuleExtensions.cs`.
+- [X] T053 [US2] Add SQLite persistence feature registration in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Features/SqliteStructuredLogPersistenceFeature.cs`.
+- [X] T054 [US2] Complete SQLite module shell feature in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/ShellFeatures/SqliteStructuredLogPersistenceFeature.cs`.
+- [X] T055 [US2] Run `dotnet test test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj`.
 
 **Checkpoint**: User Stories 1 and 2 work together with durable SQLite storage.
 
@@ -126,17 +126,17 @@
 
 ### Tests for User Story 3
 
-- [ ] T056 [P] [US3] Add relational SQL builder tests with a fake dialect in `test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/RelationalStructuredLogSqlBuilderTests.cs`.
-- [ ] T057 [P] [US3] Add relational mapper tests for JSON and UTC ISO-8601 timestamps in `test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/RelationalStructuredLogMapperTests.cs`.
-- [ ] T058 [P] [US3] Add migration metadata/version tests in `test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/StructuredLogMigrationTests.cs`.
-- [ ] T059 [P] [US3] Add core boundary test proving `Elsa.Diagnostics.StructuredLogs` has no SQLite dependency in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/StructuredLogsStorageRegistrationTests.cs`.
+- [X] T056 [P] [US3] Add relational SQL builder tests with a fake dialect in `test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/RelationalStructuredLogSqlBuilderTests.cs`.
+- [X] T057 [P] [US3] Add relational mapper tests for JSON and UTC ISO-8601 timestamps in `test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/RelationalStructuredLogMapperTests.cs`.
+- [X] T058 [P] [US3] Add migration metadata/version tests in `test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/StructuredLogMigrationTests.cs`.
+- [X] T059 [P] [US3] Add core boundary test proving `Elsa.Diagnostics.StructuredLogs` has no SQLite dependency in `test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/StructuredLogsStorageRegistrationTests.cs`.
 
 ### Implementation for User Story 3
 
-- [ ] T060 [US3] Keep provider-specific SQL outside core module in `src/modules/Elsa.Diagnostics.StructuredLogs`.
-- [ ] T061 [US3] Keep SQLite-specific services inside `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite`.
-- [ ] T062 [US3] Add relational provider guidance in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/README.md`.
-- [ ] T063 [US3] Run `dotnet test test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.csproj`.
+- [X] T060 [US3] Keep provider-specific SQL outside core module in `src/modules/Elsa.Diagnostics.StructuredLogs`.
+- [X] T061 [US3] Keep SQLite-specific services inside `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite`.
+- [X] T062 [US3] Add relational provider guidance in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Relational/README.md`.
+- [X] T063 [US3] Run `dotnet test test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.csproj`.
 
 **Checkpoint**: SQLite is the first relational provider, not a one-off persistence path.
 
@@ -146,16 +146,16 @@
 
 **Purpose**: Update public docs, sample guidance, and validation.
 
-- [ ] T064 [P] Update structured logs README with storage mode guidance in `src/modules/Elsa.Diagnostics.StructuredLogs/README.md`.
-- [ ] T065 [P] Add SQLite persistence README in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/README.md`.
-- [ ] T066 [P] Update Speckit quickstart implementation notes in `specs/005-structured-log-persistence/quickstart.md`.
-- [ ] T067 Update sample host wiring only if a sample explicitly opts into SQLite in `src/apps/Elsa.Server.Web/Program.cs`.
-- [ ] T068 Run `dotnet build src/modules/Elsa.Diagnostics.StructuredLogs/Elsa.Diagnostics.StructuredLogs.csproj`.
-- [ ] T069 Run `dotnet build src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.csproj`.
-- [ ] T070 Run `dotnet test test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Elsa.Diagnostics.StructuredLogs.UnitTests.csproj`.
-- [ ] T071 Run `dotnet test test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.csproj`.
-- [ ] T072 Run `dotnet test test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj`.
-- [ ] T073 Run `rg "OpenTelemetry|OTLP|Datadog|Logstash|Splunk|Loki|Seq" src/modules/Elsa.Diagnostics.StructuredLogs* specs/005-structured-log-persistence` and confirm only out-of-scope documentation references remain.
+- [X] T064 [P] Update structured logs README with storage mode guidance in `src/modules/Elsa.Diagnostics.StructuredLogs/README.md`.
+- [X] T065 [P] Add SQLite persistence README in `src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/README.md`.
+- [X] T066 [P] Update Speckit quickstart implementation notes in `specs/005-structured-log-persistence/quickstart.md`.
+- [X] T067 Update sample host wiring only if a sample explicitly opts into SQLite in `src/apps/Elsa.Server.Web/Program.cs`.
+- [X] T068 Run `dotnet build src/modules/Elsa.Diagnostics.StructuredLogs/Elsa.Diagnostics.StructuredLogs.csproj`.
+- [X] T069 Run `dotnet build src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.csproj`.
+- [X] T070 Run `dotnet test test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Elsa.Diagnostics.StructuredLogs.UnitTests.csproj`.
+- [X] T071 Run `dotnet test test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.csproj`.
+- [X] T072 Run `dotnet test test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj`.
+- [X] T073 Run `rg "OpenTelemetry|OTLP|Datadog|Logstash|Splunk|Loki|Seq" src/modules/Elsa.Diagnostics.StructuredLogs* specs/005-structured-log-persistence` and confirm only out-of-scope documentation references remain.
 
 ---
 

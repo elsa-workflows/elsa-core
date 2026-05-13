@@ -29,7 +29,8 @@ services.AddElsa(elsa =>
         structuredLogs.UseSqliteStorage("Data Source=elsa-structured-logs.db", sqlite =>
         {
             sqlite.RunMigrationsOnStartup = true;
-            sqlite.WriteQueueCapacity = 10_000;
+            sqlite.Relational.WriteQueue.Capacity = 10_000;
+            sqlite.Relational.WriteQueue.BatchSize = 100;
         });
     });
 });
@@ -58,8 +59,9 @@ For future shared relational providers such as SQL Server or PostgreSQL, product
 SQLite storage does not delete persisted log entries by default. Configure `Retention.MaxAge`, `Retention.MaxRows`, or both to bound durable storage growth:
 
 ```csharp
-sqlite.Retention.MaxAge = TimeSpan.FromDays(14);
-sqlite.Retention.MaxRows = 250_000;
+sqlite.Relational.Retention.MaxAge = TimeSpan.FromDays(14);
+sqlite.Relational.Retention.MaxRows = 250_000;
+sqlite.Relational.Retention.CleanupOnStartup = true;
 ```
 
 ## Write buffering
