@@ -32,8 +32,8 @@ Relational database representation of `StructuredLogEvent`.
 
 - `Id`: unique event identifier.
 - `Sequence`: monotonic sequence assigned by the logger path.
-- `Timestamp`: original event timestamp.
-- `ReceivedAt`: backend receive timestamp.
+- `Timestamp`: original event timestamp stored as UTC ISO-8601 text.
+- `ReceivedAt`: backend receive timestamp stored as UTC ISO-8601 text.
 - `Level`: structured log level stored in a queryable representation.
 - `Category`: logger category.
 - `EventId`: numeric Microsoft logging event ID.
@@ -81,6 +81,18 @@ Settings controlling durable store growth.
 - `MaxRows`: optional maximum number of retained rows.
 - `CleanupInterval`: background cleanup interval.
 - `RunCleanupOnStartup`: whether to clean immediately after migrations.
+- Default behavior: delete no records unless `MaxAge`, `MaxRows`, or both are configured.
+
+## StructuredLogWriteQueueOptions
+
+Settings controlling SQLite write buffering.
+
+- `Capacity`: maximum queued events waiting to be written.
+- `BatchSize`: maximum events written in one flush.
+- `FlushInterval`: maximum time between background flushes.
+- `ShutdownFlushTimeout`: maximum graceful shutdown flush duration.
+- `DroppedWriteCount`: reported count of events dropped because the queue was full.
+- Overflow behavior: drop newly received events when the queue is full; never block logging calls or allocate unbounded memory.
 
 ## RelationalStructuredLogDialect
 
@@ -100,4 +112,5 @@ Schema management service.
 - Runs FluentMigrator migrations for the configured provider.
 - Creates the structured log schema from an empty database.
 - Applies future upgrades in version order.
+- Runs on SQLite startup by default and can be disabled.
 - Documents multi-instance startup locking constraints for shared database providers.

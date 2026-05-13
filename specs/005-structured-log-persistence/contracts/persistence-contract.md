@@ -99,6 +99,23 @@ public interface IStructuredLogRetentionService
 }
 ```
 
+## IStructuredLogWriteBuffer
+
+Bounded async write queue used by durable stores.
+
+```csharp
+public interface IStructuredLogWriteBuffer : IAsyncDisposable
+{
+    long DroppedWriteCount { get; }
+
+    ValueTask EnqueueAsync(StructuredLogEvent logEvent, CancellationToken cancellationToken = default);
+
+    ValueTask FlushAsync(CancellationToken cancellationToken = default);
+}
+```
+
+The SQLite implementation drops newly received events when the queue is full and increments `DroppedWriteCount`. It does not block logging calls and does not allocate unbounded memory.
+
 ## Registration Sketch
 
 Default in-memory:
@@ -119,4 +136,4 @@ services.AddElsa(elsa =>
 });
 ```
 
-The exact fluent API may change during implementation to match existing Elsa feature conventions.
+SQLite migrations run on startup by default. Retention deletes no records unless `MaxAge`, `MaxRows`, or both are configured. The exact fluent API may change during implementation to match existing Elsa feature conventions.

@@ -56,6 +56,52 @@
 - EF Core runtime access: rejected for the same reasons as EF migrations.
 - A generic query-builder library: deferred because current filters are simple enough to compose directly with a small dialect service.
 
+## Decision: Use async batched SQLite writes with graceful-shutdown flush
+
+**Rationale**: Structured log capture must not make `ILogger` callers wait on disk I/O. A background writer preserves the diagnostics feature's low-latency capture path while graceful shutdown flushes queued events where possible.
+
+**Alternatives considered**:
+
+- Synchronous durable writes per event: rejected because slow disk I/O would directly affect application logging paths.
+- Configurable synchronous durability mode: deferred because the first persistence story prioritizes simple operational diagnostics over no-loss audit logging.
+
+## Decision: Use a bounded drop-newest SQLite write queue
+
+**Rationale**: The write queue must not grow without bound during logging spikes or disk stalls. Dropping newly received events keeps already queued events stable, keeps memory bounded, and makes loss visible through dropped-write counts.
+
+**Alternatives considered**:
+
+- Block logging when the queue is full: rejected because persistence backpressure would slow application code.
+- Drop oldest queued events: rejected because it makes the batch already accepted for persistence less predictable.
+- Use an unbounded queue: rejected because it can turn a logging spike into process memory pressure.
+
+## Decision: Run SQLite migrations on startup by default
+
+**Rationale**: The SQLite provider should provide an easy durable logging story. Startup migrations make first-run setup simple, while an opt-out lets advanced hosts prepare schemas separately.
+
+**Alternatives considered**:
+
+- Require explicit migration calls: rejected because it weakens the easy persistence story.
+- Run migrations only in development: rejected because SQLite is expected to be useful in small production hosts too.
+
+## Decision: Store SQLite timestamps as UTC ISO-8601 text
+
+**Rationale**: UTC ISO-8601 text is SQLite-friendly, human-readable, sortable when normalized, and avoids provider-specific date/time behavior in the first durable provider.
+
+**Alternatives considered**:
+
+- Unix epoch milliseconds: rejected because it is less inspectable and loses sub-millisecond detail.
+- Unix epoch ticks or nanoseconds: rejected because it is less readable and still requires conversion for most manual inspection.
+
+## Decision: Make retention opt-in
+
+**Rationale**: Durable storage should not delete customer logs unexpectedly. Hosts can configure maximum age, maximum rows, or both when they want bounded durable storage.
+
+**Alternatives considered**:
+
+- Default 14-day and 250,000-row retention: rejected because default deletion can surprise operators.
+- Default maximum rows only: rejected because any default deletion policy still needs explicit customer intent.
+
 ## Decision: Defer exporter/sink packages
 
 **Rationale**: Vendor sinks and OTLP export are useful, but they are not required for the first customer persistence story. Keeping them out of this slice prevents the storage abstraction from being distorted by outbound shipping concerns.

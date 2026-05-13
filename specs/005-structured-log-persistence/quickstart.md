@@ -28,9 +28,8 @@ services.AddElsa(elsa =>
     {
         structuredLogs.UseSqliteStorage("Data Source=elsa-structured-logs.db", sqlite =>
         {
-            sqlite.Retention.MaxAge = TimeSpan.FromDays(14);
-            sqlite.Retention.MaxRows = 250_000;
             sqlite.RunMigrationsOnStartup = true;
+            sqlite.WriteQueueCapacity = 10_000;
         });
     });
 });
@@ -54,6 +53,19 @@ SQLite storage runs FluentMigrator migrations when `RunMigrationsOnStartup` is e
 
 For future shared relational providers such as SQL Server or PostgreSQL, production deployments may choose to run migrations once during deployment instead of from every application instance. Multi-instance startup locking must be documented by each provider.
 
+## Retention
+
+SQLite storage does not delete persisted log entries by default. Configure `Retention.MaxAge`, `Retention.MaxRows`, or both to bound durable storage growth:
+
+```csharp
+sqlite.Retention.MaxAge = TimeSpan.FromDays(14);
+sqlite.Retention.MaxRows = 250_000;
+```
+
+## Write buffering
+
+SQLite writes are batched through a bounded background queue. Graceful shutdown flushes queued events where possible. If the process crashes, queued-but-unflushed events can be lost. If the queue is full, newly received events are dropped and dropped-write counts are reported.
+
 ## Validation
 
 Run targeted checks after implementation:
@@ -72,7 +84,9 @@ Manual validation:
 3. Query recent logs from Studio and verify filters work.
 4. Restart the host using the same SQLite database file.
 5. Query recent logs again and verify events from before the restart are still available.
-6. Lower retention settings in a test environment and verify cleanup removes old or excess rows.
+6. Verify timestamps are stored and filtered as UTC ISO-8601 values.
+7. Lower retention settings in a test environment and verify cleanup removes old or excess rows.
+8. Saturate the write queue in a test environment and verify newest events are dropped with visible dropped-write counts.
 
 ## Out of scope
 
