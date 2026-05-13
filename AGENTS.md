@@ -83,7 +83,7 @@ Before handing off changes, verify the following when applicable:
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read `specs/004-diagnostics-structured-logs/plan.md`.
+shell commands, and other important information, read `specs/005-structured-log-persistence/plan.md`.
 <!-- SPECKIT END -->
 
 ## Active Technologies
@@ -91,7 +91,10 @@ shell commands, and other important information, read `specs/004-diagnostics-str
 - Bounded in-memory ring buffer for MVP; no EF Core schema changes. Provider abstraction allows external/shared log backends later. (003-live-server-logs)
 - C# latest, nullable reference types enabled, implicit usings enabled. + `Microsoft.Extensions.Logging`, `Microsoft.Extensions.Options`, `Microsoft.AspNetCore.SignalR`, Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, CShells shell feature infrastructure. (004-diagnostics-structured-logs)
 - Existing bounded in-memory ring buffer; no EF Core schema changes. Provider abstraction remains available for future shared backends. (004-diagnostics-structured-logs)
+- C# latest, nullable reference types enabled, implicit usings enabled. + Existing `Elsa.Diagnostics.StructuredLogs`, `Microsoft.Extensions.Logging`, `Microsoft.Extensions.Options`, `Microsoft.AspNetCore.SignalR`, Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, FluentMigrator runner packages, SQLite ADO.NET provider, and optionally Dapper for relational operations. (005-structured-log-persistence)
+- Bounded in-memory store by default; opt-in SQLite durable store through shared relational persistence. SQLite stores `Timestamp` and `ReceivedAt` as UTC ISO-8601 text and stores exception, scope, and property payloads as JSON text. (005-structured-log-persistence)
 
 ## Recent Changes
+- 005-structured-log-persistence: Plans pluggable structured log storage with in-memory default and opt-in SQLite persistence using FluentMigrator.
 - 004-diagnostics-structured-logs: Refactors the unpublished server logs module into diagnostics structured logs and preserves bounded structured `ILogger` capture.
 - 003-live-server-logs: Added C# latest, nullable reference types enabled, implicit usings enabled. + `Microsoft.Extensions.Logging`, `Microsoft.AspNetCore.SignalR`, Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, existing Elsa identity/authorization features.

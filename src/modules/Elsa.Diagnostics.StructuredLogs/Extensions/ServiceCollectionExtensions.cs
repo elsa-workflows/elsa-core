@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Diagnostics.StructuredLogs.Extensions;
 
-internal static class ServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddStructuredLogsServices(this IServiceCollection services, Action<StructuredLogsOptions>? configureOptions = null)
     {
@@ -21,7 +21,11 @@ internal static class ServiceCollectionExtensions
         services.AddOptions<StructuredLogsOptions>();
         services.TryAddSingleton<IStructuredLogSourceRegistry, StructuredLogSourceRegistry>();
         services.TryAddSingleton<IStructuredLogRedactor, StructuredLogRedactor>();
-        services.TryAddSingleton<IStructuredLogProvider, InMemoryStructuredLogProvider>();
+        services.TryAddSingleton<InMemoryStructuredLogStore>();
+        services.TryAddSingleton<IStructuredLogStore>(sp => sp.GetRequiredService<InMemoryStructuredLogStore>());
+        services.TryAddSingleton<InMemoryStructuredLogLiveFeed>();
+        services.TryAddSingleton<IStructuredLogLiveFeed>(sp => sp.GetRequiredService<InMemoryStructuredLogLiveFeed>());
+        services.TryAddSingleton<IStructuredLogProvider, DefaultStructuredLogProvider>();
         services.TryAddSingleton<StructuredLogSubscriptionManager>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, StructuredLogLoggerProvider>());
 

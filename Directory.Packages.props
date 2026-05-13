@@ -113,6 +113,8 @@
         <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="9.2.2"/>
         <PackageVersion Include="FluentStorage" Version="6.0.0"/>
         <PackageVersion Include="FluentStorage.Azure.Blobs" Version="6.0.0"/>
+        <PackageVersion Include="FluentMigrator.Runner" Version="8.0.1"/>
+        <PackageVersion Include="FluentMigrator.Runner.SQLite" Version="8.0.1"/>
         <PackageVersion Include="Fluid.Core" Version="2.31.0"/>
         <PackageVersion Include="Fody" Version="6.9.3" PrivateAssets="All"/>
         <PackageVersion Include="GitHubActionsTestLogger" Version="3.0.1" PrivateAssets="All"/>

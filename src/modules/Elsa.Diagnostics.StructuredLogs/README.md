@@ -45,7 +45,19 @@ Elsa Studio can use this module to show:
 
 The default in-memory provider captures logs for the current process only. It still includes source identity and Kubernetes/container metadata so Studio can filter and display the active source.
 
-For merged multi-pod logs, provide an implementation of `IStructuredLogProvider` backed by shared infrastructure such as a log broker, distributed stream, or platform log API. Studio continues to use the same REST and SignalR contracts, including source filtering and source-change notifications.
+For persisted logs, add a storage package such as `Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite` and opt in from the structured logs feature:
+
+```csharp
+services.AddElsa(elsa =>
+{
+    elsa.UseStructuredLogs(structuredLogs =>
+    {
+        structuredLogs.UseSqliteStorage("Data Source=elsa-structured-logs.db");
+    });
+});
+```
+
+The core module remains storage-provider neutral. Custom stores can replace `IStructuredLogStore` while live updates continue through `IStructuredLogLiveFeed`; Studio continues to use the same REST and SignalR contracts, including source filtering and source-change notifications.
 
 ## Redaction
 
