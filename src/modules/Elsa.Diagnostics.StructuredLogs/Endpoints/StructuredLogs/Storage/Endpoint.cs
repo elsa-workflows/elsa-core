@@ -18,7 +18,7 @@ internal class Endpoint(IEnumerable<IStructuredLogStorageDiagnostics> storageDia
     public override Task<StructuredLogStorageDiagnostics> ExecuteAsync(CancellationToken cancellationToken)
     {
         var diagnostics = storageDiagnostics.ToList();
-        var droppedWriteCount = checked(diagnostics.Aggregate(0L, (acc, x) => acc + x.DroppedWriteCount));
+        var droppedWriteCount = diagnostics.Aggregate(0L, (acc, x) => checked(acc + x.DroppedWriteCount));
         return Task.FromResult(new StructuredLogStorageDiagnostics(droppedWriteCount, diagnostics.Count > 0));
     }
 }
