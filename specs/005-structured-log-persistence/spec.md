@@ -117,7 +117,7 @@ An Elsa maintainer can add SQL Server, PostgreSQL, MySQL, or another relational 
 - **FR-016**: SQLite storage MAY lose events that were queued but not flushed before an ungraceful process crash.
 - **FR-017**: SQLite storage MUST use a bounded write queue.
 - **FR-018**: When the SQLite write queue is full, SQLite storage MUST drop newly received events instead of blocking logging calls or using unbounded memory.
-- **FR-019**: SQLite storage MUST expose dropped-write counts through logs, metrics, or the structured log provider result surface.
+- **FR-019**: SQLite storage MUST expose dropped-write counts through `IStructuredLogWriteBuffer.DroppedWriteCount` and log warning summaries.
 - **FR-020**: SQLite retention MUST delete no records by default unless `MaxAge`, `MaxRows`, or both are configured.
 
 **Relational extensibility**

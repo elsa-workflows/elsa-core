@@ -70,12 +70,14 @@ src/modules/
 │   ├── Models/
 │   ├── Options/
 │   ├── Services/
+│   ├── ShellFeatures/
 │   └── Stores/
 └── Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/
     ├── Extensions/
     ├── Features/
     ├── Options/
-    └── Services/
+    ├── Services/
+    └── ShellFeatures/
 
 test/unit/
 ├── Elsa.Diagnostics.StructuredLogs.UnitTests/

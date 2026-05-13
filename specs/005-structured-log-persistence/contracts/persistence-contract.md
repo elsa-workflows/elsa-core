@@ -39,16 +39,6 @@ public interface IStructuredLogLiveFeed
 }
 ```
 
-## IStructuredLogStorageProvider
-
-Facade used by existing REST and SignalR code. This can be implemented by composing a store and live feed while preserving `IStructuredLogProvider` compatibility.
-
-```csharp
-public interface IStructuredLogStorageProvider : IStructuredLogStreamProvider
-{
-}
-```
-
 ## IRelationalStructuredLogConnectionFactory
 
 Provider-owned connection creation.
@@ -114,7 +104,7 @@ public interface IStructuredLogWriteBuffer : IAsyncDisposable
 }
 ```
 
-The SQLite implementation drops newly received events when the queue is full and increments `DroppedWriteCount`. It does not block logging calls and does not allocate unbounded memory.
+The SQLite implementation drops newly received events when the queue is full, increments `DroppedWriteCount`, and logs warning summaries. It does not block logging calls and does not allocate unbounded memory. Existing REST and SignalR code continues to use `IStructuredLogProvider` as the facade.
 
 ## Registration Sketch
 
