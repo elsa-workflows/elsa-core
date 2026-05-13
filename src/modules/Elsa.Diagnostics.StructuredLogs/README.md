@@ -40,7 +40,7 @@ Elsa Studio can use this module to show:
 - Live log events as the server emits them.
 - Level, category, message, tenant, workflow, trace, correlation, source, and time filters.
 - Cluster/source metadata such as source ID, pod name, namespace, container name, node name, machine name, process ID, and source health.
-- Storage pressure metadata such as dropped durable write counts when a configured store reports them.
+- Storage pressure metadata such as dropped durable write counts and whether the active store reports storage diagnostics.
 
 ## Clustered Deployments
 
