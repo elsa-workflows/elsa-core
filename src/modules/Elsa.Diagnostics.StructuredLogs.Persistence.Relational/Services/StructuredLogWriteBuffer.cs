@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
@@ -119,10 +120,10 @@ public class StructuredLogWriteBuffer(
             return;
 
         await _stopTokenSource.CancelAsync();
+        using var timeoutTokenSource = new CancellationTokenSource(options.Value.WriteQueue.ShutdownFlushTimeout);
 
         if (_backgroundTask != null)
         {
-            using var timeoutTokenSource = new CancellationTokenSource(options.Value.WriteQueue.ShutdownFlushTimeout);
             try
             {
                 await _backgroundTask.WaitAsync(timeoutTokenSource.Token);
@@ -131,6 +132,15 @@ public class StructuredLogWriteBuffer(
             {
                 CountPendingWritesAsDropped();
             }
+        }
+
+        try
+        {
+            await FlushAsync(timeoutTokenSource.Token);
+        }
+        catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested)
+        {
+            CountPendingWritesAsDropped();
         }
 
         _signal.Dispose();
@@ -158,6 +168,10 @@ public class StructuredLogWriteBuffer(
             catch (ObjectDisposedException) when (cancellationToken.IsCancellationRequested)
             {
                 return;
+            }
+            catch (Exception e) when (!cancellationToken.IsCancellationRequested)
+            {
+                Trace.TraceError("Failed to flush structured log writes: {0}", e);
             }
         }
     }
