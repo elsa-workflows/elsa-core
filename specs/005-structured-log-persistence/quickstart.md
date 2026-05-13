@@ -46,6 +46,7 @@ Studio continues to use:
 
 - `/diagnostics/structured-logs/recent`
 - `/diagnostics/structured-logs/sources`
+- `/diagnostics/structured-logs/storage`
 - `/elsa/hubs/diagnostics/structured-logs`
 
 ## Migrations
