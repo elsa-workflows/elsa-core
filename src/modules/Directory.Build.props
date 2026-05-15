@@ -1,0 +1,9 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)..'))" />
+
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/ShellFeatures')">
+    <PackageReference Include="Elsa.PackageManifest.Generator" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>
