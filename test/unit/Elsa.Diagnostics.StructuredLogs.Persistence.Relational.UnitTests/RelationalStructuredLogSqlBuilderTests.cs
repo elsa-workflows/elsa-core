@@ -53,6 +53,55 @@ public class RelationalStructuredLogSqlBuilderTests
     }
 
     [Fact]
+    public void BuildQuery_AddsTextPredicateAcrossSearchableColumns()
+    {
+        var query = _builder.BuildQuery(new()
+        {
+            Text = "failure",
+            TenantId = "tenant-a",
+            SpanId = "span-a",
+            Take = 25
+        });
+
+        const string expectedTextPredicate = "([Message] LIKE @Text OR [MessageTemplate] LIKE @Text OR [Category] LIKE @Text OR [ExceptionJson] LIKE @Text OR [ScopesJson] LIKE @Text OR [PropertiesJson] LIKE @Text)";
+
+        Assert.Contains(expectedTextPredicate, query.Sql, StringComparison.Ordinal);
+        Assert.Contains("[TenantId] = @TenantId", query.Sql, StringComparison.Ordinal);
+        Assert.Contains("[SpanId] = @SpanId", query.Sql, StringComparison.Ordinal);
+        Assert.Equal("%failure%", query.Parameters["Text"]);
+    }
+
+    [Theory]
+    [InlineData(-5, "FETCH 0")]
+    [InlineData(5000, "FETCH 1000")]
+    public void BuildQuery_ClampsTakeToSupportedRange(int take, string expectedLimit)
+    {
+        var query = _builder.BuildQuery(new()
+        {
+            Take = take
+        });
+
+        Assert.Contains(expectedLimit, query.Sql, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuildListSources_GroupsBySourceAndOrdersBySource()
+    {
+        var sql = _builder.BuildListSources();
+
+        Assert.Equal("SELECT [SourceId], MAX([ReceivedAt]) AS [LastSeen] FROM [StructuredLogEvents] GROUP BY [SourceId] ORDER BY [SourceId]", sql);
+    }
+
+    [Fact]
+    public void BuildDeleteOlderThan_UsesReceivedAtCutoffParameter()
+    {
+        var query = _builder.BuildDeleteOlderThan("2026-05-13T13:00:00.0000000+00:00");
+
+        Assert.Equal("DELETE FROM [StructuredLogEvents] WHERE [ReceivedAt] < @Cutoff", query.Sql);
+        Assert.Equal("2026-05-13T13:00:00.0000000+00:00", query.Parameters["Cutoff"]);
+    }
+
+    [Fact]
     public void BuildDeleteRowsBeyondMax_DelegatesOffsetSyntaxToDialect()
     {
         var query = _builder.BuildDeleteRowsBeyondMax(250);
