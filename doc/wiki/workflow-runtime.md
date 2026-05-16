@@ -1,6 +1,6 @@
 # Workflow Runtime
 
-Workflow runtime owns starting, dispatching, resuming, cancelling, logging, and recovering workflow executions. It is the layer that turns definitions into running instances and responds to triggers, bookmarks, background work, and admin operations.
+Workflow runtime owns starting, dispatching, resuming, canceling, logging, and recovering workflow executions. It is the layer that turns definitions into running instances and responds to triggers, bookmarks, background work, and admin operations.
 
 Start in [src/modules/Elsa.Workflows.Runtime](../../src/modules/Elsa.Workflows.Runtime).
 
