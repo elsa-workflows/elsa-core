@@ -1,4 +1,7 @@
+using System.Collections;
 using System.Data;
+using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Models;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
@@ -89,6 +92,7 @@ public class RelationalStructuredLogMapperTests
         Assert.Equal(logEvent.MessageTemplate, mapped.MessageTemplate);
         Assert.Equal(logEvent.Exception.Type, mapped.Exception!.Type);
         Assert.Equal(logEvent.Exception.Message, mapped.Exception.Message);
+        Assert.Equal(logEvent.Exception.StackTrace, mapped.Exception.StackTrace);
         Assert.Equal(logEvent.Scopes, mapped.Scopes);
         Assert.Equal(logEvent.Properties, mapped.Properties);
         Assert.Equal(logEvent.TraceId, mapped.TraceId);
@@ -145,7 +149,7 @@ public class RelationalStructuredLogMapperTests
         Assert.Null(mapped.WorkflowInstanceId);
     }
 
-    private static DataTableReader CreateReader(RelationalStructuredLogRecord record)
+    private static DbDataReader CreateReader(RelationalStructuredLogRecord record)
     {
         var table = new DataTable();
         table.Columns.Add("Id", typeof(string));
@@ -181,8 +185,8 @@ public class RelationalStructuredLogMapperTests
             record.Message,
             record.MessageTemplate ?? (object)DBNull.Value,
             record.ExceptionJson ?? (object)DBNull.Value,
-            record.ScopesJson,
-            record.PropertiesJson,
+            record.ScopesJson ?? (object)DBNull.Value,
+            record.PropertiesJson ?? (object)DBNull.Value,
             record.TraceId ?? (object)DBNull.Value,
             record.SpanId ?? (object)DBNull.Value,
             record.CorrelationId ?? (object)DBNull.Value,
@@ -191,6 +195,58 @@ public class RelationalStructuredLogMapperTests
             record.WorkflowInstanceId ?? (object)DBNull.Value,
             record.SourceId);
 
-        return table.CreateDataReader();
+        return new DisposingDataReader(table, table.CreateDataReader());
+    }
+
+    private sealed class DisposingDataReader(DataTable table, DataTableReader reader) : DbDataReader
+    {
+        public override object this[int ordinal] => reader[ordinal];
+        public override object this[string name] => reader[name];
+        public override int Depth => reader.Depth;
+        public override int FieldCount => reader.FieldCount;
+        public override bool HasRows => reader.HasRows;
+        public override bool IsClosed => reader.IsClosed;
+        public override int RecordsAffected => reader.RecordsAffected;
+        public override bool GetBoolean(int ordinal) => reader.GetBoolean(ordinal);
+        public override byte GetByte(int ordinal) => reader.GetByte(ordinal);
+        public override long GetBytes(int ordinal, long dataOffset, byte[]? buffer, int bufferOffset, int length) => reader.GetBytes(ordinal, dataOffset, buffer, bufferOffset, length);
+        public override char GetChar(int ordinal) => reader.GetChar(ordinal);
+        public override long GetChars(int ordinal, long dataOffset, char[]? buffer, int bufferOffset, int length) => reader.GetChars(ordinal, dataOffset, buffer, bufferOffset, length);
+        public override string GetDataTypeName(int ordinal) => reader.GetDataTypeName(ordinal);
+        public override DateTime GetDateTime(int ordinal) => reader.GetDateTime(ordinal);
+        public override decimal GetDecimal(int ordinal) => reader.GetDecimal(ordinal);
+        public override double GetDouble(int ordinal) => reader.GetDouble(ordinal);
+        public override IEnumerator GetEnumerator() => reader.GetEnumerator();
+        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)]
+        public override Type GetFieldType(int ordinal) => ordinal switch
+        {
+            1 => typeof(long),
+            4 or 6 => typeof(int),
+            _ => typeof(string)
+        };
+        public override float GetFloat(int ordinal) => reader.GetFloat(ordinal);
+        public override Guid GetGuid(int ordinal) => reader.GetGuid(ordinal);
+        public override short GetInt16(int ordinal) => reader.GetInt16(ordinal);
+        public override int GetInt32(int ordinal) => reader.GetInt32(ordinal);
+        public override long GetInt64(int ordinal) => reader.GetInt64(ordinal);
+        public override string GetName(int ordinal) => reader.GetName(ordinal);
+        public override int GetOrdinal(string name) => reader.GetOrdinal(name);
+        public override string GetString(int ordinal) => reader.GetString(ordinal);
+        public override object GetValue(int ordinal) => reader.GetValue(ordinal);
+        public override int GetValues(object[] values) => reader.GetValues(values);
+        public override bool IsDBNull(int ordinal) => reader.IsDBNull(ordinal);
+        public override bool NextResult() => reader.NextResult();
+        public override bool Read() => reader.Read();
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                reader.Dispose();
+                table.Dispose();
+            }
+
+            base.Dispose(disposing);
+        }
     }
 }
