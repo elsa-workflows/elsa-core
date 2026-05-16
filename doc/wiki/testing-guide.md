@@ -34,19 +34,27 @@ Shared helpers:
 
 ## Useful Commands
 
-Build the solution:
+Restore first when starting from a clean checkout or after dependency changes:
 
 ```bash
-dotnet build Elsa.sln
+./build.sh Restore --ignore-failed-sources
 ```
 
-Run all tests:
+Build the solution with direct `dotnet` commands:
 
 ```bash
-dotnet test Elsa.sln
+dotnet restore Elsa.sln --ignore-failed-sources
+dotnet build Elsa.sln --no-restore
 ```
 
-Run the NUKE test target:
+Run all tests with direct `dotnet` commands:
+
+```bash
+dotnet restore Elsa.sln --ignore-failed-sources
+dotnet test Elsa.sln --no-restore
+```
+
+Run the NUKE test target after the resilient restore:
 
 ```bash
 ./build.sh Test
@@ -55,10 +63,17 @@ Run the NUKE test target:
 Run targeted projects:
 
 ```bash
-dotnet test test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj
-dotnet test test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj
-dotnet test test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj
-dotnet test test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj
+dotnet restore test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --ignore-failed-sources
+dotnet test test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --no-restore
+
+dotnet restore test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj --ignore-failed-sources
+dotnet test test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj --no-restore
+
+dotnet restore test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj --ignore-failed-sources
+dotnet test test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj --no-restore
+
+dotnet restore test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj --ignore-failed-sources
+dotnet test test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj --no-restore
 ```
 
 Run ElsaScript DSL tests:

@@ -4,34 +4,43 @@ This page collects day-to-day build, run, and operational notes for Elsa Core co
 
 ## Build Commands
 
-Default NUKE build target:
+Restore first when working from a clean checkout or after dependency changes. The `--ignore-failed-sources` option keeps external feed hiccups from blocking packages that are available from other configured sources:
+
+```bash
+./build.sh Restore --ignore-failed-sources
+```
+
+Default NUKE build target after restore:
 
 ```bash
 ./build.sh
 ```
 
-NUKE test target:
+NUKE test target after restore:
 
 ```bash
 ./build.sh Test
 ```
 
-Direct solution build:
+Direct solution build with the same restore/no-restore pattern:
 
 ```bash
-dotnet build Elsa.sln
+dotnet restore Elsa.sln --ignore-failed-sources
+dotnet build Elsa.sln --no-restore
 ```
 
 Direct solution tests:
 
 ```bash
-dotnet test Elsa.sln
+dotnet restore Elsa.sln --ignore-failed-sources
+dotnet test Elsa.sln --no-restore
 ```
 
 Targeted test project:
 
 ```bash
-dotnet test test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj
+dotnet restore test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --ignore-failed-sources
+dotnet test test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --no-restore
 ```
 
 ElsaScript DSL tests:
@@ -50,10 +59,11 @@ Source projects multi-target `net8.0`, `net9.0`, and `net10.0` through [src/Dire
 
 The main sample host is [src/apps/Elsa.Server.Web](../../src/apps/Elsa.Server.Web). It wires most major modules in [Program.cs](../../src/apps/Elsa.Server.Web/Program.cs).
 
-Run it with:
+Restore the project and run it with:
 
 ```bash
-dotnet run --project src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj
+dotnet restore src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj --ignore-failed-sources
+dotnet run --project src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj --no-restore
 ```
 
 Notable toggles in `Program.cs`:
