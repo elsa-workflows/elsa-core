@@ -93,5 +93,5 @@ Hosts can use [UseJsonSerializationErrorHandler](../../src/modules/Elsa.Workflow
 To quickly list routes:
 
 ```bash
-rg "Get\\(|Post\\(|Delete\\(|Put\\(|Patch\\(" src/modules/Elsa.Workflows.Api/Endpoints src/modules/Elsa.Diagnostics.StructuredLogs/Endpoints -g "Endpoint.cs"
+rg "Get\\(|Post\\(|Delete\\(|Put\\(|Patch\\(|Routes\\(|Verbs\\(" src/modules/Elsa.Workflows.Api/Endpoints src/modules/Elsa.Diagnostics.StructuredLogs/Endpoints -g "Endpoint.cs"
 ```
