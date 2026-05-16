@@ -29,8 +29,11 @@ public class RelationalStructuredLogSqlBuilderTests
             SourceId = "source-a",
             WorkflowDefinitionId = "definition-a",
             WorkflowInstanceId = "instance-a",
+            TenantId = "tenant-a",
             CorrelationId = "correlation-a",
             TraceId = "trace-a",
+            SpanId = "span-a",
+            Text = "needle",
             From = DateTimeOffset.UtcNow.AddMinutes(-5),
             To = DateTimeOffset.UtcNow,
             Take = 42
@@ -42,14 +45,49 @@ public class RelationalStructuredLogSqlBuilderTests
         Assert.Contains("[SourceId] = @SourceId", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[WorkflowDefinitionId] = @WorkflowDefinitionId", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[WorkflowInstanceId] = @WorkflowInstanceId", query.Sql, StringComparison.Ordinal);
+        Assert.Contains("[TenantId] = @TenantId", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[CorrelationId] = @CorrelationId", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[TraceId] = @TraceId", query.Sql, StringComparison.Ordinal);
+        Assert.Contains("[SpanId] = @SpanId", query.Sql, StringComparison.Ordinal);
+        Assert.Contains("[Message] LIKE @Text", query.Sql, StringComparison.Ordinal);
+        Assert.Contains("[PropertiesJson] LIKE @Text", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[Timestamp] >= @TimestampFrom", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[Timestamp] <= @TimestampTo", query.Sql, StringComparison.Ordinal);
         Assert.Contains("FETCH 42", query.Sql, StringComparison.Ordinal);
         Assert.Equal("Elsa.Workflow%", query.Parameters["Category"]);
+        Assert.Equal("%needle%", query.Parameters["Text"]);
         Assert.Contains("TimestampFrom", query.Parameters.Keys);
         Assert.Contains("TimestampTo", query.Parameters.Keys);
+    }
+
+    [Theory]
+    [InlineData(null, 100)]
+    [InlineData(-1, 0)]
+    [InlineData(2000, 1000)]
+    public void BuildQuery_ClampsTakeToSupportedRange(int? take, int expectedLimit)
+    {
+        var query = _builder.BuildQuery(new() { Take = take });
+
+        Assert.Contains($"FETCH {expectedLimit}", query.Sql, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuildListSources_GroupsBySourceAndLastSeen()
+    {
+        var sql = _builder.BuildListSources();
+
+        Assert.Contains("SELECT [SourceId], MAX([ReceivedAt]) AS [LastSeen]", sql, StringComparison.Ordinal);
+        Assert.Contains("GROUP BY [SourceId]", sql, StringComparison.Ordinal);
+        Assert.Contains("ORDER BY [SourceId]", sql, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuildDeleteOlderThan_UsesReceivedAtCutoff()
+    {
+        var query = _builder.BuildDeleteOlderThan("2026-05-13T13:00:00.0000000+00:00");
+
+        Assert.Equal("2026-05-13T13:00:00.0000000+00:00", query.Parameters["Cutoff"]);
+        Assert.Contains("DELETE FROM [StructuredLogEvents] WHERE [ReceivedAt] < @Cutoff", query.Sql, StringComparison.Ordinal);
     }
 
     [Fact]
