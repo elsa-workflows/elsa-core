@@ -93,7 +93,7 @@ The management layer is what Studio and API endpoints use to list, save, publish
 - trigger and bookmark stores
 - bookmark queue worker and queue store
 - workflow and activity execution log stores
-- workflow matcher, starter, invoker, resumer, canceller
+- workflow matcher, starter, invoker, resumer, canceler
 - background dispatch and task dispatch services
 - graceful shutdown services such as quiescence signal, ingress source registry, and drain orchestrator
 - recurring startup and maintenance tasks
