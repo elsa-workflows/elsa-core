@@ -129,7 +129,7 @@ The workflow API includes runtime admin endpoints:
 - `POST /elsa/api/admin/workflow-runtime/resume`
 - `POST /elsa/api/admin/workflow-runtime/force-drain`
 
-Endpoint code lives under [Workflow.Api/Endpoints/RuntimeAdmin](../../src/modules/Elsa.Workflows.Api/Endpoints/RuntimeAdmin). The service behind these endpoints is [WorkflowRuntimeAdminService](../../src/modules/Elsa.Workflows.Runtime/Services/WorkflowRuntimeAdminService.cs).
+Endpoint code lives under [Elsa.Workflows.Api/Endpoints/RuntimeAdmin](../../src/modules/Elsa.Workflows.Api/Endpoints/RuntimeAdmin). The service behind these endpoints is [WorkflowRuntimeAdminService](../../src/modules/Elsa.Workflows.Runtime/Services/WorkflowRuntimeAdminService.cs).
 
 ## Distributed Runtime
 
