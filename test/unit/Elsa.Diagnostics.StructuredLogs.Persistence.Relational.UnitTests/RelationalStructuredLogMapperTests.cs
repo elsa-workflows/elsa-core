@@ -217,6 +217,7 @@ public class RelationalStructuredLogMapperTests
         public override decimal GetDecimal(int ordinal) => reader.GetDecimal(ordinal);
         public override double GetDouble(int ordinal) => reader.GetDouble(ordinal);
         public override IEnumerator GetEnumerator() => reader.GetEnumerator();
+
         [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)]
         public override Type GetFieldType(int ordinal) => ordinal switch
         {
@@ -224,6 +225,7 @@ public class RelationalStructuredLogMapperTests
             4 or 6 => typeof(int),
             _ => typeof(string)
         };
+
         public override float GetFloat(int ordinal) => reader.GetFloat(ordinal);
         public override Guid GetGuid(int ordinal) => reader.GetGuid(ordinal);
         public override short GetInt16(int ordinal) => reader.GetInt16(ordinal);
@@ -231,6 +233,7 @@ public class RelationalStructuredLogMapperTests
         public override long GetInt64(int ordinal) => reader.GetInt64(ordinal);
         public override string GetName(int ordinal) => reader.GetName(ordinal);
         public override int GetOrdinal(string name) => reader.GetOrdinal(name);
+        public override DataTable? GetSchemaTable() => reader.GetSchemaTable();
         public override string GetString(int ordinal) => reader.GetString(ordinal);
         public override object GetValue(int ordinal) => reader.GetValue(ordinal);
         public override int GetValues(object[] values) => reader.GetValues(values);
