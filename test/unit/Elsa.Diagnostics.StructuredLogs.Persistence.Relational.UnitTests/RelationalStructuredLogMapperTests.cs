@@ -1,4 +1,7 @@
+using System.Collections;
 using System.Data;
+using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Models;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
@@ -61,9 +64,7 @@ public class RelationalStructuredLogMapperTests
         };
         var record = _mapper.Map(logEvent);
 
-        var (table, reader) = CreateReader(record);
-        using var disposableTable = table;
-        using var disposableReader = reader;
+        using var reader = CreateReader(record);
         Assert.True(reader.Read());
         var mapped = _mapper.Map(reader);
 
@@ -106,9 +107,7 @@ public class RelationalStructuredLogMapperTests
             SourceId = "source-a"
         };
 
-        var (table, reader) = CreateReader(record, useNullJsonPayloads: true);
-        using var disposableTable = table;
-        using var disposableReader = reader;
+        using var reader = CreateReader(record, useNullJsonPayloads: true);
         Assert.True(reader.Read());
         var mapped = _mapper.Map(reader);
 
@@ -130,7 +129,52 @@ public class RelationalStructuredLogMapperTests
         Assert.Equal(timestamp.ToUniversalTime(), RelationalStructuredLogMapper.ParseTimestamp(formatted));
     }
 
-    private static (DataTable Table, DataTableReader Reader) CreateReader(RelationalStructuredLogRecord record, bool useNullJsonPayloads = false)
+    [Fact]
+    public void Map_FromReader_TreatsWhitespaceJsonAsEmptyValues()
+    {
+        var record = new RelationalStructuredLogRecord
+        {
+            Id = "event-a",
+            Sequence = 123,
+            Timestamp = RelationalStructuredLogMapper.FormatTimestamp(DateTimeOffset.UtcNow),
+            ReceivedAt = RelationalStructuredLogMapper.FormatTimestamp(DateTimeOffset.UtcNow),
+            Level = StructuredLogLevel.Information,
+            Category = "Elsa.Tests",
+            EventId = 42,
+            EventName = null,
+            Message = "Message",
+            MessageTemplate = null,
+            ExceptionJson = " ",
+            ScopesJson = " ",
+            PropertiesJson = "",
+            TraceId = null,
+            SpanId = null,
+            CorrelationId = null,
+            TenantId = null,
+            WorkflowDefinitionId = null,
+            WorkflowInstanceId = null,
+            SourceId = "source-a"
+        };
+
+        using var reader = CreateReader(record);
+        Assert.True(reader.Read());
+
+        var mapped = _mapper.Map(reader);
+
+        Assert.Null(mapped.EventName);
+        Assert.Null(mapped.MessageTemplate);
+        Assert.Null(mapped.Exception);
+        Assert.Empty(mapped.Scopes);
+        Assert.Empty(mapped.Properties);
+        Assert.Null(mapped.TraceId);
+        Assert.Null(mapped.SpanId);
+        Assert.Null(mapped.CorrelationId);
+        Assert.Null(mapped.TenantId);
+        Assert.Null(mapped.WorkflowDefinitionId);
+        Assert.Null(mapped.WorkflowInstanceId);
+    }
+
+    private static DbDataReader CreateReader(RelationalStructuredLogRecord record, bool useNullJsonPayloads = false)
     {
         var table = new DataTable();
         table.Columns.Add("Id", typeof(string));
@@ -165,9 +209,9 @@ public class RelationalStructuredLogMapperTests
             record.EventName ?? (object)DBNull.Value,
             record.Message,
             record.MessageTemplate ?? (object)DBNull.Value,
-            useNullJsonPayloads ? DBNull.Value : record.ExceptionJson ?? (object)DBNull.Value,
-            useNullJsonPayloads ? DBNull.Value : record.ScopesJson,
-            useNullJsonPayloads ? DBNull.Value : record.PropertiesJson,
+            JsonValue(record.ExceptionJson, useNullJsonPayloads),
+            JsonValue(record.ScopesJson, useNullJsonPayloads),
+            JsonValue(record.PropertiesJson, useNullJsonPayloads),
             record.TraceId ?? (object)DBNull.Value,
             record.SpanId ?? (object)DBNull.Value,
             record.CorrelationId ?? (object)DBNull.Value,
@@ -176,6 +220,66 @@ public class RelationalStructuredLogMapperTests
             record.WorkflowInstanceId ?? (object)DBNull.Value,
             record.SourceId);
 
-        return (table, table.CreateDataReader());
+        return new DisposingDataReader(table, table.CreateDataReader());
+    }
+
+    private static object JsonValue(string? value, bool useNullJsonPayloads)
+    {
+        return useNullJsonPayloads ? DBNull.Value : value ?? (object)DBNull.Value;
+    }
+
+    private sealed class DisposingDataReader(DataTable table, DataTableReader reader) : DbDataReader
+    {
+        public override object this[int ordinal] => reader[ordinal];
+        public override object this[string name] => reader[name];
+        public override int Depth => reader.Depth;
+        public override int FieldCount => reader.FieldCount;
+        public override bool HasRows => reader.HasRows;
+        public override bool IsClosed => reader.IsClosed;
+        public override int RecordsAffected => reader.RecordsAffected;
+        public override bool GetBoolean(int ordinal) => reader.GetBoolean(ordinal);
+        public override byte GetByte(int ordinal) => reader.GetByte(ordinal);
+        public override long GetBytes(int ordinal, long dataOffset, byte[]? buffer, int bufferOffset, int length) => reader.GetBytes(ordinal, dataOffset, buffer, bufferOffset, length);
+        public override char GetChar(int ordinal) => reader.GetChar(ordinal);
+        public override long GetChars(int ordinal, long dataOffset, char[]? buffer, int bufferOffset, int length) => reader.GetChars(ordinal, dataOffset, buffer, bufferOffset, length);
+        public override string GetDataTypeName(int ordinal) => reader.GetDataTypeName(ordinal);
+        public override DateTime GetDateTime(int ordinal) => reader.GetDateTime(ordinal);
+        public override decimal GetDecimal(int ordinal) => reader.GetDecimal(ordinal);
+        public override double GetDouble(int ordinal) => reader.GetDouble(ordinal);
+        public override IEnumerator GetEnumerator() => reader.GetEnumerator();
+
+        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)]
+        public override Type GetFieldType(int ordinal) => ordinal switch
+        {
+            1 => typeof(long),
+            4 or 6 => typeof(int),
+            _ => typeof(string)
+        };
+
+        public override float GetFloat(int ordinal) => reader.GetFloat(ordinal);
+        public override Guid GetGuid(int ordinal) => reader.GetGuid(ordinal);
+        public override short GetInt16(int ordinal) => reader.GetInt16(ordinal);
+        public override int GetInt32(int ordinal) => reader.GetInt32(ordinal);
+        public override long GetInt64(int ordinal) => reader.GetInt64(ordinal);
+        public override string GetName(int ordinal) => reader.GetName(ordinal);
+        public override int GetOrdinal(string name) => reader.GetOrdinal(name);
+        public override DataTable? GetSchemaTable() => reader.GetSchemaTable();
+        public override string GetString(int ordinal) => reader.GetString(ordinal);
+        public override object GetValue(int ordinal) => reader.GetValue(ordinal);
+        public override int GetValues(object[] values) => reader.GetValues(values);
+        public override bool IsDBNull(int ordinal) => reader.IsDBNull(ordinal);
+        public override bool NextResult() => reader.NextResult();
+        public override bool Read() => reader.Read();
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                reader.Dispose();
+                table.Dispose();
+            }
+
+            base.Dispose(disposing);
+        }
     }
 }
