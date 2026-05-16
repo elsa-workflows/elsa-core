@@ -1,0 +1,157 @@
+name: Update Wiki
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  update-wiki:
+    name: Refresh repo wiki
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Refresh wiki with Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          additional_permissions: |
+            actions: read
+          prompt: |
+            Refresh the repo-local wiki under doc/wiki so it remains accurate for the current Elsa Core codebase.
+
+            Scope:
+            - Edit only files under doc/wiki/.
+            - Keep the existing wiki structure unless the codebase genuinely needs a new or renamed wiki page.
+            - Ground every update in the current repository source, tests, specs, and ADRs.
+            - Preserve relative Markdown links and Mermaid diagrams where useful.
+            - Do not modify production code, tests, package files, workflows, or non-wiki docs.
+            - Prefer concise contributor-facing explanations over exhaustive API reference.
+
+            Validation:
+            - Check local Markdown links under doc/wiki before finishing.
+            - If the wiki is already up to date, leave the worktree unchanged.
+          claude_args: >-
+            --allowed-tools
+            "Bash(rg:*),Bash(git diff:*),Bash(git status:*),Bash(find:*),Bash(ls:*),Bash(sed:*),Bash(python3:*),Bash(wc:*)"
+
+      - name: Verify wiki-only changes
+        run: |
+          set -euo pipefail
+          changed_files="$(git status --porcelain=v1 --untracked-files=all | sed 's/^...//')"
+
+          if [ -z "$changed_files" ]; then
+            echo "No wiki changes detected."
+            exit 0
+          fi
+
+          invalid_files="$(printf '%s\n' "$changed_files" | grep -v '^doc/wiki/' || true)"
+          if [ -n "$invalid_files" ]; then
+            echo "The wiki update workflow may only modify files under doc/wiki/." >&2
+            echo "$invalid_files" >&2
+            exit 1
+          fi
+
+      - name: Verify local wiki links
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          root = Path(".").resolve()
+          errors = []
+
+          for md in sorted(Path("doc/wiki").glob("*.md")):
+              text = md.read_text()
+              for match in re.finditer(r"\[[^\]]+\]\(([^)]+)\)", text):
+                  target = match.group(1).split("#", 1)[0]
+                  if not target or target.startswith(("http://", "https://", "mailto:")):
+                      continue
+
+                  path = (md.parent / target).resolve()
+                  try:
+                      path.relative_to(root)
+                  except ValueError:
+                      errors.append((md, target, "outside repo"))
+                      continue
+
+                  if not path.exists():
+                      errors.append((md, target, "missing"))
+
+          if errors:
+              for md, target, reason in errors:
+                  print(f"{md}: {target} -> {reason}")
+              sys.exit(1)
+
+          print("All local markdown links resolve.")
+          PY
+
+      - name: Open or update wiki refresh pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          BASE_BRANCH: main
+          UPDATE_BRANCH: codex/update-wiki
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- doc/wiki && [ -z "$(git ls-files --others --exclude-standard doc/wiki)" ]; then
+            echo "No wiki changes to publish."
+            exit 0
+          fi
+
+          git checkout -B "$UPDATE_BRANCH"
+          git add doc/wiki
+          git commit -m "Refresh codebase wiki"
+          git push --force-with-lease origin "$UPDATE_BRANCH"
+
+          existing_pr="$(gh pr list --state open --head "$UPDATE_BRANCH" --json number --jq '.[0].number // empty')"
+          body="$(cat <<'MD'
+          ## Summary
+
+          Refreshes the repo-local `doc/wiki/` documentation after changes landed on `main`.
+
+          ## Validation
+
+          - Verified the workflow changed only files under `doc/wiki/`.
+          - Verified all local Markdown links under `doc/wiki/*.md` resolve.
+
+          This PR was opened automatically by the Update Wiki workflow.
+          MD
+          )"
+
+          if [ -n "$existing_pr" ]; then
+            gh pr edit "$existing_pr" \
+              --title "[codex] Refresh codebase wiki" \
+              --body "$body" \
+              --base "$BASE_BRANCH"
+            echo "Updated existing PR #$existing_pr."
+          else
+            gh pr create \
+              --title "[codex] Refresh codebase wiki" \
+              --body "$body" \
+              --base "$BASE_BRANCH" \
+              --head "$UPDATE_BRANCH"
+          fi
