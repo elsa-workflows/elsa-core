@@ -63,12 +63,7 @@ public class RelationalStructuredLogSqlBuilderTests
             Take = 25
         });
 
-        Assert.Contains("[Message] LIKE @Text", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[MessageTemplate] LIKE @Text", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[Category] LIKE @Text", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[ExceptionJson] LIKE @Text", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[ScopesJson] LIKE @Text", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[PropertiesJson] LIKE @Text", query.Sql, StringComparison.Ordinal);
+        Assert.Contains("([Message] LIKE @Text OR [MessageTemplate] LIKE @Text OR [Category] LIKE @Text OR [ExceptionJson] LIKE @Text OR [ScopesJson] LIKE @Text OR [PropertiesJson] LIKE @Text)", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[TenantId] = @TenantId", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[SpanId] = @SpanId", query.Sql, StringComparison.Ordinal);
         Assert.Equal("%failure%", query.Parameters["Text"]);
