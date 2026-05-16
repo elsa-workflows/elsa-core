@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <RootNamespace>Elsa.Workflows</RootNamespace>
+        <NoWarn>$(NoWarn);CS8604</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup>

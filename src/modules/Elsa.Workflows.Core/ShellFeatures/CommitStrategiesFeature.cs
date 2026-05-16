@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ShellFeatures;
 
-[ShellFeature("CommitStrategies")]
+[ShellFeature("CommitStrategies", Description = "Provides workflow commit strategy registration services")]
 public class CommitStrategiesFeature : IShellFeature
 {
     public void ConfigureServices(IServiceCollection services)

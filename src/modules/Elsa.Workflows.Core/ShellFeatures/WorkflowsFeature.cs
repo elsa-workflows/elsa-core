@@ -38,7 +38,7 @@ namespace Elsa.Workflows.ShellFeatures;
     "DefaultFormatters",
     "Multitenancy",
     "CommitStrategies"
-])]
+], Description = "Provides core workflow execution, activity, serialization, and pipeline services")]
 public class WorkflowsFeature : IShellFeature
 {
     /// <summary>
