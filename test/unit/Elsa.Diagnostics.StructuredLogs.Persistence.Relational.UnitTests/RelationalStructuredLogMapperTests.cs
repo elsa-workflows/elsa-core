@@ -61,7 +61,9 @@ public class RelationalStructuredLogMapperTests
         };
         var record = _mapper.Map(logEvent);
 
-        using var reader = CreateReader(record);
+        var (table, reader) = CreateReader(record);
+        using var disposableTable = table;
+        using var disposableReader = reader;
         Assert.True(reader.Read());
         var mapped = _mapper.Map(reader);
 
@@ -77,8 +79,8 @@ public class RelationalStructuredLogMapperTests
         Assert.Equal(logEvent.MessageTemplate, mapped.MessageTemplate);
         Assert.Equal(logEvent.Exception, mapped.Exception);
         Assert.Equal("Value", mapped.Scopes["Scope"]);
-        Assert.True(mapped.Properties.ContainsKey("Property"));
-        Assert.Null(mapped.Properties["Property"]);
+        Assert.True(mapped.Properties.TryGetValue("Property", out var propertyValue));
+        Assert.Null(propertyValue);
         Assert.Equal(logEvent.TraceId, mapped.TraceId);
         Assert.Equal(logEvent.SpanId, mapped.SpanId);
         Assert.Equal(logEvent.CorrelationId, mapped.CorrelationId);
@@ -104,7 +106,9 @@ public class RelationalStructuredLogMapperTests
             SourceId = "source-a"
         };
 
-        using var reader = CreateReader(record);
+        var (table, reader) = CreateReader(record, useNullJsonPayloads: true);
+        using var disposableTable = table;
+        using var disposableReader = reader;
         Assert.True(reader.Read());
         var mapped = _mapper.Map(reader);
 
@@ -126,7 +130,7 @@ public class RelationalStructuredLogMapperTests
         Assert.Equal(timestamp.ToUniversalTime(), RelationalStructuredLogMapper.ParseTimestamp(formatted));
     }
 
-    private static DataTableReader CreateReader(RelationalStructuredLogRecord record)
+    private static (DataTable Table, DataTableReader Reader) CreateReader(RelationalStructuredLogRecord record, bool useNullJsonPayloads = false)
     {
         var table = new DataTable();
         table.Columns.Add("Id", typeof(string));
@@ -161,9 +165,9 @@ public class RelationalStructuredLogMapperTests
             record.EventName ?? (object)DBNull.Value,
             record.Message,
             record.MessageTemplate ?? (object)DBNull.Value,
-            record.ExceptionJson ?? (object)DBNull.Value,
-            record.ScopesJson ?? (object)DBNull.Value,
-            record.PropertiesJson ?? (object)DBNull.Value,
+            useNullJsonPayloads ? DBNull.Value : record.ExceptionJson ?? (object)DBNull.Value,
+            useNullJsonPayloads ? DBNull.Value : record.ScopesJson,
+            useNullJsonPayloads ? DBNull.Value : record.PropertiesJson,
             record.TraceId ?? (object)DBNull.Value,
             record.SpanId ?? (object)DBNull.Value,
             record.CorrelationId ?? (object)DBNull.Value,
@@ -172,6 +176,6 @@ public class RelationalStructuredLogMapperTests
             record.WorkflowInstanceId ?? (object)DBNull.Value,
             record.SourceId);
 
-        return table.CreateDataReader();
+        return (table, table.CreateDataReader());
     }
 }

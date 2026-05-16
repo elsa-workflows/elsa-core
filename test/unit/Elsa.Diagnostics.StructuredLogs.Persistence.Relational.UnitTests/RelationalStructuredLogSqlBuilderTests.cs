@@ -49,8 +49,8 @@ public class RelationalStructuredLogSqlBuilderTests
         Assert.Contains("[CorrelationId] = @CorrelationId", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[TraceId] = @TraceId", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[SpanId] = @SpanId", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[Message] LIKE @Text", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[PropertiesJson] LIKE @Text", query.Sql, StringComparison.Ordinal);
+        foreach (var textColumn in new[] { "Message", "MessageTemplate", "Category", "ExceptionJson", "ScopesJson", "PropertiesJson" })
+            Assert.Contains($"[{textColumn}] LIKE @Text", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[Timestamp] >= @TimestampFrom", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[Timestamp] <= @TimestampTo", query.Sql, StringComparison.Ordinal);
         Assert.Contains("FETCH 42", query.Sql, StringComparison.Ordinal);
