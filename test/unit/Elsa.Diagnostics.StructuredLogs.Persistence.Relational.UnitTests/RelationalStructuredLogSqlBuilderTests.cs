@@ -29,8 +29,11 @@ public class RelationalStructuredLogSqlBuilderTests
             SourceId = "source-a",
             WorkflowDefinitionId = "definition-a",
             WorkflowInstanceId = "instance-a",
+            TenantId = "tenant-a",
             CorrelationId = "correlation-a",
             TraceId = "trace-a",
+            SpanId = "span-a",
+            Text = "needle",
             From = DateTimeOffset.UtcNow.AddMinutes(-5),
             To = DateTimeOffset.UtcNow,
             Take = 42
@@ -42,44 +45,30 @@ public class RelationalStructuredLogSqlBuilderTests
         Assert.Contains("[SourceId] = @SourceId", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[WorkflowDefinitionId] = @WorkflowDefinitionId", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[WorkflowInstanceId] = @WorkflowInstanceId", query.Sql, StringComparison.Ordinal);
+        Assert.Contains("[TenantId] = @TenantId", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[CorrelationId] = @CorrelationId", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[TraceId] = @TraceId", query.Sql, StringComparison.Ordinal);
+        Assert.Contains("[SpanId] = @SpanId", query.Sql, StringComparison.Ordinal);
+        foreach (var textColumn in new[] { "Message", "MessageTemplate", "Category", "ExceptionJson", "ScopesJson", "PropertiesJson" })
+            Assert.Contains($"[{textColumn}] LIKE @Text", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[Timestamp] >= @TimestampFrom", query.Sql, StringComparison.Ordinal);
         Assert.Contains("[Timestamp] <= @TimestampTo", query.Sql, StringComparison.Ordinal);
         Assert.Contains("FETCH 42", query.Sql, StringComparison.Ordinal);
         Assert.Equal("Elsa.Workflow%", query.Parameters["Category"]);
+        Assert.Equal("%needle%", query.Parameters["Text"]);
         Assert.Contains("TimestampFrom", query.Parameters.Keys);
         Assert.Contains("TimestampTo", query.Parameters.Keys);
     }
 
-    [Fact]
-    public void BuildQuery_AddsTextPredicateAcrossSearchableColumns()
-    {
-        var query = _builder.BuildQuery(new()
-        {
-            Text = "failure",
-            TenantId = "tenant-a",
-            SpanId = "span-a",
-            Take = 25
-        });
-
-        const string expectedTextPredicate = "([Message] LIKE @Text OR [MessageTemplate] LIKE @Text OR [Category] LIKE @Text OR [ExceptionJson] LIKE @Text OR [ScopesJson] LIKE @Text OR [PropertiesJson] LIKE @Text)";
-
-        Assert.Contains(expectedTextPredicate, query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[TenantId] = @TenantId", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[SpanId] = @SpanId", query.Sql, StringComparison.Ordinal);
-        Assert.Equal("%failure%", query.Parameters["Text"]);
-    }
-
     [Theory]
+    [InlineData(null, "FETCH 100")]
     [InlineData(-5, "FETCH 0")]
+    [InlineData(-1, "FETCH 0")]
+    [InlineData(2000, "FETCH 1000")]
     [InlineData(5000, "FETCH 1000")]
-    public void BuildQuery_ClampsTakeToSupportedRange(int take, string expectedLimit)
+    public void BuildQuery_ClampsTakeToSupportedRange(int? take, string expectedLimit)
     {
-        var query = _builder.BuildQuery(new()
-        {
-            Take = take
-        });
+        var query = _builder.BuildQuery(new() { Take = take });
 
         Assert.Contains(expectedLimit, query.Sql, StringComparison.Ordinal);
     }
@@ -99,6 +88,25 @@ public class RelationalStructuredLogSqlBuilderTests
 
         Assert.Equal("DELETE FROM [StructuredLogEvents] WHERE [ReceivedAt] < @Cutoff", query.Sql);
         Assert.Equal("2026-05-13T13:00:00.0000000+00:00", query.Parameters["Cutoff"]);
+    }
+
+    [Fact]
+    public void BuildQuery_AddsTextPredicateAcrossSearchableColumns()
+    {
+        var query = _builder.BuildQuery(new()
+        {
+            Text = "failure",
+            TenantId = "tenant-a",
+            SpanId = "span-a",
+            Take = 25
+        });
+
+        const string expectedTextPredicate = "([Message] LIKE @Text OR [MessageTemplate] LIKE @Text OR [Category] LIKE @Text OR [ExceptionJson] LIKE @Text OR [ScopesJson] LIKE @Text OR [PropertiesJson] LIKE @Text)";
+
+        Assert.Contains(expectedTextPredicate, query.Sql, StringComparison.Ordinal);
+        Assert.Contains("[TenantId] = @TenantId", query.Sql, StringComparison.Ordinal);
+        Assert.Contains("[SpanId] = @SpanId", query.Sql, StringComparison.Ordinal);
+        Assert.Equal("%failure%", query.Parameters["Text"]);
     }
 
     [Fact]

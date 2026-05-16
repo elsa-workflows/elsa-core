@@ -37,35 +37,23 @@ public class RelationalStructuredLogMapperTests
     }
 
     [Fact]
-    public void FormatTimestamp_StoresUtcIso8601Text()
+    public void Map_FromReader_DeserializesPersistedFields()
     {
-        var timestamp = new DateTimeOffset(2026, 5, 13, 15, 0, 0, TimeSpan.FromHours(2));
-
-        var formatted = RelationalStructuredLogMapper.FormatTimestamp(timestamp);
-
-        Assert.Equal("2026-05-13T13:00:00.0000000+00:00", formatted);
-        Assert.Equal(timestamp.ToUniversalTime(), RelationalStructuredLogMapper.ParseTimestamp(formatted));
-    }
-
-    [Fact]
-    public void MapReader_DeserializesStoredJsonAndNullableFields()
-    {
-        var timestamp = new DateTimeOffset(2026, 5, 13, 15, 0, 0, TimeSpan.FromHours(2));
         var logEvent = new StructuredLogEvent
         {
             Id = "event-a",
-            Sequence = 123,
-            Timestamp = timestamp,
-            ReceivedAt = timestamp.AddSeconds(1),
-            Level = StructuredLogLevel.Warning,
+            Sequence = 42,
+            Timestamp = new(2026, 5, 13, 15, 0, 0, TimeSpan.FromHours(2)),
+            ReceivedAt = new(2026, 5, 13, 13, 0, 1, TimeSpan.Zero),
+            Level = StructuredLogLevel.Critical,
             Category = "Elsa.Tests",
-            EventId = 42,
-            EventName = "TestEvent",
-            Message = "Message",
-            MessageTemplate = "Message {Value}",
+            EventId = 17,
+            EventName = "Failed",
+            Message = "Failed with scope",
+            MessageTemplate = "Failed with {Scope}",
             Exception = new("System.InvalidOperationException", "Boom", "Stack"),
             Scopes = new Dictionary<string, string?> { ["Scope"] = "Value" },
-            Properties = new Dictionary<string, string?> { ["Property"] = "Value" },
+            Properties = new Dictionary<string, string?> { ["Property"] = null },
             TraceId = "trace-a",
             SpanId = "span-a",
             CorrelationId = "correlation-a",
@@ -74,10 +62,10 @@ public class RelationalStructuredLogMapperTests
             WorkflowInstanceId = "instance-a",
             SourceId = "source-a"
         };
+        var record = _mapper.Map(logEvent);
 
-        using var reader = CreateReader(_mapper.Map(logEvent));
+        using var reader = CreateReader(record);
         Assert.True(reader.Read());
-
         var mapped = _mapper.Map(reader);
 
         Assert.Equal(logEvent.Id, mapped.Id);
@@ -90,11 +78,10 @@ public class RelationalStructuredLogMapperTests
         Assert.Equal(logEvent.EventName, mapped.EventName);
         Assert.Equal(logEvent.Message, mapped.Message);
         Assert.Equal(logEvent.MessageTemplate, mapped.MessageTemplate);
-        Assert.Equal(logEvent.Exception.Type, mapped.Exception!.Type);
-        Assert.Equal(logEvent.Exception.Message, mapped.Exception.Message);
-        Assert.Equal(logEvent.Exception.StackTrace, mapped.Exception.StackTrace);
-        Assert.Equal(logEvent.Scopes, mapped.Scopes);
-        Assert.Equal(logEvent.Properties, mapped.Properties);
+        Assert.Equal(logEvent.Exception, mapped.Exception);
+        Assert.Equal("Value", mapped.Scopes["Scope"]);
+        Assert.True(mapped.Properties.TryGetValue("Property", out var propertyValue));
+        Assert.Null(propertyValue);
         Assert.Equal(logEvent.TraceId, mapped.TraceId);
         Assert.Equal(logEvent.SpanId, mapped.SpanId);
         Assert.Equal(logEvent.CorrelationId, mapped.CorrelationId);
@@ -105,7 +92,45 @@ public class RelationalStructuredLogMapperTests
     }
 
     [Fact]
-    public void MapReader_TreatsNullAndWhitespaceJsonAsEmptyValues()
+    public void Map_FromReader_ReturnsEmptyCollections_WhenJsonFieldsAreNull()
+    {
+        var record = new RelationalStructuredLogRecord
+        {
+            Id = "event-a",
+            Sequence = 1,
+            Timestamp = RelationalStructuredLogMapper.FormatTimestamp(DateTimeOffset.UtcNow),
+            ReceivedAt = RelationalStructuredLogMapper.FormatTimestamp(DateTimeOffset.UtcNow),
+            Level = StructuredLogLevel.Information,
+            Category = "Elsa.Tests",
+            EventId = 0,
+            Message = "Hello",
+            SourceId = "source-a"
+        };
+
+        using var reader = CreateReader(record, useNullJsonPayloads: true);
+        Assert.True(reader.Read());
+        var mapped = _mapper.Map(reader);
+
+        Assert.Null(mapped.Exception);
+        Assert.Empty(mapped.Scopes);
+        Assert.Empty(mapped.Properties);
+        Assert.Null(mapped.EventName);
+        Assert.Null(mapped.MessageTemplate);
+    }
+
+    [Fact]
+    public void FormatTimestamp_StoresUtcIso8601Text()
+    {
+        var timestamp = new DateTimeOffset(2026, 5, 13, 15, 0, 0, TimeSpan.FromHours(2));
+
+        var formatted = RelationalStructuredLogMapper.FormatTimestamp(timestamp);
+
+        Assert.Equal("2026-05-13T13:00:00.0000000+00:00", formatted);
+        Assert.Equal(timestamp.ToUniversalTime(), RelationalStructuredLogMapper.ParseTimestamp(formatted));
+    }
+
+    [Fact]
+    public void Map_FromReader_TreatsWhitespaceJsonAsEmptyValues()
     {
         var record = new RelationalStructuredLogRecord
         {
@@ -119,7 +144,7 @@ public class RelationalStructuredLogMapperTests
             EventName = null,
             Message = "Message",
             MessageTemplate = null,
-            ExceptionJson = null,
+            ExceptionJson = " ",
             ScopesJson = " ",
             PropertiesJson = "",
             TraceId = null,
@@ -149,7 +174,7 @@ public class RelationalStructuredLogMapperTests
         Assert.Null(mapped.WorkflowInstanceId);
     }
 
-    private static DbDataReader CreateReader(RelationalStructuredLogRecord record)
+    private static DbDataReader CreateReader(RelationalStructuredLogRecord record, bool useNullJsonPayloads = false)
     {
         var table = new DataTable();
         table.Columns.Add("Id", typeof(string));
@@ -184,9 +209,9 @@ public class RelationalStructuredLogMapperTests
             record.EventName ?? (object)DBNull.Value,
             record.Message,
             record.MessageTemplate ?? (object)DBNull.Value,
-            record.ExceptionJson ?? (object)DBNull.Value,
-            record.ScopesJson ?? (object)DBNull.Value,
-            record.PropertiesJson ?? (object)DBNull.Value,
+            JsonValue(record.ExceptionJson, useNullJsonPayloads),
+            JsonValue(record.ScopesJson, useNullJsonPayloads),
+            JsonValue(record.PropertiesJson, useNullJsonPayloads),
             record.TraceId ?? (object)DBNull.Value,
             record.SpanId ?? (object)DBNull.Value,
             record.CorrelationId ?? (object)DBNull.Value,
@@ -196,6 +221,11 @@ public class RelationalStructuredLogMapperTests
             record.SourceId);
 
         return new DisposingDataReader(table, table.CreateDataReader());
+    }
+
+    private static object JsonValue(string? value, bool useNullJsonPayloads)
+    {
+        return useNullJsonPayloads ? DBNull.Value : value ?? (object)DBNull.Value;
     }
 
     private sealed class DisposingDataReader(DataTable table, DataTableReader reader) : DbDataReader
