@@ -1,0 +1,22 @@
+{
+  "name": "elsa-readme-video",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render ElsaReadme ../exports/elsa-workflows-readme.mp4",
+    "render:gif": "remotion render ElsaReadme ../exports/elsa-workflows-readme.gif --codec=gif --scale=0.5",
+    "still": "remotion still ElsaReadme ../exports/elsa-workflows-readme-poster.png --frame=36"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.462",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "remotion": "4.0.462"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "typescript": "6.0.3"
+  }
+}
