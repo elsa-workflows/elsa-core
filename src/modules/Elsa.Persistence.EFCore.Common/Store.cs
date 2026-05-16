@@ -19,6 +19,9 @@ namespace Elsa.Persistence.EFCore;
 [PublicAPI]
 public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextFactory, IServiceProvider serviceProvider) where TDbContext : DbContext where TEntity : class, new()
 {
+    private const int SqlServerBulkWriteMaxRetryCount = 3;
+    private static readonly TimeSpan SqlServerBulkWriteBaseDelay = TimeSpan.FromMilliseconds(50);
+
     // ReSharper disable once StaticMemberInGenericType
     // Justification: This is a static member that is used to ensure that only one thread can access the database for TEntity at a time.
     private static readonly SemaphoreSlim Semaphore = new(1, 1);
@@ -81,20 +84,35 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving = null,
         CancellationToken cancellationToken = default)
     {
-        var entityList = entities.ToList();
+        await Semaphore.WaitAsync(cancellationToken);
 
-        if (entityList.Count == 0)
-            return;
-
-        await using var dbContext = await CreateDbContextAsync(cancellationToken);
-
-        if (onSaving != null)
+        try
         {
-            var savingTasks = entityList.Select(entity => onSaving(dbContext, entity, cancellationToken).AsTask()).ToList();
-            await Task.WhenAll(savingTasks);
-        }
+            var entityList = entities.ToList();
 
-        await dbContext.BulkInsertAsync(entityList, cancellationToken);
+            if (entityList.Count == 0)
+                return;
+
+            await ExecuteBulkWriteWithSqlServerRetryAsync(async (dbContext, ct) =>
+            {
+                if (onSaving != null)
+                {
+                    var savingTasks = entityList.Select(entity => onSaving(dbContext, entity, ct).AsTask()).ToList();
+                    await Task.WhenAll(savingTasks);
+                }
+
+                await dbContext.BulkInsertAsync(entityList, ct);
+            }, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            await HandleDbExceptionAsync(ex, cancellationToken);
+            throw;
+        }
+        finally
+        {
+            Semaphore.Release();
+        }
     }
 
     /// <summary>
@@ -131,14 +149,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         }
         catch (Exception ex)
         {
-            var handler = serviceProvider.GetService<IDbExceptionHandler>();
-
-            if (handler != null)
-            {
-                var context = new DbUpdateExceptionContext(ex, cancellationToken);
-                await handler.HandleAsync(context);
-            }
-
+            await HandleDbExceptionAsync(ex, cancellationToken);
             throw;
         }
         finally
@@ -168,52 +179,102 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving = null,
         CancellationToken cancellationToken = default)
     {
-        var entityList = entities.ToList();
-
-        if (entityList.Count == 0)
-            return;
-
-        await using var dbContext = await CreateDbContextAsync(cancellationToken);
-
-        if (onSaving != null)
-        {
-            var savingTasks = entityList.Select(entity => onSaving(dbContext, entity, cancellationToken).AsTask()).ToList();
-            await Task.WhenAll(savingTasks);
-        }
-
-        // When doing a custom SQL query (Bulk Upsert), none of the installed query filters will be applied. Hence, we are assigning the current tenant ID explicitly.
-        var tenantId = serviceProvider.GetRequiredService<ITenantAccessor>().TenantId;
-        foreach (var entity in entityList)
-        {
-            if (entity is Entity entityWithTenant)
-            {
-                // Don't touch tenant-agnostic entities (marked with "*")
-                if (entityWithTenant.TenantId == Tenant.AgnosticTenantId)
-                    continue;
-
-                // Apply current tenant ID to entities without one
-                if (entityWithTenant.TenantId == null && tenantId != null)
-                    entityWithTenant.TenantId = tenantId;
-            }
-        }
+        await Semaphore.WaitAsync(cancellationToken);
 
         try
         {
-            await dbContext.BulkUpsertAsync(entityList, keySelector, cancellationToken);
+            var entityList = entities.ToList();
+
+            if (entityList.Count == 0)
+                return;
+
+            var tenantId = serviceProvider.GetRequiredService<ITenantAccessor>().TenantId;
+
+            await ExecuteBulkWriteWithSqlServerRetryAsync(async (dbContext, ct) =>
+            {
+                if (onSaving != null)
+                {
+                    var savingTasks = entityList.Select(entity => onSaving(dbContext, entity, ct).AsTask()).ToList();
+                    await Task.WhenAll(savingTasks);
+                }
+
+                // When doing a custom SQL query (Bulk Upsert), none of the installed query filters will be applied. Hence, we are assigning the current tenant ID explicitly.
+                foreach (var entity in entityList)
+                {
+                    if (entity is Entity entityWithTenant)
+                    {
+                        // Don't touch tenant-agnostic entities (marked with "*")
+                        if (entityWithTenant.TenantId == Tenant.AgnosticTenantId)
+                            continue;
+
+                        // Apply current tenant ID to entities without one
+                        if (entityWithTenant.TenantId == null && tenantId != null)
+                            entityWithTenant.TenantId = tenantId;
+                    }
+                }
+
+                await dbContext.BulkUpsertAsync(entityList, keySelector, ct);
+            }, cancellationToken);
         }
         catch (Exception ex)
         {
-            var handler = serviceProvider.GetService<IDbExceptionHandler>();
-
-            if (handler != null)
-            {
-                var context = new DbUpdateExceptionContext(ex, cancellationToken);
-                await handler.HandleAsync(context);
-            }
-
+            await HandleDbExceptionAsync(ex, cancellationToken);
             throw;
         }
+        finally
+        {
+            Semaphore.Release();
+        }
     }
+
+    private async Task HandleDbExceptionAsync(Exception exception, CancellationToken cancellationToken)
+    {
+        var handler = serviceProvider.GetService<IDbExceptionHandler>();
+
+        if (handler == null)
+            return;
+
+        var context = new DbUpdateExceptionContext(exception, cancellationToken);
+        await handler.HandleAsync(context);
+    }
+
+    private async Task ExecuteBulkWriteWithSqlServerRetryAsync(
+        Func<TDbContext, CancellationToken, Task> operation,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 0;; attempt++)
+        {
+            var providerName = string.Empty;
+
+            try
+            {
+                await using var dbContext = await CreateDbContextAsync(cancellationToken);
+                providerName = dbContext.Database.ProviderName ?? string.Empty;
+                await operation(dbContext, cancellationToken);
+                return;
+            }
+            catch (Exception ex)
+            {
+                if (ShouldRetrySqlServerBulkWrite(providerName, ex, attempt, cancellationToken))
+                {
+                    await Task.Delay(GetSqlServerBulkWriteRetryDelay(attempt), cancellationToken);
+                    continue;
+                }
+
+                throw;
+            }
+        }
+    }
+
+    private static bool ShouldRetrySqlServerBulkWrite(string providerName, Exception exception, int attempt, CancellationToken cancellationToken)
+    {
+        return attempt < SqlServerBulkWriteMaxRetryCount
+               && !cancellationToken.IsCancellationRequested
+               && exception is not OperationCanceledException
+               && DbExceptionClassifier.IsSqlServerTransient(providerName, exception);
+    }
+
+    private static TimeSpan GetSqlServerBulkWriteRetryDelay(int attempt) => TimeSpan.FromMilliseconds(SqlServerBulkWriteBaseDelay.TotalMilliseconds * (attempt + 1));
 
     /// <summary>
     /// Updates the entity.

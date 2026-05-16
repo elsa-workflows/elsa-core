@@ -1,5 +1,7 @@
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Runtime.HostedServices;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Quiescence;
@@ -96,5 +98,34 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         Assert.True(second.WasCached, "Second (force-after-completed) drain must be flagged as cached so the admin endpoint skips audit publishing.");
         // Same payload modulo the WasCached flag.
         Assert.Equal(first with { WasCached = true }, second);
+    }
+
+    [Fact(DisplayName = "Host stop drain swallows ObjectDisposedException after shutdown cancellation")]
+    public async Task HostStopDrainSwallowsObjectDisposedExceptionAfterCancellation()
+    {
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        var orchestrator = Substitute.For<IDrainOrchestrator>();
+        orchestrator.DrainAsync(DrainTrigger.HostStopSignal, cts.Token).Returns(_ => ThrowObjectDisposedAsync());
+        var hostedService = new DrainOrchestratorHostedService(orchestrator, Substitute.For<ILogger<DrainOrchestratorHostedService>>());
+
+        await hostedService.StopAsync(cts.Token);
+    }
+
+    [Fact(DisplayName = "Host stop drain propagates ObjectDisposedException before shutdown cancellation")]
+    public async Task HostStopDrainPropagatesObjectDisposedExceptionBeforeCancellation()
+    {
+        var orchestrator = Substitute.For<IDrainOrchestrator>();
+        orchestrator.DrainAsync(DrainTrigger.HostStopSignal, CancellationToken.None).Returns(_ => ThrowObjectDisposedAsync());
+        var hostedService = new DrainOrchestratorHostedService(orchestrator, Substitute.For<ILogger<DrainOrchestratorHostedService>>());
+
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => hostedService.StopAsync(CancellationToken.None));
+    }
+
+    private static async ValueTask<DrainOutcome> ThrowObjectDisposedAsync()
+    {
+        await Task.Yield();
+        throw new ObjectDisposedException("drain dependency");
     }
 }

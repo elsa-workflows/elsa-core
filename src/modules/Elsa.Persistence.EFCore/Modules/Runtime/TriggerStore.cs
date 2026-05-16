@@ -1,5 +1,6 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
@@ -15,6 +16,7 @@ namespace Elsa.Persistence.EFCore.Modules.Runtime;
 [UsedImplicitly]
 public class EFCoreTriggerStore(
     EntityStore<RuntimeElsaDbContext, StoredTrigger> store,
+    ITenantAccessor tenantAccessor,
     IPayloadSerializer serializer) : ITriggerStore
 {
     /// <inheritdoc />
@@ -57,14 +59,40 @@ public class EFCoreTriggerStore(
     public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
         var removedList = removed.ToList();
+        var addedList = added.ToList();
 
-        if(removedList.Count > 0)
+        foreach (var trigger in addedList)
+            ApplyCurrentTenant(trigger);
+
+        addedList = DistinctByLogicalKey(addedList).ToList();
+
+        if (removedList.Count > 0)
         {
             var filter = new TriggerFilter { Ids = removedList.Select(r => r.Id).ToList() };
             await DeleteManyAsync(filter, cancellationToken);
         }
 
-        await store.SaveManyAsync(added, OnSaveAsync, cancellationToken);
+        if (addedList.Count == 0)
+            return;
+
+        var newTriggers = await GetMissingLogicalTriggersAsync(addedList, cancellationToken);
+
+        if (newTriggers.Count == 0)
+            return;
+
+        try
+        {
+            await store.SaveManyAsync(newTriggers, OnSaveAsync, cancellationToken);
+        }
+        catch (Exception ex) when (DbExceptionClassifier.IsDuplicateKey(ex))
+        {
+            var remainingTriggers = await GetMissingLogicalTriggersAsync(newTriggers, cancellationToken);
+
+            if (remainingTriggers.Count == 0)
+                return;
+
+            await store.SaveManyAsync(remainingTriggers, OnSaveAsync, cancellationToken);
+        }
     }
 
     /// <inheritdoc />
@@ -89,4 +117,51 @@ public class EFCoreTriggerStore(
 
         return ValueTask.CompletedTask;
     }
+
+    private async Task<HashSet<string>> GetExistingLogicalKeysAsync(ICollection<StoredTrigger> triggers, CancellationToken cancellationToken)
+    {
+        var workflowDefinitionIds = triggers.Select(x => x.WorkflowDefinitionId).Distinct().ToList();
+        var existingTriggers = await store.QueryAsync(
+            queryable => queryable.Where(trigger => workflowDefinitionIds.Contains(trigger.WorkflowDefinitionId)),
+            cancellationToken);
+
+        return existingTriggers
+            .Select(GetLogicalKey)
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
+    private async Task<List<StoredTrigger>> GetMissingLogicalTriggersAsync(ICollection<StoredTrigger> triggers, CancellationToken cancellationToken)
+    {
+        var existingKeys = await GetExistingLogicalKeysAsync(triggers, cancellationToken);
+        return triggers
+            .Where(trigger => !existingKeys.Contains(GetLogicalKey(trigger)))
+            .ToList();
+    }
+
+    private void ApplyCurrentTenant(StoredTrigger trigger)
+    {
+        if (trigger.TenantId == Tenant.AgnosticTenantId)
+            return;
+
+        trigger.TenantId ??= tenantAccessor.TenantId;
+    }
+
+    private static IEnumerable<StoredTrigger> DistinctByLogicalKey(IEnumerable<StoredTrigger> triggers)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var trigger in triggers)
+        {
+            if (seen.Add(GetLogicalKey(trigger)))
+                yield return trigger;
+        }
+    }
+
+    private static string GetLogicalKey(StoredTrigger trigger) =>
+        string.Join(
+            '\u001f',
+            trigger.WorkflowDefinitionId,
+            trigger.Hash,
+            trigger.ActivityId,
+            trigger.TenantId);
 }

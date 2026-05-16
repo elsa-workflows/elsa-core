@@ -53,6 +53,14 @@ internal static class DrainTriggerExecutor
                     contextLabel, outcome.OverallResult, outcome.PausePhaseDuration, outcome.WaitPhaseDuration);
             }
         }
+        catch (ObjectDisposedException ex) when (cancellationToken.IsCancellationRequested)
+        {
+            logger.LogInformation(ex, "{Context} stopped because shutdown disposed a drain dependency after cancellation.", contextLabel);
+        }
+        catch (ObjectDisposedException)
+        {
+            throw;
+        }
         catch (InvalidOperationException ex)
         {
             // Parallel non-force drain rejected by the orchestrator — another trigger already drained
