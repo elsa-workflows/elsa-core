@@ -83,7 +83,7 @@ Before handing off changes, verify the following when applicable:
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read `specs/005-structured-log-persistence/plan.md`.
+shell commands, and other important information, read `specs/006-state-machine-activity/plan.md`.
 <!-- SPECKIT END -->
 
 ## Active Technologies
