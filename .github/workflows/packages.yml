@@ -23,8 +23,8 @@ env:
   nuget_feed_source: 'https://api.nuget.org/v3/index.json'
 
 jobs:
-  test:
-    name: Test with coverage
+  test_unit_integration:
+    name: Test unit/integration with coverage
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -66,16 +66,16 @@ jobs:
             exit 1
           fi
 
-          # Discover test projects across unit/component/integration.
+          # Discover unit and integration test projects. Component tests run in their own job.
           mapfile -t projects < <(
-            find test/unit test/component test/integration \
+            find test/unit test/integration \
               -type f -name '*.csproj' -print0 2>/dev/null \
               | xargs -0 -n1 \
               | sort
           )
 
           if [ ${#projects[@]} -eq 0 ]; then
-            echo "No test projects were found in test/unit, test/component or test/integration." >&2
+            echo "No test projects were found in test/unit or test/integration." >&2
             exit 1
           fi
 
@@ -103,6 +103,136 @@ jobs:
             docker logs "$container" 2>&1 | tail -100 || true
           done
 
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-integration-coverage-reports
+          path: artifacts/coverage
+
+  test_component:
+    name: Test component with coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.1xx
+
+      - name: Show .NET info
+        run: |
+          dotnet --info
+          dotnet --list-sdks
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore solution
+        run: dotnet restore Elsa.sln --ignore-failed-sources
+
+      - name: Prepare test artifact directories
+        run: |
+          rm -rf artifacts/coverage artifacts/test-results
+          mkdir -p artifacts/coverage artifacts/test-results/component
+
+      - name: Run component tests with coverage and hang diagnostics
+        run: |
+          set -euo pipefail
+          dotnet --info
+          if ! dotnet --version | grep -q '^10\.'; then
+            echo "Expected .NET SDK 10.x but got $(dotnet --version)" >&2
+            exit 1
+          fi
+
+          mapfile -t projects < <(
+            find test/component \
+              -type f -name '*.csproj' -print0 2>/dev/null \
+              | xargs -0 -n1 \
+              | sort
+          )
+
+          if [ ${#projects[@]} -eq 0 ]; then
+            echo "No test projects were found in test/component." >&2
+            exit 1
+          fi
+
+          for project in "${projects[@]}"; do
+            echo "Building component test project ${project}"
+            dotnet build "$project" --configuration Release --framework net10.0
+
+            echo "Running component tests with coverage and hang diagnostics for ${project}"
+            dotnet test "$project" \
+              --configuration Release \
+              --framework net10.0 \
+              --no-build \
+              --logger "GitHubActions;report-warnings=false" \
+              --logger "trx" \
+              --results-directory artifacts/test-results/component \
+              --verbosity detailed \
+              --blame-hang \
+              --blame-hang-timeout 2m \
+              --blame-hang-dump-type mini \
+              /p:CollectCoverage=true
+          done
+
+      - name: Dump docker logs on failure
+        if: failure()
+        run: |
+          echo "=== Docker containers ==="
+          docker ps -a || true
+          echo "=== Docker logs ==="
+          for container in $(docker ps -aq); do
+            echo "--- Logs for container $container ---"
+            docker logs "$container" 2>&1 | tail -100 || true
+          done
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: component-coverage-reports
+          path: artifacts/coverage
+
+      - name: Upload component test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: component-test-diagnostics
+          path: artifacts/test-results
+
+  coverage_report:
+    name: Generate coverage report
+    needs:
+      - test_unit_integration
+      - test_component
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: always() && !cancelled() && needs.test_unit_integration.result == 'success' && needs.test_component.result == 'success'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.1xx
+
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-coverage-reports'
+          path: artifacts/coverage
+          merge-multiple: true
+
       - name: Install ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
@@ -122,14 +252,16 @@ jobs:
           path: artifacts/coverage
 
       - name: Upload Pages artifact
-        if: always() && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
         uses: actions/upload-pages-artifact@v3
         with:
           path: './artifacts/coverage-report'
 
   build:
     name: Build packages
-    needs: test
+    needs:
+      - test_unit_integration
+      - test_component
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: ${{ github.event_name != 'pull_request' }}
@@ -221,7 +353,7 @@ jobs:
 
   deploy_coverage:
     name: Deploy coverage to GitHub Pages
-    needs: test
+    needs: coverage_report
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop/3.6.1' || github.ref == 'refs/heads/release/3.6.1'
     permissions:
