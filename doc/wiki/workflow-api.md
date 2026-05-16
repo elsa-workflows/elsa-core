@@ -52,12 +52,13 @@ This allows multiple features to contribute endpoints before FastEndpoints is re
 
 ## Common Endpoint Shape
 
-Endpoint classes typically derive from Elsa API base classes in [Elsa.Api.Common](../../src/common/Elsa.Api.Common). They configure route, verb, permissions, and response shape in `Configure()`, then implement `ExecuteAsync`.
+Endpoint classes typically derive from Elsa API base classes in [Elsa.Api.Common](../../src/common/Elsa.Api.Common). They configure route, verb, permissions, and response shape in `Configure()`, then implement either `ExecuteAsync` or `HandleAsync` depending on the FastEndpoints pattern used by that area of the module.
 
 When adding endpoints:
 
 - keep one endpoint per folder/action
 - keep request and response models near the endpoint
+- follow the `ExecuteAsync` or `HandleAsync` pattern used by nearby endpoints in the same area
 - use `ConfigurePermissions` for protected operations
 - use the configured API serializer rather than custom JSON settings
 - add route examples to relevant docs when behavior is externally visible
