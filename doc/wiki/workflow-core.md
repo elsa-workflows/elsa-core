@@ -61,7 +61,7 @@ Execution context extension tests live under [test/unit/Elsa.Workflows.Core.Unit
 
 ## Inputs, Outputs, And Expressions
 
-Inputs and outputs are modelled through:
+Inputs and outputs are modeled through:
 
 - `Input<T>` and `Input`
 - `Output<T>` and `Output`
