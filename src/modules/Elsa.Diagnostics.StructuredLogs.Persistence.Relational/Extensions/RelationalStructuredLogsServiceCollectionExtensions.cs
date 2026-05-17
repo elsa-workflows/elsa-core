@@ -21,8 +21,8 @@ public static class RelationalStructuredLogsServiceCollectionExtensions
         services.TryAddSingleton<RelationalStructuredLogStore>();
         services.TryAddSingleton<StructuredLogWriteBuffer>();
         services.TryAddSingleton<StructuredLogRetentionService>();
-        services.AddSingleton<IStructuredLogStore>(sp => sp.GetRequiredService<StructuredLogWriteBuffer>());
-        services.AddSingleton<IStructuredLogWriteBuffer>(sp => sp.GetRequiredService<StructuredLogWriteBuffer>());
+        services.Replace(ServiceDescriptor.Singleton<IStructuredLogStore>(sp => sp.GetRequiredService<StructuredLogWriteBuffer>()));
+        services.Replace(ServiceDescriptor.Singleton<IStructuredLogWriteBuffer>(sp => sp.GetRequiredService<StructuredLogWriteBuffer>()));
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IStructuredLogStorageDiagnostics, StructuredLogWriteBufferStorageDiagnostics>());
         services.AddHostedService(sp => sp.GetRequiredService<StructuredLogWriteBuffer>());
 
