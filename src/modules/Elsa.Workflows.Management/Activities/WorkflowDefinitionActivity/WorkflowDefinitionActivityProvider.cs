@@ -40,7 +40,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         if (_tenantAccessor != null)
         {
             var currentTenantId = _tenantAccessor.TenantId;
-            definitions = definitions.Where(x => x.TenantId.NormalizeTenantId() == currentTenantId).ToList();
+            definitions = definitions.Where(x => x.TenantId == Tenant.AgnosticTenantId || x.TenantId.NormalizeTenantId() == currentTenantId).ToList();
         }
 
         return CreateDescriptors(definitions).ToList();
