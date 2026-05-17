@@ -19,6 +19,7 @@ namespace Elsa.Workflows.Activities.StateMachine.Activities;
 public class StateMachine : Activity
 {
     private const string PhaseEntering = "Entering";
+    private const string CurrentStateProperty = "CurrentState";
 
     /// <inheritdoc />
     public StateMachine([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
@@ -59,9 +60,10 @@ public class StateMachine : Activity
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        CurrentState = string.IsNullOrWhiteSpace(CurrentState) ? InitialState : CurrentState;
+        var currentState = GetCurrentState(context);
+        SetCurrentState(context, string.IsNullOrWhiteSpace(currentState) ? InitialState : currentState);
 
-        if (FindState(CurrentState) == null)
+        if (FindState(GetCurrentState(context)) == null)
         {
             await context.CompleteActivityAsync();
             return;
@@ -72,7 +74,7 @@ public class StateMachine : Activity
 
     private async ValueTask EnterStateAsync(ActivityExecutionContext context, ActivityExecutionContext? schedulingContext = null)
     {
-        var state = FindState(CurrentState);
+        var state = FindState(GetCurrentState(context));
 
         if (state == null)
         {
@@ -96,7 +98,7 @@ public class StateMachine : Activity
 
     private async ValueTask ScheduleOutboundTriggersAsync(ActivityExecutionContext context, ActivityExecutionContext? schedulingContext = null)
     {
-        var outboundTransitions = GetOutboundTransitions(CurrentState).Where(x => x.Trigger != null && FindState(x.To) != null).ToList();
+        var outboundTransitions = GetOutboundTransitions(GetCurrentState(context)).Where(x => x.Trigger != null && FindState(x.To) != null).ToList();
 
         if (!outboundTransitions.Any())
         {
@@ -111,9 +113,9 @@ public class StateMachine : Activity
     private async ValueTask OnTriggerCompletedAsync(ActivityCompletedContext context)
     {
         var targetContext = context.TargetContext;
-        var transition = FindTransitionByKey(context.ChildContext.Tag as string) ?? FindTransitionByTrigger(context.ChildContext.Activity);
+        var transition = FindTransitionByKey(targetContext, context.ChildContext.Tag as string) ?? FindTransitionByTrigger(targetContext, context.ChildContext.Activity);
 
-        if (transition == null || !IsCurrentSource(transition) || FindState(transition.To) == null)
+        if (transition == null || !IsCurrentSource(targetContext, transition) || FindState(transition.To) == null)
             return;
 
         var canTransition = transition.Condition == null || await EvaluateConditionAsync(targetContext, transition.Condition);
@@ -139,12 +141,13 @@ public class StateMachine : Activity
 
     private async ValueTask OnTransitionActionCompletedAsync(ActivityCompletedContext context)
     {
-        var transition = FindTransitionByKey(context.ChildContext.Tag as string);
+        var targetContext = context.TargetContext;
+        var transition = FindTransitionByKey(targetContext, context.ChildContext.Tag as string);
 
-        if (transition == null)
+        if (transition == null || !IsCurrentSource(targetContext, transition))
             return;
 
-        await ExitStateAsync(context.TargetContext, transition, context.ChildContext);
+        await ExitStateAsync(targetContext, transition, context.ChildContext);
     }
 
     private async ValueTask ExitStateAsync(ActivityExecutionContext context, Transition transition, ActivityExecutionContext? schedulingContext = null)
@@ -162,17 +165,18 @@ public class StateMachine : Activity
 
     private async ValueTask OnStateExitCompletedAsync(ActivityCompletedContext context)
     {
-        var transition = FindTransitionByKey(context.ChildContext.Tag as string);
+        var targetContext = context.TargetContext;
+        var transition = FindTransitionByKey(targetContext, context.ChildContext.Tag as string);
 
-        if (transition == null)
+        if (transition == null || !IsCurrentSource(targetContext, transition))
             return;
 
-        await CompleteTransitionAsync(context.TargetContext, transition, context.ChildContext);
+        await CompleteTransitionAsync(targetContext, transition, context.ChildContext);
     }
 
     private async ValueTask CompleteTransitionAsync(ActivityExecutionContext context, Transition transition, ActivityExecutionContext? schedulingContext = null)
     {
-        CurrentState = transition.To;
+        SetCurrentState(context, transition.To);
         await EnterStateAsync(context, schedulingContext);
     }
 
@@ -219,12 +223,24 @@ public class StateMachine : Activity
             await competingTriggerContext.CancelActivityAsync();
     }
 
-    private bool IsCurrentSource(Transition transition) => string.Equals(transition.From, CurrentState, StringComparison.Ordinal);
+    private string? GetCurrentState(ActivityExecutionContext context) => context.GetProperty<string>(CurrentStateProperty) ?? CurrentState;
+
+    private void SetCurrentState(ActivityExecutionContext context, string? state)
+    {
+        CurrentState = state;
+
+        if (state == null)
+            context.RemoveProperty(CurrentStateProperty);
+        else
+            context.SetProperty(CurrentStateProperty, state);
+    }
+
+    private bool IsCurrentSource(ActivityExecutionContext context, Transition transition) => string.Equals(transition.From, GetCurrentState(context), StringComparison.Ordinal);
 
     private static async Task<bool> EvaluateConditionAsync(ActivityExecutionContext context, Input<bool> condition)
     {
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
-        return await evaluator.EvaluateAsync(condition, context.ExpressionExecutionContext) == true;
+        return await evaluator.EvaluateAsync(condition, context.ExpressionExecutionContext);
     }
 
     private StateMachineState? FindState(string? name) =>
@@ -237,15 +253,34 @@ public class StateMachine : Activity
             ? []
             : Transitions.Where(x => string.Equals(x.From, sourceState, StringComparison.Ordinal));
 
-    private Transition? FindTransitionByTrigger(IActivity trigger) =>
-        GetOutboundTransitions(CurrentState).FirstOrDefault(x => ReferenceEquals(x.Trigger, trigger));
+    private Transition? FindTransitionByTrigger(ActivityExecutionContext context, IActivity trigger) =>
+        GetOutboundTransitions(GetCurrentState(context)).FirstOrDefault(x => ReferenceEquals(x.Trigger, trigger));
 
-    private Transition? FindTransitionByKey(string? key) =>
-        string.IsNullOrWhiteSpace(key)
-            ? null
-            : Transitions.FirstOrDefault(x => string.Equals(GetTransitionKey(x), key, StringComparison.Ordinal));
+    private Transition? FindTransitionByKey(ActivityExecutionContext context, string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+            return null;
 
-    private static string GetTransitionKey(Transition transition) =>
+        var currentState = GetCurrentState(context);
+        return GetOutboundTransitions(currentState).FirstOrDefault(x => string.Equals(GetTransitionKey(x), key, StringComparison.Ordinal))
+               ?? Transitions.FirstOrDefault(x => string.Equals(GetTransitionKey(x), key, StringComparison.Ordinal));
+    }
+
+    private string GetTransitionKey(Transition transition)
+    {
+        var index = 0;
+        foreach (var current in Transitions)
+        {
+            if (ReferenceEquals(current, transition))
+                return $"{index}:{GetTransitionDisplayKey(transition)}";
+
+            index++;
+        }
+
+        return GetTransitionDisplayKey(transition);
+    }
+
+    private static string GetTransitionDisplayKey(Transition transition) =>
         string.IsNullOrWhiteSpace(transition.Name)
             ? $"{transition.From}->{transition.To}"
             : transition.Name;

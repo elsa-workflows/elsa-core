@@ -39,6 +39,7 @@ public class Transition
 
     /// <summary>
     /// The condition that determines whether the transition can be taken.
+    /// When this evaluates to <c>false</c>, the trigger is re-armed until another trigger wins or the condition later evaluates to <c>true</c>.
     /// </summary>
     [Input(UIHint = InputUIHints.SingleLine)]
     public Input<bool>? Condition { get; set; }
