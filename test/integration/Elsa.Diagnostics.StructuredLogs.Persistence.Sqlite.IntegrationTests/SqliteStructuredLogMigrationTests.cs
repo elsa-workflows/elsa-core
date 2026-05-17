@@ -43,6 +43,17 @@ public class SqliteStructuredLogMigrationTests
     }
 
     [Fact]
+    public async Task StartupTask_UsesSameInstance_AsHostedService()
+    {
+        await using var host = new SqliteStructuredLogTestHost(migrate: false);
+        using var scope = host.Services.CreateScope();
+        var hostedService = host.Services.GetServices<IHostedService>().OfType<SqliteStructuredLogStartupService>().Single();
+        var startupTask = scope.ServiceProvider.GetServices<IStartupTask>().OfType<SqliteStructuredLogStartupService>().Single();
+
+        Assert.Same(hostedService, startupTask);
+    }
+
+    [Fact]
     public async Task HostedServices_StartMigrationBeforeWriteBuffer()
     {
         await using var host = new SqliteStructuredLogTestHost(migrate: false);

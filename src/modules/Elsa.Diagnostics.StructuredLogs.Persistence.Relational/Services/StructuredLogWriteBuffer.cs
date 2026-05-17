@@ -19,6 +19,7 @@ public class StructuredLogWriteBuffer(
     private CancellationTokenSource _stopTokenSource = new();
     private Task? _backgroundTask;
     private long _droppedWriteCount;
+    private int _activeStartCount;
     private int _disposed;
 
     public long DroppedWriteCount => Interlocked.Read(ref _droppedWriteCount);
@@ -65,6 +66,8 @@ public class StructuredLogWriteBuffer(
     {
         lock (_lifecycleLock)
         {
+            _activeStartCount++;
+
             if (_backgroundTask is { IsCompleted: false })
                 return Task.CompletedTask;
 
@@ -74,7 +77,8 @@ public class StructuredLogWriteBuffer(
                 _stopTokenSource = new();
             }
 
-            _backgroundTask = Task.Run(ProcessQueueAsync, CancellationToken.None);
+            var stopToken = _stopTokenSource.Token;
+            _backgroundTask = Task.Run(() => ProcessQueueAsync(stopToken), CancellationToken.None);
         }
 
         return Task.CompletedTask;
@@ -87,6 +91,12 @@ public class StructuredLogWriteBuffer(
 
         lock (_lifecycleLock)
         {
+            if (_activeStartCount > 0)
+                _activeStartCount--;
+
+            if (_activeStartCount > 0)
+                return;
+
             backgroundTask = _backgroundTask;
             stopTokenSource = _stopTokenSource;
         }
@@ -179,10 +189,8 @@ public class StructuredLogWriteBuffer(
         stopTokenSource.Dispose();
     }
 
-    private async Task ProcessQueueAsync()
+    private async Task ProcessQueueAsync(CancellationToken cancellationToken)
     {
-        var cancellationToken = _stopTokenSource.Token;
-
         while (!cancellationToken.IsCancellationRequested)
         {
             try

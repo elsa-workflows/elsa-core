@@ -12,6 +12,9 @@ public class SqliteStructuredLogStartupService(
     StructuredLogRetentionService retentionService,
     IOptions<SqliteStructuredLogOptions> options) : IHostedService, IStartupTask
 {
+    private readonly SemaphoreSlim _startupLock = new(1, 1);
+    private bool _executed;
+
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await ExecuteAsync(cancellationToken);
@@ -19,11 +22,27 @@ public class SqliteStructuredLogStartupService(
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        if (options.Value.RunMigrationsOnStartup)
-            await schemaMigrator.MigrateAsync(cancellationToken);
+        if (_executed)
+            return;
 
-        if (options.Value.Relational.Retention.CleanupOnStartup)
-            await retentionService.CleanupAsync(cancellationToken);
+        await _startupLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_executed)
+                return;
+
+            if (options.Value.RunMigrationsOnStartup)
+                await schemaMigrator.MigrateAsync(cancellationToken);
+
+            if (options.Value.Relational.Retention.CleanupOnStartup)
+                await retentionService.CleanupAsync(cancellationToken);
+
+            _executed = true;
+        }
+        finally
+        {
+            _startupLock.Release();
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
