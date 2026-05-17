@@ -147,6 +147,22 @@ public class StateMachineTests
         Assert.Equal(ActivityStatus.Canceled, cancelTriggerContext.Status);
     }
 
+    [Fact(DisplayName = "StateMachine removes re-armed competing triggers when a different transition wins")]
+    public async Task AcceptedTransitionRemovesRearmedCompetingTriggers()
+    {
+        var context = await ExecuteAndEnterNewStateAsync();
+        _stateMachine.Transitions.Single(x => x.Name == "Pay").Condition = new(false);
+
+        await CompleteScheduledActivityAsync(context, _payTrigger);
+        Assert.True(context.WorkflowExecutionContext.Scheduler.Any(x => x.Activity == _payTrigger));
+        Assert.Contains(context.WorkflowExecutionContext.CompletionCallbacks, x => x.Owner == context && x.Child.Activity == _payTrigger);
+
+        await CompleteScheduledActivityAsync(context, _cancelTrigger);
+
+        Assert.False(context.WorkflowExecutionContext.Scheduler.Any(x => x.Activity == _payTrigger));
+        Assert.DoesNotContain(context.WorkflowExecutionContext.CompletionCallbacks, x => x.Owner == context && x.Child.Activity == _payTrigger);
+    }
+
     [Fact(DisplayName = "StateMachine stores current state in the activity execution context")]
     public async Task StoresCurrentStateInActivityExecutionContext()
     {

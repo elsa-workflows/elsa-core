@@ -213,14 +213,44 @@ public class StateMachine : Activity
             .Where(x => !ReferenceEquals(x, winningTransition))
             .Select(x => x.Trigger?.Id)
             .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!)
             .ToHashSet();
 
         var competingTriggerContexts = context.WorkflowExecutionContext.ActivityExecutionContexts
-            .Where(x => !ReferenceEquals(x, winningTriggerContext) && competingTriggerIds.Contains(x.Activity.Id))
+            .Where(x => x.ParentActivityExecutionContext == context && !ReferenceEquals(x, winningTriggerContext) && competingTriggerIds.Contains(x.Activity.Id))
             .ToList();
 
         foreach (var competingTriggerContext in competingTriggerContexts)
             await competingTriggerContext.CancelActivityAsync();
+
+        RemoveScheduledCompetingTriggers(context, competingTriggerIds);
+        RemoveCompetingTriggerCallbacks(context, competingTriggerIds);
+    }
+
+    private static void RemoveScheduledCompetingTriggers(ActivityExecutionContext context, HashSet<string> competingTriggerIds)
+    {
+        var scheduler = context.WorkflowExecutionContext.Scheduler;
+        var scheduledWorkItems = scheduler.List().ToList();
+
+        if (!scheduledWorkItems.Any(x => IsCompetingTriggerWorkItem(context, competingTriggerIds, x)))
+            return;
+
+        scheduler.Clear();
+
+        foreach (var workItem in scheduledWorkItems.Where(x => !IsCompetingTriggerWorkItem(context, competingTriggerIds, x)))
+            scheduler.Schedule(workItem);
+    }
+
+    private static bool IsCompetingTriggerWorkItem(ActivityExecutionContext context, HashSet<string> competingTriggerIds, ActivityWorkItem workItem) =>
+        workItem.Owner == context && competingTriggerIds.Contains(workItem.Activity.Id);
+
+    private static void RemoveCompetingTriggerCallbacks(ActivityExecutionContext context, HashSet<string> competingTriggerIds)
+    {
+        var competingTriggerCallbacks = context.WorkflowExecutionContext.CompletionCallbacks
+            .Where(x => x.Owner == context && competingTriggerIds.Contains(x.Child.Activity.Id))
+            .ToList();
+
+        context.WorkflowExecutionContext.RemoveCompletionCallbacks(competingTriggerCallbacks);
     }
 
     private string? GetCurrentState(ActivityExecutionContext context) => context.GetProperty<string>(CurrentStateProperty) ?? CurrentState;
