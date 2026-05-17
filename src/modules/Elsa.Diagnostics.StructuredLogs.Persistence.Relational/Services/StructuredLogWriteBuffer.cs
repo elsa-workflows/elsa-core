@@ -158,8 +158,13 @@ public class StructuredLogWriteBuffer(
             {
                 var signalTask = _signal.WaitAsync(cancellationToken);
                 var timerTask = timer.WaitForNextTickAsync(cancellationToken).AsTask();
-                await Task.WhenAny(signalTask, timerTask);
-                await FlushAsync(cancellationToken);
+                var completedTask = await Task.WhenAny(signalTask, timerTask);
+                await completedTask;
+
+                if (cancellationToken.IsCancellationRequested)
+                    return;
+
+                await FlushAsync();
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
