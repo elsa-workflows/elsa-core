@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.Diagnostics.ConsoleLogs]*</Include>
+        <Threshold>0</Threshold>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Diagnostics.ConsoleLogs\Elsa.Diagnostics.ConsoleLogs.csproj" />
+    </ItemGroup>
+
+</Project>
