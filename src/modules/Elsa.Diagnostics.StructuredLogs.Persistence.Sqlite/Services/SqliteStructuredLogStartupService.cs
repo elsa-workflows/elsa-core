@@ -1,3 +1,4 @@
+using Elsa.Common;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.Options;
@@ -9,9 +10,14 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.Services;
 public class SqliteStructuredLogStartupService(
     IStructuredLogSchemaMigrator schemaMigrator,
     StructuredLogRetentionService retentionService,
-    IOptions<SqliteStructuredLogOptions> options) : IHostedService
+    IOptions<SqliteStructuredLogOptions> options) : IHostedService, IStartupTask
 {
     public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        await ExecuteAsync(cancellationToken);
+    }
+
+    public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         if (options.Value.RunMigrationsOnStartup)
             await schemaMigrator.MigrateAsync(cancellationToken);

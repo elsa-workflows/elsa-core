@@ -1,3 +1,4 @@
+using Elsa.Common;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.Options;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.Services;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
@@ -27,6 +28,18 @@ public class SqliteStructuredLogMigrationTests
         await startup.StartAsync(CancellationToken.None);
 
         Assert.False(await host.TableExistsAsync("StructuredLogEvents"));
+    }
+
+    [Fact]
+    public async Task StartupTask_RunsMigrations_WhenHostedServicesAreNotStarted()
+    {
+        await using var host = new SqliteStructuredLogTestHost(migrate: false);
+        using var scope = host.Services.CreateScope();
+        var startup = scope.ServiceProvider.GetServices<IStartupTask>().OfType<SqliteStructuredLogStartupService>().Single();
+
+        await startup.ExecuteAsync(CancellationToken.None);
+
+        Assert.True(await host.TableExistsAsync("StructuredLogEvents"));
     }
 
     [Fact]

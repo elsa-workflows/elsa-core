@@ -1,4 +1,8 @@
+using Elsa.Common;
 using Elsa.Diagnostics.StructuredLogs.Models;
+using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests;
 
@@ -42,5 +46,48 @@ public class SqliteStructuredLogWriteQueueTests
         await host.StopHostedServicesAsync();
 
         Assert.Equal(1, await host.CountRowsAsync("StructuredLogEvents"));
+    }
+
+    [Fact]
+    public async Task BackgroundTask_FlushesLoggerWrites_ForShellLifecycle()
+    {
+        await using var host = new SqliteStructuredLogTestHost(migrate: false);
+        using var scope = host.Services.CreateScope();
+        var services = scope.ServiceProvider;
+
+        foreach (var startupTask in services.GetServices<IStartupTask>())
+            await startupTask.ExecuteAsync(CancellationToken.None);
+
+        var backgroundTask = services.GetServices<IBackgroundTask>().OfType<StructuredLogWriteBufferBackgroundTask>().Single();
+        await backgroundTask.StartAsync(CancellationToken.None);
+        await backgroundTask.StopAsync(CancellationToken.None);
+        await backgroundTask.StartAsync(CancellationToken.None);
+
+        try
+        {
+            var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("Elsa.Tests.ShellLifecycle");
+            logger.LogInformation("SQLite structured log shell background task test");
+
+            await WaitUntilAsync(async () => await host.CountRowsAsync("StructuredLogEvents") >= 1);
+        }
+        finally
+        {
+            await backgroundTask.StopAsync(CancellationToken.None);
+        }
+    }
+
+    private static async Task WaitUntilAsync(Func<ValueTask<bool>> condition)
+    {
+        using var timeoutTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        while (!timeoutTokenSource.IsCancellationRequested)
+        {
+            if (await condition())
+                return;
+
+            await Task.Delay(50);
+        }
+
+        Assert.Fail("The expected structured log row was not persisted before the timeout elapsed.");
     }
 }

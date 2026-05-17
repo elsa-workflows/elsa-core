@@ -46,6 +46,7 @@ public static class SqliteStructuredLogsModuleExtensions
         services.TryAddSingleton<IRelationalStructuredLogDialect, SqliteStructuredLogDialect>();
         services.TryAddSingleton<IStructuredLogSchemaMigrator, SqliteStructuredLogSchemaMigrator>();
         services.AddHostedService<SqliteStructuredLogStartupService>();
+        services.AddStartupTask<SqliteStructuredLogStartupService>();
         services.AddRelationalStructuredLogPersistence();
 
         return services;
