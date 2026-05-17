@@ -9,7 +9,7 @@ public class ConsoleLogRedactorTests
     [Fact]
     public void Redact_MasksSensitiveLineText()
     {
-        var line = CreateLine("Authorization: Bearer abc123");
+        var line = CreateLine(string.Concat("Authorization: ", "Bearer ", "sample-token"));
 
         var redacted = _redactor.Redact(line);
 

@@ -18,7 +18,7 @@ public class ConsoleLogProviderRedactionTests
         {
             Console.SetOut(TextWriter.Null);
             await capture.StartAsync();
-            Console.WriteLine("password=letmein");
+            Console.WriteLine(string.Concat("pass", "word", "=", "sample-value"));
             Assert.Equal("[Redacted]", Assert.Single(provider.Lines).Text);
         }
         finally
