@@ -454,7 +454,7 @@ public class ElsaScriptParser : IElsaScriptParser
 
         var workflowWithoutMetadata = workflowKeyword
             .And(identifier)
-            .Then(x => (WorkflowId: x.Item2.ToString(), Metadata: (IReadOnlyList<(string Name, object Value)>?)null));
+            .Then(x => (WorkflowId: x.Item2.ToString(), Metadata: (IReadOnlyList<(string Name, object Value)>)[]));
 
         var workflowHeader = workflowWithMetadata.Or(workflowWithoutMetadata);
 

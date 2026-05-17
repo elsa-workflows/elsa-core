@@ -9,8 +9,21 @@ namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 /// <summary>
 /// Provides activity descriptors based on <see cref="WorkflowDefinition"/>s stored in the database.
 /// </summary>
-public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, WorkflowDefinitionActivityDescriptorFactory workflowDefinitionActivityDescriptorFactory, ITenantAccessor tenantAccessor) : IActivityProvider
+public class WorkflowDefinitionActivityProvider : IActivityProvider
 {
+    private readonly IWorkflowDefinitionStore _store;
+    private readonly WorkflowDefinitionActivityDescriptorFactory _workflowDefinitionActivityDescriptorFactory;
+
+    public WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, WorkflowDefinitionActivityDescriptorFactory workflowDefinitionActivityDescriptorFactory)
+    {
+        _store = store;
+        _workflowDefinitionActivityDescriptorFactory = workflowDefinitionActivityDescriptorFactory;
+    }
+
+    public WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, WorkflowDefinitionActivityDescriptorFactory workflowDefinitionActivityDescriptorFactory, ITenantAccessor tenantAccessor) : this(store, workflowDefinitionActivityDescriptorFactory)
+    {
+    }
+
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
@@ -20,7 +33,7 @@ public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, 
             VersionOptions = VersionOptions.All
         };
 
-        var definitions = (await store.FindManyAsync(filter, cancellationToken)).ToList();
+        var definitions = (await _store.FindManyAsync(filter, cancellationToken)).ToList();
         return CreateDescriptors(definitions).ToList();
     }
 
@@ -34,6 +47,6 @@ public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, 
         var latestPublishedVersion = allDefinitions
             .Where(x => x.DefinitionId == definition.DefinitionId && x.IsPublished)
             .MaxBy(x => x.Version);
-        return workflowDefinitionActivityDescriptorFactory.CreateDescriptor(definition, latestPublishedVersion);
+        return _workflowDefinitionActivityDescriptorFactory.CreateDescriptor(definition, latestPublishedVersion);
     }
 }

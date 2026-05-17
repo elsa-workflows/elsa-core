@@ -17,7 +17,9 @@ public class ExceptionExtensionsTests
     [InlineData(typeof(ThreadAbortException))]
     public void FatalExceptions(Type exceptionType)
     {
+#pragma warning disable SYSLIB0050 // FormatterServices is needed to instantiate fatal exception types without throwing them.
         var ex = (Exception)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(exceptionType);
+#pragma warning restore SYSLIB0050
         Assert.True(ex.IsFatal());
     }
 

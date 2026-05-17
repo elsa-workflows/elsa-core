@@ -514,10 +514,10 @@ public class CachingWorkflowDefinitionServiceTests
             .Returns(async callInfo => await callInfo.Arg<Func<ICacheEntry, Task<WorkflowGraphFindResult>>>()(Substitute.For<ICacheEntry>()));
 
         _cache.FindOrCreateAsync<WorkflowDefinition>(Arg.Any<object>(), Arg.Any<Func<ICacheEntry, Task<WorkflowDefinition>>>())
-            .Returns(async callInfo => await callInfo.Arg<Func<ICacheEntry, Task<WorkflowDefinition>>>()(Substitute.For<ICacheEntry>()));
+            .Returns(async callInfo => (WorkflowDefinition?)await callInfo.Arg<Func<ICacheEntry, Task<WorkflowDefinition>>>()(Substitute.For<ICacheEntry>()));
 
         _cache.FindOrCreateAsync<WorkflowGraph>(Arg.Any<object>(), Arg.Any<Func<ICacheEntry, Task<WorkflowGraph>>>())
-            .Returns(async callInfo => await callInfo.Arg<Func<ICacheEntry, Task<WorkflowGraph>>>()(Substitute.For<ICacheEntry>()));
+            .Returns(async callInfo => (WorkflowGraph?)await callInfo.Arg<Func<ICacheEntry, Task<WorkflowGraph>>>()(Substitute.For<ICacheEntry>()));
     }
 
     /// <summary>
