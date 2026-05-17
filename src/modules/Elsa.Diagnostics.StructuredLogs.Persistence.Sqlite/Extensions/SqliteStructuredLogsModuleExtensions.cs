@@ -1,3 +1,4 @@
+using Elsa.Common;
 using Elsa.Diagnostics.StructuredLogs.Features;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Extensions;
@@ -45,7 +46,9 @@ public static class SqliteStructuredLogsModuleExtensions
         services.TryAddSingleton<IRelationalStructuredLogConnectionFactory, SqliteStructuredLogConnectionFactory>();
         services.TryAddSingleton<IRelationalStructuredLogDialect, SqliteStructuredLogDialect>();
         services.TryAddSingleton<IStructuredLogSchemaMigrator, SqliteStructuredLogSchemaMigrator>();
-        services.AddHostedService<SqliteStructuredLogStartupService>();
+        services.TryAddSingleton<SqliteStructuredLogStartupService>();
+        services.AddHostedService(sp => sp.GetRequiredService<SqliteStructuredLogStartupService>());
+        services.AddScoped<IStartupTask>(sp => sp.GetRequiredService<SqliteStructuredLogStartupService>());
         services.AddRelationalStructuredLogPersistence();
 
         return services;

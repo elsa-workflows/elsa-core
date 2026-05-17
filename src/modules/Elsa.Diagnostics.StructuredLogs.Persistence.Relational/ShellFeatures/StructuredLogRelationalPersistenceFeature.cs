@@ -1,4 +1,5 @@
 using CShells.Features;
+using Elsa.Diagnostics.StructuredLogs.ShellFeatures;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,7 +11,7 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Relational.ShellFeatures;
 [ShellFeature(
     DisplayName = "Structured Log Relational Persistence",
     Description = "Provides shared relational persistence services for diagnostics structured logs",
-    DependsOn = ["Structured Logs"])]
+    DependsOn = [typeof(StructuredLogsFeature)])]
 [UsedImplicitly]
 public class StructuredLogRelationalPersistenceFeature : IShellFeature
 {
