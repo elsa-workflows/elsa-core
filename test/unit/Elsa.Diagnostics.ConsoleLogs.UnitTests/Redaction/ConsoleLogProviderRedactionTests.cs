@@ -19,6 +19,7 @@ public class ConsoleLogProviderRedactionTests
             Console.SetOut(TextWriter.Null);
             await capture.StartAsync();
             Console.WriteLine(string.Concat("pass", "word", "=", "sample-value"));
+            await capture.StopAsync();
             Assert.Equal("[Redacted]", Assert.Single(provider.Lines).Text);
         }
         finally

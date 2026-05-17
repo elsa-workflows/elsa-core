@@ -102,7 +102,8 @@ public class ConsoleLogSubscriptionManager : IDisposable
     private void Remove(string connectionId, ConsoleLogSubscription subscription)
     {
         var entry = new KeyValuePair<string, ConsoleLogSubscription>(connectionId, subscription);
-        ((ICollection<KeyValuePair<string, ConsoleLogSubscription>>)_subscriptions).Remove(entry);
+        if (((ICollection<KeyValuePair<string, ConsoleLogSubscription>>)_subscriptions).Remove(entry))
+            subscription.CancellationTokenSource.Dispose();
     }
 
     private void OnSourceChanged(ConsoleLogSource source)

@@ -1,4 +1,5 @@
 using System.Text;
+using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Services;
@@ -11,10 +12,14 @@ public class ConsoleCaptureTee(
     IOptions<ConsoleLogsOptions> options) : TextWriter, IConsoleLogCapture
 {
     private readonly object _lock = new();
+    private readonly ConsoleLogsOptions _options = options.Value;
     private readonly ConsoleLineBuffer _stdoutBuffer = new(options);
     private readonly ConsoleLineBuffer _stderrBuffer = new(options);
     private TextWriter? _originalOut;
     private TextWriter? _originalError;
+    private Channel<ConsoleLogLine>? _publishChannel;
+    private CancellationTokenSource? _publishCancellation;
+    private Task? _publishTask;
     private long _sequence;
 
     public override Encoding Encoding => _originalOut?.Encoding ?? Encoding.UTF8;
@@ -26,6 +31,14 @@ public class ConsoleCaptureTee(
             if (_originalOut != null || _originalError != null)
                 return ValueTask.CompletedTask;
 
+            _publishCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _publishChannel = Channel.CreateBounded<ConsoleLogLine>(new BoundedChannelOptions(Math.Max(1, _options.CaptureChannelCapacity))
+            {
+                FullMode = BoundedChannelFullMode.DropOldest,
+                SingleReader = true,
+                SingleWriter = false
+            });
+            _publishTask = PublishQueuedLinesAsync(_publishChannel.Reader, _publishCancellation.Token);
             _originalOut ??= Console.Out;
             _originalError ??= Console.Error;
             Console.SetOut(new TeeWriter(_originalOut, this, ConsoleLogStream.Stdout));
@@ -37,6 +50,9 @@ public class ConsoleCaptureTee(
 
     public ValueTask StopAsync(CancellationToken cancellationToken = default)
     {
+        Task? publishTask;
+        CancellationTokenSource? publishCancellation;
+
         lock (_lock)
         {
             if (_originalOut != null)
@@ -47,11 +63,17 @@ public class ConsoleCaptureTee(
 
             FlushRemaining(ConsoleLogStream.Stdout);
             FlushRemaining(ConsoleLogStream.Stderr);
+            _publishChannel?.Writer.TryComplete();
+            publishTask = _publishTask;
+            publishCancellation = _publishCancellation;
             _originalOut = null;
             _originalError = null;
+            _publishChannel = null;
+            _publishCancellation = null;
+            _publishTask = null;
         }
 
-        return ValueTask.CompletedTask;
+        return AwaitPublisherAsync(publishTask, publishCancellation, cancellationToken);
     }
 
     public override void Write(char value)
@@ -111,7 +133,52 @@ public class ConsoleCaptureTee(
             Truncated = formatted.Truncated
         };
 
-        provider.PublishAsync(redactor.Redact(line)).AsTask().GetAwaiter().GetResult();
+        _publishChannel?.Writer.TryWrite(redactor.Redact(line));
+    }
+
+    private async Task PublishQueuedLinesAsync(ChannelReader<ConsoleLogLine> reader, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await foreach (var line in reader.ReadAllAsync(cancellationToken))
+            {
+                try
+                {
+                    await provider.PublishAsync(line, cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch
+                {
+                    // Avoid logging from the console capture path; doing so would recurse through the same tee.
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private static async ValueTask AwaitPublisherAsync(Task? publishTask, CancellationTokenSource? publishCancellation, CancellationToken cancellationToken)
+    {
+        if (publishTask == null)
+            return;
+
+        try
+        {
+            await publishTask.WaitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            publishCancellation?.Cancel();
+            throw;
+        }
+        finally
+        {
+            publishCancellation?.Dispose();
+        }
     }
 
     private sealed class TeeWriter(TextWriter original, ConsoleCaptureTee capture, ConsoleLogStream stream) : TextWriter

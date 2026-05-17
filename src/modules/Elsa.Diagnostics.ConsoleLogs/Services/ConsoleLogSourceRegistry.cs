@@ -25,11 +25,12 @@ public class ConsoleLogSourceRegistry : IConsoleLogSourceRegistry
         {
             if (_sources.TryGetValue(sourceId, out var existing))
             {
-                var updated = existing with { LastSeen = timestamp, Health = ConsoleLogSourceHealth.Connected };
+                var current = ApplyCurrentHealth(existing, DateTimeOffset.UtcNow);
+                var updated = current with { LastSeen = timestamp, Health = ConsoleLogSourceHealth.Connected };
                 if (!_sources.TryUpdate(sourceId, updated, existing))
                     continue;
 
-                if (existing.Health != updated.Health)
+                if (current.Health != updated.Health)
                     SourceChanged?.Invoke(updated);
 
                 return;
@@ -55,11 +56,30 @@ public class ConsoleLogSourceRegistry : IConsoleLogSourceRegistry
 
     public IReadOnlyCollection<ConsoleLogSource> List()
     {
-        var staleBefore = DateTimeOffset.UtcNow.Subtract(_options.SourceHeartbeatTimeout);
-        return _sources.Values
-            .Select(source => source.LastSeen < staleBefore ? source with { Health = ConsoleLogSourceHealth.Stale } : source)
+        var now = DateTimeOffset.UtcNow;
+        return _sources
+            .Select(entry => RefreshHealth(entry.Key, entry.Value, now))
             .OrderBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private ConsoleLogSource RefreshHealth(string sourceId, ConsoleLogSource source, DateTimeOffset now)
+    {
+        var updated = ApplyCurrentHealth(source, now);
+        if (updated.Health == source.Health)
+            return source;
+
+        if (!_sources.TryUpdate(sourceId, updated, source))
+            return source;
+
+        SourceChanged?.Invoke(updated);
+        return updated;
+    }
+
+    private ConsoleLogSource ApplyCurrentHealth(ConsoleLogSource source, DateTimeOffset now)
+    {
+        var staleBefore = now.Subtract(_options.SourceHeartbeatTimeout);
+        return source.LastSeen < staleBefore ? source with { Health = ConsoleLogSourceHealth.Stale } : source;
     }
 
     private static ConsoleLogSource CreateCurrentSource()

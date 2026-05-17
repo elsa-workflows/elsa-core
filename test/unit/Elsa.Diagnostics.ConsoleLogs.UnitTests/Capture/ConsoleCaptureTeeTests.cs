@@ -22,6 +22,7 @@ public class ConsoleCaptureTeeTests
             await capture.StartAsync();
 
             Console.WriteLine("hello");
+            await WaitForLineAsync(provider);
 
             Assert.Equal($"hello{Environment.NewLine}", consoleOutput.ToString());
             Assert.Single(provider.Lines);
@@ -54,6 +55,7 @@ public class ConsoleCaptureTeeTests
             await capture.StartAsync();
 
             Console.WriteLine("hello");
+            await WaitForLineAsync(provider);
 
             Assert.Equal($"hello{Environment.NewLine}", consoleOutput.ToString());
             Assert.Single(provider.Lines);
@@ -64,6 +66,13 @@ public class ConsoleCaptureTeeTests
             Console.SetOut(originalOut);
             Console.SetError(originalError);
         }
+    }
+
+    private static async Task WaitForLineAsync(CapturingProvider provider)
+    {
+        var timeout = DateTimeOffset.UtcNow.AddSeconds(2);
+        while (provider.Lines.Count == 0 && DateTimeOffset.UtcNow < timeout)
+            await Task.Delay(10);
     }
 
     private sealed class CapturingProvider : IConsoleLogProvider

@@ -4,6 +4,7 @@ public class ConsoleLogsOptions
 {
     public int RecentLogCapacity { get; set; } = 5_000;
     public int SubscriberChannelCapacity { get; set; } = 1_000;
+    public int CaptureChannelCapacity { get; set; } = 5_000;
     public int MaxRecentQuerySize { get; set; } = 1_000;
     public int MaxLineLength { get; set; } = 16_384;
     public TimeSpan IdleFlushTimeout { get; set; } = TimeSpan.FromSeconds(1);
