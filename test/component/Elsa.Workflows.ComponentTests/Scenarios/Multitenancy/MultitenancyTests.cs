@@ -17,7 +17,7 @@ public class MultitenancyTests(App app) : AppComponentTest(app)
     public void DefaultTenant_ShouldUseEmptyStringAsId()
     {
         // Assert
-        Assert.Equal(Tenant.DefaultTenantId, string.Empty);
+        Assert.Empty(Tenant.DefaultTenantId);
         Assert.Equal(Tenant.DefaultTenantId, Tenant.Default.Id);
     }
 

@@ -13,6 +13,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly WorkflowDefinitionActivityDescriptorFactory _workflowDefinitionActivityDescriptorFactory;
+    private readonly ITenantAccessor? _tenantAccessor;
 
     public WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, WorkflowDefinitionActivityDescriptorFactory workflowDefinitionActivityDescriptorFactory)
     {
@@ -22,6 +23,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
 
     public WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, WorkflowDefinitionActivityDescriptorFactory workflowDefinitionActivityDescriptorFactory, ITenantAccessor tenantAccessor) : this(store, workflowDefinitionActivityDescriptorFactory)
     {
+        _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
@@ -34,6 +36,13 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         };
 
         var definitions = (await _store.FindManyAsync(filter, cancellationToken)).ToList();
+
+        if (_tenantAccessor != null)
+        {
+            var currentTenantId = _tenantAccessor.TenantId;
+            definitions = definitions.Where(x => x.TenantId.NormalizeTenantId() == currentTenantId).ToList();
+        }
+
         return CreateDescriptors(definitions).ToList();
     }
 
