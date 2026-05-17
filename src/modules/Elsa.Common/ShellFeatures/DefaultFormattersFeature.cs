@@ -6,7 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.ShellFeatures;
 
-[ShellFeature("DefaultFormatters")]
+[ShellFeature(
+    "DefaultFormatters",
+    Description = "Registers default serializers and type converters")]
 public class DefaultFormattersFeature : IShellFeature
 {
     public void ConfigureServices(IServiceCollection services)

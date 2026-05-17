@@ -30,7 +30,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ShellFeatures;
 
-[ShellFeature(DependsOn =
+[ShellFeature(
+    Description = "Provides core workflow execution, activity execution, and workflow serialization services",
+    DependsOn =
 [
     "SystemClock",
     "Expressions",

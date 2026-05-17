@@ -88,7 +88,7 @@ public class ReloadWorkflowTests : AppComponentTest
         // Set up the initial workflow version.
         _testWorkflowProvider.MaterializedWorkflows = [workflowV1];
         await _workflowDefinitionsReloader.ReloadWorkflowDefinitionsAsync();
-        var activityTypeName = workflowV1.Workflow.Name.Pascalize();
+        var activityTypeName = workflowV1.Workflow.Name!.Pascalize();
         var activityV1 = _activityRegistry.Find(activityTypeName);
         Assert.Equal(1, activityV1!.Version);
 

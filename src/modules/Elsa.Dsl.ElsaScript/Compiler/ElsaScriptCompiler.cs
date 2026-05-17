@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Dsl.ElsaScript.Ast;
 using Elsa.Dsl.ElsaScript.Contracts;
 using Elsa.Dsl.ElsaScript.Helpers;
@@ -114,7 +115,7 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
         metadata.TryGetValue(key, out var value) ? ConvertValue<T>(value, default) : default;
 
     private T GetMetadataValueOrDefault<T>(Dictionary<string, object> metadata, string key, T defaultValue) =>
-        metadata.TryGetValue(key, out var value) ? ConvertValue(value, defaultValue) : defaultValue;
+        metadata.TryGetValue(key, out var value) ? ConvertValue(value, defaultValue) ?? defaultValue : defaultValue;
 
     private static T? ConvertValue<T>(object value, T? defaultValue)
     {
@@ -477,6 +478,7 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
         throw new NotSupportedException($"Expression type {exprNode.GetType().Name} is not supported as Expression");
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2060:Call to MakeGenericMethod can not be statically analyzed", Justification = "ElsaScript activity input types are discovered from runtime activity descriptors and must be bound dynamically.")]
     private object CompileExpression(ExpressionNode exprNode, Type targetType)
     {
         // Check if targetType is already Input<T>

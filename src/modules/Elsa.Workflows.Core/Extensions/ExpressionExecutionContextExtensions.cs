@@ -472,7 +472,7 @@ public static class ExpressionExecutionContextExtensions
             {
                 var activity = activityWithOutput.Activity;
                 var activityDescriptor = activityWithOutput.ActivityDescriptor;
-                var activityIdentifier = useActivityName ? activity.Name : activity.Id;
+                var activityIdentifier = useActivityName ? activity.Name! : activity.Id;
                 var activityIdPascalName = activityIdentifier.Pascalize();
 
                 foreach (var output in activityDescriptor.Outputs)
