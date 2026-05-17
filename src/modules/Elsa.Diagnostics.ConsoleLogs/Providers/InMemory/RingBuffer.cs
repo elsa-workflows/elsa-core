@@ -35,4 +35,14 @@ public class RingBuffer<T>
         lock (_lock)
             return _items.ToList();
     }
+
+    public long ConsumeDroppedCount()
+    {
+        lock (_lock)
+        {
+            var droppedCount = DroppedCount;
+            DroppedCount = 0;
+            return droppedCount;
+        }
+    }
 }

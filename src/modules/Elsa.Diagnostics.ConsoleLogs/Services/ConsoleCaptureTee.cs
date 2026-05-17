@@ -34,7 +34,7 @@ public class ConsoleCaptureTee(
             _publishCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _publishChannel = Channel.CreateBounded<ConsoleLogLine>(new BoundedChannelOptions(Math.Max(1, _options.CaptureChannelCapacity))
             {
-                FullMode = BoundedChannelFullMode.DropOldest,
+                FullMode = BoundedChannelFullMode.Wait,
                 SingleReader = true,
                 SingleWriter = false
             });
@@ -133,7 +133,11 @@ public class ConsoleCaptureTee(
             Truncated = formatted.Truncated
         };
 
-        _publishChannel?.Writer.TryWrite(redactor.Redact(line));
+        if (_publishChannel?.Writer.TryWrite(redactor.Redact(line)) != false)
+            return;
+
+        if (provider is IConsoleLogDroppedLineReporter reporter)
+            reporter.ReportDropped(new ConsoleLogDroppedSummary(line.Source.Id, stream, "CaptureChannelFull", 1));
     }
 
     private async Task PublishQueuedLinesAsync(ChannelReader<ConsoleLogLine> reader, CancellationToken cancellationToken)

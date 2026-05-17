@@ -4,12 +4,14 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Providers.InMemory;
 
-public class InMemoryConsoleLogProvider(IOptions<ConsoleLogsOptions> options, IConsoleLogSourceRegistry sourceRegistry) : IConsoleLogProvider
+public class InMemoryConsoleLogProvider(IOptions<ConsoleLogsOptions> options, IConsoleLogSourceRegistry sourceRegistry) : IConsoleLogProvider, IConsoleLogDroppedLineReporter
 {
     private readonly ConsoleLogsOptions _options = options.Value;
     private readonly RingBuffer<ConsoleLogLine> _recentLines = new(options.Value.RecentLogCapacity);
     private readonly object _subscribersLock = new();
     private readonly Dictionary<Guid, ConsoleLogSubscriber> _subscribers = new();
+    private readonly object _droppedLock = new();
+    private readonly Dictionary<(string? SourceId, ConsoleLogStream? Stream, string Reason), long> _dropped = new();
 
     public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default)
     {
@@ -40,9 +42,7 @@ public class InMemoryConsoleLogProvider(IOptions<ConsoleLogsOptions> options, IC
             .TakeLast(limit)
             .ToList();
 
-        IReadOnlyCollection<ConsoleLogDroppedSummary> dropped = _recentLines.DroppedCount == 0
-            ? []
-            : [new ConsoleLogDroppedSummary(null, null, "RecentBufferFull", _recentLines.DroppedCount)];
+        var dropped = ConsumeDroppedSummaries();
 
         return ValueTask.FromResult(new RecentConsoleLogsResult(items, dropped));
     }
@@ -75,6 +75,38 @@ public class InMemoryConsoleLogProvider(IOptions<ConsoleLogsOptions> options, IC
         return ValueTask.FromResult(sourceRegistry.List());
     }
 
+    public void ReportDropped(ConsoleLogDroppedSummary summary)
+    {
+        lock (_droppedLock)
+        {
+            var key = (summary.SourceId, summary.Stream, summary.Reason);
+            _dropped[key] = _dropped.GetValueOrDefault(key) + summary.Count;
+        }
+
+        List<ConsoleLogSubscriber> subscribers;
+        lock (_subscribersLock)
+            subscribers = _subscribers.Values.ToList();
+
+        foreach (var subscriber in subscribers)
+            subscriber.TryWrite(summary);
+    }
+
+    private IReadOnlyCollection<ConsoleLogDroppedSummary> ConsumeDroppedSummaries()
+    {
+        var summaries = new List<ConsoleLogDroppedSummary>();
+        var recentDroppedCount = _recentLines.ConsumeDroppedCount();
+        if (recentDroppedCount > 0)
+            summaries.Add(new ConsoleLogDroppedSummary(null, null, "RecentBufferFull", recentDroppedCount));
+
+        lock (_droppedLock)
+        {
+            summaries.AddRange(_dropped.Select(x => new ConsoleLogDroppedSummary(x.Key.SourceId, x.Key.Stream, x.Key.Reason, x.Value)));
+            _dropped.Clear();
+        }
+
+        return summaries;
+    }
+
     private sealed class ConsoleLogSubscriber(ConsoleLogFilter filter)
     {
         private readonly object _lock = new();
@@ -103,6 +135,15 @@ public class InMemoryConsoleLogProvider(IOptions<ConsoleLogsOptions> options, IC
                 }
 
                 Channel.Writer.TryWrite(ConsoleLogStreamItem.FromLine(line));
+                _pendingItemCount++;
+            }
+        }
+
+        public void TryWrite(ConsoleLogDroppedSummary summary)
+        {
+            lock (_lock)
+            {
+                Channel.Writer.TryWrite(ConsoleLogStreamItem.FromDroppedLines(summary));
                 _pendingItemCount++;
             }
         }

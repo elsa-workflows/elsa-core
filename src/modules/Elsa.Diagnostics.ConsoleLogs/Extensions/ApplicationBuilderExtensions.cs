@@ -1,16 +1,14 @@
 using Elsa.Diagnostics.ConsoleLogs.Extensions;
-using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
 public static class ConsoleLogsApplicationBuilderExtensions
 {
-    public static IApplicationBuilder UseConsoleLogs(this IApplicationBuilder app)
+    public static IEndpointRouteBuilder UseConsoleLogs(this IEndpointRouteBuilder endpoints)
     {
-        return app.UseEndpoints(endpoints =>
-        {
-            endpoints.MapConsoleLogsHub();
-        });
+        endpoints.MapConsoleLogsHub();
+        return endpoints;
     }
 }
