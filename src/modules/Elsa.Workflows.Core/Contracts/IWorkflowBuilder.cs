@@ -112,6 +112,7 @@ public interface IWorkflowBuilder
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
+    [Obsolete("Use the overload that takes a name instead. This overload will be removed in a future version.")]
     Variable<T> WithVariable<T>();
     
     /// <summary>
@@ -122,6 +123,7 @@ public interface IWorkflowBuilder
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
+    [Obsolete("Use the overload that takes a name instead. This overload will be removed in a future version.")]
     Variable<T> WithVariable<T>(T value);
     
     /// <summary>
