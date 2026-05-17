@@ -4,7 +4,7 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
 
 public class StructuredLogWriteBufferBackgroundTask(StructuredLogWriteBuffer writeBuffer) : IBackgroundTask
 {
-    private bool _started;
+    private volatile bool _started;
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
