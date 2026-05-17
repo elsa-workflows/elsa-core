@@ -55,18 +55,53 @@ jobs:
       - name: Verify wiki-only changes
         run: |
           set -euo pipefail
-          changed_files="$(git status --porcelain=v1 --untracked-files=all | sed 's/^...//')"
+          python3 - <<'PY'
+          import subprocess
+          import sys
 
-          if [ -z "$changed_files" ]; then
+          status = subprocess.run(
+              ["git", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+              check=True,
+              capture_output=True,
+          ).stdout
+
+          records = status.split(b"\0")
+          invalid_paths = []
+          changed_paths = []
+          i = 0
+
+          while i < len(records):
+              record = records[i]
+              if not record:
+                  i += 1
+                  continue
+
+              text = record.decode()
+              code = text[:2]
+              paths = [text[3:]]
+
+              if "R" in code or "C" in code:
+                  i += 1
+                  if i < len(records) and records[i]:
+                      paths.append(records[i].decode())
+
+              changed_paths.extend(paths)
+              invalid_paths.extend(path for path in paths if not path.startswith("doc/wiki/"))
+              i += 1
+
+          if not changed_paths:
+              print("No wiki changes detected.")
+              sys.exit(0)
+
+          if invalid_paths:
+              print("The wiki update workflow may only modify files under doc/wiki/.", file=sys.stderr)
+              print("\n".join(invalid_paths), file=sys.stderr)
+              sys.exit(1)
+          PY
+
+          if git diff --quiet -- doc/wiki && [ -z "$(git ls-files --others --exclude-standard doc/wiki)" ]; then
             echo "No wiki changes detected."
             exit 0
-          fi
-
-          invalid_files="$(printf '%s\n' "$changed_files" | grep -v '^doc/wiki/' || true)"
-          if [ -n "$invalid_files" ]; then
-            echo "The wiki update workflow may only modify files under doc/wiki/." >&2
-            echo "$invalid_files" >&2
-            exit 1
           fi
 
       - name: Verify local wiki links
@@ -108,7 +143,6 @@ jobs:
       - name: Open or update wiki refresh pull request
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
           BASE_BRANCH: main
           UPDATE_BRANCH: codex/update-wiki
         run: |
