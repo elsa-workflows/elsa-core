@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   update-wiki:
@@ -17,8 +17,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      issues: write
-      id-token: write
       actions: read
     steps:
       - name: Checkout repository
@@ -32,11 +30,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Refresh wiki with Claude Code
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@99ca333651aa9a8becc279065fad21c4ef1c4494 # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          additional_permissions: |
-            actions: read
           prompt: |
             Refresh the repo-local wiki under doc/wiki so it remains accurate for the current Elsa Core codebase.
 
@@ -53,7 +49,7 @@ jobs:
             - If the wiki is already up to date, leave the worktree unchanged.
           claude_args: >-
             --allowed-tools
-            "Bash(rg:*),Bash(git diff:*),Bash(git status:*),Bash(find:*),Bash(ls:*),Bash(sed:*),Bash(python3:*),Bash(wc:*)"
+            "Bash(rg:*),Bash(git diff:*),Bash(git status:*),Bash(find:*),Bash(ls:*),Bash(wc:*)"
 
       - name: Verify wiki-only changes
         run: |
@@ -83,7 +79,7 @@ jobs:
           root = Path(".").resolve()
           errors = []
 
-          for md in sorted(Path("doc/wiki").glob("*.md")):
+          for md in sorted(Path("doc/wiki").rglob("*.md")):
               text = md.read_text()
               for match in re.finditer(r"\[[^\]]+\]\(([^)]+)\)", text):
                   target = match.group(1).split("#", 1)[0]
