@@ -149,17 +149,18 @@ public class StructuredLogWriteBuffer(
 
     private async Task ProcessQueueAsync()
     {
-        using var timer = new PeriodicTimer(options.Value.WriteQueue.FlushInterval);
         var cancellationToken = _stopTokenSource.Token;
 
         while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
-                var signalTask = _signal.WaitAsync(cancellationToken);
-                var timerTask = timer.WaitForNextTickAsync(cancellationToken).AsTask();
-                await Task.WhenAny(signalTask, timerTask);
-                await FlushAsync(cancellationToken);
+                await _signal.WaitAsync(options.Value.WriteQueue.FlushInterval, cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested)
+                    return;
+
+                await FlushAsync();
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -169,9 +170,12 @@ public class StructuredLogWriteBuffer(
             {
                 return;
             }
-            catch (Exception e) when (!cancellationToken.IsCancellationRequested)
+            catch (Exception e)
             {
                 Trace.TraceError("Failed to flush structured log writes: {0}", e);
+
+                if (cancellationToken.IsCancellationRequested)
+                    return;
             }
         }
     }
