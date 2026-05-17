@@ -164,7 +164,7 @@ jobs:
             git push origin "HEAD:$UPDATE_BRANCH"
           fi
 
-          existing_pr="$(gh pr list --state open --head "$UPDATE_BRANCH" --json number --jq '.[0].number // empty')"
+          existing_pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$GITHUB_REPOSITORY_OWNER:$UPDATE_BRANCH" --json number --jq '.[0].number // empty')"
           body="$(cat <<'MD'
           ## Summary
 
@@ -181,14 +181,16 @@ jobs:
 
           if [ -n "$existing_pr" ]; then
             gh pr edit "$existing_pr" \
+              --repo "$GITHUB_REPOSITORY" \
               --title "[codex] Refresh codebase wiki" \
               --body "$body" \
               --base "$BASE_BRANCH"
             echo "Updated existing PR #$existing_pr."
           else
             gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
               --title "[codex] Refresh codebase wiki" \
               --body "$body" \
               --base "$BASE_BRANCH" \
-              --head "$UPDATE_BRANCH"
+              --head "$GITHUB_REPOSITORY_OWNER:$UPDATE_BRANCH"
           fi
