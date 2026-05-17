@@ -49,7 +49,7 @@ jobs:
             - If the wiki is already up to date, leave the worktree unchanged.
           claude_args: >-
             --allowed-tools
-            "Bash(rg:*),Bash(git diff:*),Bash(git status:*),Bash(find:*),Bash(ls:*),Bash(wc:*)"
+            "Edit(doc/wiki/**),Write(doc/wiki/**),Bash(rg:*),Bash(git diff:*),Bash(git status:*),Bash(find:*),Bash(ls:*),Bash(wc:*)"
 
       - name: Verify wiki-only changes
         run: |
@@ -121,7 +121,13 @@ jobs:
           git checkout -B "$UPDATE_BRANCH"
           git add doc/wiki
           git commit -m "Refresh codebase wiki"
-          git push --force-with-lease origin "$UPDATE_BRANCH"
+
+          remote_sha="$(git ls-remote --heads origin "$UPDATE_BRANCH" | awk '{print $1}')"
+          if [ -n "$remote_sha" ]; then
+            git push --force-with-lease="refs/heads/$UPDATE_BRANCH:$remote_sha" origin "HEAD:$UPDATE_BRANCH"
+          else
+            git push origin "HEAD:$UPDATE_BRANCH"
+          fi
 
           existing_pr="$(gh pr list --state open --head "$UPDATE_BRANCH" --json number --jq '.[0].number // empty')"
           body="$(cat <<'MD'
@@ -132,7 +138,7 @@ jobs:
           ## Validation
 
           - Verified the workflow changed only files under `doc/wiki/`.
-          - Verified all local Markdown links under `doc/wiki/*.md` resolve.
+          - Verified all local Markdown links under `doc/wiki/` recursively resolve.
 
           This PR was opened automatically by the Update Wiki workflow.
           MD
