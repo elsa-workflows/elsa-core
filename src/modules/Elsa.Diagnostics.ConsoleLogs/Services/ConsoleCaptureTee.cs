@@ -39,8 +39,8 @@ public class ConsoleCaptureTee(
                 SingleWriter = false
             });
             _publishTask = PublishQueuedLinesAsync(_publishChannel.Reader, _publishCancellation.Token);
-            _originalOut ??= Console.Out;
-            _originalError ??= Console.Error;
+            _originalOut = Console.Out;
+            _originalError = Console.Error;
             Console.SetOut(new TeeWriter(_originalOut, this, ConsoleLogStream.Stdout));
             Console.SetError(new TeeWriter(_originalError, this, ConsoleLogStream.Stderr));
         }
@@ -86,7 +86,7 @@ public class ConsoleCaptureTee(
         return StopAsync();
     }
 
-    public void FlushIdleLines()
+    public ValueTask FlushIdleAsync(CancellationToken cancellationToken = default)
     {
         foreach (var stream in new[] { ConsoleLogStream.Stdout, ConsoleLogStream.Stderr })
         {
@@ -97,6 +97,8 @@ public class ConsoleCaptureTee(
             if (line != null)
                 Publish(stream, line);
         }
+
+        return ValueTask.CompletedTask;
     }
 
     private void Capture(ConsoleLogStream stream, string value)
@@ -154,7 +156,7 @@ public class ConsoleCaptureTee(
                 {
                     throw;
                 }
-                catch
+                catch (Exception)
                 {
                     // Avoid logging from the console capture path; doing so would recurse through the same tee.
                 }
@@ -162,6 +164,7 @@ public class ConsoleCaptureTee(
         }
         catch (OperationCanceledException)
         {
+            // Normal shutdown completes or cancels the publish pump.
         }
     }
 
@@ -170,18 +173,16 @@ public class ConsoleCaptureTee(
         if (publishTask == null)
             return;
 
+        using var cancellation = publishCancellation;
+
         try
         {
             await publishTask.WaitAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            publishCancellation?.Cancel();
+            cancellation?.Cancel();
             throw;
-        }
-        finally
-        {
-            publishCancellation?.Dispose();
         }
     }
 

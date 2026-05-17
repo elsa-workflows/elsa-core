@@ -10,7 +10,7 @@ public class ConsoleCaptureTeeTests
     {
         var originalOut = Console.Out;
         var originalError = Console.Error;
-        var consoleOutput = new StringWriter();
+        using var consoleOutput = new StringWriter();
         var provider = new CapturingProvider();
         var registry = new ConsoleLogSourceRegistry(Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions()));
         var options = Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions());
@@ -42,7 +42,7 @@ public class ConsoleCaptureTeeTests
     {
         var originalOut = Console.Out;
         var originalError = Console.Error;
-        var consoleOutput = new StringWriter();
+        using var consoleOutput = new StringWriter();
         var provider = new CapturingProvider();
         var registry = new ConsoleLogSourceRegistry(Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions()));
         var options = Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions());

@@ -19,15 +19,12 @@ public class ConsoleLogCaptureHostedService(IConsoleLogCapture capture, IOptions
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (capture is not ConsoleCaptureTee tee)
-            return;
-
         var interval = TimeSpan.FromMilliseconds(Math.Max(100, options.Value.IdleFlushTimeout.TotalMilliseconds / 2));
 
         while (!stoppingToken.IsCancellationRequested)
         {
             await Task.Delay(interval, stoppingToken);
-            tee.FlushIdleLines();
+            await capture.FlushIdleAsync(stoppingToken);
         }
     }
 }

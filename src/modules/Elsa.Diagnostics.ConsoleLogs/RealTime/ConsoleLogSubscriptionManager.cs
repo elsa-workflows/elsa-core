@@ -29,7 +29,7 @@ public class ConsoleLogSubscriptionManager : IDisposable
     {
         Unsubscribe(connectionId);
         var subscriptionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var subscription = new ConsoleLogSubscription(subscriptionCancellation);
+        var subscription = new ConsoleLogSubscription(filter, subscriptionCancellation);
         _subscriptions[connectionId] = subscription;
 
         _ = StreamAsync(connectionId, filter, subscription, subscriptionCancellation.Token);
@@ -108,14 +108,20 @@ public class ConsoleLogSubscriptionManager : IDisposable
 
     private void OnSourceChanged(ConsoleLogSource source)
     {
-        _ = BroadcastSourceChangedAsync(source);
+        _ = BroadcastSourceChangedAsync(source, _subscriptions.ToArray());
     }
 
-    private async Task BroadcastSourceChangedAsync(ConsoleLogSource source)
+    private async Task BroadcastSourceChangedAsync(ConsoleLogSource source, IReadOnlyCollection<KeyValuePair<string, ConsoleLogSubscription>> subscriptions)
     {
         try
         {
-            await _hubContext.Clients.All.ReceiveSourceChangedAsync(source);
+            foreach (var (connectionId, subscription) in subscriptions)
+            {
+                if (!MatchesSource(source, subscription.Filter))
+                    continue;
+
+                await _hubContext.Clients.Client(connectionId).ReceiveSourceChangedAsync(source, subscription.CancellationTokenSource.Token);
+            }
         }
         catch (OperationCanceledException e)
         {
@@ -127,5 +133,10 @@ public class ConsoleLogSubscriptionManager : IDisposable
         }
     }
 
-    private sealed record ConsoleLogSubscription(CancellationTokenSource CancellationTokenSource);
+    private static bool MatchesSource(ConsoleLogSource source, ConsoleLogFilter filter)
+    {
+        return string.IsNullOrWhiteSpace(filter.SourceId) || string.Equals(source.Id, filter.SourceId, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private sealed record ConsoleLogSubscription(ConsoleLogFilter Filter, CancellationTokenSource CancellationTokenSource);
 }

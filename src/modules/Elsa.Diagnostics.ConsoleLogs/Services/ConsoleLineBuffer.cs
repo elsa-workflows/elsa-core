@@ -14,11 +14,8 @@ public class ConsoleLineBuffer(IOptions<ConsoleLogsOptions> options)
         _lastWriteAt = now;
         var lines = new List<string>();
 
-        foreach (var ch in value)
+        foreach (var ch in value.Where(x => x != '\r'))
         {
-            if (ch == '\r')
-                continue;
-
             if (ch == '\n')
             {
                 if (_buffer.Length > 0)
