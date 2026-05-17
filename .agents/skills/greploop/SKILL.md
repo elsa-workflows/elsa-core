@@ -51,10 +51,14 @@ For self-hosted GitLab instances whose hostname doesn't contain "gitlab", the us
 
 **GitHub:**
 ```bash
-gh pr view --json number,headRefName -q '{number: .number, branch: .headRefName}'
+if PR_JSON=$(gh pr view --json number,headRefName -q '{number: .number, branch: .headRefName}' 2>/dev/null); then
+  echo "$PR_JSON"
+else
+  PR_JSON=""
+fi
 ```
 
-If no PR exists for the current branch/worktree, automatically publish a draft PR before starting the loop:
+If `PR_JSON` is empty because no PR exists for the current branch/worktree, automatically publish a draft PR before starting the loop:
 
 1. Inspect `git status --short` and determine the intended change scope. Do not silently stage unrelated changes; if the worktree is mixed and the intended files are unclear, stop and ask.
 2. Ensure the work is on a review branch. If the current branch is missing, protected, default, or unsuitable, create/switch to a `codex/<descriptive-name>` branch.
