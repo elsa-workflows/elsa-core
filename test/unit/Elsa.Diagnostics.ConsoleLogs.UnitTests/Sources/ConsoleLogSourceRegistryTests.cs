@@ -14,7 +14,7 @@ public class ConsoleLogSourceRegistryTests
         registry.MarkSeen("remote", DateTimeOffset.UtcNow);
 
         Assert.NotNull(changed);
-        Assert.Contains(registry.List(), x => x.Id == "remote" && x.Health == ConsoleLogSourceHealth.Connected);
+        Assert.Contains(registry.List(), x => x.Id == "remote" && x.MachineName == "" && x.Health == ConsoleLogSourceHealth.Connected);
     }
 
     [Fact]

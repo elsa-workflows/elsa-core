@@ -9,7 +9,7 @@ internal class Endpoint(IConsoleLogProvider provider) : ElsaEndpoint<ConsoleLogF
 {
     public override void Configure()
     {
-        Verbs(FastEndpoints.Http.GET, FastEndpoints.Http.POST);
+        Verbs(FastEndpoints.Http.POST);
         Routes("/diagnostics/console-logs/recent");
         ConfigurePermissions(ConsoleLogsPermissions.Read);
     }

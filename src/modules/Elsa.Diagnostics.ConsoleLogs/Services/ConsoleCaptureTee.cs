@@ -23,6 +23,9 @@ public class ConsoleCaptureTee(
     {
         lock (_lock)
         {
+            if (_originalOut != null || _originalError != null)
+                return ValueTask.CompletedTask;
+
             _originalOut ??= Console.Out;
             _originalError ??= Console.Error;
             Console.SetOut(new TeeWriter(_originalOut, this, ConsoleLogStream.Stdout));

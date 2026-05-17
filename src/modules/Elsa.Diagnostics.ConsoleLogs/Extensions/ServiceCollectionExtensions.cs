@@ -22,7 +22,6 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ConsoleLogSubscriptionManager>();
         services.TryAddSingleton<IConsoleLogCapture, ConsoleCaptureTee>();
         services.AddHostedService<ConsoleLogCaptureHostedService>();
-        services.AddHostedService<ConsoleLogSourceHealthService>();
 
         return services;
     }

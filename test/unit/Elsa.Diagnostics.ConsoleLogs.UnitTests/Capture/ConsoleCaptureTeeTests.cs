@@ -36,6 +36,36 @@ public class ConsoleCaptureTeeTests
         }
     }
 
+    [Fact]
+    public async Task StartAsync_WhenAlreadyStarted_DoesNotWrapConsoleTwice()
+    {
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        var consoleOutput = new StringWriter();
+        var provider = new CapturingProvider();
+        var registry = new ConsoleLogSourceRegistry(Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions()));
+        var options = Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions());
+        var capture = new ConsoleCaptureTee(provider, registry, new ConsoleLogRedactor(options), new ConsoleLineFormatter(options), options);
+
+        try
+        {
+            Console.SetOut(consoleOutput);
+            await capture.StartAsync();
+            await capture.StartAsync();
+
+            Console.WriteLine("hello");
+
+            Assert.Equal($"hello{Environment.NewLine}", consoleOutput.ToString());
+            Assert.Single(provider.Lines);
+        }
+        finally
+        {
+            await capture.StopAsync();
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+        }
+    }
+
     private sealed class CapturingProvider : IConsoleLogProvider
     {
         public List<ConsoleLogLine> Lines { get; } = [];

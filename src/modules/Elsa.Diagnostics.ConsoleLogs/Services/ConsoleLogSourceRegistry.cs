@@ -39,7 +39,7 @@ public class ConsoleLogSourceRegistry : IConsoleLogSourceRegistry
             {
                 Id = sourceId,
                 DisplayName = sourceId,
-                MachineName = sourceId,
+                MachineName = "",
                 ProcessId = 0,
                 LastSeen = timestamp,
                 Health = ConsoleLogSourceHealth.Connected
