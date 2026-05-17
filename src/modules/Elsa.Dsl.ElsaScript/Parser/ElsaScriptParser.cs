@@ -466,12 +466,9 @@ public class ElsaScriptParser : IElsaScriptParser
                 var bodyElements = x.Item2;
 
                 var metadataDict = new Dictionary<string, object>();
-                if (header.Metadata != null)
+                foreach (var entry in header.Metadata)
                 {
-                    foreach (var entry in header.Metadata)
-                    {
-                        metadataDict[entry.Name] = entry.Value;
-                    }
+                    metadataDict[entry.Name] = entry.Value;
                 }
 
                 // Separate use statements from regular statements in body
