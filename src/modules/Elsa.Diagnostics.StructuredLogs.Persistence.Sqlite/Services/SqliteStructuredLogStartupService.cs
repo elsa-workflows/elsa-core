@@ -22,9 +22,6 @@ public class SqliteStructuredLogStartupService(
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        if (_executed)
-            return;
-
         await _startupLock.WaitAsync(cancellationToken);
         try
         {

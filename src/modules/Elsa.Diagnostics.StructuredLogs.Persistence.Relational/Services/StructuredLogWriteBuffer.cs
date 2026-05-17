@@ -91,8 +91,10 @@ public class StructuredLogWriteBuffer(
 
         lock (_lifecycleLock)
         {
-            if (_activeStartCount > 0)
-                _activeStartCount--;
+            if (_activeStartCount == 0)
+                return;
+
+            _activeStartCount--;
 
             if (_activeStartCount > 0)
                 return;

@@ -101,6 +101,30 @@ public class SqliteStructuredLogWriteQueueTests
         }
     }
 
+    [Fact]
+    public async Task BackgroundTask_StopWithoutStart_DoesNotStopHostedWriteBuffer()
+    {
+        await using var host = new SqliteStructuredLogTestHost(migrate: false);
+        using var scope = host.Services.CreateScope();
+        var services = scope.ServiceProvider;
+
+        await host.StartHostedServicesAsync();
+        var backgroundTask = services.GetServices<IBackgroundTask>().OfType<StructuredLogWriteBufferBackgroundTask>().Single();
+        await backgroundTask.StopAsync(CancellationToken.None);
+
+        try
+        {
+            var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("Elsa.Tests.PartialShellLifecycle");
+            logger.LogInformation("SQLite structured log partial shell lifecycle test");
+
+            await WaitUntilAsync(async () => await host.CountRowsAsync("StructuredLogEvents") >= 1);
+        }
+        finally
+        {
+            await host.StopHostedServicesAsync();
+        }
+    }
+
     private static async Task WaitUntilAsync(Func<ValueTask<bool>> condition)
     {
         using var timeoutTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));

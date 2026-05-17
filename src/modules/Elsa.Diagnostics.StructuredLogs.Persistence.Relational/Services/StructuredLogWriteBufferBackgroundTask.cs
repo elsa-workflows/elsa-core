@@ -4,9 +4,15 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
 
 public class StructuredLogWriteBufferBackgroundTask(StructuredLogWriteBuffer writeBuffer) : IBackgroundTask
 {
-    public Task StartAsync(CancellationToken cancellationToken)
+    private bool _started;
+
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        return writeBuffer.StartAsync(cancellationToken);
+        if (_started)
+            return;
+
+        await writeBuffer.StartAsync(cancellationToken);
+        _started = true;
     }
 
     public Task ExecuteAsync(CancellationToken cancellationToken)
@@ -14,8 +20,12 @@ public class StructuredLogWriteBufferBackgroundTask(StructuredLogWriteBuffer wri
         return Task.CompletedTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
-        return writeBuffer.StopAsync(cancellationToken);
+        if (!_started)
+            return;
+
+        _started = false;
+        await writeBuffer.StopAsync(cancellationToken);
     }
 }
