@@ -23,7 +23,11 @@ Iteratively fix a PR/MR/CL until Greptile gives a perfect review: 5/5 confidence
 
 ## Instructions
 
-### 0. Detect platform
+### 0. Delegate execution when invoked by Codex
+
+When Greploop is invoked from Codex and sub-agents are available, the main agent must delegate the actual Greploop execution to a sub-agent by default. Pass along the detected or provided PR/MR/CL identifier, repository/worktree path, current branch, VCS platform, user scope constraints, and any known changed-file intent. The parent agent monitors progress, relays concise status updates, and reports final results. Only run Greploop directly from the parent agent when sub-agents are unavailable or the environment cannot delegate.
+
+### 1. Detect platform
 
 First check for Perforce, then fall back to git remote detection:
 
@@ -43,12 +47,32 @@ fi
 
 For self-hosted GitLab instances whose hostname doesn't contain "gitlab", the user can override by passing `--vcs gitlab` as an input. For Perforce, pass `--vcs perforce`.
 
-### 1. Identify the PR/MR/CL
+### 2. Identify or create the PR/MR/CL
 
 **GitHub:**
 ```bash
-gh pr view --json number,headRefName -q '{number: .number, branch: .headRefName}'
+if PR_JSON=$(gh pr view --json number,headRefName -q '{number: .number, branch: .headRefName}' 2>/dev/null); then
+  echo "$PR_JSON"
+else
+  PR_JSON=""
+fi
 ```
+
+If `PR_JSON` is empty because no PR exists for the current branch/worktree, automatically publish a draft PR before starting the loop:
+
+1. Inspect `git status --short` and determine the intended change scope. Do not silently stage unrelated changes; if the worktree is mixed and the intended files are unclear, stop and ask.
+2. Ensure the work is on a review branch. If the current branch is missing, protected, default, or unsuitable, create/switch to a `codex/<descriptive-name>` branch.
+3. Stage intended changes only, commit if needed, push the branch, and create a draft PR.
+
+```bash
+git switch -c codex/<descriptive-name>   # only when a review branch is needed
+git add <intended-files-only>
+git commit -m "<concise change summary>" # only when there are staged changes
+git push -u origin HEAD
+gh pr create --draft --fill
+```
+
+Then continue Greploop against the created PR number.
 
 **GitLab:**
 ```bash
@@ -73,7 +97,7 @@ Key field differences:
 - GitLab: `iid`, `source_branch`, `sha`
 - Perforce: changelist number, `P4CLIENT`, shelved files
 
-### 2. Loop
+### 3. Loop
 
 Repeat the following cycle. **Max 5 iterations** to avoid runaway loops.
 
@@ -351,8 +375,11 @@ Repeat for each unresolved discussion ID. (GitLab has no batch resolution — lo
 #### F. Commit and push / re-shelve
 
 **GitHub/GitLab:**
+
+Before staging, inspect the worktree and keep the write set scoped to Greptile fixes. Do not run `git add -A` when unrelated changes are present; stage only intended files, and stop/ask if scope is ambiguous.
+
 ```bash
-git add -A
+git add <intended-files-only>
 git commit -m "address greptile review feedback (greploop iteration N)"
 git push
 ```
@@ -371,7 +398,7 @@ sleep 5
 
 Then go back to step **A**.
 
-### 3. Report
+### 4. Report
 
 After exiting the loop, summarize:
 
