@@ -107,6 +107,12 @@ jobs:
       - name: Verify local wiki links
         run: |
           set -euo pipefail
+
+          if git diff --quiet -- doc/wiki && [ -z "$(git ls-files --others --exclude-standard doc/wiki)" ]; then
+            echo "No wiki changes to validate."
+            exit 0
+          fi
+
           python3 - <<'PY'
           from pathlib import Path
           import re
