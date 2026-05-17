@@ -50,7 +50,7 @@ jobs:
             - If the wiki is already up to date, leave the worktree unchanged.
           claude_args: >-
             --allowed-tools
-            "Edit(doc/wiki/**),Write(doc/wiki/**),Bash(rg:*),Bash(git diff:*),Bash(git status:*),Bash(ls:*),Bash(wc:*)"
+            "Edit(doc/wiki/**),Write(doc/wiki/**),Bash(rg:* .),Bash(git diff:*),Bash(git status:*),Bash(ls:* .),Bash(wc:*)"
 
       - name: Verify wiki-only changes
         run: |
@@ -97,6 +97,8 @@ jobs:
               print("The wiki update workflow may only modify files under doc/wiki/.", file=sys.stderr)
               print("\n".join(invalid_paths), file=sys.stderr)
               sys.exit(1)
+
+          print("Wiki-only changes verified.")
           PY
 
           if git diff --quiet -- doc/wiki && [ -z "$(git ls-files --others --exclude-standard doc/wiki)" ]; then
