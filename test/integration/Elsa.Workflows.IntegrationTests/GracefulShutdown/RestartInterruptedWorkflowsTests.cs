@@ -1,10 +1,13 @@
-﻿using Elsa.Extensions;
+﻿using Elsa.Common;
+using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.GracefulShutdown;
@@ -29,10 +32,11 @@ public class RestartInterruptedWorkflowsTests
         var fakeRestarter = new RecordingRestarter();
         using var scope = _services.CreateScope();
         var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+        var staleTimestamp = GetStaleTimestamp(scope.ServiceProvider);
 
-        await SeedInstancesAsync(instanceStore, 3, WorkflowStatus.Running, WorkflowSubStatus.Executing, isExecuting: true, idPrefix: "stale-");
-        await SeedInstancesAsync(instanceStore, 2, WorkflowStatus.Finished, WorkflowSubStatus.Executing, isExecuting: true, idPrefix: "finished-stale-");
-        await SeedInstancesAsync(instanceStore, 1, WorkflowStatus.Finished, WorkflowSubStatus.Executing, isExecuting: false, idPrefix: "finished-");
+        await SeedInstancesAsync(instanceStore, 3, WorkflowStatus.Running, WorkflowSubStatus.Executing, isExecuting: true, idPrefix: "stale-", timestamp: staleTimestamp);
+        await SeedInstancesAsync(instanceStore, 2, WorkflowStatus.Finished, WorkflowSubStatus.Executing, isExecuting: true, idPrefix: "finished-stale-", timestamp: staleTimestamp);
+        await SeedInstancesAsync(instanceStore, 1, WorkflowStatus.Finished, WorkflowSubStatus.Executing, isExecuting: false, idPrefix: "finished-", timestamp: staleTimestamp);
 
         var scanner = ActivatorUtilities.CreateInstance<RestartInterruptedWorkflowsTask>(scope.ServiceProvider, fakeRestarter);
         await scanner.ExecuteAsync(CancellationToken.None);
@@ -41,8 +45,17 @@ public class RestartInterruptedWorkflowsTests
         Assert.All(fakeRestarter.RestartedIds, id => Assert.StartsWith("stale-", id));
     }
 
-    private static async Task SeedInstancesAsync(IWorkflowInstanceStore store, int count, WorkflowStatus status, WorkflowSubStatus subStatus, bool isExecuting, string idPrefix = "instance-")
+    private static DateTimeOffset GetStaleTimestamp(IServiceProvider serviceProvider)
     {
+        var clock = serviceProvider.GetRequiredService<ISystemClock>();
+        var options = serviceProvider.GetRequiredService<IOptions<RuntimeOptions>>().Value;
+        return clock.UtcNow - options.InactivityThreshold - TimeSpan.FromMinutes(1);
+    }
+
+    private static async Task SeedInstancesAsync(IWorkflowInstanceStore store, int count, WorkflowStatus status, WorkflowSubStatus subStatus, bool isExecuting, string idPrefix = "instance-", DateTimeOffset? timestamp = null)
+    {
+        var createdAt = timestamp ?? DateTimeOffset.UtcNow;
+
         for (var i = 0; i < count; i++)
         {
             await store.SaveAsync(new WorkflowInstance
@@ -54,8 +67,8 @@ public class RestartInterruptedWorkflowsTests
                 Status = status,
                 SubStatus = subStatus,
                 IsExecuting = isExecuting,
-                CreatedAt = DateTimeOffset.Parse("2026-04-13T12:00:00Z"),
-                UpdatedAt = DateTimeOffset.Parse("2026-04-13T12:00:00Z"),
+                CreatedAt = createdAt,
+                UpdatedAt = createdAt,
                 WorkflowState = new State.WorkflowState
                 {
                     Id = $"{idPrefix}{i}",
