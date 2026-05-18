@@ -30,7 +30,7 @@ internal class ActivityOutputFunctionsDefinitionProvider(IActivityRegistryLookup
             definitions.AddRange(from output in activityDescriptor.Outputs.Where(x => x.Name.IsValidVariableName())
                 select output.Name.Pascalize()
                 into outputPascalName
-                let activityNamePascalName = activity.Name.Pascalize()
+                let activityNamePascalName = activity.Name!.Pascalize()
                 select CreateFunctionDefinition(builder => builder.Name($"get{outputPascalName}From{activityNamePascalName}").ReturnType("any")));
         }
 

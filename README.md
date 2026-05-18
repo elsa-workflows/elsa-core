@@ -2,8 +2,6 @@
 
 ![Elsa Workflows](./design/elsa-workflows-workflow-engine-for-dotnet.png)
 
-[![Elsa Workflows video overview](./design/video/exports/elsa-workflows-readme.gif)](./design/video/exports/elsa-workflows-readme.mp4)
-
 [![Elsa 3 Prerelease](https://github.com/elsa-workflows/elsa-core/actions/workflows/packages.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/packages.yml)
 [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/)
 ![Feedz](https://img.shields.io/feedz/vpre/elsa-workflows/elsa-3/elsa)

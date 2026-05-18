@@ -1,4 +1,5 @@
 using CShells.Features;
+using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.ShellFeatures;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.Extensions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,7 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.ShellFeatures;
 [ShellFeature(
     DisplayName = "SQLite Structured Log Persistence",
     Description = "Provides SQLite persistence for diagnostics structured logs",
-    DependsOn = ["Structured Log Relational Persistence"])]
+    DependsOn = [typeof(StructuredLogRelationalPersistenceFeature)])]
 [UsedImplicitly]
 public class SqliteStructuredLogPersistenceFeature : IShellFeature
 {

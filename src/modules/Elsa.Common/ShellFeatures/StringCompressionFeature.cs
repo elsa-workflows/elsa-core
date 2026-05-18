@@ -7,7 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Common.ShellFeatures;
 
 [UsedImplicitly]
-[ShellFeature("StringCompression")]
+[ShellFeature(
+    "StringCompression",
+    Description = "Registers string compression codecs")]
 public class StringCompressionFeature : IShellFeature
 {
     public void ConfigureServices(IServiceCollection services)

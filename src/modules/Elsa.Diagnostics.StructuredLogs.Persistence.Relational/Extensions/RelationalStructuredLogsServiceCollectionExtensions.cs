@@ -3,6 +3,7 @@ using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Options;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Stores;
+using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -21,9 +22,10 @@ public static class RelationalStructuredLogsServiceCollectionExtensions
         services.TryAddSingleton<RelationalStructuredLogStore>();
         services.TryAddSingleton<StructuredLogWriteBuffer>();
         services.TryAddSingleton<StructuredLogRetentionService>();
-        services.AddSingleton<IStructuredLogStore>(sp => sp.GetRequiredService<StructuredLogWriteBuffer>());
-        services.AddSingleton<IStructuredLogWriteBuffer>(sp => sp.GetRequiredService<StructuredLogWriteBuffer>());
-        services.AddSingleton<IStructuredLogStorageDiagnostics>(sp => sp.GetRequiredService<StructuredLogWriteBuffer>());
+        services.Replace(ServiceDescriptor.Singleton<IStructuredLogStore>(sp => sp.GetRequiredService<StructuredLogWriteBuffer>()));
+        services.Replace(ServiceDescriptor.Singleton<IStructuredLogWriteBuffer>(sp => sp.GetRequiredService<StructuredLogWriteBuffer>()));
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IStructuredLogStorageDiagnostics, StructuredLogWriteBufferStorageDiagnostics>());
+        services.AddBackgroundTask<StructuredLogWriteBufferBackgroundTask>();
         services.AddHostedService(sp => sp.GetRequiredService<StructuredLogWriteBuffer>());
 
         return services;

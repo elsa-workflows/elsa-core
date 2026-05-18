@@ -1,3 +1,4 @@
+using Elsa.Common;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.Options;
@@ -9,15 +10,36 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.Services;
 public class SqliteStructuredLogStartupService(
     IStructuredLogSchemaMigrator schemaMigrator,
     StructuredLogRetentionService retentionService,
-    IOptions<SqliteStructuredLogOptions> options) : IHostedService
+    IOptions<SqliteStructuredLogOptions> options) : IHostedService, IStartupTask
 {
+    private readonly SemaphoreSlim _startupLock = new(1, 1);
+    private bool _executed;
+
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        if (options.Value.RunMigrationsOnStartup)
-            await schemaMigrator.MigrateAsync(cancellationToken);
+        await ExecuteAsync(cancellationToken);
+    }
 
-        if (options.Value.Relational.Retention.CleanupOnStartup)
-            await retentionService.CleanupAsync(cancellationToken);
+    public async Task ExecuteAsync(CancellationToken cancellationToken)
+    {
+        await _startupLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_executed)
+                return;
+
+            if (options.Value.RunMigrationsOnStartup)
+                await schemaMigrator.MigrateAsync(cancellationToken);
+
+            if (options.Value.Relational.Retention.CleanupOnStartup)
+                await retentionService.CleanupAsync(cancellationToken);
+
+            _executed = true;
+        }
+        finally
+        {
+            _startupLock.Release();
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

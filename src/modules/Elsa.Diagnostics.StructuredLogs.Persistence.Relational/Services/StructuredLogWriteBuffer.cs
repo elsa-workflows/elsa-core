@@ -13,11 +13,13 @@ public class StructuredLogWriteBuffer(
     RelationalStructuredLogStore store,
     IOptions<RelationalStructuredLogOptions> options) : IStructuredLogStore, IStructuredLogWriteBuffer, IHostedService, IAsyncDisposable
 {
+    private readonly object _lifecycleLock = new();
     private readonly Queue<StructuredLogEvent> _queue = new();
     private readonly SemaphoreSlim _signal = new(0);
-    private readonly CancellationTokenSource _stopTokenSource = new();
+    private CancellationTokenSource _stopTokenSource = new();
     private Task? _backgroundTask;
     private long _droppedWriteCount;
+    private int _activeStartCount;
     private int _disposed;
 
     public long DroppedWriteCount => Interlocked.Read(ref _droppedWriteCount);
@@ -62,21 +64,54 @@ public class StructuredLogWriteBuffer(
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _backgroundTask ??= Task.Run(ProcessQueueAsync, CancellationToken.None);
+        lock (_lifecycleLock)
+        {
+            _activeStartCount++;
+
+            if (_backgroundTask is { IsCompleted: false })
+                return Task.CompletedTask;
+
+            if (_stopTokenSource.IsCancellationRequested)
+            {
+                _stopTokenSource.Dispose();
+                _stopTokenSource = new();
+            }
+
+            var stopToken = _stopTokenSource.Token;
+            _backgroundTask = Task.Run(() => ProcessQueueAsync(stopToken), CancellationToken.None);
+        }
+
         return Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        await _stopTokenSource.CancelAsync();
+        Task? backgroundTask;
+        CancellationTokenSource stopTokenSource;
 
-        if (_backgroundTask != null)
+        lock (_lifecycleLock)
+        {
+            if (_activeStartCount == 0)
+                return;
+
+            _activeStartCount--;
+
+            if (_activeStartCount > 0)
+                return;
+
+            backgroundTask = _backgroundTask;
+            stopTokenSource = _stopTokenSource;
+        }
+
+        await stopTokenSource.CancelAsync();
+
+        if (backgroundTask != null)
         {
             try
             {
-                await _backgroundTask.WaitAsync(cancellationToken);
+                await backgroundTask.WaitAsync(cancellationToken);
             }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _stopTokenSource.IsCancellationRequested)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || stopTokenSource.IsCancellationRequested)
             {
                 // Expected during shutdown; remaining queued writes are flushed below.
             }
@@ -119,16 +154,25 @@ public class StructuredLogWriteBuffer(
         if (Interlocked.Exchange(ref _disposed, 1) == 1)
             return;
 
-        await _stopTokenSource.CancelAsync();
+        Task? backgroundTask;
+        CancellationTokenSource stopTokenSource;
+
+        lock (_lifecycleLock)
+        {
+            backgroundTask = _backgroundTask;
+            stopTokenSource = _stopTokenSource;
+        }
+
+        await stopTokenSource.CancelAsync();
         using var timeoutTokenSource = new CancellationTokenSource(options.Value.WriteQueue.ShutdownFlushTimeout);
 
-        if (_backgroundTask != null)
+        if (backgroundTask != null)
         {
             try
             {
-                await _backgroundTask.WaitAsync(timeoutTokenSource.Token);
+                await backgroundTask.WaitAsync(timeoutTokenSource.Token);
             }
-            catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested || _stopTokenSource.IsCancellationRequested)
+            catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested || stopTokenSource.IsCancellationRequested)
             {
                 CountPendingWritesAsDropped();
             }
@@ -144,22 +188,21 @@ public class StructuredLogWriteBuffer(
         }
 
         _signal.Dispose();
-        _stopTokenSource.Dispose();
+        stopTokenSource.Dispose();
     }
 
-    private async Task ProcessQueueAsync()
+    private async Task ProcessQueueAsync(CancellationToken cancellationToken)
     {
-        using var timer = new PeriodicTimer(options.Value.WriteQueue.FlushInterval);
-        var cancellationToken = _stopTokenSource.Token;
-
         while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
-                var signalTask = _signal.WaitAsync(cancellationToken);
-                var timerTask = timer.WaitForNextTickAsync(cancellationToken).AsTask();
-                await Task.WhenAny(signalTask, timerTask);
-                await FlushAsync(cancellationToken);
+                await _signal.WaitAsync(options.Value.WriteQueue.FlushInterval, cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested)
+                    return;
+
+                await FlushAsync();
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -169,9 +212,12 @@ public class StructuredLogWriteBuffer(
             {
                 return;
             }
-            catch (Exception e) when (!cancellationToken.IsCancellationRequested)
+            catch (Exception e)
             {
                 Trace.TraceError("Failed to flush structured log writes: {0}", e);
+
+                if (cancellationToken.IsCancellationRequested)
+                    return;
             }
         }
     }
