@@ -21,6 +21,8 @@ namespace Elsa.Diagnostics.StructuredLogs.ShellFeatures;
 [UsedImplicitly]
 public class StructuredLogsFeature : IFastEndpointsShellFeature, IWebShellFeature
 {
+    private const string SensitiveNamesDefaultValue = "authorization, token, password, secret, api-key, apikey, cookie, connection-string, connectionstring";
+    private const string SensitiveTextPatternsDefaultValue = "(?i)bearer\\s+[A-Za-z0-9._~+/=-]+; (?i)(password|secret|token|api[-_]?key)\\s*[=:]\\s*[^\\s,;]+; (?i)(AccountKey|SharedAccessKey)=([^;\\s]+)";
     private static readonly StructuredLogsOptions DefaultOptions = new();
 
     [ManifestSetting(
@@ -68,6 +70,7 @@ public class StructuredLogsFeature : IFastEndpointsShellFeature, IWebShellFeatur
         DisplayName = "Sensitive Names",
         Description = "Property names whose values should be redacted from structured log events.",
         Category = "Redaction",
+        DefaultValue = SensitiveNamesDefaultValue,
         RestartRequired = true)]
     public ICollection<string> SensitiveNames { get; set; } = [..DefaultOptions.SensitiveNames];
 
@@ -75,6 +78,7 @@ public class StructuredLogsFeature : IFastEndpointsShellFeature, IWebShellFeatur
         DisplayName = "Sensitive Text Patterns",
         Description = "Text patterns whose values should be redacted from structured log events.",
         Category = "Redaction",
+        DefaultValue = SensitiveTextPatternsDefaultValue,
         Advanced = true,
         RestartRequired = true)]
     public ICollection<string> SensitiveTextPatterns { get; set; } = [..DefaultOptions.SensitiveTextPatterns];
