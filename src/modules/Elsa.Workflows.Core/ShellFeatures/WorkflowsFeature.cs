@@ -31,6 +31,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Workflows.ShellFeatures;
 
 [ShellFeature(
+    DisplayName = "Workflows",
     Description = "Provides core workflow execution, activity execution, and workflow serialization services",
     DependsOn =
 [

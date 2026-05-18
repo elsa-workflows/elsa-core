@@ -1,5 +1,6 @@
 using System.Reflection;
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Runtime;
 using JetBrains.Annotations;
@@ -15,6 +16,7 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Runtime;
     Description = "Provides Oracle persistence for workflow runtime",
     DependsOn = ["WorkflowRuntime"])]
 [UsedImplicitly]
+[ManifestInfrastructure("oracle-database", "database", Reason = "Stores workflow runtime data in Oracle Database.", Providers = new[] { "Oracle" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class OracleWorkflowRuntimePersistenceShellFeature
     : EFCoreWorkflowRuntimePersistenceShellFeatureBase
 {

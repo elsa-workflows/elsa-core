@@ -1,5 +1,6 @@
 using System.Reflection;
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Labels;
 using JetBrains.Annotations;
@@ -16,6 +17,7 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Labels;
     Description = "Provides MySql persistence for label management",
     DependsOn = ["Labels"])]
 [UsedImplicitly]
+[ManifestInfrastructure("mysql-database", "database", Reason = "Stores workflow label data in MySQL.", Providers = new[] { "MySQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class MySqlLabelPersistenceShellFeature
     : EFCoreLabelPersistenceShellFeatureBase
 {

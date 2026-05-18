@@ -1,5 +1,6 @@
 using System.Reflection;
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Labels;
 using JetBrains.Annotations;
@@ -15,6 +16,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Labels;
     Description = "Provides SqlServer persistence for label management",
     DependsOn = ["Labels"])]
 [UsedImplicitly]
+[ManifestInfrastructure("sqlserver-database", "database", Reason = "Stores workflow label data in SQL Server.", Providers = new[] { "SQL Server" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqlServerLabelPersistenceShellFeature
     : EFCoreLabelPersistenceShellFeatureBase
 {

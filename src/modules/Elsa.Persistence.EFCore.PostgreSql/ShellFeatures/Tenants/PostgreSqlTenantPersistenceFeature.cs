@@ -1,5 +1,6 @@
 using System.Reflection;
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Tenants;
 using JetBrains.Annotations;
@@ -16,6 +17,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Tenants;
     Description = "Provides PostgreSql persistence for tenant management",
     DependsOn = ["TenantManagement"])]
 [UsedImplicitly]
+[ManifestInfrastructure("postgresql-database", "database", Reason = "Stores tenant data in PostgreSQL.", Providers = new[] { "PostgreSQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class PostgreSqlTenantPersistenceFeature
     : EFCoreTenantManagementShellFeatureBase
 {

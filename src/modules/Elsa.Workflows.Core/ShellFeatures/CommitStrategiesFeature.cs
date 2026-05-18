@@ -8,6 +8,7 @@ namespace Elsa.Workflows.ShellFeatures;
 
 [ShellFeature(
     "CommitStrategies",
+    DisplayName = "Commit Strategies",
     Description = "Registers workflow commit strategies")]
 public class CommitStrategiesFeature : IShellFeature
 {

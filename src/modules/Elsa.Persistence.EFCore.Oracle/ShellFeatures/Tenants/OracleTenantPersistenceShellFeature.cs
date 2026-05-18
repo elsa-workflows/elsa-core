@@ -1,5 +1,6 @@
 using System.Reflection;
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Tenants;
 using JetBrains.Annotations;
@@ -15,6 +16,7 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Tenants;
     Description = "Provides Oracle persistence for tenant management",
     DependsOn = ["TenantManagement"])]
 [UsedImplicitly]
+[ManifestInfrastructure("oracle-database", "database", Reason = "Stores tenant data in Oracle Database.", Providers = new[] { "Oracle" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class OracleTenantPersistenceShellFeature
     : EFCoreTenantManagementShellFeatureBase
 {

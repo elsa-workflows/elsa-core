@@ -1,5 +1,6 @@
 using System.Reflection;
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Alterations;
 using JetBrains.Annotations;
@@ -16,6 +17,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Alterations;
     Description = "Provides Sqlite persistence for workflow alterations",
     DependsOn = ["Alterations"])]
 [UsedImplicitly]
+[ManifestInfrastructure("sqlite-database", "database", Reason = "Stores workflow alteration records in SQLite.", Providers = new[] { "SQLite" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqliteAlterationsPersistenceShellFeature
     : EFCoreAlterationsPersistenceShellFeatureBase
 {

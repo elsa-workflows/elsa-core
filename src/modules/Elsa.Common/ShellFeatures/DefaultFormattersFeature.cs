@@ -8,6 +8,7 @@ namespace Elsa.Common.ShellFeatures;
 
 [ShellFeature(
     "DefaultFormatters",
+    DisplayName = "Default Formatters",
     Description = "Registers default serializers and type converters")]
 public class DefaultFormattersFeature : IShellFeature
 {

@@ -11,6 +11,7 @@ namespace Elsa.Common.ShellFeatures;
 
 [ShellFeature(
     "Multitenancy",
+    DisplayName = "Multitenancy",
     Description = "Provides tenant resolution, tenant scopes, and tenant lifecycle services")]
 public class MultitenancyFeature : IShellFeature
 {

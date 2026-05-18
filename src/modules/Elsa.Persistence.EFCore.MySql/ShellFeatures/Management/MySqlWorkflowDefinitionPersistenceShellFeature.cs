@@ -1,5 +1,6 @@
 using System.Reflection;
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
 using JetBrains.Annotations;
@@ -16,6 +17,7 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Management;
     Description = "Provides MySql persistence for workflow definitions",
     DependsOn = ["WorkflowManagement", "WorkflowDefinitions"])]
 [UsedImplicitly]
+[ManifestInfrastructure("mysql-database", "database", Reason = "Stores workflow definitions in MySQL.", Providers = new[] { "MySQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class MySqlWorkflowDefinitionPersistenceShellFeature
     : EFCoreWorkflowDefinitionPersistenceShellFeatureBase
 {

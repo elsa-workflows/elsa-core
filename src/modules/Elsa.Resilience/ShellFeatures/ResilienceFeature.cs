@@ -13,7 +13,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Resilience.ShellFeatures;
 
-[ShellFeature(Description = "Provides workflow resilience strategies and retry attempt tracking")]
+[ShellFeature(
+    DisplayName = "Resilience",
+    Description = "Provides workflow resilience strategies and retry attempt tracking")]
 public class ResilienceFeature : IFastEndpointsShellFeature
 {
     public void ConfigureServices(IServiceCollection services)
