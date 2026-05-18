@@ -25,7 +25,6 @@ public class DefaultAdminUserFeature : IShellFeature
         DisplayName = "Admin User Name",
         Description = "User name for the default admin account to bootstrap.",
         Category = "Bootstrap",
-        Required = true,
         RestartRequired = true)]
     public string AdminUserName { get; set; } = "";
     
@@ -36,7 +35,6 @@ public class DefaultAdminUserFeature : IShellFeature
         DisplayName = "Admin Password",
         Description = "Password for the default admin account to bootstrap.",
         Category = "Bootstrap",
-        Required = true,
         Secret = true,
         Sensitive = true,
         RestartRequired = true)]
