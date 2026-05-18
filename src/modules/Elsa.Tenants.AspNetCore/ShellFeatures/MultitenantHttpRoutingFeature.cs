@@ -1,5 +1,6 @@
 using CShells.Features;
 using Elsa.Common.Multitenancy;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Tenants.AspNetCore.Options;
 using Elsa.Tenants.AspNetCore.Services;
 using JetBrains.Annotations;
@@ -19,6 +20,12 @@ public class MultitenantHttpRoutingFeature : IShellFeature
     /// <summary>
     /// Gets or sets the tenant header name.
     /// </summary>
+    [ManifestSetting(
+        DisplayName = "Tenant Header Name",
+        Description = "HTTP header used to resolve the current tenant.",
+        Category = "Routing",
+        DefaultValue = "X-Tenant-Id",
+        RestartRequired = true)]
     public string TenantHeaderName { get; set; } = "X-Tenant-Id";
 
     public void ConfigureServices(IServiceCollection services)
@@ -37,4 +44,3 @@ public class MultitenantHttpRoutingFeature : IShellFeature
             .AddScoped<TenantPrefixHttpEndpointRoutesProvider>();
     }
 }
-

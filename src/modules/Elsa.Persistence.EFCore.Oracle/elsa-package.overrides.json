@@ -1,0 +1,100 @@
+{
+  "features": [
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.Oracle.ShellFeatures.Alterations.OracleAlterationsPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "oracle-database",
+          "kind": "database",
+          "reason": "Stores workflow alteration records in Oracle Database.",
+          "providers": [ "Oracle" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.Oracle.ShellFeatures.Identity.OracleIdentityPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "oracle-database",
+          "kind": "database",
+          "reason": "Stores identity data in Oracle Database.",
+          "providers": [ "Oracle" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.Oracle.ShellFeatures.Labels.OracleLabelPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "oracle-database",
+          "kind": "database",
+          "reason": "Stores workflow label data in Oracle Database.",
+          "providers": [ "Oracle" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.Oracle.ShellFeatures.Tenants.OracleTenantPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "oracle-database",
+          "kind": "database",
+          "reason": "Stores tenant data in Oracle Database.",
+          "providers": [ "Oracle" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.Oracle.ShellFeatures.Management.OracleWorkflowDefinitionPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "oracle-database",
+          "kind": "database",
+          "reason": "Stores workflow definitions in Oracle Database.",
+          "providers": [ "Oracle" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.Oracle.ShellFeatures.Management.OracleWorkflowInstancePersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "oracle-database",
+          "kind": "database",
+          "reason": "Stores workflow instances in Oracle Database.",
+          "providers": [ "Oracle" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.Oracle.ShellFeatures.OracleWorkflowPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "oracle-database",
+          "kind": "database",
+          "reason": "Stores workflow definitions, instances, and runtime data in Oracle Database.",
+          "providers": [ "Oracle" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.Oracle.ShellFeatures.Runtime.OracleWorkflowRuntimePersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "oracle-database",
+          "kind": "database",
+          "reason": "Stores workflow runtime data in Oracle Database.",
+          "providers": [ "Oracle" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    }
+  ]
+}

@@ -7,7 +7,10 @@ namespace Elsa.Common.ShellFeatures;
 /// <summary>
 /// Configures the system clock.
 /// </summary>
-[ShellFeature("SystemClock")]
+[ShellFeature(
+    "SystemClock",
+    DisplayName = "System Clock",
+    Description = "Provides the default system clock service")]
 public class SystemClockFeature : IShellFeature
 {
     public void ConfigureServices(IServiceCollection services)

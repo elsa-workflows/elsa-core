@@ -1,0 +1,16 @@
+{
+  "features": [
+    {
+      "clrTypeName": "Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.ShellFeatures.SqliteStructuredLogPersistenceFeature",
+      "infrastructure": [
+        {
+          "id": "sqlite-database",
+          "kind": "database",
+          "reason": "Stores structured log records in SQLite.",
+          "providers": [ "SQLite" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    }
+  ]
+}

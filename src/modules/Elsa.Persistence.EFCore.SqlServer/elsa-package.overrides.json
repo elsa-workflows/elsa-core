@@ -1,0 +1,100 @@
+{
+  "features": [
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Alterations.SqlServerAlterationsPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "sqlserver-database",
+          "kind": "database",
+          "reason": "Stores workflow alteration records in SQL Server.",
+          "providers": [ "SQL Server" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Identity.SqlServerIdentityPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "sqlserver-database",
+          "kind": "database",
+          "reason": "Stores identity data in SQL Server.",
+          "providers": [ "SQL Server" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Labels.SqlServerLabelPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "sqlserver-database",
+          "kind": "database",
+          "reason": "Stores workflow label data in SQL Server.",
+          "providers": [ "SQL Server" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Tenants.SqlServerTenantPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "sqlserver-database",
+          "kind": "database",
+          "reason": "Stores tenant data in SQL Server.",
+          "providers": [ "SQL Server" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Management.SqlServerWorkflowDefinitionPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "sqlserver-database",
+          "kind": "database",
+          "reason": "Stores workflow definitions in SQL Server.",
+          "providers": [ "SQL Server" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Management.SqlServerWorkflowInstancePersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "sqlserver-database",
+          "kind": "database",
+          "reason": "Stores workflow instances in SQL Server.",
+          "providers": [ "SQL Server" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.SqlServer.ShellFeatures.SqlServerWorkflowPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "sqlserver-database",
+          "kind": "database",
+          "reason": "Stores workflow definitions, instances, and runtime data in SQL Server.",
+          "providers": [ "SQL Server" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Runtime.SqlServerWorkflowRuntimePersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "sqlserver-database",
+          "kind": "database",
+          "reason": "Stores workflow runtime data in SQL Server.",
+          "providers": [ "SQL Server" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    }
+  ]
+}

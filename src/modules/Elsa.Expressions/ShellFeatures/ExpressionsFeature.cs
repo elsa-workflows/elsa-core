@@ -8,7 +8,10 @@ namespace Elsa.Expressions.ShellFeatures;
 /// <summary>
 /// Installs and configures the expressions feature.
 /// </summary>
-[ShellFeature("Expressions")]
+[ShellFeature(
+    "Expressions",
+    DisplayName = "Expressions",
+    Description = "Provides expression evaluation services")]
 public class ExpressionsFeature : IShellFeature
 {
     public void ConfigureServices(IServiceCollection services)

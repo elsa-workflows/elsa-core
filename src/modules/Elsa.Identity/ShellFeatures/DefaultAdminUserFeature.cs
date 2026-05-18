@@ -2,6 +2,7 @@ using CShells.Features;
 using Elsa.Extensions;
 using Elsa.Identity.HostedServices;
 using Elsa.Identity.Options;
+using Elsa.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,21 +21,47 @@ public class DefaultAdminUserFeature : IShellFeature
     /// <summary>
     /// Gets or sets the admin user name. Must be explicitly configured to enable user bootstrap.
     /// </summary>
+    [ManifestSetting(
+        DisplayName = "Admin User Name",
+        Description = "User name for the default admin account to bootstrap.",
+        Category = "Bootstrap",
+        Required = true,
+        RestartRequired = true)]
     public string AdminUserName { get; set; } = "";
     
     /// <summary>
     /// Gets or sets the admin user password. Must be explicitly configured to enable user bootstrap.
     /// </summary>
+    [ManifestSetting(
+        DisplayName = "Admin Password",
+        Description = "Password for the default admin account to bootstrap.",
+        Category = "Bootstrap",
+        Required = true,
+        Secret = true,
+        Sensitive = true,
+        RestartRequired = true)]
     public string AdminPassword { get; set; } = "";
     
     /// <summary>
     /// Gets or sets the admin role name.
     /// </summary>
+    [ManifestSetting(
+        DisplayName = "Admin Role Name",
+        Description = "Role assigned to the default admin account.",
+        Category = "Bootstrap",
+        DefaultValue = "admin",
+        RestartRequired = true)]
     public string AdminRoleName { get; set; } = "admin";
     
     /// <summary>
     /// Gets or sets the admin role permissions.
     /// </summary>
+    [ManifestSetting(
+        DisplayName = "Admin Role Permissions",
+        Description = "Permissions assigned to the default admin role.",
+        Category = "Bootstrap",
+        DefaultValue = "*",
+        RestartRequired = true)]
     public ICollection<string> AdminRolePermissions { get; set; } = ["*"];
     
     public void ConfigureServices(IServiceCollection services)

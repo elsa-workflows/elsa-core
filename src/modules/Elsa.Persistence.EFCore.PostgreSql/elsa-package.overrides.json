@@ -1,0 +1,100 @@
+{
+  "features": [
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Alterations.PostgreSqlAlterationsPersistenceFeature",
+      "infrastructure": [
+        {
+          "id": "postgresql-database",
+          "kind": "database",
+          "reason": "Stores workflow alteration records in PostgreSQL.",
+          "providers": [ "PostgreSQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Identity.PostgreSqlIdentityPersistenceFeature",
+      "infrastructure": [
+        {
+          "id": "postgresql-database",
+          "kind": "database",
+          "reason": "Stores identity data in PostgreSQL.",
+          "providers": [ "PostgreSQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Labels.PostgreSqlLabelPersistenceFeature",
+      "infrastructure": [
+        {
+          "id": "postgresql-database",
+          "kind": "database",
+          "reason": "Stores workflow label data in PostgreSQL.",
+          "providers": [ "PostgreSQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Tenants.PostgreSqlTenantPersistenceFeature",
+      "infrastructure": [
+        {
+          "id": "postgresql-database",
+          "kind": "database",
+          "reason": "Stores tenant data in PostgreSQL.",
+          "providers": [ "PostgreSQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Management.PostgreSqlWorkflowDefinitionPersistenceFeature",
+      "infrastructure": [
+        {
+          "id": "postgresql-database",
+          "kind": "database",
+          "reason": "Stores workflow definitions in PostgreSQL.",
+          "providers": [ "PostgreSQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Management.PostgreSqlWorkflowInstancePersistenceFeature",
+      "infrastructure": [
+        {
+          "id": "postgresql-database",
+          "kind": "database",
+          "reason": "Stores workflow instances in PostgreSQL.",
+          "providers": [ "PostgreSQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.PostgreSqlWorkflowPersistenceFeature",
+      "infrastructure": [
+        {
+          "id": "postgresql-database",
+          "kind": "database",
+          "reason": "Stores workflow definitions, instances, and runtime data in PostgreSQL.",
+          "providers": [ "PostgreSQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Runtime.PostgreSqlWorkflowRuntimePersistenceFeature",
+      "infrastructure": [
+        {
+          "id": "postgresql-database",
+          "kind": "database",
+          "reason": "Stores workflow runtime data in PostgreSQL.",
+          "providers": [ "PostgreSQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    }
+  ]
+}

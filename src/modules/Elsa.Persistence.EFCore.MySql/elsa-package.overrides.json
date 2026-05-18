@@ -1,0 +1,100 @@
+{
+  "features": [
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.MySql.ShellFeatures.Alterations.MySqlAlterationsPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "mysql-database",
+          "kind": "database",
+          "reason": "Stores workflow alteration records in MySQL.",
+          "providers": [ "MySQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.MySql.ShellFeatures.Identity.MySqlIdentityPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "mysql-database",
+          "kind": "database",
+          "reason": "Stores identity data in MySQL.",
+          "providers": [ "MySQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.MySql.ShellFeatures.Labels.MySqlLabelPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "mysql-database",
+          "kind": "database",
+          "reason": "Stores workflow label data in MySQL.",
+          "providers": [ "MySQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.MySql.ShellFeatures.Tenants.MySqlTenantPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "mysql-database",
+          "kind": "database",
+          "reason": "Stores tenant data in MySQL.",
+          "providers": [ "MySQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.MySql.ShellFeatures.Management.MySqlWorkflowDefinitionPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "mysql-database",
+          "kind": "database",
+          "reason": "Stores workflow definitions in MySQL.",
+          "providers": [ "MySQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.MySql.ShellFeatures.Management.MySqlWorkflowInstancePersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "mysql-database",
+          "kind": "database",
+          "reason": "Stores workflow instances in MySQL.",
+          "providers": [ "MySQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.MySql.ShellFeatures.MySqlWorkflowPersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "mysql-database",
+          "kind": "database",
+          "reason": "Stores workflow definitions, instances, and runtime data in MySQL.",
+          "providers": [ "MySQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    },
+    {
+      "clrTypeName": "Elsa.Persistence.EFCore.MySql.ShellFeatures.Runtime.MySqlWorkflowRuntimePersistenceShellFeature",
+      "infrastructure": [
+        {
+          "id": "mysql-database",
+          "kind": "database",
+          "reason": "Stores workflow runtime data in MySQL.",
+          "providers": [ "MySQL" ],
+          "configurationKeys": [ "ConnectionString" ]
+        }
+      ]
+    }
+  ]
+}

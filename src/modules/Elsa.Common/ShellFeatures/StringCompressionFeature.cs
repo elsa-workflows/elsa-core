@@ -9,6 +9,7 @@ namespace Elsa.Common.ShellFeatures;
 [UsedImplicitly]
 [ShellFeature(
     "StringCompression",
+    DisplayName = "String Compression",
     Description = "Registers string compression codecs")]
 public class StringCompressionFeature : IShellFeature
 {
