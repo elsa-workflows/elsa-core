@@ -106,7 +106,7 @@
         <PackageVersion Include="CShells.AspNetCore.Abstractions" Version="0.0.24"/>
         <PackageVersion Include="CShells.FastEndpoints" Version="0.0.24"/>
         <PackageVersion Include="CShells.FastEndpoints.Abstractions" Version="0.0.24"/>
-        <PackageVersion Include="Elsa.PackageManifest.Generator" Version="0.0.1-preview.41"/>
+        <PackageVersion Include="Elsa.PackageManifest.Generator" Version="0.0.1-preview.43"/>
         <PackageVersion Include="Datadog.Trace.Bundle" Version="3.32.0"/>
         <PackageVersion Include="DistributedLock" Version="2.7.1"/>
         <PackageVersion Include="DistributedLock.Core" Version="1.0.9"/>
