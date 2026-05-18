@@ -47,6 +47,7 @@ flowchart LR
 | [HTTP, Scheduling, And Resilience](http-scheduling-resilience.md) | Inbound HTTP workflows, outbound HTTP, scheduled triggers, and resilience strategies. |
 | [Persistence](persistence.md) | In-memory stores, EF Core stores, provider packages, migrations, and multi-provider rules. |
 | [Diagnostics Structured Logs](diagnostics-structured-logs.md) | `ILogger` capture, live feed, REST/SignalR surface, redaction, and SQLite persistence. |
+| [Diagnostics Console Logs](diagnostics-console-logs.md) | Raw stdout/stderr capture, live feed, REST/SignalR surface, and redaction. |
 | [Identity, Tenancy, And Security](identity-tenancy-security.md) | Users, applications, roles, API keys, tenant resolution, and authorization touch points. |
 | [Testing Guide](testing-guide.md) | Test project layout, fixture choices, and targeted commands. |
 | [Extension Guide](extension-guide.md) | How to add features, activities, expression providers, stores, endpoints, and ingress sources. |
@@ -63,7 +64,7 @@ flowchart LR
 - Runtime feature: [src/modules/Elsa.Workflows.Runtime/Features/WorkflowRuntimeFeature.cs](../../src/modules/Elsa.Workflows.Runtime/Features/WorkflowRuntimeFeature.cs)
 - API feature: [src/modules/Elsa.Workflows.Api/Features/WorkflowsApiFeature.cs](../../src/modules/Elsa.Workflows.Api/Features/WorkflowsApiFeature.cs)
 - Reference server: [src/apps/Elsa.Server.Web/Program.cs](../../src/apps/Elsa.Server.Web/Program.cs)
-- Active structured-log persistence plan: [specs/005-structured-log-persistence/plan.md](../../specs/005-structured-log-persistence/plan.md)
+- Structured-log persistence design: [specs/005-structured-log-persistence/plan.md](../../specs/005-structured-log-persistence/plan.md)
 
 ## Contributor Workflow
 

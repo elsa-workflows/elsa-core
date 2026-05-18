@@ -95,6 +95,28 @@ Tests:
 - [CachingAndWorkflowDefinitionActivity](../../test/component/Elsa.Workflows.ComponentTests/Scenarios/CachingAndWorkflowDefinitionActivity)
 - [WorkflowReferenceGraph](../../test/component/Elsa.Workflows.ComponentTests/Scenarios/WorkflowReferenceGraph)
 
+## StateMachine Activity
+
+The [StateMachine](../../src/modules/Elsa.Workflows.Core/Activities/StateMachine/Activities/StateMachine.cs) activity models named states with trigger-driven transitions. It lives in `Elsa.Workflows.Core` and is registered as a built-in activity.
+
+Key concepts:
+
+- **States** ([StateMachineState](../../src/modules/Elsa.Workflows.Core/Activities/StateMachine/Models/StateMachineState.cs)): Named states, each with an optional `Entry` and `Exit` activity.
+- **Transitions** ([Transition](../../src/modules/Elsa.Workflows.Core/Activities/StateMachine/Models/Transition.cs)): Directed From→To pairs with an optional `Trigger` activity, optional `Condition` expression, and optional `Action` activity.
+- **InitialState**: The first state to enter when execution starts.
+
+Execution cycle:
+
+1. On start, the machine enters `InitialState` and runs its `Entry` activity if present.
+2. All outbound transition triggers for the current state are scheduled concurrently.
+3. When a trigger completes and its `Condition` evaluates to true, competing triggers are canceled, the optional `Action` runs, then the current state's `Exit` activity runs.
+4. The machine moves to the `To` state and repeats from step 1.
+5. If the current state has no valid outbound transitions, the machine completes.
+
+When a condition evaluates to false the failed trigger is re-armed and remains waiting alongside other triggers for the state.
+
+Spec: [specs/006-state-machine-activity/spec.md](../../specs/006-state-machine-activity/spec.md).
+
 ## Adding A New Activity
 
 Typical steps:

@@ -67,7 +67,7 @@ sequenceDiagram
 
 ## Activities And Control Flow
 
-Activities are the unit of work. Core activity types live under [Elsa.Workflows.Core/Activities](../../src/modules/Elsa.Workflows.Core/Activities). Control flow includes `Sequence`, `If`, `Switch`, `Fork`, `For`, `ForEach`, `While`, `Parallel`, `Flowchart`, and flowchart node activities.
+Activities are the unit of work. Core activity types live under [Elsa.Workflows.Core/Activities](../../src/modules/Elsa.Workflows.Core/Activities). Control flow includes `Sequence`, `If`, `Switch`, `Fork`, `For`, `ForEach`, `While`, `Parallel`, `Flowchart`, `StateMachine`, and flowchart node activities.
 
 Flowchart execution has a token-centric model documented in [ADR 0005](../adr/0005-token-centric-flowchart-execution-model.md), with explicit join behavior documented in [ADR 0007](../adr/0007-adoption-of-explicit-merge-modes-for-flowchart-joins.md).
 
@@ -118,6 +118,8 @@ Provider-specific packages such as SQLite, SQL Server, PostgreSQL, MySQL, and Or
 
 ## Diagnostics Layer
 
-[Elsa.Diagnostics.StructuredLogs](../../src/modules/Elsa.Diagnostics.StructuredLogs) captures semantic `ILogger` events, redacts them, keeps recent events, exposes REST endpoints, and streams live events through SignalR. The default store is in-memory; the active `005-structured-log-persistence` work adds SQLite persistence through a shared relational package.
+[Elsa.Diagnostics.StructuredLogs](../../src/modules/Elsa.Diagnostics.StructuredLogs) captures semantic `ILogger` events, redacts them, keeps recent events, exposes REST endpoints, and streams live events through SignalR. The default store is in-memory; SQLite persistence is available through the relational and SQLite persistence packages.
 
-See [Diagnostics Structured Logs](diagnostics-structured-logs.md).
+[Elsa.Diagnostics.ConsoleLogs](../../src/modules/Elsa.Diagnostics.ConsoleLogs) captures raw `stdout` and `stderr` from the host process, buffers recent lines, and streams live console output to authorized callers through SignalR. It is separate from structured logs and does not write to durable storage.
+
+See [Diagnostics Structured Logs](diagnostics-structured-logs.md) and [Diagnostics Console Logs](diagnostics-console-logs.md).

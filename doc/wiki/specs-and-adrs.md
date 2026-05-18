@@ -35,6 +35,8 @@ Current ADRs:
 | [003 live server logs](../../specs/003-live-server-logs/spec.md) | Diagnostics precursor | Earlier live server logs work that led to structured diagnostics. |
 | [004 diagnostics structured logs](../../specs/004-diagnostics-structured-logs/spec.md) | Diagnostics | Refactors server logs into structured log diagnostics with semantic `ILogger` capture. |
 | [005 structured log persistence](../../specs/005-structured-log-persistence/spec.md) | Diagnostics persistence | Adds storage abstraction, relational persistence, SQLite durability, migrations, write queue, and retention. |
+| [006 diagnostics console logs](../../specs/006-diagnostics-console-logs/spec.md) | Diagnostics | Defines capture, buffering, endpoints, SignalR hub, permissions, source identity, and redaction for raw console output. |
+| [006 state machine activity](../../specs/006-state-machine-activity/spec.md) | Workflow core | Adds a state machine activity with named states and trigger-driven transitions to the workflow engine. |
 
 Each spec folder usually contains:
 
