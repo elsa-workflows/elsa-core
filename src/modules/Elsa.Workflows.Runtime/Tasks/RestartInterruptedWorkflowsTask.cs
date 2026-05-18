@@ -63,7 +63,8 @@ public class RestartInterruptedWorkflowsTask(
         return new()
         {
             IsExecuting = true,
-            BeforeLastUpdated = cutoffTimestamp
+            BeforeLastUpdated = cutoffTimestamp,
+            WorkflowStatus = WorkflowStatus.Running,
         };
     }
 }
