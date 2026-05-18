@@ -130,6 +130,11 @@ Structured log diagnostics endpoints include:
 - `GET /elsa/api/diagnostics/structured-logs/sources`
 - `GET /elsa/api/diagnostics/structured-logs/storage`
 
+Console log diagnostics endpoints include (when `Elsa.Diagnostics.ConsoleLogs` is enabled):
+
+- `POST /elsa/api/diagnostics/console-logs/recent`
+- `GET /elsa/api/diagnostics/console-logs/sources`
+
 Health checks are mapped to `/` in the reference server.
 
 ## Runtime Knobs

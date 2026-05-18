@@ -6,7 +6,7 @@ Start in [src/modules/Elsa.Diagnostics.StructuredLogs](../../src/modules/Elsa.Di
 
 ## Scope
 
-This module captures structured `ILogger` records only. It does not capture raw stdout/stderr console streams, traces, metrics, or OpenTelemetry spans. Those are intentionally separate future diagnostics concerns.
+This module captures structured `ILogger` records only. It does not capture raw stdout/stderr console streams, traces, metrics, or OpenTelemetry spans. Raw console output is covered by the sibling [Elsa.Diagnostics.ConsoleLogs](../../src/modules/Elsa.Diagnostics.ConsoleLogs) module — see [Diagnostics Console Logs](diagnostics-console-logs.md).
 
 ## Feature Wiring
 
@@ -100,7 +100,7 @@ Events pass through `IStructuredLogRedactor` before buffering or streaming. Conf
 
 ## SQLite Persistence
 
-The active structured-log persistence work adds durable SQLite storage:
+Durable SQLite storage is available through the relational and SQLite packages:
 
 - design plan: [specs/005-structured-log-persistence/plan.md](../../specs/005-structured-log-persistence/plan.md)
 - quickstart: [specs/005-structured-log-persistence/quickstart.md](../../specs/005-structured-log-persistence/quickstart.md)
