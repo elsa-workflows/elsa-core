@@ -31,7 +31,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Refresh wiki with Claude Code
-        uses: anthropics/claude-code-action@99ca333651aa9a8becc279065fad21c4ef1c4494 # v1
+        uses: anthropics/claude-code-action/base-action@99ca333651aa9a8becc279065fad21c4ef1c4494 # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
