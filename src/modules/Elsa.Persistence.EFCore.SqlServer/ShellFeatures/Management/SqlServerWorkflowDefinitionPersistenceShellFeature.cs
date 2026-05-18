@@ -1,5 +1,6 @@
 using System.Reflection;
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
 using JetBrains.Annotations;
@@ -15,6 +16,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Management;
     Description = "Provides SqlServer persistence for workflow definitions",
     DependsOn = ["WorkflowManagement", "WorkflowDefinitions"])]
 [UsedImplicitly]
+[ManifestInfrastructure("sqlserver-database", "database", Reason = "Stores workflow definitions in SQL Server.", Providers = new[] { "SQL Server" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqlServerWorkflowDefinitionPersistenceShellFeature
     : EFCoreWorkflowDefinitionPersistenceShellFeatureBase
 {

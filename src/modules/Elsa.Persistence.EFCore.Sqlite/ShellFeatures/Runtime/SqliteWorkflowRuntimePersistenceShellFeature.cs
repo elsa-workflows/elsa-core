@@ -1,5 +1,6 @@
 using System.Reflection;
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Runtime;
 using JetBrains.Annotations;
@@ -16,6 +17,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Runtime;
     Description = "Provides Sqlite persistence for workflow runtime",
     DependsOn = ["WorkflowRuntime"])]
 [UsedImplicitly]
+[ManifestInfrastructure("sqlite-database", "database", Reason = "Stores workflow runtime data in SQLite.", Providers = new[] { "SQLite" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqliteWorkflowRuntimePersistenceShellFeature
     : EFCoreWorkflowRuntimePersistenceShellFeatureBase
 {

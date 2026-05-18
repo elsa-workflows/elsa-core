@@ -1,5 +1,6 @@
 using System.Reflection;
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Tenants;
 using JetBrains.Annotations;
@@ -16,6 +17,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Tenants;
     Description = "Provides Sqlite persistence for tenant management",
     DependsOn = ["TenantManagement"])]
 [UsedImplicitly]
+[ManifestInfrastructure("sqlite-database", "database", Reason = "Stores tenant data in SQLite.", Providers = new[] { "SQLite" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqliteTenantPersistenceShellFeature
     : EFCoreTenantManagementShellFeatureBase
 {

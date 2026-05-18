@@ -1,4 +1,5 @@
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Management;
 using Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Runtime;
 using JetBrains.Annotations;
@@ -42,4 +43,5 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures;
     ]
 )]
 [UsedImplicitly]
+[ManifestInfrastructure("postgresql-database", "database", Reason = "Stores workflow definitions, instances, and runtime data in PostgreSQL.", Providers = new[] { "PostgreSQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class PostgreSqlWorkflowPersistenceFeature : CombinedPersistenceShellFeatureBase;

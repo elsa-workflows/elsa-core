@@ -1,4 +1,5 @@
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore;
 using JetBrains.Annotations;
 
@@ -35,6 +36,7 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures;
     Description = "Provides Oracle persistence for workflow definitions, instances, and runtime data with unified configuration",
     DependsOn = ["OracleWorkflowDefinitionPersistence", "OracleWorkflowInstancePersistence", "OracleWorkflowRuntimePersistence"])]
 [UsedImplicitly]
+[ManifestInfrastructure("oracle-database", "database", Reason = "Stores workflow definitions, instances, and runtime data in Oracle Database.", Providers = new[] { "Oracle" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class OracleWorkflowPersistenceShellFeature : CombinedPersistenceShellFeatureBase
 {
 }

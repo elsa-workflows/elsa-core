@@ -1,5 +1,6 @@
 using System.Reflection;
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Alterations;
 using JetBrains.Annotations;
@@ -16,6 +17,7 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Alterations;
     Description = "Provides MySql persistence for workflow alterations",
     DependsOn = ["Alterations"])]
 [UsedImplicitly]
+[ManifestInfrastructure("mysql-database", "database", Reason = "Stores workflow alteration records in MySQL.", Providers = new[] { "MySQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class MySqlAlterationsPersistenceShellFeature
     : EFCoreAlterationsPersistenceShellFeatureBase
 {

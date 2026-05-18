@@ -1,5 +1,6 @@
 using System.Reflection;
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Tenants;
 using JetBrains.Annotations;
@@ -16,6 +17,7 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Tenants;
     Description = "Provides MySql persistence for tenant management",
     DependsOn = ["TenantManagement"])]
 [UsedImplicitly]
+[ManifestInfrastructure("mysql-database", "database", Reason = "Stores tenant data in MySQL.", Providers = new[] { "MySQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class MySqlTenantPersistenceShellFeature
     : EFCoreTenantManagementShellFeatureBase
 {

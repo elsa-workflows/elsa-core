@@ -1,5 +1,6 @@
 using System.Reflection;
 using CShells.Features;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Identity;
 using JetBrains.Annotations;
@@ -16,6 +17,7 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Identity;
     Description = "Provides MySql persistence for identity management",
     DependsOn = ["Identity"])]
 [UsedImplicitly]
+[ManifestInfrastructure("mysql-database", "database", Reason = "Stores identity data in MySQL.", Providers = new[] { "MySQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class MySqlIdentityPersistenceShellFeature
     : EFCoreIdentityPersistenceShellFeatureBase
 {

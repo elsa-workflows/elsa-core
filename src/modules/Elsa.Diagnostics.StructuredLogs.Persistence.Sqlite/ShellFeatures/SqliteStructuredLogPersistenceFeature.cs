@@ -15,6 +15,7 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.ShellFeatures;
     Description = "Provides SQLite persistence for diagnostics structured logs",
     DependsOn = [typeof(StructuredLogRelationalPersistenceFeature)])]
 [UsedImplicitly]
+[ManifestInfrastructure("sqlite-database", "database", Reason = "Stores structured log records in SQLite.", Providers = new[] { "SQLite" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqliteStructuredLogPersistenceFeature : IShellFeature
 {
     [ManifestSetting(
