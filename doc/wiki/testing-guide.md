@@ -31,6 +31,7 @@ Shared helpers:
 | EF Core store or migration | Provider-specific integration/component test. |
 | HTTP workflows | Component test under HTTP workflow scenarios. |
 | Structured log SQLite persistence | SQLite integration test project. |
+| Console log capture, buffering, or endpoints | `Elsa.Diagnostics.ConsoleLogs.UnitTests` or `Elsa.Diagnostics.ConsoleLogs.IntegrationTests`. |
 
 ## Useful Commands
 
@@ -118,12 +119,21 @@ Use component tests when host lifecycle, HTTP server behavior, actual persistenc
 
 Structured log tests are split by layer:
 
-- core module unit tests
-- core module integration tests
-- relational unit tests
-- SQLite integration tests
+- [test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests](../../test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests)
+- [test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests](../../test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests)
+- [test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests](../../test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests)
+- [test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests](../../test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests)
 
 This mirrors the architecture: core capture and API behavior should not require SQLite; SQLite tests should prove durability, migrations, retention, timestamp storage, queue overflow, and filtering.
+
+## Console Log Tests
+
+Console log tests are split by layer:
+
+- [test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests](../../test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests): capture, filtering, redaction, buffering, source registry, and naming.
+- [test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests](../../test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests): module registration, endpoint authorization, SignalR hub, and recent query behavior.
+
+Run targeted console log tests when touching `Elsa.Diagnostics.ConsoleLogs`.
 
 ## Good Test Hygiene
 
