@@ -13,7 +13,7 @@ public class ConfigurationSecretStore(IConfiguration configuration, IOptions<Sec
         SecretStoreNames.Configuration,
         "Configuration",
         "Reads values from application configuration without storing the value in Elsa.",
-        SecretStoreCapabilities.Read | SecretStoreCapabilities.Test,
+        SecretStoreCapabilities.Read | SecretStoreCapabilities.Write | SecretStoreCapabilities.Test,
         true);
 
     public Task<SecretPayload> WriteAsync(Secret secret, SecretVersion version, SecretPayload payload, CancellationToken cancellationToken = default)

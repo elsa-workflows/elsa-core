@@ -58,6 +58,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
             throw new InvalidOperationException(error);
 
         var store = storeRegistry.Get(secret.StoreName);
+        EnsureCanWrite(store);
         var nextVersion = secret.Versions.Count == 0 ? 1 : secret.Versions.Max(x => x.Version) + 1;
         var version = new SecretVersion { Version = nextVersion, ExpiresAt = request.ExpiresAt };
         version.Payload = await store.WriteAsync(secret, version, CreatePayload(request), cancellationToken);
@@ -154,6 +155,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     {
         var typeProvider = typeRegistry.Get(request.TypeName);
         var store = storeRegistry.Get(request.StoreName);
+        EnsureCanWrite(store);
 
         if (!typeProvider.Descriptor.SupportedStoreNames.Contains(store.Name, StringComparer.OrdinalIgnoreCase))
             throw new InvalidOperationException($"Secret type '{request.TypeName}' does not support store '{request.StoreName}'.");
@@ -197,6 +199,12 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     {
         if (!nameValidator.IsValid(name, out var error))
             throw new InvalidOperationException(error);
+    }
+
+    private static void EnsureCanWrite(ISecretStore store)
+    {
+        if (!store.Descriptor.Capabilities.HasFlag(SecretStoreCapabilities.Write))
+            throw new InvalidOperationException($"Secret store '{store.Name}' does not support writing secrets.");
     }
 
     private static IEnumerable<Secret> ApplyFilters(IEnumerable<Secret> secrets, ListSecretsRequest request)

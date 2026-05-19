@@ -10,7 +10,7 @@ public class EncryptedSecretStore(ISecretValueProtector protector) : ISecretStor
         SecretStoreNames.Encrypted,
         "Elsa Encrypted Store",
         "Stores values in Elsa-managed encrypted payloads.",
-        SecretStoreCapabilities.Read | SecretStoreCapabilities.Write | SecretStoreCapabilities.Delete | SecretStoreCapabilities.Test | SecretStoreCapabilities.ExportEncrypted | SecretStoreCapabilities.Versioned,
+        SecretStoreCapabilities.Read | SecretStoreCapabilities.Write | SecretStoreCapabilities.Delete | SecretStoreCapabilities.Test | SecretStoreCapabilities.Versioned,
         false);
 
     public Task<SecretPayload> WriteAsync(Secret secret, SecretVersion version, SecretPayload payload, CancellationToken cancellationToken = default)
