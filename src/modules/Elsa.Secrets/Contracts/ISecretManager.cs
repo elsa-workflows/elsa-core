@@ -8,7 +8,7 @@ public interface ISecretManager
     Task<ListSecretsResult> ListPageAsync(ListSecretsRequest request, CancellationToken cancellationToken = default);
     Task<long> CountAsync(ListSecretsRequest request, CancellationToken cancellationToken = default);
     Task<Secret> RotateAsync(string name, RotateSecretRequest request, CancellationToken cancellationToken = default);
-    Task<bool> RevokeAsync(string name, CancellationToken cancellationToken = default);
+    Task<Secret?> RevokeAsync(string name, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(string name, CancellationToken cancellationToken = default);
     Task<SecretTestResponse> TestAsync(string name, CancellationToken cancellationToken = default);
     Task<SecretPayload> ResolvePayloadAsync(string name, CancellationToken cancellationToken = default);

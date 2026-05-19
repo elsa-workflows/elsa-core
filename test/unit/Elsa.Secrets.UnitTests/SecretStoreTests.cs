@@ -74,6 +74,29 @@ public class SecretStoreTests
     }
 
     [Fact]
+    public async Task FileRepository_RecoversFromCorruptJson()
+    {
+        var path = Path.Join(Path.GetTempPath(), $"elsa-secrets-{Guid.NewGuid():N}.json");
+        try
+        {
+            await File.WriteAllTextAsync(path, "{not-valid-json");
+            var repository = new FileSecretRepository(Microsoft.Extensions.Options.Options.Create(new SecretsOptions { RepositoryFilePath = path }));
+
+            var secrets = await repository.ListAsync();
+            await repository.AddAsync(new Secret { Name = "smtp:password", DisplayName = "SMTP password" });
+            var reloaded = await repository.GetAsync("smtp:password");
+
+            Assert.Empty(secrets);
+            Assert.NotNull(reloaded);
+        }
+        finally
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InMemoryRepository_ReturnsCopies()
     {
         var repository = new InMemorySecretRepository();

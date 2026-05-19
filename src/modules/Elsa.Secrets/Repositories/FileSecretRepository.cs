@@ -1,10 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Secrets.Repositories;
 
-public class FileSecretRepository(IOptions<SecretsOptions> options) : ISecretRepository
+public class FileSecretRepository(IOptions<SecretsOptions> options, ILogger<FileSecretRepository>? logger = null) : ISecretRepository
 {
     private readonly SemaphoreSlim _lock = new(1, 1);
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
@@ -12,12 +13,6 @@ public class FileSecretRepository(IOptions<SecretsOptions> options) : ISecretRep
         Converters = { new JsonStringEnumConverter() },
         WriteIndented = true
     };
-
-    public async Task<bool> ExistsAsync(string normalizedName, CancellationToken cancellationToken = default)
-    {
-        var secret = await GetAsync(normalizedName, cancellationToken);
-        return secret != null;
-    }
 
     public async Task<Secret?> GetAsync(string normalizedName, CancellationToken cancellationToken = default)
     {
@@ -116,7 +111,15 @@ public class FileSecretRepository(IOptions<SecretsOptions> options) : ISecretRep
             return [];
 
         await using var stream = File.OpenRead(path);
-        return await JsonSerializer.DeserializeAsync<List<Secret>>(stream, _jsonOptions, cancellationToken) ?? [];
+        try
+        {
+            return await JsonSerializer.DeserializeAsync<List<Secret>>(stream, _jsonOptions, cancellationToken) ?? [];
+        }
+        catch (JsonException e)
+        {
+            logger?.LogError(e, "The secrets repository file '{Path}' could not be read because it contains invalid JSON.", path);
+            return [];
+        }
     }
 
     private async Task WriteAllUnsafeAsync(List<Secret> secrets, CancellationToken cancellationToken)

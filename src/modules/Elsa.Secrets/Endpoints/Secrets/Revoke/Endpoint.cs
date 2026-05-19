@@ -15,14 +15,7 @@ internal class Endpoint(ISecretManager manager) : ElsaEndpointWithoutRequest<Sec
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
         var name = Route<string>("name")!;
-        var revoked = await manager.RevokeAsync(name, cancellationToken);
-        if (!revoked)
-        {
-            await Send.NotFoundAsync(cancellationToken);
-            return;
-        }
-
-        var secret = await manager.GetAsync(name, cancellationToken);
+        var secret = await manager.RevokeAsync(name, cancellationToken);
         if (secret == null)
         {
             await Send.NotFoundAsync(cancellationToken);

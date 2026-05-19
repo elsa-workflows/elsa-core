@@ -1,8 +1,9 @@
 using System.Security.Cryptography;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Secrets.Services;
 
-public class SecretProviderAdapter(ISecretResolver resolver) : ISecretProvider
+public class SecretProviderAdapter(ISecretResolver resolver, ILogger<SecretProviderAdapter>? logger = null) : ISecretProvider
 {
     public async Task<string?> GetSecretAsync(string name, CancellationToken cancellationToken = default)
     {
@@ -14,16 +15,19 @@ public class SecretProviderAdapter(ISecretResolver resolver) : ISecretProvider
         {
             return null;
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException e)
         {
+            logger?.LogWarning(e, "Secret '{SecretName}' is unavailable.", name);
             return null;
         }
-        catch (CryptographicException)
+        catch (CryptographicException e)
         {
+            logger?.LogWarning(e, "Secret '{SecretName}' could not be decrypted.", name);
             return null;
         }
-        catch (FormatException)
+        catch (FormatException e)
         {
+            logger?.LogWarning(e, "Secret '{SecretName}' has a malformed encrypted payload.", name);
             return null;
         }
     }

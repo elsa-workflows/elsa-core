@@ -73,11 +73,11 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
         return secret;
     }
 
-    public async Task<bool> RevokeAsync(string name, CancellationToken cancellationToken = default)
+    public async Task<Secret?> RevokeAsync(string name, CancellationToken cancellationToken = default)
     {
         var secret = await GetAsync(name, cancellationToken);
         if (secret == null)
-            return false;
+            return null;
 
         secret.Status = SecretStatus.Revoked;
         secret.UpdatedAt = DateTimeOffset.UtcNow;
@@ -85,7 +85,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
             version.Status = SecretStatus.Revoked;
 
         await repository.SaveAsync(secret, cancellationToken);
-        return true;
+        return secret;
     }
 
     public async Task<bool> DeleteAsync(string name, CancellationToken cancellationToken = default)

@@ -6,11 +6,6 @@ public class InMemorySecretRepository : ISecretRepository
 {
     private readonly ConcurrentDictionary<string, Secret> _secrets = new(StringComparer.OrdinalIgnoreCase);
 
-    public Task<bool> ExistsAsync(string normalizedName, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(_secrets.ContainsKey(normalizedName));
-    }
-
     public Task<Secret?> GetAsync(string normalizedName, CancellationToken cancellationToken = default)
     {
         _secrets.TryGetValue(normalizedName, out var secret);
