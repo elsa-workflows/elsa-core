@@ -44,7 +44,9 @@ public class ListSecretsRequest
 {
     public string? Search { get; set; }
     public string? TypeName { get; set; }
+    public ICollection<string> TypeNames { get; set; } = [];
     public string? StoreName { get; set; }
+    public ICollection<string> StoreNames { get; set; } = [];
     public string? Scope { get; set; }
     public SecretStatus? Status { get; set; }
     public int? Page { get; set; }

@@ -1,10 +1,10 @@
-using System.Security.Cryptography;
-using System.Text;
-
 namespace Elsa.Secrets.Options;
 
 public class SecretsOptions
 {
+    public static string DefaultRepositoryFilePath { get; } = Path.Combine(AppContext.BaseDirectory, "App_Data", "elsa-secrets.json");
+
     public string ConfigurationSectionName { get; set; } = "Elsa:Secrets";
-    public byte[] EncryptionKey { get; set; } = SHA256.HashData(Encoding.UTF8.GetBytes("Elsa.Secrets.DevelopmentKey"));
+    public string? RepositoryFilePath { get; set; }
+    public byte[]? EncryptionKey { get; set; }
 }

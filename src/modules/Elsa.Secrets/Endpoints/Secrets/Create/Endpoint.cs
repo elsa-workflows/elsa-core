@@ -19,7 +19,12 @@ internal class Endpoint(ISecretManager manager) : ElsaEndpoint<CreateSecretReque
             var secret = await manager.CreateAsync(request, cancellationToken);
             await Send.OkAsync(secret.ToModel(), cancellationToken);
         }
-        catch (Exception e)
+        catch (InvalidOperationException e)
+        {
+            AddError(e.Message);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
+        }
+        catch (ArgumentException e)
         {
             AddError(e.Message);
             await Send.ErrorsAsync(cancellation: cancellationToken);

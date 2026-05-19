@@ -41,6 +41,9 @@ public class DefaultSecretValueProtector(IOptions<SecretsOptions> options) : ISe
     private byte[] GetKey()
     {
         var key = options.Value.EncryptionKey;
+        if (key == null || key.Length == 0)
+            throw new InvalidOperationException("Elsa Secrets encryption key is not configured. Configure SecretsOptions.EncryptionKey before using the encrypted secrets store.");
+
         if (key.Length is 16 or 24 or 32)
             return key;
 

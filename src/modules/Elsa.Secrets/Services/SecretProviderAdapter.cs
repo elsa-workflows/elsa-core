@@ -8,7 +8,7 @@ public class SecretProviderAdapter(ISecretResolver resolver) : ISecretProvider
         {
             return await resolver.ResolveAsync(name, cancellationToken);
         }
-        catch
+        catch (KeyNotFoundException)
         {
             return null;
         }

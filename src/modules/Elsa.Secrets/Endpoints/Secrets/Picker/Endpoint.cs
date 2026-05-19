@@ -17,18 +17,18 @@ internal class Endpoint(ISecretManager manager) : ElsaEndpoint<SecretPickerReque
         var listRequest = new ListSecretsRequest
         {
             Search = request.Search,
+            TypeNames = request.TypeNames,
+            StoreNames = request.StoreNames,
             Scope = request.Scope,
             Status = request.ActiveOnly ? SecretStatus.Active : null,
             PageSize = 100
         };
 
         var items = await manager.ListAsync(listRequest, cancellationToken);
-        var filtered = items
-            .Where(x => request.TypeNames.Count == 0 || request.TypeNames.Contains(x.TypeName, StringComparer.OrdinalIgnoreCase))
-            .Where(x => request.StoreNames.Count == 0 || request.StoreNames.Contains(x.StoreName, StringComparer.OrdinalIgnoreCase))
+        var models = items
             .Select(x => x.ToModel())
             .ToList();
 
-        return new SecretPickerResponse { Items = filtered, CanCreateInline = true };
+        return new SecretPickerResponse { Items = models, CanCreateInline = true };
     }
 }

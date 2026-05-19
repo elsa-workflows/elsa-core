@@ -1,61 +1,45 @@
-using System.Collections.Concurrent;
-
 namespace Elsa.Secrets.Services;
 
-public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretStoreRegistry storeRegistry, ISecretTypeRegistry typeRegistry) : ISecretManager
+public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretStoreRegistry storeRegistry, ISecretTypeRegistry typeRegistry, ISecretRepository repository) : ISecretManager
 {
-    private readonly ConcurrentDictionary<string, Secret> _secrets = new(StringComparer.OrdinalIgnoreCase);
-
-    public Task<Secret> CreateAsync(CreateSecretRequest request, CancellationToken cancellationToken = default)
+    public async Task<Secret> CreateAsync(CreateSecretRequest request, CancellationToken cancellationToken = default)
     {
         ValidateName(request.Name);
         var normalizedName = nameValidator.Normalize(request.Name);
 
-        if (!_secrets.TryAdd(normalizedName, CreateSecret(request)))
+        if (await repository.ExistsAsync(normalizedName, cancellationToken))
             throw new InvalidOperationException($"A secret named '{request.Name}' already exists.");
 
-        return Task.FromResult(_secrets[normalizedName]);
+        var secret = await CreateSecretAsync(request, cancellationToken);
+        await repository.AddAsync(secret, cancellationToken);
+        return secret;
     }
 
-    public Task<Secret?> GetAsync(string name, CancellationToken cancellationToken = default)
+    public async Task<Secret?> GetAsync(string name, CancellationToken cancellationToken = default)
     {
-        _secrets.TryGetValue(nameValidator.Normalize(name), out var secret);
-        return Task.FromResult(secret is { Status: SecretStatus.Deleted } ? null : secret);
+        var secret = await repository.GetAsync(nameValidator.Normalize(name), cancellationToken);
+        return secret is { Status: SecretStatus.Deleted } ? null : secret;
     }
 
-    public Task<IReadOnlyCollection<Secret>> ListAsync(ListSecretsRequest request, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<Secret>> ListAsync(ListSecretsRequest request, CancellationToken cancellationToken = default)
     {
-        var query = _secrets.Values.Where(x => x.Status != SecretStatus.Deleted);
-
-        if (!string.IsNullOrWhiteSpace(request.Search))
-        {
-            var search = request.Search.Trim();
-            query = query.Where(x =>
-                x.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                x.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                (x.Description?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false));
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.TypeName))
-            query = query.Where(x => string.Equals(x.TypeName, request.TypeName, StringComparison.OrdinalIgnoreCase));
-
-        if (!string.IsNullOrWhiteSpace(request.StoreName))
-            query = query.Where(x => string.Equals(x.StoreName, request.StoreName, StringComparison.OrdinalIgnoreCase));
-
-        if (!string.IsNullOrWhiteSpace(request.Scope))
-            query = query.Where(x => string.Equals(x.Scope, request.Scope, StringComparison.OrdinalIgnoreCase));
-
-        if (request.Status != null)
-            query = query.Where(x => x.Status == request.Status);
+        var secrets = await repository.ListAsync(cancellationToken);
+        var query = ApplyFilters(secrets, request);
 
         var pageSize = request.PageSize is > 0 ? Math.Min(request.PageSize.Value, 200) : 100;
         var page = request.Page is > 0 ? request.Page.Value : 0;
 
-        return Task.FromResult<IReadOnlyCollection<Secret>>(query
+        return query
             .OrderBy(x => x.Name)
             .Skip(page * pageSize)
             .Take(pageSize)
-            .ToList());
+            .ToList();
+    }
+
+    public async Task<long> CountAsync(ListSecretsRequest request, CancellationToken cancellationToken = default)
+    {
+        var secrets = await repository.ListAsync(cancellationToken);
+        return ApplyFilters(secrets, request).LongCount();
     }
 
     public async Task<Secret> RotateAsync(string name, RotateSecretRequest request, CancellationToken cancellationToken = default)
@@ -76,6 +60,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
         secret.Versions.Add(version);
         secret.Status = SecretStatus.Active;
         secret.UpdatedAt = DateTimeOffset.UtcNow;
+        await repository.SaveAsync(secret, cancellationToken);
 
         return secret;
     }
@@ -91,6 +76,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
         foreach (var version in secret.Versions.Where(x => x.Status == SecretStatus.Active))
             version.Status = SecretStatus.Revoked;
 
+        await repository.SaveAsync(secret, cancellationToken);
         return true;
     }
 
@@ -103,6 +89,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
         await storeRegistry.Get(secret.StoreName).DeleteAsync(secret, cancellationToken);
         secret.Status = SecretStatus.Deleted;
         secret.UpdatedAt = DateTimeOffset.UtcNow;
+        await repository.SaveAsync(secret, cancellationToken);
         return true;
     }
 
@@ -115,13 +102,21 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
             var succeeded = await storeRegistry.Get(secret.StoreName).TestAsync(secret, version, cancellationToken);
             return new SecretTestResponse { Succeeded = succeeded, Error = succeeded ? null : "Secret value is unavailable." };
         }
-        catch (Exception e)
+        catch (InvalidOperationException e)
+        {
+            return new SecretTestResponse { Succeeded = false, Error = e.Message };
+        }
+        catch (KeyNotFoundException e)
+        {
+            return new SecretTestResponse { Succeeded = false, Error = e.Message };
+        }
+        catch (ArgumentException e)
         {
             return new SecretTestResponse { Succeeded = false, Error = e.Message };
         }
     }
 
-    internal async Task<SecretPayload> ResolvePayloadAsync(string name, CancellationToken cancellationToken = default)
+    public async Task<SecretPayload> ResolvePayloadAsync(string name, CancellationToken cancellationToken = default)
     {
         var secret = await GetExistingAsync(name, cancellationToken);
         var version = GetLatestActiveVersion(secret);
@@ -134,7 +129,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
         return payload;
     }
 
-    private Secret CreateSecret(CreateSecretRequest request)
+    private async Task<Secret> CreateSecretAsync(CreateSecretRequest request, CancellationToken cancellationToken)
     {
         var typeProvider = typeRegistry.Get(request.TypeName);
         var store = storeRegistry.Get(request.StoreName);
@@ -157,7 +152,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
         };
 
         var version = new SecretVersion { Version = 1, ExpiresAt = request.ExpiresAt };
-        version.Payload = store.WriteAsync(secret, version, CreatePayload(request)).GetAwaiter().GetResult();
+        version.Payload = await store.WriteAsync(secret, version, CreatePayload(request), cancellationToken);
         secret.Versions.Add(version);
 
         return secret;
@@ -166,7 +161,7 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     private async Task<Secret> GetExistingAsync(string name, CancellationToken cancellationToken)
     {
         var secret = await GetAsync(name, cancellationToken);
-        return secret == null ? throw new InvalidOperationException($"Secret '{name}' was not found.") : secret;
+        return secret == null ? throw new KeyNotFoundException($"Secret '{name}' was not found.") : secret;
     }
 
     private static SecretVersion GetLatestActiveVersion(Secret secret)
@@ -181,6 +176,48 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     {
         if (!nameValidator.IsValid(name, out var error))
             throw new InvalidOperationException(error);
+    }
+
+    private static IEnumerable<Secret> ApplyFilters(IEnumerable<Secret> secrets, ListSecretsRequest request)
+    {
+        var query = secrets.Where(x => x.Status != SecretStatus.Deleted);
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var search = request.Search.Trim();
+            query = query.Where(x =>
+                x.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                x.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                (x.Description?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        var typeNames = GetFilterValues(request.TypeName, request.TypeNames);
+        if (typeNames.Count > 0)
+            query = query.Where(x => typeNames.Contains(x.TypeName));
+
+        var storeNames = GetFilterValues(request.StoreName, request.StoreNames);
+        if (storeNames.Count > 0)
+            query = query.Where(x => storeNames.Contains(x.StoreName));
+
+        if (!string.IsNullOrWhiteSpace(request.Scope))
+            query = query.Where(x => string.Equals(x.Scope, request.Scope, StringComparison.OrdinalIgnoreCase));
+
+        if (request.Status != null)
+            query = query.Where(x => x.Status == request.Status);
+
+        return query;
+    }
+
+    private static HashSet<string> GetFilterValues(string? value, IEnumerable<string> values)
+    {
+        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(value))
+            result.Add(value.Trim());
+
+        foreach (var item in values.Where(x => !string.IsNullOrWhiteSpace(x)))
+            result.Add(item.Trim());
+
+        return result;
     }
 
     private static SecretPayload CreatePayload(CreateSecretRequest request)

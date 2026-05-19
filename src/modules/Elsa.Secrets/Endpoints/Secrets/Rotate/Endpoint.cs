@@ -19,7 +19,12 @@ internal class Endpoint(ISecretManager manager) : ElsaEndpoint<RotateSecretReque
             var secret = await manager.RotateAsync(Route<string>("name")!, request, cancellationToken);
             await Send.OkAsync(secret.ToModel(), cancellationToken);
         }
-        catch (Exception e)
+        catch (InvalidOperationException e)
+        {
+            AddError(e.Message);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
+        }
+        catch (KeyNotFoundException e)
         {
             AddError(e.Message);
             await Send.ErrorsAsync(cancellation: cancellationToken);

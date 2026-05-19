@@ -1,6 +1,7 @@
 using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Options;
+using Elsa.Secrets.Repositories;
 using Elsa.Secrets.Services;
 using Elsa.Secrets.Stores;
 using Elsa.Secrets.Types;
@@ -13,7 +14,7 @@ public class SecretTestFixture
 {
     public SecretTestFixture(IConfiguration? configuration = null)
     {
-        var options = Microsoft.Extensions.Options.Options.Create(new SecretsOptions());
+        var options = Microsoft.Extensions.Options.Options.Create(new SecretsOptions { EncryptionKey = "unit-test-secret-key"u8.ToArray() });
         var protector = new DefaultSecretValueProtector(options);
         var stores = new ISecretStore[]
         {
@@ -29,11 +30,13 @@ public class SecretTestFixture
 
         StoreRegistry = new SecretStoreRegistry(stores);
         TypeRegistry = new SecretTypeRegistry(types);
-        Manager = new DefaultSecretManager(new DefaultSecretNameValidator(), StoreRegistry, TypeRegistry);
+        Repository = new InMemorySecretRepository();
+        Manager = new DefaultSecretManager(new DefaultSecretNameValidator(), StoreRegistry, TypeRegistry, Repository);
         Resolver = new DefaultSecretResolver(Manager);
     }
 
     public DefaultSecretManager Manager { get; }
+    public ISecretRepository Repository { get; }
     public ISecretResolver Resolver { get; }
     public ISecretStoreRegistry StoreRegistry { get; }
     public ISecretTypeRegistry TypeRegistry { get; }

@@ -1,3 +1,4 @@
+using Elsa.Secrets.Repositories;
 using Elsa.Secrets.Services;
 using Elsa.Secrets.Stores;
 using Elsa.Secrets.Types;
@@ -15,6 +16,7 @@ public static class ServiceCollectionExtensions
 
         services.AddOptions<SecretsOptions>();
         services.TryAddSingleton<ISecretNameValidator, DefaultSecretNameValidator>();
+        services.TryAddSingleton<ISecretRepository, FileSecretRepository>();
         services.TryAddSingleton<ISecretValueProtector, DefaultSecretValueProtector>();
         services.TryAddSingleton<ISecretManager, DefaultSecretManager>();
         services.TryAddSingleton<ISecretResolver, DefaultSecretResolver>();

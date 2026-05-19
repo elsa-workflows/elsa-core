@@ -52,4 +52,17 @@ public class SecretManagerTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = " SMTP:PASSWORD ", Value = "two" }));
     }
+
+    [Fact]
+    public async Task CountAsync_ReturnsTotalMatchingItems_NotPageSize()
+    {
+        for (var i = 0; i < 3; i++)
+            await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = $"smtp:password:{i}", Value = "one" });
+
+        var items = await _fixture.Manager.ListAsync(new ListSecretsRequest { PageSize = 1 });
+        var count = await _fixture.Manager.CountAsync(new ListSecretsRequest { PageSize = 1 });
+
+        Assert.Single(items);
+        Assert.Equal(3, count);
+    }
 }
