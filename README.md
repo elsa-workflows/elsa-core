@@ -117,7 +117,7 @@ Elsa offers a wide range of features for building and executing workflows, inclu
 
 ## Roadmap
 
-See #3232
+See [ROADMAP.md](./ROADMAP.md) for the current roadmap and [#3232](https://github.com/elsa-workflows/elsa-core/issues/3232) for historical roadmap discussion.
 
 ## Use Cases
 
