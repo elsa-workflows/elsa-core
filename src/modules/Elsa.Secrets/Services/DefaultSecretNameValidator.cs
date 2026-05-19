@@ -14,7 +14,7 @@ public partial class DefaultSecretNameValidator : ISecretNameValidator
 
         if (!SecretNameRegex().IsMatch(name.Trim()))
         {
-            error = "Secret name must start with a letter and contain only letters, numbers, dots, dashes, underscores, and colons.";
+            error = "Secret name must be 2-200 characters, start with a letter, and contain only letters, numbers, dots, dashes, underscores, and colons.";
             return false;
         }
 

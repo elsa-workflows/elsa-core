@@ -122,6 +122,14 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
         {
             return new SecretTestResponse { Succeeded = false, Error = e.Message };
         }
+        catch (System.Security.Cryptography.CryptographicException e)
+        {
+            return new SecretTestResponse { Succeeded = false, Error = e.Message };
+        }
+        catch (FormatException e)
+        {
+            return new SecretTestResponse { Succeeded = false, Error = e.Message };
+        }
     }
 
     public async Task<SecretPayload> ResolvePayloadAsync(string name, CancellationToken cancellationToken = default)

@@ -69,4 +69,17 @@ public class SecretResolverTests
 
         Assert.Null(value);
     }
+
+    [Fact]
+    public async Task TestAsync_ReturnsFailedResult_WhenEncryptedPayloadIsMalformed()
+    {
+        var secret = await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "api:key", Value = "one" });
+        secret.Versions.Single().Payload.Metadata["protectedValue"] = "v1.not-base64.not-base64.not-base64";
+        await _fixture.Repository.SaveAsync(secret);
+
+        var result = await _fixture.Manager.TestAsync("api:key");
+
+        Assert.False(result.Succeeded);
+        Assert.NotNull(result.Error);
+    }
 }
