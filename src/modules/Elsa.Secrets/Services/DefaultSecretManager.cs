@@ -5,17 +5,9 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     public async Task<Secret> CreateAsync(CreateSecretRequest request, CancellationToken cancellationToken = default)
     {
         ValidateName(request.Name);
-        var normalizedName = nameValidator.Normalize(request.Name);
-        var existingSecret = await repository.GetAsync(normalizedName, cancellationToken);
-
-        if (existingSecret is { Status: not SecretStatus.Deleted })
-            throw new InvalidOperationException($"A secret named '{request.Name}' already exists.");
-
         var secret = await CreateSecretAsync(request, cancellationToken);
-        if (existingSecret is { Status: SecretStatus.Deleted })
-            await repository.SaveAsync(secret, cancellationToken);
-        else
-            await repository.AddAsync(secret, cancellationToken);
+        if (!await repository.TryAddOrReplaceDeletedAsync(secret, cancellationToken))
+            throw new InvalidOperationException($"A secret named '{request.Name}' already exists.");
 
         return secret;
     }

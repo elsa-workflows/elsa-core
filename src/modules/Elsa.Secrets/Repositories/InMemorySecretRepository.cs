@@ -30,6 +30,21 @@ public class InMemorySecretRepository : ISecretRepository
         return Task.CompletedTask;
     }
 
+    public Task<bool> TryAddOrReplaceDeletedAsync(Secret secret, CancellationToken cancellationToken = default)
+    {
+        while (true)
+        {
+            if (!_secrets.TryGetValue(secret.Name, out var existingSecret))
+                return Task.FromResult(_secrets.TryAdd(secret.Name, secret));
+
+            if (existingSecret.Status != SecretStatus.Deleted)
+                return Task.FromResult(false);
+
+            if (_secrets.TryUpdate(secret.Name, secret, existingSecret))
+                return Task.FromResult(true);
+        }
+    }
+
     public Task SaveAsync(Secret secret, CancellationToken cancellationToken = default)
     {
         _secrets[secret.Name] = secret;

@@ -35,7 +35,13 @@ public class EncryptedSecretStore(ISecretValueProtector protector) : ISecretStor
         return Task.FromResult<SecretPayload?>(SecretPayload.FromValue(protector.Unprotect(protectedValue)));
     }
 
-    public Task DeleteAsync(Secret secret, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task DeleteAsync(Secret secret, CancellationToken cancellationToken = default)
+    {
+        foreach (var version in secret.Versions)
+            version.Payload.Metadata.Remove(ProtectedValueKey);
+
+        return Task.CompletedTask;
+    }
 
     public async Task<bool> TestAsync(Secret secret, SecretVersion version, CancellationToken cancellationToken = default)
     {

@@ -80,6 +80,36 @@ public class SecretManagerTests
     }
 
     [Fact]
+    public async Task CreateAsync_AllowsOnlyOneConcurrentReuseOfDeletedSecretName()
+    {
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
+        await _fixture.Manager.DeleteAsync("smtp:password");
+        var createTasks = Enumerable.Range(0, 2)
+            .Select(x => TryCreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = x.ToString() }))
+            .ToArray();
+
+        var results = await Task.WhenAll(createTasks);
+        var stored = await _fixture.Manager.GetAsync("smtp:password");
+
+        Assert.Single(results, true);
+        Assert.NotNull(stored);
+        Assert.Equal(SecretStatus.Active, stored.Status);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_RemovesEncryptedPayloadMaterial()
+    {
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
+
+        await _fixture.Manager.DeleteAsync("smtp:password");
+        var stored = await _fixture.Repository.GetAsync("smtp:password");
+
+        Assert.NotNull(stored);
+        Assert.Equal(SecretStatus.Deleted, stored.Status);
+        Assert.All(stored.Versions, x => Assert.False(x.Payload.Metadata.ContainsKey("protectedValue")));
+    }
+
+    [Fact]
     public async Task CountAsync_ReturnsTotalMatchingItems_NotPageSize()
     {
         for (var i = 0; i < 3; i++)
@@ -90,5 +120,18 @@ public class SecretManagerTests
 
         Assert.Single(items);
         Assert.Equal(3, count);
+    }
+
+    private async Task<bool> TryCreateAsync(CreateSecretRequest request)
+    {
+        try
+        {
+            await _fixture.Manager.CreateAsync(request);
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
     }
 }

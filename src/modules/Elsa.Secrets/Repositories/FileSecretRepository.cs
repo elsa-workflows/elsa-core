@@ -48,6 +48,34 @@ public class FileSecretRepository(IOptions<SecretsOptions> options) : ISecretRep
         }
     }
 
+    public async Task<bool> TryAddOrReplaceDeletedAsync(Secret secret, CancellationToken cancellationToken = default)
+    {
+        await _lock.WaitAsync(cancellationToken);
+        try
+        {
+            var secrets = await ReadAllUnsafeAsync(cancellationToken);
+            var index = secrets.FindIndex(x => string.Equals(x.Name, secret.Name, StringComparison.OrdinalIgnoreCase));
+            if (index >= 0)
+            {
+                if (secrets[index].Status != SecretStatus.Deleted)
+                    return false;
+
+                secrets[index] = secret;
+            }
+            else
+            {
+                secrets.Add(secret);
+            }
+
+            await WriteAllUnsafeAsync(secrets, cancellationToken);
+            return true;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
     public async Task SaveAsync(Secret secret, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken);
