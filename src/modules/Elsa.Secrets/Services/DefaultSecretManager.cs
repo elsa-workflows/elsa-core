@@ -127,6 +127,11 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     public async Task<SecretPayload> ResolvePayloadAsync(string name, CancellationToken cancellationToken = default)
     {
         var secret = await GetExistingAsync(name, cancellationToken);
+        return await ResolvePayloadAsync(secret, cancellationToken);
+    }
+
+    public async Task<SecretPayload> ResolvePayloadAsync(Secret secret, CancellationToken cancellationToken = default)
+    {
         var version = GetLatestActiveVersion(secret);
         var store = storeRegistry.Get(secret.StoreName);
         var payload = await store.ReadAsync(secret, version, cancellationToken);

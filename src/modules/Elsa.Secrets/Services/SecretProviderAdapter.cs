@@ -22,5 +22,9 @@ public class SecretProviderAdapter(ISecretResolver resolver) : ISecretProvider
         {
             return null;
         }
+        catch (FormatException)
+        {
+            return null;
+        }
     }
 }

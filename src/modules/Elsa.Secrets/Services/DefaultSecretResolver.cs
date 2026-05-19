@@ -16,7 +16,7 @@ public class DefaultSecretResolver(ISecretManager secretManager) : ISecretResolv
         if (!string.IsNullOrWhiteSpace(reference.Scope) && !string.Equals(secret.Scope, reference.Scope, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException($"Secret '{reference.Name}' is not compatible with required scope '{reference.Scope}'.");
 
-        var payload = await secretManager.ResolvePayloadAsync(reference.Name, cancellationToken);
+        var payload = await secretManager.ResolvePayloadAsync(secret, cancellationToken);
         return payload.Value!;
     }
 }

@@ -97,10 +97,18 @@ public class FileSecretRepository(IOptions<SecretsOptions> options) : ISecretRep
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
         var temporaryPath = $"{path}.{Guid.NewGuid():N}.tmp";
-        await using (var stream = File.Create(temporaryPath))
-            await JsonSerializer.SerializeAsync(stream, secrets.OrderBy(x => x.Name).ToList(), _jsonOptions, cancellationToken);
+        try
+        {
+            await using (var stream = File.Create(temporaryPath))
+                await JsonSerializer.SerializeAsync(stream, secrets.OrderBy(x => x.Name).ToList(), _jsonOptions, cancellationToken);
 
-        File.Move(temporaryPath, path, true);
+            File.Move(temporaryPath, path, true);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath))
+                File.Delete(temporaryPath);
+        }
     }
 
     private string GetPath() => options.Value.RepositoryFilePath ?? SecretsOptions.DefaultRepositoryFilePath;

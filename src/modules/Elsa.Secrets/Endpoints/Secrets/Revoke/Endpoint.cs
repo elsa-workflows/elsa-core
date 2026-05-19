@@ -23,6 +23,12 @@ internal class Endpoint(ISecretManager manager) : ElsaEndpointWithoutRequest<Sec
         }
 
         var secret = await manager.GetAsync(name, cancellationToken);
-        await Send.OkAsync(secret!.ToModel(), cancellationToken);
+        if (secret == null)
+        {
+            await Send.NotFoundAsync(cancellationToken);
+            return;
+        }
+
+        await Send.OkAsync(secret.ToModel(), cancellationToken);
     }
 }

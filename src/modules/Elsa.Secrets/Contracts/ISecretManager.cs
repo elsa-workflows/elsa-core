@@ -12,4 +12,5 @@ public interface ISecretManager
     Task<bool> DeleteAsync(string name, CancellationToken cancellationToken = default);
     Task<SecretTestResponse> TestAsync(string name, CancellationToken cancellationToken = default);
     Task<SecretPayload> ResolvePayloadAsync(string name, CancellationToken cancellationToken = default);
+    Task<SecretPayload> ResolvePayloadAsync(Secret secret, CancellationToken cancellationToken = default);
 }
