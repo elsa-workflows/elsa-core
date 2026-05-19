@@ -42,6 +42,7 @@ Built-in activities live in [Activities](../../src/modules/Elsa.Workflows.Core/A
 - Data and runtime helpers: `SetVariable`, `SetName`, `Correlate`, `WriteLine`, `ReadLine`.
 - Dynamic and missing activity handling: `DynamicActivity`, `NotFoundActivity`.
 - Flowchart: [Activities/Flowchart](../../src/modules/Elsa.Workflows.Core/Activities/Flowchart/Activities).
+- State machine: [Activities/StateMachine](../../src/modules/Elsa.Workflows.Core/Activities/StateMachine/Activities). Named states with trigger-driven transitions. See [Activities And Authoring](activities-and-authoring.md) for the execution model.
 
 Activities are described by `IActivityDescriber` and registered in `IActivityRegistry`. Workflow management adds activities to the available designer/API surface.
 
