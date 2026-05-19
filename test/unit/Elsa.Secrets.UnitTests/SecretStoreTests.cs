@@ -43,7 +43,7 @@ public class SecretStoreTests
     [Fact]
     public async Task FileRepository_PersistsSecretAggregate()
     {
-        var path = Path.Combine(Path.GetTempPath(), $"elsa-secrets-{Guid.NewGuid():N}.json");
+        var path = Path.Join(Path.GetTempPath(), $"elsa-secrets-{Guid.NewGuid():N}.json");
         try
         {
             var repository = new FileSecretRepository(Microsoft.Extensions.Options.Options.Create(new SecretsOptions { RepositoryFilePath = path }));
