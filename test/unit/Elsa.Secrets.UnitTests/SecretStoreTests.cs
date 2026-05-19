@@ -72,4 +72,26 @@ public class SecretStoreTests
                 File.Delete(path);
         }
     }
+
+    [Fact]
+    public async Task InMemoryRepository_ReturnsCopies()
+    {
+        var repository = new InMemorySecretRepository();
+        await repository.AddAsync(new Secret
+        {
+            Name = "smtp:password",
+            DisplayName = "SMTP password",
+            Versions = { new SecretVersion { Version = 1, Payload = new SecretPayload { Metadata = { ["protectedValue"] = "ciphertext" } } } }
+        });
+
+        var loaded = await repository.GetAsync("smtp:password");
+        loaded!.Versions.Clear();
+        loaded.DisplayName = "Changed";
+
+        var reloaded = await repository.GetAsync("smtp:password");
+
+        Assert.Equal("SMTP password", reloaded!.DisplayName);
+        Assert.Single(reloaded.Versions);
+        Assert.True(reloaded.Versions.Single().Payload.Metadata.ContainsKey("protectedValue"));
+    }
 }

@@ -1,10 +1,11 @@
 using Elsa.Abstractions;
+using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Permissions;
 using Elsa.Secrets.Services;
 
 namespace Elsa.Secrets.Endpoints.Secrets.Picker;
 
-internal class Endpoint(ISecretManager manager) : ElsaEndpoint<SecretPickerRequest, SecretPickerResponse>
+internal class Endpoint(ISecretManager manager, ISecretStoreRegistry storeRegistry) : ElsaEndpoint<SecretPickerRequest, SecretPickerResponse>
 {
     public override void Configure()
     {
@@ -28,7 +29,8 @@ internal class Endpoint(ISecretManager manager) : ElsaEndpoint<SecretPickerReque
         var models = items
             .Select(x => x.ToModel())
             .ToList();
+        var canCreate = storeRegistry.List().Any(x => !x.Descriptor.IsReadOnly);
 
-        return new SecretPickerResponse { Items = models, CanCreateInline = true };
+        return new SecretPickerResponse { Items = models, CanCreateInline = canCreate };
     }
 }
