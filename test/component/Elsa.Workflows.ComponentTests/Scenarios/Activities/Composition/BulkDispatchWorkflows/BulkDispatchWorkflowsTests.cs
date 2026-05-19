@@ -8,12 +8,14 @@ using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.ComponentTests.Scenarios.Activities.Composition.BulkDispatchWorkflows.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Composition.BulkDispatchWorkflows;
 
 public class BulkDispatchWorkflowsTests : AppComponentTest
 {
+    private const int ChildWorkflowTimeoutSeconds = 30;
     private readonly AsyncWorkflowRunner _workflowRunner;
 
     public BulkDispatchWorkflowsTests(App app) : base(app)
@@ -134,25 +136,25 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
         return (T?)variables.FirstOrDefault(v => v.Variable.Name == variableName)?.Value;
     }
 
-    private async Task<(TestWorkflowExecutionResult Result, List<WorkflowExecutionContext> CompletedChildWorkflows)> RunWorkflowAndWaitForChildWorkflowsAsync(
+    private async Task<(TestWorkflowExecutionResult Result, List<WorkflowState> CompletedChildWorkflows)> RunWorkflowAndWaitForChildWorkflowsAsync(
         string parentWorkflowDefinitionId,
         string childWorkflowDefinitionId,
         int expectedChildCount)
     {
         var workflowEvents = Scope.ServiceProvider.GetRequiredService<WorkflowEvents>();
-        var completedChildWorkflows = new List<WorkflowExecutionContext>();
+        var completedChildWorkflows = new List<WorkflowState>();
         var childWorkflowCompletionTcs = new TaskCompletionSource();
 
         // Subscribe to child workflow completion events
         void OnWorkflowStateCommitted(object? sender, WorkflowStateCommittedEventArgs e)
         {
-            if (e.WorkflowExecutionContext.Workflow.Identity.DefinitionId != childWorkflowDefinitionId ||
-                e.WorkflowExecutionContext.Status != WorkflowStatus.Finished)
+            if (e.WorkflowState.DefinitionId != childWorkflowDefinitionId ||
+                e.WorkflowState.Status != WorkflowStatus.Finished)
             {
                 return;
             }
 
-            completedChildWorkflows.Add(e.WorkflowExecutionContext);
+            completedChildWorkflows.Add(e.WorkflowState);
             if (completedChildWorkflows.Count == expectedChildCount)
                 childWorkflowCompletionTcs.TrySetResult();
         }
@@ -165,7 +167,7 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
             var result = await RunWorkflowAsync(parentWorkflowDefinitionId);
 
             // Wait for all child workflows to complete
-            await childWorkflowCompletionTcs.Task;
+            await childWorkflowCompletionTcs.Task.WaitAsync(TimeSpan.FromSeconds(ChildWorkflowTimeoutSeconds));
 
             return (result, completedChildWorkflows);
         }
