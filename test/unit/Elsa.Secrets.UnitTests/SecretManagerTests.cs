@@ -46,11 +46,37 @@ public class SecretManagerTests
     }
 
     [Fact]
+    public async Task RotateAsync_RejectsRevokedSecret()
+    {
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
+        await _fixture.Manager.RevokeAsync("smtp:password");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.RotateAsync("smtp:password", new RotateSecretRequest { Value = "two" }));
+        var secret = await _fixture.Manager.GetAsync("smtp:password");
+        Assert.Equal(SecretStatus.Revoked, secret!.Status);
+        Assert.All(secret.Versions, x => Assert.Equal(SecretStatus.Revoked, x.Status));
+    }
+
+    [Fact]
     public async Task CreateAsync_RejectsDuplicateTechnicalName()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = " SMTP:PASSWORD ", Value = "two" }));
+    }
+
+    [Fact]
+    public async Task CreateAsync_AllowsReusingDeletedSecretName()
+    {
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
+        await _fixture.Manager.DeleteAsync("smtp:password");
+
+        var secret = await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = " SMTP:PASSWORD ", Value = "two" });
+
+        Assert.Equal("smtp:password", secret.Name);
+        Assert.Equal(SecretStatus.Active, secret.Status);
+        Assert.Single(secret.Versions);
+        Assert.Equal("two", await _fixture.Resolver.ResolveAsync("smtp:password"));
     }
 
     [Fact]

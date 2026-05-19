@@ -24,10 +24,9 @@ internal class Endpoint(ISecretManager manager) : ElsaEndpoint<RotateSecretReque
             AddError(e.Message);
             await Send.ErrorsAsync(cancellation: cancellationToken);
         }
-        catch (KeyNotFoundException e)
+        catch (KeyNotFoundException)
         {
-            AddError(e.Message);
-            await Send.ErrorsAsync(cancellation: cancellationToken);
+            await Send.NotFoundAsync(cancellationToken);
         }
     }
 }

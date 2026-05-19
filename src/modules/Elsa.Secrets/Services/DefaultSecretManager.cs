@@ -6,12 +6,17 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     {
         ValidateName(request.Name);
         var normalizedName = nameValidator.Normalize(request.Name);
+        var existingSecret = await repository.GetAsync(normalizedName, cancellationToken);
 
-        if (await repository.ExistsAsync(normalizedName, cancellationToken))
+        if (existingSecret is { Status: not SecretStatus.Deleted })
             throw new InvalidOperationException($"A secret named '{request.Name}' already exists.");
 
         var secret = await CreateSecretAsync(request, cancellationToken);
-        await repository.AddAsync(secret, cancellationToken);
+        if (existingSecret is { Status: SecretStatus.Deleted })
+            await repository.SaveAsync(secret, cancellationToken);
+        else
+            await repository.AddAsync(secret, cancellationToken);
+
         return secret;
     }
 
@@ -53,6 +58,9 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
     public async Task<Secret> RotateAsync(string name, RotateSecretRequest request, CancellationToken cancellationToken = default)
     {
         var secret = await GetExistingAsync(name, cancellationToken);
+        if (secret.Status == SecretStatus.Revoked)
+            throw new InvalidOperationException($"Secret '{secret.Name}' is revoked and cannot be rotated.");
+
         var provider = typeRegistry.Get(secret.TypeName);
         if (!provider.ValidateRotation(request, secret.StoreName, out var error))
             throw new InvalidOperationException(error);
