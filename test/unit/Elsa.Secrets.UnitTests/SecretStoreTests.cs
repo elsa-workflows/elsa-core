@@ -51,6 +51,7 @@ public class SecretStoreTests
             {
                 Name = "smtp:password",
                 DisplayName = "SMTP password",
+                Tags = ["API-Key"],
                 Versions = { new SecretVersion { Version = 1, Payload = SecretPayload.FromValue("stored") } }
             };
 
@@ -61,6 +62,7 @@ public class SecretStoreTests
 
             Assert.NotNull(reloaded);
             Assert.Equal("SMTP password", reloaded.DisplayName);
+            Assert.Contains("api-key", reloaded.Tags);
             Assert.Equal(1, reloaded.Versions.Single().Version);
         }
         finally

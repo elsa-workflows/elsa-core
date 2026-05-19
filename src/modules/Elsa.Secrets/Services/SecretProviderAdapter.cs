@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+
 namespace Elsa.Secrets.Services;
 
 public class SecretProviderAdapter(ISecretResolver resolver) : ISecretProvider
@@ -13,6 +15,10 @@ public class SecretProviderAdapter(ISecretResolver resolver) : ISecretProvider
             return null;
         }
         catch (InvalidOperationException)
+        {
+            return null;
+        }
+        catch (CryptographicException)
         {
             return null;
         }

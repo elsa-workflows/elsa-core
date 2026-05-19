@@ -59,6 +59,12 @@ public class ListSecretsResponse
     public long TotalCount { get; set; }
 }
 
+public class ListSecretsResult
+{
+    public IReadOnlyCollection<Secret> Items { get; set; } = [];
+    public long TotalCount { get; set; }
+}
+
 public class SecretDescriptorsResponse
 {
     public ICollection<SecretTypeDescriptor> Types { get; set; } = [];

@@ -23,17 +23,25 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
 
     public async Task<IReadOnlyCollection<Secret>> ListAsync(ListSecretsRequest request, CancellationToken cancellationToken = default)
     {
+        return (await ListPageAsync(request, cancellationToken)).Items;
+    }
+
+    public async Task<ListSecretsResult> ListPageAsync(ListSecretsRequest request, CancellationToken cancellationToken = default)
+    {
         var secrets = await repository.ListAsync(cancellationToken);
         var query = ApplyFilters(secrets, request);
+        var totalCount = query.LongCount();
 
         var pageSize = request.PageSize is > 0 ? Math.Min(request.PageSize.Value, 200) : 100;
         var page = request.Page is > 0 ? request.Page.Value : 0;
 
-        return query
+        var items = query
             .OrderBy(x => x.Name)
             .Skip(page * pageSize)
             .Take(pageSize)
             .ToList();
+
+        return new ListSecretsResult { Items = items, TotalCount = totalCount };
     }
 
     public async Task<long> CountAsync(ListSecretsRequest request, CancellationToken cancellationToken = default)

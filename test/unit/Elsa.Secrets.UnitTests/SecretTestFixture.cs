@@ -14,7 +14,7 @@ public class SecretTestFixture
 {
     public SecretTestFixture(IConfiguration? configuration = null)
     {
-        var options = Microsoft.Extensions.Options.Options.Create(new SecretsOptions { EncryptionKey = "unit-test-secret-key"u8.ToArray() });
+        var options = Microsoft.Extensions.Options.Options.Create(new SecretsOptions { EncryptionKey = "0123456789abcdef0123456789abcdef"u8.ToArray() });
         var protector = new DefaultSecretValueProtector(options);
         var stores = new ISecretStore[]
         {

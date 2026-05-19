@@ -14,9 +14,8 @@ internal class Endpoint(ISecretManager manager) : ElsaEndpoint<ListSecretsReques
 
     public override async Task<ListSecretsResponse> ExecuteAsync(ListSecretsRequest request, CancellationToken cancellationToken)
     {
-        var items = await manager.ListAsync(request, cancellationToken);
-        var totalCount = await manager.CountAsync(request, cancellationToken);
-        var models = items.Select(x => x.ToModel()).ToList();
-        return new ListSecretsResponse { Items = models, TotalCount = totalCount };
+        var result = await manager.ListPageAsync(request, cancellationToken);
+        var models = result.Items.Select(x => x.ToModel()).ToList();
+        return new ListSecretsResponse { Items = models, TotalCount = result.TotalCount };
     }
 }
