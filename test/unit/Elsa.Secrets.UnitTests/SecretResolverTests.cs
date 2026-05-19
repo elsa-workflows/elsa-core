@@ -25,4 +25,16 @@ public class SecretResolverTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Resolver.ResolveAsync(new SecretReference("api:key", SecretTypeNames.RsaKey)));
     }
+
+    [Fact]
+    public async Task ProviderAdapter_ReturnsNull_WhenSecretIsUnavailable()
+    {
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "api:key", Value = "one" });
+        await _fixture.Manager.RevokeAsync("api:key");
+        var provider = new Elsa.Secrets.Services.SecretProviderAdapter(_fixture.Resolver);
+
+        var value = await provider.GetSecretAsync("api:key");
+
+        Assert.Null(value);
+    }
 }

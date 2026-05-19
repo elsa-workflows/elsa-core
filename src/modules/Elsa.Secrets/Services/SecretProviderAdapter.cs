@@ -12,5 +12,9 @@ public class SecretProviderAdapter(ISecretResolver resolver) : ISecretProvider
         {
             return null;
         }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
     }
 }
