@@ -58,16 +58,29 @@ public class WorkflowDispatchOutboxProcessor(
     /// <inheritdoc />
     public async Task<bool> TryProcessAsync(CancellationToken cancellationToken = default)
     {
-        await using var handle = await distributedLockProvider.TryAcquireLockAsync(LockResource, TimeSpan.Zero, cancellationToken);
+        IDistributedSynchronizationHandle? handle;
 
-        if (handle == null)
+        try
         {
-            logger.LogDebug("Skipping eager workflow dispatch outbox processing because another processor owns the lock.");
+            handle = await distributedLockProvider.TryAcquireLockAsync(LockResource, TimeSpan.Zero, cancellationToken);
+        }
+        catch (TimeoutException e) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger.LogDebug(e, "Skipping eager workflow dispatch outbox processing because the processor lock could not be acquired.");
             return false;
         }
 
-        await ProcessPendingItemsAsync(cancellationToken);
-        return true;
+        await using (handle)
+        {
+            if (handle == null)
+            {
+                logger.LogDebug("Skipping eager workflow dispatch outbox processing because another processor owns the lock.");
+                return false;
+            }
+
+            await ProcessPendingItemsAsync(cancellationToken);
+            return true;
+        }
     }
 
     private async Task ProcessPendingItemsAsync(CancellationToken cancellationToken)

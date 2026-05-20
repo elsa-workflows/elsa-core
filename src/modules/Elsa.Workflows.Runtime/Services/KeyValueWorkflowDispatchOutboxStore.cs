@@ -13,20 +13,44 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
     private const string LegacyKeyPrefix = "Elsa:WorkflowDispatchOutbox:";
     private const string ItemKeyPrefix = "Elsa:WorkflowDispatchOutbox:Items:";
     private const string IndexKeyPrefix = "Elsa:WorkflowDispatchOutbox:Index:";
+    private const string IndexByIdKeyPrefix = "Elsa:WorkflowDispatchOutbox:IndexById:";
+    private const string RecoveryKeyPrefix = "Elsa:WorkflowDispatchOutbox:Recovery:";
+    private const string StateKeyPrefix = "Elsa:WorkflowDispatchOutbox:State:";
+    private const string LegacyScanCompletedKey = $"{StateKeyPrefix}LegacyScanCompleted";
 
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken = default)
     {
         await keyValueStore.SaveAsync(new SerializedKeyValuePair
         {
-            Key = GetItemKey(item.Id),
-            SerializedValue = payloadSerializer.Serialize(item)
+            Key = GetRecoveryKey(item.Id),
+            SerializedValue = item.Id
         }, cancellationToken);
 
         await keyValueStore.SaveAsync(new SerializedKeyValuePair
         {
-            Key = GetIndexKey(item),
+            Key = GetItemKey(item.Id),
+            SerializedValue = payloadSerializer.Serialize(item)
+        }, cancellationToken);
+
+        await SaveIndexAsync(item, cancellationToken);
+        await keyValueStore.DeleteAsync(GetRecoveryKey(item.Id), cancellationToken);
+    }
+
+    private async Task SaveIndexAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
+    {
+        var indexKey = GetIndexKey(item);
+
+        await keyValueStore.SaveAsync(new SerializedKeyValuePair
+        {
+            Key = indexKey,
             SerializedValue = item.Id
+        }, cancellationToken);
+
+        await keyValueStore.SaveAsync(new SerializedKeyValuePair
+        {
+            Key = GetIndexByIdKey(item.Id),
+            SerializedValue = indexKey
         }, cancellationToken);
     }
 
@@ -39,30 +63,12 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindManyAsync(int maxCount, CancellationToken cancellationToken = default)
     {
-        var indexRecords = (await keyValueStore.FindManyAsync(new KeyValueFilter
-        {
-            Key = IndexKeyPrefix,
-            StartsWith = true,
-            OrderByKey = true,
-            Take = maxCount > 0 ? maxCount : null
-        }, cancellationToken)).ToList();
-
-        var itemKeys = indexRecords.Select(x => GetItemKey(x.SerializedValue)).ToList();
-        IEnumerable<SerializedKeyValuePair> itemRecords = itemKeys.Count == 0
-            ? Array.Empty<SerializedKeyValuePair>()
-            : await keyValueStore.FindManyAsync(new KeyValueFilter
-            {
-                Keys = itemKeys
-            }, cancellationToken);
-
-        var indexedItems = itemRecords
-            .Select(x => payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(x.SerializedValue))
-            .OfType<WorkflowDispatchOutboxItem>()
-            .ToList();
-
-        var recoverableItems = await FindRecoverableItemRecordsAsync(cancellationToken);
+        var indexedItems = await FindIndexedItemsAsync(maxCount, cancellationToken);
+        var recoverableItems = await FindRecoveryItemsAsync(cancellationToken);
+        var legacyItems = await FindLegacyItemsAsync(cancellationToken);
         var items = indexedItems
             .Concat(recoverableItems)
+            .Concat(legacyItems)
             .GroupBy(x => x.Id)
             .Select(x => x.First())
             .OrderBy(x => x.CreatedAt);
@@ -79,32 +85,168 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
         var itemKey = GetItemKey(id);
         var record = await keyValueStore.FindAsync(new KeyValueFilter { Key = itemKey }, cancellationToken);
 
-        await keyValueStore.DeleteAsync(itemKey, cancellationToken);
-
         if (record == null)
         {
+            await DeleteIndexesForMissingItemAsync(id, cancellationToken);
+            await keyValueStore.DeleteAsync(GetRecoveryKey(id), cancellationToken);
             await keyValueStore.DeleteAsync(GetLegacyKey(id), cancellationToken);
+            await keyValueStore.DeleteAsync(itemKey, cancellationToken);
             return;
         }
 
         var item = payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(record.SerializedValue);
+
         if (item != null)
+        {
             await keyValueStore.DeleteAsync(GetIndexKey(item), cancellationToken);
+            await keyValueStore.DeleteAsync(GetIndexByIdKey(id), cancellationToken);
+        }
+
+        await keyValueStore.DeleteAsync(GetRecoveryKey(id), cancellationToken);
+        await keyValueStore.DeleteAsync(GetLegacyKey(id), cancellationToken);
+        await keyValueStore.DeleteAsync(itemKey, cancellationToken);
     }
 
-    private async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindRecoverableItemRecordsAsync(CancellationToken cancellationToken)
+    private async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindIndexedItemsAsync(int maxCount, CancellationToken cancellationToken)
     {
+        var indexRecords = (await keyValueStore.FindManyAsync(new KeyValueFilter
+        {
+            Key = IndexKeyPrefix,
+            StartsWith = true,
+            OrderByKey = true,
+            Take = maxCount > 0 ? maxCount : null
+        }, cancellationToken)).ToList();
+        var itemKeys = indexRecords.Select(x => GetItemKey(x.SerializedValue)).ToList();
+
+        var itemRecords = itemKeys.Count == 0
+            ? Array.Empty<SerializedKeyValuePair>()
+            : await keyValueStore.FindManyAsync(new KeyValueFilter
+            {
+                Keys = itemKeys
+            }, cancellationToken);
+        var itemRecordLookup = itemRecords.ToDictionary(x => x.Key);
+
+        foreach (var indexRecord in indexRecords)
+        {
+            if (itemRecordLookup.ContainsKey(GetItemKey(indexRecord.SerializedValue)))
+                continue;
+
+            await keyValueStore.DeleteAsync(indexRecord.Key, cancellationToken);
+            await keyValueStore.DeleteAsync(GetIndexByIdKey(indexRecord.SerializedValue), cancellationToken);
+        }
+
+        return itemRecords
+            .Select(x => payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(x.SerializedValue))
+            .OfType<WorkflowDispatchOutboxItem>()
+            .ToList();
+    }
+
+    private async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindRecoveryItemsAsync(CancellationToken cancellationToken)
+    {
+        var recoveryRecords = (await keyValueStore.FindManyAsync(new KeyValueFilter
+        {
+            Key = RecoveryKeyPrefix,
+            StartsWith = true
+        }, cancellationToken)).ToList();
+
+        if (recoveryRecords.Count == 0)
+            return [];
+
+        var itemKeys = recoveryRecords.Select(x => GetItemKey(x.SerializedValue)).ToList();
+        var itemRecords = (await keyValueStore.FindManyAsync(new KeyValueFilter { Keys = itemKeys }, cancellationToken)).ToDictionary(x => x.Key);
+        var items = new List<WorkflowDispatchOutboxItem>();
+
+        foreach (var recoveryRecord in recoveryRecords)
+        {
+            var id = recoveryRecord.SerializedValue;
+
+            if (!itemRecords.TryGetValue(GetItemKey(id), out var itemRecord))
+            {
+                await DeleteIndexesForMissingItemAsync(id, cancellationToken);
+                await keyValueStore.DeleteAsync(recoveryRecord.Key, cancellationToken);
+                continue;
+            }
+
+            var item = payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(itemRecord.SerializedValue);
+
+            if (item == null)
+                continue;
+
+            await SaveIndexAsync(item, cancellationToken);
+            await keyValueStore.DeleteAsync(GetRecoveryKey(item.Id), cancellationToken);
+            items.Add(item);
+        }
+
+        return items;
+    }
+
+    private async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindLegacyItemsAsync(CancellationToken cancellationToken)
+    {
+        var legacyScanCompleted = await keyValueStore.FindAsync(new KeyValueFilter { Key = LegacyScanCompletedKey }, cancellationToken);
+
+        if (legacyScanCompleted != null)
+            return [];
+
         var records = await keyValueStore.FindManyAsync(new KeyValueFilter
         {
             Key = LegacyKeyPrefix,
             StartsWith = true
         }, cancellationToken);
 
-        return records
-            .Where(x => !x.Key.StartsWith(IndexKeyPrefix, StringComparison.Ordinal))
-            .Select(x => payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(x.SerializedValue))
-            .OfType<WorkflowDispatchOutboxItem>()
+        var recoverableRecords = records
+            .Where(IsRecoverableItemRecord)
             .ToList();
+        var items = new List<WorkflowDispatchOutboxItem>();
+
+        foreach (var record in recoverableRecords)
+        {
+            var item = payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(record.SerializedValue);
+
+            if (item == null)
+                continue;
+
+            await SaveAsync(item, cancellationToken);
+
+            if (!record.Key.StartsWith(ItemKeyPrefix, StringComparison.Ordinal))
+                await keyValueStore.DeleteAsync(record.Key, cancellationToken);
+
+            items.Add(item);
+        }
+
+        await keyValueStore.SaveAsync(new SerializedKeyValuePair
+        {
+            Key = LegacyScanCompletedKey,
+            SerializedValue = "true"
+        }, cancellationToken);
+
+        return items;
+    }
+
+    private async Task DeleteIndexesForMissingItemAsync(string id, CancellationToken cancellationToken)
+    {
+        var lookupRecord = await keyValueStore.FindAsync(new KeyValueFilter { Key = GetIndexByIdKey(id) }, cancellationToken);
+        var deletedIndexKeys = new HashSet<string>();
+
+        if (lookupRecord != null)
+        {
+            deletedIndexKeys.Add(lookupRecord.SerializedValue);
+            await keyValueStore.DeleteAsync(lookupRecord.SerializedValue, cancellationToken);
+            await keyValueStore.DeleteAsync(lookupRecord.Key, cancellationToken);
+        }
+
+        var matchingIndexRecords = await keyValueStore.FindManyAsync(new KeyValueFilter
+        {
+            Key = IndexKeyPrefix,
+            StartsWith = true
+        }, cancellationToken);
+
+        foreach (var indexRecord in matchingIndexRecords.Where(x => x.SerializedValue == id || x.Key.EndsWith($":{id}", StringComparison.Ordinal)))
+        {
+            if (!deletedIndexKeys.Add(indexRecord.Key))
+                continue;
+
+            await keyValueStore.DeleteAsync(indexRecord.Key, cancellationToken);
+        }
     }
 
     private static string GetItemKey(string id) => $"{ItemKeyPrefix}{id}";
@@ -112,4 +254,16 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
     private static string GetLegacyKey(string id) => $"{LegacyKeyPrefix}{id}";
 
     private static string GetIndexKey(WorkflowDispatchOutboxItem item) => $"{IndexKeyPrefix}{item.CreatedAt.UtcTicks:D20}:{item.Id}";
+
+    private static string GetIndexByIdKey(string id) => $"{IndexByIdKeyPrefix}{id}";
+
+    private static string GetRecoveryKey(string id) => $"{RecoveryKeyPrefix}{id}";
+
+    private static bool IsRecoverableItemRecord(SerializedKeyValuePair record)
+    {
+        return !record.Key.StartsWith(IndexKeyPrefix, StringComparison.Ordinal)
+               && !record.Key.StartsWith(IndexByIdKeyPrefix, StringComparison.Ordinal)
+               && !record.Key.StartsWith(RecoveryKeyPrefix, StringComparison.Ordinal)
+               && !record.Key.StartsWith(StateKeyPrefix, StringComparison.Ordinal);
+    }
 }

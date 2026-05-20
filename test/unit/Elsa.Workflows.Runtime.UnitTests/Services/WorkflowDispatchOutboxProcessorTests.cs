@@ -52,6 +52,17 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.DidNotReceiveWithAnyArgs().FindManyAsync(default, default);
     }
 
+    [Fact]
+    public async Task TryProcessAsync_ReturnsFalseWithoutScanning_WhenProcessorLockAcquisitionTimesOut()
+    {
+        var processor = CreateProcessor(new TimeoutDistributedSynchronizationProvider());
+
+        var result = await processor.TryProcessAsync();
+
+        Assert.False(result);
+        await _store.DidNotReceiveWithAnyArgs().FindManyAsync(default, default);
+    }
+
     private WorkflowDispatchOutboxProcessor CreateProcessor(IDistributedLockProvider? distributedLockProvider = null)
     {
         return new(
