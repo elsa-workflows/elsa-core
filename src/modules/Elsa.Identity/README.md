@@ -1,5 +1,13 @@
 # Elsa.Identity
 
+## JWT Signing Key Configuration
+
+Identity token signing requires a secure random key. Configure it through environment variables or a secrets manager and keep it out of committed appsettings files.
+
+- Code-first hosts using `Identity:Tokens` should set `Identity__Tokens__SigningKey`.
+- Shell-based hosts should set the shell feature path, for example `CShells__Shells__Default__Features__Identity__SigningKey`.
+- Production startup rejects missing keys, keys shorter than 32 ASCII characters, and known public defaults. Known public defaults are tolerated only in the explicit `Development` or `Demo` environments.
+
 ## Default Admin User Bootstrap
 
 Elsa supports bootstrapping an initial admin role and user through the `DefaultAdminUser` feature.
@@ -21,9 +29,7 @@ Example (`appsettings.json`):
       {
         "Name": "Default",
         "Features": {
-          "Identity": {
-            "SigningKey": "CHANGE_ME_TO_A_SECURE_RANDOM_KEY"
-          },
+          "Identity": {},
           "DefaultAuthentication": {},
           "DefaultAdminUser": {
             "AdminUserName": "admin",
@@ -52,7 +58,7 @@ services.AddElsa(elsa =>
         {
             identity.TokenOptions += options =>
             {
-                options.SigningKey = "CHANGE_ME_TO_A_SECURE_RANDOM_KEY";
+                options.SigningKey = builder.Configuration.GetRequiredSection("Identity:Tokens")["SigningKey"]!;
             };
 
             identity.UseDefaultAdmin(admin => admin
