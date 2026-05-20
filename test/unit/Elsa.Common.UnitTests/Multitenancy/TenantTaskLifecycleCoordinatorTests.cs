@@ -2,7 +2,6 @@ using Elsa.Common.Multitenancy;
 using Elsa.Common.RecurringTasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace Elsa.Common.UnitTests.Multitenancy;
@@ -88,7 +87,7 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
 
     private static TenantTaskLifecycleCoordinator CreateCoordinator()
     {
-        var scheduleManager = new RecurringTaskScheduleManager(Options.Create(new RecurringTaskOptions()), Substitute.For<ISystemClock>());
+        var scheduleManager = new RecurringTaskScheduleManager(Microsoft.Extensions.Options.Options.Create(new RecurringTaskOptions()), Substitute.For<ISystemClock>());
         return new TenantTaskLifecycleCoordinator(scheduleManager, NullLogger<TenantTaskLifecycleCoordinator>.Instance);
     }
 
@@ -132,4 +131,3 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
         public Task ExecuteTaskAsync(ITask task, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }
-
