@@ -15,7 +15,7 @@ public class IdentityTokenOptionsValidationTests
         { options => options.SigningKey = string.Empty, "SigningKey is required" },
         { options => options.SigningKey = " ", "SigningKey is required" },
         { options => options.SigningKey = "short-signing-key", "at least 32 ASCII characters" },
-        { options => options.SigningKey = new string('é', 32), "at least 32 ASCII characters" },
+        { options => options.SigningKey = new string('é', 32), "non-printable or non-ASCII characters" },
         { options => options.SigningKey = "sufficiently-large-secret-signing-key", "known public default" },
         { options => options.SigningKey = "CHANGE_ME_TO_A_SECURE_RANDOM_KEY", "known public default" },
     };
@@ -44,14 +44,31 @@ public class IdentityTokenOptionsValidationTests
         Assert.Equal("CHANGE_ME_TO_A_SECURE_RANDOM_KEY", options.SigningKey);
     }
 
-    [Fact]
-    public void RejectsKnownDefaultSigningKeyInExplicitProductionMode()
+    [Theory]
+    [InlineData("sufficiently-large-secret-signing-key")]
+    [InlineData("CHANGE_ME_TO_A_SECURE_RANDOM_KEY")]
+    public void RejectsKnownDefaultSigningKeyInExplicitProductionMode(string knownDefaultKey)
     {
         using var serviceProvider = CreateServiceProvider(
-            options => options.SigningKey = "CHANGE_ME_TO_A_SECURE_RANDOM_KEY",
+            options => options.SigningKey = knownDefaultKey,
             "Production");
 
         var exception = Assert.Throws<OptionsValidationException>(() => _ = serviceProvider.GetRequiredService<IOptions<IdentityTokenOptions>>().Value);
+
+        Assert.Contains(exception.Failures, failure => failure.Contains("known public default"));
+    }
+
+    [Theory]
+    [InlineData("sufficiently-large-secret-signing-key")]
+    [InlineData("CHANGE_ME_TO_A_SECURE_RANDOM_KEY")]
+    public void RejectsKnownDefaultSigningKeyDuringStartupValidationInExplicitProductionMode(string knownDefaultKey)
+    {
+        using var serviceProvider = CreateServiceProvider(
+            options => options.SigningKey = knownDefaultKey,
+            "Production");
+
+        var startupValidator = serviceProvider.GetRequiredService<IStartupValidator>();
+        var exception = Assert.Throws<OptionsValidationException>(startupValidator.Validate);
 
         Assert.Contains(exception.Failures, failure => failure.Contains("known public default"));
     }

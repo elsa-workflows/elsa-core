@@ -52,7 +52,10 @@ public class ValidateIdentityTokenOptions : IValidateOptions<IdentityTokenOption
             return ValidateOptionsResult.Success;
         }
 
-        if (!IsPrintableAscii(signingKey) || signingKey.Length < MinimumSigningKeyByteLength)
+        if (!IsPrintableAscii(signingKey))
+            return ValidateOptionsResult.Fail("SigningKey contains non-printable or non-ASCII characters. Configure a secure random JWT signing key using only printable ASCII characters (0x20-0x7E) through configuration, environment variables, or a secrets manager.");
+
+        if (signingKey.Length < MinimumSigningKeyByteLength)
             return ValidateOptionsResult.Fail($"SigningKey must be at least {MinimumSigningKeyByteLength} ASCII characters long. Configure a secure random JWT signing key through configuration, environment variables, or a secrets manager.");
 
         return ValidateOptionsResult.Success;
