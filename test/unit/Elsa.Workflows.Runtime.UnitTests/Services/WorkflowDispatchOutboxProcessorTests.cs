@@ -10,6 +10,7 @@ using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.State;
+using Medallion.Threading;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
@@ -28,11 +29,36 @@ public class WorkflowDispatchOutboxProcessorTests
     public WorkflowDispatchOutboxProcessorTests()
     {
         _systemClock.UtcNow.Returns(DateTimeOffset.UtcNow);
-        _processor = new(
+        _processor = CreateProcessor();
+    }
+
+    [Fact]
+    public async Task ProcessAsync_ReturnsWithoutScanning_WhenProcessorLockCannotBeAcquired()
+    {
+        var processor = CreateProcessor(new ContendedDistributedSynchronizationProvider());
+
+        await processor.ProcessAsync();
+
+        await _store.DidNotReceiveWithAnyArgs().FindManyAsync(default, default);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_ReturnsWithoutScanning_WhenProcessorLockAcquisitionTimesOut()
+    {
+        var processor = CreateProcessor(new TimeoutDistributedSynchronizationProvider());
+
+        await processor.ProcessAsync();
+
+        await _store.DidNotReceiveWithAnyArgs().FindManyAsync(default, default);
+    }
+
+    private WorkflowDispatchOutboxProcessor CreateProcessor(IDistributedLockProvider? distributedLockProvider = null)
+    {
+        return new(
             _store,
             _workflowInstanceStore,
             _commandSender,
-            new NoopDistributedSynchronizationProvider(),
+            distributedLockProvider ?? new NoopDistributedSynchronizationProvider(),
             _systemClock,
             Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()),
             Microsoft.Extensions.Options.Options.Create(_options),
@@ -350,5 +376,42 @@ public class WorkflowDispatchOutboxProcessorTests
             DefinitionVersionId = workflowState.DefinitionVersionId,
             WorkflowState = workflowState
         };
+    }
+
+    private class ContendedDistributedSynchronizationProvider : IDistributedLockProvider
+    {
+        public IDistributedLock CreateLock(string name) => new ContendedDistributedLock(name);
+    }
+
+    private class TimeoutDistributedSynchronizationProvider : IDistributedLockProvider
+    {
+        public IDistributedLock CreateLock(string name) => new TimeoutDistributedLock(name);
+    }
+
+    private class ContendedDistributedLock(string name) : IDistributedLock
+    {
+        public string Name => name;
+
+        public IDistributedSynchronizationHandle? TryAcquire(TimeSpan timeout = default, CancellationToken cancellationToken = default) => null;
+
+        public IDistributedSynchronizationHandle Acquire(TimeSpan? timeout = null, CancellationToken cancellationToken = default) => throw new TimeoutException();
+
+        public virtual ValueTask<IDistributedSynchronizationHandle?> TryAcquireAsync(TimeSpan timeout = default, CancellationToken cancellationToken = default)
+        {
+            return new ValueTask<IDistributedSynchronizationHandle?>((IDistributedSynchronizationHandle?)null);
+        }
+
+        public ValueTask<IDistributedSynchronizationHandle> AcquireAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromException<IDistributedSynchronizationHandle>(new TimeoutException());
+        }
+    }
+
+    private class TimeoutDistributedLock(string name) : ContendedDistributedLock(name)
+    {
+        public override ValueTask<IDistributedSynchronizationHandle?> TryAcquireAsync(TimeSpan timeout = default, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromException<IDistributedSynchronizationHandle?>(new TimeoutException());
+        }
     }
 }

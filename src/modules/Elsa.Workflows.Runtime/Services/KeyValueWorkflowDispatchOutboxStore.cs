@@ -47,20 +47,30 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
             Take = maxCount > 0 ? maxCount : null
         }, cancellationToken)).ToList();
 
-        if (indexRecords.Count == 0)
-            return await FindLegacyItemsAsync(maxCount, cancellationToken);
-
         var itemKeys = indexRecords.Select(x => GetItemKey(x.SerializedValue)).ToList();
-        var itemRecords = await keyValueStore.FindManyAsync(new KeyValueFilter
-        {
-            Keys = itemKeys
-        }, cancellationToken);
+        IEnumerable<SerializedKeyValuePair> itemRecords = itemKeys.Count == 0
+            ? Array.Empty<SerializedKeyValuePair>()
+            : await keyValueStore.FindManyAsync(new KeyValueFilter
+            {
+                Keys = itemKeys
+            }, cancellationToken);
 
-        return itemRecords
+        var indexedItems = itemRecords
             .Select(x => payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(x.SerializedValue))
             .OfType<WorkflowDispatchOutboxItem>()
-            .OrderBy(x => x.CreatedAt)
             .ToList();
+
+        var recoverableItems = await FindRecoverableItemRecordsAsync(cancellationToken);
+        var items = indexedItems
+            .Concat(recoverableItems)
+            .GroupBy(x => x.Id)
+            .Select(x => x.First())
+            .OrderBy(x => x.CreatedAt);
+
+        if (maxCount > 0)
+            return items.Take(maxCount).ToList();
+
+        return items.ToList();
     }
 
     /// <inheritdoc />
@@ -82,7 +92,7 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
             await keyValueStore.DeleteAsync(GetIndexKey(item), cancellationToken);
     }
 
-    private async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindLegacyItemsAsync(int maxCount, CancellationToken cancellationToken)
+    private async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindRecoverableItemRecordsAsync(CancellationToken cancellationToken)
     {
         var records = await keyValueStore.FindManyAsync(new KeyValueFilter
         {
@@ -90,15 +100,11 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
             StartsWith = true
         }, cancellationToken);
 
-        var query = records
+        return records
+            .Where(x => !x.Key.StartsWith(IndexKeyPrefix, StringComparison.Ordinal))
             .Select(x => payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(x.SerializedValue))
             .OfType<WorkflowDispatchOutboxItem>()
-            .OrderBy(x => x.CreatedAt);
-
-        if (maxCount > 0)
-            return query.Take(maxCount).ToList();
-
-        return query.ToList();
+            .ToList();
     }
 
     private static string GetItemKey(string id) => $"{ItemKeyPrefix}{id}";

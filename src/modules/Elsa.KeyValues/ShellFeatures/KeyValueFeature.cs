@@ -1,5 +1,5 @@
 using CShells.Features;
-using Elsa.Extensions;
+using Elsa.Common.Services;
 using Elsa.KeyValues.Contracts;
 using Elsa.KeyValues.Entities;
 using Elsa.KeyValues.Stores;
@@ -18,15 +18,18 @@ namespace Elsa.KeyValues.ShellFeatures;
 [UsedImplicitly]
 public class KeyValueFeature : IShellFeature
 {
+    private static readonly Func<IServiceProvider, IKeyValueStore> DefaultKeyValueStore = sp => ActivatorUtilities.CreateInstance<MemoryKeyValueStore>(sp);
+
     /// <summary>
     /// A factory that instantiates an <see cref="IKeyValueStore"/>.
     /// </summary>
-    public Func<IServiceProvider, IKeyValueStore> KeyValueStore { get; set; } = sp => ActivatorUtilities.CreateInstance<MemoryKeyValueStore>(sp);
+    public Func<IServiceProvider, IKeyValueStore> KeyValueStore { get; set; } = DefaultKeyValueStore;
 
     public void ConfigureServices(IServiceCollection services)
     {
-        services
-            .AddMemoryStore<SerializedKeyValuePair, MemoryKeyValueStore>()
-            .TryAddScoped(KeyValueStore);
+        if (KeyValueStore == DefaultKeyValueStore && !services.Any(x => x.ServiceType == typeof(IKeyValueStore)))
+            services.TryAddSingleton<MemoryStore<SerializedKeyValuePair>>();
+
+        services.TryAddScoped<IKeyValueStore>(KeyValueStore);
     }
 }

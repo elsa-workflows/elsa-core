@@ -17,6 +17,8 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
     public KeyValueWorkflowDispatchOutboxStoreTests()
     {
         _store = new(_keyValueStore, _payloadSerializer);
+        _keyValueStore.FindManyAsync(Arg.Any<KeyValueFilter>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<SerializedKeyValuePair>());
     }
 
     [Fact]
@@ -37,6 +39,44 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
         await _keyValueStore.Received(1).FindManyAsync(
             Arg.Is<KeyValueFilter>(x => x.OrderByKey && x.Take == 2),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task FindManyAsync_MergesIndexedLegacyAndOrphanItems()
+    {
+        var indexed = CreateItem("indexed", new DateTimeOffset(2026, 5, 20, 12, 2, 0, TimeSpan.Zero));
+        var legacy = CreateItem("legacy", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
+        var orphan = CreateItem("orphan", new DateTimeOffset(2026, 5, 20, 12, 1, 0, TimeSpan.Zero));
+        _payloadSerializer.Items = new[] { indexed, legacy, orphan }.ToDictionary(x => x.Id);
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Index:"), Arg.Any<CancellationToken>())
+            .Returns([CreateIndexRecord(indexed)]);
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Keys != null), Arg.Any<CancellationToken>())
+            .Returns([CreateItemRecord(indexed)]);
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:" && x.StartsWith), Arg.Any<CancellationToken>())
+            .Returns([CreateItemRecord(indexed), CreateLegacyRecord(legacy), CreateItemRecord(orphan), CreateIndexRecord(indexed)]);
+
+        var result = (await _store.FindManyAsync()).ToList();
+
+        Assert.Equal(["legacy", "orphan", "indexed"], result.Select(x => x.Id));
+    }
+
+    [Fact]
+    public async Task FindManyAsync_AppliesLimitAfterMergingRecoverableItems()
+    {
+        var indexed1 = CreateItem("indexed-1", new DateTimeOffset(2026, 5, 20, 12, 1, 0, TimeSpan.Zero));
+        var indexed2 = CreateItem("indexed-2", new DateTimeOffset(2026, 5, 20, 12, 2, 0, TimeSpan.Zero));
+        var orphan = CreateItem("orphan", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
+        _payloadSerializer.Items = new[] { indexed1, indexed2, orphan }.ToDictionary(x => x.Id);
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Index:"), Arg.Any<CancellationToken>())
+            .Returns([CreateIndexRecord(indexed1), CreateIndexRecord(indexed2)]);
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Keys != null), Arg.Any<CancellationToken>())
+            .Returns([CreateItemRecord(indexed1), CreateItemRecord(indexed2)]);
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:" && x.StartsWith), Arg.Any<CancellationToken>())
+            .Returns([CreateItemRecord(orphan)]);
+
+        var result = (await _store.FindManyAsync(2)).ToList();
+
+        Assert.Equal(["orphan", "indexed-1"], result.Select(x => x.Id));
     }
 
     [Fact]
@@ -79,6 +119,24 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
             CreatedAt = createdAt
         };
     }
+
+    private static SerializedKeyValuePair CreateItemRecord(WorkflowDispatchOutboxItem item) => new()
+    {
+        Key = $"Elsa:WorkflowDispatchOutbox:Items:{item.Id}",
+        SerializedValue = item.Id
+    };
+
+    private static SerializedKeyValuePair CreateLegacyRecord(WorkflowDispatchOutboxItem item) => new()
+    {
+        Key = $"Elsa:WorkflowDispatchOutbox:{item.Id}",
+        SerializedValue = item.Id
+    };
+
+    private static SerializedKeyValuePair CreateIndexRecord(WorkflowDispatchOutboxItem item) => new()
+    {
+        Key = $"Elsa:WorkflowDispatchOutbox:Index:{item.CreatedAt.UtcTicks:D20}:{item.Id}",
+        SerializedValue = item.Id
+    };
 
     private class TestPayloadSerializer : IPayloadSerializer
     {

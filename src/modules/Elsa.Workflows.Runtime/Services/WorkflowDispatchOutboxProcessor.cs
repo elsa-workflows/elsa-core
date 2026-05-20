@@ -1,6 +1,6 @@
 using Elsa.Common;
-using Elsa.Common.Models;
 using Elsa.Common.DistributedHosting;
+using Elsa.Common.Models;
 using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Tenants.Mediator;
@@ -31,8 +31,26 @@ public class WorkflowDispatchOutboxProcessor(
     /// <inheritdoc />
     public async Task ProcessAsync(CancellationToken cancellationToken = default)
     {
-        await using (await distributedLockProvider.AcquireLockAsync(LockResource, distributedLockingOptions.Value.LockAcquisitionTimeout, cancellationToken))
+        IDistributedSynchronizationHandle? handle;
+
+        try
         {
+            handle = await distributedLockProvider.TryAcquireLockAsync(LockResource, distributedLockingOptions.Value.LockAcquisitionTimeout, cancellationToken);
+        }
+        catch (TimeoutException e) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger.LogDebug(e, "Skipping workflow dispatch outbox processing because the processor lock could not be acquired.");
+            return;
+        }
+
+        await using (handle)
+        {
+            if (handle == null)
+            {
+                logger.LogDebug("Skipping workflow dispatch outbox processing because another processor owns the lock.");
+                return;
+            }
+
             await ProcessPendingItemsAsync(cancellationToken);
         }
     }
