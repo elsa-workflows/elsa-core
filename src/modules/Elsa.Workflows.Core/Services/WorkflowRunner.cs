@@ -210,11 +210,11 @@ public class WorkflowRunner(
         using var loggingScope = logger.BeginScope(loggerState);
         var workflow = workflowExecutionContext.Workflow;
         var cancellationToken = workflowExecutionContext.CancellationToken;
-        var isStarting = workflowExecutionContext.SubStatus == WorkflowSubStatus.Pending;
 
         await notificationSender.SendAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken);
 
         // If the status is Pending, it means the workflow is started for the first time.
+        var isStarting = workflowExecutionContext.SubStatus == WorkflowSubStatus.Pending;
         if (isStarting)
         {
             workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);

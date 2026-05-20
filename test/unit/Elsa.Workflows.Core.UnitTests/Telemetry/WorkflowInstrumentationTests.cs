@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Reflection;
 using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
@@ -141,6 +142,34 @@ public class WorkflowInstrumentationTests
     }
 
     [Fact]
+    public async Task WorkflowRunner_Should_Not_Start_When_WorkflowExecuting_Handler_Changes_SubStatus()
+    {
+        using var activityCapture = new ActivityCapture();
+        using var meterCapture = new MeterCapture();
+        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var context = activityExecutionContext.WorkflowExecutionContext;
+        var notificationSender = Substitute.For<INotificationSender>();
+        notificationSender
+            .SendAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                if (callInfo.Arg<INotification>() is WorkflowExecuting)
+                    TransitionWorkflowTo(context, WorkflowSubStatus.Cancelled);
+
+                return Task.CompletedTask;
+            });
+        var runner = CreateWorkflowRunner(context, new NoopWorkflowExecutionPipeline(), notificationSender);
+
+        await runner.RunAsync(context);
+
+        Assert.Equal(WorkflowSubStatus.Cancelled, context.SubStatus);
+        Assert.DoesNotContain(meterCapture.LongMeasurements, x => x.InstrumentName == "elsa.workflow.started");
+        await notificationSender
+            .DidNotReceive()
+            .SendAsync(Arg.Is<INotification>(notification => notification is WorkflowStarted), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ActivityInvoker_Should_Not_Replace_Pipeline_Exception_When_Outcome_Is_Null()
     {
         using var activityCapture = new ActivityCapture();
@@ -172,12 +201,15 @@ public class WorkflowInstrumentationTests
         Assert.False(tags.ContainsKey(WorkflowInstrumentation.ErrorType));
     }
 
-    private static WorkflowRunner CreateWorkflowRunner(WorkflowExecutionContext context, IWorkflowExecutionPipeline pipeline)
+    private static WorkflowRunner CreateWorkflowRunner(WorkflowExecutionContext context, IWorkflowExecutionPipeline pipeline, INotificationSender? notificationSender = null)
     {
-        var notificationSender = Substitute.For<INotificationSender>();
-        notificationSender
-            .SendAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>())
-            .Returns(Task.CompletedTask);
+        if (notificationSender == null)
+        {
+            notificationSender = Substitute.For<INotificationSender>();
+            notificationSender
+                .SendAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>())
+                .Returns(Task.CompletedTask);
+        }
 
         var workflowStateExtractor = Substitute.For<IWorkflowStateExtractor>();
         workflowStateExtractor.Extract(context).Returns(_ => new WorkflowState
@@ -201,6 +233,12 @@ public class WorkflowInstrumentationTests
             new WorkflowLoggerStateGenerator(),
             Substitute.For<ICommitStateHandler>(),
             NullLogger<WorkflowRunner>.Instance);
+    }
+
+    private static void TransitionWorkflowTo(WorkflowExecutionContext context, WorkflowSubStatus subStatus)
+    {
+        var transitionTo = typeof(WorkflowExecutionContext).GetMethod("TransitionTo", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        transitionTo.Invoke(context, [subStatus]);
     }
 
     private sealed class CompletingActivityExecutionPipeline : IActivityExecutionPipeline
@@ -305,6 +343,16 @@ public class WorkflowInstrumentationTests
             context.Cancel();
             throw new OperationCanceledException();
         }
+    }
+
+    private sealed class NoopWorkflowExecutionPipeline : IWorkflowExecutionPipeline
+    {
+        public Action<IWorkflowExecutionPipelineBuilder> ConfigurePipelineBuilder => _ => { };
+        public WorkflowMiddlewareDelegate Pipeline => _ => ValueTask.CompletedTask;
+
+        public WorkflowMiddlewareDelegate Setup(Action<IWorkflowExecutionPipelineBuilder> setup) => Pipeline;
+
+        public Task ExecuteAsync(WorkflowExecutionContext context) => Task.CompletedTask;
     }
 
     private sealed class TestActivity : Elsa.Workflows.Activity
