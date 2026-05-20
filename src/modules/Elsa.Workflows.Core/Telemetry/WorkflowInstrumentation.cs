@@ -130,16 +130,16 @@ public static class WorkflowInstrumentation
         var identity = workflow.Identity;
 
         activity.SetTag(WorkflowSystem, SystemName);
-        activity.SetTag(WorkflowName, workflow.WorkflowMetadata.Name ?? workflow.Name);
         activity.SetTag(WorkflowInstanceId, context.Id);
         activity.SetTag(WorkflowDefinitionId, identity.DefinitionId);
         activity.SetTag(WorkflowDefinitionVersion, identity.Version);
         activity.SetTag(WorkflowDefinitionVersionId, identity.Id);
         activity.SetTag(WorkflowStatus, context.Status.ToString());
         activity.SetTag(WorkflowSubStatus, context.SubStatus.ToString());
-        activity.SetTag(WorkflowParentInstanceId, context.ParentWorkflowInstanceId);
-        activity.SetTag(WorkflowCorrelationId, context.CorrelationId);
-        activity.SetTag(TenantId, identity.TenantId);
+        AddIfNotNull(activity, WorkflowName, workflow.WorkflowMetadata.Name ?? workflow.Name);
+        AddIfNotNull(activity, WorkflowParentInstanceId, context.ParentWorkflowInstanceId);
+        AddIfNotNull(activity, WorkflowCorrelationId, context.CorrelationId);
+        AddIfNotNull(activity, TenantId, identity.TenantId);
     }
 
     private static void SetActivityTags(DiagnosticsActivity activity, ActivityExecutionContext context)
@@ -147,13 +147,13 @@ public static class WorkflowInstrumentation
         var currentActivity = context.Activity;
 
         activity.SetTag(ActivityId, currentActivity.Id);
-        activity.SetTag(ActivityName, currentActivity.Name ?? context.ActivityDescriptor.DisplayName ?? context.ActivityDescriptor.Name);
         activity.SetTag(ActivityType, currentActivity.Type);
         activity.SetTag(ActivityVersion, currentActivity.Version);
         activity.SetTag(ActivityExecutionId, context.Id);
         activity.SetTag(ActivityStatus, context.Status.ToString());
-        activity.SetTag(ActivityParentExecutionId, context.ParentActivityExecutionContext?.Id);
-        activity.SetTag(ActivityScheduledByExecutionId, context.SchedulingActivityExecutionId);
+        AddIfNotNull(activity, ActivityName, currentActivity.Name ?? context.ActivityDescriptor.DisplayName ?? context.ActivityDescriptor.Name);
+        AddIfNotNull(activity, ActivityParentExecutionId, context.ParentActivityExecutionContext?.Id);
+        AddIfNotNull(activity, ActivityScheduledByExecutionId, context.SchedulingActivityExecutionId);
     }
 
     private static void SetActivityOutcome(DiagnosticsActivity activity, ActivityExecutionContext context)
@@ -167,7 +167,7 @@ public static class WorkflowInstrumentation
             _ => outcomes?.ToString()
         };
 
-        activity.SetTag(ActivityOutcome, outcome);
+        AddIfNotNull(activity, ActivityOutcome, outcome);
     }
 
     private static void SetError(DiagnosticsActivity activity, Exception? exception, bool faulted)
@@ -227,6 +227,12 @@ public static class WorkflowInstrumentation
     {
         if (value != null)
             tags.Add(key, value);
+    }
+
+    private static void AddIfNotNull(DiagnosticsActivity activity, string key, object? value)
+    {
+        if (value != null)
+            activity.SetTag(key, value);
     }
 }
 

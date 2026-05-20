@@ -12,6 +12,7 @@ using NSubstitute;
 
 namespace Elsa.Activities.UnitTests.Http;
 
+[Collection(nameof(SendHttpRequestTestCollection))]
 public class SendHttpRequestTests
 {
     private const string TestActivitySourceName = "Elsa.Tests";
@@ -461,4 +462,9 @@ public class SendHttpRequestTests
     {
         return (_, _) => throw ((TException)Activator.CreateInstance(typeof(TException), message)!);
     }
+}
+
+[CollectionDefinition(nameof(SendHttpRequestTestCollection), DisableParallelization = true)]
+public sealed class SendHttpRequestTestCollection
+{
 }

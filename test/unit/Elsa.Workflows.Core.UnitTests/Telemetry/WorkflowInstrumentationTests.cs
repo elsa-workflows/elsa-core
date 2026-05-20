@@ -180,7 +180,7 @@ public class WorkflowInstrumentationTests
             .Returns(Task.CompletedTask);
 
         var workflowStateExtractor = Substitute.For<IWorkflowStateExtractor>();
-        workflowStateExtractor.Extract(context).Returns(new WorkflowState
+        workflowStateExtractor.Extract(context).Returns(_ => new WorkflowState
         {
             Id = context.Id,
             DefinitionId = context.Workflow.Identity.DefinitionId,
