@@ -206,6 +206,46 @@ public class BookmarkQueueDeadLetterTests
     }
 
     [Fact]
+    public async Task ReplayAsync_WhenQueueEnqueueFails_RestoresDeadLetterReplayState()
+    {
+        await _deadLetterStore.AddAsync(new BookmarkQueueDeadLetterItem
+        {
+            Id = "dead-letter",
+            OriginalQueueItemId = "original",
+            WorkflowInstanceId = "workflow-instance",
+            BookmarkId = "bookmark",
+            StimulusHash = "hash",
+            ActivityTypeName = "activity",
+            OriginalCreatedAt = _now.AddMinutes(-2),
+            DeadLetteredAt = _now.AddMinutes(-1),
+            Reason = "Expired",
+            CanReplay = true
+        });
+        var manager = new BookmarkQueueDeadLetterManager(
+            _deadLetterStore,
+            new ThrowingAddQueueStore(_queueStore),
+            _signaler,
+            _clock,
+            _identityGenerator,
+            NullLogger<BookmarkQueueDeadLetterManager>.Instance);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => manager.ReplayAsync("dead-letter"));
+
+        var deadLetter = await _deadLetterStore.FindAsync(new BookmarkQueueDeadLetterFilter { Id = "dead-letter" });
+        Assert.NotNull(deadLetter);
+        Assert.True(deadLetter.CanReplay);
+        Assert.Null(deadLetter.ReplayedAt);
+        Assert.Null(deadLetter.ReplayedQueueItemId);
+        Assert.Empty(await _queueStore.FindManyAsync(new BookmarkQueueFilter()));
+        await _signaler.DidNotReceive().TriggerAsync(Arg.Any<CancellationToken>());
+
+        var retryResult = await CreateManager().ReplayAsync("dead-letter");
+
+        Assert.True(retryResult.Succeeded);
+        Assert.Equal("generated-2", retryResult.QueueItemId);
+    }
+
+    [Fact]
     public async Task DeadLetterAsync_WhenOriginalQueueItemAlreadyDeadLettered_ReturnsExistingItem()
     {
         var item = NewQueueItem("original", _now.AddMinutes(-2));
@@ -346,6 +386,26 @@ public class BookmarkQueueDeadLetterTests
 
             return page;
         }
+
+        public Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => inner.DeleteAsync(filter, cancellationToken);
+    }
+
+    private sealed class ThrowingAddQueueStore(IBookmarkQueueStore inner) : IBookmarkQueueStore
+    {
+        public Task SaveAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default) => inner.SaveAsync(record, cancellationToken);
+
+        public Task AddAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default)
+        {
+            throw new InvalidOperationException("enqueue failed");
+        }
+
+        public Task<BookmarkQueueItem?> FindAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => inner.FindAsync(filter, cancellationToken);
+
+        public Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => inner.FindManyAsync(filter, cancellationToken);
+
+        public Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default) => inner.PageAsync(pageArgs, orderBy, cancellationToken);
+
+        public Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default) => inner.PageAsync(pageArgs, filter, orderBy, cancellationToken);
 
         public Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => inner.DeleteAsync(filter, cancellationToken);
     }

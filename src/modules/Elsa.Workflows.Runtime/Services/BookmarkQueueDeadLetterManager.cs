@@ -80,7 +80,26 @@ public class BookmarkQueueDeadLetterManager(
             CreatedAt = systemClock.UtcNow
         };
 
-        await bookmarkQueueStore.AddAsync(queueItem, cancellationToken);
+        try
+        {
+            await bookmarkQueueStore.AddAsync(queueItem, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            item.CanReplay = true;
+            item.ReplayedAt = null;
+            item.ReplayedQueueItemId = null;
+            await deadLetterStore.SaveAsync(item, cancellationToken);
+
+            logger.LogWarning(
+                ex,
+                "Failed to enqueue replayed bookmark queue item {BookmarkQueueItemId}; restored dead-letter item {BookmarkQueueDeadLetterItemId} for replay.",
+                queueItem.Id,
+                item.Id);
+
+            throw;
+        }
+
         await bookmarkQueueSignaler.TriggerAsync(cancellationToken);
 
         logger.LogInformation(
