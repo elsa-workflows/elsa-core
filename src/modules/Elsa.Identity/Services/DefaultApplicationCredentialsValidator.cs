@@ -77,7 +77,7 @@ public class DefaultApplicationCredentialsValidator : IApplicationCredentialsVal
                 application.HashedApiKeySalt = previousHashedApiKeySalt;
                 throw;
             }
-            catch (InvalidOperationException e)
+            catch (Exception e)
             {
                 application.HashedApiKey = previousHashedApiKey;
                 application.HashedApiKeySalt = previousHashedApiKeySalt;
