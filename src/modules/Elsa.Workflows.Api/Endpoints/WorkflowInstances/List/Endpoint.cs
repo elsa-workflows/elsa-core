@@ -84,27 +84,10 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
             return false;
         }
 
-        var columnWhitelist = new[]
+        foreach (var error in WorkflowInstanceFilter.ValidateTimestampFilters(request.TimestampFilters))
         {
-            "CreatedAt", "UpdatedAt", "FinishedAt"
-        };
-
-        if (request.TimestampFilters?.Any() == true)
-        {
-            foreach (var timestampFilter in request.TimestampFilters)
-            {
-                if (string.IsNullOrWhiteSpace(timestampFilter.Column))
-                {
-                    AddError("Column must be specified.");
-                    return false;
-                }
-
-                if (!columnWhitelist.Contains(timestampFilter.Column))
-                {
-                    AddError($"Invalid column '{timestampFilter.Column}'.");
-                    return false;
-                }
-            }
+            AddError(error);
+            return false;
         }
 
         return true;
