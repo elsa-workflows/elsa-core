@@ -37,6 +37,11 @@ public class ElsaWorkflowPersistenceHealthCheckTests
 
         Assert.Equal(HealthStatus.Healthy, result.Status);
         Assert.Equal("persistence", result.Data["category"]);
+        Assert.Equal("workflow-definitions,workflow-instances,triggers,bookmark-queue", result.Data["probes"]);
+        Assert.Equal("workflow-definitions,workflow-instances,triggers,bookmark-queue", result.Data["attemptedProbes"]);
+        await _workflowDefinitionStore.Received(1).FindAsync(
+            Arg.Is<WorkflowDefinitionFilter>(x => x.Id == "00000000-0000-0000-0000-000000000000"),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -51,8 +56,9 @@ public class ElsaWorkflowPersistenceHealthCheckTests
         Assert.Equal("persistence", result.Data["category"]);
         Assert.Equal("triggers", result.Data["failedStore"]);
         Assert.Equal("triggers", result.Data["failedProbe"]);
-        Assert.Equal("workflow-definitions,workflow-instances,triggers,bookmark-queue", result.Data["attemptedProbes"]);
         Assert.Equal("workflow-definitions,workflow-instances,bookmark-queue", result.Data["probes"]);
+        Assert.Equal("workflow-definitions,workflow-instances,triggers,bookmark-queue", result.Data["attemptedProbes"]);
+        Assert.Equal("triggers", result.Data["failedProbes"]);
     }
 
     [Fact]

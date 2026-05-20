@@ -27,6 +27,7 @@ public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider
         var attemptedProbes = probeResults.Where(x => !x.Skipped).Select(x => x.StoreName).ToList();
         var successfulProbes = probeResults.Where(x => !x.Skipped && x.Exception == null).Select(x => x.StoreName).ToList();
         var skippedProbes = probeResults.Where(x => x.Skipped).Select(x => x.StoreName).ToList();
+        var failedProbes = probeResults.Where(x => x.Exception != null).Select(x => x.StoreName).ToList();
         var failedProbe = probeResults.FirstOrDefault(x => x.Exception != null);
         if (failedProbe != null)
         {
@@ -77,6 +78,9 @@ public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider
 
             if (attemptedProbes.Count > 0)
                 data["attemptedProbes"] = string.Join(",", attemptedProbes);
+
+            if (failedProbes.Count > 0)
+                data["failedProbes"] = string.Join(",", failedProbes);
 
             if (skippedProbes.Count > 0)
                 data["skippedProbes"] = string.Join(",", skippedProbes);
