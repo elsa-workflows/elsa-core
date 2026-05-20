@@ -1,9 +1,6 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Api.Constants;
-using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
@@ -17,25 +14,22 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.ImportFiles;
 [PublicAPI]
 internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
 {
-    private readonly IWorkflowDefinitionService _workflowDefinitionService;
+    private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
-    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
     private readonly IApiSerializer _apiSerializer;
     private readonly IAuthorizationService _authorizationService;
     private readonly WorkflowDefinitionScriptAuthorizationService _scriptAuthorizationService;
 
     /// <inheritdoc />
     public ImportFiles(
-        IWorkflowDefinitionService workflowDefinitionService,
+        IWorkflowDefinitionStore workflowDefinitionStore,
         IWorkflowDefinitionImporter workflowDefinitionImporter,
-        WorkflowDefinitionMapper workflowDefinitionMapper,
         IApiSerializer apiSerializer,
         IAuthorizationService authorizationService,
         WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService)
     {
-        _workflowDefinitionService = workflowDefinitionService;
+        _workflowDefinitionStore = workflowDefinitionStore;
         _workflowDefinitionImporter = workflowDefinitionImporter;
-        _workflowDefinitionMapper = workflowDefinitionMapper;
         _apiSerializer = apiSerializer;
         _authorizationService = authorizationService;
         _scriptAuthorizationService = scriptAuthorizationService;
@@ -52,17 +46,21 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
     /// <inheritdoc />
     public override async Task HandleAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
-        var authorizationResult = await _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
-
-        if (!authorizationResult.Succeeded)
-        {
-            await Send.ForbiddenAsync(cancellationToken);
-            return;
-        }
-
         if (Files.Any())
         {
-            var count = await ImportFilesAsync(Files, cancellationToken);
+            var models = await ReadWorkflowDefinitionModelsAsync(Files, cancellationToken);
+            if (!await AuthorizePythonUsageAsync(models, cancellationToken))
+                return;
+
+            var authorizationResult = await _authorizationService.AuthorizeWorkflowDefinitionImportsAsync(User, _workflowDefinitionStore, models, cancellationToken);
+
+            if (!authorizationResult.Succeeded)
+            {
+                await Send.ForbiddenAsync(cancellationToken);
+                return;
+            }
+
+            var count = await ImportWorkflowDefinitionsAsync(models, cancellationToken);
 
             if (!ValidationFailed && !HttpContext.Response.HasStarted)
                 await Send.OkAsync(new { Count = count }, cancellationToken);
@@ -72,28 +70,39 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
             await Send.ErrorsAsync(400, cancellationToken);
     }
 
-    private async Task<int> ImportFilesAsync(IFormFileCollection files, CancellationToken cancellationToken)
+    private async Task<ICollection<WorkflowDefinitionModel>> ReadWorkflowDefinitionModelsAsync(IFormFileCollection files, CancellationToken cancellationToken)
     {
         var models = await WorkflowDefinitionImportFileReader.ReadAsync(files, _apiSerializer, () => HttpContext.Response.HasStarted, cancellationToken);
+        return models.ToList();
+    }
 
+    private async Task<bool> AuthorizePythonUsageAsync(IEnumerable<WorkflowDefinitionModel> models, CancellationToken cancellationToken)
+    {
         foreach (var model in models)
         {
             var scriptAuthorizationResult = await _scriptAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
             if (!scriptAuthorizationResult.Succeeded)
             {
                 await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
-                return 0;
+                return false;
             }
         }
 
+        return true;
+    }
+
+    private async Task<int> ImportWorkflowDefinitionsAsync(IEnumerable<WorkflowDefinitionModel> models, CancellationToken cancellationToken)
+    {
         var count = 0;
         foreach (var model in models)
         {
             if (HttpContext.Response.HasStarted)
                 return count;
 
-            await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
-            count++;
+            var result = await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
+
+            if (result.Succeeded)
+                count++;
         }
 
         return count;
