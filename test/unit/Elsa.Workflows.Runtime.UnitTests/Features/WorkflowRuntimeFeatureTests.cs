@@ -23,5 +23,7 @@ public class WorkflowRuntimeFeatureTests
         Assert.Throws<ArgumentException>(() => feature.AddWorkflow(typeof(NotAWorkflow)));
     }
 
-    private sealed class NotAWorkflow;
+    private sealed class NotAWorkflow
+    {
+    }
 }

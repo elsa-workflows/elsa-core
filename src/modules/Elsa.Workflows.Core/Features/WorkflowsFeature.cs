@@ -174,8 +174,11 @@ public class WorkflowsFeature : FeatureBase
             options.RegisterTypeAlias(typeof(FlowJoinMode), typeof(FlowJoinMode).GetSimpleAssemblyQualifiedName());
             options.RegisterTypeAlias(typeof(FlowJoinMode), nameof(FlowJoinMode));
             options.RegisterTypeAlias(typeof(WorkflowStorageDriver), typeof(WorkflowStorageDriver).GetSimpleAssemblyQualifiedName());
+            options.RegisterTypeAlias(typeof(WorkflowStorageDriver), nameof(WorkflowStorageDriver));
             options.RegisterTypeAlias(typeof(WorkflowInstanceStorageDriver), typeof(WorkflowInstanceStorageDriver).GetSimpleAssemblyQualifiedName());
+            options.RegisterTypeAlias(typeof(WorkflowInstanceStorageDriver), nameof(WorkflowInstanceStorageDriver));
             options.RegisterTypeAlias(typeof(FaultStrategy), typeof(FaultStrategy).GetSimpleAssemblyQualifiedName());
+            options.RegisterTypeAlias(typeof(FaultStrategy), nameof(FaultStrategy));
             options.RegisterTypeAlias(typeof(Exception), nameof(Exception));
             options.RegisterTypeAlias(typeof(ArgumentException), nameof(ArgumentException));
             options.RegisterTypeAlias(typeof(ArgumentNullException), nameof(ArgumentNullException));

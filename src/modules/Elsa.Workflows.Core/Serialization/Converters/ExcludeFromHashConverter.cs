@@ -27,20 +27,32 @@ public class ExcludeFromHashConverter : JsonConverter<object>
 
         foreach (var property in value.GetType().GetProperties())
         {
+            if (property.GetIndexParameters().Length > 0)
+                continue;
+
             var attribute = property.GetCustomAttribute<ExcludeFromHashAttribute>();
             var jsonIgnoreAttribute = property.GetCustomAttribute<JsonIgnoreAttribute>();
-            var propertyValue = property.GetValue(value);
 
-            if (attribute != null || ShouldIgnoreProperty(jsonIgnoreAttribute, propertyValue))
+            if (attribute != null || ShouldAlwaysIgnoreProperty(jsonIgnoreAttribute))
             {
                 continue;
             }
+
+            var propertyValue = property.GetValue(value);
+
+            if (ShouldIgnoreProperty(jsonIgnoreAttribute, propertyValue))
+                continue;
 
             writer.WritePropertyName(property.Name);
             JsonSerializer.Serialize(writer, propertyValue, newOptions);
         }
 
         writer.WriteEndObject();
+    }
+
+    private static bool ShouldAlwaysIgnoreProperty(JsonIgnoreAttribute? attribute)
+    {
+        return attribute?.Condition == JsonIgnoreCondition.Always;
     }
 
     private static bool ShouldIgnoreProperty(JsonIgnoreAttribute? attribute, object? value)
@@ -52,7 +64,7 @@ public class ExcludeFromHashConverter : JsonConverter<object>
             JsonIgnoreCondition.Always => true,
             JsonIgnoreCondition.WhenWritingNull => value == null,
             JsonIgnoreCondition.WhenWritingDefault => value == null || IsDefaultValue(value),
-            _ => true
+            _ => throw new JsonException($"Unsupported JSON ignore condition '{attribute.Condition}'.")
         };
     }
 

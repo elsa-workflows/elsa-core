@@ -36,7 +36,7 @@ public class OrderDefinition<T, TProp>
     public Expression<Func<T, TProp>> KeySelector { get; set; } = null!;
 
     /// <summary>
-    /// A stable representation of the key selector for cache-key generation.
+    /// A best-effort textual representation of the key selector for cache-key generation.
     /// </summary>
     public string? KeySelectorText => KeySelector?.ToString();
 }
