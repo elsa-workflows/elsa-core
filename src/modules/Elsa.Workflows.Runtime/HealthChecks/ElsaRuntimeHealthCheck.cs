@@ -1,13 +1,14 @@
 using Elsa.Common;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.HealthChecks;
 
 /// <summary>
 /// Reports whether the workflow runtime can create clients and is currently accepting new work.
 /// </summary>
-public class ElsaRuntimeHealthCheck(IWorkflowRuntime workflowRuntime, IQuiescenceSignal quiescenceSignal) : IHealthCheck
+public class ElsaRuntimeHealthCheck(IWorkflowRuntime workflowRuntime, IQuiescenceSignal quiescenceSignal, ILogger<ElsaRuntimeHealthCheck> logger) : IHealthCheck
 {
     /// <inheritdoc />
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
@@ -31,7 +32,8 @@ public class ElsaRuntimeHealthCheck(IWorkflowRuntime workflowRuntime, IQuiescenc
         }
         catch (Exception e) when (!e.IsFatal())
         {
-            return HealthCheckResult.Unhealthy("Elsa workflow runtime could not create a workflow client.", e, new Dictionary<string, object>
+            logger.LogWarning(e, "Elsa workflow runtime could not create a workflow client.");
+            return HealthCheckResult.Unhealthy("Elsa workflow runtime could not create a workflow client.", data: new Dictionary<string, object>
             {
                 ["category"] = "runtime"
             });

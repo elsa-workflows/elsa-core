@@ -2,13 +2,14 @@ using Elsa.Common;
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.HealthChecks;
 
 /// <summary>
 /// Verifies that the configured distributed lock provider can acquire and release a probe lock.
 /// </summary>
-public class ElsaDistributedLockHealthCheck(IServiceProvider serviceProvider) : IHealthCheck
+public class ElsaDistributedLockHealthCheck(IServiceProvider serviceProvider, ILogger<ElsaDistributedLockHealthCheck> logger) : IHealthCheck
 {
     private static readonly string LockName = $"elsa-health-check-{Environment.MachineName}-{Guid.NewGuid():N}";
     private static readonly TimeSpan LockAcquisitionTimeout = TimeSpan.FromSeconds(1);
@@ -43,7 +44,8 @@ public class ElsaDistributedLockHealthCheck(IServiceProvider serviceProvider) : 
         }
         catch (Exception e) when (!e.IsFatal())
         {
-            return HealthCheckResult.Unhealthy("Elsa distributed lock provider is not reachable.", e, new Dictionary<string, object>
+            logger.LogWarning(e, "Elsa distributed lock provider is not reachable.");
+            return HealthCheckResult.Unhealthy("Elsa distributed lock provider is not reachable.", data: new Dictionary<string, object>
             {
                 ["category"] = "distributed-locks"
             });

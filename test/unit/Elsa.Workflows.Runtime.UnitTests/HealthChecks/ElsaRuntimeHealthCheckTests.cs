@@ -1,6 +1,7 @@
 using Elsa.Workflows.Runtime.HealthChecks;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.HealthChecks;
@@ -16,7 +17,7 @@ public class ElsaRuntimeHealthCheckTests
         _workflowRuntime.CreateClientAsync(Arg.Any<CancellationToken>()).Returns(new ValueTask<IWorkflowClient>(Substitute.For<IWorkflowClient>()));
         _quiescenceSignal.CurrentState.Returns(QuiescenceState.Initial("test"));
         _quiescenceSignal.ActiveExecutionCycleCount.Returns(0);
-        _sut = new ElsaRuntimeHealthCheck(_workflowRuntime, _quiescenceSignal);
+        _sut = new ElsaRuntimeHealthCheck(_workflowRuntime, _quiescenceSignal, NullLogger<ElsaRuntimeHealthCheck>.Instance);
     }
 
     [Fact]

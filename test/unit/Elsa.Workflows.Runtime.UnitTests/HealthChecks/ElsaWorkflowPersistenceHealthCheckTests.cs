@@ -3,6 +3,7 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.HealthChecks;
@@ -26,7 +27,7 @@ public class ElsaWorkflowPersistenceHealthCheckTests
         _serviceProvider.GetService(typeof(IWorkflowInstanceStore)).Returns(_workflowInstanceStore);
         _serviceProvider.GetService(typeof(ITriggerStore)).Returns(_triggerStore);
         _serviceProvider.GetService(typeof(IBookmarkQueueStore)).Returns(_bookmarkQueueStore);
-        _sut = new ElsaWorkflowPersistenceHealthCheck(_serviceProvider);
+        _sut = new ElsaWorkflowPersistenceHealthCheck(_serviceProvider, NullLogger<ElsaWorkflowPersistenceHealthCheck>.Instance);
     }
 
     [Fact]

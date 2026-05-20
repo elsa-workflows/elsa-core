@@ -2,6 +2,7 @@ using Elsa.Workflows.Runtime.HealthChecks;
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.HealthChecks;
@@ -18,7 +19,7 @@ public class ElsaDistributedLockHealthCheckTests
         _distributedLockProvider.CreateLock(Arg.Any<string>()).Returns(_distributedLock);
         _distributedLock.TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<IDistributedSynchronizationHandle?>(Substitute.For<IDistributedSynchronizationHandle>()));
-        _sut = new ElsaDistributedLockHealthCheck(CreateServiceProvider(_distributedLockProvider));
+        _sut = new ElsaDistributedLockHealthCheck(CreateServiceProvider(_distributedLockProvider), NullLogger<ElsaDistributedLockHealthCheck>.Instance);
     }
 
     [Fact]
@@ -58,7 +59,7 @@ public class ElsaDistributedLockHealthCheckTests
     [Fact]
     public async Task ReturnsDegradedWhenProviderIsNotRegistered()
     {
-        var sut = new ElsaDistributedLockHealthCheck(CreateServiceProvider());
+        var sut = new ElsaDistributedLockHealthCheck(CreateServiceProvider(), NullLogger<ElsaDistributedLockHealthCheck>.Instance);
 
         var result = await sut.CheckHealthAsync(new HealthCheckContext());
 

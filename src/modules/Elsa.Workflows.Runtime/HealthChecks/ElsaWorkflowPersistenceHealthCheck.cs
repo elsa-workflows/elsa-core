@@ -4,13 +4,14 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.HealthChecks;
 
 /// <summary>
 /// Performs small read-only probes against the workflow management and runtime stores.
 /// </summary>
-public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider) : IHealthCheck
+public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider, ILogger<ElsaWorkflowPersistenceHealthCheck> logger) : IHealthCheck
 {
     private const string ProbeId = "__elsa_health_check_probe__";
 
@@ -35,7 +36,8 @@ public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider
         }
         catch (Exception e) when (!e.IsFatal())
         {
-            return HealthCheckResult.Unhealthy($"Elsa workflow store '{failedStore}' is not reachable.", e, new Dictionary<string, object>
+            logger.LogWarning(e, "Elsa workflow store {StoreName} is not reachable.", failedStore);
+            return HealthCheckResult.Unhealthy($"Elsa workflow store '{failedStore}' is not reachable.", data: new Dictionary<string, object>
             {
                 ["category"] = "persistence",
                 ["failedStore"] = failedStore,
@@ -45,13 +47,14 @@ public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider
 
         async Task ProbeAsync<TStore>(string storeName, TStore? store, Func<TStore, CancellationToken, Task> probe) where TStore : class
         {
+            failedStore = storeName;
+
             if (store == null)
             {
                 skippedProbes.Add(storeName);
                 return;
             }
 
-            failedStore = storeName;
             probes.Add(storeName);
             await probe(store, cancellationToken);
         }
