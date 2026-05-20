@@ -84,7 +84,7 @@ public class WorkflowDispatchOutboxProcessor(
 
         if (!owner.WorkflowState.HasWorkflowDispatchOutboxItem(item.Id))
         {
-            logger.LogDebug("Skipping workflow dispatch outbox item {OutboxItemId} because owner workflow {WorkflowInstanceId} has not committed it", item.Id, item.OwnerWorkflowInstanceId);
+            await HandleUncommittedOwnerAsync(item, cancellationToken);
             return;
         }
 
@@ -130,6 +130,21 @@ public class WorkflowDispatchOutboxProcessor(
         }
 
         logger.LogDebug("Skipping workflow dispatch outbox item {OutboxItemId} because owner workflow {WorkflowInstanceId} was not found; it will be retained until {ExpiresAt}", item.Id, item.OwnerWorkflowInstanceId, expiresAt);
+    }
+
+    private async Task HandleUncommittedOwnerAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
+    {
+        var retention = dispatcherOptions.Value.OrphanedOutboxItemRetention;
+        var expiresAt = item.CreatedAt.Add(retention);
+
+        if (retention <= TimeSpan.Zero || systemClock.UtcNow >= expiresAt)
+        {
+            logger.LogWarning("Deleting workflow dispatch outbox item {OutboxItemId} because owner workflow {WorkflowInstanceId} never committed the outbox marker and the retention period has elapsed", item.Id, item.OwnerWorkflowInstanceId);
+            await store.DeleteAsync(item.Id, cancellationToken);
+            return;
+        }
+
+        logger.LogDebug("Skipping workflow dispatch outbox item {OutboxItemId} because owner workflow {WorkflowInstanceId} has not committed it; it will be retained until {ExpiresAt}", item.Id, item.OwnerWorkflowInstanceId, expiresAt);
     }
 
     private async Task HandleDeliveryFailureAsync(WorkflowDispatchOutboxItem item, Exception exception, CancellationToken cancellationToken)

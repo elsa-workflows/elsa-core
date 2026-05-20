@@ -43,6 +43,7 @@ public class WorkflowDispatchOutboxProcessorTests
     public async Task ProcessAsync_DoesNotDispatch_WhenOwnerWorkflowHasNotCommittedOutboxMarker()
     {
         var item = CreateItem();
+        _systemClock.UtcNow.Returns(item.CreatedAt.Add(_options.OrphanedOutboxItemRetention).AddTicks(-1));
         _store.FindManyAsync(Arg.Any<CancellationToken>()).Returns([item]);
         _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: false)));
@@ -51,6 +52,22 @@ public class WorkflowDispatchOutboxProcessorTests
 
         await _commandSender.DidNotReceiveWithAnyArgs().SendAsync(default(DispatchWorkflowDefinitionCommand)!, default!, default!, default);
         await _store.DidNotReceive().DeleteAsync(item.Id, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ProcessAsync_DeletesOutboxItem_WhenOwnerWorkflowNeverCommittedMarkerAfterRetentionPeriod()
+    {
+        var createdAt = new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero);
+        var item = CreateItem(createdAt);
+        _systemClock.UtcNow.Returns(createdAt.Add(_options.OrphanedOutboxItemRetention));
+        _store.FindManyAsync(Arg.Any<CancellationToken>()).Returns([item]);
+        _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: false)));
+
+        await _processor.ProcessAsync();
+
+        await _commandSender.DidNotReceiveWithAnyArgs().SendAsync(default(DispatchWorkflowDefinitionCommand)!, default!, default!, default);
+        await _store.Received(1).DeleteAsync(item.Id, Arg.Any<CancellationToken>());
     }
 
     [Fact]
