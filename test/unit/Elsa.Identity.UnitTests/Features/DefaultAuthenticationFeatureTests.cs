@@ -54,4 +54,15 @@ public class DefaultAuthenticationFeatureTests
         Assert.NotNull(options.GetPolicy("Custom"));
         Assert.Null(options.GetPolicy(IdentityPolicyNames.SecurityRoot));
     }
+
+    [Fact]
+    public void DisableLocalHostPermissionGrantForSecurityRootClearsOptInFlag()
+    {
+        var feature = new DefaultAuthenticationFeature(Substitute.For<IModule>());
+
+        feature.EnableLocalHostPermissionGrantForSecurityRoot();
+        feature.DisableLocalHostPermissionGrantForSecurityRoot();
+
+        Assert.False(feature.EnableLocalHostPermissionGrant);
+    }
 }

@@ -32,6 +32,19 @@ public class LocalHostPermissionRequirementHandlerTests
     }
 
     [Fact]
+    public async Task GrantsPermissionsToAuthenticatedLocalhostRequestsWhenExplicitlyEnabled()
+    {
+        var context = await AuthorizeAsync(enableLocalHostPermissionGrant: true, isLocal: true, isAuthenticated: true);
+        var permissions = context.User.FindAll("permissions").Select(x => x.Value).ToList();
+
+        Assert.True(context.HasSucceeded);
+        Assert.True(context.User.Identity?.IsAuthenticated);
+        Assert.Contains("create:application", permissions);
+        Assert.Contains("create:user", permissions);
+        Assert.Contains("create:role", permissions);
+    }
+
+    [Fact]
     public async Task DoesNotGrantPermissionsToRemoteRequestsWhenExplicitlyEnabled()
     {
         var context = await AuthorizeAsync(enableLocalHostPermissionGrant: true, isLocal: false);
@@ -40,10 +53,10 @@ public class LocalHostPermissionRequirementHandlerTests
         Assert.Empty(context.User.FindAll("permissions"));
     }
 
-    private static async Task<AuthorizationHandlerContext> AuthorizeAsync(bool enableLocalHostPermissionGrant, bool isLocal)
+    private static async Task<AuthorizationHandlerContext> AuthorizeAsync(bool enableLocalHostPermissionGrant, bool isLocal, bool isAuthenticated = false)
     {
         var requirement = new LocalHostPermissionRequirement();
-        var user = new ClaimsPrincipal(new ClaimsIdentity());
+        var user = new ClaimsPrincipal(new ClaimsIdentity(isAuthenticated ? "Test" : null));
         var authorizationContext = new AuthorizationHandlerContext(new[] { requirement }, user, null);
         var httpContext = CreateHttpContext(isLocal);
         var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };

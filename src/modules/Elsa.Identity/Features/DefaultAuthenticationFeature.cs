@@ -23,7 +23,6 @@ public class DefaultAuthenticationFeature : FeatureBase
 {
     private const string MultiScheme = "Jwt-or-ApiKey";
     private Func<AuthenticationBuilder, AuthenticationBuilder> _configureApiKeyAuthorization = builder => builder.AddApiKeyInAuthorizationHeader<DefaultApiKeyProvider>();
-    private bool _enableLocalHostPermissionGrant;
 
     /// <inheritdoc />
     public DefaultAuthenticationFeature(IModule module) : base(module)
@@ -40,11 +39,7 @@ public class DefaultAuthenticationFeature : FeatureBase
     /// <summary>
     /// Gets or sets whether localhost requests may satisfy the security-root permission requirement without other credentials.
     /// </summary>
-    public bool EnableLocalHostPermissionGrant
-    {
-        get => _enableLocalHostPermissionGrant;
-        set => _enableLocalHostPermissionGrant = value;
-    }
+    public bool EnableLocalHostPermissionGrant { get; set; }
 
     /// <summary>
     /// Configures the API key provider type.
@@ -102,14 +97,21 @@ public class DefaultAuthenticationFeature : FeatureBase
     }
 
     /// <summary>
-    /// Disables the local host requirement for the security root policy.
+    /// Disables the localhost permission grant for the security root policy.
     /// This is useful when privileged identity bootstrap is handled through features such as <see cref="DefaultAdminUserFeature"/>.
     /// </summary>
-    public DefaultAuthenticationFeature DisableLocalHostRequirement()
+    public DefaultAuthenticationFeature DisableLocalHostPermissionGrantForSecurityRoot()
     {
         EnableLocalHostPermissionGrant = false;
         return this;
     }
+
+    /// <summary>
+    /// Disables the legacy localhost permission grant for the security root policy.
+    /// This is useful when privileged identity bootstrap is handled through features such as <see cref="DefaultAdminUserFeature"/>.
+    /// </summary>
+    [Obsolete("Use DisableLocalHostPermissionGrantForSecurityRoot instead.")]
+    public DefaultAuthenticationFeature DisableLocalHostRequirement() => DisableLocalHostPermissionGrantForSecurityRoot();
 
     /// <inheritdoc />
     public override void Apply()

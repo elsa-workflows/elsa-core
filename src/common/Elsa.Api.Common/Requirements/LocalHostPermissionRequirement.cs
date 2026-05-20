@@ -20,6 +20,13 @@ public class LocalHostPermissionRequirement : IAuthorizationRequirement
 [PublicAPI]
 public class LocalHostPermissionRequirementHandler : AuthorizationHandler<LocalHostPermissionRequirement>
 {
+    private static readonly string[] BootstrapPermissions =
+    [
+        "create:application",
+        "create:user",
+        "create:role"
+    ];
+
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IOptions<LocalHostPermissionRequirementOptions> _options;
 
@@ -46,16 +53,9 @@ public class LocalHostPermissionRequirementHandler : AuthorizationHandler<LocalH
         if (_httpContextAccessor.HttpContext?.Request.IsLocal() != true)
             return Task.CompletedTask;
 
-        var currentIdentity = context.User.Identity;
-
-        if (currentIdentity?.IsAuthenticated != true)
-        {
-            var identity = new ClaimsIdentity(JwtBearerDefaults.AuthenticationScheme);
-            identity.AddClaim(new Claim("permissions", "create:application"));
-            identity.AddClaim(new Claim("permissions", "create:user"));
-            identity.AddClaim(new Claim("permissions", "create:role"));
-            context.User.AddIdentity(identity);
-        }
+        var identity = new ClaimsIdentity(JwtBearerDefaults.AuthenticationScheme);
+        identity.AddClaims(BootstrapPermissions.Select(permission => new Claim(PermissionNames.ClaimType, permission)));
+        context.User.AddIdentity(identity);
 
         context.Succeed(requirement);
         return Task.CompletedTask;
