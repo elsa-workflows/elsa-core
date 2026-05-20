@@ -44,7 +44,7 @@ public class WorkflowDispatchOutboxProcessorTests
     {
         var item = CreateItem();
         _systemClock.UtcNow.Returns(item.CreatedAt.Add(_options.OrphanedOutboxItemRetention).AddTicks(-1));
-        _store.FindManyAsync(Arg.Any<CancellationToken>()).Returns([item]);
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
         _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: false)));
 
@@ -60,7 +60,7 @@ public class WorkflowDispatchOutboxProcessorTests
         var createdAt = new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero);
         var item = CreateItem(createdAt);
         _systemClock.UtcNow.Returns(createdAt.Add(_options.OrphanedOutboxItemRetention));
-        _store.FindManyAsync(Arg.Any<CancellationToken>()).Returns([item]);
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
         _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: false)));
 
@@ -76,7 +76,7 @@ public class WorkflowDispatchOutboxProcessorTests
         var createdAt = new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero);
         var item = CreateItem(createdAt);
         _systemClock.UtcNow.Returns(createdAt.Add(_options.OrphanedOutboxItemRetention).AddTicks(-1));
-        _store.FindManyAsync(Arg.Any<CancellationToken>()).Returns([item]);
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
         _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>((WorkflowInstance?)null));
 
@@ -92,7 +92,7 @@ public class WorkflowDispatchOutboxProcessorTests
         var createdAt = new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero);
         var item = CreateItem(createdAt);
         _systemClock.UtcNow.Returns(createdAt.Add(_options.OrphanedOutboxItemRetention));
-        _store.FindManyAsync(Arg.Any<CancellationToken>()).Returns([item]);
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
         _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>((WorkflowInstance?)null));
 
@@ -107,7 +107,7 @@ public class WorkflowDispatchOutboxProcessorTests
     {
         var item = CreateItem();
         var owner = CreateOwnerWorkflowInstance(includeOutboxMarker: true);
-        _store.FindManyAsync(Arg.Any<CancellationToken>()).Returns([item]);
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
         _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>(owner));
 
@@ -128,7 +128,7 @@ public class WorkflowDispatchOutboxProcessorTests
     public async Task ProcessAsync_DoesNotRecreateOutboxItem_WhenMarkerCleanupFails()
     {
         var item = CreateItem();
-        _store.FindManyAsync(Arg.Any<CancellationToken>()).Returns([item]);
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
         _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
         _workflowInstanceStore.SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>())
@@ -144,7 +144,7 @@ public class WorkflowDispatchOutboxProcessorTests
     public async Task ProcessAsync_KeepsOutboxItem_WhenDispatchFails()
     {
         var item = CreateItem();
-        _store.FindManyAsync(Arg.Any<CancellationToken>()).Returns([item]);
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
         _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
         _commandSender
@@ -162,7 +162,7 @@ public class WorkflowDispatchOutboxProcessorTests
     {
         var item = CreateItem();
         item.DeliveryAttempts = _options.MaxOutboxDeliveryAttempts - 1;
-        _store.FindManyAsync(Arg.Any<CancellationToken>()).Returns([item]);
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
         _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
         _commandSender
