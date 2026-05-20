@@ -11,10 +11,12 @@ namespace Elsa.Identity.Services;
 public class RoleManager : IRoleManager
 {
     private readonly IRoleStore _roleStore;
+    private readonly IRoleProvider _roleProvider;
 
-    public RoleManager(IRoleStore roleStore)
+    public RoleManager(IRoleStore roleStore, IRoleProvider roleProvider)
     {
         _roleStore = roleStore;
+        _roleProvider = roleProvider;
     }
 
     /// <inheritdoc />
@@ -26,6 +28,9 @@ public class RoleManager : IRoleManager
     {
         var roleId = id ?? name.Kebaberize();
 
+        if (await RoleExistsAsync(roleId, cancellationToken))
+            throw new InvalidOperationException($"A role with ID '{roleId}' already exists.");
+
         var role = new Role
         {
             Id = roleId,
@@ -36,5 +41,15 @@ public class RoleManager : IRoleManager
         await _roleStore.SaveAsync(role, cancellationToken);
 
         return new CreateRoleResult(role);
+    }
+
+    private async Task<bool> RoleExistsAsync(string roleId, CancellationToken cancellationToken)
+    {
+        var storedRole = await _roleStore.FindAsync(new() { Id = roleId }, cancellationToken);
+        if (storedRole != null)
+            return true;
+
+        var providedRoles = await _roleProvider.FindManyAsync(new() { Id = roleId }, cancellationToken);
+        return providedRoles.Any(x => x.Id == roleId);
     }
 }
