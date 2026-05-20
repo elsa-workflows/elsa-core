@@ -1,4 +1,3 @@
-using System.IO.Compression;
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
@@ -75,60 +74,33 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
 
     private async Task<int> ImportFilesAsync(IFormFileCollection files, CancellationToken cancellationToken)
     {
-        var count = 0;
+        var models = await WorkflowDefinitionImportFileReader.ReadAsync(files, _apiSerializer, () => HttpContext.Response.HasStarted, cancellationToken);
 
-        foreach (var file in files)
+        foreach (var model in models)
+        {
+            var pythonAuthorizationResult = await _pythonAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
+            if (pythonAuthorizationResult != PythonWorkflowDefinitionAuthorizationResult.Allowed)
+            {
+                await PythonWorkflowDefinitionAuthorizationFailure.SendAsync(pythonAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+                return 0;
+            }
+        }
+
+        var count = 0;
+        foreach (var model in models)
         {
             if (HttpContext.Response.HasStarted)
                 return count;
 
-            var fileStream = file.OpenReadStream();
-
-            // Check if the file is a JSON file or a ZIP file.
-            var isJsonFile = file.ContentType == "application/json";
-
-            // If the file is a JSON file, read it.
-            if (isJsonFile)
-            {
-                await ImportJsonStreamAsync(fileStream, cancellationToken);
-                count++;
-            }
-            else
-            {
-                // If the file is a ZIP file, extract the JSON files and read them.
-                var zipArchive = new ZipArchive(fileStream, ZipArchiveMode.Read);
-
-                foreach (var entry in zipArchive.Entries)
-                {
-                    if (!entry.FullName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    var jsonStream = entry.Open();
-                    await ImportJsonStreamAsync(jsonStream, cancellationToken);
-                    count++;
-                }
-            }
+            await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
+            count++;
         }
 
         return count;
     }
 
-    private async Task ImportJsonStreamAsync(Stream jsonStream, CancellationToken cancellationToken)
-    {
-        var json = await new StreamReader(jsonStream).ReadToEndAsync(cancellationToken);
-        var model = _apiSerializer.Deserialize<WorkflowDefinitionModel>(json);
-        await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
-    }
-
     private async Task<ImportWorkflowResult> ImportSingleWorkflowDefinitionAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
-        var pythonAuthorizationResult = await _pythonAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
-        if (pythonAuthorizationResult != PythonWorkflowDefinitionAuthorizationResult.Allowed)
-        {
-            await PythonWorkflowDefinitionAuthorizationFailure.SendAsync(pythonAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
-            return new(false, null!, []);
-        }
-
         // Import workflow
         var saveWorkflowRequest = new SaveWorkflowDefinitionRequest
         {

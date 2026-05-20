@@ -12,6 +12,7 @@ internal class PythonWorkflowDefinitionAuthorizationService(
 {
     public const string HostDisabledMessage = "Python.NET workflow expression execution is disabled by the host. Set PythonOptions.AllowHostCodeExecution to true only for trusted workflow authors; Python.NET is not a sandbox.";
     private const string PythonExpressionType = "Python";
+    // Keep in sync with ActivityTypeNameHelper.GenerateTypeName<Elsa.Expressions.Python.Activities.RunPython>().
     private const string RunPythonActivityType = "Elsa.RunPython";
     private const string PermissionsClaimType = "permissions";
 
@@ -33,6 +34,7 @@ internal class PythonWorkflowDefinitionAuthorizationService(
 
     private PythonWorkflowDefinitionAuthorizationResult AuthorizePythonUsage(ClaimsPrincipal user)
     {
+        // PythonOptions lives in the optional Python module. Workflows.Api observes the descriptor state projected by that module's provider.
         if (expressionDescriptorRegistry.Find(PythonExpressionType)?.IsBrowsable != true)
             return PythonWorkflowDefinitionAuthorizationResult.HostDisabled;
 
