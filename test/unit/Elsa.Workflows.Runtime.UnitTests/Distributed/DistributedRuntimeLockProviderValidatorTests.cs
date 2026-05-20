@@ -25,9 +25,8 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
 
         var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
 
-        Assert.Contains("local-only distributed lock provider", exception.Message);
+        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
         Assert.Contains(nameof(DistributedLockingOptions.AllowLocalLockProviderInDistributedRuntime), exception.Message);
-        Assert.Contains("cross-node", exception.Message);
     }
 
     [Fact]

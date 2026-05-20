@@ -48,7 +48,6 @@ public class DistributedRuntimeLockProviderValidator(
             "This provider does not coordinate across nodes with separate file systems and can allow concurrent workflow processing in clustered deployments. " +
             "Configure a cross-node IDistributedLockProvider such as Redis, SQL Server, or PostgreSQL, or explicitly set DistributedLockingOptions.AllowLocalLockProviderInDistributedRuntime to true for single-host development/test deployments.";
 
-        logger.LogError("{ErrorMessage}", message);
         throw new InvalidOperationException(message);
     }
 
@@ -103,8 +102,7 @@ public class DistributedRuntimeLockProviderValidator(
 
             if (value is IDistributedLockProvider innerProvider)
                 providers.Add(innerProvider);
-
-            if (value is IEnumerable<IDistributedLockProvider> innerProviders)
+            else if (value is IEnumerable<IDistributedLockProvider> innerProviders)
             {
                 try
                 {
