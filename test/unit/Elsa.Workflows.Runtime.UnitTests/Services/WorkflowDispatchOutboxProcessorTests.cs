@@ -106,9 +106,10 @@ public class WorkflowDispatchOutboxProcessorTests
     public async Task ProcessAsync_DispatchesAndDeletes_WhenOwnerWorkflowCommittedOutboxMarker()
     {
         var item = CreateItem();
+        var owner = CreateOwnerWorkflowInstance(includeOutboxMarker: true);
         _store.FindManyAsync(Arg.Any<CancellationToken>()).Returns([item]);
         _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
-            .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
+            .Returns(new ValueTask<WorkflowInstance?>(owner));
 
         await _processor.ProcessAsync();
 
@@ -118,6 +119,25 @@ public class WorkflowDispatchOutboxProcessorTests
             Arg.Any<IDictionary<object, object>>(),
             CancellationToken.None);
         await _store.Received(1).DeleteAsync(item.Id, Arg.Any<CancellationToken>());
+        await _workflowInstanceStore.Received(1).SaveAsync(
+            Arg.Is<WorkflowInstance>(x => !x.WorkflowState.HasWorkflowDispatchOutboxItem(item.Id)),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ProcessAsync_DoesNotRecreateOutboxItem_WhenMarkerCleanupFails()
+    {
+        var item = CreateItem();
+        _store.FindManyAsync(Arg.Any<CancellationToken>()).Returns([item]);
+        _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
+        _workflowInstanceStore.SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>())
+            .Returns<ValueTask>(_ => throw new InvalidOperationException("Store unavailable."));
+
+        await _processor.ProcessAsync();
+
+        await _store.Received(1).DeleteAsync(item.Id, Arg.Any<CancellationToken>());
+        await _store.DidNotReceive().SaveAsync(item, Arg.Any<CancellationToken>());
     }
 
     [Fact]

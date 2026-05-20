@@ -5,6 +5,7 @@ using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Tenants.Mediator;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
@@ -90,6 +91,7 @@ public class WorkflowDispatchOutboxProcessor(
 
         await SendAsync(item, cancellationToken);
         await store.DeleteAsync(item.Id, cancellationToken);
+        await RemoveCommittedMarkerAsync(owner, item, cancellationToken);
     }
 
     private async Task SendAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
@@ -160,5 +162,24 @@ public class WorkflowDispatchOutboxProcessor(
 
         await store.SaveAsync(item, cancellationToken);
         logger.LogError(exception, "Failed to deliver workflow dispatch outbox item {OutboxItemId}; attempt {DeliveryAttempts} of {MaxDeliveryAttempts}", item.Id, item.DeliveryAttempts, dispatcherOptions.Value.MaxOutboxDeliveryAttempts);
+    }
+
+    private async Task RemoveCommittedMarkerAsync(WorkflowInstance owner, WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
+    {
+        if (!owner.WorkflowState.RemoveWorkflowDispatchOutboxItem(item.Id))
+            return;
+
+        try
+        {
+            await workflowInstanceStore.SaveAsync(owner, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            logger.LogWarning(e, "Failed to remove delivered workflow dispatch outbox item {OutboxItemId} from owner workflow {WorkflowInstanceId}; future commits may prune the marker during a later sweep.", item.Id, item.OwnerWorkflowInstanceId);
+        }
     }
 }

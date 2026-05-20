@@ -28,6 +28,24 @@ public static class WorkflowDispatchOutboxStateExtensions
     }
 
     /// <summary>
+    /// Removes a delivered outbox item ID from the persisted workflow state property bag.
+    /// </summary>
+    public static bool RemoveWorkflowDispatchOutboxItem(this WorkflowState workflowState, string outboxItemId)
+    {
+        var state = workflowState.Properties.GetWorkflowDispatchOutboxState();
+
+        if (!state.ItemIds.Remove(outboxItemId))
+            return false;
+
+        if (state.ItemIds.Count == 0)
+            workflowState.Properties.Remove(PropertyKey);
+        else
+            workflowState.Properties[PropertyKey] = state;
+
+        return true;
+    }
+
+    /// <summary>
     /// Returns true when the workflow state includes the specified committed outbox item ID.
     /// </summary>
     public static bool HasWorkflowDispatchOutboxItem(this WorkflowState? workflowState, string outboxItemId)
