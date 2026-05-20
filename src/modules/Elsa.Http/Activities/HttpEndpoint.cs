@@ -599,7 +599,10 @@ public class HttpEndpoint : Trigger<HttpRequest>
             if (remainingBytes >= requestedCount)
                 return requestedCount;
 
-            return (int)Math.Max(0, remainingBytes) + 1;
+            if (remainingBytes < 0)
+                return 1;
+
+            return (int)remainingBytes + 1;
         }
 
         private void CountBytesRead(int bytesRead)
