@@ -1,4 +1,5 @@
 using Elsa.Workflows.Runtime.HealthChecks;
+using Elsa.Workflows.Runtime.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -9,7 +10,12 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class HealthCheckExtensions
 {
-    private static readonly string[] ReadinessTags = ["elsa", "readiness"];
+    /// <summary>
+    /// Tag applied to Elsa readiness checks.
+    /// </summary>
+    public const string ReadinessTag = "readiness";
+
+    private static readonly string[] ReadinessTags = ["elsa", ReadinessTag];
 
     /// <summary>
     /// Adds conservative Elsa-specific readiness probes for the workflow runtime and its core stores.
@@ -17,11 +23,16 @@ public static class HealthCheckExtensions
     /// <param name="builder">The health checks builder.</param>
     /// <param name="includePersistence">Whether to probe workflow management/runtime stores.</param>
     /// <param name="includeDistributedLocks">Whether to probe the configured distributed lock provider.</param>
+    /// <param name="configureOptions">Configures Elsa readiness probe behavior.</param>
     public static IHealthChecksBuilder AddElsaReadinessChecks(
         this IHealthChecksBuilder builder,
         bool includePersistence = true,
-        bool includeDistributedLocks = false)
+        bool includeDistributedLocks = false,
+        Action<ElsaReadinessHealthCheckOptions>? configureOptions = null)
     {
+        if (configureOptions != null)
+            builder.Services.Configure(configureOptions);
+
         builder.AddCheck<ElsaRuntimeHealthCheck>("elsa-runtime", tags: ReadinessTags);
 
         if (includePersistence)

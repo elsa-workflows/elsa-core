@@ -18,45 +18,46 @@ public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider
     /// <inheritdoc />
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
-        var failedStore = "";
-        var probes = new List<string>();
-        var skippedProbes = new List<string>();
+        var probeResults = await Task.WhenAll(
+            ProbeAsync("workflow-definitions", serviceProvider.GetService<IWorkflowDefinitionStore>(), async (store, ct) => await store.FindAsync(new WorkflowDefinitionFilter { Id = ProbeId }, ct)),
+            ProbeAsync("workflow-instances", serviceProvider.GetService<IWorkflowInstanceStore>(), async (store, ct) => await store.CountAsync(new WorkflowInstanceFilter { Id = ProbeId }, ct)),
+            ProbeAsync("triggers", serviceProvider.GetService<ITriggerStore>(), async (store, ct) => await store.FindAsync(new TriggerFilter { Id = ProbeId }, ct)),
+            ProbeAsync("bookmark-queue", serviceProvider.GetService<IBookmarkQueueStore>(), async (store, ct) => await store.FindAsync(new BookmarkQueueFilter { Id = ProbeId }, ct)));
 
-        try
+        var probes = probeResults.Where(x => !x.Skipped).Select(x => x.StoreName).ToList();
+        var skippedProbes = probeResults.Where(x => x.Skipped).Select(x => x.StoreName).ToList();
+        var failedProbe = probeResults.FirstOrDefault(x => x.Exception != null);
+        if (failedProbe != null)
         {
-            await ProbeAsync("workflow-definitions", serviceProvider.GetService<IWorkflowDefinitionStore>(), async (store, ct) => await store.FindAsync(new WorkflowDefinitionFilter { Id = ProbeId }, ct));
-            await ProbeAsync("workflow-instances", serviceProvider.GetService<IWorkflowInstanceStore>(), async (store, ct) => await store.CountAsync(new WorkflowInstanceFilter { Id = ProbeId }, ct));
-            await ProbeAsync("triggers", serviceProvider.GetService<ITriggerStore>(), async (store, ct) => await store.FindAsync(new TriggerFilter { Id = ProbeId }, ct));
-            await ProbeAsync("bookmark-queue", serviceProvider.GetService<IBookmarkQueueStore>(), async (store, ct) => await store.FindAsync(new BookmarkQueueFilter { Id = ProbeId }, ct));
-
             var data = CreateData();
-            return probes.Count == 0
-                ? HealthCheckResult.Degraded("No Elsa workflow persistence stores are registered.", data: data)
-                : HealthCheckResult.Healthy("Elsa workflow stores are reachable.", data);
-        }
-        catch (Exception e) when (!e.IsFatal())
-        {
-            logger.LogWarning(e, "Elsa workflow store {StoreName} is not reachable.", failedStore);
-            return HealthCheckResult.Unhealthy($"Elsa workflow store '{failedStore}' is not reachable.", data: new Dictionary<string, object>
-            {
-                ["category"] = "persistence",
-                ["failedStore"] = failedStore,
-                ["failedProbe"] = failedStore
-            });
+            data["failedStore"] = failedProbe.StoreName;
+            data["failedProbe"] = failedProbe.StoreName;
+
+            logger.LogWarning(failedProbe.Exception, "Elsa workflow store {StoreName} is not reachable.", failedProbe.StoreName);
+            return HealthCheckResult.Unhealthy($"Elsa workflow store '{failedProbe.StoreName}' is not reachable.", data: data);
         }
 
-        async Task ProbeAsync<TStore>(string storeName, TStore? store, Func<TStore, CancellationToken, Task> probe) where TStore : class
-        {
-            failedStore = storeName;
+        var healthyData = CreateData();
+        return probes.Count == 0
+            ? HealthCheckResult.Degraded("No Elsa workflow persistence stores are registered.", data: healthyData)
+            : HealthCheckResult.Healthy("Elsa workflow stores are reachable.", healthyData);
 
+        async Task<ProbeResult> ProbeAsync<TStore>(string storeName, TStore? store, Func<TStore, CancellationToken, Task> probe) where TStore : class
+        {
             if (store == null)
             {
-                skippedProbes.Add(storeName);
-                return;
+                return new ProbeResult(storeName, true, null);
             }
 
-            probes.Add(storeName);
-            await probe(store, cancellationToken);
+            try
+            {
+                await probe(store, cancellationToken);
+                return new ProbeResult(storeName, false, null);
+            }
+            catch (Exception e) when (!e.IsFatal())
+            {
+                return new ProbeResult(storeName, false, e);
+            }
         }
 
         Dictionary<string, object> CreateData()
@@ -75,4 +76,6 @@ public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider
             return data;
         }
     }
+
+    private sealed record ProbeResult(string StoreName, bool Skipped, Exception? Exception);
 }

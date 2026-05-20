@@ -1,18 +1,22 @@
 using Elsa.Common;
+using Elsa.Workflows.Runtime.Options;
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.HealthChecks;
 
 /// <summary>
 /// Verifies that the configured distributed lock provider can acquire and release a probe lock.
 /// </summary>
-public class ElsaDistributedLockHealthCheck(IServiceProvider serviceProvider, ILogger<ElsaDistributedLockHealthCheck> logger) : IHealthCheck
+public class ElsaDistributedLockHealthCheck(
+    IServiceProvider serviceProvider,
+    IOptions<ElsaReadinessHealthCheckOptions> options,
+    ILogger<ElsaDistributedLockHealthCheck> logger) : IHealthCheck
 {
     private static readonly string LockName = $"elsa-health-check-{Environment.MachineName}-{Guid.NewGuid():N}";
-    private static readonly TimeSpan LockAcquisitionTimeout = TimeSpan.FromSeconds(1);
 
     /// <inheritdoc />
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
@@ -28,7 +32,7 @@ public class ElsaDistributedLockHealthCheck(IServiceProvider serviceProvider, IL
                 });
             }
 
-            await using var handle = await distributedLockProvider.TryAcquireLockAsync(LockName, LockAcquisitionTimeout, cancellationToken);
+            await using var handle = await distributedLockProvider.TryAcquireLockAsync(LockName, options.Value.DistributedLockAcquisitionTimeout, cancellationToken);
             if (handle == null)
             {
                 return HealthCheckResult.Degraded("Elsa distributed lock provider was reachable, but the probe lock was not acquired.", data: new Dictionary<string, object>

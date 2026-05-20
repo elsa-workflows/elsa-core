@@ -1,15 +1,17 @@
 using Elsa.Workflows.Runtime.HealthChecks;
+using Elsa.Workflows.Runtime.Options;
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.HealthChecks;
 
 public class ElsaDistributedLockHealthCheckTests
 {
-    private static readonly TimeSpan ExpectedLockAcquisitionTimeout = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan ExpectedLockAcquisitionTimeout = TimeSpan.FromMilliseconds(250);
     private readonly IDistributedLockProvider _distributedLockProvider = Substitute.For<IDistributedLockProvider>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
     private readonly ElsaDistributedLockHealthCheck _sut;
@@ -19,7 +21,7 @@ public class ElsaDistributedLockHealthCheckTests
         _distributedLockProvider.CreateLock(Arg.Any<string>()).Returns(_distributedLock);
         _distributedLock.TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<IDistributedSynchronizationHandle?>(Substitute.For<IDistributedSynchronizationHandle>()));
-        _sut = new ElsaDistributedLockHealthCheck(CreateServiceProvider(_distributedLockProvider), NullLogger<ElsaDistributedLockHealthCheck>.Instance);
+        _sut = new ElsaDistributedLockHealthCheck(CreateServiceProvider(_distributedLockProvider), CreateOptions(), NullLogger<ElsaDistributedLockHealthCheck>.Instance);
     }
 
     [Fact]
@@ -59,7 +61,7 @@ public class ElsaDistributedLockHealthCheckTests
     [Fact]
     public async Task ReturnsDegradedWhenProviderIsNotRegistered()
     {
-        var sut = new ElsaDistributedLockHealthCheck(CreateServiceProvider(), NullLogger<ElsaDistributedLockHealthCheck>.Instance);
+        var sut = new ElsaDistributedLockHealthCheck(CreateServiceProvider(), CreateOptions(), NullLogger<ElsaDistributedLockHealthCheck>.Instance);
 
         var result = await sut.CheckHealthAsync(new HealthCheckContext());
 
@@ -76,4 +78,9 @@ public class ElsaDistributedLockHealthCheckTests
 
         return services.BuildServiceProvider();
     }
+
+    private static IOptions<ElsaReadinessHealthCheckOptions> CreateOptions() => Microsoft.Extensions.Options.Options.Create(new ElsaReadinessHealthCheckOptions
+    {
+        DistributedLockAcquisitionTimeout = ExpectedLockAcquisitionTimeout
+    });
 }

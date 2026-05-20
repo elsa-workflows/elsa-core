@@ -177,7 +177,7 @@ app.MapHealthChecks("/health/live", new()
 });
 app.MapHealthChecks("/health/ready", new()
 {
-    Predicate = check => check.Tags.Contains("readiness"),
+    Predicate = check => check.Tags.Contains(HealthCheckExtensions.ReadinessTag),
     ResultStatusCodes =
     {
         [HealthStatus.Degraded] = StatusCodes.Status503ServiceUnavailable,

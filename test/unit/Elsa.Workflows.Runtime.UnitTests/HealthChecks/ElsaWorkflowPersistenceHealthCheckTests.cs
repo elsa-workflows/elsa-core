@@ -66,4 +66,21 @@ public class ElsaWorkflowPersistenceHealthCheckTests
         Assert.Equal("triggers,bookmark-queue", result.Data["probes"]);
         Assert.Equal("workflow-definitions,workflow-instances", result.Data["skippedProbes"]);
     }
+
+    [Fact]
+    public async Task ReturnsDegradedWithSkippedProbesWhenNoStoresAreRegistered()
+    {
+        _serviceProvider.GetService(typeof(IWorkflowDefinitionStore)).Returns((object?)null);
+        _serviceProvider.GetService(typeof(IWorkflowInstanceStore)).Returns((object?)null);
+        _serviceProvider.GetService(typeof(ITriggerStore)).Returns((object?)null);
+        _serviceProvider.GetService(typeof(IBookmarkQueueStore)).Returns((object?)null);
+
+        var result = await _sut.CheckHealthAsync(new HealthCheckContext());
+
+        Assert.Equal(HealthStatus.Degraded, result.Status);
+        Assert.Equal("No Elsa workflow persistence stores are registered.", result.Description);
+        Assert.Equal("persistence", result.Data["category"]);
+        Assert.Equal("workflow-definitions,workflow-instances,triggers,bookmark-queue", result.Data["skippedProbes"]);
+        Assert.False(result.Data.ContainsKey("probes"));
+    }
 }

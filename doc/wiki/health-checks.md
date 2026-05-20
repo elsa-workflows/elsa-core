@@ -7,9 +7,13 @@ Elsa hosts can opt in to Elsa-specific readiness checks on top of the normal ASP
 Register ASP.NET Core health checks and then add Elsa readiness checks:
 
 ```csharp
+using System;
+
 services
     .AddHealthChecks()
-    .AddElsaReadinessChecks(includeDistributedLocks: true);
+    .AddElsaReadinessChecks(
+        includeDistributedLocks: true,
+        configureOptions: options => options.DistributedLockAcquisitionTimeout = TimeSpan.FromSeconds(1));
 ```
 
 Use `includeDistributedLocks: true` when the host enables distributed runtime behavior or relies on distributed locks for workflow coordination. Leave it `false` for simple single-node hosts that do not want a lock probe.
@@ -25,6 +29,10 @@ services
 Map separate endpoints for liveness and readiness:
 
 ```csharp
+using Elsa.Extensions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+
 app.MapHealthChecks("/health/live", new()
 {
     Predicate = _ => false
@@ -32,7 +40,7 @@ app.MapHealthChecks("/health/live", new()
 
 app.MapHealthChecks("/health/ready", new()
 {
-    Predicate = check => check.Tags.Contains("readiness"),
+    Predicate = check => check.Tags.Contains(HealthCheckExtensions.ReadinessTag),
     ResultStatusCodes =
     {
         [HealthStatus.Degraded] = StatusCodes.Status503ServiceUnavailable,
@@ -72,4 +80,4 @@ readinessProbe:
 
 Do not point liveness at Elsa readiness checks. A paused, draining, or temporarily database-degraded runtime should be removed from service by readiness without forcing Kubernetes to restart the process.
 
-When `includeDistributedLocks: true` is enabled, set the readiness probe `timeoutSeconds` higher than the distributed-lock acquisition timeout. The built-in distributed-lock readiness check currently waits up to 1 second to acquire its probe lock, so the example uses `timeoutSeconds: 2` to avoid intermittent Kubernetes probe timeouts while the lock provider is still healthy.
+When `includeDistributedLocks: true` is enabled, set the readiness probe `timeoutSeconds` higher than the configured distributed-lock acquisition timeout. The built-in distributed-lock readiness check waits up to 1 second by default to acquire its probe lock, so the example uses `timeoutSeconds: 2` to avoid intermittent Kubernetes probe timeouts while the lock provider is still healthy.
