@@ -12,15 +12,14 @@ internal class WorkflowDefinitionScriptAuthorizationService(
 {
     private static readonly ScriptPolicy[] ScriptPolicies =
     [
-        // Keep run activity type names in sync with ActivityTypeNameHelper.GenerateTypeName<RunCSharp>() and GenerateTypeName<RunPython>().
         new(
             "CSharp",
-            "Elsa.RunCSharp",
+            WorkflowScriptActivityTypeNames.RunCSharp,
             PermissionNames.ExecuteCSharpExpressions,
             "C# workflow expression execution is disabled by the host. Set CSharpOptions.AllowHostCodeExecution to true only for trusted workflow authors; Roslyn scripting is not a sandbox."),
         new(
             "Python",
-            "Elsa.RunPython",
+            WorkflowScriptActivityTypeNames.RunPython,
             PermissionNames.ExecutePythonExpressions,
             "Python.NET workflow expression execution is disabled by the host. Set PythonOptions.AllowHostCodeExecution to true only for trusted workflow authors; Python.NET is not a sandbox.")
     ];
@@ -39,10 +38,11 @@ internal class WorkflowDefinitionScriptAuthorizationService(
 
         var failure = scriptUsages
             .Select(policy => AuthorizeScriptUsage(policy, user))
-            .FirstOrDefault(result => !result.Succeeded);
+            .Cast<WorkflowDefinitionScriptAuthorizationResult?>()
+            .FirstOrDefault(result => result is { Succeeded: false });
 
-        if (!failure.Succeeded)
-            return failure;
+        if (failure is { } failedResult)
+            return failedResult;
 
         return WorkflowDefinitionScriptAuthorizationResult.Allowed();
     }

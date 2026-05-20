@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Elsa.Abstractions;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
@@ -12,11 +13,11 @@ namespace Elsa.Workflows.Api.Endpoints.Scripting.ExpressionDescriptors.List;
 [UsedImplicitly]
 internal class List(IExpressionDescriptorRegistry expressionDescriptorRegistry) : ElsaEndpointWithoutRequest<ListResponse<ExpressionDescriptorModel>>
 {
-    private static readonly IDictionary<string, string> PrivilegedExpressionPermissions = new Dictionary<string, string>
+    private static readonly IReadOnlyDictionary<string, string> PrivilegedExpressionPermissions = new Dictionary<string, string>
     {
         ["CSharp"] = PermissionNames.ExecuteCSharpExpressions,
         ["Python"] = PermissionNames.ExecutePythonExpressions
-    };
+    }.ToFrozenDictionary(StringComparer.Ordinal);
 
     /// <inheritdoc />
     public override void Configure()
