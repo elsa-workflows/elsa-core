@@ -1,6 +1,7 @@
 using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using Elsa;
 using Elsa.Resilience.Endpoints.SimulateResponse;
 using Elsa.Resilience.Features;
 using Elsa.Resilience.Options;
@@ -48,7 +49,7 @@ public class SimulateResponseEndpointTests : IAsyncLifetime
             options.SessionCapacity = 2;
             options.SessionSlidingExpiration = TimeSpan.FromSeconds(1);
             options.MaxCodes = 3;
-            options.MaxCodesQueryLength = 16;
+            options.MaxCodesQueryLength = 32;
             options.MaxSessionIdLength = 16;
         });
         builder.Services.AddSingleton<ResilienceStrategySerializer>();
@@ -102,6 +103,48 @@ public class SimulateResponseEndpointTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Get_WhenSessionIdExceedsMaxLength_ReturnsBadRequest()
+    {
+        var response = await GetAuthenticatedAsync("/simulate-response?sessionId=exceeds-sixteen-chars");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Get_WhenSessionIdIsAtMaxLength_AcceptsRequest()
+    {
+        var response = await GetAuthenticatedAsync("/simulate-response?sessionId=1234567890123456&codes=[200]");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Get_WhenCodesQueryExceedsMaxLength_ReturnsBadRequest()
+    {
+        var response = await GetAuthenticatedAsync($"/simulate-response?codes={new string('1', 33)}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Get_WhenCodesExceedMaxCount_ReturnsBadRequest()
+    {
+        var response = await GetAuthenticatedAsync("/simulate-response?codes=[500,503,200,201]");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(99)]
+    [InlineData(600)]
+    public async Task Get_WhenCodesAreOutOfRange_ReturnsBadRequest(int statusCode)
+    {
+        var response = await GetAuthenticatedAsync($"/simulate-response?codes=[{statusCode}]");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Get_WhenSessionCapacityIsReached_ReturnsTooManyRequestsUntilStateExpires()
     {
         Assert.Equal(HttpStatusCode.InternalServerError, (await GetAuthenticatedAsync("/simulate-response?sessionId=first&codes=[500,200]")).StatusCode);
@@ -126,10 +169,22 @@ public class SimulateResponseEndpointTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    private async Task<HttpResponseMessage> GetAuthenticatedAsync(string requestUri)
+    [Fact]
+    public async Task Get_WhenDifferentIdentitiesUseSameSessionId_TracksSessionsIndependently()
+    {
+        Assert.Equal(HttpStatusCode.InternalServerError, (await GetAuthenticatedAsync("/simulate-response?sessionId=shared&codes=[500,200]", "alice")).StatusCode);
+        Assert.Equal(HttpStatusCode.InternalServerError, (await GetAuthenticatedAsync("/simulate-response?sessionId=shared&codes=[500,200]", "bob")).StatusCode);
+
+        var response = await GetAuthenticatedAsync("/simulate-response?sessionId=shared&codes=[500,200]", "alice");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    private async Task<HttpResponseMessage> GetAuthenticatedAsync(string requestUri, string identity = "test-user")
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
         request.Headers.Add(TestAuthenticationHandler.PermissionHeader, "*");
+        request.Headers.Add(TestAuthenticationHandler.IdentityHeader, identity);
         return await HttpClient.SendAsync(request);
     }
 
@@ -151,6 +206,7 @@ public class SimulateResponseEndpointTests : IAsyncLifetime
         UrlEncoder encoder) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
     {
         public const string AuthenticationScheme = "Test";
+        public const string IdentityHeader = "X-Test-Identity";
         public const string PermissionHeader = "X-Test-Permissions";
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -158,13 +214,18 @@ public class SimulateResponseEndpointTests : IAsyncLifetime
             if (!Request.Headers.TryGetValue(PermissionHeader, out var permissionHeader))
                 return Task.FromResult(AuthenticateResult.NoResult());
 
+            var identity = Request.Headers.TryGetValue(IdentityHeader, out var identityHeader)
+                ? identityHeader.FirstOrDefault()
+                : null;
             var claims = permissionHeader
                 .SelectMany(x => x?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [])
                 .Select(x => new Claim("permissions", x))
                 .ToList();
 
-            var identity = new ClaimsIdentity(claims, AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, identity ?? "test-user"));
+
+            var claimsIdentity = new ClaimsIdentity(claims, AuthenticationScheme);
+            var principal = new ClaimsPrincipal(claimsIdentity);
             var ticket = new AuthenticationTicket(principal, AuthenticationScheme);
 
             return Task.FromResult(AuthenticateResult.Success(ticket));

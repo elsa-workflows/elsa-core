@@ -1,3 +1,6 @@
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Resilience.Options;
@@ -27,7 +30,8 @@ public class SimulateResponseEndpoint(SimulateResponseSessionStore sessionStore,
             return;
         }
 
-        if (!sessionStore.TryGetNextIndex(sessionId, codes.Length, out var nextIndex))
+        var scopedSessionId = CreateScopedSessionId(sessionId);
+        if (!sessionStore.TryGetNextIndex(scopedSessionId, codes.Length, out var nextIndex))
         {
             AddError($"The maximum number of active simulate-response sessions ({_options.SessionCapacity}) has been reached.");
             await Send.ErrorsAsync(StatusCodes.Status429TooManyRequests, ct);
@@ -118,5 +122,38 @@ public class SimulateResponseEndpoint(SimulateResponseSessionStore sessionStore,
             error = "The codes query parameter must be valid JSON.";
             return false;
         }
+    }
+
+    private string CreateScopedSessionId(string sessionId)
+    {
+        var key = $"{GetAuthenticatedIdentityKey()}\0{sessionId}";
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key)));
+    }
+
+    private string GetAuthenticatedIdentityKey()
+    {
+        var user = HttpContext.User;
+        var identityClaim = user.FindFirst(ClaimTypes.NameIdentifier)
+            ?? user.FindFirst("sub")
+            ?? user.FindFirst("client_id")
+            ?? user.FindFirst("name")
+            ?? user.FindFirst(ClaimTypes.Name);
+
+        if (identityClaim != null)
+            return $"{identityClaim.Type}:{identityClaim.Value}";
+
+        if (!string.IsNullOrWhiteSpace(user.Identity?.Name))
+            return $"name:{user.Identity.Name}";
+
+        var claimsKey = string.Join('\u001e', user.Claims
+            .Where(x => x.Type != "permissions")
+            .OrderBy(x => x.Type, StringComparer.Ordinal)
+            .ThenBy(x => x.Issuer, StringComparer.Ordinal)
+            .ThenBy(x => x.Value, StringComparer.Ordinal)
+            .Select(x => $"{x.Type}:{x.Issuer}:{x.Value}"));
+
+        return !string.IsNullOrEmpty(claimsKey)
+            ? claimsKey
+            : $"auth:{user.Identity?.AuthenticationType ?? "unknown"}";
     }
 }
