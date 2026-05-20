@@ -76,6 +76,8 @@ Notable toggles in `Program.cs`:
 
 The sample configures identity, default authentication, workflow management/runtime with SQLite, workflow API, fluent storage, ElsaScript blob storage, scheduling, C#, JavaScript, Python, Liquid, HTTP, and optional tenants/structured logs.
 
+When running outside the explicit `Development` or `Demo` environments, configure a secure random JWT signing key with at least 32 ASCII characters. For the code-first reference server, prefer `Identity__Tokens__SigningKey` from an environment variable or secrets manager instead of committing the value to appsettings. Shell-based hosts use the shell feature path, for example `CShells__Shells__Default__Features__Identity__SigningKey`.
+
 ## Docker Quick Try
 
 The root [README](../../README.md) documents the public Docker quick start:
@@ -85,14 +87,16 @@ docker pull elsaworkflows/elsa-server-and-studio-v3:latest
 docker run -t -i -e ASPNETCORE_ENVIRONMENT='Development' -e HTTP_PORTS=8080 -e HTTP__BASEURL=http://localhost:13000 -p 13000:8080 elsaworkflows/elsa-server-and-studio-v3:latest
 ```
 
-Default development login:
+Production containers must inject a secure JWT signing key through environment variables or a secrets manager. The appsettings placeholder and known public sample keys are rejected during startup outside `Development` or `Demo`.
+
+Default development login is available only when a development configuration explicitly provisions it:
 
 ```text
 Username: admin
 Password: password
 ```
 
-Do not use default credentials in production.
+Do not use development credentials in production.
 
 ## ASP.NET Middleware Order
 

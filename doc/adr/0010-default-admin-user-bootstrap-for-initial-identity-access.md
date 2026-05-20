@@ -73,7 +73,7 @@ This narrows the purpose of `SecurityRoot` and keeps it from being the default a
 
 - **More responsibility for integrators**: Deployments must intentionally configure `DefaultAdminUser` or provide another trusted bootstrap path if no administrator exists yet.
 - **Migration awareness**: Existing documentation and operational guidance that referenced `SecurityRoot` for user bootstrap must be updated.
-- **Potential misconfiguration risk**: A weak or default admin password remains a deployment concern and must be handled carefully by integrators.
+- **Potential misconfiguration risk**: A weak admin password remains a deployment concern and must be handled carefully by integrators.
 
 ### Neutral
 
@@ -87,4 +87,3 @@ This narrows the purpose of `SecurityRoot` and keeps it from being the default a
 - User-management endpoints should document only their permission requirements, not `SecurityRoot`.
 - Authentication configuration may still use `SecurityRoot` for operations that intentionally remain root-level.
 - Integrators should prefer environment-specific configuration for default admin credentials and rotate them according to their security practices.
-
