@@ -11,11 +11,16 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Workflows.Runtime;
 
 [UsedImplicitly]
-public class DefaultBookmarkQueuePurger(IBookmarkQueueStore store, ISystemClock systemClock, IOptions<BookmarkQueuePurgeOptions> options, ILogger<DefaultBookmarkQueuePurger> logger) : IBookmarkQueuePurger
+public class DefaultBookmarkQueuePurger(
+    IBookmarkQueueStore store,
+    IBookmarkQueueDeadLetterStore deadLetterStore,
+    IBookmarkQueueDeadLetterManager deadLetterManager,
+    ISystemClock systemClock,
+    IOptions<BookmarkQueuePurgeOptions> options,
+    ILogger<DefaultBookmarkQueuePurger> logger) : IBookmarkQueuePurger
 {
     public async Task PurgeAsync(CancellationToken cancellationToken = default)
     {
-        var currentPage = 0;
         var now = systemClock.UtcNow;
         var thresholdDate = now - options.Value.Ttl;
 
@@ -23,7 +28,7 @@ public class DefaultBookmarkQueuePurger(IBookmarkQueueStore store, ISystemClock 
 
         while (true)
         {
-            var pageArgs = PageArgs.FromPage(currentPage, options.Value.BatchSize);
+            var pageArgs = PageArgs.FromPage(0, options.Value.BatchSize);
             var filter = new BookmarkQueueFilter
             {
                 CreatedAtLessThan = thresholdDate
@@ -35,17 +40,49 @@ public class DefaultBookmarkQueuePurger(IBookmarkQueueStore store, ISystemClock 
             if (items.Count == 0)
                 break;
 
+            foreach (var item in items)
+                await deadLetterManager.DeadLetterAsync(item, "Expired", cancellationToken: cancellationToken);
+
             var ids = items.Select(x => x.Id).ToList();
             await store.DeleteAsync(new BookmarkQueueFilter
             {
                 Ids = ids
             }, cancellationToken);
 
-            logger.LogInformation("Purged {Count} bookmark queue items.", items.Count);
-
-            currentPage++;
+            logger.LogInformation("Moved {Count} expired bookmark queue items to the dead-letter store.", items.Count);
         }
 
+        await PurgeDeadLettersAsync(now, cancellationToken);
+
         logger.LogDebug("Finished purging bookmark queue items.");
+    }
+
+    private async Task PurgeDeadLettersAsync(DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var thresholdDate = now - options.Value.DeadLetterTtl;
+
+        logger.LogDebug("Purging bookmark queue dead-letter items older than {ThresholdDate}.", thresholdDate);
+
+        while (true)
+        {
+            var pageArgs = PageArgs.FromPage(0, options.Value.BatchSize);
+            var filter = new BookmarkQueueDeadLetterFilter
+            {
+                DeadLetteredAtLessThan = thresholdDate
+            };
+            var order = new BookmarkQueueDeadLetterItemOrder<DateTimeOffset>(x => x.DeadLetteredAt, OrderDirection.Ascending);
+            var page = await deadLetterStore.PageAsync(pageArgs, filter, order, cancellationToken);
+            var items = page.Items;
+
+            if (items.Count == 0)
+                break;
+
+            await deadLetterStore.DeleteAsync(new BookmarkQueueDeadLetterFilter
+            {
+                Ids = items.Select(x => x.Id).ToList()
+            }, cancellationToken);
+
+            logger.LogInformation("Purged {Count} bookmark queue dead-letter items.", items.Count);
+        }
     }
 }

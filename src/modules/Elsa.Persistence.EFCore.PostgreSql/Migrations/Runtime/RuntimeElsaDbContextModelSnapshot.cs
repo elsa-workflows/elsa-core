@@ -18,7 +18,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.11")
+                .HasAnnotation("ProductVersion", "9.0.16")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -141,6 +141,15 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
                     b.HasIndex("HasBookmarks")
                         .HasDatabaseName("IX_ActivityExecutionRecord_HasBookmarks");
 
+                    b.HasIndex("SchedulingActivityExecutionId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingActivityExecutionId");
+
+                    b.HasIndex("SchedulingActivityId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingActivityId");
+
+                    b.HasIndex("SchedulingWorkflowInstanceId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingWorkflowInstanceId");
+
                     b.HasIndex("StartedAt")
                         .HasDatabaseName("IX_ActivityExecutionRecord_StartedAt");
 
@@ -157,6 +166,91 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType_ActivityTypeVersion");
 
                     b.ToTable("ActivityExecutionRecords", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueDeadLetterItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ActivityInstanceId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ActivityTypeName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BookmarkId")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("CanReplay")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("DeadLetteredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DeliveryAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("LastAttemptedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastErrorMessage")
+                        .HasColumnType("text");
+
+                    b.Property<string>("LastErrorType")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("OriginalCreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OriginalQueueItemId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("ReplayedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReplayedQueueItemId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SerializedOptions")
+                        .HasColumnType("text");
+
+                    b.Property<string>("StimulusHash")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "ActivityInstanceId" }, "IX_BookmarkQueueDeadLetterItem_ActivityInstanceId");
+
+                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_BookmarkQueueDeadLetterItem_ActivityTypeName");
+
+                    b.HasIndex(new[] { "BookmarkId" }, "IX_BookmarkQueueDeadLetterItem_BookmarkId");
+
+                    b.HasIndex(new[] { "CorrelationId" }, "IX_BookmarkQueueDeadLetterItem_CorrelationId");
+
+                    b.HasIndex(new[] { "DeadLetteredAt" }, "IX_BookmarkQueueDeadLetterItem_DeadLetteredAt");
+
+                    b.HasIndex(new[] { "OriginalQueueItemId" }, "IX_BookmarkQueueDeadLetterItem_OriginalQueueItemId");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_BookmarkQueueDeadLetterItem_TenantId");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_BookmarkQueueDeadLetterItem_WorkflowInstanceId");
+
+                    b.ToTable("BookmarkQueueDeadLetterItems", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueItem", b =>
@@ -178,6 +272,18 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DeliveryAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("LastAttemptedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastErrorMessage")
+                        .HasColumnType("text");
+
+                    b.Property<string>("LastErrorType")
+                        .HasColumnType("text");
 
                     b.Property<string>("SerializedOptions")
                         .HasColumnType("text");
@@ -323,9 +429,9 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
-                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId")
+                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId", "TenantId")
                         .IsUnique()
-                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId");
+                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId");
 
                     b.ToTable("Triggers", "Elsa");
                 });

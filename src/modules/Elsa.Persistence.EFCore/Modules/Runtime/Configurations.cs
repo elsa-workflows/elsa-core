@@ -14,6 +14,7 @@ public class Configurations :
     IEntityTypeConfiguration<ActivityExecutionRecord>,
     IEntityTypeConfiguration<StoredBookmark>,
     IEntityTypeConfiguration<BookmarkQueueItem>,
+    IEntityTypeConfiguration<BookmarkQueueDeadLetterItem>,
     IEntityTypeConfiguration<SerializedKeyValuePair>,
     IEntityTypeConfiguration<WorkflowInboxMessage>
 {
@@ -66,6 +67,21 @@ public class Configurations :
         builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.ActivityTypeName)}");
         builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.CreatedAt)}");
         builder.HasIndex(x => x.TenantId, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.TenantId)}");
+    }
+
+    /// <inheritdoc />
+    public void Configure(EntityTypeBuilder<BookmarkQueueDeadLetterItem> builder)
+    {
+        builder.Ignore(x => x.Options);
+        builder.Property<string>("SerializedOptions");
+        builder.HasIndex(x => x.OriginalQueueItemId, $"IX_{nameof(BookmarkQueueDeadLetterItem)}_{nameof(BookmarkQueueDeadLetterItem.OriginalQueueItemId)}");
+        builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(BookmarkQueueDeadLetterItem)}_{nameof(BookmarkQueueDeadLetterItem.WorkflowInstanceId)}");
+        builder.HasIndex(x => x.CorrelationId, $"IX_{nameof(BookmarkQueueDeadLetterItem)}_{nameof(BookmarkQueueDeadLetterItem.CorrelationId)}");
+        builder.HasIndex(x => x.BookmarkId, $"IX_{nameof(BookmarkQueueDeadLetterItem)}_{nameof(BookmarkQueueDeadLetterItem.BookmarkId)}");
+        builder.HasIndex(x => x.ActivityInstanceId, $"IX_{nameof(BookmarkQueueDeadLetterItem)}_{nameof(BookmarkQueueDeadLetterItem.ActivityInstanceId)}");
+        builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(BookmarkQueueDeadLetterItem)}_{nameof(BookmarkQueueDeadLetterItem.ActivityTypeName)}");
+        builder.HasIndex(x => x.DeadLetteredAt, $"IX_{nameof(BookmarkQueueDeadLetterItem)}_{nameof(BookmarkQueueDeadLetterItem.DeadLetteredAt)}");
+        builder.HasIndex(x => x.TenantId, $"IX_{nameof(BookmarkQueueDeadLetterItem)}_{nameof(BookmarkQueueDeadLetterItem.TenantId)}");
     }
 
     /// <inheritdoc />

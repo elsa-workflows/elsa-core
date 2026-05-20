@@ -76,6 +76,11 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     public Func<IServiceProvider, IBookmarkQueueStore> BookmarkQueueStore { get; set; } = sp => sp.GetRequiredService<MemoryBookmarkQueueStore>();
 
     /// <summary>
+    /// A factory that instantiates an <see cref="IBookmarkQueueDeadLetterStore"/>.
+    /// </summary>
+    public Func<IServiceProvider, IBookmarkQueueDeadLetterStore> BookmarkQueueDeadLetterStore { get; set; } = sp => sp.GetRequiredService<MemoryBookmarkQueueDeadLetterStore>();
+
+    /// <summary>
     /// A factory that instantiates an <see cref="ITriggerStore"/>.
     /// </summary>
     public Func<IServiceProvider, ITriggerStore> TriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryTriggerStore>();
@@ -323,6 +328,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
             .AddScoped<IBookmarkResumer, BookmarkResumer>()
             .AddScoped<IBookmarkQueue, StoreBookmarkQueue>()
+            .AddScoped<IBookmarkQueueDeadLetterManager, BookmarkQueueDeadLetterManager>()
             .AddScoped(WorkflowResumer)
             .AddScoped<WorkflowResumer>()
             .AddScoped(BookmarkQueueWorker)
@@ -347,6 +353,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             // Stores.
             .AddScoped(BookmarkStore)
             .AddScoped(BookmarkQueueStore)
+            .AddScoped(BookmarkQueueDeadLetterStore)
             .AddScoped(TriggerStore)
             .AddScoped(WorkflowExecutionLogStore)
             .AddScoped(ActivityExecutionLogStore)
@@ -363,6 +370,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddMemoryStore<StoredBookmark, MemoryBookmarkStore>()
             .AddMemoryStore<StoredTrigger, MemoryTriggerStore>()
             .AddMemoryStore<BookmarkQueueItem, MemoryBookmarkQueueStore>()
+            .AddMemoryStore<BookmarkQueueDeadLetterItem, MemoryBookmarkQueueDeadLetterStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionStore>()
             

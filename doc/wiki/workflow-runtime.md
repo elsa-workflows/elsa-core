@@ -12,7 +12,7 @@ Start in [src/modules/Elsa.Workflows.Runtime](../../src/modules/Elsa.Workflows.R
 - `IWorkflowDispatcher`
 - `IStimulusDispatcher`
 - `IWorkflowCancellationDispatcher`
-- bookmark, bookmark queue, trigger, workflow execution log, and activity execution stores
+- bookmark, bookmark queue, bookmark queue dead-letter, trigger, workflow execution log, and activity execution stores
 - workflow matcher, starter, invoker, resumer, canceler, restarter
 - trigger indexer and bookmark manager
 - background workflow, stimulus, task, and activity dispatch
@@ -31,6 +31,7 @@ Important runtime entities:
 - [StoredTrigger](../../src/modules/Elsa.Workflows.Runtime/Entities/StoredTrigger.cs)
 - [StoredBookmark](../../src/modules/Elsa.Workflows.Runtime/Entities/StoredBookmark.cs)
 - [BookmarkQueueItem](../../src/modules/Elsa.Workflows.Runtime/Entities/BookmarkQueueItem.cs)
+- [BookmarkQueueDeadLetterItem](../../src/modules/Elsa.Workflows.Runtime/Entities/BookmarkQueueDeadLetterItem.cs)
 - [WorkflowExecutionLogRecord](../../src/modules/Elsa.Workflows.Runtime/Entities/WorkflowExecutionLogRecord.cs)
 - [ActivityExecutionRecord](../../src/modules/Elsa.Workflows.Runtime/Entities/ActivityExecutionRecord.cs)
 - [WorkflowInboxMessage](../../src/modules/Elsa.Workflows.Runtime/Entities/WorkflowInboxMessage.cs)
@@ -81,6 +82,15 @@ Bookmark queue processing is handled by:
 - [BookmarkQueueProcessor](../../src/modules/Elsa.Workflows.Runtime/Services/BookmarkQueueProcessor.cs)
 - [BookmarkQueueWorker](../../src/modules/Elsa.Workflows.Runtime/Services/BookmarkQueueWorker.cs)
 - [BookmarkQueueSignaler](../../src/modules/Elsa.Workflows.Runtime/Services/BookmarkQueueSignaler.cs)
+
+Expired bookmark queue items are moved to the dead-letter store before they are removed from the active queue. Processing failures increment `DeliveryAttempts`; when `BookmarkQueuePurgeOptions.MaxDeliveryAttempts` is reached, the queue item is dead-lettered with the last exception type and message. `BookmarkQueuePurgeOptions.Ttl` controls active queue expiry, and `BookmarkQueuePurgeOptions.DeadLetterTtl` controls how long dead-letter records are retained before the purger deletes them.
+
+Operators can inspect and manage dead-lettered bookmark queue items through the workflow API:
+
+- `GET|POST /elsa/api/bookmark-queue/dead-letters`: requires `read:bookmark-queue:dead-letters`.
+- `GET /elsa/api/bookmark-queue/dead-letters/{id}`: requires `read:bookmark-queue:dead-letters`.
+- `POST /elsa/api/bookmark-queue/dead-letters/{id}/replay`: requires `replay:bookmark-queue:dead-letters`; replay creates a new active queue item and marks the dead-letter item as no longer replayable.
+- `DELETE /elsa/api/bookmark-queue/dead-letters/{id}`: requires `delete:bookmark-queue:dead-letters`.
 
 ## Execution Logs
 

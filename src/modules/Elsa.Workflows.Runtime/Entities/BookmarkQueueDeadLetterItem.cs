@@ -1,14 +1,18 @@
 using Elsa.Common.Entities;
-using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Options;
 
 namespace Elsa.Workflows.Runtime.Entities;
 
 /// <summary>
-/// Represents a bookmark queue item that is used to resume bookmarks that may not yet have been stored.
+/// Represents a bookmark queue item that was moved out of the active queue for operator inspection.
 /// </summary>
-public class BookmarkQueueItem : Entity
+public class BookmarkQueueDeadLetterItem : Entity
 {
+    /// <summary>
+    /// The ID of the original bookmark queue item.
+    /// </summary>
+    public string OriginalQueueItemId { get; set; } = null!;
+
     /// <summary>
     /// The workflow instance ID owning the bookmark to resume.
     /// </summary>
@@ -45,12 +49,22 @@ public class BookmarkQueueItem : Entity
     public ResumeBookmarkOptions? Options { get; set; }
 
     /// <summary>
-    /// The timestamp that this entity was created.
+    /// The timestamp that the original queue item was created.
     /// </summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset OriginalCreatedAt { get; set; }
 
     /// <summary>
-    /// The number of failed delivery attempts.
+    /// The timestamp that this item was moved to the dead-letter store.
+    /// </summary>
+    public DateTimeOffset DeadLetteredAt { get; set; }
+
+    /// <summary>
+    /// The reason this item was moved to the dead-letter store.
+    /// </summary>
+    public string Reason { get; set; } = null!;
+
+    /// <summary>
+    /// The number of failed delivery attempts observed before dead-lettering.
     /// </summary>
     public int DeliveryAttempts { get; set; }
 
@@ -70,18 +84,17 @@ public class BookmarkQueueItem : Entity
     public string? LastErrorMessage { get; set; }
 
     /// <summary>
-    /// Creates a <see cref="BookmarkFilter"/> from this bookmark queue item.
+    /// Whether this item can be replayed.
     /// </summary>
-    public BookmarkFilter CreateBookmarkFilter()
-    {
-        return new()
-        {
-            WorkflowInstanceId = WorkflowInstanceId,
-            CorrelationId = CorrelationId,
-            BookmarkId = BookmarkId,
-            Hash = StimulusHash,
-            ActivityInstanceId = ActivityInstanceId,
-            Name =  ActivityTypeName
-        };
-    }
+    public bool CanReplay { get; set; } = true;
+
+    /// <summary>
+    /// The timestamp that this item was replayed.
+    /// </summary>
+    public DateTimeOffset? ReplayedAt { get; set; }
+
+    /// <summary>
+    /// The ID of the queue item created when this dead-letter item was replayed.
+    /// </summary>
+    public string? ReplayedQueueItemId { get; set; }
 }

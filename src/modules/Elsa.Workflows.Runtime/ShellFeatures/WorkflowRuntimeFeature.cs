@@ -74,6 +74,11 @@ public class WorkflowRuntimeFeature : IShellFeature
     public Func<IServiceProvider, IBookmarkQueueStore> BookmarkQueueStore { get; set; } = sp => sp.GetRequiredService<MemoryBookmarkQueueStore>();
 
     /// <summary>
+    /// A factory that instantiates an <see cref="IBookmarkQueueDeadLetterStore"/>.
+    /// </summary>
+    public Func<IServiceProvider, IBookmarkQueueDeadLetterStore> BookmarkQueueDeadLetterStore { get; set; } = sp => sp.GetRequiredService<MemoryBookmarkQueueDeadLetterStore>();
+
+    /// <summary>
     /// A factory that instantiates an <see cref="ITriggerStore"/>.
     /// </summary>
     public Func<IServiceProvider, ITriggerStore> TriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryTriggerStore>();
@@ -219,6 +224,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
             .AddScoped<IBookmarkResumer, BookmarkResumer>()
             .AddScoped<IBookmarkQueue, StoreBookmarkQueue>()
+            .AddScoped<IBookmarkQueueDeadLetterManager, BookmarkQueueDeadLetterManager>()
             .AddScoped<WorkflowResumer>()
             .AddScoped<BookmarkQueueWorker>()
             .AddScoped(WorkflowResumer)
@@ -244,6 +250,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             // Stores.
             .AddScoped(BookmarkStore)
             .AddScoped(BookmarkQueueStore)
+            .AddScoped(BookmarkQueueDeadLetterStore)
             .AddScoped(TriggerStore)
             .AddScoped(WorkflowExecutionLogStore)
             .AddScoped(ActivityExecutionLogStore)
@@ -260,6 +267,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddMemoryStore<StoredBookmark, MemoryBookmarkStore>()
             .AddMemoryStore<StoredTrigger, MemoryTriggerStore>()
             .AddMemoryStore<BookmarkQueueItem, MemoryBookmarkQueueStore>()
+            .AddMemoryStore<BookmarkQueueDeadLetterItem, MemoryBookmarkQueueDeadLetterStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionStore>()
 

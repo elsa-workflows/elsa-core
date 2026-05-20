@@ -1,13 +1,23 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Common;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Messages;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime;
 
-public class BookmarkQueueProcessor(IBookmarkQueueStore store, IWorkflowResumer workflowResumer, ILogger<BookmarkQueueProcessor> logger) : IBookmarkQueueProcessor
+public class BookmarkQueueProcessor(
+    IBookmarkQueueStore store,
+    IBookmarkQueueDeadLetterManager deadLetterManager,
+    IWorkflowResumer workflowResumer,
+    ISystemClock systemClock,
+    IOptions<BookmarkQueuePurgeOptions> options,
+    ILogger<BookmarkQueueProcessor> logger) : IBookmarkQueueProcessor
 {
     public async Task ProcessAsync(CancellationToken cancellationToken = default)
     {
@@ -37,11 +47,21 @@ public class BookmarkQueueProcessor(IBookmarkQueueStore store, IWorkflowResumer 
     private async Task ProcessItemAsync(BookmarkQueueItem item, CancellationToken cancellationToken = default)
     {
         var filter = item.CreateBookmarkFilter();
-        var options = item.Options;
+        var resumeOptions = item.Options;
         
         logger.LogDebug("Processing bookmark queue item {BookmarkQueueItemId} for workflow instance {WorkflowInstanceId} for activity type {ActivityType}", item.Id, item.WorkflowInstanceId, item.ActivityTypeName);
-        
-        var responses = (await workflowResumer.ResumeAsync(filter, options, cancellationToken)).ToList();
+
+        List<RunWorkflowInstanceResponse> responses;
+
+        try
+        {
+            responses = (await workflowResumer.ResumeAsync(filter, resumeOptions, cancellationToken)).ToList();
+        }
+        catch (Exception ex)
+        {
+            await HandleFailureAsync(item, ex, cancellationToken);
+            return;
+        }
 
         if (responses.Count > 0)
         {
@@ -52,5 +72,35 @@ public class BookmarkQueueProcessor(IBookmarkQueueStore store, IWorkflowResumer 
         {
             logger.LogDebug("No matching bookmarks found for bookmark queue item {BookmarkQueueItemId} for workflow instance {WorkflowInstanceId} for activity type {ActivityType} with stimulus {StimulusHash}", item.Id, item.WorkflowInstanceId, item.ActivityTypeName, item.StimulusHash);
         }
+    }
+
+    private async Task HandleFailureAsync(BookmarkQueueItem item, Exception exception, CancellationToken cancellationToken)
+    {
+        item.DeliveryAttempts++;
+        item.LastAttemptedAt = systemClock.UtcNow;
+        item.LastErrorType = exception.GetType().FullName;
+        item.LastErrorMessage = exception.Message;
+
+        if (item.DeliveryAttempts < options.Value.MaxDeliveryAttempts)
+        {
+            logger.LogWarning(
+                exception,
+                "Failed to process bookmark queue item {BookmarkQueueItemId}. Attempt {DeliveryAttempt} of {MaxDeliveryAttempts}.",
+                item.Id,
+                item.DeliveryAttempts,
+                options.Value.MaxDeliveryAttempts);
+
+            await store.SaveAsync(item, cancellationToken);
+            return;
+        }
+
+        logger.LogError(
+            exception,
+            "Moving bookmark queue item {BookmarkQueueItemId} to dead letter after {DeliveryAttempt} failed delivery attempts.",
+            item.Id,
+            item.DeliveryAttempts);
+
+        await deadLetterManager.DeadLetterAsync(item, "Failed", exception, cancellationToken);
+        await store.DeleteAsync(item.Id, cancellationToken);
     }
 }

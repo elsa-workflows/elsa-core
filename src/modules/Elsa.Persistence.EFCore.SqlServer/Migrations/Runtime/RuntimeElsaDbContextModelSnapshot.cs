@@ -18,7 +18,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.11")
+                .HasAnnotation("ProductVersion", "9.0.16")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -78,13 +78,13 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
                         .HasColumnType("bit");
 
                     b.Property<string>("SchedulingActivityExecutionId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("SchedulingActivityId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("SchedulingWorkflowInstanceId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("SerializedActivityState")
                         .HasColumnType("nvarchar(max)");
@@ -141,6 +141,15 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
                     b.HasIndex("HasBookmarks")
                         .HasDatabaseName("IX_ActivityExecutionRecord_HasBookmarks");
 
+                    b.HasIndex("SchedulingActivityExecutionId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingActivityExecutionId");
+
+                    b.HasIndex("SchedulingActivityId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingActivityId");
+
+                    b.HasIndex("SchedulingWorkflowInstanceId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingWorkflowInstanceId");
+
                     b.HasIndex("StartedAt")
                         .HasDatabaseName("IX_ActivityExecutionRecord_StartedAt");
 
@@ -157,6 +166,91 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType_ActivityTypeVersion");
 
                     b.ToTable("ActivityExecutionRecords", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueDeadLetterItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ActivityInstanceId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ActivityTypeName")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("BookmarkId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("CanReplay")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTimeOffset>("DeadLetteredAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("DeliveryAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("LastAttemptedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastErrorMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastErrorType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("OriginalCreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("OriginalQueueItemId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("ReplayedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ReplayedQueueItemId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SerializedOptions")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StimulusHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "ActivityInstanceId" }, "IX_BookmarkQueueDeadLetterItem_ActivityInstanceId");
+
+                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_BookmarkQueueDeadLetterItem_ActivityTypeName");
+
+                    b.HasIndex(new[] { "BookmarkId" }, "IX_BookmarkQueueDeadLetterItem_BookmarkId");
+
+                    b.HasIndex(new[] { "CorrelationId" }, "IX_BookmarkQueueDeadLetterItem_CorrelationId");
+
+                    b.HasIndex(new[] { "DeadLetteredAt" }, "IX_BookmarkQueueDeadLetterItem_DeadLetteredAt");
+
+                    b.HasIndex(new[] { "OriginalQueueItemId" }, "IX_BookmarkQueueDeadLetterItem_OriginalQueueItemId");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_BookmarkQueueDeadLetterItem_TenantId");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_BookmarkQueueDeadLetterItem_WorkflowInstanceId");
+
+                    b.ToTable("BookmarkQueueDeadLetterItems", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueItem", b =>
@@ -178,6 +272,18 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("DeliveryAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("LastAttemptedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastErrorMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastErrorType")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SerializedOptions")
                         .HasColumnType("nvarchar(max)");
@@ -326,7 +432,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime
                     b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId", "TenantId")
                         .IsUnique()
                         .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId")
-                        .HasFilter("[Hash] IS NOT NULL");
+                        .HasFilter("[Hash] IS NOT NULL AND [TenantId] IS NOT NULL");
 
                     b.ToTable("Triggers", "Elsa");
                 });
