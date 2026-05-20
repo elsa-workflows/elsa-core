@@ -111,8 +111,10 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
 
         foreach (var model in models)
         {
-            await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
-            count++;
+            var result = await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
+
+            if (result.Succeeded)
+                count++;
         }
 
         return count;
