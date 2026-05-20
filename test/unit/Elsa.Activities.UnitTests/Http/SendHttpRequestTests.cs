@@ -289,9 +289,9 @@ public class SendHttpRequestTests
             await using var writer = new StreamWriter(stream, Encoding.ASCII, leaveOpen: true) { NewLine = "\r\n", AutoFlush = true };
             var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            await reader.ReadLineAsync();
+            await reader.ReadLineAsync(_cancellationTokenSource.Token);
 
-            while (await reader.ReadLineAsync() is { Length: > 0 } line)
+            while (await reader.ReadLineAsync(_cancellationTokenSource.Token) is { Length: > 0 } line)
             {
                 var separator = line.IndexOf(':');
 
@@ -305,7 +305,7 @@ public class SendHttpRequestTests
 
         private static bool IsExpectedTeardownException(Exception exception)
         {
-            return exception is OperationCanceledException or ObjectDisposedException or SocketException or TimeoutException ||
+            return exception is OperationCanceledException or ObjectDisposedException or SocketException ||
                    exception.InnerException is not null && IsExpectedTeardownException(exception.InnerException);
         }
     }
