@@ -1,21 +1,21 @@
 namespace Elsa.Workflows.Api.Security;
 
-internal static class PythonWorkflowDefinitionAuthorizationFailure
+internal static class WorkflowDefinitionScriptAuthorizationFailure
 {
     public static async Task SendAsync(
-        PythonWorkflowDefinitionAuthorizationResult result,
+        WorkflowDefinitionScriptAuthorizationResult result,
         Func<CancellationToken, Task> sendForbiddenAsync,
         Action<string> addError,
         Func<int, CancellationToken, Task> sendErrorsAsync,
         CancellationToken cancellationToken)
     {
-        if (result == PythonWorkflowDefinitionAuthorizationResult.MissingPermission)
+        if (result.FailureReason == WorkflowDefinitionScriptAuthorizationFailureReason.MissingPermission)
         {
             await sendForbiddenAsync(cancellationToken);
             return;
         }
 
-        addError(PythonWorkflowDefinitionAuthorizationService.HostDisabledMessage);
+        addError(result.Message ?? "Workflow script authorization failed.");
         await sendErrorsAsync(400, cancellationToken);
     }
 }

@@ -18,7 +18,7 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
     private readonly IApiSerializer _apiSerializer;
     private readonly IAuthorizationService _authorizationService;
-    private readonly PythonWorkflowDefinitionAuthorizationService _pythonAuthorizationService;
+    private readonly WorkflowDefinitionScriptAuthorizationService _scriptAuthorizationService;
 
     /// <inheritdoc />
     public ImportFiles(
@@ -26,13 +26,13 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
         IWorkflowDefinitionImporter workflowDefinitionImporter,
         IApiSerializer apiSerializer,
         IAuthorizationService authorizationService,
-        PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService)
+        WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService)
     {
         _workflowDefinitionStore = workflowDefinitionStore;
         _workflowDefinitionImporter = workflowDefinitionImporter;
         _apiSerializer = apiSerializer;
         _authorizationService = authorizationService;
-        _pythonAuthorizationService = pythonAuthorizationService;
+        _scriptAuthorizationService = scriptAuthorizationService;
     }
 
     /// <inheritdoc />
@@ -80,10 +80,10 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
     {
         foreach (var model in models)
         {
-            var pythonAuthorizationResult = await _pythonAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
-            if (pythonAuthorizationResult != PythonWorkflowDefinitionAuthorizationResult.Allowed)
+            var scriptAuthorizationResult = await _scriptAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
+            if (!scriptAuthorizationResult.Succeeded)
             {
-                await PythonWorkflowDefinitionAuthorizationFailure.SendAsync(pythonAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+                await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
                 return false;
             }
         }

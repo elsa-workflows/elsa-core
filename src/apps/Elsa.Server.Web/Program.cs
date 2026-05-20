@@ -86,6 +86,7 @@ services
             .UseScheduling()
             .UseCSharp(options =>
             {
+                configuration.GetSection("Scripting:CSharp").Bind(options);
                 options.DisableWrappers = disableVariableWrappers;
                 options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
                 options.AppendScript("string SayHelloWorld() => Greet(\"World\");");

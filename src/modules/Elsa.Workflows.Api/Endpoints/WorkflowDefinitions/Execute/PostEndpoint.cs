@@ -16,7 +16,7 @@ internal class PostEndpoint(
     IWorkflowRuntime workflowRuntime,
     IWorkflowStarter workflowStarter,
     IApiSerializer apiSerializer,
-    PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService)
+    WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService)
     : ElsaEndpointWithoutRequest<Response>
 {
     /// <inheritdoc />
@@ -73,7 +73,7 @@ internal class PostEndpoint(
             workflowRuntime,
             workflowStarter,
             apiSerializer,
-            pythonAuthorizationService,
+            scriptAuthorizationService,
             HttpContext,
             cancellationToken);
     }

@@ -1,4 +1,5 @@
 using CShells.Features;
+using Elsa.Expressions.CSharp.ActivityDescriptorModifiers;
 using Elsa.Expressions.CSharp.Activities;
 using Elsa.Expressions.CSharp.Contracts;
 using Elsa.Expressions.CSharp.Options;
@@ -33,7 +34,8 @@ public class CSharpFeature : IShellFeature
         // C# services.
         services
             .AddExpressionDescriptorProvider<CSharpExpressionDescriptorProvider>()
-            .AddScoped<ICSharpEvaluator, CSharpEvaluator>();
+            .AddScoped<ICSharpEvaluator, CSharpEvaluator>()
+            .AddSingleton<IActivityDescriptorModifier, CSharpActivityDescriptorModifier>();
 
         // Handlers.
         services.AddNotificationHandlersFrom<CSharpFeature>();
@@ -42,5 +44,4 @@ public class CSharpFeature : IShellFeature
         services.AddScoped<IPropertyUIHandler, RunCSharpOptionsProvider>();
     }
 }
-
 

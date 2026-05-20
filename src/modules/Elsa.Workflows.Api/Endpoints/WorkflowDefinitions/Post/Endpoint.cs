@@ -26,7 +26,7 @@ internal class Post(
     IDistributedLockProvider distributedLockProvider,
     IWorkflowDefinitionLinker linker,
     IAuthorizationService authorizationService,
-    PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService)
+    WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService)
     : ElsaEndpoint<SaveWorkflowDefinitionRequest, LinkedWorkflowDefinitionModel>
 {
     public override void Configure()
@@ -66,10 +66,10 @@ internal class Post(
             return;
         }
 
-        var pythonAuthorizationResult = await pythonAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
-        if (pythonAuthorizationResult != PythonWorkflowDefinitionAuthorizationResult.Allowed)
+        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
+        if (!scriptAuthorizationResult.Succeeded)
         {
-            await PythonWorkflowDefinitionAuthorizationFailure.SendAsync(pythonAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
             return;
         }
 

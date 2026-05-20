@@ -17,6 +17,12 @@ namespace Elsa.Expressions.CSharp.Options;
 public class CSharpOptions
 {
     /// <summary>
+    /// Gets or sets whether workflow-authored Roslyn C# host-code execution is allowed.
+    /// Roslyn scripting is not a sandbox and can access host process capabilities.
+    /// </summary>
+    public bool AllowHostCodeExecution { get; set; }
+
+    /// <summary>
     /// A list of callbacks that is invoked when a C# expression is evaluated. Use this to configure the <see cref="ScriptOptions"/>.
     /// </summary>
     public ICollection<Func<ScriptOptions, ExpressionExecutionContext, ScriptOptions>> ConfigureScriptOptionsCallbacks { get; } = new List<Func<ScriptOptions, ExpressionExecutionContext, ScriptOptions>>();
