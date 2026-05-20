@@ -11,6 +11,8 @@ namespace Elsa.Activities.UnitTests.Http;
 
 public class SendHttpRequestTests
 {
+    private const string TestActivitySourceName = "Elsa.Tests";
+
     [Theory]
     [InlineData("GET", "https://api.example.com/data", "{\"result\": \"success\"}", 200)]
     [InlineData("POST", "https://api.example.com/create", "{\"id\": 123}", 201)]
@@ -65,12 +67,12 @@ public class SendHttpRequestTests
         // Arrange
         using var listener = new ActivityListener
         {
-            ShouldListenTo = _ => true,
+            ShouldListenTo = source => source.Name == TestActivitySourceName,
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
         };
         ActivitySource.AddActivityListener(listener);
 
-        using var source = new ActivitySource("Elsa.Tests");
+        using var source = new ActivitySource(TestActivitySourceName);
         using var parentActivity = source.StartActivity("parent");
         var requestCapture = new RequestCapture();
         var responseHandler = CreateResponseHandler(HttpStatusCode.OK, null, requestCapture);

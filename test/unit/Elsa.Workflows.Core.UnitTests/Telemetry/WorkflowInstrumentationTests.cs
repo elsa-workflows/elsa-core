@@ -20,6 +20,7 @@ namespace Elsa.Workflows.Core.UnitTests.Telemetry;
 
 using DiagnosticsActivity = System.Diagnostics.Activity;
 
+[Collection(nameof(WorkflowInstrumentationTestCollection))]
 public class WorkflowInstrumentationTests
 {
     [Fact]
@@ -179,4 +180,9 @@ public class WorkflowInstrumentationTests
     }
 
     private readonly record struct Measurement<T>(string InstrumentName, T Value, IReadOnlyDictionary<string, object?> Tags);
+}
+
+[CollectionDefinition(nameof(WorkflowInstrumentationTestCollection), DisableParallelization = true)]
+public sealed class WorkflowInstrumentationTestCollection
+{
 }
