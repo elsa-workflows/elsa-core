@@ -8,8 +8,6 @@ namespace Elsa.Identity.Services;
 /// <inheritdoc />
 public class RoleAuthorizationService(IRoleProvider roleProvider) : IRoleAuthorizationService
 {
-    private const string PermissionClaimType = "permissions";
-
     /// <inheritdoc />
     public async Task<bool> CanAssignRolesAsync(ClaimsPrincipal user, IEnumerable<string>? roleIds, CancellationToken cancellationToken = default)
     {
@@ -45,7 +43,7 @@ public class RoleAuthorizationService(IRoleProvider roleProvider) : IRoleAuthori
     private static bool HasAllPermissions(ClaimsPrincipal user, IEnumerable<string>? permissions)
     {
         var grantedPermissions = user
-            .FindAll(PermissionClaimType)
+            .FindAll(PermissionNames.ClaimType)
             .Select(x => x.Value)
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .ToHashSet(StringComparer.Ordinal);

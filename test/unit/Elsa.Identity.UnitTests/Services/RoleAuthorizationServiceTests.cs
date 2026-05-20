@@ -73,7 +73,7 @@ public class RoleAuthorizationServiceTests
     private static ClaimsPrincipal CreateUser(params string[] permissions)
     {
         var identity = new ClaimsIdentity("test");
-        identity.AddClaims(permissions.Select(x => new Claim("permissions", x)));
+        identity.AddClaims(permissions.Select(x => new Claim(PermissionNames.ClaimType, x)));
         return new(identity);
     }
 }

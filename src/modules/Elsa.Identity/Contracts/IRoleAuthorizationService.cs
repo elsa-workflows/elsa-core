@@ -21,5 +21,8 @@ public interface IRoleAuthorizationService
     /// <summary>
     /// Returns true when the user can mutate the specified role.
     /// </summary>
+    /// <remarks>
+    /// When replacement permissions are supplied, authorization is evaluated against both the current permissions and the replacement permissions so callers cannot modify permissions they do not already hold.
+    /// </remarks>
     bool CanMutateRole(ClaimsPrincipal user, Role role, IEnumerable<string>? replacementPermissions = null);
 }
