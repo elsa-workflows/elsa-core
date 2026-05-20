@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Workflows.Api.RealTime.Contracts;
@@ -9,7 +8,6 @@ using FastEndpoints.Security;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Api.RealTime.Hubs;
 
@@ -23,20 +21,14 @@ public class WorkflowInstanceHub : Hub<IWorkflowInstanceClient>
     private const string ReadWorkflowInstancesPermission = "read:workflow-instances";
     private const string ReadAllPermission = "read:*";
     private static readonly string[] ReadPermissions = [PermissionNames.All, ReadAllPermission, ReadWorkflowInstancesPermission];
-    private readonly IWorkflowInstanceStore? _workflowInstanceStore;
+    private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly ITenantAccessor? _tenantAccessor;
 
     /// <inheritdoc />
-    [ActivatorUtilitiesConstructor]
     public WorkflowInstanceHub(IWorkflowInstanceStore workflowInstanceStore, ITenantAccessor? tenantAccessor = null)
     {
         _workflowInstanceStore = workflowInstanceStore;
         _tenantAccessor = tenantAccessor;
-    }
-
-    /// <inheritdoc />
-    public WorkflowInstanceHub()
-    {
     }
     
     /// <summary>
@@ -48,16 +40,13 @@ public class WorkflowInstanceHub : Hub<IWorkflowInstanceClient>
         if (!CanReadWorkflowInstances())
             throw new HubException("Access denied.");
 
-        if (!TryGetRequiredServices(out var workflowInstanceStore, out var tenantAccessor))
-            throw new HubException("Access denied.");
+        var workflowInstance = await _workflowInstanceStore.FindAsync(new WorkflowInstanceFilter { Id = instanceId }, Context.ConnectionAborted);
 
-        var workflowInstance = await workflowInstanceStore.FindAsync(new WorkflowInstanceFilter { Id = instanceId }, Context.ConnectionAborted);
-
-        if (!CanAccessTenant(workflowInstance, tenantAccessor))
+        if (!CanAccessTenant(workflowInstance, _tenantAccessor))
             throw new HubException("Access denied.");
 
         // Join the user to the workflow instance group.
-        await Groups.AddToGroupAsync(Context.ConnectionId, instanceId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, instanceId, Context.ConnectionAborted);
     }
 
     private bool CanReadWorkflowInstances()
@@ -70,15 +59,6 @@ public class WorkflowInstanceHub : Hub<IWorkflowInstanceClient>
         return ReadPermissions.Any(user.HasPermission);
     }
 
-    private bool TryGetRequiredServices([NotNullWhen(true)] out IWorkflowInstanceStore? workflowInstanceStore, out ITenantAccessor? tenantAccessor)
-    {
-        var services = Context.GetHttpContext()?.RequestServices;
-        workflowInstanceStore = _workflowInstanceStore ?? services?.GetService<IWorkflowInstanceStore>();
-        tenantAccessor = _tenantAccessor ?? services?.GetService<ITenantAccessor>();
-
-        return workflowInstanceStore != null;
-    }
-
     private static bool CanAccessTenant(WorkflowInstance? workflowInstance, ITenantAccessor? tenantAccessor)
     {
         if (workflowInstance == null)
@@ -88,7 +68,8 @@ public class WorkflowInstanceHub : Hub<IWorkflowInstanceClient>
             return true;
 
         var workflowInstanceTenantId = workflowInstance.TenantId.NormalizeTenantId();
+        var currentTenantId = tenantAccessor.TenantId.NormalizeTenantId();
 
-        return workflowInstanceTenantId == Tenant.AgnosticTenantId || workflowInstanceTenantId == tenantAccessor.TenantId;
+        return workflowInstanceTenantId == Tenant.AgnosticTenantId || workflowInstanceTenantId == currentTenantId;
     }
 }

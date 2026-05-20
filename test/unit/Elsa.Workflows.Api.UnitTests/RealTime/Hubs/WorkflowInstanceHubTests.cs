@@ -24,10 +24,13 @@ public class WorkflowInstanceHubTests : IDisposable
     private readonly IGroupManager _groups;
     private readonly HubCallerContext _context;
     private readonly WorkflowInstanceHub _hub;
+    private readonly string _originalPermissionsClaimType;
+    private readonly CancellationTokenSource _connectionAbortedTokenSource = new();
     private WorkflowInstance? _workflowInstance;
 
     public WorkflowInstanceHubTests()
     {
+        _originalPermissionsClaimType = GetPermissionsClaimType();
         UsePermissionsClaimType("permissions");
         _workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();
         _tenantAccessor = Substitute.For<ITenantAccessor>();
@@ -42,14 +45,15 @@ public class WorkflowInstanceHubTests : IDisposable
 
         _tenantAccessor.TenantId.Returns(TenantId);
         _context.ConnectionId.Returns(ConnectionId);
-        _context.ConnectionAborted.Returns(CancellationToken.None);
+        _context.ConnectionAborted.Returns(_connectionAbortedTokenSource.Token);
         UseUser(ReadWorkflowInstancesPermission);
         StubWorkflowInstance();
     }
 
     public void Dispose()
     {
-        UsePermissionsClaimType("permissions");
+        UsePermissionsClaimType(_originalPermissionsClaimType);
+        _connectionAbortedTokenSource.Dispose();
     }
 
     [Fact]
@@ -57,7 +61,7 @@ public class WorkflowInstanceHubTests : IDisposable
     {
         await _hub.ObserveInstanceAsync(WorkflowInstanceId);
 
-        await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, Arg.Any<CancellationToken>());
+        await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, _connectionAbortedTokenSource.Token);
     }
 
     [Theory]
@@ -69,7 +73,7 @@ public class WorkflowInstanceHubTests : IDisposable
 
         await _hub.ObserveInstanceAsync(WorkflowInstanceId);
 
-        await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, Arg.Any<CancellationToken>());
+        await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, _connectionAbortedTokenSource.Token);
     }
 
     [Fact]
@@ -80,7 +84,7 @@ public class WorkflowInstanceHubTests : IDisposable
 
         await _hub.ObserveInstanceAsync(WorkflowInstanceId);
 
-        await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, Arg.Any<CancellationToken>());
+        await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, _connectionAbortedTokenSource.Token);
     }
 
     [Fact]
@@ -120,7 +124,7 @@ public class WorkflowInstanceHubTests : IDisposable
 
         await _hub.ObserveInstanceAsync(WorkflowInstanceId);
 
-        await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, Arg.Any<CancellationToken>());
+        await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, _connectionAbortedTokenSource.Token);
     }
 
     [Fact]
@@ -134,7 +138,18 @@ public class WorkflowInstanceHubTests : IDisposable
 
         await hub.ObserveInstanceAsync(WorkflowInstanceId);
 
-        await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, Arg.Any<CancellationToken>());
+        await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, _connectionAbortedTokenSource.Token);
+    }
+
+    [Fact]
+    public async Task ObserveInstanceAsync_WithNonCanonicalCurrentTenant_NormalizesBeforeComparing()
+    {
+        _tenantAccessor.TenantId.Returns(string.Empty);
+        UseWorkflowInstanceTenant(null);
+
+        await _hub.ObserveInstanceAsync(WorkflowInstanceId);
+
+        await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, _connectionAbortedTokenSource.Token);
     }
 
     private void UseUser(params string[] permissions)
@@ -184,6 +199,12 @@ public class WorkflowInstanceHubTests : IDisposable
     {
         var property = typeof(SecurityOptions).GetProperty(nameof(SecurityOptions.PermissionsClaimType))!;
         property.SetValue(new Config().Security, claimType);
+    }
+
+    private static string GetPermissionsClaimType()
+    {
+        var property = typeof(SecurityOptions).GetProperty(nameof(SecurityOptions.PermissionsClaimType))!;
+        return (string)property.GetValue(new Config().Security)!;
     }
 }
 
