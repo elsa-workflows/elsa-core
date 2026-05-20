@@ -18,11 +18,13 @@ public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider
     /// <inheritdoc />
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
-        var probeResults = await Task.WhenAll(
-            ProbeAsync("workflow-definitions", serviceProvider.GetService<IWorkflowDefinitionStore>(), async (store, ct) => await store.FindAsync(new WorkflowDefinitionFilter { Id = ProbeId }, ct)),
-            ProbeAsync("workflow-instances", serviceProvider.GetService<IWorkflowInstanceStore>(), async (store, ct) => await store.CountAsync(new WorkflowInstanceFilter { Id = ProbeId }, ct)),
-            ProbeAsync("triggers", serviceProvider.GetService<ITriggerStore>(), async (store, ct) => await store.FindAsync(new TriggerFilter { Id = ProbeId }, ct)),
-            ProbeAsync("bookmark-queue", serviceProvider.GetService<IBookmarkQueueStore>(), async (store, ct) => await store.FindAsync(new BookmarkQueueFilter { Id = ProbeId }, ct)));
+        var probeResults = new List<ProbeResult>
+        {
+            await ProbeAsync("workflow-definitions", serviceProvider.GetService<IWorkflowDefinitionStore>(), async (store, ct) => await store.FindAsync(new WorkflowDefinitionFilter { Id = ProbeId }, ct)),
+            await ProbeAsync("workflow-instances", serviceProvider.GetService<IWorkflowInstanceStore>(), async (store, ct) => await store.CountAsync(new WorkflowInstanceFilter { Id = ProbeId }, ct)),
+            await ProbeAsync("triggers", serviceProvider.GetService<ITriggerStore>(), async (store, ct) => await store.FindAsync(new TriggerFilter { Id = ProbeId }, ct)),
+            await ProbeAsync("bookmark-queue", serviceProvider.GetService<IBookmarkQueueStore>(), async (store, ct) => await store.FindAsync(new BookmarkQueueFilter { Id = ProbeId }, ct))
+        };
 
         var attemptedProbes = probeResults.Where(x => !x.Skipped).Select(x => x.StoreName).ToList();
         var successfulProbes = probeResults.Where(x => !x.Skipped && x.Exception == null).Select(x => x.StoreName).ToList();

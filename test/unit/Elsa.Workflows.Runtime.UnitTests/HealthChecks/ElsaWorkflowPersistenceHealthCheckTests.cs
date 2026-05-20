@@ -45,6 +45,25 @@ public class ElsaWorkflowPersistenceHealthCheckTests
     }
 
     [Fact]
+    public async Task ProbesStoresSequentially()
+    {
+        var tracker = new ProbeConcurrencyTracker();
+        _workflowDefinitionStore.FindAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ => TrackProbeAsync<Elsa.Workflows.Management.Entities.WorkflowDefinition?>(tracker, null));
+        _workflowInstanceStore.CountAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ => new ValueTask<long>(TrackProbeAsync(tracker, 0L)));
+        _triggerStore.FindAsync(Arg.Any<TriggerFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ => new ValueTask<Elsa.Workflows.Runtime.Entities.StoredTrigger?>(TrackProbeAsync<Elsa.Workflows.Runtime.Entities.StoredTrigger?>(tracker, null)));
+        _bookmarkQueueStore.FindAsync(Arg.Any<BookmarkQueueFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ => TrackProbeAsync<Elsa.Workflows.Runtime.Entities.BookmarkQueueItem?>(tracker, null));
+
+        var result = await _sut.CheckHealthAsync(new HealthCheckContext());
+
+        Assert.Equal(HealthStatus.Healthy, result.Status);
+        Assert.Equal(1, tracker.MaxConcurrentProbes);
+    }
+
+    [Fact]
     public async Task ReturnsUnhealthyWithFailedStoreWhenAStoreProbeFails()
     {
         _triggerStore.FindAsync(Arg.Any<TriggerFilter>(), Arg.Any<CancellationToken>()).Returns<ValueTask<Elsa.Workflows.Runtime.Entities.StoredTrigger?>>(_ => throw new InvalidOperationException("store unavailable"));
@@ -91,5 +110,45 @@ public class ElsaWorkflowPersistenceHealthCheckTests
         Assert.Equal("persistence", result.Data["category"]);
         Assert.Equal("workflow-definitions,workflow-instances,triggers,bookmark-queue", result.Data["skippedProbes"]);
         Assert.False(result.Data.ContainsKey("probes"));
+    }
+
+    private static async Task<T> TrackProbeAsync<T>(ProbeConcurrencyTracker tracker, T result)
+    {
+        tracker.Enter();
+
+        try
+        {
+            await Task.Delay(10);
+            return result;
+        }
+        finally
+        {
+            tracker.Exit();
+        }
+    }
+
+    private sealed class ProbeConcurrencyTracker
+    {
+        private int _currentProbes;
+        private int _maxConcurrentProbes;
+
+        public int MaxConcurrentProbes => Volatile.Read(ref _maxConcurrentProbes);
+
+        public void Enter()
+        {
+            var currentProbes = Interlocked.Increment(ref _currentProbes);
+
+            while (true)
+            {
+                var maxConcurrentProbes = MaxConcurrentProbes;
+                if (currentProbes <= maxConcurrentProbes)
+                    return;
+
+                if (Interlocked.CompareExchange(ref _maxConcurrentProbes, currentProbes, maxConcurrentProbes) == maxConcurrentProbes)
+                    return;
+            }
+        }
+
+        public void Exit() => Interlocked.Decrement(ref _currentProbes);
     }
 }

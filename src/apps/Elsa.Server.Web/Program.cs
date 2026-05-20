@@ -186,7 +186,11 @@ app.MapHealthChecks("/health/ready", new()
 });
 app.MapHealthChecks("/", new()
 {
-    Predicate = _ => false
+    ResultStatusCodes =
+    {
+        [HealthStatus.Degraded] = StatusCodes.Status503ServiceUnavailable,
+        [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+    }
 });
 
 // Routing used for SignalR.
