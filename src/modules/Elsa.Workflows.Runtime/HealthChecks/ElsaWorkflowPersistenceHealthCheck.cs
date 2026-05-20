@@ -18,6 +18,7 @@ public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider
     /// <inheritdoc />
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
+        // These probes verify store reachability only; returned entities and counts are intentionally ignored.
         var probeResults = new List<ProbeResult>
         {
             await ProbeAsync("workflow-definitions", serviceProvider.GetService<IWorkflowDefinitionStore>(), async (store, ct) =>
