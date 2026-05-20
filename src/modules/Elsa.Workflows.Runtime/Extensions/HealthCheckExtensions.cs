@@ -30,8 +30,10 @@ public static class HealthCheckExtensions
         bool includeDistributedLocks = false,
         Action<ElsaReadinessHealthCheckOptions>? configureOptions = null)
     {
+        var optionsBuilder = builder.Services.AddOptions<ElsaReadinessHealthCheckOptions>();
+
         if (configureOptions != null)
-            builder.Services.Configure(configureOptions);
+            optionsBuilder.Configure(configureOptions);
 
         builder.AddCheck<ElsaRuntimeHealthCheck>("elsa-runtime", tags: ReadinessTags);
 

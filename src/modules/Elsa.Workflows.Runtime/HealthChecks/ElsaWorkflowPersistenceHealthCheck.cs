@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Runtime.HealthChecks;
 /// </summary>
 public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider, ILogger<ElsaWorkflowPersistenceHealthCheck> logger) : IHealthCheck
 {
-    private const string ProbeId = "__elsa_health_check_probe__";
+    private const string ProbeId = "00000000-0000-0000-0000-000000000000";
 
     /// <inheritdoc />
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
@@ -24,7 +24,8 @@ public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider
             ProbeAsync("triggers", serviceProvider.GetService<ITriggerStore>(), async (store, ct) => await store.FindAsync(new TriggerFilter { Id = ProbeId }, ct)),
             ProbeAsync("bookmark-queue", serviceProvider.GetService<IBookmarkQueueStore>(), async (store, ct) => await store.FindAsync(new BookmarkQueueFilter { Id = ProbeId }, ct)));
 
-        var probes = probeResults.Where(x => !x.Skipped).Select(x => x.StoreName).ToList();
+        var attemptedProbes = probeResults.Where(x => !x.Skipped).Select(x => x.StoreName).ToList();
+        var successfulProbes = probeResults.Where(x => !x.Skipped && x.Exception == null).Select(x => x.StoreName).ToList();
         var skippedProbes = probeResults.Where(x => x.Skipped).Select(x => x.StoreName).ToList();
         var failedProbe = probeResults.FirstOrDefault(x => x.Exception != null);
         if (failedProbe != null)
@@ -38,7 +39,7 @@ public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider
         }
 
         var healthyData = CreateData();
-        return probes.Count == 0
+        return attemptedProbes.Count == 0
             ? HealthCheckResult.Degraded("No Elsa workflow persistence stores are registered.", data: healthyData)
             : HealthCheckResult.Healthy("Elsa workflow stores are reachable.", healthyData);
 
@@ -71,8 +72,11 @@ public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider
                 ["category"] = "persistence"
             };
 
-            if (probes.Count > 0)
-                data["probes"] = string.Join(",", probes);
+            if (successfulProbes.Count > 0)
+                data["probes"] = string.Join(",", successfulProbes);
+
+            if (attemptedProbes.Count > 0)
+                data["attemptedProbes"] = string.Join(",", attemptedProbes);
 
             if (skippedProbes.Count > 0)
                 data["skippedProbes"] = string.Join(",", skippedProbes);
