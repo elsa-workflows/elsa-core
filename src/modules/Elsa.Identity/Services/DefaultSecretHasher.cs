@@ -67,12 +67,13 @@ public class DefaultSecretHasher : ISecretHasher
         var storedSecretBytes = hashedSecret.Secret;
         var saltBytes = hashedSecret.Salt;
         var clearTextBytes = Encoding.UTF8.GetBytes(clearTextSecret);
+        byte[]? expectedHash = null;
         byte[]? providedHash = null;
         byte[]? legacyHash = null;
 
         try
         {
-            if (TryReadPbkdf2Hash(storedSecretBytes, out var iterationCount, out var expectedHash))
+            if (TryReadPbkdf2Hash(storedSecretBytes, out var iterationCount, out expectedHash))
             {
                 providedHash = HashSecret(clearTextBytes, saltBytes, iterationCount);
                 var matches = CryptographicOperations.FixedTimeEquals(providedHash, expectedHash);
@@ -100,6 +101,9 @@ public class DefaultSecretHasher : ISecretHasher
 
             if (legacyHash is not null)
                 CryptographicOperations.ZeroMemory(legacyHash);
+
+            if (expectedHash is not null)
+                CryptographicOperations.ZeroMemory(expectedHash);
         }
     }
 
@@ -164,6 +168,7 @@ public class DefaultSecretHasher : ISecretHasher
             return true;
 
         iterationCount = 0;
+        CryptographicOperations.ZeroMemory(hash);
         hash = [];
         return false;
     }
