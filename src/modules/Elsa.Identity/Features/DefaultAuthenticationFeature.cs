@@ -23,6 +23,7 @@ public class DefaultAuthenticationFeature : FeatureBase
 {
     private const string MultiScheme = "Jwt-or-ApiKey";
     private Func<AuthenticationBuilder, AuthenticationBuilder> _configureApiKeyAuthorization = builder => builder.AddApiKeyInAuthorizationHeader<DefaultApiKeyProvider>();
+    private Action<AuthorizationOptions>? _configureAuthorizationOptions;
 
     /// <inheritdoc />
     public DefaultAuthenticationFeature(IModule module) : base(module)
@@ -34,7 +35,15 @@ public class DefaultAuthenticationFeature : FeatureBase
     /// Gets or sets the <see cref="ApiKeyProviderType"/>.
     /// </summary>
     public Type ApiKeyProviderType { get; set; } = typeof(DefaultApiKeyProvider);
-    public Action<AuthorizationOptions> ConfigureAuthorizationOptions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the authorization options configuration.
+    /// </summary>
+    public Action<AuthorizationOptions> ConfigureAuthorizationOptions
+    {
+        get => _configureAuthorizationOptions ?? ConfigureDefaultSecurityRootPolicy;
+        set => _configureAuthorizationOptions = value ?? ConfigureDefaultSecurityRootPolicy;
+    }
 
     /// <summary>
     /// Gets or sets whether localhost requests may satisfy the security-root permission requirement without other credentials.

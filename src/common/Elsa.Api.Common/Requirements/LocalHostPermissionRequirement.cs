@@ -53,11 +53,25 @@ public class LocalHostPermissionRequirementHandler : AuthorizationHandler<LocalH
         if (_httpContextAccessor.HttpContext?.Request.IsLocal() != true)
             return Task.CompletedTask;
 
+        if (context.User.Identities.Any(x => x.IsAuthenticated))
+        {
+            if (HasBootstrapPermissions(context.User))
+                context.Succeed(requirement);
+
+            return Task.CompletedTask;
+        }
+
         var identity = new ClaimsIdentity(JwtBearerDefaults.AuthenticationScheme);
         identity.AddClaims(BootstrapPermissions.Select(permission => new Claim(PermissionNames.ClaimType, permission)));
         context.User.AddIdentity(identity);
 
         context.Succeed(requirement);
         return Task.CompletedTask;
+    }
+
+    private static bool HasBootstrapPermissions(ClaimsPrincipal user)
+    {
+        var permissions = user.FindAll(PermissionNames.ClaimType).Select(x => x.Value).ToHashSet(StringComparer.Ordinal);
+        return permissions.Contains(PermissionNames.All) || BootstrapPermissions.All(permissions.Contains);
     }
 }

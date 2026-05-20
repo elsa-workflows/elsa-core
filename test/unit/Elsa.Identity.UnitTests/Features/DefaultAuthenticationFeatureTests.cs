@@ -56,6 +56,23 @@ public class DefaultAuthenticationFeatureTests
     }
 
     [Fact]
+    public void NullConfigureAuthorizationOptionsFallsBackToDefaultSecurityRootPolicy()
+    {
+        var feature = new DefaultAuthenticationFeature(Substitute.For<IModule>())
+        {
+            ConfigureAuthorizationOptions = null!
+        };
+        var options = new AuthorizationOptions();
+
+        feature.ConfigureAuthorizationOptions(options);
+
+        var policy = options.GetPolicy(IdentityPolicyNames.SecurityRoot);
+
+        Assert.NotNull(policy);
+        Assert.Contains(policy.Requirements, requirement => requirement is DenyAnonymousAuthorizationRequirement);
+    }
+
+    [Fact]
     public void DisableLocalHostPermissionGrantForSecurityRootClearsOptInFlag()
     {
         var feature = new DefaultAuthenticationFeature(Substitute.For<IModule>());
