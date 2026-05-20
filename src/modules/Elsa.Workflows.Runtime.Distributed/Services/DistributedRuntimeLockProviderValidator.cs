@@ -16,8 +16,6 @@ public class DistributedRuntimeLockProviderValidator(
     IOptions<DistributedLockingOptions> options,
     ILogger<DistributedRuntimeLockProviderValidator> logger)
 {
-    private static readonly string[] InnerProviderPropertyNames = ["InnerProvider", "RealProvider", "Inner", "Provider", "DecoratedProvider"];
-
     /// <summary>
     /// Validates the configured provider.
     /// </summary>
@@ -79,13 +77,15 @@ public class DistributedRuntimeLockProviderValidator(
 
     private IEnumerable<IDistributedLockProvider> GetInnerProviders(IDistributedLockProvider provider)
     {
-        foreach (var propertyName in InnerProviderPropertyNames)
+        foreach (var property in provider.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
         {
-            var property = provider
-                .GetType()
-                .GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
+            if (property.GetIndexParameters().Length > 0)
+                continue;
 
-            if (property == null || property.GetIndexParameters().Length > 0 || !typeof(IDistributedLockProvider).IsAssignableFrom(property.PropertyType))
+            var returnsDistributedLockProvider = typeof(IDistributedLockProvider).IsAssignableFrom(property.PropertyType);
+            var returnsDistributedLockProviders = typeof(IEnumerable<IDistributedLockProvider>).IsAssignableFrom(property.PropertyType);
+
+            if (!returnsDistributedLockProvider && !returnsDistributedLockProviders)
                 continue;
 
             object? value;
@@ -101,6 +101,12 @@ public class DistributedRuntimeLockProviderValidator(
 
             if (value is IDistributedLockProvider innerProvider)
                 yield return innerProvider;
+
+            if (value is IEnumerable<IDistributedLockProvider> innerProviders)
+            {
+                foreach (var providerItem in innerProviders)
+                    yield return providerItem;
+            }
         }
     }
 }

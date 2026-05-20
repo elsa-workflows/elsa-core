@@ -14,6 +14,7 @@ public class ValidateDistributedRuntimeLockProviderStartupTask(DistributedRuntim
     /// <inheritdoc />
     public Task ExecuteAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         validator.Validate();
         return Task.CompletedTask;
     }

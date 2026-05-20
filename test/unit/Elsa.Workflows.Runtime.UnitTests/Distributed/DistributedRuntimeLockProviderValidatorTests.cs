@@ -1,4 +1,5 @@
 using Elsa.Common.DistributedHosting;
+using Elsa.Common.DistributedHosting.DistributedLocks;
 using Elsa.Workflows.Runtime.Distributed;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
@@ -6,9 +7,16 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Distributed;
 
-public class DistributedRuntimeLockProviderValidatorTests
+public class DistributedRuntimeLockProviderValidatorTests : IDisposable
 {
-    private readonly FileDistributedSynchronizationProvider _fileProvider = new(new DirectoryInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"))));
+    private readonly DirectoryInfo _lockDirectory;
+    private readonly FileDistributedSynchronizationProvider _fileProvider;
+
+    public DistributedRuntimeLockProviderValidatorTests()
+    {
+        _lockDirectory = Directory.CreateDirectory(Path.Join(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+        _fileProvider = new(_lockDirectory);
+    }
 
     [Fact]
     public void Validate_Throws_WhenFileSystemProviderIsUsedWithoutOptIn()
@@ -42,6 +50,46 @@ public class DistributedRuntimeLockProviderValidatorTests
     }
 
     [Fact]
+    public void Validate_Throws_WhenProviderUsesFileSystemProviderThroughCustomProperty()
+    {
+        var validator = CreateValidator(new CustomWrappedDistributedLockProvider(_fileProvider));
+
+        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
+
+        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
+        Assert.Contains(nameof(CustomWrappedDistributedLockProvider), exception.Message);
+    }
+
+    [Fact]
+    public void Validate_Throws_WhenProviderUsesFileSystemProviderThroughProviderCollection()
+    {
+        var validator = CreateValidator(new CompositeDistributedLockProvider([new CustomDistributedLockProvider(), _fileProvider]));
+
+        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
+
+        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
+        Assert.Contains(nameof(CompositeDistributedLockProvider), exception.Message);
+    }
+
+    [Fact]
+    public void Validate_Throws_WhenNoopProviderIsUsedWithoutOptIn()
+    {
+        var validator = CreateValidator(new NoopDistributedSynchronizationProvider());
+
+        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
+
+        Assert.Contains(nameof(NoopDistributedSynchronizationProvider), exception.Message);
+    }
+
+    [Fact]
+    public void Validate_DoesNotThrow_WhenNoopProviderIsExplicitlyAllowed()
+    {
+        var validator = CreateValidator(new NoopDistributedSynchronizationProvider(), options => options.AllowLocalLockProviderInDistributedRuntime = true);
+
+        validator.Validate();
+    }
+
+    [Fact]
     public void Validate_DoesNotThrow_WhenProviderIsNotKnownLocalOnly()
     {
         var validator = CreateValidator(new CustomDistributedLockProvider());
@@ -57,11 +105,31 @@ public class DistributedRuntimeLockProviderValidatorTests
         return new(provider, Microsoft.Extensions.Options.Options.Create(options), NullLogger<DistributedRuntimeLockProviderValidator>.Instance);
     }
 
+    public void Dispose()
+    {
+        _lockDirectory.Delete(true);
+        GC.SuppressFinalize(this);
+    }
+
     private class WrappedDistributedLockProvider(IDistributedLockProvider innerProvider) : IDistributedLockProvider
     {
         public IDistributedLockProvider InnerProvider { get; } = innerProvider;
 
         public IDistributedLock CreateLock(string name) => InnerProvider.CreateLock(name);
+    }
+
+    private class CustomWrappedDistributedLockProvider(IDistributedLockProvider provider) : IDistributedLockProvider
+    {
+        public IDistributedLockProvider LockProvider { get; } = provider;
+
+        public IDistributedLock CreateLock(string name) => LockProvider.CreateLock(name);
+    }
+
+    private class CompositeDistributedLockProvider(IReadOnlyCollection<IDistributedLockProvider> providers) : IDistributedLockProvider
+    {
+        public IReadOnlyCollection<IDistributedLockProvider> Providers { get; } = providers;
+
+        public IDistributedLock CreateLock(string name) => Providers.First().CreateLock(name);
     }
 
     private class CustomDistributedLockProvider : IDistributedLockProvider
