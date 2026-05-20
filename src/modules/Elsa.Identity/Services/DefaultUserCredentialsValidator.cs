@@ -1,6 +1,8 @@
 using Elsa.Extensions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Elsa.Identity.Services;
 
@@ -12,15 +14,24 @@ public class DefaultUserCredentialsValidator : IUserCredentialsValidator
     private readonly IUserProvider _userProvider;
     private readonly IUserStore _userStore;
     private readonly ISecretHasher _secretHasher;
+    private readonly ILogger<DefaultUserCredentialsValidator> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultUserCredentialsValidator"/> class.
     /// </summary>
-    public DefaultUserCredentialsValidator(IUserProvider userProvider, IUserStore userStore, ISecretHasher secretHasher)
+    public DefaultUserCredentialsValidator(IUserProvider userProvider, IUserStore userStore, ISecretHasher secretHasher) : this(userProvider, userStore, secretHasher, null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultUserCredentialsValidator"/> class.
+    /// </summary>
+    public DefaultUserCredentialsValidator(IUserProvider userProvider, IUserStore userStore, ISecretHasher secretHasher, ILogger<DefaultUserCredentialsValidator>? logger)
     {
         _userProvider = userProvider;
         _userStore = userStore;
         _secretHasher = secretHasher;
+        _logger = logger ?? NullLogger<DefaultUserCredentialsValidator>.Instance;
     }
 
     /// <inheritdoc />
@@ -41,7 +52,14 @@ public class DefaultUserCredentialsValidator : IUserCredentialsValidator
             var hashedPassword = _secretHasher.HashSecret(password);
             user.HashedPassword = hashedPassword.EncodeSecret();
             user.HashedPasswordSalt = hashedPassword.EncodeSalt();
-            await _userStore.SaveAsync(user, cancellationToken);
+            try
+            {
+                await _userStore.SaveAsync(user, cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(e, "Failed to save upgraded password hash for user {UserId}.", user.Id);
+            }
         }
 
         return user;

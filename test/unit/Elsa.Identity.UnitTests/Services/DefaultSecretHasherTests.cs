@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Elsa.Common.Services;
+using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 using Elsa.Identity.Providers;
@@ -117,6 +118,50 @@ public class DefaultSecretHasherTests
         Assert.StartsWith("pbkdf2-sha256$", Encoding.UTF8.GetString(Convert.FromBase64String(reloadedApplication.HashedApiKey)));
     }
 
+    [Fact]
+    public async Task ValidateAsync_ReturnsUserWhenLegacyPasswordRehashSaveFails()
+    {
+        var legacyHash = CreateLegacyHash("secret");
+        var user = new User
+        {
+            Id = "user-1",
+            Name = "alice",
+            HashedPassword = legacyHash.EncodeSecret(),
+            HashedPasswordSalt = legacyHash.EncodeSalt()
+        };
+        var userStore = new FailingUserStore(user);
+        var validator = new DefaultUserCredentialsValidator(new StoreBasedUserProvider(userStore), userStore, _hasher);
+
+        var validatedUser = await validator.ValidateAsync("alice", "secret");
+
+        Assert.Same(user, validatedUser);
+    }
+
+    [Fact]
+    public async Task ValidateAsync_ReturnsApplicationWhenLegacyApiKeyRehashSaveFails()
+    {
+        var apiKeyGenerator = new DefaultApiKeyGeneratorAndParser();
+        var apiKey = apiKeyGenerator.Generate("client-1");
+        var legacyHash = CreateLegacyHash(apiKey);
+        var application = new Application
+        {
+            Id = "app-1",
+            ClientId = "client-1",
+            Name = "Client 1",
+            HashedApiKey = legacyHash.EncodeSecret(),
+            HashedApiKeySalt = legacyHash.EncodeSalt(),
+            HashedClientSecret = "",
+            HashedClientSecretSalt = ""
+        };
+        var applicationStore = new FailingApplicationStore(application);
+        var applicationProvider = new StoreBasedApplicationProvider(applicationStore);
+        var validator = new DefaultApplicationCredentialsValidator(apiKeyGenerator, applicationProvider, applicationStore, _hasher);
+
+        var validatedApplication = await validator.ValidateAsync(apiKey);
+
+        Assert.Same(application, validatedApplication);
+    }
+
     private static HashedSecret CreateLegacyHash(string secret)
     {
         var salt = RandomNumberGenerator.GetBytes(32);
@@ -132,5 +177,41 @@ public class DefaultSecretHasherTests
         var hash = Rfc2898DeriveBytes.Pbkdf2(secretBytes, salt, iterationCount, HashAlgorithmName.SHA256, 32);
         var envelope = Encoding.UTF8.GetBytes($"pbkdf2-sha256${iterationCount}${Convert.ToBase64String(hash)}");
         return HashedSecret.FromBytes(envelope, salt);
+    }
+
+    private sealed class FailingUserStore(User user) : IUserStore
+    {
+        private readonly User _user = user;
+
+        public Task SaveAsync(User user, CancellationToken cancellationToken = default) => throw new InvalidOperationException("Save failed.");
+
+        public Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task<IEnumerable<User>> FindManyAsync(UserFilter filter, CancellationToken cancellationToken = default)
+        {
+            var users = filter.Apply(new[] { _user }.AsQueryable()).ToList();
+            return Task.FromResult<IEnumerable<User>>(users);
+        }
+
+        public Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default)
+        {
+            var user = filter.Apply(new[] { _user }.AsQueryable()).FirstOrDefault();
+            return Task.FromResult(user);
+        }
+    }
+
+    private sealed class FailingApplicationStore(Application application) : IApplicationStore
+    {
+        private readonly Application _application = application;
+
+        public Task SaveAsync(Application application, CancellationToken cancellationToken = default) => throw new InvalidOperationException("Save failed.");
+
+        public Task DeleteAsync(ApplicationFilter filter, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task<Application?> FindAsync(ApplicationFilter filter, CancellationToken cancellationToken = default)
+        {
+            var application = filter.Apply(new[] { _application }.AsQueryable()).FirstOrDefault();
+            return Task.FromResult(application);
+        }
     }
 }
