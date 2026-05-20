@@ -31,6 +31,24 @@ public class EFBookmarkQueueDeadLetterStore(Store<RuntimeElsaDbContext, Bookmark
     }
 
     /// <inheritdoc />
+    public async Task<BookmarkQueueDeadLetterItem> AddOrGetExistingAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await AddAsync(record, cancellationToken);
+            return record;
+        }
+        catch (Exception ex) when (DbExceptionClassifier.IsDuplicateKey(ex))
+        {
+            var existing = await FindAsync(new BookmarkQueueDeadLetterFilter { OriginalQueueItemId = record.OriginalQueueItemId }, cancellationToken);
+            if (existing != null)
+                return existing;
+
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<BookmarkQueueDeadLetterItem?> TryMarkReplayedAsync(string id, string queueItemId, DateTimeOffset replayedAt, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);

@@ -41,15 +41,18 @@ public class BookmarkQueueDeadLetterManager(
             CanReplay = true
         };
 
-        await deadLetterStore.AddAsync(deadLetterItem, cancellationToken);
+        var savedDeadLetterItem = await deadLetterStore.AddOrGetExistingAsync(deadLetterItem, cancellationToken);
 
-        logger.LogInformation(
-            "Moved bookmark queue item {BookmarkQueueItemId} to dead letter {BookmarkQueueDeadLetterItemId} because {Reason}.",
-            item.Id,
-            deadLetterItem.Id,
-            reason);
+        if (savedDeadLetterItem.Id == deadLetterItem.Id)
+        {
+            logger.LogInformation(
+                "Moved bookmark queue item {BookmarkQueueItemId} to dead letter {BookmarkQueueDeadLetterItemId} because {Reason}.",
+                item.Id,
+                deadLetterItem.Id,
+                reason);
+        }
 
-        return deadLetterItem;
+        return savedDeadLetterItem;
     }
 
     public async Task<ReplayBookmarkQueueDeadLetterResult> ReplayAsync(string id, CancellationToken cancellationToken = default)

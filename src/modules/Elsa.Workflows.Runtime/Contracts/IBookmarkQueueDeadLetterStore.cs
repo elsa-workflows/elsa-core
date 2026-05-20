@@ -21,6 +21,15 @@ public interface IBookmarkQueueDeadLetterStore
     Task AddAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Adds the specified <see cref="BookmarkQueueDeadLetterItem"/> to the persistence store or returns the existing item for the same original queue item.
+    /// </summary>
+    async Task<BookmarkQueueDeadLetterItem> AddOrGetExistingAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default)
+    {
+        await AddAsync(record, cancellationToken);
+        return record;
+    }
+
+    /// <summary>
     /// Atomically marks a replayable dead-letter item as replayed.
     /// </summary>
     Task<BookmarkQueueDeadLetterItem?> TryMarkReplayedAsync(string id, string queueItemId, DateTimeOffset replayedAt, CancellationToken cancellationToken = default);

@@ -17,15 +17,36 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
     /// <inheritdoc />
     public Task SaveAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default)
     {
-        store.Save(record, x => x.Id);
+        lock (_lock)
+        {
+            var existing = store.Find(x => x.OriginalQueueItemId == record.OriginalQueueItemId && x.Id != record.Id);
+            if (existing != null)
+                throw new InvalidOperationException($"A bookmark queue dead-letter item for original queue item '{record.OriginalQueueItemId}' already exists.");
+
+            store.Save(record, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task AddAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default)
+    public async Task AddAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default)
     {
-        store.Add(record, x => x.Id);
-        return Task.CompletedTask;
+        await AddOrGetExistingAsync(record, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<BookmarkQueueDeadLetterItem> AddOrGetExistingAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default)
+    {
+        lock (_lock)
+        {
+            var existing = store.Find(x => x.OriginalQueueItemId == record.OriginalQueueItemId);
+            if (existing != null)
+                return Task.FromResult(existing);
+
+            store.Add(record, x => x.Id);
+            return Task.FromResult(record);
+        }
     }
 
     /// <inheritdoc />
