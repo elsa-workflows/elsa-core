@@ -121,13 +121,18 @@ public static class WebApplicationExtensions
 
     private static void ValidateRateLimiterPolicy(IApplicationBuilder app, string policyName)
     {
-        if (!HasRateLimiterServices(app.ApplicationServices))
+        var hasServices = TryHasRateLimiterServices(app.ApplicationServices);
+
+        if (hasServices == false)
             throw new InvalidOperationException($"Rate limiting services are not registered. Call services.AddRateLimiter(...) before applying Elsa rate limiting middleware for policy '{policyName}'.");
 
         var options = app.ApplicationServices.GetService<IOptions<RateLimiterOptions>>()?.Value;
 
-        if (options == null)
+        if (options == null && hasServices != null)
             throw new InvalidOperationException($"Rate limiting services are not registered. Call services.AddRateLimiter(...) before applying Elsa rate limiting middleware for policy '{policyName}'.");
+
+        if (options == null)
+            return;
 
         var policyFound = TryHasRateLimiterPolicy(options, policyName);
 
@@ -135,11 +140,11 @@ public static class WebApplicationExtensions
             throw new InvalidOperationException($"Rate limiting policy '{policyName}' is not registered. Register the policy with services.AddRateLimiter(...) before applying Elsa rate limiting middleware.");
     }
 
-    private static bool HasRateLimiterServices(IServiceProvider serviceProvider)
+    private static bool? TryHasRateLimiterServices(IServiceProvider serviceProvider)
     {
         // IOptions<RateLimiterOptions> can exist without AddRateLimiter(); this internal service is registered by AddRateLimiter().
         var metricsType = typeof(RateLimiterOptions).Assembly.GetType(RateLimitingMetricsTypeName);
-        return metricsType != null && serviceProvider.GetService(metricsType) != null;
+        return metricsType == null ? null : serviceProvider.GetService(metricsType) != null;
     }
 
     private static bool? TryHasRateLimiterPolicy(RateLimiterOptions options, string policyName)
