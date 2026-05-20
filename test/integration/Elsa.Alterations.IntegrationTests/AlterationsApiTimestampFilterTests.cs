@@ -78,6 +78,26 @@ public class AlterationsApiTimestampFilterTests : IAsyncLifetime
         Assert.Contains("Invalid timestamp filter column", body);
     }
 
+    [Fact]
+    public async Task Submit_WithNullFilter_DoesNotReturnServerError()
+    {
+        var response = await _httpClient.PostAsJsonAsync("/alterations/submit", new { filter = (object?)null });
+
+        Assert.NotEqual(HttpStatusCode.InternalServerError, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/alterations/dry-run")]
+    [InlineData("/alterations/submit")]
+    public async Task Post_WithNullTimestampFilter_ReturnsBadRequest(string path)
+    {
+        var response = await _httpClient.PostAsJsonAsync(path, CreateRequestWithNullTimestampFilter(path));
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("Timestamp filter must be specified.", body);
+    }
+
     private static object CreateRequest(string path)
     {
         var filter = new
@@ -91,6 +111,18 @@ public class AlterationsApiTimestampFilterTests : IAsyncLifetime
                     timestamp = new DateTimeOffset(2026, 5, 20, 10, 0, 0, TimeSpan.Zero)
                 }
             }
+        };
+
+        return path == "/alterations/submit"
+            ? new { filter }
+            : filter;
+    }
+
+    private static object CreateRequestWithNullTimestampFilter(string path)
+    {
+        var filter = new
+        {
+            timestampFilters = new object?[] { null }
         };
 
         return path == "/alterations/submit"

@@ -217,6 +217,12 @@ public class WorkflowInstanceFilter
 
         foreach (var timestampFilter in timestampFilters)
         {
+            if (timestampFilter == null)
+            {
+                yield return "Timestamp filter must be specified.";
+                continue;
+            }
+
             if (!TryNormalizeTimestampFilterColumn(timestampFilter.Column, out _, out var error))
                 yield return error;
         }

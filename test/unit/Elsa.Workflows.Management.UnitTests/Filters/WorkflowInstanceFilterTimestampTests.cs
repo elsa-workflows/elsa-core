@@ -87,6 +87,15 @@ public class WorkflowInstanceFilterTimestampTests
         Assert.Equal("Timestamp filter column must be specified.", error);
     }
 
+    [Fact]
+    public void ValidateTimestampFilters_WithNullFilter_ReturnsClearValidationError()
+    {
+        var errors = WorkflowInstanceFilter.ValidateTimestampFilters([null!]).ToList();
+
+        var error = Assert.Single(errors);
+        Assert.Equal("Timestamp filter must be specified.", error);
+    }
+
     private DateTimeOffset GetMatchingTimestamp(string column) => column switch
     {
         nameof(WorkflowInstance.CreatedAt) => _matchingCreatedAt,
