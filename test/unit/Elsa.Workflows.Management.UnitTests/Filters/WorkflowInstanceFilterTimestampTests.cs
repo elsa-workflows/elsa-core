@@ -67,7 +67,9 @@ public class WorkflowInstanceFilterTimestampTests
         var exception = Assert.Throws<ArgumentException>(() => filter.Apply(_workflowInstances).ToList());
 
         Assert.Contains("Invalid timestamp filter column", exception.Message);
-        Assert.Contains("CreatedAt, UpdatedAt, FinishedAt", exception.Message);
+        Assert.DoesNotContain("CreatedAt == @0", exception.Message);
+        foreach (var column in WorkflowInstanceFilter.AllowedTimestampFilterColumns)
+            Assert.Contains(column, exception.Message);
         Assert.Equal($"{nameof(WorkflowInstanceFilter.TimestampFilters)}.Column", exception.ParamName);
     }
 
@@ -99,7 +101,7 @@ public class WorkflowInstanceFilterTimestampTests
         ]).ToList();
 
         var error = Assert.Single(errors);
-        Assert.Equal("Timestamp filter column must be specified.", error);
+        Assert.Equal("Timestamp filter at index 0: Timestamp filter column must be specified.", error);
     }
 
     [Fact]
@@ -108,7 +110,7 @@ public class WorkflowInstanceFilterTimestampTests
         var errors = WorkflowInstanceFilter.ValidateTimestampFilters([null!]).ToList();
 
         var error = Assert.Single(errors);
-        Assert.Equal("Timestamp filter must be specified.", error);
+        Assert.Equal("Timestamp filter at index 0 must be specified.", error);
     }
 
     private DateTimeOffset GetMatchingTimestamp(string column) => column switch

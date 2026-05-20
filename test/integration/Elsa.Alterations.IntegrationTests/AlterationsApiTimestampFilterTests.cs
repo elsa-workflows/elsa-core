@@ -97,7 +97,7 @@ public class AlterationsApiTimestampFilterTests : IAsyncLifetime
         var body = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Contains("Timestamp filter must be specified.", body);
+        Assert.Contains("Timestamp filter at index 0 must be specified.", body);
     }
 
     [Theory]
@@ -109,8 +109,8 @@ public class AlterationsApiTimestampFilterTests : IAsyncLifetime
         var body = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Contains("Timestamp filter column must be specified.", body);
-        Assert.Contains("Timestamp filter must be specified.", body);
+        Assert.Contains("Timestamp filter at index 0: Timestamp filter column must be specified.", body);
+        Assert.Contains("Timestamp filter at index 1 must be specified.", body);
     }
 
     private static object CreateRequest(string path)

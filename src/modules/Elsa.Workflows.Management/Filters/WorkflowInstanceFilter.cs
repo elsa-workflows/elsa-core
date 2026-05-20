@@ -218,16 +218,16 @@ public class WorkflowInstanceFilter
         if (timestampFilters == null)
             yield break;
 
-        foreach (var timestampFilter in timestampFilters)
+        foreach (var (timestampFilter, index) in timestampFilters.Select((value, index) => (value, index)))
         {
             if (timestampFilter == null)
             {
-                yield return "Timestamp filter must be specified.";
+                yield return $"Timestamp filter at index {index} must be specified.";
                 continue;
             }
 
             if (!TryNormalizeTimestampFilterColumn(timestampFilter.Column, out _, out var error))
-                yield return error;
+                yield return $"Timestamp filter at index {index}: {error}";
         }
     }
 
@@ -251,7 +251,7 @@ public class WorkflowInstanceFilter
         if (normalizedColumn != null)
             return true;
 
-        error = $"Invalid timestamp filter column '{column}'. Allowed columns are: {string.Join(", ", TimestampFilterColumns)}.";
+        error = $"Invalid timestamp filter column. Allowed columns are: {string.Join(", ", TimestampFilterColumns)}.";
         return false;
     }
 
