@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Runtime.HealthChecks;
 /// </summary>
 public class ElsaDistributedLockHealthCheck(IDistributedLockProvider distributedLockProvider) : IHealthCheck
 {
-    private const string LockName = "elsa-health-check";
+    private static readonly string LockName = $"elsa-health-check-{Environment.MachineName}-{Guid.NewGuid():N}";
     private static readonly TimeSpan LockAcquisitionTimeout = TimeSpan.FromSeconds(1);
 
     /// <inheritdoc />

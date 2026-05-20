@@ -27,7 +27,7 @@ public class ElsaDistributedLockHealthCheckTests
 
         Assert.Equal(HealthStatus.Healthy, result.Status);
         Assert.Equal("distributed-locks", result.Data["category"]);
-        _distributedLockProvider.Received(1).CreateLock("elsa-health-check");
+        _distributedLockProvider.Received(1).CreateLock(Arg.Is<string>(x => x.StartsWith("elsa-health-check-", StringComparison.Ordinal)));
         await _distributedLock.Received(1).TryAcquireAsync(ExpectedLockAcquisitionTimeout, Arg.Any<CancellationToken>());
     }
 
