@@ -65,8 +65,11 @@ readinessProbe:
   httpGet:
     path: /health/ready
     port: http
+  timeoutSeconds: 2
   periodSeconds: 10
   failureThreshold: 3
 ```
 
 Do not point liveness at Elsa readiness checks. A paused, draining, or temporarily database-degraded runtime should be removed from service by readiness without forcing Kubernetes to restart the process.
+
+When `includeDistributedLocks: true` is enabled, set the readiness probe `timeoutSeconds` higher than the distributed-lock acquisition timeout. The built-in distributed-lock readiness check currently waits up to 1 second to acquire its probe lock, so the example uses `timeoutSeconds: 2` to avoid intermittent Kubernetes probe timeouts while the lock provider is still healthy.
