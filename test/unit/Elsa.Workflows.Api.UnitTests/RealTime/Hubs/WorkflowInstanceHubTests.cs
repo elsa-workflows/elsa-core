@@ -4,18 +4,21 @@ using Elsa.Workflows.Api.RealTime.Hubs;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using FastEndpoints;
 using Microsoft.AspNetCore.SignalR;
 using NSubstitute;
 
 namespace Elsa.Workflows.Api.UnitTests.RealTime.Hubs;
 
-public class WorkflowInstanceHubTests
+[Collection(nameof(WorkflowInstanceHubTestsCollection))]
+public class WorkflowInstanceHubTests : IDisposable
 {
     private const string ConnectionId = "connection-1";
     private const string WorkflowInstanceId = "workflow-instance-1";
     private const string TenantId = "tenant-a";
     private const string OtherTenantId = "tenant-b";
     private const string ReadWorkflowInstancesPermission = "read:workflow-instances";
+    private const string CustomPermissionsClaimType = "elsa-permissions";
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly ITenantAccessor _tenantAccessor;
     private readonly IGroupManager _groups;
@@ -25,6 +28,7 @@ public class WorkflowInstanceHubTests
 
     public WorkflowInstanceHubTests()
     {
+        UsePermissionsClaimType("permissions");
         _workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();
         _tenantAccessor = Substitute.For<ITenantAccessor>();
         _groups = Substitute.For<IGroupManager>();
@@ -43,6 +47,11 @@ public class WorkflowInstanceHubTests
         StubWorkflowInstance();
     }
 
+    public void Dispose()
+    {
+        UsePermissionsClaimType("permissions");
+    }
+
     [Fact]
     public async Task ObserveInstanceAsync_WithReadPermissionAndMatchingTenant_JoinsInstanceGroup()
     {
@@ -57,6 +66,17 @@ public class WorkflowInstanceHubTests
     public async Task ObserveInstanceAsync_WithWildcardReadPermission_JoinsInstanceGroup(string permission)
     {
         UseUser(permission);
+
+        await _hub.ObserveInstanceAsync(WorkflowInstanceId);
+
+        await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ObserveInstanceAsync_UsesConfiguredFastEndpointsPermissionClaimType()
+    {
+        UsePermissionsClaimType(CustomPermissionsClaimType);
+        UseUserClaim(CustomPermissionsClaimType, ReadWorkflowInstancesPermission);
 
         await _hub.ObserveInstanceAsync(WorkflowInstanceId);
 
@@ -124,6 +144,13 @@ public class WorkflowInstanceHubTests
         _context.User.Returns(new ClaimsPrincipal(identity));
     }
 
+    private void UseUserClaim(string claimType, params string[] permissions)
+    {
+        var claims = permissions.Select(x => new Claim(claimType, x));
+        var identity = new ClaimsIdentity(claims, "Test");
+        _context.User.Returns(new ClaimsPrincipal(identity));
+    }
+
     private void UseWorkflowInstanceTenant(string? tenantId)
     {
         UseWorkflowInstance(CreateWorkflowInstance(tenantId));
@@ -152,4 +179,13 @@ public class WorkflowInstanceHubTests
             DefinitionVersionId = "definition-version-1"
         };
     }
+
+    private static void UsePermissionsClaimType(string claimType)
+    {
+        var property = typeof(SecurityOptions).GetProperty(nameof(SecurityOptions.PermissionsClaimType))!;
+        property.SetValue(new Config().Security, claimType);
+    }
 }
+
+[CollectionDefinition(nameof(WorkflowInstanceHubTestsCollection), DisableParallelization = true)]
+public class WorkflowInstanceHubTestsCollection;

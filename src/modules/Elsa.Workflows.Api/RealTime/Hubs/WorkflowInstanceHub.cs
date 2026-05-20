@@ -5,6 +5,7 @@ using Elsa.Workflows.Api.RealTime.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using FastEndpoints.Security;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -21,7 +22,7 @@ public class WorkflowInstanceHub : Hub<IWorkflowInstanceClient>
 {
     private const string ReadWorkflowInstancesPermission = "read:workflow-instances";
     private const string ReadAllPermission = "read:*";
-    private const string PermissionsClaimType = "permissions";
+    private static readonly string[] ReadPermissions = [PermissionNames.All, ReadAllPermission, ReadWorkflowInstancesPermission];
     private readonly IWorkflowInstanceStore? _workflowInstanceStore;
     private readonly ITenantAccessor? _tenantAccessor;
 
@@ -66,7 +67,7 @@ public class WorkflowInstanceHub : Hub<IWorkflowInstanceClient>
         if (user?.Identity?.IsAuthenticated != true)
             return false;
 
-        return user.FindAll(PermissionsClaimType).Any(x => x.Value is PermissionNames.All or ReadAllPermission or ReadWorkflowInstancesPermission);
+        return ReadPermissions.Any(user.HasPermission);
     }
 
     private bool TryGetRequiredServices([NotNullWhen(true)] out IWorkflowInstanceStore? workflowInstanceStore, out ITenantAccessor? tenantAccessor)
