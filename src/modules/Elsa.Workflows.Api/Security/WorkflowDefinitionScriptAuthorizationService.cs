@@ -37,11 +37,12 @@ internal class WorkflowDefinitionScriptAuthorizationService(
     {
         var scriptUsages = await GetUsedScriptPoliciesAsync(root, cancellationToken);
 
-        foreach (var result in scriptUsages.Select(policy => AuthorizeScriptUsage(policy, user)))
-        {
-            if (!result.Succeeded)
-                return result;
-        }
+        var failure = scriptUsages
+            .Select(policy => AuthorizeScriptUsage(policy, user))
+            .FirstOrDefault(result => !result.Succeeded);
+
+        if (!failure.Succeeded)
+            return failure;
 
         return WorkflowDefinitionScriptAuthorizationResult.Allowed();
     }
