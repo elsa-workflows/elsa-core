@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Serialization;
+using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Api.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
@@ -36,6 +37,7 @@ public class WorkflowsApiFeature : IFastEndpointsShellFeature
     {
         services.AddSerializationOptionsConfigurator<SerializationConfigurator>();
         services.AddScoped<IWorkflowDefinitionLinker, StaticWorkflowDefinitionLinker>();
+        services.AddScoped<PythonWorkflowDefinitionAuthorizationService>();
         services.AddScoped<IAuthorizationHandler, NotReadOnlyRequirementHandler>();
         services.Configure<AuthorizationOptions>(options =>
         {

@@ -29,6 +29,9 @@ public class PythonGlobalInterpreterManager : IHostedService
     /// <inheritdoc />
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        if (!_options.Value.AllowHostCodeExecution)
+            return Task.CompletedTask;
+
         if (_initialized)
             return Task.CompletedTask;
 

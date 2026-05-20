@@ -221,79 +221,84 @@ public class HttpEndpoint : Trigger<HttpRequest>
         context.Set(QueryStringData, queryStringDictionary);
         context.Set(Headers, headersDictionary);
 
-        // Validate request size.
-        if (!ValidateRequestSize(context, httpContext))
+        // Validate declared request size before reading, then enforce the same limit while reading.
+        if (!ValidateDeclaredRequestSize(context, httpContext))
         {
             await HandleRequestTooLargeAsync(context, httpContext);
             return;
         }
 
-        // Handle Form Fields
-        if (request.HasFormContentType)
+        ApplyRequestSizeLimit(context, request);
+
+        try
         {
-            var formFields = request.Form.ToObjectDictionary();
-
-            ParsedContent.Set(context, formFields);
-
-            // Read files, if any.
-            var files = ReadFilesAsync(context, request);
-
-            if (files.Any())
+            // Handle Form Fields
+            if (request.HasFormContentType)
             {
-                if (!ValidateFileSizes(context, httpContext, files))
+                var form = await request.ReadFormAsync(context.CancellationToken);
+                var formFields = form.ToObjectDictionary();
+
+                ParsedContent.Set(context, formFields);
+
+                // Read files, if any.
+                var files = form.Files;
+
+                if (files.Any())
                 {
-                    await HandleFileSizeTooLargeAsync(context, httpContext);
+                    if (!ValidateFileSizes(context, httpContext, files))
+                    {
+                        await HandleFileSizeTooLargeAsync(context, httpContext);
+                        return;
+                    }
+
+                    if (!ValidateFileExtensionWhitelist(context, httpContext, files))
+                    {
+                        await HandleInvalidFileExtensionWhitelistAsync(context, httpContext);
+                        return;
+                    }
+
+                    if (!ValidateFileExtensionBlacklist(context, httpContext, files))
+                    {
+                        await HandleInvalidFileExtensionBlacklistAsync(context, httpContext);
+                        return;
+                    }
+
+                    if (!ValidateFileMimeTypes(context, httpContext, files))
+                    {
+                        await HandleInvalidFileMimeTypesAsync(context, httpContext);
+                        return;
+                    }
+
+                    Files.Set(context, files.ToArray());
+                    File.Set(context, files.FirstOrDefault());
+                }
+            }
+            else
+            {
+                // Parse Non-Form content.
+                try
+                {
+                    var content = await ParseContentAsync(context, request);
+                    ParsedContent.Set(context, content);
+                }
+                catch (JsonException e)
+                {
+                    await HandleInvalidJsonPayloadAsync(context, httpContext, e);
                     return;
                 }
-
-                if (!ValidateFileExtensionWhitelist(context, httpContext, files))
-                {
-                    await HandleInvalidFileExtensionWhitelistAsync(context, httpContext);
-                    return;
-                }
-
-                if (!ValidateFileExtensionBlacklist(context, httpContext, files))
-                {
-                    await HandleInvalidFileExtensionBlacklistAsync(context, httpContext);
-                    return;
-                }
-
-                if (!ValidateFileMimeTypes(context, httpContext, files))
-                {
-                    await HandleInvalidFileMimeTypesAsync(context, httpContext);
-                    return;
-                }
-
-                Files.Set(context, files.ToArray());
-                File.Set(context, files.FirstOrDefault());
             }
         }
-        else
+        catch (RequestBodyTooLargeException)
         {
-            // Parse Non-Form content.
-            try
-            {
-                var content = await ParseContentAsync(context, request);
-                ParsedContent.Set(context, content);
-            }
-            catch (JsonException e)
-            {
-                await HandleInvalidJsonPayloadAsync(context, httpContext, e);
-                return;
-            }
-
+            await HandleRequestTooLargeAsync(context, httpContext);
+            return;
         }
 
         // Complete.
         await context.CompleteActivityAsync();
     }
 
-    private IFormFileCollection ReadFilesAsync(ActivityExecutionContext context, HttpRequest request)
-    {
-        return request.HasFormContentType ? request.Form.Files : new FormFileCollection();
-    }
-
-    private bool ValidateRequestSize(ActivityExecutionContext context, HttpContext httpContext)
+    private bool ValidateDeclaredRequestSize(ActivityExecutionContext context, HttpContext httpContext)
     {
         var requestSizeLimit = RequestSizeLimit.GetOrDefault(context);
 
@@ -302,6 +307,16 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
         var requestSize = httpContext.Request.ContentLength ?? 0;
         return requestSize <= requestSizeLimit;
+    }
+
+    private void ApplyRequestSizeLimit(ActivityExecutionContext context, HttpRequest request)
+    {
+        var requestSizeLimit = RequestSizeLimit.GetOrDefault(context);
+
+        if (!requestSizeLimit.HasValue || request.Body is RequestSizeLimitStream)
+            return;
+
+        request.Body = new RequestSizeLimitStream(request.Body, requestSizeLimit.Value);
     }
 
     private async Task HandleRequestTooLargeAsync(ActivityExecutionContext context, HttpContext httpContext)
@@ -477,7 +492,13 @@ public class HttpEndpoint : Trigger<HttpRequest>
         return await context.ParseContentAsync(contentStream, contentType, targetType, headers!, cancellationToken);
     }
 
-    private static bool HasContent(HttpRequest httpRequest) => httpRequest.Headers.ContentLength > 0;
+    private static bool HasContent(HttpRequest httpRequest)
+    {
+        if (httpRequest.ContentLength > 0)
+            return true;
+
+        return httpRequest.ContentLength == null && !string.IsNullOrWhiteSpace(httpRequest.ContentType);
+    }
 
     private IEnumerable<object> GetBookmarkPayloads(ExpressionExecutionContext context)
     {
@@ -517,4 +538,81 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
         return routeData;
     }
+
+    private sealed class RequestSizeLimitStream(Stream inner, long requestSizeLimit) : Stream
+    {
+        private long _bytesRead;
+
+        public override bool CanRead => inner.CanRead;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => inner.Length;
+
+        public override long Position
+        {
+            get => inner.Position;
+            set => throw new NotSupportedException();
+        }
+
+        public override void Flush() => inner.Flush();
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            var bytesRead = inner.Read(buffer, offset, GetPermittedReadCount(count));
+            CountBytesRead(bytesRead);
+            return bytesRead;
+        }
+
+        public override int Read(Span<byte> buffer)
+        {
+            var bytesRead = inner.Read(buffer[..GetPermittedReadCount(buffer.Length)]);
+            CountBytesRead(bytesRead);
+            return bytesRead;
+        }
+
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            var bytesRead = await inner.ReadAsync(buffer[..GetPermittedReadCount(buffer.Length)], cancellationToken);
+            CountBytesRead(bytesRead);
+            return bytesRead;
+        }
+
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            var bytesRead = await inner.ReadAsync(buffer, offset, GetPermittedReadCount(count), cancellationToken);
+            CountBytesRead(bytesRead);
+            return bytesRead;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        private int GetPermittedReadCount(int requestedCount)
+        {
+            if (requestedCount == 0)
+                return 0;
+
+            var remainingBytes = requestSizeLimit - _bytesRead;
+            if (remainingBytes >= requestedCount)
+                return requestedCount;
+
+            if (remainingBytes < 0)
+                return 1;
+
+            return (int)remainingBytes + 1;
+        }
+
+        private void CountBytesRead(int bytesRead)
+        {
+            _bytesRead += bytesRead;
+
+            if (_bytesRead > requestSizeLimit)
+                throw new RequestBodyTooLargeException();
+        }
+    }
+
+    private sealed class RequestBodyTooLargeException : Exception;
 }
