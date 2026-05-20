@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
+using Elsa.Workflows.Serialization.Helpers;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Serialization.Converters;
@@ -29,30 +30,19 @@ public class TypeJsonConverter : JsonConverter<Type>
     /// <inheritdoc />
     public override Type? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var typeAlias = reader.GetString()!;
-
-        // Handle array types.
-        if (typeAlias.EndsWith("[]"))
-        {
-            var elementTypeAlias = typeAlias[..^2];
-            var elementType = _wellKnownTypeRegistry.TryGetType(elementTypeAlias, out var t) ? t : Type.GetType(elementTypeAlias)!;
-            return elementType.MakeArrayType();
-        }
-        
-        // Handle collection types.
-        if (typeAlias.StartsWith("List<") && typeAlias.EndsWith(">"))
-        {
-            var elementTypeAlias = typeAlias[5..^1];
-            var elementType = _wellKnownTypeRegistry.TryGetType(elementTypeAlias, out var t) ? t : Type.GetType(elementTypeAlias)!;
-            return typeof(List<>).MakeGenericType(elementType);
-        }
-
-        return _wellKnownTypeRegistry.TryGetType(typeAlias, out var type) ? type : Type.GetType(typeAlias);
+        var typeAlias = reader.GetString();
+        return WorkflowJsonTypeResolver.ResolveType(_wellKnownTypeRegistry, typeAlias);
     }
 
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, Type value, JsonSerializerOptions options)
     {
+        if (_wellKnownTypeRegistry.TryGetAlias(value, out var alias))
+        {
+            writer.WriteStringValue(alias);
+            return;
+        }
+
         // Handle array types.
         if (value.IsArray)
         {
@@ -75,7 +65,6 @@ public class TypeJsonConverter : JsonConverter<Type>
             }
         }
 
-        var typeAlias = _wellKnownTypeRegistry.TryGetAlias(value, out var alias) ? alias : value.GetSimpleAssemblyQualifiedName();
-        writer.WriteStringValue(typeAlias);
+        writer.WriteStringValue(value.GetSimpleAssemblyQualifiedName());
     }
 }

@@ -4,7 +4,10 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Services;
 using Elsa.Extensions;
+using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
 using Newtonsoft.Json.Linq;
 
@@ -21,6 +24,23 @@ public class PolymorphicObjectConverter : JsonConverter<object>
     private const string IdPropertyName = "$id";
     private const string RefPropertyName = "$ref";
     private const string ValuesPropertyName = "$values";
+    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PolymorphicObjectConverter"/> class.
+    /// </summary>
+    public PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegistry)
+    {
+        _wellKnownTypeRegistry = wellKnownTypeRegistry;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PolymorphicObjectConverter"/> class.
+    /// </summary>
+    public PolymorphicObjectConverter()
+    {
+        _wellKnownTypeRegistry = WellKnownTypeRegistry.CreateDefault();
+    }
 
     /// <inheritdoc />
     public override object Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -199,7 +219,8 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         {
             writer.WriteStartObject();
             writer.WriteString(IslandPropertyName, value.ToString());
-            writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
+            writer.WritePropertyName(TypePropertyName);
+            WriteType(writer, type, newOptions);
             writer.WriteEndObject();
             return;
         }
@@ -271,15 +292,8 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         {
             if (shouldWriteTypeField)
             {
-                if (newOptions.Converters.OfType<TypeJsonConverter>().FirstOrDefault() is { } typeJsonConverter)
-                {
-                    writer.WritePropertyName(TypePropertyName);
-                    typeJsonConverter.Write(writer, type, newOptions);
-                }
-                else
-                {
-                    writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
-                }
+                writer.WritePropertyName(TypePropertyName);
+                WriteType(writer, type, newOptions);
             }
         }
 
@@ -338,8 +352,13 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         }
 
         // If we found the _type property, attempt to resolve the type.
-        var targetType = typeName != null ? Type.GetType(typeName) : default;
-        return targetType;
+        return typeName != null ? WorkflowJsonTypeResolver.ResolveType(_wellKnownTypeRegistry, typeName) : default;
+    }
+
+    private void WriteType(Utf8JsonWriter writer, Type type, JsonSerializerOptions options)
+    {
+        var typeJsonConverter = options.Converters.OfType<TypeJsonConverter>().FirstOrDefault() ?? new TypeJsonConverter(_wellKnownTypeRegistry);
+        typeJsonConverter.Write(writer, type, options);
     }
 
     private static object ReadPrimitive(ref Utf8JsonReader reader, JsonSerializerOptions options)
