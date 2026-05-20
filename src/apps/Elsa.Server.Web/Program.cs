@@ -152,7 +152,9 @@ services.Configure<RuntimeOptions>(options => { options.InactivityThreshold = Ti
 services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(3600));
 services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.Configure<IncidentOptions>(options => options.DefaultIncidentStrategy = typeof(ContinueWithIncidentsStrategy));
-services.AddHealthChecks();
+services
+    .AddHealthChecks()
+    .AddElsaReadinessChecks(includeDistributedLocks: true);
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
 
@@ -168,7 +170,18 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 
 // Health checks.
-app.MapHealthChecks("/");
+app.MapHealthChecks("/health/live", new()
+{
+    Predicate = _ => false
+});
+app.MapHealthChecks("/health/ready", new()
+{
+    Predicate = check => check.Tags.Contains("readiness")
+});
+app.MapHealthChecks("/", new()
+{
+    Predicate = _ => false
+});
 
 // Routing used for SignalR.
 app.UseRouting();

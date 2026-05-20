@@ -1,0 +1,53 @@
+using Elsa.Workflows.Runtime.HealthChecks;
+using Medallion.Threading;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using NSubstitute;
+
+namespace Elsa.Workflows.Runtime.UnitTests.HealthChecks;
+
+public class ElsaDistributedLockHealthCheckTests
+{
+    private readonly IDistributedLockProvider _distributedLockProvider = Substitute.For<IDistributedLockProvider>();
+    private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
+    private readonly ElsaDistributedLockHealthCheck _sut;
+
+    public ElsaDistributedLockHealthCheckTests()
+    {
+        _distributedLockProvider.CreateLock(Arg.Any<string>()).Returns(_distributedLock);
+        _distributedLock.TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<IDistributedSynchronizationHandle?>(Substitute.For<IDistributedSynchronizationHandle>()));
+        _sut = new ElsaDistributedLockHealthCheck(_distributedLockProvider);
+    }
+
+    [Fact]
+    public async Task ReturnsHealthyWhenProbeLockCanBeAcquired()
+    {
+        var result = await _sut.CheckHealthAsync(new HealthCheckContext());
+
+        Assert.Equal(HealthStatus.Healthy, result.Status);
+        Assert.Equal("distributed-locks", result.Data["category"]);
+    }
+
+    [Fact]
+    public async Task ReturnsDegradedWhenProbeLockCannotBeAcquired()
+    {
+        _distributedLock.TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<IDistributedSynchronizationHandle?>((IDistributedSynchronizationHandle?)null));
+
+        var result = await _sut.CheckHealthAsync(new HealthCheckContext());
+
+        Assert.Equal(HealthStatus.Degraded, result.Status);
+        Assert.Equal("distributed-locks", result.Data["category"]);
+    }
+
+    [Fact]
+    public async Task ReturnsUnhealthyWhenProviderThrows()
+    {
+        _distributedLockProvider.CreateLock(Arg.Any<string>()).Returns<IDistributedLock>(_ => throw new InvalidOperationException("lock backend unavailable"));
+
+        var result = await _sut.CheckHealthAsync(new HealthCheckContext());
+
+        Assert.Equal(HealthStatus.Unhealthy, result.Status);
+        Assert.Equal("distributed-locks", result.Data["category"]);
+    }
+}
