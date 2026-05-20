@@ -4,6 +4,7 @@ using Elsa.Common;
 using Elsa.Common.DistributedHosting;
 using Elsa.Common.Features;
 using Elsa.Common.RecurringTasks;
+using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -35,6 +36,7 @@ namespace Elsa.Workflows.Runtime.Features;
 public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 {
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
+    private ISet<Type> WorkflowTypes { get; } = new HashSet<Type>();
 
     /// <summary>
     /// A list of workflow builders configured during application startup.
@@ -174,7 +176,17 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     /// </summary>
     public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
     {
-        Workflows.Add<T>();
+        AddWorkflow(typeof(T));
+        return this;
+    }
+
+    /// <summary>
+    /// Register the specified workflow type.
+    /// </summary>
+    public WorkflowRuntimeFeature AddWorkflow(Type workflowType)
+    {
+        Workflows.Add(workflowType);
+        WorkflowTypes.Add(workflowType);
         return this;
     }
 
@@ -189,7 +201,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .ToList();
 
         foreach (var workflowType in workflowTypes)
-            Workflows.Add(workflowType);
+            AddWorkflow(workflowType);
 
         return this;
     }
@@ -245,6 +257,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         Services.Configure(WorkflowInboxCleanupOptions);
         Services.Configure(WorkflowDispatcherOptions);
         Services.Configure(BookmarkQueuePurgeOptions);
+        Services.Configure<ExpressionOptions>(RegisterWorkflowTypeAliases);
         Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         Services.Configure<WorkflowDispatcherOptions>(options =>
         {
@@ -405,5 +418,11 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddScoped<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
+    }
+
+    private void RegisterWorkflowTypeAliases(ExpressionOptions options)
+    {
+        foreach (var workflowType in WorkflowTypes)
+            options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName());
     }
 }

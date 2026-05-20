@@ -1,6 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using CShells.Features;
 using Elsa.Common;
 using Elsa.Common.RecurringTasks;
+using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.CommitStates;
@@ -33,6 +36,7 @@ namespace Elsa.Workflows.Runtime.ShellFeatures;
 public class WorkflowRuntimeFeature : IShellFeature
 {
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
+    private ISet<Type> WorkflowTypes { get; } = new HashSet<Type>();
 
     /// <summary>
     /// A list of workflow builders configured during application startup.
@@ -134,10 +138,44 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// </summary>
     public GracefulShutdownOptions? GracefulShutdown { get; set; }
 
+    /// <summary>
+    /// Register the specified workflow type.
+    /// </summary>
+    public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
+    {
+        return AddWorkflow(typeof(T));
+    }
+
+    /// <summary>
+    /// Register the specified workflow type.
+    /// </summary>
+    public WorkflowRuntimeFeature AddWorkflow(Type workflowType)
+    {
+        Workflows.Add(workflowType);
+        WorkflowTypes.Add(workflowType);
+        return this;
+    }
+
+    /// <summary>
+    /// Register all workflows in the specified assembly.
+    /// </summary>
+    [RequiresUnreferencedCode("The assembly is required to be referenced.")]
+    public WorkflowRuntimeFeature AddWorkflowsFrom(Assembly assembly)
+    {
+        var workflowTypes = assembly.GetExportedTypes()
+            .Where(x => typeof(IWorkflow).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, IsGenericType: false })
+            .ToList();
+
+        foreach (var workflowType in workflowTypes)
+            AddWorkflow(workflowType);
+
+        return this;
+    }
 
     public void ConfigureServices(IServiceCollection services)
     {
         // Options.
+        services.Configure<ExpressionOptions>(RegisterWorkflowTypeAliases);
         services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         services.Configure<WorkflowDispatcherOptions>(options =>
         {
@@ -302,5 +340,11 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddScoped<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
+    }
+
+    private void RegisterWorkflowTypeAliases(ExpressionOptions options)
+    {
+        foreach (var workflowType in WorkflowTypes)
+            options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName());
     }
 }
