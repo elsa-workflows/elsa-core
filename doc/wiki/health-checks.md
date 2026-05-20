@@ -49,6 +49,8 @@ app.MapHealthChecks("/health/ready", new()
 });
 ```
 
+The reference server also keeps `/` process-liveness compatible for existing probes by mapping it with `Predicate = _ => false`, the same as `/health/live`. Use `/health/ready` for checks that should return `503` while the runtime is paused, draining, or dependency-degraded.
+
 ## Current Elsa Readiness Checks
 
 - `elsa-runtime`: creates a workflow runtime client and reports `Degraded` when the runtime is paused or draining, because it is process-up but not accepting new work.
