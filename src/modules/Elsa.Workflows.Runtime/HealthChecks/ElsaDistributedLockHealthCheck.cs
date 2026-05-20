@@ -46,6 +46,10 @@ public class ElsaDistributedLockHealthCheck(
                 ["category"] = "distributed-locks"
             });
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception e) when (!e.IsFatal())
         {
             logger.LogWarning(e, "Elsa distributed lock provider is not reachable.");

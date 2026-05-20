@@ -30,6 +30,10 @@ public class ElsaRuntimeHealthCheck(IWorkflowRuntime workflowRuntime, IQuiescenc
                 ? HealthCheckResult.Healthy("Elsa workflow runtime is ready.", data)
                 : HealthCheckResult.Degraded("Elsa workflow runtime is paused or draining.", data: data);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception e) when (!e.IsFatal())
         {
             logger.LogWarning(e, "Elsa workflow runtime could not create a workflow client.");

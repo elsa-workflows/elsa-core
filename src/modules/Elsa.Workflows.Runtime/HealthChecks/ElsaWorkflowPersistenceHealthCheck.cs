@@ -54,6 +54,10 @@ public class ElsaWorkflowPersistenceHealthCheck(IServiceProvider serviceProvider
                 await probe(store, cancellationToken);
                 return new ProbeResult(storeName, false, null);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (Exception e) when (!e.IsFatal())
             {
                 return new ProbeResult(storeName, false, e);
