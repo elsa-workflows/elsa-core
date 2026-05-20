@@ -19,7 +19,9 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Composition.BulkDis
 public class BulkDispatchWorkflowsTests : AppComponentTest
 {
     private const int ChildWorkflowTimeoutSeconds = 30;
-    private const int ChildWorkflowPollingIntervalMilliseconds = 100;
+    private const int InitialChildWorkflowPollingIntervalMilliseconds = 250;
+    private const int MaxChildWorkflowPollingIntervalMilliseconds = 1000;
+    // The runtime persists this marker under the activity property name; resume handlers read the same key from WorkflowState.Properties.
     private const string WaitForCompletionPropertyName = nameof(Elsa.Workflows.Runtime.Activities.BulkDispatchWorkflows.WaitForCompletion);
     private readonly AsyncWorkflowRunner _workflowRunner;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
@@ -189,6 +191,8 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
         CancellationToken cancellationToken = default)
     {
         var timeout = TimeSpan.FromSeconds(ChildWorkflowTimeoutSeconds);
+        var pollingInterval = TimeSpan.FromMilliseconds(InitialChildWorkflowPollingIntervalMilliseconds);
+        var maxPollingInterval = TimeSpan.FromMilliseconds(MaxChildWorkflowPollingIntervalMilliseconds);
         var stopwatch = Stopwatch.StartNew();
         var filter = new WorkflowInstanceFilter
         {
@@ -205,7 +209,8 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
             if (instances.Count >= expectedChildCount)
                 return instances;
 
-            await Task.Delay(TimeSpan.FromMilliseconds(ChildWorkflowPollingIntervalMilliseconds), cancellationToken);
+            await Task.Delay(pollingInterval, cancellationToken);
+            pollingInterval = TimeSpan.FromMilliseconds(Math.Min(pollingInterval.TotalMilliseconds * 2, maxPollingInterval.TotalMilliseconds));
         }
 
         throw new TimeoutException($"Expected {expectedChildCount} child workflow instances of definition '{childWorkflowDefinitionId}' for parent '{parentWorkflowInstanceId}', but found {actualChildCount}.");
