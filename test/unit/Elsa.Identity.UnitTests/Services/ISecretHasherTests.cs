@@ -9,7 +9,7 @@ public class ISecretHasherTests
     private readonly ISecretHasher _hasher = new BackwardCompatibleSecretHasher();
 
     [Fact]
-    public void VerifySecret_WithStringSaltAndNeedsRehash_DelegatesToExistingImplementation()
+    public void VerifySecret_WithStringSalt_SetsNeedsRehashFalseWhenUsingDefaultInterfaceOverload()
     {
         var isVerified = _hasher.VerifySecret("secret", "secret", "salt", out var needsRehash);
 
@@ -18,7 +18,7 @@ public class ISecretHasherTests
     }
 
     [Fact]
-    public void VerifySecret_WithHashedSecretAndNeedsRehash_DelegatesToExistingImplementation()
+    public void VerifySecret_WithHashedSecret_SetsNeedsRehashFalseWhenUsingDefaultInterfaceOverload()
     {
         var hashedSecret = HashedSecret.FromBytes(Encoding.UTF8.GetBytes("secret"), Encoding.UTF8.GetBytes("salt"));
 

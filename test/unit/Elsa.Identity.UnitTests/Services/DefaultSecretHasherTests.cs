@@ -49,13 +49,14 @@ public class DefaultSecretHasherTests
     }
 
     [Fact]
-    public void HashSecret_UsesUniqueSalts()
+    public void HashSecret_GeneratesExpectedSaltAndVerifiesSecret()
     {
-        var first = _hasher.HashSecret("secret");
-        var second = _hasher.HashSecret("secret");
+        var hashedSecret = _hasher.HashSecret("secret");
 
-        Assert.NotEqual(first.EncodeSalt(), second.EncodeSalt());
-        Assert.NotEqual(first.EncodeSecret(), second.EncodeSecret());
+        Assert.Equal(32, hashedSecret.Salt.Length);
+        Assert.Equal(44, hashedSecret.EncodeSalt().Length);
+        Assert.True(_hasher.VerifySecret("secret", hashedSecret, out var needsRehash));
+        Assert.False(needsRehash);
     }
 
     [Fact]

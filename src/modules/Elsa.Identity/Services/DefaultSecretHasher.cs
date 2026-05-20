@@ -1,3 +1,5 @@
+using System.Buffers;
+using System.Buffers.Text;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -11,9 +13,11 @@ public class DefaultSecretHasher : ISecretHasher
 {
     private const string Algorithm = "pbkdf2-sha256";
     private const char Separator = '$';
+    private const byte SeparatorByte = (byte)Separator;
     private const int DefaultIterationCount = 600_000;
     private const int MaxIterationCount = DefaultIterationCount * 4;
     private const int KeySize = 32;
+    private static readonly byte[] AlgorithmBytes = Encoding.UTF8.GetBytes(Algorithm);
 
     /// <inheritdoc />
     public HashedSecret HashSecret(string secret)
@@ -53,26 +57,26 @@ public class DefaultSecretHasher : ISecretHasher
     /// <inheritdoc />
     public bool VerifySecret(string clearTextSecret, HashedSecret hashedSecret, out bool needsRehash)
     {
-        var password = hashedSecret.Secret;
-        var salt = hashedSecret.Salt;
-        var passwordBytes = Encoding.UTF8.GetBytes(clearTextSecret);
+        var storedSecretBytes = hashedSecret.Secret;
+        var saltBytes = hashedSecret.Salt;
+        var clearTextBytes = Encoding.UTF8.GetBytes(clearTextSecret);
 
-        if (TryReadPbkdf2Hash(password, out var iterationCount, out var expectedHash))
+        if (TryReadPbkdf2Hash(storedSecretBytes, out var iterationCount, out var expectedHash))
         {
-            var providedHash = HashSecret(passwordBytes, salt, iterationCount);
+            var providedHash = HashSecret(clearTextBytes, saltBytes, iterationCount);
             var matches = CryptographicOperations.FixedTimeEquals(providedHash, expectedHash);
             needsRehash = matches && iterationCount < DefaultIterationCount;
             return matches;
         }
 
-        var legacyHash = HashLegacySha256(passwordBytes, salt);
-        if (password.Length != legacyHash.Length)
+        var legacyHash = HashLegacySha256(clearTextBytes, saltBytes);
+        if (storedSecretBytes.Length != legacyHash.Length)
         {
             needsRehash = false;
             return false;
         }
 
-        var isLegacyMatch = CryptographicOperations.FixedTimeEquals(legacyHash, password);
+        var isLegacyMatch = CryptographicOperations.FixedTimeEquals(legacyHash, storedSecretBytes);
         needsRehash = isLegacyMatch;
         return isLegacyMatch;
     }
@@ -101,34 +105,37 @@ public class DefaultSecretHasher : ISecretHasher
         return sha256.GetHashAndReset();
     }
 
-    private static bool TryReadPbkdf2Hash(byte[] secret, out int iterationCount, out byte[] hash)
+    private static bool TryReadPbkdf2Hash(byte[] storedSecretBytes, out int iterationCount, out byte[] hash)
     {
         iterationCount = 0;
         hash = [];
 
-        var hashString = Encoding.UTF8.GetString(secret);
-        var segments = hashString.Split(Separator, 3);
-        if (segments.Length != 3 || !string.Equals(segments[0], Algorithm, StringComparison.Ordinal))
+        var envelope = storedSecretBytes.AsSpan();
+        var algorithmSeparatorIndex = envelope.IndexOf(SeparatorByte);
+        if (algorithmSeparatorIndex <= 0)
             return false;
 
-        if (!int.TryParse(segments[1], NumberStyles.None, CultureInfo.InvariantCulture, out iterationCount) || iterationCount <= 0 || iterationCount > MaxIterationCount)
+        var algorithmBytes = envelope[..algorithmSeparatorIndex];
+        if (!algorithmBytes.SequenceEqual(AlgorithmBytes))
             return false;
 
-        try
-        {
-            hash = Convert.FromBase64String(segments[2]);
-            if (hash.Length == KeySize)
-                return true;
+        var iterationAndHashBytes = envelope[(algorithmSeparatorIndex + 1)..];
+        var iterationSeparatorIndex = iterationAndHashBytes.IndexOf(SeparatorByte);
+        if (iterationSeparatorIndex <= 0)
+            return false;
 
-            iterationCount = 0;
-            hash = [];
+        var iterationBytes = iterationAndHashBytes[..iterationSeparatorIndex];
+        if (!Utf8Parser.TryParse(iterationBytes, out iterationCount, out var bytesConsumed) || bytesConsumed != iterationBytes.Length || iterationCount <= 0 || iterationCount > MaxIterationCount)
             return false;
-        }
-        catch (FormatException)
-        {
-            iterationCount = 0;
-            hash = [];
-            return false;
-        }
+
+        var encodedHashBytes = iterationAndHashBytes[(iterationSeparatorIndex + 1)..];
+        hash = new byte[KeySize];
+        var status = Base64.DecodeFromUtf8(encodedHashBytes, hash, out var consumed, out var written);
+        if (status == OperationStatus.Done && consumed == encodedHashBytes.Length && written == KeySize)
+            return true;
+
+        iterationCount = 0;
+        hash = [];
+        return false;
     }
 }
