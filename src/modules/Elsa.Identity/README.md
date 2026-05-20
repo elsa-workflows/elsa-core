@@ -80,4 +80,4 @@ identity.UseDefaultAdmin("admin", "password", "admin", new List<string> { "*" })
 
 ## Secret Hashing
 
-New identity passwords, client secrets, and API keys are hashed with PBKDF2-SHA256 using a per-record salt and version metadata. Existing legacy SHA-256 hashes remain valid and are upgraded opportunistically after a successful user login or API-key validation.
+New identity passwords, client secrets, and API keys are hashed with PBKDF2-SHA256 using 600,000 iterations, a per-record salt, and version metadata. Existing legacy SHA-256 hashes remain valid and are upgraded opportunistically after a successful user login or API-key validation.

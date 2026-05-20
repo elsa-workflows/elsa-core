@@ -10,7 +10,7 @@ public class DefaultSecretHasher : ISecretHasher
 {
     private const string Algorithm = "pbkdf2-sha256";
     private const char Separator = '$';
-    private const int DefaultIterationCount = 210_000;
+    private const int DefaultIterationCount = 600_000;
     private const int MaxIterationCount = DefaultIterationCount * 4;
     private const int KeySize = 32;
 

@@ -17,7 +17,7 @@ public class DefaultSecretHasherTests
     {
         var hashedSecret = _hasher.HashSecret("secret");
 
-        Assert.StartsWith("pbkdf2-sha256$", Encoding.UTF8.GetString(hashedSecret.Secret));
+        Assert.StartsWith("pbkdf2-sha256$600000$", Encoding.UTF8.GetString(hashedSecret.Secret));
         Assert.True(_hasher.VerifySecret("secret", hashedSecret, out var needsRehash));
         Assert.False(needsRehash);
     }
