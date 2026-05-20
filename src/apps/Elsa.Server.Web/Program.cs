@@ -164,12 +164,12 @@ if (registerIngressRateLimitingPolicies)
 {
     services.PostConfigure<ApiEndpointOptions>(options =>
     {
-        if (string.IsNullOrWhiteSpace(options.RateLimitingPolicyName))
+        if (options.RateLimitingPolicyName == null)
             options.RateLimitingPolicyName = elsaApiRateLimitingPolicy;
     });
     services.PostConfigure<HttpActivityOptions>(options =>
     {
-        if (string.IsNullOrWhiteSpace(options.RateLimitingPolicyName))
+        if (options.RateLimitingPolicyName == null)
             options.RateLimitingPolicyName = httpWorkflowRateLimitingPolicy;
     });
 }

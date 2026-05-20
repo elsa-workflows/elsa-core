@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -21,10 +20,6 @@ namespace Elsa.Extensions;
 [PublicAPI]
 public static class WebApplicationExtensions
 {
-    private const string PolicyMapPropertyName = "PolicyMap";
-    private const string RateLimitingMetricsTypeName = "Microsoft.AspNetCore.RateLimiting.RateLimitingMetrics";
-    private const string UnactivatedPolicyMapPropertyName = "UnactivatedPolicyMap";
-
     /// <summary>
     /// Register the FastEndpoints middleware configured for use with with Elsa API endpoints.
     /// </summary>
@@ -82,14 +77,14 @@ public static class WebApplicationExtensions
     /// <param name="displayName">The endpoint display name used for rate limiting metadata.</param>
     /// <remarks>
     /// This method only attaches rate limiting metadata. In endpoint-routed pipelines, call this after routing has selected an endpoint
-    /// and before the host's single <c>app.UseRateLimiter()</c> middleware.
+    /// and before the host's single <c>app.UseRateLimiter()</c> middleware. ASP.NET Core validates the configured policy when the
+    /// rate limiter middleware handles matching requests.
     /// </remarks>
     public static IApplicationBuilder UseRateLimitingPolicyForPath(this IApplicationBuilder app, PathString pathPrefix, string policyName, string displayName)
     {
         if (!pathPrefix.HasValue || string.IsNullOrWhiteSpace(policyName))
             return app;
 
-        ValidateRateLimiterPolicy(app, policyName);
         var rateLimitingMetadata = new EnableRateLimitingAttribute(policyName);
         var fallbackEndpoint = CreateRateLimitingEndpoint(null, rateLimitingMetadata, displayName);
         var endpointCache = new ConditionalWeakTable<Endpoint, Endpoint>();
@@ -119,53 +114,11 @@ public static class WebApplicationExtensions
             });
     }
 
-    private static void ValidateRateLimiterPolicy(IApplicationBuilder app, string policyName)
-    {
-        var hasServices = TryHasRateLimiterServices(app.ApplicationServices);
-
-        if (hasServices == false)
-            throw new InvalidOperationException($"Rate limiting services are not registered. Call services.AddRateLimiter(...) before applying Elsa rate limiting middleware for policy '{policyName}'.");
-
-        var options = app.ApplicationServices.GetService<IOptions<RateLimiterOptions>>()?.Value;
-
-        if (options == null && hasServices != null)
-            throw new InvalidOperationException($"Rate limiting services are not registered. Call services.AddRateLimiter(...) before applying Elsa rate limiting middleware for policy '{policyName}'.");
-
-        if (options == null)
-            return;
-
-        var policyFound = TryHasRateLimiterPolicy(options, policyName);
-
-        if (policyFound == false)
-            throw new InvalidOperationException($"Rate limiting policy '{policyName}' is not registered. Register the policy with services.AddRateLimiter(...) before applying Elsa rate limiting middleware.");
-    }
-
     private static PathString NormalizeRoutePrefixPath(string routePrefix)
     {
         var value = routePrefix.Trim().Trim('/');
 
         return string.IsNullOrEmpty(value) ? PathString.Empty : new PathString("/" + value);
-    }
-
-    private static bool? TryHasRateLimiterServices(IServiceProvider serviceProvider)
-    {
-        // IOptions<RateLimiterOptions> can exist without AddRateLimiter(); this internal service is registered by AddRateLimiter().
-        var metricsType = typeof(RateLimiterOptions).Assembly.GetType(RateLimitingMetricsTypeName);
-        return metricsType == null ? null : serviceProvider.GetService(metricsType) != null;
-    }
-
-    private static bool? TryHasRateLimiterPolicy(RateLimiterOptions options, string policyName)
-    {
-        var results = new[]
-        {
-            TryContainsPolicy(options, PolicyMapPropertyName, policyName),
-            TryContainsPolicy(options, UnactivatedPolicyMapPropertyName, policyName)
-        };
-
-        if (results.Any(result => result == true))
-            return true;
-
-        return results.Any(result => !result.HasValue) ? null : false;
     }
 
     private static Endpoint CreateRateLimitingEndpoint(Endpoint? originalEndpoint, EnableRateLimitingAttribute rateLimitingMetadata, string displayName)
@@ -178,18 +131,6 @@ public static class WebApplicationExtensions
             return new RouteEndpoint(routeEndpoint.RequestDelegate ?? (_ => Task.CompletedTask), routeEndpoint.RoutePattern, routeEndpoint.Order, metadata, routeEndpoint.DisplayName ?? displayName);
 
         return new Endpoint(originalEndpoint?.RequestDelegate ?? (_ => Task.CompletedTask), metadata, originalEndpoint?.DisplayName ?? displayName);
-    }
-
-    private static bool? TryContainsPolicy(RateLimiterOptions options, string propertyName, string policyName)
-    {
-        var property = typeof(RateLimiterOptions).GetProperty(propertyName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-        if (property == null)
-            return null;
-
-        var map = property.GetValue(options);
-        var containsKey = map?.GetType().GetMethod(nameof(Dictionary<string, object>.ContainsKey), [typeof(string)]);
-
-        return containsKey?.Invoke(map, [policyName]) is bool result ? result : null;
     }
 
     private static ValueTask<object?> DeserializeRequestAsync(HttpRequest httpRequest, Type modelType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)

@@ -273,7 +273,7 @@ public class IngressRateLimitingTests
     }
 
     [Fact]
-    public void UseWorkflowsApiRateLimiting_ThrowsWhenRateLimiterIsNotRegistered()
+    public void UseWorkflowsApiRateLimiting_UsesFrameworkServiceValidation()
     {
         using var app = CreateApp(
             app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName),
@@ -281,7 +281,7 @@ public class IngressRateLimitingTests
 
         var exception = Assert.Throws<InvalidOperationException>(() => app.Configure());
 
-        Assert.Contains("Rate limiting services are not registered", exception.Message);
+        Assert.Contains("Unable to find the required services", exception.Message);
     }
 
     private static async Task<TestApplication> CreateAppAsync(Action<WebApplication> configure, Action<RateLimiterOptions>? configureRateLimiter = null)
