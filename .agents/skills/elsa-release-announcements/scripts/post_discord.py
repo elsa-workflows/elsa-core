@@ -34,7 +34,7 @@ def main() -> int:
         print("error: provide --bot-token or DISCORD_BOT_TOKEN when using --crosspost", file=sys.stderr)
         return 1
 
-    payload = json.dumps({"content": message[:2000]}).encode("utf-8")
+    payload = json.dumps({"content": message[:2000], "flags": 4}).encode("utf-8")
     status, body = post_payload(webhook_url, payload, wait=args.crosspost)
     if status not in (200, 204):
         print(f"error: Discord returned HTTP {status}", file=sys.stderr)

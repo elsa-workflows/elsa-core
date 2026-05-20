@@ -201,7 +201,7 @@ def render_discord(
 
 {intro}
 
-:point_right: Release notes: {release_url}
+:point_right: Release notes: <{release_url}>
 
 {availability}
 

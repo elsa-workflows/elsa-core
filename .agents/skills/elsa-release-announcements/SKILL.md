@@ -98,6 +98,7 @@ Use this structure for the announcement pack:
 Channel guidance:
 
 - Discord can be more direct, celebratory, and useful: mention the release, top changes, package availability, and links. Prefer `:rocket:`, `:point_right:`, `:sparkles:`, `:tools:`, `:test_tube:`, and similar Discord emoji shortcodes over raw Unicode emoji.
+- Discord posts should suppress link previews. Use the webhook `SUPPRESS_EMBEDS` message flag and wrap links in angle brackets, for example `<https://github.com/elsa-workflows/elsa-core/releases/tag/3.7.0>`.
 - Discord stable releases should say the stable version is available and ask for feedback on upgrades or regressions.
 - Discord preview/RC releases should explicitly say they are intended for testing and validation before stable release.
 - LinkedIn should explain the release in terms of developer value and project momentum, with fewer implementation details.
@@ -114,8 +115,8 @@ Use this shape for Discord drafts and adapt the details to the actual release:
 
 We've published the stable **Elsa 3.7.0** release across **Elsa Core** and **Elsa Studio**.
 
-:point_right: Core: https://github.com/elsa-workflows/elsa-core/releases/tag/3.7.0
-:point_right: Studio: https://github.com/elsa-workflows/elsa-studio/releases/tag/3.7.0
+:point_right: Core: <https://github.com/elsa-workflows/elsa-core/releases/tag/3.7.0>
+:point_right: Studio: <https://github.com/elsa-workflows/elsa-studio/releases/tag/3.7.0>
 
 This release brings a solid set of improvements around **authentication**, **workflow diagnostics**, **Studio extensibility**, and the **modular server runtime**.
 
