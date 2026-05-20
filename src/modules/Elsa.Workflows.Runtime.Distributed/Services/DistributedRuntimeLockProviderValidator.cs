@@ -54,7 +54,7 @@ public class DistributedRuntimeLockProviderValidator(
 
     private Type? FindLocalProviderType(IDistributedLockProvider provider, ISet<IDistributedLockProvider>? visited = null)
     {
-        visited ??= new HashSet<IDistributedLockProvider>();
+        visited ??= new HashSet<IDistributedLockProvider>(ReferenceEqualityComparer.Instance);
 
         if (!visited.Add(provider))
             return null;

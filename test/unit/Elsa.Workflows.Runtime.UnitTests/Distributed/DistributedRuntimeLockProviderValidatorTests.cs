@@ -72,6 +72,20 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     }
 
     [Fact]
+    public void Validate_UsesReferenceEquality_WhenProvidersOverrideEquality()
+    {
+        var validator = CreateValidator(new CompositeDistributedLockProvider([
+            new ValueEqualDistributedLockProvider("same"),
+            new ValueEqualDistributedLockProvider("same", _fileProvider)
+        ]));
+
+        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
+
+        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
+        Assert.Contains(nameof(CompositeDistributedLockProvider), exception.Message);
+    }
+
+    [Fact]
     public void Validate_Throws_WhenNoopProviderIsUsedWithoutOptIn()
     {
         var validator = CreateValidator(new NoopDistributedSynchronizationProvider());
@@ -135,6 +149,19 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     private class CustomDistributedLockProvider : IDistributedLockProvider
     {
         public IDistributedLock CreateLock(string name) => new CustomDistributedLock(name);
+    }
+
+    private class ValueEqualDistributedLockProvider(string key, IDistributedLockProvider? innerProvider = null) : IDistributedLockProvider
+    {
+        public IDistributedLockProvider? InnerProvider { get; } = innerProvider;
+
+        public IDistributedLock CreateLock(string name) => InnerProvider?.CreateLock(name) ?? new CustomDistributedLock(name);
+
+        public override bool Equals(object? obj) => obj is ValueEqualDistributedLockProvider provider && provider.Key == Key;
+
+        public override int GetHashCode() => Key.GetHashCode();
+
+        private string Key { get; } = key;
     }
 
     private class CustomDistributedLock(string name) : IDistributedLock

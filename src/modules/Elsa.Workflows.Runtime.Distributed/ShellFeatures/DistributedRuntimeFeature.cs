@@ -26,7 +26,7 @@ public class DistributedRuntimeFeature : IShellFeature
             .AddScoped<DistributedBookmarkQueueWorker>()
             .AddScoped<IBookmarkQueueWorker>(sp => sp.GetRequiredService<DistributedBookmarkQueueWorker>());
 
-        services.TryAddSingleton<DistributedRuntimeLockProviderValidator>();
+        services.TryAddScoped<DistributedRuntimeLockProviderValidator>();
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IStartupTask, ValidateDistributedRuntimeLockProviderStartupTask>());
     }
 }

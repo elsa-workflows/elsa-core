@@ -33,11 +33,11 @@ public class DistributedRuntimeFeature(IModule module) : FeatureBase(module)
         Services
             .AddScoped<DistributedWorkflowRuntime>()
             .AddScoped<DistributedBookmarkQueueWorker>()
-            
+
             .Decorate<IWorkflowDefinitionsRefresher, DistributedWorkflowDefinitionsRefresher>()
             .Decorate<IWorkflowDefinitionsReloader, DistributedWorkflowDefinitionsReloader>();
 
-        Services.TryAddSingleton<DistributedRuntimeLockProviderValidator>();
+        Services.TryAddScoped<DistributedRuntimeLockProviderValidator>();
         Services.TryAddEnumerable(ServiceDescriptor.Scoped<IStartupTask, ValidateDistributedRuntimeLockProviderStartupTask>());
     }
 }
