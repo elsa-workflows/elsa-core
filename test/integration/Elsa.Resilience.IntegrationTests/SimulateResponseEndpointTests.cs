@@ -115,6 +115,16 @@ public class SimulateResponseEndpointTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.InternalServerError, acceptedAfterExpiration.StatusCode);
     }
 
+    [Fact]
+    public async Task Get_WhenExistingSessionUsesShorterCodes_DoesNotReadBeyondCodes()
+    {
+        Assert.Equal(HttpStatusCode.InternalServerError, (await GetAuthenticatedAsync("/simulate-response?sessionId=reused&codes=[500,503,200]")).StatusCode);
+
+        var response = await GetAuthenticatedAsync("/simulate-response?sessionId=reused&codes=[200]");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     private async Task<HttpResponseMessage> GetAuthenticatedAsync(string requestUri)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
