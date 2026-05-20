@@ -70,6 +70,7 @@ public class IdentityFeature : IFastEndpointsShellFeature
         services
             .AddScoped<IUserManager, UserManager>()
             .AddScoped<IRoleManager, RoleManager>()
+            .AddScoped<IRoleAuthorizationService, RoleAuthorizationService>()
             .AddScoped<ISecretHasher, DefaultSecretHasher>()
             .AddScoped<IAccessTokenIssuer, DefaultAccessTokenIssuer>()
             .AddScoped<IUserCredentialsValidator, DefaultUserCredentialsValidator>()
