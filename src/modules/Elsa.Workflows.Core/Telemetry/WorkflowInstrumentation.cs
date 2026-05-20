@@ -98,11 +98,10 @@ public static class WorkflowInstrumentation
             activity.Dispose();
         }
 
-        if (context.SubStatus == Workflows.WorkflowSubStatus.Finished)
-            WorkflowCompletedCounter.Add(1, CreateWorkflowTags(context));
-
         if (faulted)
             WorkflowFaultedCounter.Add(1, CreateWorkflowTags(context));
+        else if (context.SubStatus == Workflows.WorkflowSubStatus.Finished)
+            WorkflowCompletedCounter.Add(1, CreateWorkflowTags(context));
     }
 
     internal static void StopActivity(ActivityInstrumentationScope scope, ActivityExecutionContext context, Exception? exception)
@@ -195,8 +194,8 @@ public static class WorkflowInstrumentation
             { WorkflowSubStatus, context.SubStatus.ToString() }
         };
 
-        AddIfNotNull(tags, WorkflowName, workflow.WorkflowMetadata.Name ?? workflow.Name);
-        AddIfNotNull(tags, TenantId, identity.TenantId);
+        AddIfNotNull(ref tags, WorkflowName, workflow.WorkflowMetadata.Name ?? workflow.Name);
+        AddIfNotNull(ref tags, TenantId, identity.TenantId);
         return tags;
     }
 
@@ -212,12 +211,12 @@ public static class WorkflowInstrumentation
             { ActivityStatus, context.Status.ToString() }
         };
 
-        AddIfNotNull(tags, ActivityName, currentActivity.Name ?? context.ActivityDescriptor.DisplayName ?? context.ActivityDescriptor.Name);
-        AddIfNotNull(tags, TenantId, context.WorkflowExecutionContext.Workflow.Identity.TenantId);
+        AddIfNotNull(ref tags, ActivityName, currentActivity.Name ?? context.ActivityDescriptor.DisplayName ?? context.ActivityDescriptor.Name);
+        AddIfNotNull(ref tags, TenantId, context.WorkflowExecutionContext.Workflow.Identity.TenantId);
         return tags;
     }
 
-    private static void AddIfNotNull(TagList tags, string key, object? value)
+    private static void AddIfNotNull(ref TagList tags, string key, object? value)
     {
         if (value != null)
             tags.Add(key, value);

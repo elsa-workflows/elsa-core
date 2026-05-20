@@ -38,7 +38,8 @@ public class WorkflowInstrumentationTests
         Assert.Equal("activity.execute", span.OperationName);
         Assert.Equal(activity.Type, tags[WorkflowInstrumentation.ActivityType]);
         Assert.Equal(ActivityStatus.Completed.ToString(), tags[WorkflowInstrumentation.ActivityStatus]);
-        Assert.Contains(meterCapture.DoubleMeasurements, x => x.InstrumentName == "elsa.activity.duration" && x.Value >= 0);
+        var activityDuration = Assert.Single(meterCapture.DoubleMeasurements, x => x.InstrumentName == "elsa.activity.duration" && x.Value >= 0);
+        Assert.Equal("Test activity", activityDuration.Tags[WorkflowInstrumentation.ActivityName]);
     }
 
     [Fact]
@@ -48,6 +49,7 @@ public class WorkflowInstrumentationTests
         using var meterCapture = new MeterCapture();
         var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
         var context = activityExecutionContext.WorkflowExecutionContext;
+        context.Workflow.WorkflowMetadata = new("Test workflow");
         var runner = CreateWorkflowRunner(context, new ThrowingWorkflowExecutionPipeline());
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(context));
@@ -58,8 +60,10 @@ public class WorkflowInstrumentationTests
         Assert.Equal(ActivityStatusCode.Error, span.Status);
         Assert.Equal(context.Id, tags[WorkflowInstrumentation.WorkflowInstanceId]);
         Assert.Equal(typeof(InvalidOperationException).FullName, tags[WorkflowInstrumentation.ErrorType]);
-        Assert.Contains(meterCapture.LongMeasurements, x => x.InstrumentName == "elsa.workflow.started" && x.Value == 1);
-        Assert.Contains(meterCapture.LongMeasurements, x => x.InstrumentName == "elsa.workflow.faulted" && x.Value == 1);
+        var started = Assert.Single(meterCapture.LongMeasurements, x => x.InstrumentName == "elsa.workflow.started" && x.Value == 1);
+        var faulted = Assert.Single(meterCapture.LongMeasurements, x => x.InstrumentName == "elsa.workflow.faulted" && x.Value == 1);
+        Assert.Equal("Test workflow", started.Tags[WorkflowInstrumentation.WorkflowName]);
+        Assert.Equal("Test workflow", faulted.Tags[WorkflowInstrumentation.WorkflowName]);
     }
 
     private static WorkflowRunner CreateWorkflowRunner(WorkflowExecutionContext context, IWorkflowExecutionPipeline pipeline)
@@ -153,8 +157,8 @@ public class WorkflowInstrumentationTests
                     listener.EnableMeasurementEvents(instrument);
             };
 
-            _listener.SetMeasurementEventCallback<long>((instrument, measurement, _, _) => LongMeasurements.Add(new(instrument.Name, measurement)));
-            _listener.SetMeasurementEventCallback<double>((instrument, measurement, _, _) => DoubleMeasurements.Add(new(instrument.Name, measurement)));
+            _listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) => LongMeasurements.Add(new(instrument.Name, measurement, CaptureTags(tags))));
+            _listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) => DoubleMeasurements.Add(new(instrument.Name, measurement, CaptureTags(tags))));
             _listener.Start();
         }
 
@@ -162,7 +166,17 @@ public class WorkflowInstrumentationTests
         public IList<Measurement<double>> DoubleMeasurements { get; } = new List<Measurement<double>>();
 
         public void Dispose() => _listener.Dispose();
+
+        private static IReadOnlyDictionary<string, object?> CaptureTags(ReadOnlySpan<KeyValuePair<string, object?>> tags)
+        {
+            var result = new Dictionary<string, object?>();
+
+            foreach (var tag in tags)
+                result[tag.Key] = tag.Value;
+
+            return result;
+        }
     }
 
-    private readonly record struct Measurement<T>(string InstrumentName, T Value);
+    private readonly record struct Measurement<T>(string InstrumentName, T Value, IReadOnlyDictionary<string, object?> Tags);
 }
