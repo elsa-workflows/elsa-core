@@ -91,7 +91,14 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
 
         try
         {
-            return apiSerializer.Deserialize<Request>(body).Input;
+            var request = apiSerializer.Deserialize<Request>(body);
+            if (request == null)
+            {
+                AddError("Invalid input format. Expected a valid JSON request body.");
+                return null;
+            }
+
+            return request.Input;
         }
         catch (Exception e) when (e is JsonException or NotSupportedException or InvalidOperationException or FormatException)
         {

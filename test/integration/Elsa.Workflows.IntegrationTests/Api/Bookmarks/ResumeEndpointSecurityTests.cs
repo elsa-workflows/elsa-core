@@ -75,6 +75,26 @@ public class ResumeEndpointSecurityTests
         await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task Post_WithJsonNullBody_ReturnsBadRequest()
+    {
+        var context = CreateHttpContext(HttpMethods.Post, "?t=valid", "null");
+        var sut = CreateEndpoint(context);
+        _tokenService.TryDecryptToken<BookmarkTokenPayload>("valid", out Arg.Any<BookmarkTokenPayload>())
+            .Returns(callInfo =>
+            {
+                callInfo[1] = new BookmarkTokenPayload("bookmark", "workflow");
+                return true;
+            });
+        _apiSerializer.Deserialize<Request>("null").Returns((Request?)null);
+
+        await sut.HandleAsync(CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        await _workflowResumer.DidNotReceive().ResumeAsync(Arg.Any<ResumeBookmarkRequest>(), Arg.Any<CancellationToken>());
+        await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
+    }
+
     private Resume CreateEndpoint(DefaultHttpContext context)
     {
         return Factory.Create<Resume>(context, _tokenService, _workflowResumer, _bookmarkQueue, _payloadSerializer, _apiSerializer);
