@@ -16,6 +16,7 @@ using NSubstitute;
 
 namespace Elsa.Resilience.IntegrationTests;
 
+[Collection(nameof(EndpointSecurityCollection))]
 public class SimulateResponseEndpointTests : IAsyncLifetime
 {
     private readonly TestTimeProvider _timeProvider = new();
@@ -170,3 +171,6 @@ public class SimulateResponseEndpointTests : IAsyncLifetime
         }
     }
 }
+
+[CollectionDefinition(nameof(EndpointSecurityCollection), DisableParallelization = true)]
+public class EndpointSecurityCollection;
