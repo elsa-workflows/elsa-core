@@ -5,6 +5,7 @@ using Elsa.KeyValues.Entities;
 using Elsa.KeyValues.Stores;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.KeyValues.ShellFeatures;
 
@@ -26,6 +27,6 @@ public class KeyValueFeature : IShellFeature
     {
         services
             .AddMemoryStore<SerializedKeyValuePair, MemoryKeyValueStore>()
-            .AddScoped(KeyValueStore);
+            .TryAddScoped(KeyValueStore);
     }
 }

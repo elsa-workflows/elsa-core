@@ -29,7 +29,7 @@ namespace Elsa.Workflows.Runtime.ShellFeatures;
 [ShellFeature(
     DisplayName = "Workflow Runtime",
     Description = "Provides workflow execution runtime and scheduling capabilities",
-    DependsOn = ["Workflows", typeof(Elsa.KeyValues.ShellFeatures.KeyValueFeature)])]
+    DependsOn = ["Workflows", "KeyValue"])]
 public class WorkflowRuntimeFeature : IShellFeature
 {
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();

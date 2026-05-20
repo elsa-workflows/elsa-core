@@ -34,14 +34,18 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
         var records = await keyValueStore.FindManyAsync(new KeyValueFilter
         {
             Key = KeyPrefix,
-            StartsWith = true,
-            Take = maxCount > 0 ? maxCount : null
+            StartsWith = true
         }, cancellationToken);
 
-        return records
+        var query = records
             .Select(x => payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(x.SerializedValue))
             .OfType<WorkflowDispatchOutboxItem>()
-            .ToList();
+            .OrderBy(x => x.CreatedAt);
+
+        if (maxCount > 0)
+            return query.Take(maxCount).ToList();
+
+        return query.ToList();
     }
 
     /// <inheritdoc />

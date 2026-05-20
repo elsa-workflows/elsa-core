@@ -125,6 +125,26 @@ public class WorkflowDispatchOutboxProcessorTests
     }
 
     [Fact]
+    public async Task ProcessAsync_ReloadsOwnerBeforeRemovingCommittedMarker()
+    {
+        var item = CreateItem();
+        var staleOwner = CreateOwnerWorkflowInstance(includeOutboxMarker: true);
+        var freshOwner = CreateOwnerWorkflowInstance(includeOutboxMarker: true);
+        freshOwner.Name = "fresh owner";
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
+        _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(
+                new ValueTask<WorkflowInstance?>(staleOwner),
+                new ValueTask<WorkflowInstance?>(freshOwner));
+
+        await _processor.ProcessAsync();
+
+        await _workflowInstanceStore.Received(1).SaveAsync(
+            Arg.Is<WorkflowInstance>(x => ReferenceEquals(x, freshOwner) && !x.WorkflowState.HasWorkflowDispatchOutboxItem(item.Id)),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ProcessAsync_DoesNotRecreateOutboxItem_WhenMarkerCleanupFails()
     {
         var item = CreateItem();
@@ -138,6 +158,28 @@ public class WorkflowDispatchOutboxProcessorTests
 
         await _store.Received(1).DeleteAsync(item.Id, Arg.Any<CancellationToken>());
         await _store.DidNotReceive().SaveAsync(item, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ProcessAsync_DoesNotCountDeliveryFailure_WhenDeleteAfterSendFails()
+    {
+        var item = CreateItem();
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
+        _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
+        _store.DeleteAsync(item.Id, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new InvalidOperationException("Delete failed.")));
+
+        await _processor.ProcessAsync();
+
+        await _commandSender.Received(1).SendAsync(
+            item.WorkflowDefinitionCommand!,
+            CommandStrategy.Background,
+            Arg.Any<IDictionary<object, object>>(),
+            CancellationToken.None);
+        Assert.Equal(0, item.DeliveryAttempts);
+        await _store.DidNotReceive().SaveAsync(item, Arg.Any<CancellationToken>());
+        await _workflowInstanceStore.DidNotReceive().SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -158,6 +200,33 @@ public class WorkflowDispatchOutboxProcessorTests
     }
 
     [Fact]
+    public async Task ProcessAsync_ContinuesBatch_WhenFailurePersistenceFails()
+    {
+        var failedItem = CreateItem(id: "outbox-1");
+        var nextItem = CreateItem(id: "outbox-2");
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([failedItem, nextItem]);
+        _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(
+                new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true, itemIds: [failedItem.Id])),
+                new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true, itemIds: [nextItem.Id])),
+                new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true, itemIds: [nextItem.Id])));
+        _commandSender
+            .SendAsync(failedItem.WorkflowDefinitionCommand!, CommandStrategy.Background, Arg.Any<IDictionary<object, object>>(), CancellationToken.None)
+            .Returns(Task.FromException<Elsa.Mediator.Models.Unit>(new InvalidOperationException("Queue unavailable.")));
+        _store.SaveAsync(failedItem, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new InvalidOperationException("Save failed.")));
+
+        await _processor.ProcessAsync();
+
+        await _commandSender.Received(1).SendAsync(
+            nextItem.WorkflowDefinitionCommand!,
+            CommandStrategy.Background,
+            Arg.Any<IDictionary<object, object>>(),
+            CancellationToken.None);
+        await _store.Received(1).DeleteAsync(nextItem.Id, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ProcessAsync_DeletesOutboxItem_WhenMaxDeliveryAttemptsIsReached()
     {
         var item = CreateItem();
@@ -174,22 +243,51 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.Received(1).DeleteAsync(item.Id, Arg.Any<CancellationToken>());
     }
 
-    private static WorkflowDispatchOutboxItem CreateItem(DateTimeOffset? createdAt = null)
+    [Fact]
+    public async Task ProcessAsync_ContinuesBatch_WhenMaxAttemptDeleteFails()
+    {
+        var failedItem = CreateItem(id: "outbox-1");
+        var nextItem = CreateItem(id: "outbox-2");
+        failedItem.DeliveryAttempts = _options.MaxOutboxDeliveryAttempts - 1;
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([failedItem, nextItem]);
+        _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(
+                new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true, itemIds: [failedItem.Id])),
+                new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true, itemIds: [nextItem.Id])),
+                new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true, itemIds: [nextItem.Id])));
+        _commandSender
+            .SendAsync(failedItem.WorkflowDefinitionCommand!, CommandStrategy.Background, Arg.Any<IDictionary<object, object>>(), CancellationToken.None)
+            .Returns(Task.FromException<Elsa.Mediator.Models.Unit>(new InvalidOperationException("Queue unavailable.")));
+        _store.DeleteAsync(failedItem.Id, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new InvalidOperationException("Delete failed.")));
+
+        await _processor.ProcessAsync();
+
+        await _commandSender.Received(1).SendAsync(
+            nextItem.WorkflowDefinitionCommand!,
+            CommandStrategy.Background,
+            Arg.Any<IDictionary<object, object>>(),
+            CancellationToken.None);
+        await _store.Received(1).SaveAsync(Arg.Is<WorkflowDispatchOutboxItem>(x => x.Id == failedItem.Id && x.DeliveryAttempts == _options.MaxOutboxDeliveryAttempts), Arg.Any<CancellationToken>());
+        await _store.Received(1).DeleteAsync(nextItem.Id, Arg.Any<CancellationToken>());
+    }
+
+    private static WorkflowDispatchOutboxItem CreateItem(DateTimeOffset? createdAt = null, string id = "outbox-1")
     {
         return new()
         {
-            Id = "outbox-1",
+            Id = id,
             OwnerWorkflowInstanceId = "parent-1",
             Kind = WorkflowDispatchOutboxItemKind.WorkflowDefinition,
             WorkflowDefinitionCommand = new DispatchWorkflowDefinitionCommand("definition-version-1")
             {
-                InstanceId = "child-1"
+                InstanceId = $"child-{id}"
             },
             CreatedAt = createdAt ?? DateTimeOffset.UtcNow
         };
     }
 
-    private static WorkflowInstance CreateOwnerWorkflowInstance(bool includeOutboxMarker)
+    private static WorkflowInstance CreateOwnerWorkflowInstance(bool includeOutboxMarker, ICollection<string>? itemIds = null)
     {
         var workflowState = new WorkflowState
         {
@@ -201,7 +299,7 @@ public class WorkflowDispatchOutboxProcessorTests
                 {
                     [WorkflowDispatchOutboxStateExtensions.PropertyKey] = new WorkflowDispatchOutboxState
                     {
-                        ItemIds = ["outbox-1"]
+                        ItemIds = itemIds ?? ["outbox-1"]
                     }
                 }
                 : new Dictionary<string, object>()

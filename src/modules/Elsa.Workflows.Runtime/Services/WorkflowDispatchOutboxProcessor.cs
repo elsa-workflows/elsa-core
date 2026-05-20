@@ -55,7 +55,7 @@ public class WorkflowDispatchOutboxProcessor(
     private async Task ProcessPendingItemsAsync(CancellationToken cancellationToken)
     {
         var batchSize = Math.Max(1, dispatcherOptions.Value.OutboxProcessorBatchSize);
-        var items = (await store.FindManyAsync(batchSize, cancellationToken)).OrderBy(x => x.CreatedAt).ToList();
+        var items = (await store.FindManyAsync(batchSize, cancellationToken)).ToList();
 
         foreach (var item in items)
         {
@@ -91,8 +91,7 @@ public class WorkflowDispatchOutboxProcessor(
         }
 
         await SendAsync(item, cancellationToken);
-        await store.DeleteAsync(item.Id, cancellationToken);
-        await RemoveCommittedMarkerAsync(owner, item, cancellationToken);
+        await CleanupDeliveredItemAsync(item, cancellationToken);
     }
 
     private async Task SendAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
@@ -154,19 +153,87 @@ public class WorkflowDispatchOutboxProcessor(
     {
         item.DeliveryAttempts++;
 
-        if (item.DeliveryAttempts >= dispatcherOptions.Value.MaxOutboxDeliveryAttempts)
+        try
         {
-            logger.LogWarning(exception, "Abandoning workflow dispatch outbox item {OutboxItemId} after {DeliveryAttempts} failed delivery attempts", item.Id, item.DeliveryAttempts);
+            if (item.DeliveryAttempts >= dispatcherOptions.Value.MaxOutboxDeliveryAttempts)
+            {
+                logger.LogWarning(exception, "Abandoning workflow dispatch outbox item {OutboxItemId} after {DeliveryAttempts} failed delivery attempts", item.Id, item.DeliveryAttempts);
+                if (await TryDeleteAbandonedItemAsync(item, cancellationToken))
+                    await RemoveCommittedMarkerAsync(item, cancellationToken);
+                return;
+            }
+
+            await store.SaveAsync(item, cancellationToken);
+            logger.LogError(exception, "Failed to deliver workflow dispatch outbox item {OutboxItemId}; attempt {DeliveryAttempts} of {MaxDeliveryAttempts}", item.Id, item.DeliveryAttempts, dispatcherOptions.Value.MaxOutboxDeliveryAttempts);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            logger.LogError(e, "Failed to persist delivery failure state for workflow dispatch outbox item {OutboxItemId}; processing will continue with the next item.", item.Id);
+        }
+    }
+
+    private async Task<bool> TryDeleteAbandonedItemAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
+    {
+        try
+        {
             await store.DeleteAsync(item.Id, cancellationToken);
+            return true;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            logger.LogError(e, "Failed to delete abandoned workflow dispatch outbox item {OutboxItemId}; preserving its delivery attempt count for the next processor run.", item.Id);
+        }
+
+        try
+        {
+            await store.SaveAsync(item, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            logger.LogError(e, "Failed to preserve delivery attempt count for abandoned workflow dispatch outbox item {OutboxItemId}.", item.Id);
+        }
+
+        return false;
+    }
+
+    private async Task CleanupDeliveredItemAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await store.DeleteAsync(item.Id, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            logger.LogWarning(e, "Delivered workflow dispatch outbox item {OutboxItemId}, but failed to delete it from the outbox store. The item was not counted as a delivery failure.", item.Id);
             return;
         }
 
-        await store.SaveAsync(item, cancellationToken);
-        logger.LogError(exception, "Failed to deliver workflow dispatch outbox item {OutboxItemId}; attempt {DeliveryAttempts} of {MaxDeliveryAttempts}", item.Id, item.DeliveryAttempts, dispatcherOptions.Value.MaxOutboxDeliveryAttempts);
+        await RemoveCommittedMarkerAsync(item, cancellationToken);
     }
 
-    private async Task RemoveCommittedMarkerAsync(WorkflowInstance owner, WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
+    private async Task RemoveCommittedMarkerAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
     {
+        var owner = await workflowInstanceStore.FindAsync(new WorkflowInstanceFilter { Id = item.OwnerWorkflowInstanceId }, cancellationToken);
+
+        if (owner == null)
+            return;
+
         if (!owner.WorkflowState.RemoveWorkflowDispatchOutboxItem(item.Id))
             return;
 
