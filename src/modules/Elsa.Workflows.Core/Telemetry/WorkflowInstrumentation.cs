@@ -24,7 +24,7 @@ public static class WorkflowInstrumentation
     public const string WorkflowStatus = "workflow.status";
     public const string WorkflowSubStatus = "workflow.substatus";
     public const string WorkflowFaulted = "workflow.faulted";
-    public const string WorkflowParentInstanceId = "workflow.parent_instance.id";
+    public const string WorkflowParentInstanceId = "workflow.parent.instance.id";
     public const string WorkflowCorrelationId = "workflow.correlation.id";
 
     public const string ActivityOperationName = "workflow.activity.operation.name";

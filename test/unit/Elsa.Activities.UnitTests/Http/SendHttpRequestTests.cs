@@ -236,7 +236,9 @@ public class SendHttpRequestTests
     private sealed class TraceContextServer : IAsyncDisposable
     {
         private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan HeaderReadTimeout = TimeSpan.FromSeconds(2);
         private static readonly TimeSpan TeardownTimeout = TimeSpan.FromSeconds(2);
+        private const int MaxHeaderLineLength = 16 * 1024;
 
         private readonly TcpListener _listener = new(IPAddress.Loopback, 0);
         private readonly CancellationTokenSource _cancellationTokenSource = new();
@@ -285,27 +287,81 @@ public class SendHttpRequestTests
         {
             using var client = await _listener.AcceptTcpClientAsync(_cancellationTokenSource.Token);
             await using var stream = client.GetStream();
-            using var reader = new StreamReader(stream, Encoding.ASCII, leaveOpen: true);
             await using var writer = new StreamWriter(stream, Encoding.ASCII, leaveOpen: true) { NewLine = "\r\n", AutoFlush = true };
+            var headers = await ReadHeadersAsync(stream, _cancellationTokenSource.Token);
+
+            await writer.WriteAsync("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{}");
+            return headers;
+        }
+
+        private static async Task<Dictionary<string, string>> ReadHeadersAsync(NetworkStream stream, CancellationToken cancellationToken)
+        {
             var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            await reader.ReadLineAsync(_cancellationTokenSource.Token);
+            if (await ReadLineAsync(stream, cancellationToken) == null)
+                throw new IOException("The HTTP client closed the connection before sending a request line.");
 
-            while (await reader.ReadLineAsync(_cancellationTokenSource.Token) is { Length: > 0 } line)
+            while (await ReadLineAsync(stream, cancellationToken) is { } line)
             {
+                if (line.Length == 0)
+                    return headers;
+
                 var separator = line.IndexOf(':');
 
                 if (separator > 0)
                     headers[line[..separator]] = line[(separator + 1)..].Trim();
             }
 
-            await writer.WriteAsync("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{}");
-            return headers;
+            throw new IOException("The HTTP client closed the connection before completing the request headers.");
+        }
+
+        private static async Task<string?> ReadLineAsync(NetworkStream stream, CancellationToken cancellationToken)
+        {
+            var line = new List<byte>();
+            var buffer = new byte[1];
+
+            while (true)
+            {
+                var bytesRead = await ReadWithTimeoutAsync(stream, buffer, cancellationToken);
+
+                if (bytesRead == 0)
+                    return line.Count == 0 ? null : Encoding.ASCII.GetString(line.ToArray());
+
+                var value = buffer[0];
+
+                if (value == '\n')
+                {
+                    if (line.Count > 0 && line[^1] == '\r')
+                        line.RemoveAt(line.Count - 1);
+
+                    return Encoding.ASCII.GetString(line.ToArray());
+                }
+
+                line.Add(value);
+
+                if (line.Count > MaxHeaderLineLength)
+                    throw new InvalidDataException($"The HTTP request header line exceeded {MaxHeaderLineLength} bytes.");
+            }
+        }
+
+        private static async Task<int> ReadWithTimeoutAsync(NetworkStream stream, byte[] buffer, CancellationToken cancellationToken)
+        {
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(HeaderReadTimeout);
+
+            try
+            {
+                return await stream.ReadAsync(buffer.AsMemory(0, 1), timeout.Token);
+            }
+            catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new TimeoutException("Timed out while reading the HTTP request headers.", ex);
+            }
         }
 
         private static bool IsExpectedTeardownException(Exception exception)
         {
-            return exception is OperationCanceledException or ObjectDisposedException or SocketException ||
+            return exception is OperationCanceledException or ObjectDisposedException or SocketException or TimeoutException ||
                    exception.InnerException is not null && IsExpectedTeardownException(exception.InnerException);
         }
     }

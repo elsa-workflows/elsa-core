@@ -74,6 +74,7 @@ public class WorkflowInstrumentationTests
         var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
         var context = activityExecutionContext.WorkflowExecutionContext;
         context.Workflow.WorkflowMetadata = new("Test workflow");
+        context.ParentWorkflowInstanceId = "parent-instance-id";
         var runner = CreateWorkflowRunner(context, new CompletingWorkflowExecutionPipeline());
 
         await runner.RunAsync(context);
@@ -82,8 +83,10 @@ public class WorkflowInstrumentationTests
         var tags = span.TagObjects.ToDictionary(x => x.Key, x => x.Value);
         Assert.Equal(ActivityStatusCode.Ok, span.Status);
         Assert.Equal(context.Workflow.Identity.Id, tags[WorkflowInstrumentation.WorkflowDefinitionVersionId]);
-        Assert.Equal("workflow.substatus", WorkflowInstrumentation.WorkflowSubStatus);
+        Assert.True(tags.ContainsKey(WorkflowInstrumentation.WorkflowSubStatus));
         Assert.Equal(WorkflowSubStatus.Finished.ToString(), tags[WorkflowInstrumentation.WorkflowSubStatus]);
+        Assert.Equal("parent-instance-id", tags[WorkflowInstrumentation.WorkflowParentInstanceId]);
+        Assert.False(tags.ContainsKey("workflow.parent_instance.id"));
         var started = Assert.Single(meterCapture.LongMeasurements, x => x.InstrumentName == "elsa.workflow.started" && x.Value == 1);
         var completed = Assert.Single(meterCapture.LongMeasurements, x => x.InstrumentName == "elsa.workflow.completed" && x.Value == 1);
         Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
