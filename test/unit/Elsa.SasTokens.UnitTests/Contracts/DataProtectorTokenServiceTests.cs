@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.SasTokens.Contracts;
 using Microsoft.AspNetCore.DataProtection;
 
@@ -6,12 +7,14 @@ namespace Elsa.SasTokens.UnitTests.Contracts;
 public class DataProtectorTokenServiceTests : IDisposable
 {
     private readonly string _keyDirectory = Path.Join(Path.GetTempPath(), Path.GetRandomFileName());
+    private readonly IDataProtectionProvider _dataProtectionProvider;
     private readonly DataProtectorTokenService _service;
 
     public DataProtectorTokenServiceTests()
     {
         Directory.CreateDirectory(_keyDirectory);
-        _service = new DataProtectorTokenService(DataProtectionProvider.Create(new DirectoryInfo(_keyDirectory)));
+        _dataProtectionProvider = DataProtectionProvider.Create(new DirectoryInfo(_keyDirectory));
+        _service = new DataProtectorTokenService(_dataProtectionProvider);
     }
 
     [Fact]
@@ -22,6 +25,7 @@ public class DataProtectorTokenServiceTests : IDisposable
         var token = _service.CreateToken(payload, TimeSpan.FromMinutes(5));
         var result = _service.DecryptToken<TokenPayload>(token);
 
+        Assert.StartsWith("v1.tl.", token);
         AssertPayload(payload, result);
     }
 
@@ -42,6 +46,33 @@ public class DataProtectorTokenServiceTests : IDisposable
         var payload = new TokenPayload("workflow-instance-1", "bookmark-1");
 
         var token = _service.CreateToken(payload);
+        var result = _service.TryDecryptToken<TokenPayload>(token, out var decryptedPayload);
+
+        Assert.StartsWith("v1.ne.", token);
+        Assert.True(result);
+        AssertPayload(payload, decryptedPayload);
+    }
+
+    [Fact]
+    public void TryDecryptToken_LegacyTimeLimitedTokenBeforeExpiration_ReturnsPayload()
+    {
+        var payload = new TokenPayload("workflow-instance-1", "bookmark-1");
+        var json = JsonSerializer.Serialize(payload);
+        var token = _dataProtectionProvider.CreateProtector("Elsa Tokens").ToTimeLimitedDataProtector().Protect(json, TimeSpan.FromMinutes(5));
+
+        var result = _service.TryDecryptToken<TokenPayload>(token, out var decryptedPayload);
+
+        Assert.True(result);
+        AssertPayload(payload, decryptedPayload);
+    }
+
+    [Fact]
+    public void TryDecryptToken_LegacyNonExpiringToken_ReturnsPayload()
+    {
+        var payload = new TokenPayload("workflow-instance-1", "bookmark-1");
+        var json = JsonSerializer.Serialize(payload);
+        var token = _dataProtectionProvider.CreateProtector("Elsa Tokens").Protect(json);
+
         var result = _service.TryDecryptToken<TokenPayload>(token, out var decryptedPayload);
 
         Assert.True(result);

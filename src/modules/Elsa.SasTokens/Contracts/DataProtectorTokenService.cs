@@ -9,6 +9,8 @@ namespace Elsa.SasTokens.Contracts;
 /// </summary>
 public class DataProtectorTokenService : ITokenService
 {
+    private const string TimeLimitedTokenPrefix = "v1.tl.";
+    private const string NonExpiringTokenPrefix = "v1.ne.";
     private readonly IDataProtector _dataProtector;
     private readonly ITimeLimitedDataProtector _timeLimitedDataProtector;
 
@@ -25,21 +27,21 @@ public class DataProtectorTokenService : ITokenService
     public string CreateToken<T>(T payload, TimeSpan lifetime)
     {
         var json = JsonSerializer.Serialize(payload);
-        return _timeLimitedDataProtector.Protect(json, lifetime);
+        return TimeLimitedTokenPrefix + _timeLimitedDataProtector.Protect(json, lifetime);
     }
     
     /// <inheritdoc />
     public string CreateToken<T>(T payload, DateTimeOffset expiresAt)
     {
         var json = JsonSerializer.Serialize(payload);
-        return _timeLimitedDataProtector.Protect(json, expiresAt);
+        return TimeLimitedTokenPrefix + _timeLimitedDataProtector.Protect(json, expiresAt);
     }
     
     /// <inheritdoc />
     public string CreateToken<T>(T payload)
     {
         var json = JsonSerializer.Serialize(payload);
-        return _dataProtector.Protect(json);
+        return NonExpiringTokenPrefix + _dataProtector.Protect(json);
     }
 
     /// <inheritdoc />
@@ -69,6 +71,12 @@ public class DataProtectorTokenService : ITokenService
 
     private string Unprotect(string token)
     {
+        if (token.StartsWith(TimeLimitedTokenPrefix, StringComparison.Ordinal))
+            return _timeLimitedDataProtector.Unprotect(token[TimeLimitedTokenPrefix.Length..]);
+
+        if (token.StartsWith(NonExpiringTokenPrefix, StringComparison.Ordinal))
+            return _dataProtector.Unprotect(token[NonExpiringTokenPrefix.Length..]);
+
         try
         {
             return _timeLimitedDataProtector.Unprotect(token);

@@ -63,7 +63,7 @@ internal class ZipManager
     {
         if (!TryGetCacheFilename(downloadCorrelationId, out var fileCacheFilename))
         {
-            _logger.LogWarning("Rejected invalid zip download correlation ID");
+            _logger.LogDebug("Rejected invalid zip download correlation ID");
             return null;
         }
 
@@ -132,7 +132,7 @@ internal class ZipManager
     {
         if (!TryGetCacheFilename(downloadCorrelationId, out var fileCacheFilename))
         {
-            _logger.LogWarning("Rejected invalid zip download correlation ID");
+            _logger.LogDebug("Rejected invalid zip download correlation ID");
             return;
         }
 
@@ -223,7 +223,7 @@ internal class ZipManager
 
         var cacheDirectory = Path.GetFullPath(_fileCacheOptions.Value.LocalCacheDirectory);
         var fullCacheDirectory = Path.EndsInDirectorySeparator(cacheDirectory) ? cacheDirectory : cacheDirectory + Path.DirectorySeparatorChar;
-        var fullPath = Path.GetFullPath(Path.Combine(fullCacheDirectory, path));
+        var fullPath = Path.GetFullPath(fullCacheDirectory + path);
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         return fullPath.StartsWith(fullCacheDirectory, comparison);
     }

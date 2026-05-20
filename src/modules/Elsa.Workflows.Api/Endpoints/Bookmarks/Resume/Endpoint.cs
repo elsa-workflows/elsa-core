@@ -83,7 +83,7 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
         if (HttpContext.Request.ContentLength == 0)
             return null;
 
-        using var reader = new StreamReader(HttpContext.Request.Body);
+        using var reader = new StreamReader(HttpContext.Request.Body, leaveOpen: true);
         var body = await reader.ReadToEndAsync(cancellationToken);
 
         if (string.IsNullOrWhiteSpace(body))
