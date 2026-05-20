@@ -49,6 +49,7 @@ var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 var ingressRateLimitingSection = configuration.GetSection("IngressRateLimiting");
 var useIngressRateLimiting = ingressRateLimitingSection.GetValue("Enabled", false);
+var registerIngressRateLimitingPolicies = ingressRateLimitingSection.GetValue("RegisterReferencePolicies", useIngressRateLimiting);
 
 services
     .AddElsa(elsa =>
@@ -159,10 +160,18 @@ services.Configure<RuntimeOptions>(options => { options.InactivityThreshold = Ti
 services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(3600));
 services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.Configure<IncidentOptions>(options => options.DefaultIncidentStrategy = typeof(ContinueWithIncidentsStrategy));
-if (useIngressRateLimiting)
+if (registerIngressRateLimitingPolicies)
 {
-    services.Configure<ApiEndpointOptions>(options => options.RateLimitingPolicyName = elsaApiRateLimitingPolicy);
-    services.Configure<HttpActivityOptions>(options => options.RateLimitingPolicyName = httpWorkflowRateLimitingPolicy);
+    services.PostConfigure<ApiEndpointOptions>(options =>
+    {
+        if (string.IsNullOrWhiteSpace(options.RateLimitingPolicyName))
+            options.RateLimitingPolicyName = elsaApiRateLimitingPolicy;
+    });
+    services.PostConfigure<HttpActivityOptions>(options =>
+    {
+        if (string.IsNullOrWhiteSpace(options.RateLimitingPolicyName))
+            options.RateLimitingPolicyName = httpWorkflowRateLimitingPolicy;
+    });
     services.AddRateLimiter(options =>
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -219,7 +228,9 @@ app.UseWorkflowsApiRateLimiting(routePrefix, apiEndpointOptions.RateLimitingPoli
 // Elsa HTTP Endpoint activities.
 var httpActivityOptions = app.Services.GetRequiredService<IOptions<HttpActivityOptions>>().Value;
 app.UseWorkflowsRateLimiting(httpActivityOptions.BasePath, httpActivityOptions.RateLimitingPolicyName);
-if (useIngressRateLimiting)
+if (useIngressRateLimiting ||
+    !string.IsNullOrWhiteSpace(apiEndpointOptions.RateLimitingPolicyName) ||
+    !string.IsNullOrWhiteSpace(httpActivityOptions.RateLimitingPolicyName))
     app.UseRateLimiter();
 
 app.UseWorkflowsApi(routePrefix);

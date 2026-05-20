@@ -160,7 +160,7 @@ public static class WebApplicationExtensions
     {
         var metadata = originalEndpoint == null
             ? new EndpointMetadataCollection(rateLimitingMetadata)
-            : new EndpointMetadataCollection(originalEndpoint.Metadata.Concat([rateLimitingMetadata]));
+            : new EndpointMetadataCollection(originalEndpoint.Metadata.Where(x => x is not EnableRateLimitingAttribute and not DisableRateLimitingAttribute).Concat([rateLimitingMetadata]));
 
         if (originalEndpoint is RouteEndpoint routeEndpoint)
             return new RouteEndpoint(routeEndpoint.RequestDelegate ?? (_ => Task.CompletedTask), routeEndpoint.RoutePattern, routeEndpoint.Order, metadata, routeEndpoint.DisplayName ?? displayName);

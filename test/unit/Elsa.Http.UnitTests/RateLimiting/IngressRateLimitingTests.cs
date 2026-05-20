@@ -161,17 +161,73 @@ public class IngressRateLimitingTests
     }
 
     [Fact]
-    public void UseWorkflowsApiRateLimiting_ThrowsWhenPolicyIsNotRegistered()
+    public async Task UseWorkflowsApiRateLimiting_ReplacesExistingRateLimitingMetadata()
     {
-        // This current-runtime assertion depends on ASP.NET Core's named-policy maps being inspectable.
-        // If those internals move, validation intentionally falls back to the runtime rate limiter.
+        var builder = CreateBuilder();
+        AddRateLimiterServices(builder.Services);
+        RouteEndpoint? augmentedEndpoint = null;
+        var app = new TestApplication(builder.Build(), app =>
+        {
+            app.MapGet("/elsa/api/ping", () => "pong")
+                .RequireRateLimiting("other")
+                .DisableRateLimiting();
+            app.UseRouting();
+            app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName);
+            app.Use(async (context, next) =>
+            {
+                augmentedEndpoint ??= Assert.IsType<RouteEndpoint>(context.GetEndpoint());
+                await next(context);
+            });
+            app.UseRateLimiter();
+        });
+        await using (app)
+        {
+            app.Configure();
+            await app.StartAsync();
+            var client = app.GetTestClient();
+
+            var response = await client.GetAsync("/elsa/api/ping");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        Assert.NotNull(augmentedEndpoint);
+        var enableRateLimitingMetadata = augmentedEndpoint.Metadata.OfType<EnableRateLimitingAttribute>().ToList();
+        Assert.Single(enableRateLimitingMetadata);
+        Assert.Equal(PolicyName, enableRateLimitingMetadata.Single().PolicyName);
+        Assert.DoesNotContain(augmentedEndpoint.Metadata, x => x is DisableRateLimitingAttribute);
+    }
+
+    [Fact]
+    public async Task UseWorkflowsApiRateLimiting_FailsWhenPolicyIsNotRegistered()
+    {
         using var app = CreateApp(
             app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName),
             options => AddFixedWindowLimiter(options, "other"));
 
-        var exception = Assert.Throws<InvalidOperationException>(() => app.Configure());
+        try
+        {
+            app.Configure();
+        }
+        catch (InvalidOperationException exception)
+        {
+            Assert.Contains($"Rate limiting policy '{PolicyName}' is not registered", exception.Message);
+            return;
+        }
 
-        Assert.Contains($"Rate limiting policy '{PolicyName}' is not registered", exception.Message);
+        await app.StartAsync();
+        var client = app.GetTestClient();
+        HttpResponseMessage? response = null;
+        var runtimeException = await Record.ExceptionAsync(async () => response = await client.GetAsync("/elsa/api/workflow-definitions"));
+
+        if (runtimeException is InvalidOperationException invalidOperationException)
+        {
+            Assert.Contains(PolicyName, invalidOperationException.Message);
+            return;
+        }
+
+        Assert.Null(runtimeException);
+        Assert.Equal(HttpStatusCode.InternalServerError, response!.StatusCode);
     }
 
     [Fact]
