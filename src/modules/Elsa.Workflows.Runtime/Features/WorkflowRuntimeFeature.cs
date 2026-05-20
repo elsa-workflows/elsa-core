@@ -425,21 +425,6 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 
     private void RegisterWorkflowTypeAliases(ExpressionOptions options)
     {
-        options.RegisterTypeAlias(typeof(EventBookmarkPayload), nameof(EventBookmarkPayload));
-        options.RegisterTypeAlias(typeof(ExecuteWorkflowPayload), nameof(ExecuteWorkflowPayload));
-        options.RegisterTypeAlias(typeof(RunTaskBookmarkPayload), nameof(RunTaskBookmarkPayload));
-        options.RegisterTypeAlias(typeof(BookmarkTokenPayload), nameof(BookmarkTokenPayload));
-        options.RegisterTypeAlias(typeof(EventTokenPayload), nameof(EventTokenPayload));
-        options.RegisterTypeAlias(typeof(ExecuteWorkflowResult), nameof(ExecuteWorkflowResult));
-        options.RegisterTypeAlias(typeof(WorkflowInterruptedPayload), nameof(WorkflowInterruptedPayload));
-        options.RegisterTypeAlias(typeof(BackgroundActivityStimulus), nameof(BackgroundActivityStimulus));
-        options.RegisterTypeAlias(typeof(BulkDispatchWorkflowsStimulus), nameof(BulkDispatchWorkflowsStimulus));
-        options.RegisterTypeAlias(typeof(DispatchWorkflowStimulus), nameof(DispatchWorkflowStimulus));
-        options.RegisterTypeAlias(typeof(EventStimulus), nameof(EventStimulus));
-        options.RegisterTypeAlias(typeof(ExecuteWorkflowStimulus), nameof(ExecuteWorkflowStimulus));
-        options.RegisterTypeAlias(typeof(RunTaskStimulus), nameof(RunTaskStimulus));
-
-        foreach (var workflowType in WorkflowTypes)
-            options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName());
+        WorkflowRuntimeTypeAliasRegistrar.Register(options, WorkflowTypes);
     }
 }

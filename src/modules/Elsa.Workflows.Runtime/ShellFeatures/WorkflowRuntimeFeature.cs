@@ -344,7 +344,6 @@ public class WorkflowRuntimeFeature : IShellFeature
 
     private void RegisterWorkflowTypeAliases(ExpressionOptions options)
     {
-        foreach (var workflowType in WorkflowTypes)
-            options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName());
+        WorkflowRuntimeTypeAliasRegistrar.Register(options, WorkflowTypes);
     }
 }
