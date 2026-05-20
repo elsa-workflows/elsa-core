@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using Elsa.Activities.UnitTests.Http.Helpers;
 using Elsa.Extensions;
@@ -56,6 +57,33 @@ public class SendHttpRequestTests
         Assert.NotNull(requestCapture.CapturedRequest);
         Assert.NotNull(requestCapture.CapturedRequest.Headers.Authorization);
         Assert.Equal(authorizationHeader, requestCapture.CapturedRequest.Headers.Authorization.ToString());
+    }
+
+    [Fact]
+    public async Task Should_Propagate_Current_Trace_Context()
+    {
+        // Arrange
+        using var listener = new ActivityListener
+        {
+            ShouldListenTo = _ => true,
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
+        };
+        ActivitySource.AddActivityListener(listener);
+
+        using var source = new ActivitySource("Elsa.Tests");
+        using var parentActivity = source.StartActivity("parent");
+        var requestCapture = new RequestCapture();
+        var responseHandler = CreateResponseHandler(HttpStatusCode.OK, null, requestCapture);
+        var sendHttpRequest = CreateSendHttpRequest(new("https://api.example.com/traced"));
+
+        // Act
+        await ExecuteActivityAsync(sendHttpRequest, responseHandler);
+
+        // Assert
+        Assert.NotNull(parentActivity);
+        Assert.NotNull(requestCapture.CapturedRequest);
+        Assert.True(requestCapture.CapturedRequest.Headers.TryGetValues("traceparent", out var values));
+        Assert.Equal($"00-{parentActivity.TraceId}-{parentActivity.SpanId}-01", Assert.Single(values));
     }
 
     [Theory]
@@ -166,7 +194,7 @@ public class SendHttpRequestTests
             expectedCategory: "HTTP",
             expectedDisplayName: "HTTP Request",
             expectedDescription: "Send an HTTP request.",
-            expectedKind: ActivityKind.Task
+            expectedKind: Elsa.Workflows.ActivityKind.Task
         );
     }
 

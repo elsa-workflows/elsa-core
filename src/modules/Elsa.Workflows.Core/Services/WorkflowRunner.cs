@@ -7,6 +7,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
+using Elsa.Workflows.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows;
@@ -205,34 +206,49 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
-        var loggerState = loggerStateGenerator.GenerateLoggerState(workflowExecutionContext);
-        using var loggingScope = logger.BeginScope(loggerState);
-        var workflow = workflowExecutionContext.Workflow;
-        var cancellationToken = workflowExecutionContext.CancellationToken;
+        var telemetryScope = WorkflowInstrumentation.StartWorkflow(workflowExecutionContext);
+        Exception? exception = null;
 
-        await notificationSender.SendAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken);
-
-        // If the status is Pending, it means the workflow is started for the first time.
-        if (workflowExecutionContext.SubStatus == WorkflowSubStatus.Pending)
+        try
         {
-            workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
-            await notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), cancellationToken);
+            var loggerState = loggerStateGenerator.GenerateLoggerState(workflowExecutionContext);
+            using var loggingScope = logger.BeginScope(loggerState);
+            var workflow = workflowExecutionContext.Workflow;
+            var cancellationToken = workflowExecutionContext.CancellationToken;
+
+            await notificationSender.SendAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken);
+
+            // If the status is Pending, it means the workflow is started for the first time.
+            if (workflowExecutionContext.SubStatus == WorkflowSubStatus.Pending)
+            {
+                workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
+                await notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), cancellationToken);
+            }
+
+            await pipeline.ExecuteAsync(workflowExecutionContext);
+            var workflowState = workflowStateExtractor.Extract(workflowExecutionContext);
+
+            if (workflowState.Status == WorkflowStatus.Finished)
+            {
+                await notificationSender.SendAsync(new WorkflowFinished(workflow, workflowState, workflowExecutionContext), cancellationToken);
+            }
+
+            var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
+            var workflowExecutionLogEntries = workflowExecutionContext.ExecutionLog.ToList();
+            var activityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.ToList();
+            var journal = new Journal(workflowExecutionLogEntries, activityExecutionContexts);
+            await notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
+            await commitStateHandler.CommitAsync(workflowExecutionContext, workflowState, cancellationToken);
+            return new(workflowExecutionContext, workflowState, workflowExecutionContext.Workflow, result, journal);
         }
-
-        await pipeline.ExecuteAsync(workflowExecutionContext);
-        var workflowState = workflowStateExtractor.Extract(workflowExecutionContext);
-
-        if (workflowState.Status == WorkflowStatus.Finished)
+        catch (Exception e)
         {
-            await notificationSender.SendAsync(new WorkflowFinished(workflow, workflowState, workflowExecutionContext), cancellationToken);
+            exception = e;
+            throw;
         }
-
-        var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
-        var workflowExecutionLogEntries = workflowExecutionContext.ExecutionLog.ToList();
-        var activityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.ToList();
-        var journal = new Journal(workflowExecutionLogEntries, activityExecutionContexts);
-        await notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
-        await commitStateHandler.CommitAsync(workflowExecutionContext, workflowState, cancellationToken);
-        return new(workflowExecutionContext, workflowState, workflowExecutionContext.Workflow, result, journal);
+        finally
+        {
+            WorkflowInstrumentation.StopWorkflow(telemetryScope, workflowExecutionContext, exception);
+        }
     }
 }

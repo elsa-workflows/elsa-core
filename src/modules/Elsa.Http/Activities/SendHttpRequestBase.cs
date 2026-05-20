@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using Elsa.Extensions;
@@ -11,6 +12,8 @@ using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
 using Polly;
+
+using DiagnosticsActivity = System.Diagnostics.Activity;
 
 namespace Elsa.Http;
 
@@ -216,9 +219,28 @@ public abstract class SendHttpRequestBase(string? source = null, int? line = nul
         async Task<HttpResponseMessage> SendRequestAsyncCore(CancellationToken ct = default)
         {
             var request = PrepareRequest(context);
+            InjectTraceContext(request);
 
             return await httpClient.SendAsync(request, ct);
         }
+    }
+
+    private static void InjectTraceContext(HttpRequestMessage request)
+    {
+        var activity = DiagnosticsActivity.Current;
+
+        if (activity == null)
+            return;
+
+        DistributedContextPropagator.Current.Inject(activity, request, InjectHeader);
+    }
+
+    private static void InjectHeader(object? carrier, string key, string value)
+    {
+        if (carrier is not HttpRequestMessage request || request.Headers.Contains(key))
+            return;
+
+        request.Headers.TryAddWithoutValidation(key, value);
     }
 
     private async Task<object?> ParseContentAsync(ActivityExecutionContext context, HttpResponseMessage httpResponse)
