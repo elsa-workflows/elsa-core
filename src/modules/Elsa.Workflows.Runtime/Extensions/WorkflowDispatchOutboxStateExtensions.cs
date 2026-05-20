@@ -35,8 +35,8 @@ public static class WorkflowDispatchOutboxStateExtensions
         return workflowState?.Properties.GetWorkflowDispatchOutboxState().ItemIds.Contains(outboxItemId) == true;
     }
 
-    private static WorkflowDispatchOutboxState GetWorkflowDispatchOutboxState(this IDictionary<string, object> properties)
+    private static WorkflowDispatchOutboxState GetWorkflowDispatchOutboxState(this IDictionary<string, object>? properties)
     {
-        return properties.TryGetValue<WorkflowDispatchOutboxState>(PropertyKey, out var state) ? state : new();
+        return properties?.TryGetValue<WorkflowDispatchOutboxState>(PropertyKey, out var state) == true ? state : new();
     }
 }
