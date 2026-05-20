@@ -11,6 +11,7 @@
         <ProjectReference Include="..\..\..\src\modules\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>

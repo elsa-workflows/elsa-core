@@ -3,6 +3,8 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Identity.Constants;
+using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Requirements;
 using Microsoft.AspNetCore.Authentication;
@@ -39,15 +41,44 @@ public class DefaultAuthenticationFeature : FeatureBase
     /// <returns>The current <see cref="DefaultAuthenticationFeature"/>.</returns>
     public DefaultAuthenticationFeature UseApiKeyAuthorization<T>() where T : class, IApiKeyProvider
     {
+        ApiKeyProviderType = typeof(T);
         _configureApiKeyAuthorization = builder => builder.AddApiKeyInAuthorizationHeader<T>();
         return this;
     }
 
     /// <summary>
-    /// Configures the API key provider type to <see cref="AdminApiKeyProvider"/>.
+    /// Configures the API key provider type to <see cref="AdminApiKeyProvider"/>. The provider denies all keys unless configured.
     /// </summary>
     /// <returns>The current <see cref="DefaultAuthenticationFeature"/>.</returns>
     public DefaultAuthenticationFeature UseAdminApiKey() => UseApiKeyAuthorization<AdminApiKeyProvider>();
+
+    /// <summary>
+    /// Configures the admin API key provider with an explicit API key.
+    /// </summary>
+    /// <param name="apiKey">The API key to accept.</param>
+    /// <returns>The current <see cref="DefaultAuthenticationFeature"/>.</returns>
+    public DefaultAuthenticationFeature UseAdminApiKey(string apiKey)
+    {
+        Services.Configure<AdminApiKeyOptions>(options => options.ApiKey = apiKey);
+        return UseAdminApiKey();
+    }
+
+    /// <summary>
+    /// Configures the admin API key provider with an explicit API key.
+    /// </summary>
+    /// <param name="configure">The admin API key options to configure.</param>
+    /// <returns>The current <see cref="DefaultAuthenticationFeature"/>.</returns>
+    public DefaultAuthenticationFeature UseAdminApiKey(Action<AdminApiKeyOptions> configure)
+    {
+        Services.Configure(configure);
+        return UseAdminApiKey();
+    }
+
+    /// <summary>
+    /// Enables the all-zero development admin API key. Do not use in production.
+    /// </summary>
+    /// <returns>The current <see cref="DefaultAuthenticationFeature"/>.</returns>
+    public DefaultAuthenticationFeature UseDevelopmentAdminApiKey() => UseAdminApiKey(AdminApiKeyProvider.DevelopmentApiKey);
     
     /// <summary>
     /// Disables the local host requirement for the security root policy.
@@ -63,6 +94,7 @@ public class DefaultAuthenticationFeature : FeatureBase
     public override void Apply()
     {
         Services.ConfigureOptions<ConfigureJwtBearerOptions>();
+        Services.Configure<AdminApiKeyOptions>(_ => { });
         Services.AddIdentityTokenOptionsValidation();
 
         var authBuilder = Services
@@ -76,7 +108,8 @@ public class DefaultAuthenticationFeature : FeatureBase
                         : JwtBearerDefaults.AuthenticationScheme;
                 };
             })
-            .AddJwtBearer();
+            .AddJwtBearer()
+            .AddJwtBearer(IdentityAuthenticationSchemes.RefreshToken);
 
         _configureApiKeyAuthorization(authBuilder);
 
