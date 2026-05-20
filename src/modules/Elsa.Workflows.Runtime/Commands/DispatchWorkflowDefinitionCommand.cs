@@ -18,4 +18,9 @@ public class DispatchWorkflowDefinitionCommand(string definitionVersionId) : ICo
     public string? SchedulingActivityExecutionId { get; set; }
     public string? SchedulingWorkflowInstanceId { get; set; }
     public int? SchedulingCallStackDepth { get; set; }
+
+    /// <summary>
+    /// When set, creating the workflow instance is skipped if <see cref="InstanceId"/> already exists.
+    /// </summary>
+    public bool SkipIfInstanceExists { get; set; }
 }

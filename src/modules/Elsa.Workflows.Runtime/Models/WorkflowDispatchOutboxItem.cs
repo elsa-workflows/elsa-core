@@ -33,6 +33,11 @@ public class WorkflowDispatchOutboxItem
     public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>
+    /// The number of failed delivery attempts.
+    /// </summary>
+    public int DeliveryAttempts { get; set; }
+
+    /// <summary>
     /// A workflow definition dispatch command.
     /// </summary>
     public DispatchWorkflowDefinitionCommand? WorkflowDefinitionCommand { get; set; }

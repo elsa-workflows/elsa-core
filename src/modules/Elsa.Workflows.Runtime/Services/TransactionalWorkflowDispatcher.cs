@@ -17,8 +17,8 @@ public class TransactionalWorkflowDispatcher(
     IWorkflowDispatchOutbox outbox,
     IWorkflowDispatchOutboxAccessor outboxAccessor,
     INotificationSender notificationSender,
-    ITenantAccessor tenantAccessor,
-    IOptions<WorkflowDispatcherOptions> options) : IWorkflowDispatcher
+    IOptions<WorkflowDispatcherOptions> options,
+    ITenantAccessor? tenantAccessor = null) : IWorkflowDispatcher
 {
     /// <inheritdoc />
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? dispatchOptions = null, CancellationToken cancellationToken = default)
@@ -30,7 +30,7 @@ public class TransactionalWorkflowDispatcher(
 
         await outbox.EnqueueAsync(context, new()
         {
-            TenantId = tenantAccessor.Tenant?.Id,
+            TenantId = tenantAccessor?.Tenant?.Id,
             Kind = WorkflowDispatchOutboxItemKind.WorkflowDefinition,
             WorkflowDefinitionCommand = WorkflowDispatchCommandFactory.CreateCommand(request)
         }, cancellationToken);
@@ -50,7 +50,7 @@ public class TransactionalWorkflowDispatcher(
 
         await outbox.EnqueueAsync(context, new()
         {
-            TenantId = tenantAccessor.Tenant?.Id,
+            TenantId = tenantAccessor?.Tenant?.Id,
             Kind = WorkflowDispatchOutboxItemKind.WorkflowInstance,
             WorkflowInstanceCommand = WorkflowDispatchCommandFactory.CreateCommand(request)
         }, cancellationToken);
@@ -68,7 +68,7 @@ public class TransactionalWorkflowDispatcher(
 
         await outbox.EnqueueAsync(context, new()
         {
-            TenantId = tenantAccessor.Tenant?.Id,
+            TenantId = tenantAccessor?.Tenant?.Id,
             Kind = WorkflowDispatchOutboxItemKind.TriggerWorkflows,
             TriggerWorkflowsCommand = WorkflowDispatchCommandFactory.CreateCommand(request)
         }, cancellationToken);
@@ -84,7 +84,7 @@ public class TransactionalWorkflowDispatcher(
 
         await outbox.EnqueueAsync(context, new()
         {
-            TenantId = tenantAccessor.Tenant?.Id,
+            TenantId = tenantAccessor?.Tenant?.Id,
             Kind = WorkflowDispatchOutboxItemKind.ResumeWorkflows,
             ResumeWorkflowsCommand = WorkflowDispatchCommandFactory.CreateCommand(request)
         }, cancellationToken);

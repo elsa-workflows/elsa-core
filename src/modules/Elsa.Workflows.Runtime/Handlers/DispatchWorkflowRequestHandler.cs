@@ -36,7 +36,7 @@ internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IW
     {
         var client = await workflowRuntime.CreateClientAsync(command.InstanceId, cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(command.InstanceId) && await client.InstanceExistsAsync(cancellationToken))
+        if (command.SkipIfInstanceExists && !string.IsNullOrWhiteSpace(command.InstanceId) && await client.InstanceExistsAsync(cancellationToken))
             return Unit.Instance;
 
         var createRequest = new CreateAndRunWorkflowInstanceRequest

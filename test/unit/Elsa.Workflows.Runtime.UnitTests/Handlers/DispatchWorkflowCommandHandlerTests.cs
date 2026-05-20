@@ -19,11 +19,28 @@ public class DispatchWorkflowCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_DoesNotCreateAndRunWorkflow_WhenCommandInstanceAlreadyExists()
+    public async Task HandleAsync_CreatesAndRunsWorkflow_WhenCommandInstanceAlreadyExistsAndIdempotencyIsNotRequested()
     {
         var command = new DispatchWorkflowDefinitionCommand("definition-version-1")
         {
             InstanceId = "child-1"
+        };
+        _workflowClient.InstanceExistsAsync(Arg.Any<CancellationToken>()).Returns(true);
+
+        await _handler.HandleAsync(command, CancellationToken.None);
+
+        await _workflowClient.Received(1).CreateAndRunInstanceAsync(
+            Arg.Is<CreateAndRunWorkflowInstanceRequest>(x => x.WorkflowDefinitionHandle.DefinitionVersionId == "definition-version-1"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_DoesNotCreateAndRunWorkflow_WhenCommandInstanceAlreadyExistsAndIdempotencyIsRequested()
+    {
+        var command = new DispatchWorkflowDefinitionCommand("definition-version-1")
+        {
+            InstanceId = "child-1",
+            SkipIfInstanceExists = true
         };
         _workflowClient.InstanceExistsAsync(Arg.Any<CancellationToken>()).Returns(true);
 

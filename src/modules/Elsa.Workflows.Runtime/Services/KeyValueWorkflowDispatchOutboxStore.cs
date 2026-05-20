@@ -33,8 +33,8 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
 
         return records
             .Select(x => payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(x.SerializedValue))
-            .Where(x => x != null)
-            .ToList()!;
+            .OfType<WorkflowDispatchOutboxItem>()
+            .ToList();
     }
 
     /// <inheritdoc />

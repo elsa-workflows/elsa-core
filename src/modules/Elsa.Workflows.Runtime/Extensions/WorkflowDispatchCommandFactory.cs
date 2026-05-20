@@ -17,7 +17,8 @@ internal static class WorkflowDispatchCommandFactory
             ParentWorkflowInstanceId = request.ParentWorkflowInstanceId,
             SchedulingActivityExecutionId = request.SchedulingActivityExecutionId,
             SchedulingWorkflowInstanceId = request.SchedulingWorkflowInstanceId,
-            SchedulingCallStackDepth = request.SchedulingCallStackDepth
+            SchedulingCallStackDepth = request.SchedulingCallStackDepth,
+            SkipIfInstanceExists = true
         };
     }
 

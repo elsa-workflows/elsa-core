@@ -30,9 +30,9 @@ public static class WorkflowDispatchOutboxStateExtensions
     /// <summary>
     /// Returns true when the workflow state includes the specified committed outbox item ID.
     /// </summary>
-    public static bool HasWorkflowDispatchOutboxItem(this WorkflowState workflowState, string outboxItemId)
+    public static bool HasWorkflowDispatchOutboxItem(this WorkflowState? workflowState, string outboxItemId)
     {
-        return workflowState.Properties.GetWorkflowDispatchOutboxState().ItemIds.Contains(outboxItemId);
+        return workflowState?.Properties.GetWorkflowDispatchOutboxState().ItemIds.Contains(outboxItemId) == true;
     }
 
     private static WorkflowDispatchOutboxState GetWorkflowDispatchOutboxState(this IDictionary<string, object> properties)
