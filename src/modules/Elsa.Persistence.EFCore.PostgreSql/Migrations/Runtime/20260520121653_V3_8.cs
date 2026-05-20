@@ -105,7 +105,8 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
                 name: "IX_BookmarkQueueDeadLetterItem_OriginalQueueItemId",
                 schema: "Elsa",
                 table: "BookmarkQueueDeadLetterItems",
-                column: "OriginalQueueItemId");
+                column: "OriginalQueueItemId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookmarkQueueDeadLetterItem_TenantId",

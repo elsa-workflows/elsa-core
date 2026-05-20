@@ -143,24 +143,27 @@ public class BookmarkQueueDeadLetterTests
     }
 
     [Fact]
-    public async Task ProcessAsync_WhenResumeThrowsSystemException_PropagatesWithoutDeadLettering()
+    public async Task ProcessAsync_WhenResumeThrowsBuiltInException_DeadLettersQueueItem()
     {
-        var item = NewQueueItem("system-exception", _now);
+        var item = NewQueueItem("built-in-exception", _now);
         await _queueStore.AddAsync(item);
         var processor = new BookmarkQueueProcessor(
             _queueStore,
             CreateManager(),
-            new ThrowingWorkflowResumer(new SystemException("system failure")),
+            new ThrowingWorkflowResumer(new InvalidOperationException("transient failure")),
             _clock,
-            Microsoft.Extensions.Options.Options.Create(new BookmarkQueuePurgeOptions { MaxDeliveryAttempts = 2 }),
+            Microsoft.Extensions.Options.Options.Create(new BookmarkQueuePurgeOptions { MaxDeliveryAttempts = 1 }),
             NullLogger<BookmarkQueueProcessor>.Instance);
 
-        await Assert.ThrowsAsync<SystemException>(() => processor.ProcessAsync());
+        await processor.ProcessAsync();
 
-        var retained = await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "system-exception" });
-        Assert.NotNull(retained);
-        Assert.Equal(0, retained.DeliveryAttempts);
-        Assert.Empty(await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter()));
+        Assert.Null(await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "built-in-exception" }));
+        var deadLetter = Assert.Single((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList());
+        Assert.Equal("built-in-exception", deadLetter.OriginalQueueItemId);
+        Assert.Equal("Failed", deadLetter.Reason);
+        Assert.Equal(1, deadLetter.DeliveryAttempts);
+        Assert.Equal(typeof(InvalidOperationException).FullName, deadLetter.LastErrorType);
+        Assert.Equal("transient failure", deadLetter.LastErrorMessage);
     }
 
     [Fact]

@@ -61,7 +61,7 @@ public class BookmarkQueueProcessor(
         {
             throw;
         }
-        catch (Exception ex) when (ex is not SystemException)
+        catch (Exception ex) when (ex is not OutOfMemoryException and not StackOverflowException)
         {
             await HandleFailureAsync(item, ex, cancellationToken);
             return;

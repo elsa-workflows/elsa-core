@@ -74,7 +74,7 @@ public class Configurations :
     {
         builder.Ignore(x => x.Options);
         builder.Property<string>("SerializedOptions");
-        builder.HasIndex(x => x.OriginalQueueItemId, $"IX_{nameof(BookmarkQueueDeadLetterItem)}_{nameof(BookmarkQueueDeadLetterItem.OriginalQueueItemId)}");
+        builder.HasIndex(x => x.OriginalQueueItemId, $"IX_{nameof(BookmarkQueueDeadLetterItem)}_{nameof(BookmarkQueueDeadLetterItem.OriginalQueueItemId)}").IsUnique();
         builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(BookmarkQueueDeadLetterItem)}_{nameof(BookmarkQueueDeadLetterItem.WorkflowInstanceId)}");
         builder.HasIndex(x => x.CorrelationId, $"IX_{nameof(BookmarkQueueDeadLetterItem)}_{nameof(BookmarkQueueDeadLetterItem.CorrelationId)}");
         builder.HasIndex(x => x.BookmarkId, $"IX_{nameof(BookmarkQueueDeadLetterItem)}_{nameof(BookmarkQueueDeadLetterItem.BookmarkId)}");
