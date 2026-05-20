@@ -109,7 +109,7 @@ Elsa exposes opt-in ASP.NET Core rate limiting hooks for two ingress surfaces:
 - Elsa management API endpoints, through `ApiEndpointOptions.RateLimitingPolicyName` and `UseWorkflowsApiRateLimiting(...)`.
 - Public HTTP workflow trigger routes, through `HttpActivityOptions.RateLimitingPolicyName` and `UseWorkflowsRateLimiting(...)`.
 
-The reference server registers disabled-by-default fixed-window policies under `IngressRateLimiting`. Enable them by setting `IngressRateLimiting:Enabled` to `true`, then tune the API and HTTP workflow permit/window values for production traffic. Custom hosts should register named policies with `services.AddRateLimiter(...)` before applying the Elsa middleware hooks. Leave the option disabled, or omit the policy names in custom hosts, to run without Elsa-provided rate limiting.
+The reference server registers disabled-by-default fixed-window policies under `IngressRateLimiting`. Enable them by setting `IngressRateLimiting:Enabled` to `true`, then tune the API and HTTP workflow permit/window values for production traffic. Custom hosts should register named policies with `services.AddRateLimiter(...)`, apply the Elsa metadata hooks before the rate limiter middleware, and call `app.UseRateLimiter()` once in the host pipeline. The Elsa hooks validate configured policy names during pipeline setup. Leave the option disabled, or omit the policy names in custom hosts, to run without Elsa-provided rate limiting.
 
 ## Security Review Checklist
 

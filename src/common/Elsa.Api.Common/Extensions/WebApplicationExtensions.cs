@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -19,7 +20,8 @@ namespace Elsa.Extensions;
 [PublicAPI]
 public static class WebApplicationExtensions
 {
-    private static readonly object OriginalEndpointKey = new();
+    private const string PolicyMapPropertyName = "PolicyMap";
+    private const string UnactivatedPolicyMapPropertyName = "UnactivatedPolicyMap";
 
     /// <summary>
     /// Register the FastEndpoints middleware configured for use with with Elsa API endpoints.
@@ -78,28 +80,54 @@ public static class WebApplicationExtensions
     /// <param name="displayName">The endpoint display name used for rate limiting metadata.</param>
     public static IApplicationBuilder UseRateLimitingPolicyForPath(this IApplicationBuilder app, PathString pathPrefix, string policyName, string displayName)
     {
-        if (!pathPrefix.HasValue)
+        if (!pathPrefix.HasValue || string.IsNullOrWhiteSpace(policyName))
             return app;
+
+        ValidateRateLimiterPolicy(app, policyName);
+        var originalEndpointKey = new object();
+        var rateLimitingEndpoint = new Endpoint(_ => Task.CompletedTask, new EndpointMetadataCollection(new EnableRateLimitingAttribute(policyName)), displayName);
 
         return app.UseWhen(
             context => context.Request.Path.StartsWithSegments(pathPrefix, StringComparison.OrdinalIgnoreCase),
             branch =>
             {
-                branch.Use((context, next) =>
+                branch.Use(async (context, next) =>
                 {
-                    context.Items[OriginalEndpointKey] = context.GetEndpoint();
-                    context.SetEndpoint(new Endpoint(_ => Task.CompletedTask, new EndpointMetadataCollection(new EnableRateLimitingAttribute(policyName)), displayName));
-                    return next(context);
-                });
-                branch.UseRateLimiter();
-                branch.Use((context, next) =>
-                {
-                    if (context.Items.TryGetValue(OriginalEndpointKey, out var endpoint))
-                        context.SetEndpoint((Endpoint?)endpoint);
+                    context.Items[originalEndpointKey] = context.GetEndpoint();
+                    context.SetEndpoint(rateLimitingEndpoint);
 
-                    return next(context);
+                    try
+                    {
+                        await next(context);
+                    }
+                    finally
+                    {
+                        context.SetEndpoint(context.Items.TryGetValue(originalEndpointKey, out var endpoint) ? (Endpoint?)endpoint : null);
+                    }
                 });
             });
+    }
+
+    private static void ValidateRateLimiterPolicy(IApplicationBuilder app, string policyName)
+    {
+        var options = app.ApplicationServices.GetService<IOptions<RateLimiterOptions>>()?.Value;
+
+        if (options == null || !HasRateLimiterPolicy(options, policyName))
+            throw new InvalidOperationException($"Rate limiting policy '{policyName}' is not registered. Register it with services.AddRateLimiter(...) before applying Elsa rate limiting middleware.");
+    }
+
+    private static bool HasRateLimiterPolicy(RateLimiterOptions options, string policyName)
+    {
+        return ContainsPolicy(options, PolicyMapPropertyName, policyName) || ContainsPolicy(options, UnactivatedPolicyMapPropertyName, policyName);
+    }
+
+    private static bool ContainsPolicy(RateLimiterOptions options, string propertyName, string policyName)
+    {
+        var property = typeof(RateLimiterOptions).GetProperty(propertyName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var map = property?.GetValue(options);
+        var containsKey = map?.GetType().GetMethod(nameof(Dictionary<string, object>.ContainsKey), [typeof(string)]);
+
+        return containsKey != null && containsKey.Invoke(map, [policyName]) is true;
     }
 
     private static ValueTask<object?> DeserializeRequestAsync(HttpRequest httpRequest, Type modelType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)

@@ -27,7 +27,7 @@ Default policies are intentionally conservative and queue-free:
 }
 ```
 
-Tune these values for production traffic and deployment topology. To disable the reference policies, leave `Enabled` as `false`. Custom hosts can register their own named ASP.NET Core rate limiter policies with `services.AddRateLimiter(...)` and pass the policy names through `ApiEndpointOptions.RateLimitingPolicyName` and `HttpActivityOptions.RateLimitingPolicyName` before calling `UseWorkflowsApiRateLimiting(...)` and `UseWorkflowsRateLimiting(...)`.
+Tune these values for production traffic and deployment topology. To disable the reference policies, leave `Enabled` as `false`. Custom hosts can register their own named ASP.NET Core rate limiter policies with `services.AddRateLimiter(...)`, pass the policy names through `ApiEndpointOptions.RateLimitingPolicyName` and `HttpActivityOptions.RateLimitingPolicyName`, call `UseWorkflowsApiRateLimiting(...)` and `UseWorkflowsRateLimiting(...)`, then call `app.UseRateLimiter()` once for the host pipeline. The Elsa hooks validate that configured policy names are registered and only attach endpoint metadata, so they should run before the host's single rate limiter middleware.
 
 ## OpenTelemetry (MacOS)
 

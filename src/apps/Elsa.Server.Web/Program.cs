@@ -215,14 +215,18 @@ if (useMultitenancy)
 var apiEndpointOptions = app.Services.GetRequiredService<IOptions<ApiEndpointOptions>>().Value;
 var routePrefix = apiEndpointOptions.RoutePrefix;
 app.UseWorkflowsApiRateLimiting(routePrefix, apiEndpointOptions.RateLimitingPolicyName);
+
+// Elsa HTTP Endpoint activities.
+var httpActivityOptions = app.Services.GetRequiredService<IOptions<HttpActivityOptions>>().Value;
+app.UseWorkflowsRateLimiting(httpActivityOptions.BasePath, httpActivityOptions.RateLimitingPolicyName);
+if (useIngressRateLimiting)
+    app.UseRateLimiter();
+
 app.UseWorkflowsApi(routePrefix);
 
 // Captures unhandled exceptions and returns a JSON response.
 app.UseJsonSerializationErrorHandler();
 
-// Elsa HTTP Endpoint activities.
-var httpActivityOptions = app.Services.GetRequiredService<IOptions<HttpActivityOptions>>().Value;
-app.UseWorkflowsRateLimiting(httpActivityOptions.BasePath, httpActivityOptions.RateLimitingPolicyName);
 app.UseWorkflows();
 
 app.MapControllers();
