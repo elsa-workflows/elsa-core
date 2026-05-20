@@ -34,13 +34,15 @@ public class ElsaWorkflowPersistenceHealthCheckTests
     }
 
     [Fact]
-    public async Task ReturnsUnhealthyWhenAStoreProbeFails()
+    public async Task ReturnsUnhealthyWithFailedStoreWhenAStoreProbeFails()
     {
         _triggerStore.FindAsync(Arg.Any<TriggerFilter>(), Arg.Any<CancellationToken>()).Returns<ValueTask<Elsa.Workflows.Runtime.Entities.StoredTrigger?>>(_ => throw new InvalidOperationException("store unavailable"));
 
         var result = await _sut.CheckHealthAsync(new HealthCheckContext());
 
         Assert.Equal(HealthStatus.Unhealthy, result.Status);
+        Assert.Equal("Elsa workflow store 'triggers' is not reachable.", result.Description);
         Assert.Equal("persistence", result.Data["category"]);
+        Assert.Equal("triggers", result.Data["failedStore"]);
     }
 }

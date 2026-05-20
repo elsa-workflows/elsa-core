@@ -14,6 +14,14 @@ services
 
 Use `includeDistributedLocks: true` when the host enables distributed runtime behavior or relies on distributed locks for workflow coordination. Leave it `false` for simple single-node hosts that do not want a lock probe.
 
+Persistence probes are enabled by default. Set `includePersistence: false` when a host uses a custom or minimal persistence setup, or when it only needs the `elsa-runtime` readiness probe:
+
+```csharp
+services
+    .AddHealthChecks()
+    .AddElsaReadinessChecks(includePersistence: false);
+```
+
 Map separate endpoints for liveness and readiness:
 
 ```csharp
@@ -24,7 +32,12 @@ app.MapHealthChecks("/health/live", new()
 
 app.MapHealthChecks("/health/ready", new()
 {
-    Predicate = check => check.Tags.Contains("readiness")
+    Predicate = check => check.Tags.Contains("readiness"),
+    ResultStatusCodes =
+    {
+        [HealthStatus.Degraded] = StatusCodes.Status503ServiceUnavailable,
+        [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+    }
 });
 ```
 

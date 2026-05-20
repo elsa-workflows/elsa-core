@@ -20,12 +20,14 @@ public class ElsaWorkflowPersistenceHealthCheck(
     /// <inheritdoc />
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
+        var failedStore = "";
+
         try
         {
-            await workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter { Id = ProbeId }, cancellationToken);
-            await workflowInstanceStore.CountAsync(new WorkflowInstanceFilter { Id = ProbeId }, cancellationToken);
-            await triggerStore.FindAsync(new TriggerFilter { Id = ProbeId }, cancellationToken);
-            await bookmarkQueueStore.FindAsync(new BookmarkQueueFilter { Id = ProbeId }, cancellationToken);
+            await ProbeAsync("workflow-definitions", async ct => await workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter { Id = ProbeId }, ct));
+            await ProbeAsync("workflow-instances", async ct => await workflowInstanceStore.CountAsync(new WorkflowInstanceFilter { Id = ProbeId }, ct));
+            await ProbeAsync("triggers", async ct => await triggerStore.FindAsync(new TriggerFilter { Id = ProbeId }, ct));
+            await ProbeAsync("bookmark-queue", async ct => await bookmarkQueueStore.FindAsync(new BookmarkQueueFilter { Id = ProbeId }, ct));
 
             return HealthCheckResult.Healthy("Elsa workflow stores are reachable.", new Dictionary<string, object>
             {
@@ -35,10 +37,17 @@ public class ElsaWorkflowPersistenceHealthCheck(
         }
         catch (Exception e) when (!e.IsFatal())
         {
-            return HealthCheckResult.Unhealthy("Elsa workflow stores are not reachable.", e, new Dictionary<string, object>
+            return HealthCheckResult.Unhealthy($"Elsa workflow store '{failedStore}' is not reachable.", e, new Dictionary<string, object>
             {
-                ["category"] = "persistence"
+                ["category"] = "persistence",
+                ["failedStore"] = failedStore
             });
+        }
+
+        async Task ProbeAsync(string store, Func<CancellationToken, Task> probe)
+        {
+            failedStore = store;
+            await probe(cancellationToken);
         }
     }
 }

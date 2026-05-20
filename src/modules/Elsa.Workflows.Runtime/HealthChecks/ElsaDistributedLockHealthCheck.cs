@@ -9,13 +9,15 @@ namespace Elsa.Workflows.Runtime.HealthChecks;
 /// </summary>
 public class ElsaDistributedLockHealthCheck(IDistributedLockProvider distributedLockProvider) : IHealthCheck
 {
+    private const string LockName = "elsa-health-check";
+    private static readonly TimeSpan LockAcquisitionTimeout = TimeSpan.FromSeconds(1);
+
     /// <inheritdoc />
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         try
         {
-            var lockName = $"elsa-health-check-{Guid.NewGuid():N}";
-            await using var handle = await distributedLockProvider.TryAcquireLockAsync(lockName, TimeSpan.Zero, cancellationToken);
+            await using var handle = await distributedLockProvider.TryAcquireLockAsync(LockName, LockAcquisitionTimeout, cancellationToken);
             if (handle == null)
             {
                 return HealthCheckResult.Degraded("Elsa distributed lock provider was reachable, but the probe lock was not acquired.", data: new Dictionary<string, object>

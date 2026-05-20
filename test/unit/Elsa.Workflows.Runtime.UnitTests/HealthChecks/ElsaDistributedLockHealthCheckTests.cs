@@ -7,6 +7,7 @@ namespace Elsa.Workflows.Runtime.UnitTests.HealthChecks;
 
 public class ElsaDistributedLockHealthCheckTests
 {
+    private static readonly TimeSpan ExpectedLockAcquisitionTimeout = TimeSpan.FromSeconds(1);
     private readonly IDistributedLockProvider _distributedLockProvider = Substitute.For<IDistributedLockProvider>();
     private readonly IDistributedLock _distributedLock = Substitute.For<IDistributedLock>();
     private readonly ElsaDistributedLockHealthCheck _sut;
@@ -26,6 +27,8 @@ public class ElsaDistributedLockHealthCheckTests
 
         Assert.Equal(HealthStatus.Healthy, result.Status);
         Assert.Equal("distributed-locks", result.Data["category"]);
+        _distributedLockProvider.Received(1).CreateLock("elsa-health-check");
+        await _distributedLock.Received(1).TryAcquireAsync(ExpectedLockAcquisitionTimeout, Arg.Any<CancellationToken>());
     }
 
     [Fact]
