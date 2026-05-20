@@ -172,9 +172,14 @@ if (registerIngressRateLimitingPolicies)
         if (string.IsNullOrWhiteSpace(options.RateLimitingPolicyName))
             options.RateLimitingPolicyName = httpWorkflowRateLimitingPolicy;
     });
-    services.AddRateLimiter(options =>
+}
+
+services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    if (registerIngressRateLimitingPolicies)
     {
-        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
         options.AddFixedWindowLimiter(elsaApiRateLimitingPolicy, limiterOptions =>
         {
             limiterOptions.PermitLimit = ingressRateLimitingSection.GetValue("ApiPermitLimit", 120);
@@ -189,8 +194,8 @@ if (registerIngressRateLimitingPolicies)
             limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
             limiterOptions.QueueLimit = ingressRateLimitingSection.GetValue("HttpWorkflowQueueLimit", 0);
         });
-    });
-}
+    }
+});
 services.AddHealthChecks();
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
