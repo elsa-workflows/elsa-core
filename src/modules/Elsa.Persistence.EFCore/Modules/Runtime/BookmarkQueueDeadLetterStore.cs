@@ -46,7 +46,10 @@ public class EFBookmarkQueueDeadLetterStore(Store<RuntimeElsaDbContext, Bookmark
         if (affectedRows == 0)
             return null;
 
-        var entity = await dbContext.Set<BookmarkQueueDeadLetterItem>().AsNoTracking().FirstAsync(x => x.Id == id, cancellationToken);
+        var entity = await dbContext.Set<BookmarkQueueDeadLetterItem>().AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (entity == null)
+            return null;
+
         await OnLoadAsync(dbContext, entity, cancellationToken);
         return entity;
     }
@@ -74,8 +77,8 @@ public class EFBookmarkQueueDeadLetterStore(Store<RuntimeElsaDbContext, Bookmark
     /// <inheritdoc />
     public async Task<Page<BookmarkQueueDeadLetterItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueDeadLetterFilter filter, BookmarkQueueDeadLetterItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var count = await store.QueryAsync(filter.Apply, cancellationToken).LongCount();
-        var results = await store.QueryAsync(queryable => filter.Apply(queryable).OrderBy(orderBy).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
+        var count = await store.QueryAsync(filter.Apply, filter.TenantAgnostic, cancellationToken).LongCount();
+        var results = await store.QueryAsync(queryable => filter.Apply(queryable).OrderBy(orderBy).Paginate(pageArgs), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
         return new(results, count);
     }
 

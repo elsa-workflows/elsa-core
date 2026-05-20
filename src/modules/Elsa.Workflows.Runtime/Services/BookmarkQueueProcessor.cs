@@ -57,6 +57,10 @@ public class BookmarkQueueProcessor(
         {
             responses = (await workflowResumer.ResumeAsync(filter, resumeOptions, cancellationToken)).ToList();
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             await HandleFailureAsync(item, ex, cancellationToken);

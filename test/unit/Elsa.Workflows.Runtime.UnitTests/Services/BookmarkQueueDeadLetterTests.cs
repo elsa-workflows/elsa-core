@@ -1,10 +1,12 @@
 using Elsa.Common;
+using Elsa.Common.Models;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.OrderDefinitions;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Stores;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -49,6 +51,25 @@ public class BookmarkQueueDeadLetterTests
         Assert.Equal("expired", deadLetters[0].OriginalQueueItemId);
         Assert.Equal("Expired", deadLetters[0].Reason);
         Assert.True(deadLetters[0].CanReplay);
+    }
+
+    [Fact]
+    public async Task PurgeAsync_DoesNotDeadLetterExpiredItemAlreadyRemovedByProcessor()
+    {
+        var expired = NewQueueItem("expired", _now.AddMinutes(-2));
+        await _queueStore.AddAsync(expired);
+        var queueStore = new DeletingAfterPageQueueStore(_queueStore);
+        var purger = new DefaultBookmarkQueuePurger(
+            queueStore,
+            _deadLetterStore,
+            CreateManager(),
+            _clock,
+            Microsoft.Extensions.Options.Options.Create(new BookmarkQueuePurgeOptions { Ttl = TimeSpan.FromMinutes(1), DeadLetterTtl = TimeSpan.FromDays(7) }),
+            NullLogger<DefaultBookmarkQueuePurger>.Instance);
+
+        await purger.PurgeAsync();
+
+        Assert.Empty(await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter()));
     }
 
     [Fact]
@@ -98,6 +119,27 @@ public class BookmarkQueueDeadLetterTests
         Assert.Equal(2, deadLetter.DeliveryAttempts);
         Assert.Equal(typeof(InvalidOperationException).FullName, deadLetter.LastErrorType);
         Assert.Equal("resume failed", deadLetter.LastErrorMessage);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WhenResumeIsCanceled_PropagatesCancellationWithoutIncrementingDeliveryAttempts()
+    {
+        var item = NewQueueItem("cancelled", _now);
+        await _queueStore.AddAsync(item);
+        var processor = new BookmarkQueueProcessor(
+            _queueStore,
+            CreateManager(),
+            new CancelingWorkflowResumer(),
+            _clock,
+            Microsoft.Extensions.Options.Options.Create(new BookmarkQueuePurgeOptions { MaxDeliveryAttempts = 2 }),
+            NullLogger<BookmarkQueueProcessor>.Instance);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => processor.ProcessAsync());
+
+        var retained = await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "cancelled" });
+        Assert.NotNull(retained);
+        Assert.Equal(0, retained.DeliveryAttempts);
+        Assert.Empty(await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter()));
     }
 
     [Fact]
@@ -249,5 +291,62 @@ public class BookmarkQueueDeadLetterTests
         {
             throw new InvalidOperationException("resume failed");
         }
+    }
+
+    private sealed class CancelingWorkflowResumer : IWorkflowResumer
+    {
+        public Task<IEnumerable<RunWorkflowInstanceResponse>> ResumeAsync<TActivity>(object stimulus, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default) where TActivity : IActivity
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<RunWorkflowInstanceResponse?> ResumeAsync(string bookmarkId, IDictionary<string, object> input, CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<IEnumerable<RunWorkflowInstanceResponse>> ResumeAsync<TActivity>(object stimulus, string? workflowInstanceId = null, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default) where TActivity : IActivity
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<RunWorkflowInstanceResponse?> ResumeAsync<TActivity>(string bookmarkId, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default) where TActivity : IActivity
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<IEnumerable<RunWorkflowInstanceResponse>> ResumeAsync(ResumeBookmarkRequest request, CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<IEnumerable<RunWorkflowInstanceResponse>> ResumeAsync(BookmarkFilter filter, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default)
+        {
+            throw new OperationCanceledException(cancellationToken);
+        }
+    }
+
+    private sealed class DeletingAfterPageQueueStore(IBookmarkQueueStore inner) : IBookmarkQueueStore
+    {
+        public Task SaveAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default) => inner.SaveAsync(record, cancellationToken);
+
+        public Task AddAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default) => inner.AddAsync(record, cancellationToken);
+
+        public Task<BookmarkQueueItem?> FindAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => inner.FindAsync(filter, cancellationToken);
+
+        public Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => inner.FindManyAsync(filter, cancellationToken);
+
+        public Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default) => inner.PageAsync(pageArgs, orderBy, cancellationToken);
+
+        public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
+        {
+            var page = await inner.PageAsync(pageArgs, filter, orderBy, cancellationToken);
+            foreach (var item in page.Items)
+                await inner.DeleteAsync(new BookmarkQueueFilter { Id = item.Id }, cancellationToken);
+
+            return page;
+        }
+
+        public Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => inner.DeleteAsync(filter, cancellationToken);
     }
 }

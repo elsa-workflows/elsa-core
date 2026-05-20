@@ -40,16 +40,22 @@ public class DefaultBookmarkQueuePurger(
             if (items.Count == 0)
                 break;
 
+            var movedCount = 0;
             foreach (var item in items)
-                await deadLetterManager.DeadLetterAsync(item, "Expired", cancellationToken: cancellationToken);
-
-            var ids = items.Select(x => x.Id).ToList();
-            await store.DeleteAsync(new BookmarkQueueFilter
             {
-                Ids = ids
-            }, cancellationToken);
+                var deletedCount = await store.DeleteAsync(new BookmarkQueueFilter
+                {
+                    Id = item.Id
+                }, cancellationToken);
 
-            logger.LogInformation("Moved {Count} expired bookmark queue items to the dead-letter store.", items.Count);
+                if (deletedCount == 0)
+                    continue;
+
+                await deadLetterManager.DeadLetterAsync(item, "Expired", cancellationToken: cancellationToken);
+                movedCount++;
+            }
+
+            logger.LogInformation("Moved {Count} expired bookmark queue items to the dead-letter store.", movedCount);
         }
 
         await PurgeDeadLettersAsync(now, cancellationToken);
