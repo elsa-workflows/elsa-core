@@ -1,9 +1,13 @@
-using System.Reflection;
+using System.Collections;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Middleware;
+using Elsa.Http.Options;
+using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Http.UnitTests.Middleware;
@@ -14,7 +18,7 @@ public class HttpWorkflowsMiddlewareTests
     private const string OtherTenantId = "tenant-b";
     private const string BookmarkHash = "http-endpoint:/colliding:get";
 
-    private readonly TenantAwareBookmarkStore _bookmarkStore;
+    private readonly CapturingBookmarkStore _bookmarkStore;
     private readonly IServiceProvider _serviceProvider;
     private readonly HttpWorkflowsMiddleware _middleware = new(_ => Task.CompletedTask);
 
@@ -23,24 +27,31 @@ public class HttpWorkflowsMiddlewareTests
         _bookmarkStore = new(CurrentTenantId, CreateCollidingHttpEndpointBookmarks());
         _serviceProvider = new ServiceCollection()
             .AddSingleton<IBookmarkStore>(_bookmarkStore)
+            .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
+            .AddSingleton<IRouteTable>(new ListRouteTable([new(BookmarkPath)]))
+            .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
             .BuildServiceProvider();
     }
 
     [Fact]
-    public async Task FindBookmarksAsync_WithCollidingHttpEndpointBookmarks_ReturnsOnlyCurrentTenantBookmark()
+    public async Task InvokeAsync_WithCollidingHttpEndpointBookmarks_UsesTenantScopedBookmarkLookup()
     {
-        var bookmarks = await FindBookmarksAsync();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = _serviceProvider
+        };
+        httpContext.Request.Path = BookmarkPath;
+        httpContext.Request.Method = HttpMethod.Get.Method;
 
-        var bookmark = Assert.Single(bookmarks);
-        Assert.Equal(CurrentTenantId, bookmark.TenantId);
-        Assert.False(_bookmarkStore.LastFilter?.TenantAgnostic);
-    }
+        await _middleware.InvokeAsync(
+            httpContext,
+            _serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = null }),
+            new EmptyHttpWorkflowLookupService());
 
-    private async Task<IEnumerable<StoredBookmark>> FindBookmarksAsync()
-    {
-        var method = typeof(HttpWorkflowsMiddleware).GetMethod("FindBookmarksAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var result = method.Invoke(_middleware, [_serviceProvider, BookmarkHash, null, null, CancellationToken.None]);
-        return await (Task<IEnumerable<StoredBookmark>>)result!;
+        Assert.NotNull(_bookmarkStore.LastFilter);
+        var filter = _bookmarkStore.LastFilter!;
+        Assert.False(filter.TenantAgnostic);
     }
 
     private static IEnumerable<StoredBookmark> CreateCollidingHttpEndpointBookmarks()
@@ -48,6 +59,8 @@ public class HttpWorkflowsMiddlewareTests
         yield return CreateBookmark("current-tenant-bookmark", CurrentTenantId);
         yield return CreateBookmark("other-tenant-bookmark", OtherTenantId);
     }
+
+    private const string BookmarkPath = "/colliding";
 
     private static StoredBookmark CreateBookmark(string id, string tenantId) => new()
     {
@@ -58,7 +71,7 @@ public class HttpWorkflowsMiddlewareTests
         Payload = new HttpEndpointBookmarkPayload("/colliding", "get")
     };
 
-    private class TenantAwareBookmarkStore(string currentTenantId, IEnumerable<StoredBookmark> bookmarks) : IBookmarkStore
+    private class CapturingBookmarkStore(string currentTenantId, IEnumerable<StoredBookmark> bookmarks) : IBookmarkStore
     {
         private readonly ICollection<StoredBookmark> _bookmarks = bookmarks.ToList();
 
@@ -87,7 +100,8 @@ public class HttpWorkflowsMiddlewareTests
         public ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
         {
             LastFilter = filter;
-            return new(Filter(filter).ToList());
+            _ = Filter(filter).ToList();
+            return new([]);
         }
 
         public ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
@@ -108,6 +122,52 @@ public class HttpWorkflowsMiddlewareTests
                 query = query.Where(x => x.TenantId == currentTenantId);
 
             return query;
+        }
+    }
+
+    private class EmptyHttpWorkflowLookupService : IHttpWorkflowLookupService
+    {
+        public Task<HttpWorkflowLookupResult?> FindWorkflowAsync(string bookmarkHash, CancellationToken cancellationToken = default) => Task.FromResult<HttpWorkflowLookupResult?>(null);
+    }
+
+    private class FixedStimulusHasher : IStimulusHasher
+    {
+        public string Hash(string stimulusName, object? payload = null, string? activityInstanceId = null) => BookmarkHash;
+    }
+
+    private class ExactRouteMatcher : IRouteMatcher
+    {
+        public RouteValueDictionary? Match(string routeTemplate, string route) => routeTemplate == route ? new() : null;
+    }
+
+    private class ListRouteTable(IEnumerable<HttpRouteData> routes) : IRouteTable
+    {
+        private readonly ICollection<HttpRouteData> _routes = routes.ToList();
+
+        public IEnumerator<HttpRouteData> GetEnumerator() => _routes.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public void Add(string route) => _routes.Add(new(route));
+
+        public void Add(HttpRouteData httpRouteData) => _routes.Add(httpRouteData);
+
+        public void Remove(string route)
+        {
+            foreach (var routeData in _routes.Where(x => x.Route == route).ToList())
+                _routes.Remove(routeData);
+        }
+
+        public void AddRange(IEnumerable<string> routes)
+        {
+            foreach (var route in routes)
+                Add(route);
+        }
+
+        public void RemoveRange(IEnumerable<string> routes)
+        {
+            foreach (var route in routes)
+                Remove(route);
         }
     }
 }
