@@ -214,6 +214,11 @@ app.UseCors();
 // Health checks.
 app.MapHealthChecks("/");
 
+// Elsa API endpoints for designer.
+var apiEndpointOptions = app.Services.GetRequiredService<IOptions<ApiEndpointOptions>>().Value;
+var routePrefix = apiEndpointOptions.RoutePrefix;
+app.MapWorkflowsApi(routePrefix);
+
 // Routing used for SignalR.
 app.UseRouting();
 
@@ -225,9 +230,6 @@ app.UseAuthorization();
 if (useMultitenancy)
     app.UseTenants();
 
-// Elsa API endpoints for designer.
-var apiEndpointOptions = app.Services.GetRequiredService<IOptions<ApiEndpointOptions>>().Value;
-var routePrefix = apiEndpointOptions.RoutePrefix;
 app.UseWorkflowsApiRateLimiting(routePrefix, apiEndpointOptions.RateLimitingPolicyName);
 
 // Elsa HTTP Endpoint activities.
@@ -237,9 +239,6 @@ if (useIngressRateLimiting ||
     !string.IsNullOrWhiteSpace(apiEndpointOptions.RateLimitingPolicyName) ||
     !string.IsNullOrWhiteSpace(httpActivityOptions.RateLimitingPolicyName))
     app.UseRateLimiter();
-
-app.UseWorkflowsApi(routePrefix);
-
 // Captures unhandled exceptions and returns a JSON response.
 app.UseJsonSerializationErrorHandler();
 

@@ -41,6 +41,19 @@ public class IngressRateLimitingTests
     }
 
     [Fact]
+    public async Task UseWorkflowsRateLimiting_NormalizesHttpWorkflowBasePath()
+    {
+        await using var app = await CreateAppAsync(app => app.UseWorkflowsRateLimiting("/workflows/", PolicyName));
+        var client = app.GetTestClient();
+
+        var firstResponse = await client.GetAsync("/workflows/hello-world");
+        var secondResponse = await client.GetAsync("/workflows/hello-world");
+
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, secondResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task UseWorkflowsApiRateLimiting_DoesNotApplyPolicyToOtherPaths()
     {
         await using var app = await CreateAppAsync(app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName));
@@ -212,6 +225,7 @@ public class IngressRateLimitingTests
         catch (InvalidOperationException exception)
         {
             Assert.Contains($"Rate limiting policy '{PolicyName}' is not registered", exception.Message);
+            Assert.DoesNotContain("services were not registered", exception.Message);
             return;
         }
 

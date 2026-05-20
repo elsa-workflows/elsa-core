@@ -132,14 +132,14 @@ public static class WebApplicationExtensions
         var policyFound = TryHasRateLimiterPolicy(options, policyName);
 
         if (policyFound == false)
-            throw new InvalidOperationException($"Rate limiting policy '{policyName}' is not registered, or rate limiting services were not registered. Call services.AddRateLimiter(...) and register the policy before applying Elsa rate limiting middleware.");
+            throw new InvalidOperationException($"Rate limiting policy '{policyName}' is not registered. Register the policy with services.AddRateLimiter(...) before applying Elsa rate limiting middleware.");
     }
 
     private static bool HasRateLimiterServices(IServiceProvider serviceProvider)
     {
         // IOptions<RateLimiterOptions> can exist without AddRateLimiter(); this internal service is registered by AddRateLimiter().
         var metricsType = typeof(RateLimiterOptions).Assembly.GetType(RateLimitingMetricsTypeName);
-        return metricsType == null || serviceProvider.GetService(metricsType) != null;
+        return metricsType != null && serviceProvider.GetService(metricsType) != null;
     }
 
     private static bool? TryHasRateLimiterPolicy(RateLimiterOptions options, string policyName)
