@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows;
@@ -21,6 +22,7 @@ namespace Elsa.Extensions;
 public static class WebApplicationExtensions
 {
     private const string PolicyMapPropertyName = "PolicyMap";
+    private const string RateLimitingMetricsTypeName = "Microsoft.AspNetCore.RateLimiting.RateLimitingMetrics";
     private const string UnactivatedPolicyMapPropertyName = "UnactivatedPolicyMap";
 
     /// <summary>
@@ -79,7 +81,8 @@ public static class WebApplicationExtensions
     /// <param name="policyName">The registered ASP.NET Core rate limiting policy name.</param>
     /// <param name="displayName">The endpoint display name used for rate limiting metadata.</param>
     /// <remarks>
-    /// This method only attaches rate limiting metadata. Register a single <c>app.UseRateLimiter()</c> middleware after this call.
+    /// This method only attaches rate limiting metadata. In endpoint-routed pipelines, call this after routing has selected an endpoint
+    /// and before the host's single <c>app.UseRateLimiter()</c> middleware.
     /// </remarks>
     public static IApplicationBuilder UseRateLimitingPolicyForPath(this IApplicationBuilder app, PathString pathPrefix, string policyName, string displayName)
     {
@@ -87,7 +90,9 @@ public static class WebApplicationExtensions
             return app;
 
         ValidateRateLimiterPolicy(app, policyName);
-        var originalEndpointKey = new object();
+        var rateLimitingMetadata = new EnableRateLimitingAttribute(policyName);
+        var fallbackEndpoint = CreateRateLimitingEndpoint(null, rateLimitingMetadata, displayName);
+        var endpointCache = new ConditionalWeakTable<Endpoint, Endpoint>();
 
         return app.UseWhen(
             context => context.Request.Path.StartsWithSegments(pathPrefix, StringComparison.OrdinalIgnoreCase),
@@ -95,8 +100,12 @@ public static class WebApplicationExtensions
             {
                 branch.Use(async (context, next) =>
                 {
-                    context.Items[originalEndpointKey] = context.GetEndpoint();
-                    context.SetEndpoint(CreateRateLimitingEndpoint(context.GetEndpoint(), policyName, displayName));
+                    var originalEndpoint = context.GetEndpoint();
+                    var rateLimitingEndpoint = originalEndpoint == null
+                        ? fallbackEndpoint
+                        : endpointCache.GetValue(originalEndpoint, endpoint => CreateRateLimitingEndpoint(endpoint, rateLimitingMetadata, displayName));
+
+                    context.SetEndpoint(rateLimitingEndpoint);
 
                     try
                     {
@@ -104,7 +113,7 @@ public static class WebApplicationExtensions
                     }
                     finally
                     {
-                        context.SetEndpoint(context.Items.TryGetValue(originalEndpointKey, out var endpoint) ? (Endpoint?)endpoint : null);
+                        context.SetEndpoint(originalEndpoint);
                     }
                 });
             });
@@ -112,6 +121,9 @@ public static class WebApplicationExtensions
 
     private static void ValidateRateLimiterPolicy(IApplicationBuilder app, string policyName)
     {
+        if (!HasRateLimiterServices(app.ApplicationServices))
+            throw new InvalidOperationException($"Rate limiting services are not registered. Call services.AddRateLimiter(...) before applying Elsa rate limiting middleware for policy '{policyName}'.");
+
         var options = app.ApplicationServices.GetService<IOptions<RateLimiterOptions>>()?.Value;
 
         if (options == null)
@@ -121,6 +133,13 @@ public static class WebApplicationExtensions
 
         if (policyFound == false)
             throw new InvalidOperationException($"Rate limiting policy '{policyName}' is not registered, or rate limiting services were not registered. Call services.AddRateLimiter(...) and register the policy before applying Elsa rate limiting middleware.");
+    }
+
+    private static bool HasRateLimiterServices(IServiceProvider serviceProvider)
+    {
+        // IOptions<RateLimiterOptions> can exist without AddRateLimiter(); this internal service is registered by AddRateLimiter().
+        var metricsType = typeof(RateLimiterOptions).Assembly.GetType(RateLimitingMetricsTypeName);
+        return metricsType == null || serviceProvider.GetService(metricsType) != null;
     }
 
     private static bool? TryHasRateLimiterPolicy(RateLimiterOptions options, string policyName)
@@ -137,11 +156,14 @@ public static class WebApplicationExtensions
         return results.Any(result => !result.HasValue) ? null : false;
     }
 
-    private static Endpoint CreateRateLimitingEndpoint(Endpoint? originalEndpoint, string policyName, string displayName)
+    private static Endpoint CreateRateLimitingEndpoint(Endpoint? originalEndpoint, EnableRateLimitingAttribute rateLimitingMetadata, string displayName)
     {
         var metadata = originalEndpoint == null
-            ? new EndpointMetadataCollection(new EnableRateLimitingAttribute(policyName))
-            : new EndpointMetadataCollection(originalEndpoint.Metadata.Concat([new EnableRateLimitingAttribute(policyName)]));
+            ? new EndpointMetadataCollection(rateLimitingMetadata)
+            : new EndpointMetadataCollection(originalEndpoint.Metadata.Concat([rateLimitingMetadata]));
+
+        if (originalEndpoint is RouteEndpoint routeEndpoint)
+            return new RouteEndpoint(routeEndpoint.RequestDelegate ?? (_ => Task.CompletedTask), routeEndpoint.RoutePattern, routeEndpoint.Order, metadata, routeEndpoint.DisplayName ?? displayName);
 
         return new Endpoint(originalEndpoint?.RequestDelegate ?? (_ => Task.CompletedTask), metadata, originalEndpoint?.DisplayName ?? displayName);
     }

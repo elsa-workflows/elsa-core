@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -100,6 +101,66 @@ public class IngressRateLimitingTests
     }
 
     [Fact]
+    public async Task UseWorkflowsApiRateLimiting_CachesAugmentedRouteEndpointAndPreservesRouteDetails()
+    {
+        var builder = CreateBuilder();
+        AddRateLimiterServices(builder.Services);
+        RouteEndpoint? originalEndpoint = null;
+        RouteEndpoint? firstAugmentedEndpoint = null;
+        RouteEndpoint? secondAugmentedEndpoint = null;
+        var requestCount = 0;
+        var routeMetadata = new TestRouteMetadata("ping");
+        var app = new TestApplication(builder.Build(), app =>
+        {
+            app.MapGet("/elsa/api/ping", () => "pong")
+                .WithDisplayName("Elsa API Ping")
+                .WithMetadata(routeMetadata);
+            app.UseRouting();
+            app.Use(async (context, next) =>
+            {
+                originalEndpoint ??= Assert.IsType<RouteEndpoint>(context.GetEndpoint());
+                await next(context);
+            });
+            app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName);
+            app.Use(async (context, next) =>
+            {
+                var augmentedEndpoint = Assert.IsType<RouteEndpoint>(context.GetEndpoint());
+                requestCount++;
+                if (requestCount == 1)
+                    firstAugmentedEndpoint = augmentedEndpoint;
+                else
+                    secondAugmentedEndpoint = augmentedEndpoint;
+
+                await next(context);
+            });
+            app.UseRateLimiter();
+        });
+        await using (app)
+        {
+            app.Configure();
+            await app.StartAsync();
+            var client = app.GetTestClient();
+
+            var firstResponse = await client.GetAsync("/elsa/api/ping");
+            var secondResponse = await client.GetAsync("/elsa/api/ping");
+
+            Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+            Assert.Equal(HttpStatusCode.TooManyRequests, secondResponse.StatusCode);
+        }
+
+        Assert.NotNull(originalEndpoint);
+        Assert.NotNull(firstAugmentedEndpoint);
+        Assert.NotNull(secondAugmentedEndpoint);
+        Assert.NotSame(originalEndpoint, firstAugmentedEndpoint);
+        Assert.Same(firstAugmentedEndpoint, secondAugmentedEndpoint);
+        Assert.Equal(originalEndpoint.RoutePattern.RawText, firstAugmentedEndpoint.RoutePattern.RawText);
+        Assert.Equal(originalEndpoint.Order, firstAugmentedEndpoint.Order);
+        Assert.Equal(originalEndpoint.DisplayName, firstAugmentedEndpoint.DisplayName);
+        Assert.Same(routeMetadata, firstAugmentedEndpoint.Metadata.GetMetadata<TestRouteMetadata>());
+        Assert.Equal(PolicyName, firstAugmentedEndpoint.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName);
+    }
+
+    [Fact]
     public void UseWorkflowsApiRateLimiting_ThrowsWhenPolicyIsNotRegistered()
     {
         // This current-runtime assertion depends on ASP.NET Core's named-policy maps being inspectable.
@@ -122,7 +183,7 @@ public class IngressRateLimitingTests
 
         var exception = Assert.Throws<InvalidOperationException>(() => app.Configure());
 
-        Assert.Contains($"Rate limiting policy '{PolicyName}' is not registered", exception.Message);
+        Assert.Contains("Rate limiting services are not registered", exception.Message);
     }
 
     private static async Task<TestApplication> CreateAppAsync(Action<WebApplication> configure, Action<RateLimiterOptions>? configureRateLimiter = null)
@@ -226,4 +287,6 @@ public class IngressRateLimitingTests
             });
         }
     }
+
+    private sealed record TestRouteMetadata(string Value);
 }
