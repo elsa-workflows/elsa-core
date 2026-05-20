@@ -21,10 +21,7 @@ public class SimulateResponseSessionStore(IOptions<SimulateResponseOptions> opti
         {
             PruneExpired(now);
 
-            if (_sessions.TryGetValue(sessionId, out var state))
-                nextIndex = Math.Min(state.NextIndex, statusCodeCount - 1);
-            else
-                nextIndex = 0;
+            nextIndex = _sessions.TryGetValue(sessionId, out var state) ? Math.Min(state.NextIndex, statusCodeCount - 1) : 0;
 
             if (nextIndex + 1 >= statusCodeCount)
             {
