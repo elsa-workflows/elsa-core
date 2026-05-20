@@ -114,13 +114,9 @@ public sealed class WorkflowJsonTypeResolverTests
     [InlineData(typeof(System.Text.StringBuilder))]
     [InlineData(typeof(System.Text.StringBuilder[]))]
     [InlineData(typeof(List<System.Text.StringBuilder>))]
-    public void When_SerializeUnsupportedType_Then_EmitsLegacyTypeNameThatCannotBeDeserialized(Type type)
+    public void When_SerializeUnsupportedType_Then_ThrowsJsonException(Type type)
     {
-        var json = JsonSerializer.Serialize(type, _options);
-        var typeAlias = JsonSerializer.Deserialize<string>(json);
-
-        Assert.Equal(type.GetSimpleAssemblyQualifiedName(), typeAlias);
-        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<Type>(json, _options));
+        Assert.Throws<JsonException>(() => JsonSerializer.Serialize(type, _options));
     }
 
     [Fact]

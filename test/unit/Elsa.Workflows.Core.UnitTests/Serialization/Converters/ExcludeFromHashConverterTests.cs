@@ -68,6 +68,14 @@ public class ExcludeFromHashConverterTests
         Assert.Contains("\"Count\":0", json);
     }
 
+    [Fact]
+    public void Write_IncludesProperty_WhenJsonIgnoreConditionIsUnknown()
+    {
+        var json = JsonSerializer.Serialize<object>(new UnknownIgnoreConditionModel { Name = "Alice" }, _options);
+
+        Assert.Contains("\"Name\":\"Alice\"", json);
+    }
+
     private sealed class ConditionalIgnoreModel
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -101,5 +109,11 @@ public class ExcludeFromHashConverterTests
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public int? Count { get; set; }
+    }
+
+    private sealed class UnknownIgnoreConditionModel
+    {
+        [JsonIgnore(Condition = (JsonIgnoreCondition)999)]
+        public string? Name { get; set; }
     }
 }

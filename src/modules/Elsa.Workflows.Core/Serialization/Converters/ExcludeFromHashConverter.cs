@@ -64,7 +64,7 @@ public class ExcludeFromHashConverter : JsonConverter<object>
             JsonIgnoreCondition.Always => true,
             JsonIgnoreCondition.WhenWritingNull => value == null,
             JsonIgnoreCondition.WhenWritingDefault => value == null || IsDefaultValue(declaredType, value),
-            _ => throw new JsonException($"Unsupported JSON ignore condition '{attribute.Condition}'.")
+            _ => false
         };
     }
 
