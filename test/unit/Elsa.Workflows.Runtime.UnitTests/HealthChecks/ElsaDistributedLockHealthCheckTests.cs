@@ -36,6 +36,24 @@ public class ElsaDistributedLockHealthCheckTests
     }
 
     [Fact]
+    public async Task UsesUniqueProbeLockNameForEachCheck()
+    {
+        var lockNames = new List<string>();
+        var distributedLockProvider = Substitute.For<IDistributedLockProvider>();
+        var distributedLock = Substitute.For<IDistributedLock>();
+        distributedLockProvider.CreateLock(Arg.Do<string>(lockNames.Add)).Returns(distributedLock);
+        distributedLock.TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<IDistributedSynchronizationHandle?>(Substitute.For<IDistributedSynchronizationHandle>()));
+        var sut = new ElsaDistributedLockHealthCheck(CreateServiceProvider(distributedLockProvider), CreateOptions(), NullLogger<ElsaDistributedLockHealthCheck>.Instance);
+
+        await sut.CheckHealthAsync(new HealthCheckContext());
+        await sut.CheckHealthAsync(new HealthCheckContext());
+
+        Assert.Equal(2, lockNames.Count);
+        Assert.NotEqual(lockNames[0], lockNames[1]);
+    }
+
+    [Fact]
     public async Task ReturnsDegradedWhenProbeLockCannotBeAcquired()
     {
         _distributedLock.TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())

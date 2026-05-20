@@ -16,8 +16,6 @@ public class ElsaDistributedLockHealthCheck(
     IOptions<ElsaReadinessHealthCheckOptions> options,
     ILogger<ElsaDistributedLockHealthCheck> logger) : IHealthCheck
 {
-    private static readonly string LockName = $"elsa-health-check-{Environment.MachineName}-{Guid.NewGuid():N}";
-
     /// <inheritdoc />
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
@@ -32,7 +30,8 @@ public class ElsaDistributedLockHealthCheck(
                 });
             }
 
-            await using var handle = await distributedLockProvider.TryAcquireLockAsync(LockName, options.Value.DistributedLockAcquisitionTimeout, cancellationToken);
+            var lockName = $"elsa-health-check-{Environment.MachineName}-{Guid.NewGuid():N}";
+            await using var handle = await distributedLockProvider.TryAcquireLockAsync(lockName, options.Value.DistributedLockAcquisitionTimeout, cancellationToken);
             if (handle == null)
             {
                 return HealthCheckResult.Degraded("Elsa distributed lock provider was reachable, but the probe lock was not acquired.", data: new Dictionary<string, object>
