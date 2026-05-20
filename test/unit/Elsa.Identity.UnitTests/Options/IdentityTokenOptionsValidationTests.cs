@@ -14,6 +14,8 @@ public class IdentityTokenOptionsValidationTests
     {
         { options => options.SigningKey = string.Empty, "SigningKey is required" },
         { options => options.SigningKey = " ", "SigningKey is required" },
+        { options => options.SigningKey = $" {SecureSigningKey}", "must not contain leading or trailing whitespace" },
+        { options => options.SigningKey = $"{SecureSigningKey} ", "must not contain leading or trailing whitespace" },
         { options => options.SigningKey = "short-signing-key", "at least 32 ASCII characters" },
         { options => options.SigningKey = new string('é', 32), "non-printable or non-ASCII characters" },
         { options => options.SigningKey = "sufficiently-large-secret-signing-key", "known public default" },

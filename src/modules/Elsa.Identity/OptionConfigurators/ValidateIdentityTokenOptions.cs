@@ -44,6 +44,9 @@ public class ValidateIdentityTokenOptions : IValidateOptions<IdentityTokenOption
 
         var signingKey = options.SigningKey.Trim();
 
+        if (!string.Equals(signingKey, options.SigningKey, StringComparison.Ordinal))
+            return ValidateOptionsResult.Fail("SigningKey must not contain leading or trailing whitespace. Configure the exact secure random JWT signing key through configuration, environment variables, or a secrets manager.");
+
         if (KnownDefaultSigningKeys.Contains(signingKey))
         {
             if (!IsDemoOrDevelopment())
