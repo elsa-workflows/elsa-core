@@ -68,7 +68,7 @@ public static class WorkflowInstrumentation
         if (shouldRecordStarted)
             WorkflowStartedCounter.Add(1, CreateWorkflowTags(context, false));
 
-        return new WorkflowInstrumentationScope(activity, Stopwatch.GetTimestamp());
+        return new WorkflowInstrumentationScope(activity);
     }
 
     internal static ActivityInstrumentationScope StartActivity(ActivityExecutionContext context)
@@ -228,6 +228,6 @@ public static class WorkflowInstrumentation
     }
 }
 
-public readonly record struct WorkflowInstrumentationScope(DiagnosticsActivity? Activity, long StartTimestamp);
+public readonly record struct WorkflowInstrumentationScope(DiagnosticsActivity? Activity);
 
 public readonly record struct ActivityInstrumentationScope(DiagnosticsActivity? Activity, long StartTimestamp);

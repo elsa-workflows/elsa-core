@@ -46,6 +46,28 @@ public class WorkflowInstrumentationTests
     }
 
     [Fact]
+    public async Task WorkflowRunner_Should_Record_Completed_Metric_When_Pipeline_Finishes()
+    {
+        using var activityCapture = new ActivityCapture();
+        using var meterCapture = new MeterCapture();
+        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var context = activityExecutionContext.WorkflowExecutionContext;
+        context.Workflow.WorkflowMetadata = new("Test workflow");
+        var runner = CreateWorkflowRunner(context, new CompletingWorkflowExecutionPipeline());
+
+        await runner.RunAsync(context);
+
+        var span = Assert.Single(activityCapture.StoppedActivities);
+        var tags = span.TagObjects.ToDictionary(x => x.Key, x => x.Value);
+        Assert.Equal(ActivityStatusCode.Ok, span.Status);
+        Assert.Equal(WorkflowSubStatus.Finished.ToString(), tags[WorkflowInstrumentation.WorkflowSubStatus]);
+        var started = Assert.Single(meterCapture.LongMeasurements, x => x.InstrumentName == "elsa.workflow.started" && x.Value == 1);
+        var completed = Assert.Single(meterCapture.LongMeasurements, x => x.InstrumentName == "elsa.workflow.completed" && x.Value == 1);
+        Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowSubStatus));
+        Assert.Equal(WorkflowSubStatus.Finished.ToString(), completed.Tags[WorkflowInstrumentation.WorkflowSubStatus]);
+    }
+
+    [Fact]
     public async Task WorkflowRunner_Should_Record_Faulted_Span_And_Metric_When_Pipeline_Throws()
     {
         using var activityCapture = new ActivityCapture();
@@ -140,6 +162,25 @@ public class WorkflowInstrumentationTests
             context.JournalData["Outcomes"] = null!;
             throw new InvalidOperationException("Pipeline failed");
         }
+    }
+
+    private sealed class CompletingWorkflowExecutionPipeline : IWorkflowExecutionPipeline
+    {
+        public Action<IWorkflowExecutionPipelineBuilder> ConfigurePipelineBuilder => _ => { };
+        public WorkflowMiddlewareDelegate Pipeline => _ => ValueTask.CompletedTask;
+
+        public WorkflowMiddlewareDelegate Setup(Action<IWorkflowExecutionPipelineBuilder> setup) => Pipeline;
+
+        public Task ExecuteAsync(WorkflowExecutionContext context)
+        {
+            SetWorkflowSubStatus(context, WorkflowSubStatus.Finished);
+            return Task.CompletedTask;
+        }
+    }
+
+    private static void SetWorkflowSubStatus(WorkflowExecutionContext context, WorkflowSubStatus subStatus)
+    {
+        typeof(WorkflowExecutionContext).GetProperty(nameof(WorkflowExecutionContext.SubStatus))!.SetValue(context, subStatus);
     }
 
     private sealed class ThrowingWorkflowExecutionPipeline : IWorkflowExecutionPipeline
