@@ -1,7 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
-using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
@@ -36,11 +35,6 @@ public class DryRun(IWorkflowInstanceFinder workflowInstanceFinder) : ElsaEndpoi
 
     private bool ValidateInput(AlterationWorkflowInstanceFilter filter)
     {
-        var errors = WorkflowInstanceFilter.ValidateTimestampFilters(filter.TimestampFilters).ToList();
-
-        foreach (var error in errors)
-            AddError(error);
-
-        return errors.Count == 0;
+        return TimestampFilterValidation.Validate(filter.TimestampFilters, error => AddError(error));
     }
 }

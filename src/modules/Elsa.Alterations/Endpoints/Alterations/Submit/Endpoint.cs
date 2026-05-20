@@ -3,7 +3,6 @@ using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
 using Elsa.Common;
 using Elsa.Workflows;
-using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
@@ -53,11 +52,6 @@ public class Submit : ElsaEndpoint<AlterationPlanParams, Response>
 
     private bool ValidateInput(AlterationPlanParams planParams)
     {
-        var errors = WorkflowInstanceFilter.ValidateTimestampFilters(planParams.Filter?.TimestampFilters).ToList();
-
-        foreach (var error in errors)
-            AddError(error);
-
-        return errors.Count == 0;
+        return TimestampFilterValidation.Validate(planParams.Filter?.TimestampFilters, error => AddError(error));
     }
 }

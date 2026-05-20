@@ -166,6 +166,9 @@ public class WorkflowInstanceFilter
         {
             foreach (var timestampFilter in TimestampFilters)
             {
+                if (timestampFilter == null)
+                    throw new ArgumentException("Timestamp filter must be specified.", nameof(TimestampFilters));
+
                 var column = NormalizeTimestampFilterColumn(timestampFilter.Column);
                 var timestamp = timestampFilter.Timestamp;
                 var isZeroTime = timestamp.TimeOfDay == TimeSpan.Zero;

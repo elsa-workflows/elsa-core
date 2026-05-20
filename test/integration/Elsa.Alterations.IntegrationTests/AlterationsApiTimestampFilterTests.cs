@@ -98,6 +98,19 @@ public class AlterationsApiTimestampFilterTests : IAsyncLifetime
         Assert.Contains("Timestamp filter must be specified.", body);
     }
 
+    [Theory]
+    [InlineData("/alterations/dry-run")]
+    [InlineData("/alterations/submit")]
+    public async Task Post_WithMultipleInvalidTimestampFilters_ReturnsAllValidationErrors(string path)
+    {
+        var response = await _httpClient.PostAsJsonAsync(path, CreateRequestWithMultipleInvalidTimestampFilters(path));
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("Timestamp filter column must be specified.", body);
+        Assert.Contains("Timestamp filter must be specified.", body);
+    }
+
     private static object CreateRequest(string path)
     {
         var filter = new
@@ -123,6 +136,27 @@ public class AlterationsApiTimestampFilterTests : IAsyncLifetime
         var filter = new
         {
             timestampFilters = new object?[] { null }
+        };
+
+        return path == "/alterations/submit"
+            ? new { filter }
+            : filter;
+    }
+
+    private static object CreateRequestWithMultipleInvalidTimestampFilters(string path)
+    {
+        var filter = new
+        {
+            timestampFilters = new object?[]
+            {
+                new
+                {
+                    column = " ",
+                    @operator = TimestampFilterOperator.Is,
+                    timestamp = new DateTimeOffset(2026, 5, 20, 10, 0, 0, TimeSpan.Zero)
+                },
+                null
+            }
         };
 
         return path == "/alterations/submit"

@@ -71,6 +71,20 @@ public class WorkflowInstanceFilterTimestampTests
     }
 
     [Fact]
+    public void Apply_WithNullTimestampFilter_ThrowsClearArgumentException()
+    {
+        var filter = new WorkflowInstanceFilter
+        {
+            TimestampFilters = [null!]
+        };
+
+        var exception = Assert.Throws<ArgumentException>(() => filter.Apply(_workflowInstances).ToList());
+
+        Assert.Contains("Timestamp filter must be specified.", exception.Message);
+        Assert.Equal(nameof(WorkflowInstanceFilter.TimestampFilters), exception.ParamName);
+    }
+
+    [Fact]
     public void ValidateTimestampFilters_WithMissingColumn_ReturnsClearValidationError()
     {
         var errors = WorkflowInstanceFilter.ValidateTimestampFilters(
