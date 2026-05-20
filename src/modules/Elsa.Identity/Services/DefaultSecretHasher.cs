@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.Buffers.Text;
-using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Elsa.Identity.Contracts;
@@ -113,8 +112,7 @@ public class DefaultSecretHasher : ISecretHasher
         var hash = HashSecret(secret, salt, DefaultIterationCount);
         try
         {
-            var encodedHash = Convert.ToBase64String(hash);
-            return Encoding.UTF8.GetBytes($"{Algorithm}{Separator}{DefaultIterationCount.ToString(CultureInfo.InvariantCulture)}{Separator}{encodedHash}");
+            return FormatHashEnvelope(hash);
         }
         finally
         {
@@ -128,6 +126,30 @@ public class DefaultSecretHasher : ISecretHasher
     private static byte[] HashSecret(byte[] secret, byte[] salt, int iterationCount)
     {
         return Rfc2898DeriveBytes.Pbkdf2(secret, salt, iterationCount, HashAlgorithmName.SHA256, KeySize);
+    }
+
+    private static byte[] FormatHashEnvelope(byte[] hash)
+    {
+        Span<byte> iterationBytes = stackalloc byte[16];
+        if (!Utf8Formatter.TryFormat(DefaultIterationCount, iterationBytes, out var iterationBytesWritten))
+            throw new InvalidOperationException("Failed to format the PBKDF2 iteration count.");
+
+        var encodedHashLength = ((hash.Length + 2) / 3) * 4;
+        var result = new byte[AlgorithmBytes.Length + 1 + iterationBytesWritten + 1 + encodedHashLength];
+        var resultSpan = result.AsSpan();
+        AlgorithmBytes.CopyTo(resultSpan);
+
+        var offset = AlgorithmBytes.Length;
+        resultSpan[offset++] = SeparatorByte;
+        iterationBytes[..iterationBytesWritten].CopyTo(resultSpan[offset..]);
+        offset += iterationBytesWritten;
+        resultSpan[offset++] = SeparatorByte;
+
+        var status = Base64.EncodeToUtf8(hash, resultSpan[offset..], out var consumed, out var written);
+        if (status != OperationStatus.Done || consumed != hash.Length || written != encodedHashLength)
+            throw new InvalidOperationException("Failed to encode the PBKDF2 hash.");
+
+        return result;
     }
 
     private static byte[] HashLegacySha256(byte[] secret, byte[] salt)

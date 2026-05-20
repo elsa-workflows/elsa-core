@@ -13,7 +13,7 @@ public class DefaultApiKeyGeneratorAndParser : IApiKeyGenerator, IApiKeyParser
     public string Generate(string clientId)
     {
         var hexIdentifier = Convert.ToHexString(Encoding.UTF8.GetBytes(clientId));
-        var id = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+        var id = new Guid(RandomNumberGenerator.GetBytes(16)).ToString("D");
         return $"{hexIdentifier}-{id}";
     }
 

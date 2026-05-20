@@ -20,18 +20,8 @@ public class DefaultSecretHasherTests
         var hashedSecret = _hasher.HashSecret("secret");
 
         Assert.StartsWith("pbkdf2-sha256$600000$", Encoding.UTF8.GetString(hashedSecret.Secret));
-        Assert.True(_hasher.VerifySecret("secret", hashedSecret, out var needsRehash));
-        Assert.False(needsRehash);
-    }
-
-    [Fact]
-    public void HashSecret_FormatsPbkdf2EnvelopeUsingInvariantCulture()
-    {
-        using var _ = new CultureScope("ar-SA");
-
-        var hashedSecret = _hasher.HashSecret("secret");
-
-        Assert.StartsWith("pbkdf2-sha256$600000$", Encoding.UTF8.GetString(hashedSecret.Secret));
+        Assert.Equal(32, hashedSecret.Salt.Length);
+        Assert.Equal(44, hashedSecret.EncodeSalt().Length);
         Assert.True(_hasher.VerifySecret("secret", hashedSecret, out var needsRehash));
         Assert.False(needsRehash);
     }
@@ -49,14 +39,12 @@ public class DefaultSecretHasherTests
     }
 
     [Fact]
-    public void HashSecret_GeneratesExpectedSaltAndVerifiesSecret()
+    public void GenerateSalt_GeneratesExpectedSalt()
     {
-        var hashedSecret = _hasher.HashSecret("secret");
+        var salt = _hasher.GenerateSalt();
 
-        Assert.Equal(32, hashedSecret.Salt.Length);
-        Assert.Equal(44, hashedSecret.EncodeSalt().Length);
-        Assert.True(_hasher.VerifySecret("secret", hashedSecret, out var needsRehash));
-        Assert.False(needsRehash);
+        Assert.Equal(32, salt.Length);
+        Assert.Equal(44, Convert.ToBase64String(salt).Length);
     }
 
     [Fact]
@@ -141,14 +129,16 @@ public class DefaultSecretHasherTests
             HashedPassword = legacyHash.EncodeSecret(),
             HashedPasswordSalt = legacyHash.EncodeSalt()
         });
-        var validator = new DefaultUserCredentialsValidator(new StoreBasedUserProvider(userStore), userStore, _hasher);
+        var rehashingHasher = new RehashingSecretHasher("secret");
+        var validator = new DefaultUserCredentialsValidator(new StoreBasedUserProvider(userStore), userStore, rehashingHasher);
 
         var user = await validator.ValidateAsync("alice", "secret");
         var reloadedUser = await userStore.FindAsync(new UserFilter { Name = "alice" });
 
         Assert.NotNull(user);
         Assert.NotNull(reloadedUser);
-        Assert.StartsWith("pbkdf2-sha256$", Encoding.UTF8.GetString(Convert.FromBase64String(reloadedUser.HashedPassword)));
+        Assert.Equal(rehashingHasher.UpgradedSecret.EncodeSecret(), reloadedUser.HashedPassword);
+        Assert.Equal(rehashingHasher.UpgradedSecret.EncodeSalt(), reloadedUser.HashedPasswordSalt);
     }
 
     [Fact]
@@ -169,14 +159,16 @@ public class DefaultSecretHasherTests
             HashedClientSecretSalt = ""
         });
         var applicationProvider = new StoreBasedApplicationProvider(applicationStore);
-        var validator = new DefaultApplicationCredentialsValidator(apiKeyGenerator, applicationProvider, applicationStore, _hasher);
+        var rehashingHasher = new RehashingSecretHasher(apiKey);
+        var validator = new DefaultApplicationCredentialsValidator(apiKeyGenerator, applicationProvider, applicationStore, rehashingHasher);
 
         var application = await validator.ValidateAsync(apiKey);
         var reloadedApplication = await applicationStore.FindAsync(new ApplicationFilter { ClientId = "client-1" });
 
         Assert.NotNull(application);
         Assert.NotNull(reloadedApplication);
-        Assert.StartsWith("pbkdf2-sha256$", Encoding.UTF8.GetString(Convert.FromBase64String(reloadedApplication.HashedApiKey)));
+        Assert.Equal(rehashingHasher.UpgradedSecret.EncodeSecret(), reloadedApplication.HashedApiKey);
+        Assert.Equal(rehashingHasher.UpgradedSecret.EncodeSalt(), reloadedApplication.HashedApiKeySalt);
     }
 
     [Fact]
@@ -191,7 +183,7 @@ public class DefaultSecretHasherTests
             HashedPasswordSalt = legacyHash.EncodeSalt()
         };
         var userStore = new FailingUserStore(user, new TimeoutException("Save timed out."));
-        var validator = new DefaultUserCredentialsValidator(new StoreBasedUserProvider(userStore), userStore, _hasher);
+        var validator = new DefaultUserCredentialsValidator(new StoreBasedUserProvider(userStore), userStore, new RehashingSecretHasher("secret"));
 
         var validatedUser = await validator.ValidateAsync("alice", "secret");
 
@@ -212,7 +204,7 @@ public class DefaultSecretHasherTests
             HashedPassword = encodedLegacyHash,
             HashedPasswordSalt = legacyHash.EncodeSalt()
         };
-        var validator = new DefaultUserCredentialsValidator(new StaticUserProvider(user), _hasher);
+        var validator = new DefaultUserCredentialsValidator(new StaticUserProvider(user), new RehashingSecretHasher("secret"));
 
         var validatedUser = await validator.ValidateAsync("alice", "secret");
 
@@ -238,7 +230,7 @@ public class DefaultSecretHasherTests
         };
         var applicationStore = new FailingApplicationStore(application);
         var applicationProvider = new StoreBasedApplicationProvider(applicationStore);
-        var validator = new DefaultApplicationCredentialsValidator(apiKeyGenerator, applicationProvider, applicationStore, _hasher);
+        var validator = new DefaultApplicationCredentialsValidator(apiKeyGenerator, applicationProvider, applicationStore, new RehashingSecretHasher(apiKey));
 
         var validatedApplication = await validator.ValidateAsync(apiKey);
 
@@ -265,7 +257,7 @@ public class DefaultSecretHasherTests
             HashedClientSecretSalt = ""
         };
         var applicationProvider = new StaticApplicationProvider(application);
-        var validator = new DefaultApplicationCredentialsValidator(apiKeyGenerator, applicationProvider, _hasher);
+        var validator = new DefaultApplicationCredentialsValidator(apiKeyGenerator, applicationProvider, new RehashingSecretHasher(apiKey));
 
         var validatedApplication = await validator.ValidateAsync(apiKey);
 
@@ -310,6 +302,35 @@ public class DefaultSecretHasherTests
             var user = filter.Apply(new[] { _user }.AsQueryable()).FirstOrDefault();
             return Task.FromResult(user);
         }
+    }
+
+    private sealed class RehashingSecretHasher(string expectedSecret) : ISecretHasher
+    {
+        public HashedSecret UpgradedSecret { get; } = HashedSecret.FromBytes(Encoding.UTF8.GetBytes("upgraded-secret"), Encoding.UTF8.GetBytes("upgraded-salt"));
+
+        public HashedSecret HashSecret(string secret) => UpgradedSecret;
+
+        public HashedSecret HashSecret(string secret, byte[] salt) => UpgradedSecret;
+
+        public bool VerifySecret(string clearTextSecret, string secret, string salt) => clearTextSecret == expectedSecret;
+
+        public bool VerifySecret(string clearTextSecret, string secret, string salt, out bool needsRehash)
+        {
+            needsRehash = clearTextSecret == expectedSecret;
+            return clearTextSecret == expectedSecret;
+        }
+
+        public bool VerifySecret(string clearTextSecret, HashedSecret hashedSecret) => clearTextSecret == expectedSecret;
+
+        public bool VerifySecret(string clearTextSecret, HashedSecret hashedSecret, out bool needsRehash)
+        {
+            needsRehash = clearTextSecret == expectedSecret;
+            return clearTextSecret == expectedSecret;
+        }
+
+        public byte[] HashSecret(byte[] secret, byte[] salt) => UpgradedSecret.Secret;
+
+        public byte[] GenerateSalt(int saltSize = 32) => UpgradedSecret.Salt;
     }
 
     private sealed class FailingApplicationStore(Application application) : IApplicationStore

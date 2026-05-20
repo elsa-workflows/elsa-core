@@ -11,9 +11,8 @@ public class DefaultApiKeyGeneratorAndParserTests
 
         var apiKey = generator.Generate("client-1");
         var suffix = apiKey.Split('-', 2)[1];
-        var bytes = Convert.FromHexString(suffix);
 
-        Assert.Equal(64, suffix.Length);
-        Assert.Equal(32, bytes.Length);
+        Assert.Equal(36, suffix.Length);
+        Assert.True(Guid.TryParseExact(suffix, "D", out _));
     }
 }
