@@ -544,14 +544,14 @@ public class HttpEndpoint : Trigger<HttpRequest>
         private long _bytesRead;
 
         public override bool CanRead => inner.CanRead;
-        public override bool CanSeek => inner.CanSeek;
+        public override bool CanSeek => false;
         public override bool CanWrite => false;
         public override long Length => inner.Length;
 
         public override long Position
         {
             get => inner.Position;
-            set => inner.Position = value;
+            set => throw new NotSupportedException();
         }
 
         public override void Flush() => inner.Flush();
@@ -584,7 +584,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
             return bytesRead;
         }
 
-        public override long Seek(long offset, SeekOrigin origin) => inner.Seek(offset, origin);
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
 
         public override void SetLength(long value) => throw new NotSupportedException();
 
@@ -596,8 +596,10 @@ public class HttpEndpoint : Trigger<HttpRequest>
                 return 0;
 
             var remainingBytes = requestSizeLimit - _bytesRead;
-            var readLimit = Math.Max(0, remainingBytes) + 1;
-            return (int)Math.Min(requestedCount, readLimit);
+            if (remainingBytes >= requestedCount)
+                return requestedCount;
+
+            return (int)Math.Max(0, remainingBytes) + 1;
         }
 
         private void CountBytesRead(int bytesRead)
