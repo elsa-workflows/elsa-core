@@ -106,6 +106,6 @@ internal static class WorkflowExecutionHelper
         }
 
         httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-        await httpContext.Response.WriteAsync(result.Message!, cancellationToken);
+        await httpContext.Response.WriteAsync(result.Message ?? "Workflow script authorization failed.", cancellationToken);
     }
 }

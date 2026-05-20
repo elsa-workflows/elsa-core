@@ -15,7 +15,7 @@ internal static class WorkflowDefinitionScriptAuthorizationFailure
             return;
         }
 
-        addError(result.Message!);
+        addError(result.Message ?? "Workflow script authorization failed.");
         await sendErrorsAsync(400, cancellationToken);
     }
 }
