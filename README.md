@@ -34,6 +34,8 @@ docker run -t -i -e ASPNETCORE_ENVIRONMENT='Development' -e HTTP_PORTS=8080 -e H
 
 > This Docker image is based on a reference ASP.NET application that hosts both the workflow server and designer and is not intended for production use.
 
+For any non-development deployment, inject a secure random JWT signing key through environment variables or a secrets manager instead of using committed appsettings values. For code-first hosts such as `Elsa.Server.Web`, set `Identity__Tokens__SigningKey`. For shell-based hosts, set the shell feature key, for example `CShells__Shells__Default__Features__Identity__SigningKey`.
+
 By default, you can access http://localhost:13000 and log in with:
 
 ```

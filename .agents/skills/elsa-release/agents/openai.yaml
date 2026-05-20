@@ -1,0 +1,4 @@
+interface:
+  display_name: "Elsa Release"
+  short_description: "Release Elsa repositories from GitHub tags"
+  default_prompt: "Use $elsa-release to create a stable GitHub release from the existing RC tag."
