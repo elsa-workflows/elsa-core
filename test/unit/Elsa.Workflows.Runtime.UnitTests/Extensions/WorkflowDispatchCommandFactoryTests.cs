@@ -32,5 +32,6 @@ public class WorkflowDispatchCommandFactoryTests
         var command = WorkflowDispatchCommandFactory.CreateCommand(request, "generated-instance");
 
         Assert.Equal("requested-instance", command.InstanceId);
+        Assert.False(command.SkipIfInstanceExists);
     }
 }

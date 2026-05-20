@@ -7,18 +7,20 @@ internal static class WorkflowDispatchCommandFactory
 {
     public static DispatchWorkflowDefinitionCommand CreateCommand(DispatchWorkflowDefinitionRequest request, string? instanceId = null)
     {
+        var useGeneratedInstanceId = string.IsNullOrWhiteSpace(request.InstanceId);
+
         return new(request.DefinitionVersionId)
         {
             Input = request.Input,
             Properties = request.Properties,
             CorrelationId = request.CorrelationId,
-            InstanceId = string.IsNullOrWhiteSpace(request.InstanceId) ? instanceId : request.InstanceId,
+            InstanceId = useGeneratedInstanceId ? instanceId : request.InstanceId,
             TriggerActivityId = request.TriggerActivityId,
             ParentWorkflowInstanceId = request.ParentWorkflowInstanceId,
             SchedulingActivityExecutionId = request.SchedulingActivityExecutionId,
             SchedulingWorkflowInstanceId = request.SchedulingWorkflowInstanceId,
             SchedulingCallStackDepth = request.SchedulingCallStackDepth,
-            SkipIfInstanceExists = true
+            SkipIfInstanceExists = useGeneratedInstanceId
         };
     }
 

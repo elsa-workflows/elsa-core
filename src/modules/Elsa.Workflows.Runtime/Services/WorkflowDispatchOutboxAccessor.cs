@@ -3,12 +3,12 @@ namespace Elsa.Workflows.Runtime;
 /// <inheritdoc />
 public class WorkflowDispatchOutboxAccessor : IWorkflowDispatchOutboxAccessor
 {
-    private static readonly AsyncLocal<WorkflowExecutionContext?> CurrentWorkflowExecutionContext = new();
+    private readonly AsyncLocal<WorkflowExecutionContext?> _currentWorkflowExecutionContext = new();
 
     /// <inheritdoc />
     public WorkflowExecutionContext? WorkflowExecutionContext
     {
-        get => CurrentWorkflowExecutionContext.Value;
-        set => CurrentWorkflowExecutionContext.Value = value;
+        get => _currentWorkflowExecutionContext.Value;
+        set => _currentWorkflowExecutionContext.Value = value;
     }
 }

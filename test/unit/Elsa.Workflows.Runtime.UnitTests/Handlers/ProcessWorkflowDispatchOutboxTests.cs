@@ -4,6 +4,7 @@ using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.State;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Handlers;
@@ -48,7 +49,26 @@ public class ProcessWorkflowDispatchOutboxTests
         await _processor.Received(1).TryProcessAsync(CancellationToken.None);
     }
 
-    private ProcessWorkflowDispatchOutbox CreateHandler() => new(_processor, Microsoft.Extensions.Options.Options.Create(_options));
+    [Fact]
+    public async Task HandleAsync_DoesNotThrow_WhenEagerOutboxProcessingFails()
+    {
+        var handler = CreateHandler();
+        var notification = CreateNotification(new WorkflowState
+        {
+            Properties = new Dictionary<string, object>
+            {
+                [WorkflowDispatchOutboxStateExtensions.PropertyKey] = new WorkflowDispatchOutboxState
+                {
+                    ItemIds = ["outbox-1"]
+                }
+            }
+        });
+        _processor.TryProcessAsync(Arg.Any<CancellationToken>()).Returns(Task.FromException<bool>(new InvalidOperationException("Store unavailable.")));
+
+        await handler.HandleAsync(notification, CancellationToken.None);
+    }
+
+    private ProcessWorkflowDispatchOutbox CreateHandler() => new(_processor, Microsoft.Extensions.Options.Options.Create(_options), NullLogger<ProcessWorkflowDispatchOutbox>.Instance);
 
     private static WorkflowStateCommitted CreateNotification(WorkflowState workflowState)
     {
