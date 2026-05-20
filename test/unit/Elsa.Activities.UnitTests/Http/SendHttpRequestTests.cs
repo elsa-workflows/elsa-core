@@ -93,8 +93,11 @@ public class SendHttpRequestTests
         // Assert
         Assert.NotNull(parentActivity);
         Assert.True(headers.TryGetValue("traceparent", out var traceParent));
-        Assert.StartsWith($"00-{parentActivity.TraceId}-", traceParent);
-        Assert.DoesNotContain(parentActivity.SpanId.ToString(), traceParent);
+        var traceParentParts = traceParent.Split('-');
+        Assert.Equal(4, traceParentParts.Length);
+        Assert.Equal("00", traceParentParts[0]);
+        Assert.Equal(parentActivity.TraceId.ToString(), traceParentParts[1]);
+        Assert.NotEqual(parentActivity.SpanId.ToString(), traceParentParts[2]);
     }
 
     [Theory]
@@ -232,7 +235,10 @@ public class SendHttpRequestTests
 
     private sealed class TraceContextServer : IAsyncDisposable
     {
+        private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
+
         private readonly TcpListener _listener = new(IPAddress.Loopback, 0);
+        private readonly CancellationTokenSource _cancellationTokenSource = new();
         private readonly Task<Dictionary<string, string>> _requestTask;
 
         public TraceContextServer()
@@ -245,17 +251,40 @@ public class SendHttpRequestTests
 
         public Uri Uri { get; }
 
-        public Task<Dictionary<string, string>> GetRequestHeadersAsync() => _requestTask;
-
-        public ValueTask DisposeAsync()
+        public async Task<Dictionary<string, string>> GetRequestHeadersAsync()
         {
+            try
+            {
+                return await _requestTask.WaitAsync(RequestTimeout);
+            }
+            catch (TimeoutException ex)
+            {
+                throw new TimeoutException("The trace context test server did not receive an HTTP request before the timeout elapsed.", ex);
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            var requestTaskCompleted = _requestTask.IsCompleted;
+            _cancellationTokenSource.Cancel();
             _listener.Stop();
-            return ValueTask.CompletedTask;
+
+            try
+            {
+                await _requestTask.ConfigureAwait(false);
+            }
+            catch (Exception) when (!requestTaskCompleted)
+            {
+            }
+            finally
+            {
+                _cancellationTokenSource.Dispose();
+            }
         }
 
         private async Task<Dictionary<string, string>> AcceptRequestAsync()
         {
-            using var client = await _listener.AcceptTcpClientAsync();
+            using var client = await _listener.AcceptTcpClientAsync(_cancellationTokenSource.Token);
             await using var stream = client.GetStream();
             using var reader = new StreamReader(stream, Encoding.ASCII, leaveOpen: true);
             await using var writer = new StreamWriter(stream, Encoding.ASCII, leaveOpen: true) { NewLine = "\r\n", AutoFlush = true };

@@ -177,7 +177,9 @@ public static class WorkflowInstrumentation
         }
 
         activity.SetStatus(ActivityStatusCode.Error, "Faulted");
-        activity.SetTag(ErrorType, exception?.GetType().FullName);
+
+        if (exception != null)
+            activity.SetTag(ErrorType, exception.GetType().FullName);
     }
 
     private static TagList CreateWorkflowTags(WorkflowExecutionContext context, bool includeExecutionStatus = true)
@@ -228,6 +230,6 @@ public static class WorkflowInstrumentation
     }
 }
 
-public readonly record struct WorkflowInstrumentationScope(DiagnosticsActivity? Activity);
+internal readonly record struct WorkflowInstrumentationScope(DiagnosticsActivity? Activity);
 
-public readonly record struct ActivityInstrumentationScope(DiagnosticsActivity? Activity, long StartTimestamp);
+internal readonly record struct ActivityInstrumentationScope(DiagnosticsActivity? Activity, long StartTimestamp);

@@ -2,10 +2,12 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Elsa.Common;
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.CommitStates;
+using Elsa.Workflows.Middleware.Workflows;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Options;
@@ -107,6 +109,22 @@ public class WorkflowInstrumentationTests
         Assert.Equal(ActivityStatus.Faulted.ToString(), activityDuration.Tags[WorkflowInstrumentation.ActivityStatus]);
     }
 
+    [Fact]
+    public async Task ActivityInvoker_Should_Not_Emit_ErrorType_When_Faulted_Without_Exception()
+    {
+        using var activityCapture = new ActivityCapture();
+        using var meterCapture = new MeterCapture();
+        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var invoker = new ActivityInvoker(new FaultingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
+
+        await invoker.InvokeAsync(context);
+
+        var span = Assert.Single(activityCapture.StoppedActivities);
+        var tags = span.TagObjects.ToDictionary(x => x.Key, x => x.Value);
+        Assert.Equal(ActivityStatusCode.Error, span.Status);
+        Assert.False(tags.ContainsKey(WorkflowInstrumentation.ErrorType));
+    }
+
     private static WorkflowRunner CreateWorkflowRunner(WorkflowExecutionContext context, IWorkflowExecutionPipeline pipeline)
     {
         var notificationSender = Substitute.For<INotificationSender>();
@@ -171,16 +189,38 @@ public class WorkflowInstrumentationTests
 
         public WorkflowMiddlewareDelegate Setup(Action<IWorkflowExecutionPipelineBuilder> setup) => Pipeline;
 
-        public Task ExecuteAsync(WorkflowExecutionContext context)
+        public async Task ExecuteAsync(WorkflowExecutionContext context)
         {
-            SetWorkflowSubStatus(context, WorkflowSubStatus.Finished);
-            return Task.CompletedTask;
+            context.ScheduleWorkflow();
+
+            var middleware = new DefaultActivitySchedulerMiddleware(
+                _ => ValueTask.CompletedTask,
+                new CompletingActivityInvoker(),
+                Substitute.For<ICommitStrategyRegistry>(),
+                Microsoft.Extensions.Options.Options.Create(new CommitStateOptions()));
+
+            await middleware.InvokeAsync(context);
         }
     }
 
-    private static void SetWorkflowSubStatus(WorkflowExecutionContext context, WorkflowSubStatus subStatus)
+    private sealed class CompletingActivityInvoker : IActivityInvoker
     {
-        typeof(WorkflowExecutionContext).GetProperty(nameof(WorkflowExecutionContext.SubStatus))!.SetValue(context, subStatus);
+        public async Task<ActivityExecutionContext> InvokeAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, ActivityInvocationOptions? options = null)
+        {
+            var activityExecutionContext = options?.ExistingActivityExecutionContext ?? await workflowExecutionContext.CreateActivityExecutionContextAsync(activity, options);
+
+            if (!workflowExecutionContext.ActivityExecutionContexts.Any(x => x.Id == activityExecutionContext.Id))
+                workflowExecutionContext.AddActivityExecutionContext(activityExecutionContext);
+
+            await InvokeAsync(activityExecutionContext);
+            return activityExecutionContext;
+        }
+
+        public async Task InvokeAsync(ActivityExecutionContext activityExecutionContext)
+        {
+            activityExecutionContext.TransitionTo(ActivityStatus.Running);
+            await activityExecutionContext.CompleteActivityAsync();
+        }
     }
 
     private sealed class ThrowingWorkflowExecutionPipeline : IWorkflowExecutionPipeline
@@ -248,6 +288,19 @@ public class WorkflowInstrumentationTests
                 result[tag.Key] = tag.Value;
 
             return result;
+        }
+    }
+
+    private sealed class FaultingActivityExecutionPipeline : IActivityExecutionPipeline
+    {
+        public ActivityMiddlewareDelegate Pipeline => _ => ValueTask.CompletedTask;
+
+        public ActivityMiddlewareDelegate Setup(Action<IActivityExecutionPipelineBuilder> setup) => Pipeline;
+
+        public Task ExecuteAsync(ActivityExecutionContext context)
+        {
+            context.TransitionTo(ActivityStatus.Faulted);
+            return Task.CompletedTask;
         }
     }
 
