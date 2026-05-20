@@ -1,7 +1,9 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elsa.Expressions.Options;
 using Elsa.Expressions.Services;
 using Elsa.Workflows.Serialization.Converters;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.Core.UnitTests.Serialization.Converters;
 
@@ -48,6 +50,19 @@ public sealed class WorkflowJsonTypeResolverTests
 
         Assert.Equal(expectedAlias, alias);
         Assert.Equal(type, result);
+    }
+
+    [Theory]
+    [MemberData(nameof(JsonIslandValues))]
+    public void When_SerializeSpecialJsonIslandType_Then_CanBeDeserialized(object value, Type expectedType)
+    {
+        _wellKnownTypeRegistry.RegisterType(typeof(JObject), nameof(JObject));
+        _wellKnownTypeRegistry.RegisterType(typeof(JArray), nameof(JArray));
+
+        var json = JsonSerializer.Serialize(value, _options);
+        var result = JsonSerializer.Deserialize<object>(json, _options);
+
+        Assert.IsType(expectedType, result);
     }
 
     [Theory]
@@ -171,6 +186,14 @@ public sealed class WorkflowJsonTypeResolverTests
     };
 
     private static string JsonString(string value) => JsonSerializer.Serialize(value);
+
+    public static TheoryData<object, Type> JsonIslandValues() => new()
+    {
+        { new JObject { ["name"] = "Alice" }, typeof(JObject) },
+        { new JArray("Alice", "Bob"), typeof(JArray) },
+        { new JsonObject { ["name"] = "Alice" }, typeof(JsonObject) },
+        { new JsonArray("Alice", "Bob"), typeof(JsonArray) }
+    };
 
     public sealed class RegisteredPayload
     {

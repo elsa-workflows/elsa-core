@@ -2,6 +2,7 @@ using Elsa.Common;
 using Elsa.Common.Features;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Features;
+using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -27,6 +28,7 @@ using Elsa.Workflows.UIHints.Dropdown;
 using Elsa.Workflows.UIHints.JsonEditor;
 using Elsa.Workflows.UIHints.RadioList;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.Features;
 
@@ -159,6 +161,12 @@ public class WorkflowsFeature : FeatureBase
 
     private void AddElsaCore(IServiceCollection services)
     {
+        services.Configure<ExpressionOptions>(options =>
+        {
+            options.RegisterTypeAlias(typeof(JObject), nameof(JObject));
+            options.RegisterTypeAlias(typeof(JArray), nameof(JArray));
+        });
+
         services
 
             // Core.
