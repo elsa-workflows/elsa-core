@@ -27,13 +27,14 @@ public class DefaultAuthenticationFeature : FeatureBase
     /// <inheritdoc />
     public DefaultAuthenticationFeature(IModule module) : base(module)
     {
+        ConfigureAuthorizationOptions = ConfigureDefaultSecurityRootPolicy;
     }
 
     /// <summary>
     /// Gets or sets the <see cref="ApiKeyProviderType"/>.
     /// </summary>
     public Type ApiKeyProviderType { get; set; } = typeof(DefaultApiKeyProvider);
-    public Action<AuthorizationOptions> ConfigureAuthorizationOptions { get; set; } = ConfigureAuthenticatedSecurityRootPolicy;
+    public Action<AuthorizationOptions> ConfigureAuthorizationOptions { get; set; }
 
     /// <summary>
     /// Gets or sets whether localhost requests may satisfy the security-root permission requirement without other credentials.
@@ -41,11 +42,7 @@ public class DefaultAuthenticationFeature : FeatureBase
     public bool EnableLocalHostPermissionGrant
     {
         get => _enableLocalHostPermissionGrant;
-        set
-        {
-            _enableLocalHostPermissionGrant = value;
-            ConfigureAuthorizationOptions = value ? ConfigureLocalHostSecurityRootPolicy : ConfigureAuthenticatedSecurityRootPolicy;
-        }
+        set => _enableLocalHostPermissionGrant = value;
     }
 
     /// <summary>
@@ -118,6 +115,14 @@ public class DefaultAuthenticationFeature : FeatureBase
     private static void ConfigureAuthenticatedSecurityRootPolicy(AuthorizationOptions options)
     {
         options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.RequireAuthenticatedUser());
+    }
+
+    private void ConfigureDefaultSecurityRootPolicy(AuthorizationOptions options)
+    {
+        if (EnableLocalHostPermissionGrant)
+            ConfigureLocalHostSecurityRootPolicy(options);
+        else
+            ConfigureAuthenticatedSecurityRootPolicy(options);
     }
 
     private static void ConfigureLocalHostSecurityRootPolicy(AuthorizationOptions options)

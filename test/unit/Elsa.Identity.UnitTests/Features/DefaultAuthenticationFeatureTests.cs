@@ -39,4 +39,19 @@ public class DefaultAuthenticationFeatureTests
         Assert.NotNull(policy);
         Assert.Contains(policy.Requirements, requirement => requirement is LocalHostPermissionRequirement);
     }
+
+    [Fact]
+    public void EnableLocalHostPermissionGrantDoesNotOverwriteCustomAuthorizationConfiguration()
+    {
+        var feature = new DefaultAuthenticationFeature(Substitute.For<IModule>());
+        feature.ConfigureAuthorizationOptions = options => options.AddPolicy("Custom", policy => policy.RequireAuthenticatedUser());
+
+        feature.EnableLocalHostPermissionGrantForSecurityRoot();
+        var options = new AuthorizationOptions();
+        feature.ConfigureAuthorizationOptions(options);
+
+        Assert.True(feature.EnableLocalHostPermissionGrant);
+        Assert.NotNull(options.GetPolicy("Custom"));
+        Assert.Null(options.GetPolicy(IdentityPolicyNames.SecurityRoot));
+    }
 }
