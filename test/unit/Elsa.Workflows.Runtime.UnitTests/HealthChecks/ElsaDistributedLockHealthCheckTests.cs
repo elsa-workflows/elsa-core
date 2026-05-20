@@ -50,6 +50,7 @@ public class ElsaDistributedLockHealthCheckTests
         await sut.CheckHealthAsync(new HealthCheckContext());
 
         Assert.Equal(2, lockNames.Count);
+        Assert.All(lockNames, x => Assert.DoesNotContain(Environment.MachineName, x, StringComparison.Ordinal));
         Assert.NotEqual(lockNames[0], lockNames[1]);
     }
 

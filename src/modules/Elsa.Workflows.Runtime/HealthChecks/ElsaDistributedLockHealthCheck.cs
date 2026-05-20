@@ -30,7 +30,7 @@ public class ElsaDistributedLockHealthCheck(
                 });
             }
 
-            var lockName = $"elsa-health-check-{Environment.MachineName}-{Guid.NewGuid():N}";
+            var lockName = $"elsa-health-check-{Guid.NewGuid():N}";
             await using var handle = await distributedLockProvider.TryAcquireLockAsync(lockName, options.Value.DistributedLockAcquisitionTimeout, cancellationToken);
             if (handle == null)
             {

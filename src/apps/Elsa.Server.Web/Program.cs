@@ -177,7 +177,7 @@ app.MapHealthChecks("/health/live", new()
 });
 app.MapHealthChecks("/health/ready", new()
 {
-    Predicate = check => check.Tags.Contains(HealthCheckExtensions.ReadinessTag),
+    Predicate = check => check.Tags.Contains(HealthCheckExtensions.ElsaTag) && check.Tags.Contains(HealthCheckExtensions.ReadinessTag),
     ResultStatusCodes =
     {
         [HealthStatus.Degraded] = StatusCodes.Status503ServiceUnavailable,
@@ -186,12 +186,7 @@ app.MapHealthChecks("/health/ready", new()
 });
 app.MapHealthChecks("/", new()
 {
-    Predicate = _ => false,
-    ResultStatusCodes =
-    {
-        [HealthStatus.Degraded] = StatusCodes.Status503ServiceUnavailable,
-        [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
-    }
+    Predicate = _ => false
 });
 
 // Routing used for SignalR.

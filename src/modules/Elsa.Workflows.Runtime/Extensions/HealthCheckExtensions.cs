@@ -11,11 +11,16 @@ namespace Elsa.Extensions;
 public static class HealthCheckExtensions
 {
     /// <summary>
+    /// Tag applied to Elsa health checks.
+    /// </summary>
+    public const string ElsaTag = "elsa";
+
+    /// <summary>
     /// Tag applied to Elsa readiness checks.
     /// </summary>
     public const string ReadinessTag = "readiness";
 
-    private static readonly string[] ReadinessTags = ["elsa", ReadinessTag];
+    private static readonly string[] ReadinessTags = [ElsaTag, ReadinessTag];
 
     /// <summary>
     /// Adds conservative Elsa-specific readiness probes for the workflow runtime and its core stores.
