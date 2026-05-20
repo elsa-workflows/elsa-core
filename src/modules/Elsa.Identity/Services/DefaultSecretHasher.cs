@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Elsa.Identity.Contracts;
@@ -81,7 +82,7 @@ public class DefaultSecretHasher : ISecretHasher
     {
         var hash = HashSecret(secret, salt, DefaultIterationCount);
         var encodedHash = Convert.ToBase64String(hash);
-        return Encoding.UTF8.GetBytes($"{Algorithm}{Separator}{DefaultIterationCount}{Separator}{encodedHash}");
+        return Encoding.UTF8.GetBytes($"{Algorithm}{Separator}{DefaultIterationCount.ToString(CultureInfo.InvariantCulture)}{Separator}{encodedHash}");
     }
 
     /// <inheritdoc />
@@ -110,7 +111,7 @@ public class DefaultSecretHasher : ISecretHasher
         if (segments.Length != 3 || !string.Equals(segments[0], Algorithm, StringComparison.Ordinal))
             return false;
 
-        if (!int.TryParse(segments[1], out iterationCount) || iterationCount <= 0 || iterationCount > MaxIterationCount)
+        if (!int.TryParse(segments[1], NumberStyles.None, CultureInfo.InvariantCulture, out iterationCount) || iterationCount <= 0 || iterationCount > MaxIterationCount)
             return false;
 
         try

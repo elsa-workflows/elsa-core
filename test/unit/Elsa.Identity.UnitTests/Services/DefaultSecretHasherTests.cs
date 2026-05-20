@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Elsa.Common.Services;
@@ -21,6 +22,30 @@ public class DefaultSecretHasherTests
         Assert.StartsWith("pbkdf2-sha256$600000$", Encoding.UTF8.GetString(hashedSecret.Secret));
         Assert.True(_hasher.VerifySecret("secret", hashedSecret, out var needsRehash));
         Assert.False(needsRehash);
+    }
+
+    [Fact]
+    public void HashSecret_FormatsPbkdf2EnvelopeUsingInvariantCulture()
+    {
+        using var _ = new CultureScope("ar-SA");
+
+        var hashedSecret = _hasher.HashSecret("secret");
+
+        Assert.StartsWith("pbkdf2-sha256$600000$", Encoding.UTF8.GetString(hashedSecret.Secret));
+        Assert.True(_hasher.VerifySecret("secret", hashedSecret, out var needsRehash));
+        Assert.False(needsRehash);
+    }
+
+    [Fact]
+    public void VerifySecret_ParsesPbkdf2EnvelopeUsingInvariantCulture()
+    {
+        var hashedSecret = CreatePbkdf2Hash("secret", 1);
+        using var _ = new CultureScope("ar-SA");
+
+        var verified = _hasher.VerifySecret("secret", hashedSecret, out var needsRehash);
+
+        Assert.True(verified);
+        Assert.True(needsRehash);
     }
 
     [Fact]
@@ -164,7 +189,7 @@ public class DefaultSecretHasherTests
             HashedPassword = legacyHash.EncodeSecret(),
             HashedPasswordSalt = legacyHash.EncodeSalt()
         };
-        var userStore = new FailingUserStore(user);
+        var userStore = new FailingUserStore(user, new TimeoutException("Save timed out."));
         var validator = new DefaultUserCredentialsValidator(new StoreBasedUserProvider(userStore), userStore, _hasher);
 
         var validatedUser = await validator.ValidateAsync("alice", "secret");
@@ -260,15 +285,16 @@ public class DefaultSecretHasherTests
         var salt = RandomNumberGenerator.GetBytes(32);
         var secretBytes = Encoding.UTF8.GetBytes(secret);
         var hash = Rfc2898DeriveBytes.Pbkdf2(secretBytes, salt, iterationCount, HashAlgorithmName.SHA256, 32);
-        var envelope = Encoding.UTF8.GetBytes($"pbkdf2-sha256${iterationCount}${Convert.ToBase64String(hash)}");
+        var envelope = Encoding.UTF8.GetBytes($"pbkdf2-sha256${iterationCount.ToString(CultureInfo.InvariantCulture)}${Convert.ToBase64String(hash)}");
         return HashedSecret.FromBytes(envelope, salt);
     }
 
-    private sealed class FailingUserStore(User user) : IUserStore
+    private sealed class FailingUserStore(User user, Exception? exception = null) : IUserStore
     {
         private readonly User _user = user;
+        private readonly Exception _exception = exception ?? new InvalidOperationException("Save failed.");
 
-        public Task SaveAsync(User user, CancellationToken cancellationToken = default) => throw new InvalidOperationException("Save failed.");
+        public Task SaveAsync(User user, CancellationToken cancellationToken = default) => throw _exception;
 
         public Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
@@ -319,6 +345,25 @@ public class DefaultSecretHasherTests
         {
             var application = filter.Apply(new[] { _application }.AsQueryable()).FirstOrDefault();
             return Task.FromResult(application);
+        }
+    }
+
+    private sealed class CultureScope : IDisposable
+    {
+        private readonly CultureInfo _currentCulture = CultureInfo.CurrentCulture;
+        private readonly CultureInfo _currentUICulture = CultureInfo.CurrentUICulture;
+
+        public CultureScope(string cultureName)
+        {
+            var culture = CultureInfo.GetCultureInfo(cultureName);
+            CultureInfo.CurrentCulture = culture;
+            CultureInfo.CurrentUICulture = culture;
+        }
+
+        public void Dispose()
+        {
+            CultureInfo.CurrentCulture = _currentCulture;
+            CultureInfo.CurrentUICulture = _currentUICulture;
         }
     }
 }

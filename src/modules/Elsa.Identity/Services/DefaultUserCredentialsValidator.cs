@@ -71,7 +71,7 @@ public class DefaultUserCredentialsValidator : IUserCredentialsValidator
                 user.HashedPasswordSalt = previousHashedPasswordSalt;
                 throw;
             }
-            catch (InvalidOperationException e)
+            catch (Exception e)
             {
                 user.HashedPassword = previousHashedPassword;
                 user.HashedPasswordSalt = previousHashedPasswordSalt;
