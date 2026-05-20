@@ -7,6 +7,7 @@ Elsa hosts can opt in to Elsa-specific readiness checks on top of the normal ASP
 Register ASP.NET Core health checks and then add Elsa readiness checks:
 
 ```csharp
+using Elsa.Extensions;
 using System;
 
 services
