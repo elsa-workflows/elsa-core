@@ -55,10 +55,13 @@ Additional JavaScript libraries are in [Elsa.Expressions.JavaScript.Libraries](.
 ```csharp
 elsa.UseCSharp(options =>
 {
+    options.AllowHostCodeExecution = true;
     options.DisableWrappers = disableVariableWrappers;
     options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
 });
 ```
+
+Roslyn C# scripting is privileged host-code execution, not a sandbox. Hosts must explicitly set `CSharpOptions.AllowHostCodeExecution` to `true` before C# expressions or `RunCSharp` can be authored or executed. API callers that author, publish, dispatch, or directly execute workflows containing C# must have the `exec:csharp-expressions` permission.
 
 ## Python
 

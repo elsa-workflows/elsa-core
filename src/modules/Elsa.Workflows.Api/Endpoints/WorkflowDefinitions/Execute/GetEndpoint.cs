@@ -15,7 +15,7 @@ internal class GetEndpoint(
     IWorkflowRuntime workflowRuntime,
     IWorkflowStarter workflowStarter,
     IApiSerializer apiSerializer,
-    PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService)
+    WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService)
     : ElsaEndpoint<GetRequest>
 {
     /// <inheritdoc />
@@ -35,7 +35,7 @@ internal class GetEndpoint(
             workflowRuntime,
             workflowStarter,
             apiSerializer,
-            pythonAuthorizationService,
+            scriptAuthorizationService,
             HttpContext,
             cancellationToken);
     }

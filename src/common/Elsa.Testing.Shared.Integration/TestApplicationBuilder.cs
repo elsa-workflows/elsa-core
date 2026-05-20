@@ -36,7 +36,7 @@ public class TestApplicationBuilder
         _configureElsa += elsa => elsa
             .AddActivitiesFrom<WriteLine>()
             .UseScheduling()
-            .UseCSharp()
+            .UseCSharp(options => options.AllowHostCodeExecution = true)
             .UseJavaScript()
             .UseLiquid()
             .UseWorkflowManagement()
