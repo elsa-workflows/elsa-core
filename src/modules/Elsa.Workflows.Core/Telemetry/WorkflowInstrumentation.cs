@@ -88,7 +88,8 @@ public static class WorkflowInstrumentation
     internal static void StopWorkflow(WorkflowInstrumentationScope scope, WorkflowExecutionContext context, Exception? exception)
     {
         var activity = scope.Activity;
-        var faulted = exception != null || context.SubStatus == Workflows.WorkflowSubStatus.Faulted;
+        var cancelled = exception is OperationCanceledException || context.SubStatus == Workflows.WorkflowSubStatus.Cancelled;
+        var faulted = !cancelled && (exception != null || context.SubStatus == Workflows.WorkflowSubStatus.Faulted);
 
         if (activity != null)
         {

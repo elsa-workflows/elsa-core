@@ -265,20 +265,18 @@ public class SendHttpRequestTests
 
         public async ValueTask DisposeAsync()
         {
+            using var cancellationTokenSource = _cancellationTokenSource;
             var requestTaskCompleted = _requestTask.IsCompleted;
-            _cancellationTokenSource.Cancel();
+            cancellationTokenSource.Cancel();
             _listener.Stop();
 
             try
             {
                 await _requestTask.ConfigureAwait(false);
             }
-            catch (Exception) when (!requestTaskCompleted)
+            catch (Exception ex) when (!requestTaskCompleted)
             {
-            }
-            finally
-            {
-                _cancellationTokenSource.Dispose();
+                Trace.WriteLine($"TraceContextServer teardown ignored exception: {ex}");
             }
         }
 

@@ -94,6 +94,25 @@ public class WorkflowInstrumentationTests
     }
 
     [Fact]
+    public async Task WorkflowRunner_Should_Not_Record_Faulted_Span_Or_Metric_When_Pipeline_Cancels()
+    {
+        using var activityCapture = new ActivityCapture();
+        using var meterCapture = new MeterCapture();
+        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var context = activityExecutionContext.WorkflowExecutionContext;
+        var runner = CreateWorkflowRunner(context, new CancellingWorkflowExecutionPipeline());
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => runner.RunAsync(context));
+
+        var span = Assert.Single(activityCapture.StoppedActivities);
+        var tags = span.TagObjects.ToDictionary(x => x.Key, x => x.Value);
+        Assert.Equal(ActivityStatusCode.Ok, span.Status);
+        Assert.Equal(WorkflowSubStatus.Cancelled.ToString(), tags[WorkflowInstrumentation.WorkflowSubStatus]);
+        Assert.Equal(false, tags[WorkflowInstrumentation.WorkflowFaulted]);
+        Assert.DoesNotContain(meterCapture.LongMeasurements, x => x.InstrumentName == "elsa.workflow.faulted");
+    }
+
+    [Fact]
     public async Task ActivityInvoker_Should_Not_Replace_Pipeline_Exception_When_Outcome_Is_Null()
     {
         using var activityCapture = new ActivityCapture();
@@ -231,6 +250,20 @@ public class WorkflowInstrumentationTests
         public WorkflowMiddlewareDelegate Setup(Action<IWorkflowExecutionPipelineBuilder> setup) => Pipeline;
 
         public Task ExecuteAsync(WorkflowExecutionContext context) => throw new InvalidOperationException("Pipeline failed");
+    }
+
+    private sealed class CancellingWorkflowExecutionPipeline : IWorkflowExecutionPipeline
+    {
+        public Action<IWorkflowExecutionPipelineBuilder> ConfigurePipelineBuilder => _ => { };
+        public WorkflowMiddlewareDelegate Pipeline => _ => ValueTask.CompletedTask;
+
+        public WorkflowMiddlewareDelegate Setup(Action<IWorkflowExecutionPipelineBuilder> setup) => Pipeline;
+
+        public Task ExecuteAsync(WorkflowExecutionContext context)
+        {
+            context.Cancel();
+            throw new OperationCanceledException();
+        }
     }
 
     private sealed class TestActivity : Elsa.Workflows.Activity
