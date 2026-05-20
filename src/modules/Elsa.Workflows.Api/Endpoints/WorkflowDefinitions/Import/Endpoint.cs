@@ -1,6 +1,4 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Api.Constants;
-using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
@@ -14,16 +12,19 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
 [PublicAPI]
 internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
 {
+    private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
     private readonly IWorkflowDefinitionLinker _linker;
     private readonly IAuthorizationService _authorizationService;
 
     /// <inheritdoc />
     public Import(
+        IWorkflowDefinitionStore workflowDefinitionStore,
         IWorkflowDefinitionImporter workflowDefinitionImporter,
         IWorkflowDefinitionLinker linker,
         IAuthorizationService authorizationService)
     {
+        _workflowDefinitionStore = workflowDefinitionStore;
         _workflowDefinitionImporter = workflowDefinitionImporter;
         _linker = linker;
         _authorizationService = authorizationService;
@@ -42,10 +43,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
     {
         var definitionId = model.DefinitionId;
         var isNew = string.IsNullOrWhiteSpace(definitionId);
-        var result = await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
-        var definition = result.WorkflowDefinition;
-
-        var authorizationResult = await _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = await _authorizationService.AuthorizeWorkflowDefinitionImportAsync(User, _workflowDefinitionStore, model, cancellationToken);
 
         if (!authorizationResult.Succeeded)
         {
@@ -53,6 +51,8 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
             return;
         }
 
+        var result = await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
+        var definition = result.WorkflowDefinition;
         var updatedModel = await _linker.MapAsync(definition, cancellationToken);
 
         if (result.Succeeded)

@@ -1,9 +1,6 @@
 using System.IO.Compression;
 using Elsa.Abstractions;
-using Elsa.Workflows.Api.Constants;
-using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
@@ -17,23 +14,20 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.ImportFiles;
 [PublicAPI]
 internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
 {
-    private readonly IWorkflowDefinitionService _workflowDefinitionService;
+    private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
-    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
     private readonly IApiSerializer _apiSerializer;
     private readonly IAuthorizationService _authorizationService;
 
     /// <inheritdoc />
     public ImportFiles(
-        IWorkflowDefinitionService workflowDefinitionService,
+        IWorkflowDefinitionStore workflowDefinitionStore,
         IWorkflowDefinitionImporter workflowDefinitionImporter,
-        WorkflowDefinitionMapper workflowDefinitionMapper,
         IApiSerializer apiSerializer,
         IAuthorizationService authorizationService)
     {
-        _workflowDefinitionService = workflowDefinitionService;
+        _workflowDefinitionStore = workflowDefinitionStore;
         _workflowDefinitionImporter = workflowDefinitionImporter;
-        _workflowDefinitionMapper = workflowDefinitionMapper;
         _apiSerializer = apiSerializer;
         _authorizationService = authorizationService;
     }
@@ -49,17 +43,18 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
     /// <inheritdoc />
     public override async Task HandleAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
-        var authorizationResult = await _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
-
-        if (!authorizationResult.Succeeded)
-        {
-            await Send.ForbiddenAsync(cancellationToken);
-            return;
-        }
-
         if (Files.Any())
         {
-            var count = await ImportFilesAsync(Files, cancellationToken);
+            var models = await ReadWorkflowDefinitionModelsAsync(Files, cancellationToken);
+            var authorizationResult = await _authorizationService.AuthorizeWorkflowDefinitionImportsAsync(User, _workflowDefinitionStore, models, cancellationToken);
+
+            if (!authorizationResult.Succeeded)
+            {
+                await Send.ForbiddenAsync(cancellationToken);
+                return;
+            }
+
+            var count = await ImportWorkflowDefinitionsAsync(models, cancellationToken);
 
             if (!ValidationFailed)
                 await Send.OkAsync(new { Count = count }, cancellationToken);
@@ -69,9 +64,9 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
             await Send.ErrorsAsync(400, cancellationToken);
     }
 
-    private async Task<int> ImportFilesAsync(IFormFileCollection files, CancellationToken cancellationToken)
+    private async Task<ICollection<WorkflowDefinitionModel>> ReadWorkflowDefinitionModelsAsync(IFormFileCollection files, CancellationToken cancellationToken)
     {
-        var count = 0;
+        var models = new List<WorkflowDefinitionModel>();
 
         foreach (var file in files)
         {
@@ -83,8 +78,7 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
             // If the file is a JSON file, read it.
             if (isJsonFile)
             {
-                await ImportJsonStreamAsync(fileStream, cancellationToken);
-                count++;
+                models.Add(await ReadJsonStreamAsync(fileStream, cancellationToken));
             }
             else
             {
@@ -97,20 +91,31 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
                         continue;
 
                     var jsonStream = entry.Open();
-                    await ImportJsonStreamAsync(jsonStream, cancellationToken);
-                    count++;
+                    models.Add(await ReadJsonStreamAsync(jsonStream, cancellationToken));
                 }
             }
         }
 
-        return count;
+        return models;
     }
 
-    private async Task ImportJsonStreamAsync(Stream jsonStream, CancellationToken cancellationToken)
+    private async Task<WorkflowDefinitionModel> ReadJsonStreamAsync(Stream jsonStream, CancellationToken cancellationToken)
     {
         var json = await new StreamReader(jsonStream).ReadToEndAsync(cancellationToken);
-        var model = _apiSerializer.Deserialize<WorkflowDefinitionModel>(json);
-        await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
+        return _apiSerializer.Deserialize<WorkflowDefinitionModel>(json);
+    }
+
+    private async Task<int> ImportWorkflowDefinitionsAsync(IEnumerable<WorkflowDefinitionModel> models, CancellationToken cancellationToken)
+    {
+        var count = 0;
+
+        foreach (var model in models)
+        {
+            await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
+            count++;
+        }
+
+        return count;
     }
 
     private async Task<ImportWorkflowResult> ImportSingleWorkflowDefinitionAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
