@@ -3,6 +3,8 @@ using System.Text;
 using System.Text.Json;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.Management;
@@ -17,11 +19,13 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.RestApis.Endpoints.WorkflowDef
 public class ImportAuthorizationTests : AppComponentTest
 {
     private readonly IWorkflowDefinitionStore _store;
+    private readonly IActivitySerializer _activitySerializer;
     private readonly IWorkflowDefinitionsApi _client;
 
     public ImportAuthorizationTests(App app) : base(app)
     {
         _store = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+        _activitySerializer = Scope.ServiceProvider.GetRequiredService<IActivitySerializer>();
         _client = WorkflowServer.CreateApiClient<IWorkflowDefinitionsApi>();
     }
 
@@ -70,7 +74,8 @@ public class ImportAuthorizationTests : AppComponentTest
             CreatedAt = DateTimeOffset.UtcNow,
             IsLatest = true,
             IsReadonly = isReadonly,
-            MaterializerName = JsonWorkflowMaterializer.MaterializerName
+            MaterializerName = JsonWorkflowMaterializer.MaterializerName,
+            StringData = _activitySerializer.Serialize(new Sequence())
         });
     }
 
