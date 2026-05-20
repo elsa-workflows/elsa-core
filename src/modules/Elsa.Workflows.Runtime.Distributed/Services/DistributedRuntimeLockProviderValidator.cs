@@ -48,7 +48,7 @@ public class DistributedRuntimeLockProviderValidator(
             "This provider does not coordinate across nodes with separate file systems and can allow concurrent workflow processing in clustered deployments. " +
             "Configure a cross-node IDistributedLockProvider such as Redis, SQL Server, or PostgreSQL, or explicitly set DistributedLockingOptions.AllowLocalLockProviderInDistributedRuntime to true for single-host development/test deployments.";
 
-        logger.LogCritical("{ErrorMessage}", message);
+        logger.LogError("{ErrorMessage}", message);
         throw new InvalidOperationException(message);
     }
 
@@ -75,8 +75,10 @@ public class DistributedRuntimeLockProviderValidator(
         return null;
     }
 
-    private IEnumerable<IDistributedLockProvider> GetInnerProviders(IDistributedLockProvider provider)
+    private IReadOnlyCollection<IDistributedLockProvider> GetInnerProviders(IDistributedLockProvider provider)
     {
+        var providers = new List<IDistributedLockProvider>();
+
         foreach (var property in provider.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
         {
             if (property.GetIndexParameters().Length > 0)
@@ -100,16 +102,29 @@ public class DistributedRuntimeLockProviderValidator(
             }
 
             if (value is IDistributedLockProvider innerProvider)
-                yield return innerProvider;
+                providers.Add(innerProvider);
 
             if (value is IEnumerable<IDistributedLockProvider> innerProviders)
             {
-                foreach (var providerItem in innerProviders)
+                try
                 {
-                    if (providerItem != null)
-                        yield return providerItem;
+                    var providerItems = new List<IDistributedLockProvider>();
+
+                    foreach (var providerItem in innerProviders)
+                    {
+                        if (providerItem != null)
+                            providerItems.Add(providerItem);
+                    }
+
+                    providers.AddRange(providerItems);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogDebug(ex, "Skipping distributed lock provider property {PropertyName} because enumeration threw.", property.Name);
                 }
             }
         }
+
+        return providers;
     }
 }

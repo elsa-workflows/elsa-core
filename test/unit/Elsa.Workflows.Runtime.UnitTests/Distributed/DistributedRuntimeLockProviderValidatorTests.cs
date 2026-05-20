@@ -27,7 +27,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
 
         Assert.Contains("local-only distributed lock provider", exception.Message);
         Assert.Contains(nameof(DistributedLockingOptions.AllowLocalLockProviderInDistributedRuntime), exception.Message);
-        Assert.Contains("Redis, SQL Server, or PostgreSQL", exception.Message);
+        Assert.Contains("cross-node", exception.Message);
     }
 
     [Fact]
@@ -83,6 +83,14 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     public void Validate_IgnoresThrowingProviderProperties()
     {
         var validator = CreateValidator(new ThrowingPropertyDistributedLockProvider());
+
+        validator.Validate();
+    }
+
+    [Fact]
+    public void Validate_IgnoresProviderCollectionsThatThrowDuringEnumeration()
+    {
+        var validator = CreateValidator(new ThrowingEnumerableDistributedLockProvider());
 
         validator.Validate();
     }
@@ -174,6 +182,20 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         public IDistributedLockProvider InnerProvider => throw new NotSupportedException("Property unavailable.");
 
         public IDistributedLock CreateLock(string name) => new CustomDistributedLock(name);
+    }
+
+    private class ThrowingEnumerableDistributedLockProvider : IDistributedLockProvider
+    {
+        public IEnumerable<IDistributedLockProvider> Providers => new ThrowingDistributedLockProviderEnumerable();
+
+        public IDistributedLock CreateLock(string name) => new CustomDistributedLock(name);
+    }
+
+    private class ThrowingDistributedLockProviderEnumerable : IEnumerable<IDistributedLockProvider>
+    {
+        public IEnumerator<IDistributedLockProvider> GetEnumerator() => throw new NotSupportedException("Enumeration unavailable.");
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
     private class CustomDistributedLockProvider : IDistributedLockProvider
