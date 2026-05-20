@@ -3,6 +3,7 @@ using CShells.Features;
 using Elsa.Extensions;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Providers;
+using Elsa.Options;
 using Elsa.Requirements;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -28,10 +29,16 @@ public class DefaultAuthenticationFeature : IShellFeature
     /// </summary>
     public Type ApiKeyProviderType { get; set; } = typeof(DefaultApiKeyProvider);
 
+    /// <summary>
+    /// Gets or sets whether localhost requests may satisfy the security-root permission requirement without other credentials.
+    /// </summary>
+    public bool EnableLocalHostPermissionGrant { get; set; }
+
     public void ConfigureServices(IServiceCollection services)
     {
         services.ConfigureOptions<ConfigureJwtBearerOptions>();
         services.AddIdentityTokenOptionsValidation();
+        services.Configure<LocalHostPermissionRequirementOptions>(options => options.EnableLocalHostPermissionGrant = EnableLocalHostPermissionGrant);
 
         var authBuilder = services
             .AddAuthentication(MultiScheme)
@@ -60,7 +67,10 @@ public class DefaultAuthenticationFeature : IShellFeature
 
         services.AddAuthorization(options =>
         {
-            options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.RequireAuthenticatedUser());
+            if (EnableLocalHostPermissionGrant)
+                options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostPermissionRequirement()));
+            else
+                options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.RequireAuthenticatedUser());
         });
     }
 }

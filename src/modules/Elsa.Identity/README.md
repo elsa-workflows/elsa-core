@@ -77,4 +77,4 @@ identity.UseDefaultAdmin("admin", "password", "admin", new List<string> { "*" })
 - Do not keep development defaults (`admin` / `password`) in production.
 - Prefer environment variables or a secret manager for admin credentials.
 - After first bootstrap, rotate credentials according to your security policy.
-
+- Localhost requests no longer satisfy `SecurityRoot` by default. Legacy localhost bootstrap requires an explicit opt-in: call `EnableLocalHostPermissionGrantForSecurityRoot()` in code-first configuration or set `EnableLocalHostPermissionGrant` on the shell `DefaultAuthentication` feature; prefer `DefaultAdminUser` instead.

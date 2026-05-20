@@ -5,6 +5,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Providers;
+using Elsa.Options;
 using Elsa.Requirements;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -21,6 +22,7 @@ public class DefaultAuthenticationFeature : FeatureBase
 {
     private const string MultiScheme = "Jwt-or-ApiKey";
     private Func<AuthenticationBuilder, AuthenticationBuilder> _configureApiKeyAuthorization = builder => builder.AddApiKeyInAuthorizationHeader<DefaultApiKeyProvider>();
+    private bool _enableLocalHostPermissionGrant;
 
     /// <inheritdoc />
     public DefaultAuthenticationFeature(IModule module) : base(module)
@@ -31,7 +33,20 @@ public class DefaultAuthenticationFeature : FeatureBase
     /// Gets or sets the <see cref="ApiKeyProviderType"/>.
     /// </summary>
     public Type ApiKeyProviderType { get; set; } = typeof(DefaultApiKeyProvider);
-    public Action<AuthorizationOptions> ConfigureAuthorizationOptions { get; set; } = options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostPermissionRequirement()));
+    public Action<AuthorizationOptions> ConfigureAuthorizationOptions { get; set; } = ConfigureAuthenticatedSecurityRootPolicy;
+
+    /// <summary>
+    /// Gets or sets whether localhost requests may satisfy the security-root permission requirement without other credentials.
+    /// </summary>
+    public bool EnableLocalHostPermissionGrant
+    {
+        get => _enableLocalHostPermissionGrant;
+        set
+        {
+            _enableLocalHostPermissionGrant = value;
+            ConfigureAuthorizationOptions = value ? ConfigureLocalHostSecurityRootPolicy : ConfigureAuthenticatedSecurityRootPolicy;
+        }
+    }
 
     /// <summary>
     /// Configures the API key provider type.
@@ -40,6 +55,7 @@ public class DefaultAuthenticationFeature : FeatureBase
     /// <returns>The current <see cref="DefaultAuthenticationFeature"/>.</returns>
     public DefaultAuthenticationFeature UseApiKeyAuthorization<T>() where T : class, IApiKeyProvider
     {
+        ApiKeyProviderType = typeof(T);
         _configureApiKeyAuthorization = builder => builder.AddApiKeyInAuthorizationHeader<T>();
         return this;
     }
@@ -49,14 +65,23 @@ public class DefaultAuthenticationFeature : FeatureBase
     /// </summary>
     /// <returns>The current <see cref="DefaultAuthenticationFeature"/>.</returns>
     public DefaultAuthenticationFeature UseAdminApiKey() => UseApiKeyAuthorization<AdminApiKeyProvider>();
-    
+
+    /// <summary>
+    /// Enables the legacy localhost permission grant for the security root policy.
+    /// </summary>
+    public DefaultAuthenticationFeature EnableLocalHostPermissionGrantForSecurityRoot()
+    {
+        EnableLocalHostPermissionGrant = true;
+        return this;
+    }
+
     /// <summary>
     /// Disables the local host requirement for the security root policy.
     /// This is useful when privileged identity bootstrap is handled through features such as <see cref="DefaultAdminUserFeature"/>.
     /// </summary>
     public DefaultAuthenticationFeature DisableLocalHostRequirement()
     {
-        ConfigureAuthorizationOptions = options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.RequireAuthenticatedUser());
+        EnableLocalHostPermissionGrant = false;
         return this;
     }
 
@@ -65,6 +90,7 @@ public class DefaultAuthenticationFeature : FeatureBase
     {
         Services.ConfigureOptions<ConfigureJwtBearerOptions>();
         Services.AddIdentityTokenOptionsValidation();
+        Services.Configure<LocalHostPermissionRequirementOptions>(options => options.EnableLocalHostPermissionGrant = EnableLocalHostPermissionGrant);
 
         var authBuilder = Services
             .AddAuthentication(MultiScheme)
@@ -87,5 +113,15 @@ public class DefaultAuthenticationFeature : FeatureBase
         Services.AddScoped(ApiKeyProviderType);
         Services.AddScoped<IApiKeyProvider>(sp => (IApiKeyProvider)sp.GetRequiredService(ApiKeyProviderType));
         Services.AddAuthorization(ConfigureAuthorizationOptions);
+    }
+
+    private static void ConfigureAuthenticatedSecurityRootPolicy(AuthorizationOptions options)
+    {
+        options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.RequireAuthenticatedUser());
+    }
+
+    private static void ConfigureLocalHostSecurityRootPolicy(AuthorizationOptions options)
+    {
+        options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostPermissionRequirement()));
     }
 }
