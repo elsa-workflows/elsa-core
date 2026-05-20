@@ -1,5 +1,6 @@
 using Elsa.Workflows.Runtime.HealthChecks;
 using Medallion.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using NSubstitute;
 
@@ -17,7 +18,7 @@ public class ElsaDistributedLockHealthCheckTests
         _distributedLockProvider.CreateLock(Arg.Any<string>()).Returns(_distributedLock);
         _distributedLock.TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<IDistributedSynchronizationHandle?>(Substitute.For<IDistributedSynchronizationHandle>()));
-        _sut = new ElsaDistributedLockHealthCheck(_distributedLockProvider);
+        _sut = new ElsaDistributedLockHealthCheck(CreateServiceProvider(_distributedLockProvider));
     }
 
     [Fact]
@@ -52,5 +53,26 @@ public class ElsaDistributedLockHealthCheckTests
 
         Assert.Equal(HealthStatus.Unhealthy, result.Status);
         Assert.Equal("distributed-locks", result.Data["category"]);
+    }
+
+    [Fact]
+    public async Task ReturnsDegradedWhenProviderIsNotRegistered()
+    {
+        var sut = new ElsaDistributedLockHealthCheck(CreateServiceProvider());
+
+        var result = await sut.CheckHealthAsync(new HealthCheckContext());
+
+        Assert.Equal(HealthStatus.Degraded, result.Status);
+        Assert.Equal("distributed-locks", result.Data["category"]);
+    }
+
+    private static IServiceProvider CreateServiceProvider(IDistributedLockProvider? distributedLockProvider = null)
+    {
+        var services = new ServiceCollection();
+
+        if (distributedLockProvider != null)
+            services.AddSingleton(distributedLockProvider);
+
+        return services.BuildServiceProvider();
     }
 }
