@@ -1,8 +1,10 @@
 using CShells.Features;
+using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Distributed.StartupTasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Workflows.Runtime.Distributed.ShellFeatures;
 
@@ -22,8 +24,9 @@ public class DistributedRuntimeFeature : IShellFeature
             .AddScoped<DistributedWorkflowRuntime>()
             .AddScoped<IWorkflowRuntime>(sp => sp.GetRequiredService<DistributedWorkflowRuntime>())
             .AddScoped<DistributedBookmarkQueueWorker>()
-            .AddScoped<IBookmarkQueueWorker>(sp => sp.GetRequiredService<DistributedBookmarkQueueWorker>())
-            .AddSingleton<DistributedRuntimeLockProviderValidator>()
-            .AddStartupTask<ValidateDistributedRuntimeLockProviderStartupTask>();
+            .AddScoped<IBookmarkQueueWorker>(sp => sp.GetRequiredService<DistributedBookmarkQueueWorker>());
+
+        services.TryAddSingleton<DistributedRuntimeLockProviderValidator>();
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IStartupTask, ValidateDistributedRuntimeLockProviderStartupTask>());
     }
 }

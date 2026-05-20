@@ -50,11 +50,11 @@ public class DistributedRuntimeLockProviderValidator(
             "This provider does not coordinate across nodes with separate file systems and can allow concurrent workflow processing in clustered deployments. " +
             "Configure a cross-node IDistributedLockProvider such as Redis, SQL Server, or PostgreSQL, or explicitly set DistributedLockingOptions.AllowLocalLockProviderInDistributedRuntime to true for single-host development/test deployments.";
 
-        logger.LogCritical(message);
+        logger.LogCritical("{ErrorMessage}", message);
         throw new InvalidOperationException(message);
     }
 
-    private static Type? FindLocalProviderType(IDistributedLockProvider provider, ISet<IDistributedLockProvider>? visited = null)
+    private Type? FindLocalProviderType(IDistributedLockProvider provider, ISet<IDistributedLockProvider>? visited = null)
     {
         visited ??= new HashSet<IDistributedLockProvider>();
 
@@ -77,7 +77,7 @@ public class DistributedRuntimeLockProviderValidator(
         return null;
     }
 
-    private static IEnumerable<IDistributedLockProvider> GetInnerProviders(IDistributedLockProvider provider)
+    private IEnumerable<IDistributedLockProvider> GetInnerProviders(IDistributedLockProvider provider)
     {
         foreach (var propertyName in InnerProviderPropertyNames)
         {
@@ -88,7 +88,18 @@ public class DistributedRuntimeLockProviderValidator(
             if (property == null || property.GetIndexParameters().Length > 0 || !typeof(IDistributedLockProvider).IsAssignableFrom(property.PropertyType))
                 continue;
 
-            if (property.GetValue(provider) is IDistributedLockProvider innerProvider)
+            object? value;
+            try
+            {
+                value = property.GetValue(provider);
+            }
+            catch (TargetInvocationException ex)
+            {
+                logger.LogDebug(ex, "Skipping distributed lock provider property {PropertyName} because the getter threw.", property.Name);
+                continue;
+            }
+
+            if (value is IDistributedLockProvider innerProvider)
                 yield return innerProvider;
         }
     }

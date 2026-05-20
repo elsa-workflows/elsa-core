@@ -1,3 +1,4 @@
+using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -6,6 +7,7 @@ using Elsa.Resilience.Features;
 using Elsa.Workflows.Runtime.Distributed.StartupTasks;
 using Elsa.Workflows.Runtime.Features;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Workflows.Runtime.Distributed.Features;
 
@@ -31,10 +33,11 @@ public class DistributedRuntimeFeature(IModule module) : FeatureBase(module)
         Services
             .AddScoped<DistributedWorkflowRuntime>()
             .AddScoped<DistributedBookmarkQueueWorker>()
-            .AddSingleton<DistributedRuntimeLockProviderValidator>()
-            .AddStartupTask<ValidateDistributedRuntimeLockProviderStartupTask>()
             
             .Decorate<IWorkflowDefinitionsRefresher, DistributedWorkflowDefinitionsRefresher>()
             .Decorate<IWorkflowDefinitionsReloader, DistributedWorkflowDefinitionsReloader>();
+
+        Services.TryAddSingleton<DistributedRuntimeLockProviderValidator>();
+        Services.TryAddEnumerable(ServiceDescriptor.Scoped<IStartupTask, ValidateDistributedRuntimeLockProviderStartupTask>());
     }
 }
