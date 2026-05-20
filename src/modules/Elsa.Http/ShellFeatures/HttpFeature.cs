@@ -1,3 +1,4 @@
+using System.Net;
 using CShells.AspNetCore.Features;
 using CShells.Features;
 using Elsa.Expressions.Options;
@@ -230,6 +231,7 @@ public class HttpFeature : IMiddlewareShellFeature
             options.AddTypeAlias<HttpFile[]>("HttpFile[]");
             options.AddTypeAlias<Downloadable>("Downloadable");
             options.AddTypeAlias<Downloadable[]>("Downloadable[]");
+            options.AddTypeAlias<HttpStatusCode>();
         });
     }
 

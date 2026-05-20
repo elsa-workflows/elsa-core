@@ -1,4 +1,5 @@
 using Elsa.Caching.Features;
+using Elsa.Expressions.Options;
 using Elsa.Common.Features;
 using Elsa.Expressions.Features;
 using Elsa.Extensions;
@@ -59,6 +60,7 @@ public class JavaScriptFeature : FeatureBase
     public override void Apply()
     {
         Services.Configure(JintOptions);
+        Services.Configure<ExpressionOptions>(JavaScriptExceptionTypeAliasRegistrar.Register);
 
         // JavaScript services.
         Services
