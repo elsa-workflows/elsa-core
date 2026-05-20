@@ -212,7 +212,7 @@ internal sealed class BlobStorageStub(string lookupPath, string fullPath, byte[]
     public Task<Stream> OpenReadAsync(string fullPath, CancellationToken cancellationToken = default)
     {
         OpenedPath = fullPath;
-        return Task.FromResult<Stream>(new MemoryStream(content));
+        return Task.FromResult(CreateContentStream());
     }
 
     public Task DeleteAsync(IEnumerable<string> fullPaths, CancellationToken cancellationToken = default)
@@ -254,4 +254,6 @@ internal sealed class BlobStorageStub(string lookupPath, string fullPath, byte[]
         blob.Metadata["ExpiresAt"] = expiresAt.ToString("O");
         return blob;
     }
+
+    private Stream CreateContentStream() => new MemoryStream(content, writable: false);
 }

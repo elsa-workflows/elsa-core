@@ -217,13 +217,8 @@ internal class ZipManager
         if (string.IsNullOrWhiteSpace(value) || value.Length > MaxDownloadCorrelationIdLength)
             return false;
 
-        foreach (var c in value)
-        {
-            if (c is not (>= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '-' or '_'))
-                return false;
-        }
-
-        return true;
+        var invalidCharacters = value.Where(c => c is not (>= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '-' or '_'));
+        return !invalidCharacters.Any();
     }
 
     private bool IsBlobPathSafe(string path, string expectedFilename)
@@ -255,7 +250,7 @@ internal class ZipManager
             return false;
 
         var fullCacheDirectory = GetFullCacheDirectory();
-        var fullPath = Path.GetFullPath(Path.Combine(fullCacheDirectory, path));
+        var fullPath = Path.GetFullPath(Path.Join(fullCacheDirectory, path));
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         return fullPath.StartsWith(fullCacheDirectory, comparison);
     }
