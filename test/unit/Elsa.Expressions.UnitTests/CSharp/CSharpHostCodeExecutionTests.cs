@@ -17,10 +17,11 @@ public class CSharpHostCodeExecutionTests
     [Fact]
     public async Task Evaluator_BlocksExecution_WhenHostHasNotOptedIn()
     {
+        using var memoryCache = new MemoryCache(new MemoryCacheOptions());
         var evaluator = new CSharpEvaluator(
             Substitute.For<Elsa.Mediator.Contracts.INotificationSender>(),
             Microsoft.Extensions.Options.Options.Create(new CSharpOptions()),
-            new MemoryCache(new MemoryCacheOptions()));
+            memoryCache);
         var context = await new ActivityTestFixture(new WriteLine("test")).BuildAsync();
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>

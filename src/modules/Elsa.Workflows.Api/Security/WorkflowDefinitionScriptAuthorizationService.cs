@@ -37,9 +37,8 @@ internal class WorkflowDefinitionScriptAuthorizationService(
     {
         var scriptUsages = await GetUsedScriptPoliciesAsync(root, cancellationToken);
 
-        foreach (var policy in scriptUsages)
+        foreach (var result in scriptUsages.Select(policy => AuthorizeScriptUsage(policy, user)))
         {
-            var result = AuthorizeScriptUsage(policy, user);
             if (!result.Succeeded)
                 return result;
         }
@@ -67,13 +66,9 @@ internal class WorkflowDefinitionScriptAuthorizationService(
     {
         var graph = await activityVisitor.VisitAsync(root, cancellationToken);
         var nodes = new[] { graph }.Concat(graph.Descendants()).ToList();
-        var policies = new List<ScriptPolicy>();
-
-        foreach (var policy in ScriptPolicies)
-        {
-            if (nodes.Any(x => IsRunActivity(x.Activity, policy) || HasExpression(x.Activity, policy)))
-                policies.Add(policy);
-        }
+        var policies = ScriptPolicies
+            .Where(policy => nodes.Any(x => IsRunActivity(x.Activity, policy) || HasExpression(x.Activity, policy)))
+            .ToList();
 
         return policies;
     }
