@@ -31,7 +31,7 @@ public class ResumeEndpointSecurityTests
     public async Task Get_WithInvalidToken_DoesNotParseQueryInput()
     {
         var input = Uri.EscapeDataString("{not-json");
-        var context = CreateHttpContext(HttpMethods.Get, $"?t=invalid&in={input}");
+        var context = CreateHttpContext(HttpMethods.Get, $"?t=invalid&async=true&in={input}");
         var sut = CreateEndpoint(context);
 
         await sut.HandleAsync(CancellationToken.None);
@@ -39,6 +39,23 @@ public class ResumeEndpointSecurityTests
         Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
         _payloadSerializer.Received(0).Deserialize<IDictionary<string, object>>(Arg.Any<string>());
         _apiSerializer.Received(0).Deserialize<Request>(Arg.Any<string>());
+        await _workflowResumer.DidNotReceive().ResumeAsync(Arg.Any<ResumeBookmarkRequest>(), Arg.Any<CancellationToken>());
+        await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("GET", "?async=true&in=%7Bnot-json", null)]
+    [InlineData("POST", "?async=true", """{"input":{"value":"ignored"}}""")]
+    public async Task Request_WithMissingToken_DoesNotParseInput(string method, string queryString, string? body)
+    {
+        var context = CreateHttpContext(method, queryString, body);
+        var sut = CreateEndpoint(context);
+
+        await sut.HandleAsync(CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        _apiSerializer.Received(0).Deserialize<Request>(Arg.Any<string>());
+        _payloadSerializer.Received(0).Deserialize<IDictionary<string, object>>(Arg.Any<string>());
         await _workflowResumer.DidNotReceive().ResumeAsync(Arg.Any<ResumeBookmarkRequest>(), Arg.Any<CancellationToken>());
         await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
     }

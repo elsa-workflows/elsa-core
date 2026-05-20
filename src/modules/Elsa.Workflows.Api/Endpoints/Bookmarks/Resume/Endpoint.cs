@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.SasTokens.Contracts;
 using Elsa.Workflows;
@@ -25,16 +26,16 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
     /// <inheritdoc />
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
-        var token = Query<string>("t")!;
-        var asynchronous = Query<bool>("async", false);
+        var token = Query<string?>("t", false);
 
-        if (!tokenService.TryDecryptToken<BookmarkTokenPayload>(token, out var payload))
+        if (string.IsNullOrWhiteSpace(token) || !tokenService.TryDecryptToken<BookmarkTokenPayload>(token, out var payload))
         {
             AddError("Invalid token.");
             await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
 
+        var asynchronous = Query<bool>("async", false);
         var input = await GetInputAsync(cancellationToken);
 
         if (ValidationFailed)
@@ -63,7 +64,7 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
         {
             return payloadSerializer.Deserialize<IDictionary<string, object>>(inputJson);
         }
-        catch
+        catch (Exception e) when (e is JsonException or NotSupportedException or InvalidOperationException or FormatException)
         {
             AddError("Invalid input format. Expected a valid JSON string.");
             return null;
@@ -92,9 +93,9 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
         {
             return apiSerializer.Deserialize<Request>(body).Input;
         }
-        catch
+        catch (Exception e) when (e is JsonException or NotSupportedException or InvalidOperationException or FormatException)
         {
-            AddError("Invalid input format. Expected a valid JSON string.");
+            AddError("Invalid input format. Expected a valid JSON request body.");
             return null;
         }
     }

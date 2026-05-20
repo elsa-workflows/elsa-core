@@ -18,7 +18,7 @@ public class ZipManagerTests : IDisposable
     private static readonly Type ZipManagerType = typeof(WriteFileHttpResponse).Assembly.GetRequiredType("Elsa.Http.Services.ZipManager");
     private static readonly MethodInfo CreateAsyncMethod = ZipManagerType.GetRequiredMethod("CreateAsync");
     private static readonly MethodInfo LoadAsyncMethod = ZipManagerType.GetRequiredMethod("LoadAsync");
-    private readonly string _cacheDirectory = Path.Combine(Path.GetTempPath(), "elsa-zip-manager-tests", Guid.NewGuid().ToString("N"));
+    private readonly string _cacheDirectory = Path.Join(Path.GetTempPath(), "elsa-zip-manager-tests", Guid.NewGuid().ToString("N"));
     private readonly IBlobStorage _blobStorage;
     private readonly object _zipManager;
     private readonly DateTimeOffset _now = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
@@ -38,8 +38,9 @@ public class ZipManagerTests : IDisposable
 
         var result = await LoadAsync(downloadId);
 
-        Assert.NotNull(result);
-        using var zipStream = new MemoryStream(result.Value.Content);
+        Assert.True(result.HasValue);
+        var value = result.Value;
+        using var zipStream = new MemoryStream(value.Content);
         using var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Read);
         var entry = Assert.Single(zipArchive.Entries);
         await using var entryStream = entry.Open();

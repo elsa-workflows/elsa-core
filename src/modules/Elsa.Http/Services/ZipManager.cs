@@ -210,20 +210,15 @@ internal class ZipManager
         if (string.IsNullOrWhiteSpace(value))
             return false;
 
-        foreach (var c in value)
-        {
-            if (c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '-' or '_')
-                continue;
-
-            return false;
-        }
-
-        return true;
+        return value.All(c => c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '-' or '_');
     }
 
     private bool IsCachePathSafe(string path)
     {
         if (string.IsNullOrWhiteSpace(path))
+            return false;
+
+        if (Path.IsPathRooted(path))
             return false;
 
         var cacheDirectory = Path.GetFullPath(_fileCacheOptions.Value.LocalCacheDirectory);

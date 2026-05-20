@@ -75,7 +75,20 @@ public class DataProtectorTokenService : ITokenService
         }
         catch (CryptographicException)
         {
-            return _dataProtector.Unprotect(token);
+            var json = _dataProtector.Unprotect(token);
+
+            // Expired time-limited tokens can be decrypted by the base protector,
+            // but the result includes the expiration header.
+            // Only accept fallback payloads that are standalone JSON produced by CreateToken(payload).
+            try
+            {
+                using var _ = JsonDocument.Parse(json);
+                return json;
+            }
+            catch (JsonException e)
+            {
+                throw new CryptographicException("Token payload is not a valid non-expiring token.", e);
+            }
         }
     }
 }

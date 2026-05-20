@@ -5,7 +5,7 @@ namespace Elsa.SasTokens.UnitTests.Contracts;
 
 public class DataProtectorTokenServiceTests : IDisposable
 {
-    private readonly string _keyDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+    private readonly string _keyDirectory = Path.Join(Path.GetTempPath(), Path.GetRandomFileName());
     private readonly DataProtectorTokenService _service;
 
     public DataProtectorTokenServiceTests()
@@ -22,8 +22,7 @@ public class DataProtectorTokenServiceTests : IDisposable
         var token = _service.CreateToken(payload, TimeSpan.FromMinutes(5));
         var result = _service.DecryptToken<TokenPayload>(token);
 
-        Assert.Equal(payload.WorkflowInstanceId, result.WorkflowInstanceId);
-        Assert.Equal(payload.BookmarkId, result.BookmarkId);
+        AssertPayload(payload, result);
     }
 
     [Fact]
@@ -37,9 +36,36 @@ public class DataProtectorTokenServiceTests : IDisposable
         Assert.False(result);
     }
 
+    [Fact]
+    public void TryDecryptToken_CreatedWithoutExpiration_ReturnsPayload()
+    {
+        var payload = new TokenPayload("workflow-instance-1", "bookmark-1");
+
+        var token = _service.CreateToken(payload);
+        var result = _service.TryDecryptToken<TokenPayload>(token, out var decryptedPayload);
+
+        Assert.True(result);
+        AssertPayload(payload, decryptedPayload);
+    }
+
+    [Fact]
+    public void TryDecryptToken_StringPayloadCreatedWithPastExpiration_ReturnsFalse()
+    {
+        var token = _service.CreateToken("payload", DateTimeOffset.UtcNow.AddMinutes(-1));
+        var result = _service.TryDecryptToken<string>(token, out _);
+
+        Assert.False(result);
+    }
+
     public void Dispose()
     {
         Directory.Delete(_keyDirectory, true);
+    }
+
+    private static void AssertPayload(TokenPayload expected, TokenPayload actual)
+    {
+        Assert.Equal(expected.WorkflowInstanceId, actual.WorkflowInstanceId);
+        Assert.Equal(expected.BookmarkId, actual.BookmarkId);
     }
 
     private record TokenPayload(string WorkflowInstanceId, string BookmarkId);
