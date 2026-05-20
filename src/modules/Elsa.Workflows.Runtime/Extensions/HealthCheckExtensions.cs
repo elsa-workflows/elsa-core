@@ -18,7 +18,7 @@ public static class HealthCheckExtensions
     /// <summary>
     /// Tag applied to Elsa readiness checks.
     /// </summary>
-    public const string ReadinessTag = "readiness";
+    public const string ReadinessTag = "elsa-readiness";
 
     private static readonly string[] ReadinessTags = [ElsaTag, ReadinessTag];
 

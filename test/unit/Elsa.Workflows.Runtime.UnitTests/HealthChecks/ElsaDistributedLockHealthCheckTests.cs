@@ -31,7 +31,7 @@ public class ElsaDistributedLockHealthCheckTests
 
         Assert.Equal(HealthStatus.Healthy, result.Status);
         Assert.Equal("distributed-locks", result.Data["category"]);
-        _distributedLockProvider.Received(1).CreateLock(Arg.Is<string>(x => x.StartsWith("elsa-health-check-", StringComparison.Ordinal)));
+        _distributedLockProvider.Received(1).CreateLock(Arg.Is<string>(x => IsProbeLockName(x)));
         await _distributedLock.Received(1).TryAcquireAsync(ExpectedLockAcquisitionTimeout, Arg.Any<CancellationToken>());
     }
 
@@ -52,6 +52,7 @@ public class ElsaDistributedLockHealthCheckTests
         Assert.Equal(2, lockNames.Count);
         Assert.All(lockNames, x => Assert.DoesNotContain(Environment.MachineName, x, StringComparison.OrdinalIgnoreCase));
         Assert.NotEqual(lockNames[0], lockNames[1]);
+        Assert.All(lockNames, x => Assert.True(IsProbeLockName(x)));
     }
 
     [Fact]
@@ -102,4 +103,11 @@ public class ElsaDistributedLockHealthCheckTests
     {
         DistributedLockAcquisitionTimeout = ExpectedLockAcquisitionTimeout
     });
+
+    private static bool IsProbeLockName(string lockName)
+    {
+        const string prefix = "elsa-health-check-";
+        return lockName.StartsWith(prefix, StringComparison.Ordinal)
+               && Guid.TryParseExact(lockName[prefix.Length..], "N", out _);
+    }
 }
