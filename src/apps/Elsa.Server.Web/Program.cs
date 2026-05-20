@@ -79,6 +79,8 @@ services
                 runtime.UseEntityFrameworkCore(ef => ef.UseSqlite());
                 runtime.UseCache();
                 runtime.UseDistributedRuntime();
+                // This sample host uses single-host file-system locks. Configure a cross-node provider for clustered deployments.
+                runtime.DistributedLockingOptions = options => options.AllowLocalLockProviderInDistributedRuntime = true;
             })
             .UseWorkflowsApi()
             .UseFluentStorageProvider()
