@@ -9,6 +9,7 @@ namespace Elsa.Workflows.Runtime.UnitTests.HealthChecks;
 
 public class ElsaWorkflowPersistenceHealthCheckTests
 {
+    private readonly IServiceProvider _serviceProvider = Substitute.For<IServiceProvider>();
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore = Substitute.For<IWorkflowDefinitionStore>();
     private readonly IWorkflowInstanceStore _workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();
     private readonly ITriggerStore _triggerStore = Substitute.For<ITriggerStore>();
@@ -21,7 +22,11 @@ public class ElsaWorkflowPersistenceHealthCheckTests
         _workflowInstanceStore.CountAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns(new ValueTask<long>(0));
         _triggerStore.FindAsync(Arg.Any<TriggerFilter>(), Arg.Any<CancellationToken>()).Returns(new ValueTask<Elsa.Workflows.Runtime.Entities.StoredTrigger?>((Elsa.Workflows.Runtime.Entities.StoredTrigger?)null));
         _bookmarkQueueStore.FindAsync(Arg.Any<BookmarkQueueFilter>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult<Elsa.Workflows.Runtime.Entities.BookmarkQueueItem?>(null));
-        _sut = new ElsaWorkflowPersistenceHealthCheck(_workflowDefinitionStore, _workflowInstanceStore, _triggerStore, _bookmarkQueueStore);
+        _serviceProvider.GetService(typeof(IWorkflowDefinitionStore)).Returns(_workflowDefinitionStore);
+        _serviceProvider.GetService(typeof(IWorkflowInstanceStore)).Returns(_workflowInstanceStore);
+        _serviceProvider.GetService(typeof(ITriggerStore)).Returns(_triggerStore);
+        _serviceProvider.GetService(typeof(IBookmarkQueueStore)).Returns(_bookmarkQueueStore);
+        _sut = new ElsaWorkflowPersistenceHealthCheck(_serviceProvider);
     }
 
     [Fact]
@@ -44,5 +49,20 @@ public class ElsaWorkflowPersistenceHealthCheckTests
         Assert.Equal("Elsa workflow store 'triggers' is not reachable.", result.Description);
         Assert.Equal("persistence", result.Data["category"]);
         Assert.Equal("triggers", result.Data["failedStore"]);
+        Assert.Equal("triggers", result.Data["failedProbe"]);
+    }
+
+    [Fact]
+    public async Task ReturnsHealthyWithSkippedProbesWhenOptionalManagementStoresAreMissing()
+    {
+        _serviceProvider.GetService(typeof(IWorkflowDefinitionStore)).Returns((object?)null);
+        _serviceProvider.GetService(typeof(IWorkflowInstanceStore)).Returns((object?)null);
+
+        var result = await _sut.CheckHealthAsync(new HealthCheckContext());
+
+        Assert.Equal(HealthStatus.Healthy, result.Status);
+        Assert.Equal("persistence", result.Data["category"]);
+        Assert.Equal("triggers,bookmark-queue", result.Data["probes"]);
+        Assert.Equal("workflow-definitions,workflow-instances", result.Data["skippedProbes"]);
     }
 }
