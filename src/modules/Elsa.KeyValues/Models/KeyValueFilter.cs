@@ -20,6 +20,11 @@ public class KeyValueFilter
     public ICollection<string>? Keys { get; set; }
 
     /// <summary>
+    /// Gets or sets the maximum number of records to return.
+    /// </summary>
+    public int? Take { get; set; }
+
+    /// <summary>
     /// Applies the filter to the specified queryable.
     /// </summary>
     /// <param name="queryable">The queryable.</param>
@@ -35,6 +40,9 @@ public class KeyValueFilter
         }
 
         if (filter.Keys != null) queryable = queryable.Where(x => filter.Keys.Contains(x.Id));
+
+        if (filter.Take is > 0)
+            queryable = queryable.Take(filter.Take.Value);
 
         return queryable;
     }

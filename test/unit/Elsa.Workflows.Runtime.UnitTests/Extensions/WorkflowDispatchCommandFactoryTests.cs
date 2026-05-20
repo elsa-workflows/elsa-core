@@ -34,4 +34,15 @@ public class WorkflowDispatchCommandFactoryTests
         Assert.Equal("requested-instance", command.InstanceId);
         Assert.False(command.SkipIfInstanceExists);
     }
+
+    [Fact]
+    public void CreateCommand_DoesNotSkipExistingInstance_WhenFallbackInstanceIdIsMissing()
+    {
+        var request = new DispatchWorkflowDefinitionRequest("definition-version-1");
+
+        var command = WorkflowDispatchCommandFactory.CreateCommand(request);
+
+        Assert.Null(command.InstanceId);
+        Assert.False(command.SkipIfInstanceExists);
+    }
 }

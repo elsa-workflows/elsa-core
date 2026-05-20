@@ -25,10 +25,17 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindManyAsync(CancellationToken cancellationToken = default)
     {
+        return await FindManyAsync(maxCount: 0, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindManyAsync(int maxCount, CancellationToken cancellationToken = default)
+    {
         var records = await keyValueStore.FindManyAsync(new KeyValueFilter
         {
             Key = KeyPrefix,
-            StartsWith = true
+            StartsWith = true,
+            Take = maxCount > 0 ? maxCount : null
         }, cancellationToken);
 
         return records

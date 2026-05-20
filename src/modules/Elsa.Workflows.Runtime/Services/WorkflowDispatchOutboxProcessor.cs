@@ -54,7 +54,8 @@ public class WorkflowDispatchOutboxProcessor(
 
     private async Task ProcessPendingItemsAsync(CancellationToken cancellationToken)
     {
-        var items = (await store.FindManyAsync(cancellationToken)).OrderBy(x => x.CreatedAt).ToList();
+        var batchSize = Math.Max(1, dispatcherOptions.Value.OutboxProcessorBatchSize);
+        var items = (await store.FindManyAsync(batchSize, cancellationToken)).OrderBy(x => x.CreatedAt).ToList();
 
         foreach (var item in items)
         {

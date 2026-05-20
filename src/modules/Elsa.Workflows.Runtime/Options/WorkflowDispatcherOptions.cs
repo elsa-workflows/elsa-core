@@ -35,4 +35,9 @@ public class WorkflowDispatcherOptions
     /// Gets or sets the maximum number of failed delivery attempts before an outbox item is abandoned.
     /// </summary>
     public int MaxOutboxDeliveryAttempts { get; set; } = 10;
+
+    /// <summary>
+    /// Gets or sets the maximum number of outbox items to load and process during one processor cycle.
+    /// </summary>
+    public int OutboxProcessorBatchSize { get; set; } = 100;
 }

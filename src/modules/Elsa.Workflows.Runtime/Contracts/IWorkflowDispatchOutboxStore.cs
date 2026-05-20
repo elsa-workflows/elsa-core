@@ -18,6 +18,11 @@ public interface IWorkflowDispatchOutboxStore
     Task<IEnumerable<WorkflowDispatchOutboxItem>> FindManyAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Returns up to the specified number of pending outbox items.
+    /// </summary>
+    Task<IEnumerable<WorkflowDispatchOutboxItem>> FindManyAsync(int maxCount, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes the specified outbox item.
     /// </summary>
     Task DeleteAsync(string id, CancellationToken cancellationToken = default);
