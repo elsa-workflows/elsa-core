@@ -2,8 +2,10 @@ using AspNetCore.Authentication.ApiKey;
 using CShells.Features;
 using Elsa.Extensions;
 using Elsa.Identity.Constants;
+using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Options;
+using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Requirements;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -30,15 +32,46 @@ public class DefaultAuthenticationFeature : IShellFeature
     public Type ApiKeyProviderType { get; set; } = typeof(DefaultApiKeyProvider);
 
     /// <summary>
+    /// Gets or sets an explicit API key for <see cref="AdminApiKeyProvider"/>. Leave empty to disable the provider.
+    /// </summary>
+    [ManifestSetting(
+        DisplayName = "Admin API Key",
+        Description = "Explicit API key for the admin API key provider. Leave empty to disable built-in admin API key authentication.",
+        Category = "Security",
+        Secret = true,
+        Sensitive = true,
+        RestartRequired = true)]
+    public string AdminApiKey { get; set; } = "";
+
+    /// <summary>
+    /// Gets or sets whether the all-zero development admin API key should be enabled. Do not enable in production.
+    /// </summary>
+    [ManifestSetting(
+        DisplayName = "Use Development Admin API Key",
+        Description = "Enables the all-zero development admin API key. Do not enable in production.",
+        Category = "Security",
+        DefaultValue = "false",
+        RestartRequired = true)]
+    public bool UseDevelopmentAdminApiKey { get; set; }
+
+    /// <summary>
     /// Gets or sets whether localhost requests may satisfy the security-root permission requirement without other credentials.
     /// </summary>
     public bool EnableLocalHostPermissionGrant { get; set; }
 
     public void ConfigureServices(IServiceCollection services)
     {
+        var resolvedAdminApiKey = UseDevelopmentAdminApiKey ? AdminApiKeyProvider.DevelopmentApiKey : AdminApiKey;
+        if (!string.IsNullOrWhiteSpace(resolvedAdminApiKey))
+            ApiKeyProviderType = typeof(AdminApiKeyProvider);
+
         services.ConfigureOptions<ConfigureJwtBearerOptions>();
         services.AddIdentityTokenOptionsValidation();
         services.Configure<LocalHostPermissionRequirementOptions>(options => options.EnableLocalHostPermissionGrant = EnableLocalHostPermissionGrant);
+        services.Configure<AdminApiKeyOptions>(options =>
+        {
+            options.ApiKey = resolvedAdminApiKey;
+        });
 
         var authBuilder = services
             .AddAuthentication(MultiScheme)
