@@ -64,7 +64,7 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
         {
             return payloadSerializer.Deserialize<IDictionary<string, object>>(inputJson);
         }
-        catch (Exception e) when (e is JsonException or NotSupportedException or InvalidOperationException or FormatException)
+        catch (Exception e) when (e is JsonException or NotSupportedException or InvalidOperationException or FormatException or ArgumentException)
         {
             AddError("Invalid input format. Expected a valid JSON string.");
             return null;
@@ -100,7 +100,7 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
 
             return request.Input;
         }
-        catch (Exception e) when (e is JsonException or NotSupportedException or InvalidOperationException or FormatException)
+        catch (Exception e) when (e is JsonException or NotSupportedException or InvalidOperationException or FormatException or ArgumentException)
         {
             AddError("Invalid input format. Expected a valid JSON request body.");
             return null;

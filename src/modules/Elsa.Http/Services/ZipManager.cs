@@ -12,6 +12,7 @@ namespace Elsa.Http.Services;
 /// </summary>
 internal class ZipManager
 {
+    private const int MaxDownloadCorrelationIdLength = 128;
     private readonly ISystemClock _clock;
     private readonly IFileCacheStorageProvider _fileCacheStorageProvider;
     private readonly IOptions<HttpFileCacheOptions> _fileCacheOptions;
@@ -91,7 +92,13 @@ internal class ZipManager
             return null;
         }
 
-        var stream = await fileCacheStorage.OpenReadAsync(fileCacheFilename, cancellationToken);
+        if (!IsBlobPathSafe(blob.FullPath, fileCacheFilename))
+        {
+            _logger.LogWarning("Rejected unsafe cached zip blob path {FullPath}", blob.FullPath);
+            return null;
+        }
+
+        var stream = await fileCacheStorage.OpenReadAsync(blob.FullPath, cancellationToken);
         return (blob, stream);
     }
     
@@ -207,10 +214,30 @@ internal class ZipManager
 
     private static bool IsValidDownloadCorrelationId(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        if (string.IsNullOrWhiteSpace(value) || value.Length > MaxDownloadCorrelationIdLength)
             return false;
 
         return value.All(c => c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '-' or '_');
+    }
+
+    private bool IsBlobPathSafe(string path, string expectedFilename)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return false;
+
+        if (!Path.IsPathRooted(path))
+            return IsCachePathSafe(path);
+
+        var fullPath = Path.GetFullPath(path);
+        var fullCacheDirectory = GetFullCacheDirectory();
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        if (fullPath.StartsWith(fullCacheDirectory, comparison))
+            return true;
+
+        var blobPath = path.Replace('\\', '/');
+        return !blobPath.Contains("/../", StringComparison.Ordinal)
+               && !blobPath.EndsWith("/..", StringComparison.Ordinal)
+               && blobPath.EndsWith($"/{expectedFilename}", StringComparison.Ordinal);
     }
 
     private bool IsCachePathSafe(string path)
@@ -221,11 +248,16 @@ internal class ZipManager
         if (Path.IsPathRooted(path))
             return false;
 
-        var cacheDirectory = Path.GetFullPath(_fileCacheOptions.Value.LocalCacheDirectory);
-        var fullCacheDirectory = Path.EndsInDirectorySeparator(cacheDirectory) ? cacheDirectory : cacheDirectory + Path.DirectorySeparatorChar;
+        var fullCacheDirectory = GetFullCacheDirectory();
         var fullPath = Path.GetFullPath(fullCacheDirectory + path);
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         return fullPath.StartsWith(fullCacheDirectory, comparison);
+    }
+
+    private string GetFullCacheDirectory()
+    {
+        var cacheDirectory = Path.GetFullPath(_fileCacheOptions.Value.LocalCacheDirectory);
+        return Path.EndsInDirectorySeparator(cacheDirectory) ? cacheDirectory : cacheDirectory + Path.DirectorySeparatorChar;
     }
     
     private void Cleanup(string filePath)

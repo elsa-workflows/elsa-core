@@ -48,6 +48,21 @@ public class ZipManagerTests : IDisposable
         Assert.Equal("cached zip", await reader.ReadToEndAsync());
     }
 
+    [Fact]
+    public async Task LoadAsync_ValidToken_OpensReturnedBlobFullPath()
+    {
+        var provider = Substitute.For<IFileCacheStorageProvider>();
+        var blobStorage = new BlobStorageStub("download.tmp", "folder/download.tmp", [1, 2, 3], _now.AddMinutes(5));
+        var zipManager = CreateZipManager(provider);
+        provider.GetStorage().Returns(blobStorage);
+
+        var result = await LoadAsync("download", zipManager);
+
+        Assert.True(result.HasValue);
+        Assert.Equal([1, 2, 3], result.Value.Content);
+        Assert.Equal("/folder/download.tmp", blobStorage.OpenedPath);
+    }
+
     [Theory]
     [InlineData("../download")]
     [InlineData("..\\download")]
@@ -57,6 +72,16 @@ public class ZipManagerTests : IDisposable
     [InlineData("download token")]
     public async Task LoadAsync_TraversalLikeToken_ReturnsNull(string downloadId)
     {
+        var result = await LoadAsync(downloadId);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task LoadAsync_TooLongToken_ReturnsNull()
+    {
+        var downloadId = new string('a', 129);
+
         var result = await LoadAsync(downloadId);
 
         Assert.Null(result);
@@ -79,11 +104,11 @@ public class ZipManagerTests : IDisposable
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2077:Target type is resolved by name for an internal test subject.")]
-    private object CreateZipManager()
+    private object CreateZipManager(IFileCacheStorageProvider? fileCacheStorageProvider = null)
     {
         var clock = Substitute.For<ISystemClock>();
         clock.UtcNow.Returns(_now);
-        var fileCacheStorageProvider = new BlobFileCacheStorageProvider(_blobStorage);
+        fileCacheStorageProvider ??= new BlobFileCacheStorageProvider(_blobStorage);
         var options = Options.Create(new HttpFileCacheOptions
         {
             LocalCacheDirectory = _cacheDirectory,
@@ -120,9 +145,9 @@ public class ZipManagerTests : IDisposable
         }
     }
 
-    private async Task<(Blob Blob, byte[] Content)?> LoadAsync(string downloadId)
+    private async Task<(Blob Blob, byte[] Content)?> LoadAsync(string downloadId, object? zipManager = null)
     {
-        var task = (Task)LoadAsyncMethod.Invoke(_zipManager, [downloadId, CancellationToken.None])!;
+        var task = (Task)LoadAsyncMethod.Invoke(zipManager ?? _zipManager, [downloadId, CancellationToken.None])!;
         await task;
         var result = task.GetType().GetRequiredProperty("Result").GetValue(task);
 
@@ -157,5 +182,66 @@ internal static class ReflectionExtensions
     public static FieldInfo GetRequiredField(this Type type, string fieldName)
     {
         return type.GetField(fieldName) ?? throw new InvalidOperationException($"Could not find field {type.FullName}.{fieldName}.");
+    }
+}
+
+internal sealed class BlobStorageStub(string lookupPath, string fullPath, byte[] content, DateTimeOffset expiresAt) : IBlobStorage
+{
+    public string? OpenedPath { get; private set; }
+
+    public Task<IReadOnlyCollection<Blob>> ListAsync(ListOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task WriteAsync(string fullPath, Stream dataStream, bool append = false, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task<Stream> OpenReadAsync(string fullPath, CancellationToken cancellationToken = default)
+    {
+        OpenedPath = fullPath;
+        return Task.FromResult<Stream>(new MemoryStream(content));
+    }
+
+    public Task DeleteAsync(IEnumerable<string> fullPaths, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task<IReadOnlyCollection<bool>> ExistsAsync(IEnumerable<string> fullPaths, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task<IReadOnlyCollection<Blob>> GetBlobsAsync(IEnumerable<string> fullPaths, CancellationToken cancellationToken = default)
+    {
+        var blobs = fullPaths.Contains(lookupPath)
+            ? [CreateBlob()]
+            : Array.Empty<Blob>();
+
+        return Task.FromResult<IReadOnlyCollection<Blob>>(blobs);
+    }
+
+    public Task SetBlobsAsync(IEnumerable<Blob> blobs, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task<ITransaction> OpenTransactionAsync()
+    {
+        throw new NotSupportedException();
+    }
+
+    public void Dispose()
+    {
+    }
+
+    private Blob CreateBlob()
+    {
+        var blob = new Blob(fullPath);
+        blob.Metadata["ExpiresAt"] = expiresAt.ToString("O");
+        return blob;
     }
 }

@@ -80,13 +80,38 @@ public class ResumeEndpointSecurityTests
     {
         var context = CreateHttpContext(HttpMethods.Post, "?t=valid", "null");
         var sut = CreateEndpoint(context);
-        _tokenService.TryDecryptToken<BookmarkTokenPayload>("valid", out Arg.Any<BookmarkTokenPayload>())
-            .Returns(callInfo =>
-            {
-                callInfo[1] = new BookmarkTokenPayload("bookmark", "workflow");
-                return true;
-            });
+        ArrangeValidToken();
         _apiSerializer.Deserialize<Request>("null").Returns((Request?)null);
+
+        await sut.HandleAsync(CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        await _workflowResumer.DidNotReceive().ResumeAsync(Arg.Any<ResumeBookmarkRequest>(), Arg.Any<CancellationToken>());
+        await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Get_WithArgumentExceptionWhileParsingInput_ReturnsBadRequest()
+    {
+        var context = CreateHttpContext(HttpMethods.Get, "?t=valid&in=%7B%7D");
+        var sut = CreateEndpoint(context);
+        ArrangeValidToken();
+        _payloadSerializer.Deserialize<IDictionary<string, object>>("{}").Returns(_ => throw new ArgumentException("Invalid input."));
+
+        await sut.HandleAsync(CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        await _workflowResumer.DidNotReceive().ResumeAsync(Arg.Any<ResumeBookmarkRequest>(), Arg.Any<CancellationToken>());
+        await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Post_WithArgumentExceptionWhileParsingInput_ReturnsBadRequest()
+    {
+        var context = CreateHttpContext(HttpMethods.Post, "?t=valid", "{}");
+        var sut = CreateEndpoint(context);
+        ArrangeValidToken();
+        _apiSerializer.Deserialize<Request>("{}").Returns(_ => throw new ArgumentException("Invalid input."));
 
         await sut.HandleAsync(CancellationToken.None);
 
@@ -98,6 +123,16 @@ public class ResumeEndpointSecurityTests
     private Resume CreateEndpoint(DefaultHttpContext context)
     {
         return Factory.Create<Resume>(context, _tokenService, _workflowResumer, _bookmarkQueue, _payloadSerializer, _apiSerializer);
+    }
+
+    private void ArrangeValidToken()
+    {
+        _tokenService.TryDecryptToken<BookmarkTokenPayload>("valid", out Arg.Any<BookmarkTokenPayload>())
+            .Returns(callInfo =>
+            {
+                callInfo[1] = new BookmarkTokenPayload("bookmark", "workflow");
+                return true;
+            });
     }
 
     private static DefaultHttpContext CreateHttpContext(string method, string queryString, string? body = null)
