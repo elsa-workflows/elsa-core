@@ -12,6 +12,7 @@ internal class WorkflowDefinitionScriptAuthorizationService(
 {
     private static readonly ScriptPolicy[] ScriptPolicies =
     [
+        // Keep run activity type names in sync with ActivityTypeNameHelper.GenerateTypeName<RunCSharp>() and GenerateTypeName<RunPython>().
         new(
             "CSharp",
             "Elsa.RunCSharp",
@@ -65,7 +66,7 @@ internal class WorkflowDefinitionScriptAuthorizationService(
     private async Task<IEnumerable<ScriptPolicy>> GetUsedScriptPoliciesAsync(IActivity root, CancellationToken cancellationToken)
     {
         var graph = await activityVisitor.VisitAsync(root, cancellationToken);
-        var nodes = new[] { graph }.Concat(graph.Descendants());
+        var nodes = new[] { graph }.Concat(graph.Descendants()).ToList();
         var policies = new List<ScriptPolicy>();
 
         foreach (var policy in ScriptPolicies)
