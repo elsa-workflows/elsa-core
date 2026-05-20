@@ -31,8 +31,8 @@ internal class List(IExpressionDescriptorRegistry expressionDescriptorRegistry) 
     private bool CanListDescriptor(ExpressionDescriptor descriptor)
     {
         return descriptor.Type != "Python" ||
-               descriptor.IsBrowsable &&
-               User.Claims.Any(x => x.Type == "permissions" && (x.Value == PermissionNames.All || x.Value == PermissionNames.ExecutePythonExpressions));
+               (descriptor.IsBrowsable &&
+                User.Claims.Any(x => x.Type == "permissions" && (x.Value == PermissionNames.All || x.Value == PermissionNames.ExecutePythonExpressions)));
     }
 
     private static IEnumerable<ExpressionDescriptorModel> Map(List<ExpressionDescriptor> descriptors) => descriptors.Select(Map);
