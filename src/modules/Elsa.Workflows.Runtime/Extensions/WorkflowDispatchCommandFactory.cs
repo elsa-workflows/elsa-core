@@ -5,14 +5,14 @@ namespace Elsa.Workflows.Runtime;
 
 internal static class WorkflowDispatchCommandFactory
 {
-    public static DispatchWorkflowDefinitionCommand CreateCommand(DispatchWorkflowDefinitionRequest request)
+    public static DispatchWorkflowDefinitionCommand CreateCommand(DispatchWorkflowDefinitionRequest request, string? instanceId = null)
     {
         return new(request.DefinitionVersionId)
         {
             Input = request.Input,
             Properties = request.Properties,
             CorrelationId = request.CorrelationId,
-            InstanceId = request.InstanceId,
+            InstanceId = string.IsNullOrWhiteSpace(request.InstanceId) ? instanceId : request.InstanceId,
             TriggerActivityId = request.TriggerActivityId,
             ParentWorkflowInstanceId = request.ParentWorkflowInstanceId,
             SchedulingActivityExecutionId = request.SchedulingActivityExecutionId,

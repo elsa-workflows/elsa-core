@@ -1,3 +1,4 @@
+using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Models;
@@ -17,6 +18,7 @@ public class TransactionalWorkflowDispatcher(
     IWorkflowDispatchOutbox outbox,
     IWorkflowDispatchOutboxAccessor outboxAccessor,
     INotificationSender notificationSender,
+    IIdentityGenerator identityGenerator,
     IOptions<WorkflowDispatcherOptions> options,
     ITenantAccessor? tenantAccessor = null) : IWorkflowDispatcher
 {
@@ -27,12 +29,13 @@ public class TransactionalWorkflowDispatcher(
             return await decoratedService.DispatchAsync(request, dispatchOptions, cancellationToken);
 
         await notificationSender.SendAsync(new WorkflowDefinitionDispatching(request), cancellationToken);
+        var generatedInstanceId = string.IsNullOrWhiteSpace(request.InstanceId) ? identityGenerator.GenerateId() : null;
 
         await outbox.EnqueueAsync(context, new()
         {
             TenantId = tenantAccessor?.Tenant?.Id,
             Kind = WorkflowDispatchOutboxItemKind.WorkflowDefinition,
-            WorkflowDefinitionCommand = WorkflowDispatchCommandFactory.CreateCommand(request)
+            WorkflowDefinitionCommand = WorkflowDispatchCommandFactory.CreateCommand(request, generatedInstanceId)
         }, cancellationToken);
 
         var response = DispatchWorkflowResponse.Success();
