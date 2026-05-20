@@ -5,6 +5,8 @@ using Elsa.Mediator.Contracts;
 using Elsa.Expressions.Python.Contracts;
 using Elsa.Expressions.Python.Models;
 using Elsa.Expressions.Python.Notifications;
+using Elsa.Expressions.Python.Options;
+using Microsoft.Extensions.Options;
 using Python.Runtime;
 
 namespace Elsa.Expressions.Python.Services;
@@ -16,18 +18,30 @@ public class PythonNetPythonEvaluator : IPythonEvaluator
 {
     private const string ReturnVarName = "elsa_python_result_variable_name";
     private readonly INotificationSender _notificationSender;
+    private readonly IOptions<PythonOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PythonNetPythonEvaluator"/> class.
     /// </summary>
-    public PythonNetPythonEvaluator(INotificationSender notificationSender)
+    public PythonNetPythonEvaluator(INotificationSender notificationSender) : this(notificationSender, Microsoft.Extensions.Options.Options.Create(new PythonOptions()))
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PythonNetPythonEvaluator"/> class.
+    /// </summary>
+    public PythonNetPythonEvaluator(INotificationSender notificationSender, IOptions<PythonOptions> options)
     {
         _notificationSender = notificationSender;
+        _options = options;
     }
 
     /// <inheritdoc />
     public async Task<object?> EvaluateAsync(string expression, Type returnType, ExpressionExecutionContext context, CancellationToken cancellationToken = default)
     {
+        if (!_options.Value.AllowHostCodeExecution)
+            throw new InvalidOperationException("Python.NET workflow expression execution is disabled. Set PythonOptions.AllowHostCodeExecution to true only for trusted workflow authors; Python.NET is not a sandbox.");
+
         using var gil = Py.GIL();
         using var scope = Py.CreateScope();
         var notification = new EvaluatingPython(scope, context);

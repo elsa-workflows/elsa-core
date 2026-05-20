@@ -11,6 +11,12 @@ namespace Elsa.Expressions.Python.Options;
 public class PythonOptions
 {
     /// <summary>
+    /// Gets or sets whether workflow-authored Python.NET host-code execution is allowed.
+    /// Python.NET is not a sandbox and can access host process capabilities.
+    /// </summary>
+    public bool AllowHostCodeExecution { get; set; }
+
+    /// <summary>
     /// Gets or sets the path to the Python DLL. Alternatively, you can set the PYTHON_DLL environment variable, which is required if you leave this property empty.
     /// </summary>
     public string? PythonDllPath { get; set; }

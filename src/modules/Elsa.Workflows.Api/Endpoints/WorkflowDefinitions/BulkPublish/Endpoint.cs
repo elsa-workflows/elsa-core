@@ -2,7 +2,9 @@ using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
+using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +12,12 @@ using Microsoft.AspNetCore.Authorization;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkPublish;
 
 [PublicAPI]
-internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IAuthorizationService authorizationService)
+internal class BulkPublish(
+    IWorkflowDefinitionStore store,
+    IWorkflowDefinitionPublisher workflowDefinitionPublisher,
+    IAuthorizationService authorizationService,
+    IWorkflowDefinitionService workflowDefinitionService,
+    PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService)
     : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
@@ -34,6 +41,7 @@ internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
         var alreadyPublished = new List<string>();
         var skipped = new List<string>();
         var updatedConsumers = new List<string>();
+        var publishableDefinitions = new List<(string DefinitionId, WorkflowDefinition Definition)>();
 
         var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter
         {
@@ -63,6 +71,22 @@ internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
                 continue;
             }
 
+            publishableDefinitions.Add((definitionId, definition));
+        }
+
+        foreach (var (_, definition) in publishableDefinitions)
+        {
+            var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+            var pythonAuthorizationResult = await pythonAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, User, cancellationToken);
+            if (pythonAuthorizationResult != PythonWorkflowDefinitionAuthorizationResult.Allowed)
+            {
+                await PythonWorkflowDefinitionAuthorizationFailure.SendAsync(pythonAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+                return null!;
+            }
+        }
+
+        foreach (var (definitionId, definition) in publishableDefinitions)
+        {
             var result = await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
             published.Add(definitionId);
             
@@ -72,4 +96,5 @@ internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
 
         return new(published, alreadyPublished, notFound, skipped, updatedConsumers);
     }
+
 }
