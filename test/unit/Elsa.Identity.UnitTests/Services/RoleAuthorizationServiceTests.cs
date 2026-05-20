@@ -38,6 +38,14 @@ public class RoleAuthorizationServiceTests
     }
 
     [Fact]
+    public async Task CannotAssignUnknownRoleId()
+    {
+        var canAssignRoles = await _service.CanAssignRolesAsync(CreateUser(PermissionNames.All), ["future-admin"]);
+
+        Assert.False(canAssignRoles);
+    }
+
+    [Fact]
     public void CannotMutatePrivilegedRoleWithOnlyRoleUpdatePermission()
     {
         var role = new Role

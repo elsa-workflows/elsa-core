@@ -38,7 +38,7 @@ internal class Create(IRoleManager roleManager, IRoleAuthorizationService roleAu
                 request.Id,
                 cancellationToken);
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex) when (ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
         {
             await Send.ErrorsAsync(StatusCodes.Status409Conflict, cancellationToken);
             return;

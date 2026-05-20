@@ -18,7 +18,13 @@ public class RoleAuthorizationService(IRoleProvider roleProvider) : IRoleAuthori
             return true;
 
         var requestedRoleIdSet = requestedRoleIds.ToHashSet(StringComparer.Ordinal);
-        var roles = (await roleProvider.FindByIdsAsync(requestedRoleIds, cancellationToken)).Where(x => requestedRoleIdSet.Contains(x.Id));
+        var roles = (await roleProvider.FindByIdsAsync(requestedRoleIds, cancellationToken))
+            .Where(x => requestedRoleIdSet.Contains(x.Id))
+            .ToList();
+        var resolvedRoleIdSet = roles.Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
+        if (!resolvedRoleIdSet.SetEquals(requestedRoleIdSet))
+            return false;
+
         var permissions = roles.SelectMany(x => x.Permissions);
         return HasAllPermissions(user, permissions);
     }
