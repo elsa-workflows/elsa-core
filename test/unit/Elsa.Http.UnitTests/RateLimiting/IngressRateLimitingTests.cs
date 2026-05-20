@@ -107,6 +107,21 @@ public class IngressRateLimitingTests
         Assert.Equal(HttpStatusCode.OK, otherResponse.StatusCode);
     }
 
+    [Theory]
+    [InlineData("/")]
+    [InlineData(" / ")]
+    public async Task UseWorkflowsRateLimiting_DoesNotApplyRootBasePathToAllPaths(string basePath)
+    {
+        await using var app = await CreateAppAsync(app => app.UseWorkflowsRateLimiting(basePath, PolicyName));
+        var client = app.GetTestClient();
+
+        var firstResponse = await client.GetAsync("/other/path");
+        var secondResponse = await client.GetAsync("/other/path");
+
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+    }
+
     [Fact]
     public async Task UseWorkflowsApiRateLimiting_UsesExistingGlobalRateLimiterMiddleware()
     {
@@ -242,34 +257,19 @@ public class IngressRateLimitingTests
     [Fact]
     public async Task UseWorkflowsApiRateLimiting_FailsWhenPolicyIsNotRegistered()
     {
-        using var app = CreateApp(
+        await using var app = CreateApp(
             app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName),
             options => AddFixedWindowLimiter(options, "other"));
 
-        try
-        {
-            app.Configure();
-        }
-        catch (InvalidOperationException exception)
-        {
-            Assert.Contains($"Rate limiting policy '{PolicyName}' is not registered", exception.Message);
-            Assert.DoesNotContain("services were not registered", exception.Message);
-            return;
-        }
-
+        app.Configure();
         await app.StartAsync();
         var client = app.GetTestClient();
-        HttpResponseMessage? response = null;
-        var runtimeException = await Record.ExceptionAsync(async () => response = await client.GetAsync("/elsa/api/workflow-definitions"));
 
-        if (runtimeException is InvalidOperationException invalidOperationException)
-        {
-            Assert.Contains(PolicyName, invalidOperationException.Message);
-            return;
-        }
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => client.GetAsync("/elsa/api/workflow-definitions"));
 
-        Assert.Null(runtimeException);
-        Assert.Equal(HttpStatusCode.InternalServerError, response!.StatusCode);
+        Assert.Contains("requires a rate limiting policy", exception.Message);
+        Assert.Contains(PolicyName, exception.Message);
+        Assert.DoesNotContain("Unable to find the required services", exception.Message);
     }
 
     [Fact]

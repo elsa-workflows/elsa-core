@@ -160,7 +160,7 @@ services.Configure<RuntimeOptions>(options => { options.InactivityThreshold = Ti
 services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(3600));
 services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.Configure<IncidentOptions>(options => options.DefaultIncidentStrategy = typeof(ContinueWithIncidentsStrategy));
-if (registerIngressRateLimitingPolicies)
+if (registerIngressRateLimitingPolicies && useIngressRateLimiting)
 {
     services.PostConfigure<ApiEndpointOptions>(options =>
     {

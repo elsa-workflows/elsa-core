@@ -72,7 +72,7 @@ Compare existing language modules:
 6. Add endpoint tests or component coverage if behavior is important.
 7. Update client models if the endpoint is part of the public client surface.
 
-Use route prefixing from `UseWorkflowsApi`; endpoint routes should usually be written without `/elsa/api`.
+Use route prefixing from `MapWorkflowsApi`; endpoint routes should usually be written without `/elsa/api`.
 
 ## Add A Store Or Persistence Provider
 

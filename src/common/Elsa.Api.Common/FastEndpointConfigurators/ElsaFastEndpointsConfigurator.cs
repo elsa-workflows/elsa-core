@@ -12,7 +12,8 @@ namespace Elsa.FastEndpointConfigurators;
 
 /// <summary>
 /// Configures FastEndpoints with Elsa-specific serialization options.
-/// Uses the same serialization settings as <see cref="Elsa.Extensions.WebApplicationExtensions.UseWorkflowsApi"/>.
+/// Uses the same serialization settings as <see cref="Elsa.Extensions.WebApplicationExtensions.UseWorkflowsApi"/>
+/// and <see cref="Elsa.Extensions.WebApplicationExtensions.MapWorkflowsApi"/>.
 /// </summary>
 [UsedImplicitly]
 public class ElsaFastEndpointsConfigurator : IFastEndpointsConfigurator

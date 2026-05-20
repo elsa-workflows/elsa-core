@@ -37,7 +37,10 @@ public static class ApplicationBuilderExtensions
         if (string.IsNullOrWhiteSpace(policyName) || string.IsNullOrWhiteSpace(basePath))
             return app;
 
-        return app.UseRateLimitingPolicyForPath(NormalizeBasePath(basePath), policyName, "Elsa HTTP workflow trigger rate limiting endpoint");
+        var pathPrefix = NormalizeBasePath(basePath);
+        return pathPrefix.HasValue
+            ? app.UseRateLimitingPolicyForPath(pathPrefix, policyName, "Elsa HTTP workflow trigger rate limiting endpoint")
+            : app;
     }
 
     private static PathString NormalizeBasePath(string basePath)
@@ -47,9 +50,8 @@ public static class ApplicationBuilderExtensions
         if (string.IsNullOrEmpty(value))
             return PathString.Empty;
 
-        if (!value.StartsWith('/'))
-            value = "/" + value;
+        value = value.Trim('/');
 
-        return value.Length == 1 ? new PathString(value) : new PathString(value.TrimEnd('/'));
+        return string.IsNullOrEmpty(value) ? PathString.Empty : new PathString("/" + value);
     }
 }
