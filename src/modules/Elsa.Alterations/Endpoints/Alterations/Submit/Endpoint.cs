@@ -53,12 +53,11 @@ public class Submit : ElsaEndpoint<AlterationPlanParams, Response>
 
     private bool ValidateInput(AlterationPlanParams planParams)
     {
-        foreach (var error in WorkflowInstanceFilter.ValidateTimestampFilters(planParams.Filter.TimestampFilters))
-        {
-            AddError(error);
-            return false;
-        }
+        var errors = WorkflowInstanceFilter.ValidateTimestampFilters(planParams.Filter.TimestampFilters).ToList();
 
-        return true;
+        foreach (var error in errors)
+            AddError(error);
+
+        return errors.Count == 0;
     }
 }

@@ -84,13 +84,12 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
             return false;
         }
 
-        foreach (var error in WorkflowInstanceFilter.ValidateTimestampFilters(request.TimestampFilters))
-        {
-            AddError(error);
-            return false;
-        }
+        var timestampFilterErrors = WorkflowInstanceFilter.ValidateTimestampFilters(request.TimestampFilters).ToList();
 
-        return true;
+        foreach (var error in timestampFilterErrors)
+            AddError(error);
+
+        return timestampFilterErrors.Count == 0;
     }
 
     private async Task<Page<WorkflowInstanceSummary>> FindAsync(Request request, WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken)

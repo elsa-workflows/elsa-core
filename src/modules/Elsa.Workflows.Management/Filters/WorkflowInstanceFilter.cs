@@ -251,6 +251,6 @@ public class WorkflowInstanceFilter
         if (TryNormalizeTimestampFilterColumn(column, out var normalizedColumn, out var error))
             return normalizedColumn;
 
-        throw new ArgumentException(error, nameof(TimestampFilters));
+        throw new ArgumentException(error, nameof(column));
     }
 }

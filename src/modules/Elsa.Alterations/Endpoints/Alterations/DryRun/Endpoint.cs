@@ -36,12 +36,11 @@ public class DryRun(IWorkflowInstanceFinder workflowInstanceFinder) : ElsaEndpoi
 
     private bool ValidateInput(AlterationWorkflowInstanceFilter filter)
     {
-        foreach (var error in WorkflowInstanceFilter.ValidateTimestampFilters(filter.TimestampFilters))
-        {
-            AddError(error);
-            return false;
-        }
+        var errors = WorkflowInstanceFilter.ValidateTimestampFilters(filter.TimestampFilters).ToList();
 
-        return true;
+        foreach (var error in errors)
+            AddError(error);
+
+        return errors.Count == 0;
     }
 }
