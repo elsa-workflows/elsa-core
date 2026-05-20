@@ -112,22 +112,39 @@ public static class WebApplicationExtensions
     {
         var options = app.ApplicationServices.GetService<IOptions<RateLimiterOptions>>()?.Value;
 
-        if (options == null || !HasRateLimiterPolicy(options, policyName))
+        if (options == null)
+            throw new InvalidOperationException($"Rate limiting policy '{policyName}' is not registered. Register it with services.AddRateLimiter(...) before applying Elsa rate limiting middleware.");
+
+        var policyFound = TryHasRateLimiterPolicy(options, policyName);
+
+        if (policyFound == false)
             throw new InvalidOperationException($"Rate limiting policy '{policyName}' is not registered. Register it with services.AddRateLimiter(...) before applying Elsa rate limiting middleware.");
     }
 
-    private static bool HasRateLimiterPolicy(RateLimiterOptions options, string policyName)
+    private static bool? TryHasRateLimiterPolicy(RateLimiterOptions options, string policyName)
     {
-        return ContainsPolicy(options, PolicyMapPropertyName, policyName) || ContainsPolicy(options, UnactivatedPolicyMapPropertyName, policyName);
+        var results = new[]
+        {
+            TryContainsPolicy(options, PolicyMapPropertyName, policyName),
+            TryContainsPolicy(options, UnactivatedPolicyMapPropertyName, policyName)
+        };
+
+        if (results.Any(result => result == true))
+            return true;
+
+        return results.Any(result => !result.HasValue) ? null : false;
     }
 
-    private static bool ContainsPolicy(RateLimiterOptions options, string propertyName, string policyName)
+    private static bool? TryContainsPolicy(RateLimiterOptions options, string propertyName, string policyName)
     {
         var property = typeof(RateLimiterOptions).GetProperty(propertyName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-        var map = property?.GetValue(options);
+        if (property == null)
+            return null;
+
+        var map = property.GetValue(options);
         var containsKey = map?.GetType().GetMethod(nameof(Dictionary<string, object>.ContainsKey), [typeof(string)]);
 
-        return containsKey != null && containsKey.Invoke(map, [policyName]) is true;
+        return containsKey?.Invoke(map, [policyName]) is bool result ? result : null;
     }
 
     private static ValueTask<object?> DeserializeRequestAsync(HttpRequest httpRequest, Type modelType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)

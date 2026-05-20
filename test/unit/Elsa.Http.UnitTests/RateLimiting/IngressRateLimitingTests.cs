@@ -74,10 +74,14 @@ public class IngressRateLimitingTests
             options => options.AddPolicy(PolicyName, policy));
         var client = app.GetTestClient();
 
-        var response = await client.GetAsync("/elsa/api/workflow-definitions");
+        var firstResponse = await client.GetAsync("/elsa/api/workflow-definitions");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
         Assert.Equal(1, policy.PartitionRequestCount);
+
+        var secondResponse = await client.GetAsync("/elsa/api/workflow-definitions");
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, secondResponse.StatusCode);
     }
 
     [Fact]
@@ -170,7 +174,13 @@ public class IngressRateLimitingTests
         public RateLimitPartition<string> GetPartition(HttpContext httpContext)
         {
             PartitionRequestCount++;
-            return RateLimitPartition.GetNoLimiter(PolicyName);
+            return RateLimitPartition.GetFixedWindowLimiter(PolicyName, _ => new()
+            {
+                PermitLimit = 1,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
         }
     }
 }
