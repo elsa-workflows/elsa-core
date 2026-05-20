@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
+using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Requests;
@@ -8,7 +9,11 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Dispatch;
 
 [UsedImplicitly]
-internal class Endpoint(IWorkflowDefinitionService workflowDefinitionService, IWorkflowDispatcher workflowDispatcher, IIdentityGenerator identityGenerator) : ElsaEndpoint<Request, Response>
+internal class Endpoint(
+    IWorkflowDefinitionService workflowDefinitionService,
+    IWorkflowDispatcher workflowDispatcher,
+    IIdentityGenerator identityGenerator,
+    PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService) : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
     {
@@ -25,6 +30,13 @@ internal class Endpoint(IWorkflowDefinitionService workflowDefinitionService, IW
         if(workflowGraph == null)
         {
             await Send.NotFoundAsync(cancellationToken);
+            return;
+        }
+
+        var pythonAuthorizationResult = await pythonAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, User, cancellationToken);
+        if (pythonAuthorizationResult != PythonWorkflowDefinitionAuthorizationResult.Allowed)
+        {
+            await PythonWorkflowDefinitionAuthorizationFailure.SendAsync(pythonAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
             return;
         }
         
@@ -63,4 +75,5 @@ internal class Endpoint(IWorkflowDefinitionService workflowDefinitionService, IW
         
         await Send.OkAsync(new Response(instanceId), cancellationToken);
     }
+
 }

@@ -1,5 +1,6 @@
 using System.Net.Mime;
 using Elsa.Common.Models;
+using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.State;
@@ -8,7 +9,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 
-public static class WorkflowExecutionHelper
+internal static class WorkflowExecutionHelper
 {
     public static async Task ExecuteWorkflowAsync(
         IExecutionRequest request,
@@ -16,6 +17,7 @@ public static class WorkflowExecutionHelper
         IWorkflowRuntime workflowRuntime,
         IWorkflowStarter workflowStarter,
         IApiSerializer apiSerializer,
+        PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
@@ -26,6 +28,13 @@ public static class WorkflowExecutionHelper
         if (workflowGraph == null)
         {
             await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
+            return;
+        }
+
+        var pythonAuthorizationResult = await pythonAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, httpContext.User, cancellationToken);
+        if (pythonAuthorizationResult != PythonWorkflowDefinitionAuthorizationResult.Allowed)
+        {
+            await SendPythonAuthorizationFailureAsync(httpContext, pythonAuthorizationResult, cancellationToken);
             return;
         }
         
@@ -87,5 +96,16 @@ public static class WorkflowExecutionHelper
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
         await httpContext.Response.WriteAsync(faultedResponse, cancellationToken);
     }
-}
 
+    private static async Task SendPythonAuthorizationFailureAsync(HttpContext httpContext, PythonWorkflowDefinitionAuthorizationResult result, CancellationToken cancellationToken)
+    {
+        if (result == PythonWorkflowDefinitionAuthorizationResult.MissingPermission)
+        {
+            await httpContext.Response.SendForbiddenAsync(cancellation: cancellationToken);
+            return;
+        }
+
+        httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await httpContext.Response.WriteAsync(PythonWorkflowDefinitionAuthorizationService.HostDisabledMessage, cancellationToken);
+    }
+}
