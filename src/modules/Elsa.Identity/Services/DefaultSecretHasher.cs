@@ -107,7 +107,12 @@ public class DefaultSecretHasher : ISecretHasher
         try
         {
             hash = Convert.FromBase64String(segments[2]);
-            return true;
+            if (hash.Length == KeySize)
+                return true;
+
+            iterationCount = 0;
+            hash = [];
+            return false;
         }
         catch (FormatException)
         {

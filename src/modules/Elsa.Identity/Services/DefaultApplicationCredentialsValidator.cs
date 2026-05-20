@@ -13,9 +13,16 @@ public class DefaultApplicationCredentialsValidator : IApplicationCredentialsVal
 {
     private readonly IApiKeyParser _apiKeyParser;
     private readonly IApplicationProvider _applicationProvider;
-    private readonly IApplicationStore _applicationStore;
+    private readonly IApplicationStore? _applicationStore;
     private readonly ISecretHasher _secretHasher;
     private readonly ILogger<DefaultApplicationCredentialsValidator> _logger;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultApplicationCredentialsValidator"/> class.
+    /// </summary>
+    public DefaultApplicationCredentialsValidator(IApiKeyParser apiKeyParser, IApplicationProvider applicationProvider, ISecretHasher secretHasher) : this(apiKeyParser, applicationProvider, null, secretHasher, null)
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultApplicationCredentialsValidator"/> class.
@@ -27,7 +34,7 @@ public class DefaultApplicationCredentialsValidator : IApplicationCredentialsVal
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultApplicationCredentialsValidator"/> class.
     /// </summary>
-    public DefaultApplicationCredentialsValidator(IApiKeyParser apiKeyParser, IApplicationProvider applicationProvider, IApplicationStore applicationStore, ISecretHasher secretHasher, ILogger<DefaultApplicationCredentialsValidator>? logger)
+    public DefaultApplicationCredentialsValidator(IApiKeyParser apiKeyParser, IApplicationProvider applicationProvider, IApplicationStore? applicationStore, ISecretHasher secretHasher, ILogger<DefaultApplicationCredentialsValidator>? logger)
     {
         _apiKeyParser = apiKeyParser;
         _applicationProvider = applicationProvider;
@@ -53,7 +60,7 @@ public class DefaultApplicationCredentialsValidator : IApplicationCredentialsVal
         if (!isValidApiKey)
             return null;
 
-        if (needsRehash)
+        if (needsRehash && _applicationStore != null)
         {
             var hashedApiKey = _secretHasher.HashSecret(apiKey);
             application.HashedApiKey = hashedApiKey.EncodeSecret();

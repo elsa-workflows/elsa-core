@@ -69,6 +69,19 @@ public class DefaultSecretHasherTests
     }
 
     [Fact]
+    public void VerifySecret_RejectsPbkdf2HashWithInvalidKeyLength()
+    {
+        var salt = _hasher.GenerateSalt();
+        var storedHash = Encoding.UTF8.GetBytes("pbkdf2-sha256$600000$" + Convert.ToBase64String(RandomNumberGenerator.GetBytes(16)));
+        var hashedSecret = HashedSecret.FromBytes(storedHash, salt);
+
+        var verified = _hasher.VerifySecret("secret", hashedSecret, out var needsRehash);
+
+        Assert.False(verified);
+        Assert.False(needsRehash);
+    }
+
+    [Fact]
     public async Task ValidateAsync_RehashesLegacyUserPassword()
     {
         var userStore = new MemoryUserStore(new MemoryStore<User>());
@@ -138,6 +151,26 @@ public class DefaultSecretHasherTests
     }
 
     [Fact]
+    public async Task ValidateAsync_WithOldUserValidatorConstructor_ReturnsUserWithoutPersistingRehash()
+    {
+        var legacyHash = CreateLegacyHash("secret");
+        var encodedLegacyHash = legacyHash.EncodeSecret();
+        var user = new User
+        {
+            Id = "user-1",
+            Name = "alice",
+            HashedPassword = encodedLegacyHash,
+            HashedPasswordSalt = legacyHash.EncodeSalt()
+        };
+        var validator = new DefaultUserCredentialsValidator(new StaticUserProvider(user), _hasher);
+
+        var validatedUser = await validator.ValidateAsync("alice", "secret");
+
+        Assert.Same(user, validatedUser);
+        Assert.Equal(encodedLegacyHash, user.HashedPassword);
+    }
+
+    [Fact]
     public async Task ValidateAsync_ReturnsApplicationWhenLegacyApiKeyRehashSaveFails()
     {
         var apiKeyGenerator = new DefaultApiKeyGeneratorAndParser();
@@ -160,6 +193,32 @@ public class DefaultSecretHasherTests
         var validatedApplication = await validator.ValidateAsync(apiKey);
 
         Assert.Same(application, validatedApplication);
+    }
+
+    [Fact]
+    public async Task ValidateAsync_WithOldApplicationValidatorConstructor_ReturnsApplicationWithoutPersistingRehash()
+    {
+        var apiKeyGenerator = new DefaultApiKeyGeneratorAndParser();
+        var apiKey = apiKeyGenerator.Generate("client-1");
+        var legacyHash = CreateLegacyHash(apiKey);
+        var encodedLegacyHash = legacyHash.EncodeSecret();
+        var application = new Application
+        {
+            Id = "app-1",
+            ClientId = "client-1",
+            Name = "Client 1",
+            HashedApiKey = encodedLegacyHash,
+            HashedApiKeySalt = legacyHash.EncodeSalt(),
+            HashedClientSecret = "",
+            HashedClientSecretSalt = ""
+        };
+        var applicationProvider = new StaticApplicationProvider(application);
+        var validator = new DefaultApplicationCredentialsValidator(apiKeyGenerator, applicationProvider, _hasher);
+
+        var validatedApplication = await validator.ValidateAsync(apiKey);
+
+        Assert.Same(application, validatedApplication);
+        Assert.Equal(encodedLegacyHash, application.HashedApiKey);
     }
 
     private static HashedSecret CreateLegacyHash(string secret)
@@ -207,6 +266,28 @@ public class DefaultSecretHasherTests
         public Task SaveAsync(Application application, CancellationToken cancellationToken = default) => throw new InvalidOperationException("Save failed.");
 
         public Task DeleteAsync(ApplicationFilter filter, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task<Application?> FindAsync(ApplicationFilter filter, CancellationToken cancellationToken = default)
+        {
+            var application = filter.Apply(new[] { _application }.AsQueryable()).FirstOrDefault();
+            return Task.FromResult(application);
+        }
+    }
+
+    private sealed class StaticUserProvider(User user) : IUserProvider
+    {
+        private readonly User _user = user;
+
+        public Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default)
+        {
+            var user = filter.Apply(new[] { _user }.AsQueryable()).FirstOrDefault();
+            return Task.FromResult(user);
+        }
+    }
+
+    private sealed class StaticApplicationProvider(Application application) : IApplicationProvider
+    {
+        private readonly Application _application = application;
 
         public Task<Application?> FindAsync(ApplicationFilter filter, CancellationToken cancellationToken = default)
         {

@@ -12,9 +12,16 @@ namespace Elsa.Identity.Services;
 public class DefaultUserCredentialsValidator : IUserCredentialsValidator
 {
     private readonly IUserProvider _userProvider;
-    private readonly IUserStore _userStore;
+    private readonly IUserStore? _userStore;
     private readonly ISecretHasher _secretHasher;
     private readonly ILogger<DefaultUserCredentialsValidator> _logger;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultUserCredentialsValidator"/> class.
+    /// </summary>
+    public DefaultUserCredentialsValidator(IUserProvider userProvider, ISecretHasher secretHasher) : this(userProvider, null, secretHasher, null)
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultUserCredentialsValidator"/> class.
@@ -26,7 +33,7 @@ public class DefaultUserCredentialsValidator : IUserCredentialsValidator
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultUserCredentialsValidator"/> class.
     /// </summary>
-    public DefaultUserCredentialsValidator(IUserProvider userProvider, IUserStore userStore, ISecretHasher secretHasher, ILogger<DefaultUserCredentialsValidator>? logger)
+    public DefaultUserCredentialsValidator(IUserProvider userProvider, IUserStore? userStore, ISecretHasher secretHasher, ILogger<DefaultUserCredentialsValidator>? logger)
     {
         _userProvider = userProvider;
         _userStore = userStore;
@@ -47,7 +54,7 @@ public class DefaultUserCredentialsValidator : IUserCredentialsValidator
         if (!isValidPassword)
             return null;
 
-        if (needsRehash)
+        if (needsRehash && _userStore != null)
         {
             var hashedPassword = _secretHasher.HashSecret(password);
             user.HashedPassword = hashedPassword.EncodeSecret();
