@@ -85,8 +85,25 @@ public class IngressRateLimitingTests
     }
 
     [Fact]
+    public async Task UseWorkflowsApiRateLimiting_PreservesRoutedEndpointExecution()
+    {
+        await using var app = await CreateRoutedAppAsync(app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName));
+        var client = app.GetTestClient();
+
+        var firstResponse = await client.GetAsync("/elsa/api/ping");
+        var content = await firstResponse.Content.ReadAsStringAsync();
+        var secondResponse = await client.GetAsync("/elsa/api/ping");
+
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal("pong", content);
+        Assert.Equal(HttpStatusCode.TooManyRequests, secondResponse.StatusCode);
+    }
+
+    [Fact]
     public void UseWorkflowsApiRateLimiting_ThrowsWhenPolicyIsNotRegistered()
     {
+        // This current-runtime assertion depends on ASP.NET Core's named-policy maps being inspectable.
+        // If those internals move, validation intentionally falls back to the runtime rate limiter.
         using var app = CreateApp(
             app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName),
             options => AddFixedWindowLimiter(options, "other"));
@@ -116,24 +133,55 @@ public class IngressRateLimitingTests
         return app;
     }
 
+    private static async Task<TestApplication> CreateRoutedAppAsync(Action<WebApplication> configure)
+    {
+        var builder = CreateBuilder();
+        AddRateLimiterServices(builder.Services);
+        var app = new TestApplication(builder.Build(), app =>
+        {
+            app.MapGet("/elsa/api/ping", () => "pong");
+            app.UseRouting();
+            configure(app);
+            app.UseRateLimiter();
+        });
+
+        app.Configure();
+        await app.StartAsync();
+        return app;
+    }
+
     private static TestApplication CreateApp(Action<WebApplication> configure, Action<RateLimiterOptions>? configureRateLimiter = null, bool registerRateLimiter = true)
+    {
+        var builder = CreateBuilder();
+
+        if (registerRateLimiter)
+            AddRateLimiterServices(builder.Services, configureRateLimiter);
+
+        return new TestApplication(builder.Build(), app =>
+        {
+            configure(app);
+            app.UseRateLimiter();
+            app.Run(context => context.Response.WriteAsync("ok"));
+        });
+    }
+
+    private static WebApplicationBuilder CreateBuilder()
     {
         var builder = WebApplication.CreateSlimBuilder();
         builder.WebHost.UseTestServer();
+        return builder;
+    }
 
-        if (registerRateLimiter)
+    private static void AddRateLimiterServices(IServiceCollection services, Action<RateLimiterOptions>? configureRateLimiter = null)
+    {
+        services.AddRateLimiter(options =>
         {
-            builder.Services.AddRateLimiter(options =>
-            {
-                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-                if (configureRateLimiter == null)
-                    AddFixedWindowLimiter(options, PolicyName);
-                else
-                    configureRateLimiter(options);
-            });
-        }
-
-        return new TestApplication(builder.Build(), configure);
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            if (configureRateLimiter == null)
+                AddFixedWindowLimiter(options, PolicyName);
+            else
+                configureRateLimiter(options);
+        });
     }
 
     private static void AddFixedWindowLimiter(RateLimiterOptions options, string policyName)
@@ -149,12 +197,7 @@ public class IngressRateLimitingTests
 
     private sealed class TestApplication(WebApplication app, Action<WebApplication> configure) : IAsyncDisposable, IDisposable
     {
-        public void Configure()
-        {
-            configure(app);
-            app.UseRateLimiter();
-            app.Run(context => context.Response.WriteAsync("ok"));
-        }
+        public void Configure() => configure(app);
 
         public HttpClient GetTestClient() => app.GetTestClient();
 
