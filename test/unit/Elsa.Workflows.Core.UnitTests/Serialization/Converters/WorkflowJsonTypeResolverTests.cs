@@ -5,6 +5,7 @@ using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.State;
 using Newtonsoft.Json.Linq;
 
@@ -114,9 +115,27 @@ public sealed class WorkflowJsonTypeResolverTests
     [InlineData(typeof(System.Text.StringBuilder))]
     [InlineData(typeof(System.Text.StringBuilder[]))]
     [InlineData(typeof(List<System.Text.StringBuilder>))]
-    public void When_SerializeUnsupportedType_Then_ThrowsJsonException(Type type)
+    public void When_SerializeUnsupportedType_Then_EmitsSafeUnregisteredTypeAlias(Type type)
     {
-        Assert.Throws<JsonException>(() => JsonSerializer.Serialize(type, _options));
+        var json = JsonSerializer.Serialize(type, _options);
+        var alias = JsonSerializer.Deserialize<string>(json);
+        var result = JsonSerializer.Deserialize<Type>(json, _options);
+
+        Assert.StartsWith("UnregisteredClrType:", alias);
+        Assert.Equal(typeof(Exception), result);
+    }
+
+    [Fact]
+    public void When_SerializeExceptionStateWithUnregisteredExceptionType_Then_DoesNotThrow()
+    {
+        var exceptionState = ExceptionState.FromException(new NullReferenceException("Test"));
+
+        var json = JsonSerializer.Serialize(exceptionState, _options);
+        var result = JsonSerializer.Deserialize<ExceptionState>(json, _options)!;
+
+        Assert.Contains("UnregisteredClrType:", json);
+        Assert.Equal(typeof(Exception), result.Type);
+        Assert.Equal("Test", result.Message);
     }
 
     [Fact]
@@ -159,6 +178,40 @@ public sealed class WorkflowJsonTypeResolverTests
 
         var payload = Assert.IsType<RegisteredPayload>(result);
         Assert.Equal("Alice", payload.Name);
+    }
+
+    [Theory]
+    [InlineData("IEnumerable<String>", typeof(List<string>))]
+    [InlineData("ICollection<String>", typeof(List<string>))]
+    [InlineData("IList<String>", typeof(List<string>))]
+    [InlineData("IReadOnlyCollection<String>", typeof(List<string>))]
+    [InlineData("IReadOnlyList<String>", typeof(List<string>))]
+    [InlineData("ISet<String>", typeof(HashSet<string>))]
+    public void When_DeserializePolymorphicCollectionInterface_Then_ReturnsConcreteCollection(string typeAlias, Type expectedType)
+    {
+        var json = $$"""
+        {
+          "_items": ["Alice"],
+          "_type": "{{typeAlias}}"
+        }
+        """;
+
+        var result = JsonSerializer.Deserialize<object>(json, _options);
+
+        Assert.IsType(expectedType, result);
+    }
+
+    [Fact]
+    public void When_DeserializePolymorphicObjectWithNonInstantiableType_Then_ThrowsJsonException()
+    {
+        _wellKnownTypeRegistry.RegisterType(typeof(AbstractPayload), "AbstractPayload");
+        var json = """
+        {
+          "_type": "AbstractPayload"
+        }
+        """;
+
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<object>(json, _options));
     }
 
     [Fact]
@@ -221,6 +274,18 @@ public sealed class WorkflowJsonTypeResolverTests
         Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<IDictionary<string, object>>(json, _options));
     }
 
+    [Fact]
+    public void When_RegistryChangesAfterLegacyResolutionAttempt_Then_LegacyResolutionUsesCurrentRegistry()
+    {
+        var typeAlias = typeof(LateRegisteredPayload).GetSimpleAssemblyQualifiedName();
+        Assert.False(WorkflowJsonTypeResolver.TryResolveType(_wellKnownTypeRegistry, typeAlias, out _));
+
+        _wellKnownTypeRegistry.RegisterType(typeof(LateRegisteredPayload), "LateRegisteredPayload");
+
+        Assert.True(WorkflowJsonTypeResolver.TryResolveType(_wellKnownTypeRegistry, typeAlias, out var result));
+        Assert.Equal(typeof(LateRegisteredPayload), result);
+    }
+
     private static JsonSerializerOptions CreateOptions(WellKnownTypeRegistry wellKnownTypeRegistry) => new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -258,6 +323,16 @@ public sealed class WorkflowJsonTypeResolverTests
     }
 
     public sealed class UnregisteredPayload
+    {
+        public string? Name { get; set; }
+    }
+
+    public abstract class AbstractPayload
+    {
+        public string? Name { get; set; }
+    }
+
+    public sealed class LateRegisteredPayload
     {
         public string? Name { get; set; }
     }
