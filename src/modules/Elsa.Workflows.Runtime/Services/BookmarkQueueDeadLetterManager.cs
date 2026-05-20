@@ -89,7 +89,7 @@ public class BookmarkQueueDeadLetterManager(
             item.CanReplay = true;
             item.ReplayedAt = null;
             item.ReplayedQueueItemId = null;
-            await deadLetterStore.SaveAsync(item, cancellationToken);
+            await deadLetterStore.SaveAsync(item, CancellationToken.None);
 
             logger.LogWarning(
                 ex,
