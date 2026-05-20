@@ -67,6 +67,18 @@ public class WorkflowInstrumentationTests
         Assert.Equal("Test workflow", faulted.Tags[WorkflowInstrumentation.WorkflowName]);
     }
 
+    [Fact]
+    public async Task ActivityInvoker_Should_Not_Replace_Pipeline_Exception_When_Outcome_Is_Null()
+    {
+        using var activityCapture = new ActivityCapture();
+        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var invoker = new ActivityInvoker(new ThrowingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => invoker.InvokeAsync(context));
+
+        Assert.Equal("Pipeline failed", exception.Message);
+    }
+
     private static WorkflowRunner CreateWorkflowRunner(WorkflowExecutionContext context, IWorkflowExecutionPipeline pipeline)
     {
         var notificationSender = Substitute.For<INotificationSender>();
@@ -108,6 +120,19 @@ public class WorkflowInstrumentationTests
         {
             context.TransitionTo(ActivityStatus.Running);
             await context.CompleteActivityAsync();
+        }
+    }
+
+    private sealed class ThrowingActivityExecutionPipeline : IActivityExecutionPipeline
+    {
+        public ActivityMiddlewareDelegate Pipeline => _ => ValueTask.CompletedTask;
+
+        public ActivityMiddlewareDelegate Setup(Action<IActivityExecutionPipelineBuilder> setup) => Pipeline;
+
+        public Task ExecuteAsync(ActivityExecutionContext context)
+        {
+            context.JournalData["Outcomes"] = null!;
+            throw new InvalidOperationException("Pipeline failed");
         }
     }
 

@@ -54,9 +54,9 @@ public static class WorkflowInstrumentation
     private static readonly Counter<long> WorkflowFaultedCounter = Meter.CreateCounter<long>("elsa.workflow.faulted", description: "Number of workflow execution cycles that faulted.");
     private static readonly Histogram<double> ActivityDuration = Meter.CreateHistogram<double>("elsa.activity.duration", "s", "Duration of activity execution.");
 
-    public static WorkflowInstrumentationScope StartWorkflow(WorkflowExecutionContext context)
+    public static WorkflowInstrumentationScope StartWorkflow(WorkflowExecutionContext context, bool? isStarting = null)
     {
-        var isStarting = context.SubStatus == Workflows.WorkflowSubStatus.Pending;
+        var shouldRecordStarted = isStarting ?? context.SubStatus == Workflows.WorkflowSubStatus.Pending;
         var activity = Source.StartActivity(WorkflowExecuteOperation, DiagnosticsActivityKind.Internal);
 
         if (activity != null)
@@ -65,7 +65,7 @@ public static class WorkflowInstrumentation
             activity.SetTag(WorkflowOperationName, WorkflowExecuteOperation);
         }
 
-        if (isStarting)
+        if (shouldRecordStarted)
             WorkflowStartedCounter.Add(1, CreateWorkflowTags(context));
 
         return new WorkflowInstrumentationScope(activity, Stopwatch.GetTimestamp());
@@ -162,7 +162,7 @@ public static class WorkflowInstrumentation
         var outcome = outcomes switch
         {
             IEnumerable<string> names => string.Join(",", names),
-            _ => outcomes.ToString()
+            _ => outcomes?.ToString()
         };
 
         activity.SetTag(ActivityOutcome, outcome);
