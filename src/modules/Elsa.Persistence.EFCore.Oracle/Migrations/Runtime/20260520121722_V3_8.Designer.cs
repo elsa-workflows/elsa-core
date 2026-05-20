@@ -21,7 +21,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.16")
+                .HasAnnotation("ProductVersion", "9.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -81,13 +81,13 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                         .HasColumnType("BOOLEAN");
 
                     b.Property<string>("SchedulingActivityExecutionId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("NVARCHAR2(200)");
 
                     b.Property<string>("SchedulingActivityId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("NVARCHAR2(200)");
 
                     b.Property<string>("SchedulingWorkflowInstanceId")
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("NVARCHAR2(200)");
 
                     b.Property<string>("SerializedActivityState")
                         .HasColumnType("NCLOB");
@@ -143,15 +143,6 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
 
                     b.HasIndex("HasBookmarks")
                         .HasDatabaseName("IX_ActivityExecutionRecord_HasBookmarks");
-
-                    b.HasIndex("SchedulingActivityExecutionId")
-                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingActivityExecutionId");
-
-                    b.HasIndex("SchedulingActivityId")
-                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingActivityId");
-
-                    b.HasIndex("SchedulingWorkflowInstanceId")
-                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingWorkflowInstanceId");
 
                     b.HasIndex("StartedAt")
                         .HasDatabaseName("IX_ActivityExecutionRecord_StartedAt");
@@ -432,10 +423,10 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
-                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId", "TenantId")
+                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId")
                         .IsUnique()
-                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId")
-                        .HasFilter("\"Hash\" IS NOT NULL AND \"TenantId\" IS NOT NULL");
+                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId")
+                        .HasFilter("\"Hash\" IS NOT NULL");
 
                     b.ToTable("Triggers", "Elsa");
                 });

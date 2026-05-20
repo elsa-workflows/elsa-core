@@ -21,7 +21,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.16")
+                .HasAnnotation("ProductVersion", "9.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -143,15 +143,6 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
 
                     b.HasIndex("HasBookmarks")
                         .HasDatabaseName("IX_ActivityExecutionRecord_HasBookmarks");
-
-                    b.HasIndex("SchedulingActivityExecutionId")
-                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingActivityExecutionId");
-
-                    b.HasIndex("SchedulingActivityId")
-                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingActivityId");
-
-                    b.HasIndex("SchedulingWorkflowInstanceId")
-                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingWorkflowInstanceId");
 
                     b.HasIndex("StartedAt")
                         .HasDatabaseName("IX_ActivityExecutionRecord_StartedAt");
@@ -432,9 +423,9 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
-                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId", "TenantId")
+                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId")
                         .IsUnique()
-                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId");
+                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId");
 
                     b.ToTable("Triggers", "Elsa");
                 });

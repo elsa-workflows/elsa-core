@@ -18,7 +18,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.16")
+                .HasAnnotation("ProductVersion", "9.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -78,13 +78,13 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("SchedulingActivityExecutionId")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SchedulingActivityId")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SchedulingWorkflowInstanceId")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SerializedActivityState")
                         .HasColumnType("longtext");
@@ -140,15 +140,6 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
 
                     b.HasIndex("HasBookmarks")
                         .HasDatabaseName("IX_ActivityExecutionRecord_HasBookmarks");
-
-                    b.HasIndex("SchedulingActivityExecutionId")
-                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingActivityExecutionId");
-
-                    b.HasIndex("SchedulingActivityId")
-                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingActivityId");
-
-                    b.HasIndex("SchedulingWorkflowInstanceId")
-                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingWorkflowInstanceId");
 
                     b.HasIndex("StartedAt")
                         .HasDatabaseName("IX_ActivityExecutionRecord_StartedAt");
@@ -429,9 +420,9 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
-                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId", "TenantId")
+                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId")
                         .IsUnique()
-                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId");
+                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId");
 
                     b.ToTable("Triggers", "Elsa");
                 });

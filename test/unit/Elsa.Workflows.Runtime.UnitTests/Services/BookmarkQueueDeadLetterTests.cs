@@ -117,7 +117,7 @@ public class BookmarkQueueDeadLetterTests
         Assert.Equal("failed", deadLetter.OriginalQueueItemId);
         Assert.Equal("Failed", deadLetter.Reason);
         Assert.Equal(2, deadLetter.DeliveryAttempts);
-        Assert.Equal(typeof(InvalidOperationException).FullName, deadLetter.LastErrorType);
+        Assert.Equal(typeof(ApplicationException).FullName, deadLetter.LastErrorType);
         Assert.Equal("resume failed", deadLetter.LastErrorMessage);
     }
 
@@ -137,6 +137,27 @@ public class BookmarkQueueDeadLetterTests
         await Assert.ThrowsAsync<OperationCanceledException>(() => processor.ProcessAsync());
 
         var retained = await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "cancelled" });
+        Assert.NotNull(retained);
+        Assert.Equal(0, retained.DeliveryAttempts);
+        Assert.Empty(await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter()));
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WhenResumeThrowsSystemException_PropagatesWithoutDeadLettering()
+    {
+        var item = NewQueueItem("system-exception", _now);
+        await _queueStore.AddAsync(item);
+        var processor = new BookmarkQueueProcessor(
+            _queueStore,
+            CreateManager(),
+            new ThrowingWorkflowResumer(new SystemException("system failure")),
+            _clock,
+            Microsoft.Extensions.Options.Options.Create(new BookmarkQueuePurgeOptions { MaxDeliveryAttempts = 2 }),
+            NullLogger<BookmarkQueueProcessor>.Instance);
+
+        await Assert.ThrowsAsync<SystemException>(() => processor.ProcessAsync());
+
+        var retained = await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "system-exception" });
         Assert.NotNull(retained);
         Assert.Equal(0, retained.DeliveryAttempts);
         Assert.Empty(await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter()));
@@ -300,8 +321,10 @@ public class BookmarkQueueDeadLetterTests
         public DateTimeOffset UtcNow { get; } = utcNow;
     }
 
-    private sealed class ThrowingWorkflowResumer : IWorkflowResumer
+    private sealed class ThrowingWorkflowResumer(Exception? exception = null) : IWorkflowResumer
     {
+        private readonly Exception _exception = exception ?? new ApplicationException("resume failed");
+
         public Task<IEnumerable<RunWorkflowInstanceResponse>> ResumeAsync<TActivity>(object stimulus, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default) where TActivity : IActivity
         {
             throw new NotSupportedException();
@@ -329,7 +352,7 @@ public class BookmarkQueueDeadLetterTests
 
         public Task<IEnumerable<RunWorkflowInstanceResponse>> ResumeAsync(BookmarkFilter filter, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default)
         {
-            throw new InvalidOperationException("resume failed");
+            throw _exception;
         }
     }
 

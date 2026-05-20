@@ -61,7 +61,7 @@ public class BookmarkQueueProcessor(
         {
             throw;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not SystemException)
         {
             await HandleFailureAsync(item, ex, cancellationToken);
             return;
