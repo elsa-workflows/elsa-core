@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.SasTokens.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using FastEndpoints;
 using JetBrains.Annotations;
@@ -11,7 +12,7 @@ namespace Elsa.Workflows.Api.Endpoints.Bookmarks.Resume;
 /// Resumes a bookmarked workflow instance with the bookmark ID specified in the provided SAS token.
 /// </summary>
 [PublicAPI]
-internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResumer, IBookmarkQueue bookmarkQueue, IPayloadSerializer serializer) : ElsaEndpoint<Request>
+internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResumer, IBookmarkQueue bookmarkQueue, IPayloadSerializer payloadSerializer, IApiSerializer apiSerializer) : ElsaEndpointWithoutRequest
 {
     /// <inheritdoc />
     public override void Configure()
@@ -22,15 +23,19 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
     }
 
     /// <inheritdoc />
-    public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(CancellationToken cancellationToken)
     {
         var token = Query<string>("t")!;
         var asynchronous = Query<bool>("async", false);
 
-        if (!tokenService.TryDecryptToken<BookmarkTokenPayload>(token, out var payload)) 
+        if (!tokenService.TryDecryptToken<BookmarkTokenPayload>(token, out var payload))
+        {
             AddError("Invalid token.");
+            await Send.ErrorsAsync(cancellation: cancellationToken);
+            return;
+        }
 
-        var input = HttpContext.Request.Method == HttpMethods.Post ? request.Input : GetInputFromQueryString();
+        var input = await GetInputAsync(cancellationToken);
 
         if (ValidationFailed)
         {
@@ -56,7 +61,36 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
 
         try
         {
-            return serializer.Deserialize<IDictionary<string, object>>(inputJson);
+            return payloadSerializer.Deserialize<IDictionary<string, object>>(inputJson);
+        }
+        catch
+        {
+            AddError("Invalid input format. Expected a valid JSON string.");
+            return null;
+        }
+    }
+
+    private async ValueTask<IDictionary<string, object>?> GetInputAsync(CancellationToken cancellationToken)
+    {
+        return HttpContext.Request.Method == HttpMethods.Post
+            ? await GetInputFromBodyAsync(cancellationToken)
+            : GetInputFromQueryString();
+    }
+
+    private async ValueTask<IDictionary<string, object>?> GetInputFromBodyAsync(CancellationToken cancellationToken)
+    {
+        if (HttpContext.Request.ContentLength == 0)
+            return null;
+
+        using var reader = new StreamReader(HttpContext.Request.Body);
+        var body = await reader.ReadToEndAsync(cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(body))
+            return null;
+
+        try
+        {
+            return apiSerializer.Deserialize<Request>(body).Input;
         }
         catch
         {

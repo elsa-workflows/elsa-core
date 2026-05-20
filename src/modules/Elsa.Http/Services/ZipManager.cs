@@ -61,8 +61,13 @@ internal class ZipManager
     /// <returns>A tuple containing the blob and the stream.</returns>
     public async Task<(Blob, Stream)?> LoadAsync(string downloadCorrelationId, CancellationToken cancellationToken = default)
     {
+        if (!TryGetCacheFilename(downloadCorrelationId, out var fileCacheFilename))
+        {
+            _logger.LogWarning("Rejected invalid zip download correlation ID");
+            return null;
+        }
+
         var fileCacheStorage = _fileCacheStorageProvider.GetStorage();
-        var fileCacheFilename = $"{downloadCorrelationId}.tmp";
         var blob = await fileCacheStorage.GetBlobAsync(fileCacheFilename, cancellationToken);
 
         if (blob == null)
@@ -86,7 +91,7 @@ internal class ZipManager
             return null;
         }
 
-        var stream = await fileCacheStorage.OpenReadAsync(blob.FullPath, cancellationToken);
+        var stream = await fileCacheStorage.OpenReadAsync(fileCacheFilename, cancellationToken);
         return (blob, stream);
     }
     
@@ -125,8 +130,13 @@ internal class ZipManager
     /// <param name="cancellationToken">An optional cancellation token.</param>
     private async Task CreateCachedZipBlobAsync(string localPath, string downloadCorrelationId, string? downloadAsFilename = default, string? contentType = default, CancellationToken cancellationToken = default)
     {
+        if (!TryGetCacheFilename(downloadCorrelationId, out var fileCacheFilename))
+        {
+            _logger.LogWarning("Rejected invalid zip download correlation ID");
+            return;
+        }
+
         var fileCacheStorage = _fileCacheStorageProvider.GetStorage();
-        var fileCacheFilename = $"{downloadCorrelationId}.tmp";
         var expiresAt = _clock.UtcNow.Add(_fileCacheOptions.Value.TimeToLive);
         var cachedBlob = CreateBlob(fileCacheFilename, downloadAsFilename, contentType, expiresAt);
         await fileCacheStorage.WriteFileAsync(fileCacheFilename, localPath, cancellationToken);
@@ -177,6 +187,50 @@ internal class ZipManager
         var tempFileName = Path.GetRandomFileName();
         var tempFilePath = Path.Combine(_fileCacheOptions.Value.LocalCacheDirectory, tempFileName);
         return tempFilePath;
+    }
+
+    private bool TryGetCacheFilename(string downloadCorrelationId, out string fileCacheFilename)
+    {
+        fileCacheFilename = default!;
+
+        if (!IsValidDownloadCorrelationId(downloadCorrelationId))
+            return false;
+
+        var candidateFilename = $"{downloadCorrelationId}.tmp";
+
+        if (!IsCachePathSafe(candidateFilename))
+            return false;
+
+        fileCacheFilename = candidateFilename;
+        return true;
+    }
+
+    private static bool IsValidDownloadCorrelationId(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        foreach (var c in value)
+        {
+            if (c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '-' or '_')
+                continue;
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool IsCachePathSafe(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return false;
+
+        var cacheDirectory = Path.GetFullPath(_fileCacheOptions.Value.LocalCacheDirectory);
+        var fullCacheDirectory = Path.EndsInDirectorySeparator(cacheDirectory) ? cacheDirectory : cacheDirectory + Path.DirectorySeparatorChar;
+        var fullPath = Path.GetFullPath(Path.Combine(fullCacheDirectory, path));
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        return fullPath.StartsWith(fullCacheDirectory, comparison);
     }
     
     private void Cleanup(string filePath)

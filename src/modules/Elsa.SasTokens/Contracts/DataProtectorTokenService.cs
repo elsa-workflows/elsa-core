@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
 
@@ -9,6 +10,7 @@ namespace Elsa.SasTokens.Contracts;
 public class DataProtectorTokenService : ITokenService
 {
     private readonly IDataProtector _dataProtector;
+    private readonly ITimeLimitedDataProtector _timeLimitedDataProtector;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DataProtectorTokenService"/> class.
@@ -16,20 +18,21 @@ public class DataProtectorTokenService : ITokenService
     public DataProtectorTokenService(IDataProtectionProvider dataProtector)
     {
         _dataProtector = dataProtector.CreateProtector("Elsa Tokens");
+        _timeLimitedDataProtector = _dataProtector.ToTimeLimitedDataProtector();
     }
 
     /// <inheritdoc />
     public string CreateToken<T>(T payload, TimeSpan lifetime)
     {
         var json = JsonSerializer.Serialize(payload);
-        return _dataProtector.ToTimeLimitedDataProtector().Protect(json, lifetime);
+        return _timeLimitedDataProtector.Protect(json, lifetime);
     }
     
     /// <inheritdoc />
     public string CreateToken<T>(T payload, DateTimeOffset expiresAt)
     {
         var json = JsonSerializer.Serialize(payload);
-        return _dataProtector.ToTimeLimitedDataProtector().Protect(json, expiresAt);
+        return _timeLimitedDataProtector.Protect(json, expiresAt);
     }
     
     /// <inheritdoc />
@@ -60,7 +63,19 @@ public class DataProtectorTokenService : ITokenService
     /// <inheritdoc />
     public T DecryptToken<T>(string token)
     {
-        var json = _dataProtector.Unprotect(token);
+        var json = Unprotect(token);
         return JsonSerializer.Deserialize<T>(json)!;
+    }
+
+    private string Unprotect(string token)
+    {
+        try
+        {
+            return _timeLimitedDataProtector.Unprotect(token);
+        }
+        catch (CryptographicException)
+        {
+            return _dataProtector.Unprotect(token);
+        }
     }
 }
