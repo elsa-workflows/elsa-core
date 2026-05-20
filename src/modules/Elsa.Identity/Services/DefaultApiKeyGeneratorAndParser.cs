@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using Elsa.Identity.Contracts;
 
@@ -12,7 +13,7 @@ public class DefaultApiKeyGeneratorAndParser : IApiKeyGenerator, IApiKeyParser
     public string Generate(string clientId)
     {
         var hexIdentifier = Convert.ToHexString(Encoding.UTF8.GetBytes(clientId));
-        var id = Guid.NewGuid().ToString("D");
+        var id = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         return $"{hexIdentifier}-{id}";
     }
 

@@ -39,6 +39,16 @@ public interface ISecretHasher
     /// <param name="salt">The salt.</param>
     /// <returns>True if the secret is valid, otherwise false.</returns>
     bool VerifySecret(string clearTextSecret, string secret, string salt);
+
+    /// <summary>
+    /// Verifies the secret.
+    /// </summary>
+    /// <param name="clearTextSecret">The secret to verify.</param>
+    /// <param name="secret">The hashed secret.</param>
+    /// <param name="salt">The salt.</param>
+    /// <param name="needsRehash">Whether the stored hash should be upgraded.</param>
+    /// <returns>True if the secret is valid, otherwise false.</returns>
+    bool VerifySecret(string clearTextSecret, string secret, string salt, out bool needsRehash);
     
     /// <summary>
     /// Verifies the secret.
@@ -47,6 +57,15 @@ public interface ISecretHasher
     /// <param name="hashedSecret">The hashed secret.</param>
     /// <returns>True if the secret is valid, otherwise false.</returns>
     bool VerifySecret(string clearTextSecret, HashedSecret hashedSecret);
+
+    /// <summary>
+    /// Verifies the secret.
+    /// </summary>
+    /// <param name="clearTextSecret">The secret to verify.</param>
+    /// <param name="hashedSecret">The hashed secret.</param>
+    /// <param name="needsRehash">Whether the stored hash should be upgraded.</param>
+    /// <returns>True if the secret is valid, otherwise false.</returns>
+    bool VerifySecret(string clearTextSecret, HashedSecret hashedSecret, out bool needsRehash);
 
     /// <summary>
     /// Generates a salt.
