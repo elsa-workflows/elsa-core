@@ -1,10 +1,13 @@
 using System.Diagnostics;
 using System.Net;
+using System.Net.Sockets;
+using System.Text;
 using Elsa.Activities.UnitTests.Http.Helpers;
 using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
 namespace Elsa.Activities.UnitTests.Http;
@@ -67,25 +70,31 @@ public class SendHttpRequestTests
         // Arrange
         using var listener = new ActivityListener
         {
-            ShouldListenTo = source => source.Name == TestActivitySourceName,
+            ShouldListenTo = source => source.Name == TestActivitySourceName || source.Name == "System.Net.Http",
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
         };
         ActivitySource.AddActivityListener(listener);
 
         using var source = new ActivitySource(TestActivitySourceName);
         using var parentActivity = source.StartActivity("parent");
-        var requestCapture = new RequestCapture();
-        var responseHandler = CreateResponseHandler(HttpStatusCode.OK, null, requestCapture);
-        var sendHttpRequest = CreateSendHttpRequest(new("https://api.example.com/traced"));
+        await using var server = new TraceContextServer();
+        using var httpClient = new HttpClient();
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
+        var sendHttpRequest = CreateSendHttpRequest(server.Uri);
 
         // Act
-        await ExecuteActivityAsync(sendHttpRequest, responseHandler);
+        await new ActivityTestFixture(sendHttpRequest)
+            .WithHttpServices()
+            .ConfigureServices(services => services.AddSingleton(httpClientFactory))
+            .ExecuteAsync();
+        var headers = await server.GetRequestHeadersAsync();
 
         // Assert
         Assert.NotNull(parentActivity);
-        Assert.NotNull(requestCapture.CapturedRequest);
-        Assert.True(requestCapture.CapturedRequest.Headers.TryGetValues("traceparent", out var values));
-        Assert.Equal($"00-{parentActivity.TraceId}-{parentActivity.SpanId}-01", Assert.Single(values));
+        Assert.True(headers.TryGetValue("traceparent", out var traceParent));
+        Assert.StartsWith($"00-{parentActivity.TraceId}-", traceParent);
+        Assert.DoesNotContain(parentActivity.SpanId.ToString(), traceParent);
     }
 
     [Theory]
@@ -211,6 +220,7 @@ public class SendHttpRequestTests
         {
             if (requestCapture != null)
                 requestCapture.CapturedRequest = request;
+
             return Task.FromResult(ActivityTestFixtureHttpExtensions.CreateHttpResponse(statusCode, content, additionalHeaders));
         };
     }
@@ -218,6 +228,52 @@ public class SendHttpRequestTests
     private sealed class RequestCapture
     {
         public HttpRequestMessage? CapturedRequest { get; set; }
+    }
+
+    private sealed class TraceContextServer : IAsyncDisposable
+    {
+        private readonly TcpListener _listener = new(IPAddress.Loopback, 0);
+        private readonly Task<Dictionary<string, string>> _requestTask;
+
+        public TraceContextServer()
+        {
+            _listener.Start();
+            var port = ((IPEndPoint)_listener.LocalEndpoint).Port;
+            Uri = new($"http://127.0.0.1:{port}/traced");
+            _requestTask = AcceptRequestAsync();
+        }
+
+        public Uri Uri { get; }
+
+        public Task<Dictionary<string, string>> GetRequestHeadersAsync() => _requestTask;
+
+        public ValueTask DisposeAsync()
+        {
+            _listener.Stop();
+            return ValueTask.CompletedTask;
+        }
+
+        private async Task<Dictionary<string, string>> AcceptRequestAsync()
+        {
+            using var client = await _listener.AcceptTcpClientAsync();
+            await using var stream = client.GetStream();
+            using var reader = new StreamReader(stream, Encoding.ASCII, leaveOpen: true);
+            await using var writer = new StreamWriter(stream, Encoding.ASCII, leaveOpen: true) { NewLine = "\r\n", AutoFlush = true };
+            var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            await reader.ReadLineAsync();
+
+            while (await reader.ReadLineAsync() is { Length: > 0 } line)
+            {
+                var separator = line.IndexOf(':');
+
+                if (separator > 0)
+                    headers[line[..separator]] = line[(separator + 1)..].Trim();
+            }
+
+            await writer.WriteAsync("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{}");
+            return headers;
+        }
     }
 
     private static SendHttpRequest CreateSendHttpRequest(

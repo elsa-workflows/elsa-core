@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Elsa.Common;
@@ -41,6 +42,7 @@ public class WorkflowInstrumentationTests
         Assert.Equal(ActivityStatus.Completed.ToString(), tags[WorkflowInstrumentation.ActivityStatus]);
         var activityDuration = Assert.Single(meterCapture.DoubleMeasurements, x => x.InstrumentName == "elsa.activity.duration" && x.Value >= 0);
         Assert.Equal("Test activity", activityDuration.Tags[WorkflowInstrumentation.ActivityName]);
+        Assert.Equal(false, activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]);
     }
 
     [Fact]
@@ -71,12 +73,16 @@ public class WorkflowInstrumentationTests
     public async Task ActivityInvoker_Should_Not_Replace_Pipeline_Exception_When_Outcome_Is_Null()
     {
         using var activityCapture = new ActivityCapture();
+        using var meterCapture = new MeterCapture();
         var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
         var invoker = new ActivityInvoker(new ThrowingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => invoker.InvokeAsync(context));
 
         Assert.Equal("Pipeline failed", exception.Message);
+        var activityDuration = Assert.Single(meterCapture.DoubleMeasurements, x => x.InstrumentName == "elsa.activity.duration" && x.Value >= 0);
+        Assert.Equal(true, activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]);
+        Assert.Equal(ActivityStatus.Faulted.ToString(), activityDuration.Tags[WorkflowInstrumentation.ActivityStatus]);
     }
 
     private static WorkflowRunner CreateWorkflowRunner(WorkflowExecutionContext context, IWorkflowExecutionPipeline pipeline)
@@ -160,13 +166,13 @@ public class WorkflowInstrumentationTests
             {
                 ShouldListenTo = source => source.Name == WorkflowInstrumentation.ActivitySourceName,
                 Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-                ActivityStopped = activity => StoppedActivities.Add(activity)
+                ActivityStopped = activity => StoppedActivities.Enqueue(activity)
             };
 
             ActivitySource.AddActivityListener(_listener);
         }
 
-        public IList<DiagnosticsActivity> StoppedActivities { get; } = new List<DiagnosticsActivity>();
+        public ConcurrentQueue<DiagnosticsActivity> StoppedActivities { get; } = new();
 
         public void Dispose() => _listener.Dispose();
     }
@@ -183,13 +189,13 @@ public class WorkflowInstrumentationTests
                     listener.EnableMeasurementEvents(instrument);
             };
 
-            _listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) => LongMeasurements.Add(new(instrument.Name, measurement, CaptureTags(tags))));
-            _listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) => DoubleMeasurements.Add(new(instrument.Name, measurement, CaptureTags(tags))));
+            _listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) => LongMeasurements.Enqueue(new(instrument.Name, measurement, CaptureTags(tags))));
+            _listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) => DoubleMeasurements.Enqueue(new(instrument.Name, measurement, CaptureTags(tags))));
             _listener.Start();
         }
 
-        public IList<Measurement<long>> LongMeasurements { get; } = new List<Measurement<long>>();
-        public IList<Measurement<double>> DoubleMeasurements { get; } = new List<Measurement<double>>();
+        public ConcurrentQueue<Measurement<long>> LongMeasurements { get; } = new();
+        public ConcurrentQueue<Measurement<double>> DoubleMeasurements { get; } = new();
 
         public void Dispose() => _listener.Dispose();
 

@@ -14,7 +14,7 @@ services.AddOpenTelemetry()
 
 Elsa creates spans around workflow execution cycles and activity execution. The spans include workflow and activity identifiers, definition metadata, status, tenant ID when available, and fault status. Workflow input, activity input, output payloads, headers, and variable values are not added as span attributes.
 
-Outbound `SendHttpRequest` and `FlowSendHttpRequest` calls inject the current W3C trace context into the request when an `Activity.Current` exists, allowing downstream HTTP spans to stay connected to the Elsa workflow trace.
+Outbound `SendHttpRequest` and `FlowSendHttpRequest` calls use the configured `HttpClient`, so standard .NET HTTP client instrumentation can create child HTTP spans and propagate W3C trace context without Elsa-specific middleware. Enable HTTP client instrumentation in your OpenTelemetry setup when you want outbound HTTP spans and downstream context propagation.
 
 ## Metrics
 
@@ -25,4 +25,4 @@ The `Elsa.Workflows` meter emits:
 - `elsa.workflow.faulted`
 - `elsa.activity.duration` in seconds
 
-Metric tags use the same low-cardinality workflow and activity metadata as the spans where practical.
+Metric tags use the same low-cardinality workflow and activity metadata as the spans where practical. The started counter omits execution status tags because it records the pre-execution boundary; completed and faulted counters include terminal workflow status tags.

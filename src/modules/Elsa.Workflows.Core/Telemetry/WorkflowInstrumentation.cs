@@ -54,7 +54,7 @@ public static class WorkflowInstrumentation
     private static readonly Counter<long> WorkflowFaultedCounter = Meter.CreateCounter<long>("elsa.workflow.faulted", description: "Number of workflow execution cycles that faulted.");
     private static readonly Histogram<double> ActivityDuration = Meter.CreateHistogram<double>("elsa.activity.duration", "s", "Duration of activity execution.");
 
-    public static WorkflowInstrumentationScope StartWorkflow(WorkflowExecutionContext context, bool? isStarting = null)
+    internal static WorkflowInstrumentationScope StartWorkflow(WorkflowExecutionContext context, bool? isStarting = null)
     {
         var shouldRecordStarted = isStarting ?? context.SubStatus == Workflows.WorkflowSubStatus.Pending;
         var activity = Source.StartActivity(WorkflowExecuteOperation, DiagnosticsActivityKind.Internal);
@@ -66,12 +66,12 @@ public static class WorkflowInstrumentation
         }
 
         if (shouldRecordStarted)
-            WorkflowStartedCounter.Add(1, CreateWorkflowTags(context));
+            WorkflowStartedCounter.Add(1, CreateWorkflowTags(context, false));
 
         return new WorkflowInstrumentationScope(activity, Stopwatch.GetTimestamp());
     }
 
-    public static ActivityInstrumentationScope StartActivity(ActivityExecutionContext context)
+    internal static ActivityInstrumentationScope StartActivity(ActivityExecutionContext context)
     {
         var activity = Source.StartActivity(ActivityExecuteOperation, DiagnosticsActivityKind.Internal);
 
@@ -110,7 +110,7 @@ public static class WorkflowInstrumentation
         var faulted = exception != null || context.Status == Workflows.ActivityStatus.Faulted;
         var duration = Stopwatch.GetElapsedTime(scope.StartTimestamp).TotalSeconds;
 
-        ActivityDuration.Record(duration, CreateActivityTags(context));
+        ActivityDuration.Record(duration, CreateActivityTags(context, faulted));
 
         if (activity != null)
         {
@@ -180,7 +180,7 @@ public static class WorkflowInstrumentation
         activity.SetTag(ErrorType, exception?.GetType().FullName);
     }
 
-    private static TagList CreateWorkflowTags(WorkflowExecutionContext context)
+    private static TagList CreateWorkflowTags(WorkflowExecutionContext context, bool includeExecutionStatus = true)
     {
         var workflow = context.Workflow;
         var identity = workflow.Identity;
@@ -189,17 +189,21 @@ public static class WorkflowInstrumentation
             { WorkflowSystem, SystemName },
             { WorkflowDefinitionId, identity.DefinitionId },
             { WorkflowDefinitionVersion, identity.Version },
-            { WorkflowDefinitionVersionId, identity.Id },
-            { WorkflowStatus, context.Status.ToString() },
-            { WorkflowSubStatus, context.SubStatus.ToString() }
+            { WorkflowDefinitionVersionId, identity.Id }
         };
+
+        if (includeExecutionStatus)
+        {
+            tags.Add(WorkflowStatus, context.Status.ToString());
+            tags.Add(WorkflowSubStatus, context.SubStatus.ToString());
+        }
 
         AddIfNotNull(ref tags, WorkflowName, workflow.WorkflowMetadata.Name ?? workflow.Name);
         AddIfNotNull(ref tags, TenantId, identity.TenantId);
         return tags;
     }
 
-    private static TagList CreateActivityTags(ActivityExecutionContext context)
+    private static TagList CreateActivityTags(ActivityExecutionContext context, bool faulted)
     {
         var currentActivity = context.Activity;
         var tags = new TagList
@@ -208,7 +212,8 @@ public static class WorkflowInstrumentation
             { WorkflowDefinitionId, context.WorkflowExecutionContext.Workflow.Identity.DefinitionId },
             { ActivityType, currentActivity.Type },
             { ActivityVersion, currentActivity.Version },
-            { ActivityStatus, context.Status.ToString() }
+            { ActivityStatus, faulted ? Workflows.ActivityStatus.Faulted.ToString() : context.Status.ToString() },
+            { ActivityFaulted, faulted }
         };
 
         AddIfNotNull(ref tags, ActivityName, currentActivity.Name ?? context.ActivityDescriptor.DisplayName ?? context.ActivityDescriptor.Name);
