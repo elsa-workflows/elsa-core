@@ -8,7 +8,7 @@ namespace Elsa.Identity.Endpoints.Users.Create;
 /// An endpoint that creates a new user.
 /// </summary>
 [PublicAPI]
-internal class Create(IUserManager userManager) : ElsaEndpoint<Request, Response>
+internal class Create(IUserManager userManager, IRoleAuthorizationService roleAuthorizationService) : ElsaEndpoint<Request, Response>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -20,6 +20,12 @@ internal class Create(IUserManager userManager) : ElsaEndpoint<Request, Response
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
+        if (!await roleAuthorizationService.CanAssignRolesAsync(User, request.Roles, cancellationToken))
+        {
+            await Send.ForbiddenAsync(cancellationToken);
+            return;
+        }
+
         var result = await userManager.CreateUserAsync(
             request.Name,
             request.Password,
