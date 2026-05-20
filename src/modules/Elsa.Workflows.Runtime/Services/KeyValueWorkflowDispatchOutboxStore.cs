@@ -101,6 +101,10 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
             await keyValueStore.DeleteAsync(GetIndexKey(item), cancellationToken);
             await keyValueStore.DeleteAsync(GetIndexByIdKey(id), cancellationToken);
         }
+        else
+        {
+            await DeleteIndexesForMissingItemAsync(id, cancellationToken);
+        }
 
         await keyValueStore.DeleteAsync(GetRecoveryKey(id), cancellationToken);
         await keyValueStore.DeleteAsync(GetLegacyKey(id), cancellationToken);
@@ -225,13 +229,12 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
     private async Task DeleteIndexesForMissingItemAsync(string id, CancellationToken cancellationToken)
     {
         var lookupRecord = await keyValueStore.FindAsync(new KeyValueFilter { Key = GetIndexByIdKey(id) }, cancellationToken);
-        var deletedIndexKeys = new HashSet<string>();
 
         if (lookupRecord != null)
         {
-            deletedIndexKeys.Add(lookupRecord.SerializedValue);
             await keyValueStore.DeleteAsync(lookupRecord.SerializedValue, cancellationToken);
             await keyValueStore.DeleteAsync(lookupRecord.Key, cancellationToken);
+            return;
         }
 
         var matchingIndexRecords = await keyValueStore.FindManyAsync(new KeyValueFilter
@@ -242,9 +245,6 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
 
         foreach (var indexRecord in matchingIndexRecords.Where(x => x.SerializedValue == id || x.Key.EndsWith($":{id}", StringComparison.Ordinal)))
         {
-            if (!deletedIndexKeys.Add(indexRecord.Key))
-                continue;
-
             await keyValueStore.DeleteAsync(indexRecord.Key, cancellationToken);
         }
     }

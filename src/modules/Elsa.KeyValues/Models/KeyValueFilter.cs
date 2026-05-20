@@ -25,7 +25,8 @@ public class KeyValueFilter
     public int? Take { get; set; }
 
     /// <summary>
-    /// Gets or sets whether results should be ordered by key before applying <see cref="Take"/>.
+    /// Gets or sets whether results should be ordered by the persisted key before applying <see cref="Take"/>.
+    /// The persisted key is stored as <c>Id</c>; <see cref="SerializedKeyValuePair.Key"/> is an alias.
     /// </summary>
     public bool OrderByKey { get; set; }
 
