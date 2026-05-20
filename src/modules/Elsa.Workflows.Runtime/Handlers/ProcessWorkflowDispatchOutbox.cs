@@ -1,6 +1,7 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -9,7 +10,7 @@ namespace Elsa.Workflows.Runtime.Handlers;
 /// <summary>
 /// Processes the workflow dispatch outbox after a workflow state commit.
 /// </summary>
-public class ProcessWorkflowDispatchOutbox(IWorkflowDispatchOutboxProcessor processor, IOptions<WorkflowDispatcherOptions> options, ILogger<ProcessWorkflowDispatchOutbox> logger) : INotificationHandler<WorkflowStateCommitted>
+public class ProcessWorkflowDispatchOutbox(IServiceProvider serviceProvider, IOptions<WorkflowDispatcherOptions> options, ILogger<ProcessWorkflowDispatchOutbox> logger) : INotificationHandler<WorkflowStateCommitted>
 {
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowStateCommitted notification, CancellationToken cancellationToken)
@@ -22,6 +23,7 @@ public class ProcessWorkflowDispatchOutbox(IWorkflowDispatchOutboxProcessor proc
 
         try
         {
+            var processor = serviceProvider.GetRequiredService<IWorkflowDispatchOutboxProcessor>();
             await processor.TryProcessAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

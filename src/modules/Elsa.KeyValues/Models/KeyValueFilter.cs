@@ -25,6 +25,11 @@ public class KeyValueFilter
     public int? Take { get; set; }
 
     /// <summary>
+    /// Gets or sets whether results should be ordered by key before applying <see cref="Take"/>.
+    /// </summary>
+    public bool OrderByKey { get; set; }
+
+    /// <summary>
     /// Applies the filter to the specified queryable.
     /// </summary>
     /// <param name="queryable">The queryable.</param>
@@ -40,6 +45,9 @@ public class KeyValueFilter
         }
 
         if (filter.Keys != null) queryable = queryable.Where(x => filter.Keys.Contains(x.Id));
+
+        if (filter.OrderByKey)
+            queryable = queryable.OrderBy(x => x.Id);
 
         if (filter.Take is > 0)
             queryable = queryable.Take(filter.Take.Value);

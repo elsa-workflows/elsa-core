@@ -10,15 +10,23 @@ namespace Elsa.Workflows.Runtime;
 /// </summary>
 public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, IPayloadSerializer payloadSerializer) : IWorkflowDispatchOutboxStore
 {
-    private const string KeyPrefix = "Elsa:WorkflowDispatchOutbox:";
+    private const string LegacyKeyPrefix = "Elsa:WorkflowDispatchOutbox:";
+    private const string ItemKeyPrefix = "Elsa:WorkflowDispatchOutbox:Items:";
+    private const string IndexKeyPrefix = "Elsa:WorkflowDispatchOutbox:Index:";
 
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken = default)
     {
         await keyValueStore.SaveAsync(new SerializedKeyValuePair
         {
-            Key = GetKey(item.Id),
+            Key = GetItemKey(item.Id),
             SerializedValue = payloadSerializer.Serialize(item)
+        }, cancellationToken);
+
+        await keyValueStore.SaveAsync(new SerializedKeyValuePair
+        {
+            Key = GetIndexKey(item),
+            SerializedValue = item.Id
         }, cancellationToken);
     }
 
@@ -31,9 +39,54 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindManyAsync(int maxCount, CancellationToken cancellationToken = default)
     {
+        var indexRecords = (await keyValueStore.FindManyAsync(new KeyValueFilter
+        {
+            Key = IndexKeyPrefix,
+            StartsWith = true,
+            OrderByKey = true,
+            Take = maxCount > 0 ? maxCount : null
+        }, cancellationToken)).ToList();
+
+        if (indexRecords.Count == 0)
+            return await FindLegacyItemsAsync(maxCount, cancellationToken);
+
+        var itemKeys = indexRecords.Select(x => GetItemKey(x.SerializedValue)).ToList();
+        var itemRecords = await keyValueStore.FindManyAsync(new KeyValueFilter
+        {
+            Keys = itemKeys
+        }, cancellationToken);
+
+        return itemRecords
+            .Select(x => payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(x.SerializedValue))
+            .OfType<WorkflowDispatchOutboxItem>()
+            .OrderBy(x => x.CreatedAt)
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
+    {
+        var itemKey = GetItemKey(id);
+        var record = await keyValueStore.FindAsync(new KeyValueFilter { Key = itemKey }, cancellationToken);
+
+        await keyValueStore.DeleteAsync(itemKey, cancellationToken);
+
+        if (record == null)
+        {
+            await keyValueStore.DeleteAsync(GetLegacyKey(id), cancellationToken);
+            return;
+        }
+
+        var item = payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(record.SerializedValue);
+        if (item != null)
+            await keyValueStore.DeleteAsync(GetIndexKey(item), cancellationToken);
+    }
+
+    private async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindLegacyItemsAsync(int maxCount, CancellationToken cancellationToken)
+    {
         var records = await keyValueStore.FindManyAsync(new KeyValueFilter
         {
-            Key = KeyPrefix,
+            Key = LegacyKeyPrefix,
             StartsWith = true
         }, cancellationToken);
 
@@ -48,11 +101,9 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
         return query.ToList();
     }
 
-    /// <inheritdoc />
-    public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
-    {
-        await keyValueStore.DeleteAsync(GetKey(id), cancellationToken);
-    }
+    private static string GetItemKey(string id) => $"{ItemKeyPrefix}{id}";
 
-    private static string GetKey(string id) => $"{KeyPrefix}{id}";
+    private static string GetLegacyKey(string id) => $"{LegacyKeyPrefix}{id}";
+
+    private static string GetIndexKey(WorkflowDispatchOutboxItem item) => $"{IndexKeyPrefix}{item.CreatedAt.UtcTicks:D20}:{item.Id}";
 }

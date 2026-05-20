@@ -17,6 +17,12 @@ public class ProcessWorkflowDispatchOutboxTests
         UseTransactionalOutbox = true,
         ProcessOutboxAfterCommit = true
     };
+    private readonly IServiceProvider _serviceProvider = Substitute.For<IServiceProvider>();
+
+    public ProcessWorkflowDispatchOutboxTests()
+    {
+        _serviceProvider.GetService(typeof(IWorkflowDispatchOutboxProcessor)).Returns(_processor);
+    }
 
     [Fact]
     public async Task HandleAsync_DoesNotProcess_WhenCommittedStateHasNoOutboxItems()
@@ -68,7 +74,7 @@ public class ProcessWorkflowDispatchOutboxTests
         await handler.HandleAsync(notification, CancellationToken.None);
     }
 
-    private ProcessWorkflowDispatchOutbox CreateHandler() => new(_processor, Microsoft.Extensions.Options.Options.Create(_options), NullLogger<ProcessWorkflowDispatchOutbox>.Instance);
+    private ProcessWorkflowDispatchOutbox CreateHandler() => new(_serviceProvider, Microsoft.Extensions.Options.Options.Create(_options), NullLogger<ProcessWorkflowDispatchOutbox>.Instance);
 
     private static WorkflowStateCommitted CreateNotification(WorkflowState workflowState)
     {

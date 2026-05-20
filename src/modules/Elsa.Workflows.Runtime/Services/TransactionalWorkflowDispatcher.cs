@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Mediator.Contracts;
@@ -6,6 +7,7 @@ using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime;
@@ -15,7 +17,7 @@ namespace Elsa.Workflows.Runtime;
 /// </summary>
 public class TransactionalWorkflowDispatcher(
     IWorkflowDispatcher decoratedService,
-    IWorkflowDispatchOutbox outbox,
+    IServiceProvider serviceProvider,
     IWorkflowDispatchOutboxAccessor outboxAccessor,
     INotificationSender notificationSender,
     IIdentityGenerator identityGenerator,
@@ -31,7 +33,7 @@ public class TransactionalWorkflowDispatcher(
         await notificationSender.SendAsync(new WorkflowDefinitionDispatching(request), cancellationToken);
         var generatedInstanceId = string.IsNullOrWhiteSpace(request.InstanceId) ? identityGenerator.GenerateId() : null;
 
-        await outbox.EnqueueAsync(context, new()
+        await GetOutbox().EnqueueAsync(context, new()
         {
             TenantId = tenantAccessor?.Tenant?.Id,
             Kind = WorkflowDispatchOutboxItemKind.WorkflowDefinition,
@@ -51,7 +53,7 @@ public class TransactionalWorkflowDispatcher(
 
         await notificationSender.SendAsync(new WorkflowInstanceDispatching(request), cancellationToken);
 
-        await outbox.EnqueueAsync(context, new()
+        await GetOutbox().EnqueueAsync(context, new()
         {
             TenantId = tenantAccessor?.Tenant?.Id,
             Kind = WorkflowDispatchOutboxItemKind.WorkflowInstance,
@@ -69,7 +71,7 @@ public class TransactionalWorkflowDispatcher(
         if (!TryGetWorkflowExecutionContext(out var context))
             return await decoratedService.DispatchAsync(request, dispatchOptions, cancellationToken);
 
-        await outbox.EnqueueAsync(context, new()
+        await GetOutbox().EnqueueAsync(context, new()
         {
             TenantId = tenantAccessor?.Tenant?.Id,
             Kind = WorkflowDispatchOutboxItemKind.TriggerWorkflows,
@@ -85,7 +87,7 @@ public class TransactionalWorkflowDispatcher(
         if (!TryGetWorkflowExecutionContext(out var context))
             return await decoratedService.DispatchAsync(request, dispatchOptions, cancellationToken);
 
-        await outbox.EnqueueAsync(context, new()
+        await GetOutbox().EnqueueAsync(context, new()
         {
             TenantId = tenantAccessor?.Tenant?.Id,
             Kind = WorkflowDispatchOutboxItemKind.ResumeWorkflows,
@@ -95,9 +97,18 @@ public class TransactionalWorkflowDispatcher(
         return DispatchWorkflowResponse.Success();
     }
 
-    private bool TryGetWorkflowExecutionContext(out WorkflowExecutionContext context)
+    private bool TryGetWorkflowExecutionContext([NotNullWhen(true)] out WorkflowExecutionContext? context)
     {
-        context = outboxAccessor.WorkflowExecutionContext!;
-        return options.Value.UseTransactionalOutbox && context != null;
+        var currentContext = outboxAccessor.WorkflowExecutionContext;
+        if (!options.Value.UseTransactionalOutbox || currentContext == null)
+        {
+            context = null;
+            return false;
+        }
+
+        context = currentContext;
+        return true;
     }
+
+    private IWorkflowDispatchOutbox GetOutbox() => serviceProvider.GetRequiredService<IWorkflowDispatchOutbox>();
 }

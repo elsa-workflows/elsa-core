@@ -19,6 +19,7 @@ using Elsa.Workflows.Runtime.UIHints;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.ShellFeatures;
@@ -29,7 +30,7 @@ namespace Elsa.Workflows.Runtime.ShellFeatures;
 [ShellFeature(
     DisplayName = "Workflow Runtime",
     Description = "Provides workflow execution runtime and scheduling capabilities",
-    DependsOn = ["Workflows", "KeyValue"])]
+    DependsOn = ["Workflows"])]
 public class WorkflowRuntimeFeature : IShellFeature
 {
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
@@ -63,6 +64,11 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// A factory that instantiates an <see cref="IWorkflowCancellationDispatcher"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowCancellationDispatcher> WorkflowCancellationDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowCancellationDispatcher>(sp);
+
+    /// <summary>
+    /// A factory that instantiates an <see cref="IWorkflowDispatchOutboxStore"/>.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowDispatchOutboxStore> WorkflowDispatchOutboxStore { get; set; } = sp => ActivatorUtilities.CreateInstance<KeyValueWorkflowDispatchOutboxStore>(sp);
 
     /// <summary>
     /// A factory that instantiates an <see cref="IBookmarkStore"/>.
@@ -231,9 +237,6 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<IWorkflowRestarter, DefaultWorkflowRestarter>()
             .AddScoped<IBookmarkQueuePurger, DefaultBookmarkQueuePurger>()
             .AddSingleton<IWorkflowDispatchOutboxAccessor, WorkflowDispatchOutboxAccessor>()
-            .AddScoped<IWorkflowDispatchOutbox, WorkflowDispatchOutbox>()
-            .AddScoped<IWorkflowDispatchOutboxStore, KeyValueWorkflowDispatchOutboxStore>()
-            .AddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>()
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             .AddScoped<IActivityPropertyLogPersistenceEvaluator, ActivityPropertyLogPersistenceEvaluator>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
@@ -309,5 +312,9 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddScoped<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
+
+        services.TryAddScoped<IWorkflowDispatchOutbox>(sp => ActivatorUtilities.CreateInstance<WorkflowDispatchOutbox>(sp));
+        services.TryAddScoped(WorkflowDispatchOutboxStore);
+        services.TryAddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>();
     }
 }

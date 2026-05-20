@@ -26,15 +26,46 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
         var oldest = CreateItem("oldest", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
         var middle = CreateItem("middle", new DateTimeOffset(2026, 5, 20, 12, 1, 0, TimeSpan.Zero));
         _payloadSerializer.Items = new[] { newest, oldest, middle }.ToDictionary(x => x.Id);
-        _keyValueStore.FindManyAsync(Arg.Any<KeyValueFilter>(), Arg.Any<CancellationToken>())
-            .Returns(_payloadSerializer.Items.Keys.Select(x => new SerializedKeyValuePair { Key = x, SerializedValue = x }));
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Index:"), Arg.Any<CancellationToken>())
+            .Returns(new[] { oldest, middle }.Select(x => new SerializedKeyValuePair { Key = $"index:{x.Id}", SerializedValue = x.Id }));
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Keys != null), Arg.Any<CancellationToken>())
+            .Returns(callInfo => ((KeyValueFilter)callInfo[0]).Keys!.Select(x => new SerializedKeyValuePair { Key = x, SerializedValue = x.Split(':').Last() }));
 
         var result = (await _store.FindManyAsync(2)).ToList();
 
         Assert.Equal(["oldest", "middle"], result.Select(x => x.Id));
         await _keyValueStore.Received(1).FindManyAsync(
-            Arg.Is<KeyValueFilter>(x => x.Take == null),
+            Arg.Is<KeyValueFilter>(x => x.OrderByKey && x.Take == 2),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task SaveAsync_WritesItemAndSortableIndex()
+    {
+        var item = CreateItem("outbox-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
+
+        await _store.SaveAsync(item);
+
+        await _keyValueStore.Received(1).SaveAsync(
+            Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Items:outbox-1" && x.SerializedValue == "outbox-1"),
+            Arg.Any<CancellationToken>());
+        await _keyValueStore.Received(1).SaveAsync(
+            Arg.Is<SerializedKeyValuePair>(x => x.Key == $"Elsa:WorkflowDispatchOutbox:Index:{item.CreatedAt.UtcTicks:D20}:outbox-1" && x.SerializedValue == "outbox-1"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DeleteAsync_RemovesItemAndIndex()
+    {
+        var item = CreateItem("outbox-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
+        _payloadSerializer.Items[item.Id] = item;
+        _keyValueStore.FindAsync(Arg.Any<KeyValueFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new SerializedKeyValuePair { Key = "Elsa:WorkflowDispatchOutbox:Items:outbox-1", SerializedValue = item.Id });
+
+        await _store.DeleteAsync(item.Id);
+
+        await _keyValueStore.Received(1).DeleteAsync("Elsa:WorkflowDispatchOutbox:Items:outbox-1", Arg.Any<CancellationToken>());
+        await _keyValueStore.Received(1).DeleteAsync($"Elsa:WorkflowDispatchOutbox:Index:{item.CreatedAt.UtcTicks:D20}:outbox-1", Arg.Any<CancellationToken>());
     }
 
     private static WorkflowDispatchOutboxItem CreateItem(string id, DateTimeOffset createdAt)

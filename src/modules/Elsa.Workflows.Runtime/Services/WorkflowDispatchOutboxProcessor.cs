@@ -69,7 +69,7 @@ public class WorkflowDispatchOutboxProcessor(
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
-                await HandleDeliveryFailureAsync(item, e, cancellationToken);
+                logger.LogError(e, "Failed to process workflow dispatch outbox item {OutboxItemId}; processing will continue with the next item.", item.Id);
             }
         }
     }
@@ -90,7 +90,20 @@ public class WorkflowDispatchOutboxProcessor(
             return;
         }
 
-        await SendAsync(item, cancellationToken);
+        try
+        {
+            await SendAsync(item, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            await HandleDeliveryFailureAsync(item, e, cancellationToken);
+            return;
+        }
+
         await CleanupDeliveredItemAsync(item, cancellationToken);
     }
 
@@ -127,7 +140,7 @@ public class WorkflowDispatchOutboxProcessor(
         if (retention <= TimeSpan.Zero || systemClock.UtcNow >= expiresAt)
         {
             logger.LogWarning("Deleting workflow dispatch outbox item {OutboxItemId} because owner workflow {WorkflowInstanceId} was not found and the orphan retention period has elapsed", item.Id, item.OwnerWorkflowInstanceId);
-            await store.DeleteAsync(item.Id, cancellationToken);
+            await TryDeleteRetainedItemAsync(item, cancellationToken);
             return;
         }
 
@@ -142,11 +155,27 @@ public class WorkflowDispatchOutboxProcessor(
         if (retention <= TimeSpan.Zero || systemClock.UtcNow >= expiresAt)
         {
             logger.LogWarning("Deleting workflow dispatch outbox item {OutboxItemId} because owner workflow {WorkflowInstanceId} never committed the outbox marker and the retention period has elapsed", item.Id, item.OwnerWorkflowInstanceId);
-            await store.DeleteAsync(item.Id, cancellationToken);
+            await TryDeleteRetainedItemAsync(item, cancellationToken);
             return;
         }
 
         logger.LogDebug("Skipping workflow dispatch outbox item {OutboxItemId} because owner workflow {WorkflowInstanceId} has not committed it; it will be retained until {ExpiresAt}", item.Id, item.OwnerWorkflowInstanceId, expiresAt);
+    }
+
+    private async Task TryDeleteRetainedItemAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await store.DeleteAsync(item.Id, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            logger.LogWarning(e, "Failed to delete retained workflow dispatch outbox item {OutboxItemId}; it will be retried without counting as a delivery failure.", item.Id);
+        }
     }
 
     private async Task HandleDeliveryFailureAsync(WorkflowDispatchOutboxItem item, Exception exception, CancellationToken cancellationToken)

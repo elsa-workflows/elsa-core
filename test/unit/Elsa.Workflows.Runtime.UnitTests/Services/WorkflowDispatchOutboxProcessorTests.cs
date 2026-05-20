@@ -71,6 +71,25 @@ public class WorkflowDispatchOutboxProcessorTests
     }
 
     [Fact]
+    public async Task ProcessAsync_DoesNotCountDeliveryFailure_WhenUncommittedCleanupDeleteFails()
+    {
+        var createdAt = new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero);
+        var item = CreateItem(createdAt);
+        _systemClock.UtcNow.Returns(createdAt.Add(_options.OrphanedOutboxItemRetention));
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
+        _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: false)));
+        _store.DeleteAsync(item.Id, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new InvalidOperationException("Delete failed.")));
+
+        await _processor.ProcessAsync();
+
+        Assert.Equal(0, item.DeliveryAttempts);
+        await _store.DidNotReceive().SaveAsync(item, Arg.Any<CancellationToken>());
+        await _commandSender.DidNotReceiveWithAnyArgs().SendAsync(default(DispatchWorkflowDefinitionCommand)!, default!, default!, default);
+    }
+
+    [Fact]
     public async Task ProcessAsync_KeepsOutboxItem_WhenOwnerWorkflowIsMissingWithinRetentionPeriod()
     {
         var createdAt = new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero);
@@ -100,6 +119,25 @@ public class WorkflowDispatchOutboxProcessorTests
 
         await _commandSender.DidNotReceiveWithAnyArgs().SendAsync(default(DispatchWorkflowDefinitionCommand)!, default!, default!, default);
         await _store.Received(1).DeleteAsync(item.Id, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ProcessAsync_DoesNotCountDeliveryFailure_WhenMissingOwnerCleanupDeleteFails()
+    {
+        var createdAt = new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero);
+        var item = CreateItem(createdAt);
+        _systemClock.UtcNow.Returns(createdAt.Add(_options.OrphanedOutboxItemRetention));
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
+        _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>((WorkflowInstance?)null));
+        _store.DeleteAsync(item.Id, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new InvalidOperationException("Delete failed.")));
+
+        await _processor.ProcessAsync();
+
+        Assert.Equal(0, item.DeliveryAttempts);
+        await _store.DidNotReceive().SaveAsync(item, Arg.Any<CancellationToken>());
+        await _commandSender.DidNotReceiveWithAnyArgs().SendAsync(default(DispatchWorkflowDefinitionCommand)!, default!, default!, default);
     }
 
     [Fact]

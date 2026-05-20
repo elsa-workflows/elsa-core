@@ -8,7 +8,6 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.KeyValues.Features;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Management;
@@ -25,6 +24,7 @@ using Elsa.Workflows.Runtime.UIHints;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Features;
@@ -33,7 +33,6 @@ namespace Elsa.Workflows.Runtime.Features;
 /// Installs and configures workflow runtime features.
 /// </summary>
 [DependsOn(typeof(SystemClockFeature))]
-[DependsOn(typeof(KeyValueFeature))]
 public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 {
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
@@ -67,6 +66,11 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     /// A factory that instantiates an <see cref="IWorkflowCancellationDispatcher"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowCancellationDispatcher> WorkflowCancellationDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowCancellationDispatcher>(sp);
+
+    /// <summary>
+    /// A factory that instantiates an <see cref="IWorkflowDispatchOutboxStore"/>.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowDispatchOutboxStore> WorkflowDispatchOutboxStore { get; set; } = sp => ActivatorUtilities.CreateInstance<KeyValueWorkflowDispatchOutboxStore>(sp);
 
     /// <summary>
     /// A factory that instantiates an <see cref="IBookmarkStore"/>.
@@ -338,9 +342,6 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IWorkflowRestarter, DefaultWorkflowRestarter>()
             .AddScoped<IBookmarkQueuePurger, DefaultBookmarkQueuePurger>()
             .AddSingleton<IWorkflowDispatchOutboxAccessor, WorkflowDispatchOutboxAccessor>()
-            .AddScoped<IWorkflowDispatchOutbox, WorkflowDispatchOutbox>()
-            .AddScoped<IWorkflowDispatchOutboxStore, KeyValueWorkflowDispatchOutboxStore>()
-            .AddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>()
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             .AddScoped<IActivityPropertyLogPersistenceEvaluator, ActivityPropertyLogPersistenceEvaluator>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
@@ -414,5 +415,9 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddScoped<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
+
+        Services.TryAddScoped<IWorkflowDispatchOutbox>(sp => ActivatorUtilities.CreateInstance<WorkflowDispatchOutbox>(sp));
+        Services.TryAddScoped(WorkflowDispatchOutboxStore);
+        Services.TryAddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>();
     }
 }
