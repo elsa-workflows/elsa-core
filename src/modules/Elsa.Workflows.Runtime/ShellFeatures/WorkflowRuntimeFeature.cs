@@ -29,7 +29,7 @@ namespace Elsa.Workflows.Runtime.ShellFeatures;
 [ShellFeature(
     DisplayName = "Workflow Runtime",
     Description = "Provides workflow execution runtime and scheduling capabilities",
-    DependsOn = ["Workflows"])]
+    DependsOn = ["Workflows", typeof(Elsa.KeyValues.ShellFeatures.KeyValueFeature)])]
 public class WorkflowRuntimeFeature : IShellFeature
 {
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
@@ -50,7 +50,8 @@ public class WorkflowRuntimeFeature : IShellFeature
     public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcher { get; set; } = sp =>
     {
         var decoratedService = ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
-        return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
+        var transactionalService = ActivatorUtilities.CreateInstance<TransactionalWorkflowDispatcher>(sp, decoratedService);
+        return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, transactionalService);
     };
 
     /// <summary>
@@ -229,6 +230,10 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<IWorkflowStarter, DefaultWorkflowStarter>()
             .AddScoped<IWorkflowRestarter, DefaultWorkflowRestarter>()
             .AddScoped<IBookmarkQueuePurger, DefaultBookmarkQueuePurger>()
+            .AddSingleton<IWorkflowDispatchOutboxAccessor, WorkflowDispatchOutboxAccessor>()
+            .AddScoped<IWorkflowDispatchOutbox, WorkflowDispatchOutbox>()
+            .AddScoped<IWorkflowDispatchOutboxStore, KeyValueWorkflowDispatchOutboxStore>()
+            .AddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>()
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             .AddScoped<IActivityPropertyLogPersistenceEvaluator, ActivityPropertyLogPersistenceEvaluator>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
@@ -268,6 +273,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddRecurringTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromMinutes(1))
             .AddRecurringTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10))
             .AddRecurringTask<RestartInterruptedWorkflowsTask>(TimeSpan.FromMinutes(5)) // Same default as the workflow liveness threshold.
+            .AddRecurringTask<ProcessWorkflowDispatchOutboxRecurringTask>(TimeSpan.FromSeconds(10))
 
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
@@ -284,6 +290,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddCommandHandler<CancelWorkflowsCommandHandler>()
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeBulkDispatchWorkflowActivity>()
+            .AddNotificationHandler<ProcessWorkflowDispatchOutbox>()
             .AddNotificationHandler<ResumeExecuteWorkflowActivity>()
             .AddNotificationHandler<IndexTriggers>()
             .AddNotificationHandler<CancelBackgroundActivities>()

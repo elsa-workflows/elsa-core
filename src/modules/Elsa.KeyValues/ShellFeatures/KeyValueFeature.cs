@@ -1,5 +1,7 @@
 using CShells.Features;
+using Elsa.Extensions;
 using Elsa.KeyValues.Contracts;
+using Elsa.KeyValues.Entities;
 using Elsa.KeyValues.Stores;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +24,8 @@ public class KeyValueFeature : IShellFeature
 
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddScoped(KeyValueStore);
+        services
+            .AddMemoryStore<SerializedKeyValuePair, MemoryKeyValueStore>()
+            .AddScoped(KeyValueStore);
     }
 }
