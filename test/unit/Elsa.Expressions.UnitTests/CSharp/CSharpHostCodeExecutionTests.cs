@@ -5,7 +5,6 @@ using Elsa.Expressions.CSharp.Services;
 using Elsa.Expressions.Models;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Management.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
@@ -42,7 +41,7 @@ public class CSharpHostCodeExecutionTests
         {
             CSharpOptions = options => options.AllowHostCodeExecution = allowHostCodeExecution
         }.ConfigureServices(services);
-        services.AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>();
+        services.AddSingleton<IExpressionDescriptorRegistry, Elsa.Workflows.Management.Services.ExpressionDescriptorRegistry>();
 
         var serviceProvider = services.BuildServiceProvider();
         var registry = serviceProvider.GetRequiredService<IExpressionDescriptorRegistry>();

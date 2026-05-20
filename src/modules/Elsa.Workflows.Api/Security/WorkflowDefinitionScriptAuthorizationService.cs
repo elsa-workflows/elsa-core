@@ -38,11 +38,10 @@ internal class WorkflowDefinitionScriptAuthorizationService(
 
         var failure = scriptUsages
             .Select(policy => AuthorizeScriptUsage(policy, user))
-            .Cast<WorkflowDefinitionScriptAuthorizationResult?>()
             .FirstOrDefault(result => result is { Succeeded: false });
 
-        if (failure is { } failedResult)
-            return failedResult;
+        if (failure.FailureReason.HasValue)
+            return failure;
 
         return WorkflowDefinitionScriptAuthorizationResult.Allowed();
     }

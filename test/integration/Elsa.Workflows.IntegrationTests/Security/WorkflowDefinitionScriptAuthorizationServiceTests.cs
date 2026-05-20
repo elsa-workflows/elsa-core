@@ -53,6 +53,20 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
     }
 
     [Fact]
+    public async Task AuthorizeAsync_AllowsWorkflowWithoutScriptUsage()
+    {
+        var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
+        var model = new WorkflowDefinitionModel
+        {
+            Root = new WriteLine("hello")
+        };
+
+        var result = await service.AuthorizeAsync(model, UserWithoutScriptPermission);
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Fact]
     public async Task AuthorizeAsync_TreatsRunCSharpActivityAsCSharpUsage()
     {
         var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
@@ -60,7 +74,7 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
         {
             Root = new WriteLine("hello")
             {
-                Type = "Elsa.RunCSharp"
+                Type = WorkflowScriptActivityTypeNames.RunCSharp
             }
         };
 
@@ -111,7 +125,7 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
         {
             Root = new WriteLine("hello")
             {
-                Type = "Elsa.RunPython"
+                Type = WorkflowScriptActivityTypeNames.RunPython
             }
         };
 
