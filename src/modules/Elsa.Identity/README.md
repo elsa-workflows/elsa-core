@@ -33,7 +33,7 @@ Example (`appsettings.json`):
           "DefaultAuthentication": {},
           "DefaultAdminUser": {
             "AdminUserName": "admin",
-            "AdminPassword": "password",
+            "AdminPassword": "REPLACE_WITH_SECURE_BOOTSTRAP_PASSWORD",
             "AdminRoleName": "admin",
             "AdminRolePermissions": ["*"]
           }
@@ -63,7 +63,7 @@ services.AddElsa(elsa =>
 
             identity.UseDefaultAdmin(admin => admin
                 .WithAdminUserName("admin")
-                .WithAdminPassword("password")
+                .WithAdminPassword("REPLACE_WITH_SECURE_BOOTSTRAP_PASSWORD")
                 .WithAdminRoleName("admin")
                 .WithAdminRolePermissions(new List<string> { "*" }));
         })
@@ -74,12 +74,12 @@ services.AddElsa(elsa =>
 You can also use the shorthand overload:
 
 ```csharp
-identity.UseDefaultAdmin("admin", "password", "admin", new List<string> { "*" });
+identity.UseDefaultAdmin("admin", "REPLACE_WITH_SECURE_BOOTSTRAP_PASSWORD", "admin", new List<string> { "*" });
 ```
 
 ### Operational notes
 
 - The initializer is idempotent: existing admin role/user are not recreated.
-- Do not keep development defaults (`admin` / `password`) in production.
+- Do not keep development defaults in production.
 - Prefer environment variables or a secret manager for admin credentials.
 - After first bootstrap, rotate credentials according to your security policy.

@@ -34,6 +34,7 @@ public class IdentityFeature : IFastEndpointsShellFeature
             options.Realm = "Elsa Workflows";
             options.KeyName = "ApiKey";
         });
+        services.Configure<AdminUserProviderOptions>(_ => { });
         services.Configure<UsersOptions>(_ => { });
         services.Configure<ApplicationsOptions>(_ => { });
         services.Configure<RolesOptions>(_ => { });

@@ -1,4 +1,5 @@
 using CShells.Features;
+using Elsa.Expressions.Python.ActivityDescriptorModifiers;
 using Elsa.Expressions.Python.Activities;
 using Elsa.Expressions.Python.Contracts;
 using Elsa.Expressions.Python.HostedServices;
@@ -34,7 +35,8 @@ public class PythonFeature : IShellFeature
         // Python services.
         services
             .AddScoped<IPythonEvaluator, PythonNetPythonEvaluator>()
-            .AddExpressionDescriptorProvider<PythonExpressionDescriptorProvider>();
+            .AddExpressionDescriptorProvider<PythonExpressionDescriptorProvider>()
+            .AddSingleton<IActivityDescriptorModifier, PythonActivityDescriptorModifier>();
 
         // Handlers.
         services.AddNotificationHandlersFrom<PythonFeature>();
@@ -46,5 +48,4 @@ public class PythonFeature : IShellFeature
         services.AddHostedService<PythonGlobalInterpreterManager>();
     }
 }
-
 

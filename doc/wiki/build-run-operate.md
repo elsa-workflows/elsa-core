@@ -89,14 +89,14 @@ docker run -t -i -e ASPNETCORE_ENVIRONMENT='Development' -e HTTP_PORTS=8080 -e H
 
 Production containers must inject a secure JWT signing key through environment variables or a secrets manager. The appsettings placeholder and known public sample keys are rejected during startup outside `Development` or `Demo`.
 
-Default development login:
+Default development login is available only when a development configuration explicitly provisions it:
 
 ```text
 Username: admin
 Password: password
 ```
 
-Do not use default credentials in production.
+Do not use development credentials in production.
 
 ## ASP.NET Middleware Order
 

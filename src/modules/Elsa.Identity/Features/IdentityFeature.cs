@@ -102,13 +102,31 @@ public class IdentityFeature : FeatureBase
     }
 
     /// <summary>
-    /// Configures the feature to use <see cref="AdminUserProvider"/>.
+    /// Configures the feature to use <see cref="AdminUserProvider"/>. The provider denies all users unless configured.
     /// </summary>
     public void UseAdminUserProvider()
     {
         UserProvider = sp => sp.GetRequiredService<AdminUserProvider>();
         RoleProvider = sp => sp.GetRequiredService<AdminRoleProvider>();
     }
+
+    /// <summary>
+    /// Configures the feature to use <see cref="AdminUserProvider"/> with an explicit admin user.
+    /// </summary>
+    public void UseAdminUserProvider(Action<AdminUserProviderOptions> configure)
+    {
+        UseAdminUserProvider();
+        Services.Configure(configure);
+    }
+
+    /// <summary>
+    /// Configures the feature to use the development admin user. Do not use in production.
+    /// </summary>
+    public void UseDevelopmentAdminUserProvider() => UseAdminUserProvider(options =>
+    {
+        options.UserName = "admin";
+        options.Password = "password";
+    });
 
     /// <summary>
     /// Configures the feature to use <see cref="StoreBasedApplicationProvider"/>.
@@ -149,6 +167,7 @@ public class IdentityFeature : FeatureBase
     {
         Services.Configure(TokenOptions);
         Services.Configure(ApiKeyDefaults.AuthenticationScheme, ApiKeyOptions);
+        Services.Configure<AdminUserProviderOptions>(_ => { });
         Services.Configure(UsersOptions);
         Services.Configure(ApplicationsOptions);
         Services.Configure(RolesOptions);
