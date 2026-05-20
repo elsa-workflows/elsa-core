@@ -6,6 +6,7 @@ using FastEndpoints;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,6 +19,8 @@ namespace Elsa.Extensions;
 [PublicAPI]
 public static class WebApplicationExtensions
 {
+    private static readonly object OriginalEndpointKey = new();
+
     /// <summary>
     /// Register the FastEndpoints middleware configured for use with with Elsa API endpoints.
     /// </summary>
@@ -38,6 +41,21 @@ public static class WebApplicationExtensions
     }
 
     /// <summary>
+    /// Applies an ASP.NET Core rate limiting policy to requests targeting the Elsa API route prefix.
+    /// </summary>
+    /// <param name="app">The application builder.</param>
+    /// <param name="routePrefix">The route prefix used by Elsa API endpoints.</param>
+    /// <param name="policyName">The registered ASP.NET Core rate limiting policy name. Leave empty to skip rate limiting.</param>
+    public static IApplicationBuilder UseWorkflowsApiRateLimiting(this IApplicationBuilder app, string routePrefix = "elsa/api", string? policyName = null)
+    {
+        if (string.IsNullOrWhiteSpace(policyName))
+            return app;
+
+        var pathPrefix = "/" + routePrefix.Trim('/');
+        return app.UseRateLimitingPolicyForPath(pathPrefix, policyName, "Elsa API rate limiting endpoint");
+    }
+
+    /// <summary>
     /// Register the FastEndpoints middleware configured for use with with Elsa API endpoints.
     /// </summary>
     /// <param name="routes">The <see cref="IEndpointRouteBuilder"/> to register the endpoints with.</param>
@@ -50,6 +68,39 @@ public static class WebApplicationExtensions
             config.Serializer.RequestDeserializer = DeserializeRequestAsync;
             config.Serializer.ResponseSerializer = SerializeRequestAsync;
         });
+
+    /// <summary>
+    /// Applies an ASP.NET Core rate limiting policy to requests targeting the specified path prefix.
+    /// </summary>
+    /// <param name="app">The application builder.</param>
+    /// <param name="pathPrefix">The path prefix to protect.</param>
+    /// <param name="policyName">The registered ASP.NET Core rate limiting policy name.</param>
+    /// <param name="displayName">The endpoint display name used for rate limiting metadata.</param>
+    public static IApplicationBuilder UseRateLimitingPolicyForPath(this IApplicationBuilder app, PathString pathPrefix, string policyName, string displayName)
+    {
+        if (!pathPrefix.HasValue)
+            return app;
+
+        return app.UseWhen(
+            context => context.Request.Path.StartsWithSegments(pathPrefix, StringComparison.OrdinalIgnoreCase),
+            branch =>
+            {
+                branch.Use((context, next) =>
+                {
+                    context.Items[OriginalEndpointKey] = context.GetEndpoint();
+                    context.SetEndpoint(new Endpoint(_ => Task.CompletedTask, new EndpointMetadataCollection(new EnableRateLimitingAttribute(policyName)), displayName));
+                    return next(context);
+                });
+                branch.UseRateLimiter();
+                branch.Use((context, next) =>
+                {
+                    if (context.Items.TryGetValue(OriginalEndpointKey, out var endpoint))
+                        context.SetEndpoint((Endpoint?)endpoint);
+
+                    return next(context);
+                });
+            });
+    }
 
     private static ValueTask<object?> DeserializeRequestAsync(HttpRequest httpRequest, Type modelType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
     {

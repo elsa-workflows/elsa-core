@@ -9,6 +9,26 @@ The following are the secrets stored in hashed form in appsettings.json:
 **Admin user**: `admin`
 **Admin password**: `password`
 
+## Ingress Rate Limiting
+
+The reference server includes opt-in ASP.NET Core rate limiting for Elsa management API requests and public HTTP workflow trigger routes. Enable it by setting `IngressRateLimiting:Enabled` to `true`.
+
+Default policies are intentionally conservative and queue-free:
+
+```json
+"IngressRateLimiting": {
+  "Enabled": true,
+  "ApiPermitLimit": 120,
+  "ApiWindowSeconds": 60,
+  "ApiQueueLimit": 0,
+  "HttpWorkflowPermitLimit": 60,
+  "HttpWorkflowWindowSeconds": 60,
+  "HttpWorkflowQueueLimit": 0
+}
+```
+
+Tune these values for production traffic and deployment topology. To disable the reference policies, leave `Enabled` as `false`. Custom hosts can register their own named ASP.NET Core rate limiter policies with `services.AddRateLimiter(...)` and pass the policy names through `ApiEndpointOptions.RateLimitingPolicyName` and `HttpActivityOptions.RateLimitingPolicyName` before calling `UseWorkflowsApiRateLimiting(...)` and `UseWorkflowsRateLimiting(...)`.
+
 ## OpenTelemetry (MacOS)
 
 COR_ENABLE_PROFILING=1

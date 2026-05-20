@@ -102,11 +102,21 @@ Structured logs define diagnostics permissions in [StructuredLogsPermissions](..
 
 Identity endpoints and user-management endpoints are permission-based; see [ADR 0010](../adr/0010-default-admin-user-bootstrap-for-initial-identity-access.md).
 
+## Ingress Rate Limiting
+
+Elsa exposes opt-in ASP.NET Core rate limiting hooks for two ingress surfaces:
+
+- Elsa management API endpoints, through `ApiEndpointOptions.RateLimitingPolicyName` and `UseWorkflowsApiRateLimiting(...)`.
+- Public HTTP workflow trigger routes, through `HttpActivityOptions.RateLimitingPolicyName` and `UseWorkflowsRateLimiting(...)`.
+
+The reference server registers disabled-by-default fixed-window policies under `IngressRateLimiting`. Enable them by setting `IngressRateLimiting:Enabled` to `true`, then tune the API and HTTP workflow permit/window values for production traffic. Custom hosts should register named policies with `services.AddRateLimiter(...)` before applying the Elsa middleware hooks. Leave the option disabled, or omit the policy names in custom hosts, to run without Elsa-provided rate limiting.
+
 ## Security Review Checklist
 
 - Does the endpoint require authentication or a permission?
 - Does mutable API behavior honor read-only mode?
 - Does the operation need tenant scoping?
+- Are exposed API or HTTP workflow trigger routes protected by appropriate ingress rate limiting?
 - Does persistence apply tenant ID filters and saving handlers?
 - Are bootstrap credentials only for development or secret-managed environments?
 - Does any diagnostic/logging feature expose sensitive data without redaction?
