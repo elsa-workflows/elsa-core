@@ -7,6 +7,8 @@ using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.State;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.Core.UnitTests.Serialization.Converters;
@@ -136,6 +138,26 @@ public sealed class WorkflowJsonTypeResolverTests
         Assert.Contains("UnregisteredClrType:", json);
         Assert.Equal(typeof(Exception), result.Type);
         Assert.Equal("Test", result.Message);
+    }
+
+    [Fact]
+    public void When_ConfigureWorkflowsFeature_Then_RegistersNullReferenceExceptionAlias()
+    {
+        var services = new ServiceCollection();
+        var module = services.CreateModule();
+        module.UseWorkflows();
+        module.Apply();
+        using var serviceProvider = services.BuildServiceProvider();
+        var expressionOptions = serviceProvider.GetRequiredService<IOptions<ExpressionOptions>>();
+        var registry = new WellKnownTypeRegistry(expressionOptions);
+
+        var aliasRegistered = registry.TryGetAlias(typeof(NullReferenceException), out var alias);
+        var typeRegistered = registry.TryGetType(nameof(NullReferenceException), out var type);
+
+        Assert.True(aliasRegistered);
+        Assert.Equal(nameof(NullReferenceException), alias);
+        Assert.True(typeRegistered);
+        Assert.Equal(typeof(NullReferenceException), type);
     }
 
     [Fact]

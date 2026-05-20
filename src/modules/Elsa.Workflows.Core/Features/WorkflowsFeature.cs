@@ -183,6 +183,7 @@ public class WorkflowsFeature : FeatureBase
             options.RegisterTypeAlias(typeof(ArgumentException), nameof(ArgumentException));
             options.RegisterTypeAlias(typeof(ArgumentNullException), nameof(ArgumentNullException));
             options.RegisterTypeAlias(typeof(InvalidOperationException), nameof(InvalidOperationException));
+            options.RegisterTypeAlias(typeof(NullReferenceException), nameof(NullReferenceException));
             options.RegisterTypeAlias(typeof(OperationCanceledException), nameof(OperationCanceledException));
             options.RegisterTypeAlias(typeof(TaskCanceledException), nameof(TaskCanceledException));
             options.RegisterTypeAlias(typeof(TimeoutException), nameof(TimeoutException));

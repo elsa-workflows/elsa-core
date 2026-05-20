@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -11,6 +12,7 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class ExcludeFromHashConverter : JsonConverter<object>
 {
+    private static readonly ConcurrentDictionary<Type, PropertyMetadata[]> PropertyCache = new();
     private JsonSerializerOptions? _options;
     
     /// <inheritdoc />
@@ -25,22 +27,12 @@ public class ExcludeFromHashConverter : JsonConverter<object>
         writer.WriteStartObject();
         var newOptions = GetClonedOptions(options);
 
-        foreach (var property in value.GetType().GetProperties())
+        foreach (var metadata in GetSerializableProperties(value.GetType()))
         {
-            if (property.GetIndexParameters().Length > 0)
-                continue;
-
-            var attribute = property.GetCustomAttribute<ExcludeFromHashAttribute>();
-            var jsonIgnoreAttribute = property.GetCustomAttribute<JsonIgnoreAttribute>();
-
-            if (attribute != null || ShouldAlwaysIgnoreProperty(jsonIgnoreAttribute))
-            {
-                continue;
-            }
-
+            var property = metadata.Property;
             var propertyValue = property.GetValue(value);
 
-            if (ShouldIgnoreProperty(jsonIgnoreAttribute, property.PropertyType, propertyValue))
+            if (ShouldIgnoreProperty(metadata.JsonIgnoreCondition, property.PropertyType, propertyValue))
                 continue;
 
             writer.WritePropertyName(property.Name);
@@ -50,14 +42,29 @@ public class ExcludeFromHashConverter : JsonConverter<object>
         writer.WriteEndObject();
     }
 
-    private static bool ShouldAlwaysIgnoreProperty(JsonIgnoreAttribute? attribute)
+    private static PropertyMetadata[] GetSerializableProperties(Type type)
     {
-        return attribute?.Condition == JsonIgnoreCondition.Always;
+        return PropertyCache.GetOrAdd(type, static itemType => itemType.GetProperties()
+            .Where(property => property.GetIndexParameters().Length == 0)
+            .Select(property => new
+            {
+                Property = property,
+                ExcludeFromHash = property.GetCustomAttribute<ExcludeFromHashAttribute>(),
+                JsonIgnore = property.GetCustomAttribute<JsonIgnoreAttribute>()
+            })
+            .Where(x => x.ExcludeFromHash == null && !ShouldAlwaysIgnoreProperty(x.JsonIgnore?.Condition))
+            .Select(x => new PropertyMetadata(x.Property, x.JsonIgnore?.Condition))
+            .ToArray());
     }
 
-    private static bool ShouldIgnoreProperty(JsonIgnoreAttribute? attribute, Type declaredType, object? value)
+    private static bool ShouldAlwaysIgnoreProperty(JsonIgnoreCondition? condition)
     {
-        return attribute?.Condition switch
+        return condition == JsonIgnoreCondition.Always;
+    }
+
+    private static bool ShouldIgnoreProperty(JsonIgnoreCondition? condition, Type declaredType, object? value)
+    {
+        return condition switch
         {
             null => false,
             JsonIgnoreCondition.Never => false,
@@ -72,6 +79,8 @@ public class ExcludeFromHashConverter : JsonConverter<object>
     {
         return declaredType.IsValueType && value.Equals(Activator.CreateInstance(declaredType));
     }
+
+    private sealed record PropertyMetadata(PropertyInfo Property, JsonIgnoreCondition? JsonIgnoreCondition);
     
     private JsonSerializerOptions GetClonedOptions(JsonSerializerOptions options)
     {

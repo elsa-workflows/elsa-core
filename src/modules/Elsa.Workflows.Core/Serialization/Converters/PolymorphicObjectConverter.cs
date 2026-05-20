@@ -370,36 +370,8 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         if (!targetType.IsInterface && !targetType.IsAbstract)
             return targetType;
 
-        if (targetType.IsGenericType)
-        {
-            var genericTypeDefinition = targetType.GetGenericTypeDefinition();
-            var genericTypeArguments = targetType.GenericTypeArguments;
-
-            if (genericTypeArguments.Length == 1)
-            {
-                var elementType = genericTypeArguments[0];
-
-                if (genericTypeDefinition == typeof(ISet<>))
-                    return typeof(HashSet<>).MakeGenericType(elementType);
-
-                if (genericTypeDefinition == typeof(IEnumerable<>) ||
-                    genericTypeDefinition == typeof(ICollection<>) ||
-                    genericTypeDefinition == typeof(IList<>) ||
-                    genericTypeDefinition == typeof(IReadOnlyCollection<>) ||
-                    genericTypeDefinition == typeof(IReadOnlyList<>))
-                    return typeof(List<>).MakeGenericType(elementType);
-            }
-
-            if (genericTypeArguments.Length == 2 &&
-                (genericTypeDefinition == typeof(IDictionary<,>) || genericTypeDefinition == typeof(IReadOnlyDictionary<,>)))
-                return typeof(Dictionary<,>).MakeGenericType(genericTypeArguments);
-        }
-
-        if (targetType == typeof(IEnumerable) || targetType == typeof(ICollection) || targetType == typeof(IList))
-            return typeof(List<object>);
-
-        if (targetType == typeof(IDictionary))
-            return typeof(Dictionary<string, object>);
+        if (WorkflowJsonTypeResolver.TryGetInstantiableCollectionType(targetType, out var instantiableCollectionType))
+            return instantiableCollectionType;
 
         throw new JsonException($"Workflow JSON type alias resolved to non-instantiable type '{targetType}'.");
     }

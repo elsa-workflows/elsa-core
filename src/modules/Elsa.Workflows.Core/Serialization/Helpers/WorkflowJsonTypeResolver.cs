@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Text.Json;
@@ -29,6 +30,26 @@ public static class WorkflowJsonTypeResolver
         [typeof(List<>)] = "List",
         [typeof(HashSet<>)] = "HashSet",
         [typeof(Collection<>)] = "Collection"
+    };
+
+    private static readonly IDictionary<Type, Type> GenericCollectionInterfaceMappings = new Dictionary<Type, Type>
+    {
+        [typeof(IEnumerable<>)] = typeof(List<>),
+        [typeof(ICollection<>)] = typeof(List<>),
+        [typeof(IList<>)] = typeof(List<>),
+        [typeof(IReadOnlyCollection<>)] = typeof(List<>),
+        [typeof(IReadOnlyList<>)] = typeof(List<>),
+        [typeof(ISet<>)] = typeof(HashSet<>),
+        [typeof(IDictionary<,>)] = typeof(Dictionary<,>),
+        [typeof(IReadOnlyDictionary<,>)] = typeof(Dictionary<,>)
+    };
+
+    private static readonly IDictionary<Type, Type> CollectionInterfaceMappings = new Dictionary<Type, Type>
+    {
+        [typeof(IEnumerable)] = typeof(List<object>),
+        [typeof(ICollection)] = typeof(List<object>),
+        [typeof(IList)] = typeof(List<object>),
+        [typeof(IDictionary)] = typeof(Dictionary<string, object>)
     };
 
     /// <summary>
@@ -120,6 +141,28 @@ public static class WorkflowJsonTypeResolver
         return false;
     }
 
+    /// <summary>
+    /// Attempts to map a supported collection interface type to an instantiable concrete type.
+    /// </summary>
+    public static bool TryGetInstantiableCollectionType(Type type, out Type instantiableType)
+    {
+        if (type.IsGenericType)
+        {
+            var genericTypeDefinition = type.GetGenericTypeDefinition();
+            if (GenericCollectionInterfaceMappings.TryGetValue(genericTypeDefinition, out var instantiableGenericTypeDefinition))
+            {
+                instantiableType = instantiableGenericTypeDefinition.MakeGenericType(type.GenericTypeArguments);
+                return true;
+            }
+        }
+
+        if (CollectionInterfaceMappings.TryGetValue(type, out instantiableType!))
+            return true;
+
+        instantiableType = null!;
+        return false;
+    }
+
     private static bool TryResolveArrayType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
         type = null!;
@@ -160,19 +203,9 @@ public static class WorkflowJsonTypeResolver
         if (GenericCollectionAliases.TryGetValue(genericTypeDefinition, out alias!))
             return true;
 
-        if (genericTypeDefinition == typeof(ISet<>))
+        if (GenericCollectionInterfaceMappings.TryGetValue(genericTypeDefinition, out var instantiableGenericTypeDefinition) &&
+            GenericCollectionAliases.TryGetValue(instantiableGenericTypeDefinition, out alias!))
         {
-            alias = "HashSet";
-            return true;
-        }
-
-        if (genericTypeDefinition == typeof(IEnumerable<>) ||
-            genericTypeDefinition == typeof(ICollection<>) ||
-            genericTypeDefinition == typeof(IList<>) ||
-            genericTypeDefinition == typeof(IReadOnlyCollection<>) ||
-            genericTypeDefinition == typeof(IReadOnlyList<>))
-        {
-            alias = "List";
             return true;
         }
 
