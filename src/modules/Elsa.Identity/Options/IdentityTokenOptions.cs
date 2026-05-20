@@ -52,7 +52,14 @@ public class IdentityTokenOptions
     /// Configures the <see cref="JwtBearerOptions"/> with the values from this instance.
     /// </summary>
     /// <param name="options">The options to configure.</param>
-    public void ConfigureJwtBearerOptions(JwtBearerOptions options)
+    public void ConfigureJwtBearerOptions(JwtBearerOptions options) => ConfigureJwtBearerOptions(options, TokenUse.Access);
+
+    /// <summary>
+    /// Configures the <see cref="JwtBearerOptions"/> with the values from this instance.
+    /// </summary>
+    /// <param name="options">The options to configure.</param>
+    /// <param name="requiredTokenUse">The required token usage claim value.</param>
+    public void ConfigureJwtBearerOptions(JwtBearerOptions options, string requiredTokenUse)
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -62,6 +69,18 @@ public class IdentityTokenOptions
             ValidateLifetime = true,
             LifetimeValidator = ValidateLifetime,
             NameClaimType = JwtRegisteredClaimNames.Name
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                var tokenUse = context.Principal?.FindFirst(TokenUse.ClaimType)?.Value;
+
+                if (!string.Equals(tokenUse, requiredTokenUse, StringComparison.Ordinal))
+                    context.Fail($"The token is not a valid {requiredTokenUse} token.");
+
+                return Task.CompletedTask;
+            }
         };
     }
 

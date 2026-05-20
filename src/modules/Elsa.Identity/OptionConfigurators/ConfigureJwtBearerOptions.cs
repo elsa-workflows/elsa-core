@@ -1,3 +1,4 @@
+using Elsa.Identity.Constants;
 using Elsa.Identity.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
@@ -26,6 +27,7 @@ public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions
     /// <inheritdoc />
     public void Configure(string? name, JwtBearerOptions options)
     {
-        _identityTokenOptions.Value.ConfigureJwtBearerOptions(options);
+        var requiredTokenUse = name == IdentityAuthenticationSchemes.RefreshToken ? TokenUse.Refresh : TokenUse.Access;
+        _identityTokenOptions.Value.ConfigureJwtBearerOptions(options, requiredTokenUse);
     }
 }

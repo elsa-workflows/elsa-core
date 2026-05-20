@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Elsa.Common;
 using Elsa.Extensions;
+using Elsa.Identity.Constants;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
@@ -48,18 +49,19 @@ public class DefaultAccessTokenIssuer(IRoleProvider roleProvider, ISystemClock s
         var now = systemClock.UtcNow;
         var accessTokenExpiresAt = now.Add(accessTokenLifetime);
         var refreshTokenExpiresAt = now.Add(refreshTokenLifetime);
-        var accessToken = JwtBearer.CreateToken(options => ConfigureTokenOptions(options, accessTokenExpiresAt.UtcDateTime));
-        var refreshToken = JwtBearer.CreateToken(options => ConfigureTokenOptions(options, refreshTokenExpiresAt.UtcDateTime));
+        var accessToken = JwtBearer.CreateToken(options => ConfigureTokenOptions(options, accessTokenExpiresAt.UtcDateTime, TokenUse.Access));
+        var refreshToken = JwtBearer.CreateToken(options => ConfigureTokenOptions(options, refreshTokenExpiresAt.UtcDateTime, TokenUse.Refresh));
 
         return new IssuedTokens(accessToken, refreshToken);
 
-        void ConfigureTokenOptions(JwtCreationOptions options, DateTime expireAt)
+        void ConfigureTokenOptions(JwtCreationOptions options, DateTime expireAt, string tokenUse)
         {
             options.SigningKey = signingKey;
             options.ExpireAt = expireAt;
             options.Issuer = issuer;
             options.Audience = audience;
             options.User.Claims.AddRange(claims);
+            options.User.Claims.Add(new Claim(TokenUse.ClaimType, tokenUse));
             options.User.Permissions.AddRange(permissions);
             options.User.Roles.AddRange(roleNames);
         }

@@ -1,4 +1,5 @@
 ﻿using Elsa.Extensions;
+using Elsa.Identity.Constants;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
 using FastEndpoints;
@@ -26,6 +27,7 @@ internal class RefreshToken : EndpointWithoutRequest<LoginResponse>
     public override void Configure()
     {
         Post("/identity/refresh-token");
+        AuthSchemes(IdentityAuthenticationSchemes.RefreshToken);
     }
 
     /// <inheritdoc />

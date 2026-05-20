@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Identity.Constants;
 using Elsa.Identity.Providers;
 using Elsa.Requirements;
 using Microsoft.AspNetCore.Authentication;
@@ -76,7 +77,8 @@ public class DefaultAuthenticationFeature : FeatureBase
                         : JwtBearerDefaults.AuthenticationScheme;
                 };
             })
-            .AddJwtBearer();
+            .AddJwtBearer()
+            .AddJwtBearer(IdentityAuthenticationSchemes.RefreshToken);
 
         _configureApiKeyAuthorization(authBuilder);
 
