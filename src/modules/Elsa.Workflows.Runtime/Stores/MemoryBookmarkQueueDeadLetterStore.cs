@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
+using Elsa.Workflows.Runtime.Options;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Stores;
@@ -23,7 +24,7 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
             if (existing != null)
                 throw new InvalidOperationException($"A bookmark queue dead-letter item for original queue item '{record.OriginalQueueItemId}' already exists.");
 
-            store.Save(record, x => x.Id);
+            store.Save(Clone(record), x => x.Id);
         }
 
         return Task.CompletedTask;
@@ -42,10 +43,10 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
         {
             var existing = store.Find(x => x.OriginalQueueItemId == record.OriginalQueueItemId);
             if (existing != null)
-                return Task.FromResult(existing);
+                return Task.FromResult(Clone(existing));
 
-            store.Add(record, x => x.Id);
-            return Task.FromResult(record);
+            store.Add(Clone(record), x => x.Id);
+            return Task.FromResult(Clone(record));
         }
     }
 
@@ -62,44 +63,108 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
             entity.ReplayedQueueItemId = queueItemId;
             entity.CanReplay = false;
             store.Save(entity, x => x.Id);
-            return Task.FromResult<BookmarkQueueDeadLetterItem?>(entity);
+            return Task.FromResult<BookmarkQueueDeadLetterItem?>(Clone(entity));
         }
     }
 
     /// <inheritdoc />
     public Task<BookmarkQueueDeadLetterItem?> FindAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default)
     {
-        var entity = store.Query(query => Filter(query, filter)).FirstOrDefault();
+        BookmarkQueueDeadLetterItem? entity;
+        lock (_lock)
+        {
+            entity = store.Query(query => Filter(query, filter)).Select(Clone).FirstOrDefault();
+        }
+
         return Task.FromResult(entity);
     }
 
     /// <inheritdoc />
     public Task<Page<BookmarkQueueDeadLetterItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueDeadLetterItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var entities = store.Query(query => query.OrderBy(orderBy)).Paginate(pageArgs);
+        Page<BookmarkQueueDeadLetterItem> entities;
+        lock (_lock)
+        {
+            var page = store.Query(query => query.OrderBy(orderBy)).Paginate(pageArgs);
+            entities = page with { Items = page.Items.Select(Clone).ToList() };
+        }
+
         return Task.FromResult(entities);
     }
 
     /// <inheritdoc />
     public Task<Page<BookmarkQueueDeadLetterItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueDeadLetterFilter filter, BookmarkQueueDeadLetterItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var entities = store.Query(query => Filter(query, filter).OrderBy(orderBy)).Paginate(pageArgs);
+        Page<BookmarkQueueDeadLetterItem> entities;
+        lock (_lock)
+        {
+            var page = store.Query(query => Filter(query, filter).OrderBy(orderBy)).Paginate(pageArgs);
+            entities = page with { Items = page.Items.Select(Clone).ToList() };
+        }
+
         return Task.FromResult(entities);
     }
 
     /// <inheritdoc />
     public Task<IEnumerable<BookmarkQueueDeadLetterItem>> FindManyAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default)
     {
-        var entities = store.Query(query => Filter(query, filter)).AsEnumerable();
+        IEnumerable<BookmarkQueueDeadLetterItem> entities;
+        lock (_lock)
+        {
+            entities = store.Query(query => Filter(query, filter)).Select(Clone).ToList();
+        }
+
         return Task.FromResult(entities);
     }
 
     /// <inheritdoc />
-    public async Task<long> DeleteAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default)
+    public Task<long> DeleteAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default)
     {
-        var ids = (await FindManyAsync(filter, cancellationToken)).Select(x => x.Id);
-        return store.DeleteMany(ids);
+        lock (_lock)
+        {
+            var ids = store.Query(query => Filter(query, filter)).Select(x => x.Id).ToList();
+            return Task.FromResult(store.DeleteMany(ids));
+        }
     }
 
     private static IQueryable<BookmarkQueueDeadLetterItem> Filter(IQueryable<BookmarkQueueDeadLetterItem> query, BookmarkQueueDeadLetterFilter filter) => filter.Apply(query);
+
+    private static BookmarkQueueDeadLetterItem Clone(BookmarkQueueDeadLetterItem item)
+    {
+        return new()
+        {
+            Id = item.Id,
+            TenantId = item.TenantId,
+            OriginalQueueItemId = item.OriginalQueueItemId,
+            WorkflowInstanceId = item.WorkflowInstanceId,
+            CorrelationId = item.CorrelationId,
+            BookmarkId = item.BookmarkId,
+            StimulusHash = item.StimulusHash,
+            ActivityInstanceId = item.ActivityInstanceId,
+            ActivityTypeName = item.ActivityTypeName,
+            Options = Clone(item.Options),
+            OriginalCreatedAt = item.OriginalCreatedAt,
+            DeadLetteredAt = item.DeadLetteredAt,
+            Reason = item.Reason,
+            DeliveryAttempts = item.DeliveryAttempts,
+            LastAttemptedAt = item.LastAttemptedAt,
+            LastErrorType = item.LastErrorType,
+            LastErrorMessage = item.LastErrorMessage,
+            CanReplay = item.CanReplay,
+            ReplayedAt = item.ReplayedAt,
+            ReplayedQueueItemId = item.ReplayedQueueItemId
+        };
+    }
+
+    private static ResumeBookmarkOptions? Clone(ResumeBookmarkOptions? options)
+    {
+        if (options == null)
+            return null;
+
+        return new()
+        {
+            Input = options.Input == null ? null : new Dictionary<string, object>(options.Input),
+            Properties = options.Properties == null ? null : new Dictionary<string, object>(options.Properties)
+        };
+    }
 }
