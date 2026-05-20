@@ -34,6 +34,8 @@ elsa
 
 See [src/apps/Elsa.Server.Web/Program.cs](../../src/apps/Elsa.Server.Web/Program.cs).
 
+Identity JWTs include a `token_use` claim. API bearer authentication accepts only access tokens (`token_use=access`), while `/identity/refresh-token` uses a dedicated refresh-token bearer scheme and accepts only refresh tokens (`token_use=refresh`). Clients should not send refresh tokens to normal API endpoints or access tokens to the refresh endpoint.
+
 ## Default Admin Bootstrap
 
 The default admin bootstrap is documented in [src/modules/Elsa.Identity/README.md](../../src/modules/Elsa.Identity/README.md) and [ADR 0010](../adr/0010-default-admin-user-bootstrap-for-initial-identity-access.md).

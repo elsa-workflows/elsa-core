@@ -1,6 +1,7 @@
 using AspNetCore.Authentication.ApiKey;
 using CShells.Features;
 using Elsa.Extensions;
+using Elsa.Identity.Constants;
 using Elsa.Identity.Providers;
 using Elsa.Requirements;
 using JetBrains.Annotations;
@@ -43,7 +44,8 @@ public class DefaultAuthenticationFeature : IShellFeature
                         : JwtBearerDefaults.AuthenticationScheme;
                 };
             })
-            .AddJwtBearer();
+            .AddJwtBearer()
+            .AddJwtBearer(IdentityAuthenticationSchemes.RefreshToken);
 
         // Configure API key authorization based on provider type
         if (ApiKeyProviderType == typeof(AdminApiKeyProvider))
