@@ -236,6 +236,7 @@ public class SendHttpRequestTests
     private sealed class TraceContextServer : IAsyncDisposable
     {
         private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan TeardownTimeout = TimeSpan.FromSeconds(2);
 
         private readonly TcpListener _listener = new(IPAddress.Loopback, 0);
         private readonly CancellationTokenSource _cancellationTokenSource = new();
@@ -272,9 +273,9 @@ public class SendHttpRequestTests
 
             try
             {
-                await _requestTask.ConfigureAwait(false);
+                await _requestTask.WaitAsync(TeardownTimeout).ConfigureAwait(false);
             }
-            catch (Exception ex) when (!requestTaskCompleted)
+            catch (Exception ex) when (!requestTaskCompleted && IsExpectedTeardownException(ex))
             {
                 Trace.WriteLine($"TraceContextServer teardown ignored exception: {ex}");
             }
@@ -300,6 +301,12 @@ public class SendHttpRequestTests
 
             await writer.WriteAsync("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{}");
             return headers;
+        }
+
+        private static bool IsExpectedTeardownException(Exception exception)
+        {
+            return exception is OperationCanceledException or ObjectDisposedException or SocketException or TimeoutException ||
+                   exception.InnerException is not null && IsExpectedTeardownException(exception.InnerException);
         }
     }
 

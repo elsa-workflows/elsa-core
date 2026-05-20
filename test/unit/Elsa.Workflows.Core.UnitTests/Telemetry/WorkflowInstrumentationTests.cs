@@ -41,8 +41,10 @@ public class WorkflowInstrumentationTests
         var tags = span.TagObjects.ToDictionary(x => x.Key, x => x.Value);
         Assert.Equal("activity.execute", span.OperationName);
         Assert.Equal(activity.Type, tags[WorkflowInstrumentation.ActivityType]);
+        Assert.Equal(context.WorkflowExecutionContext.Workflow.Identity.Id, tags[WorkflowInstrumentation.WorkflowDefinitionVersionId]);
         Assert.Equal(ActivityStatus.Completed.ToString(), tags[WorkflowInstrumentation.ActivityStatus]);
         var activityDuration = Assert.Single(meterCapture.DoubleMeasurements, x => x.InstrumentName == "elsa.activity.duration" && x.Value >= 0);
+        Assert.False(activityDuration.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
         Assert.False(activityDuration.Tags.ContainsKey(WorkflowInstrumentation.ActivityName));
         Assert.Equal(false, activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]);
     }
@@ -79,9 +81,13 @@ public class WorkflowInstrumentationTests
         var span = Assert.Single(activityCapture.StoppedActivities);
         var tags = span.TagObjects.ToDictionary(x => x.Key, x => x.Value);
         Assert.Equal(ActivityStatusCode.Ok, span.Status);
+        Assert.Equal(context.Workflow.Identity.Id, tags[WorkflowInstrumentation.WorkflowDefinitionVersionId]);
+        Assert.Equal("workflow.substatus", WorkflowInstrumentation.WorkflowSubStatus);
         Assert.Equal(WorkflowSubStatus.Finished.ToString(), tags[WorkflowInstrumentation.WorkflowSubStatus]);
         var started = Assert.Single(meterCapture.LongMeasurements, x => x.InstrumentName == "elsa.workflow.started" && x.Value == 1);
         var completed = Assert.Single(meterCapture.LongMeasurements, x => x.InstrumentName == "elsa.workflow.completed" && x.Value == 1);
+        Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
+        Assert.False(completed.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
         Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowSubStatus));
         Assert.Equal(WorkflowSubStatus.Finished.ToString(), completed.Tags[WorkflowInstrumentation.WorkflowSubStatus]);
     }
@@ -106,6 +112,8 @@ public class WorkflowInstrumentationTests
         Assert.Equal(typeof(InvalidOperationException).FullName, tags[WorkflowInstrumentation.ErrorType]);
         var started = Assert.Single(meterCapture.LongMeasurements, x => x.InstrumentName == "elsa.workflow.started" && x.Value == 1);
         var faulted = Assert.Single(meterCapture.LongMeasurements, x => x.InstrumentName == "elsa.workflow.faulted" && x.Value == 1);
+        Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
+        Assert.False(faulted.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
         Assert.Equal("Test workflow", started.Tags[WorkflowInstrumentation.WorkflowName]);
         Assert.Equal("Test workflow", faulted.Tags[WorkflowInstrumentation.WorkflowName]);
     }

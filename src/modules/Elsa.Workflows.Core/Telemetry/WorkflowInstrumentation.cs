@@ -22,7 +22,7 @@ public static class WorkflowInstrumentation
     public const string WorkflowDefinitionVersion = "workflow.definition.version";
     public const string WorkflowDefinitionVersionId = "workflow.definition.version.id";
     public const string WorkflowStatus = "workflow.status";
-    public const string WorkflowSubStatus = "workflow.sub_status";
+    public const string WorkflowSubStatus = "workflow.substatus";
     public const string WorkflowFaulted = "workflow.faulted";
     public const string WorkflowParentInstanceId = "workflow.parent_instance.id";
     public const string WorkflowCorrelationId = "workflow.correlation.id";
@@ -192,8 +192,7 @@ public static class WorkflowInstrumentation
         {
             { WorkflowSystem, SystemName },
             { WorkflowDefinitionId, identity.DefinitionId },
-            { WorkflowDefinitionVersion, identity.Version },
-            { WorkflowDefinitionVersionId, identity.Id }
+            { WorkflowDefinitionVersion, identity.Version }
         };
 
         if (includeExecutionStatus)
