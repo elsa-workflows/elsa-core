@@ -13,6 +13,7 @@ using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
+using Elsa.Workflows.Runtime.Helpers;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
@@ -151,9 +152,7 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// </summary>
     public WorkflowRuntimeFeature AddWorkflow(Type workflowType)
     {
-        if (!typeof(IWorkflow).IsAssignableFrom(workflowType))
-            throw new ArgumentException($"Workflow type '{workflowType.FullName}' must implement {nameof(IWorkflow)}.", nameof(workflowType));
-
+        WorkflowTypeValidator.Validate(workflowType);
         Workflows.Add(workflowType);
         WorkflowTypes.Add(workflowType);
         return this;

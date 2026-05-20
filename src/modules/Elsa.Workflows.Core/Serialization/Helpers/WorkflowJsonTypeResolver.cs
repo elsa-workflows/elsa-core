@@ -51,25 +51,31 @@ public static class WorkflowJsonTypeResolver
     /// </summary>
     public static bool TryResolveType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
     {
+        IReadOnlyList<Type>? registeredTypes = null;
+        return TryResolveType(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type);
+    }
+
+    private static bool TryResolveType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
+    {
         if (wellKnownTypeRegistry.TryGetType(typeAlias, out var registeredType))
         {
             type = registeredType;
             return true;
         }
 
-        if (TryResolveArrayType(wellKnownTypeRegistry, typeAlias, out var arrayType))
+        if (TryResolveArrayType(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out var arrayType))
         {
             type = arrayType;
             return true;
         }
 
-        if (TryResolveGenericCollectionType(wellKnownTypeRegistry, typeAlias, out var genericCollectionType))
+        if (TryResolveGenericCollectionType(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out var genericCollectionType))
         {
             type = genericCollectionType;
             return true;
         }
 
-        if (TryResolveRegisteredLegacyTypeName(wellKnownTypeRegistry, typeAlias, out var legacyType))
+        if (TryResolveRegisteredLegacyTypeName(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out var legacyType))
         {
             type = legacyType;
             return true;
@@ -114,7 +120,7 @@ public static class WorkflowJsonTypeResolver
         return false;
     }
 
-    private static bool TryResolveArrayType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
+    private static bool TryResolveArrayType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
         type = null!;
 
@@ -122,14 +128,14 @@ public static class WorkflowJsonTypeResolver
             return false;
 
         var elementTypeAlias = typeAlias[..^2];
-        if (!TryResolveType(wellKnownTypeRegistry, elementTypeAlias, out var elementType))
+        if (!TryResolveType(wellKnownTypeRegistry, elementTypeAlias, ref registeredTypes, out var elementType))
             return false;
 
         type = elementType.MakeArrayType();
         return true;
     }
 
-    private static bool TryResolveGenericCollectionType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
+    private static bool TryResolveGenericCollectionType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
         type = null!;
         var genericStart = typeAlias.IndexOf('<', StringComparison.Ordinal);
@@ -142,7 +148,7 @@ public static class WorkflowJsonTypeResolver
             return false;
 
         var elementTypeAlias = typeAlias[(genericStart + 1)..^1];
-        if (!TryResolveType(wellKnownTypeRegistry, elementTypeAlias, out var elementType))
+        if (!TryResolveType(wellKnownTypeRegistry, elementTypeAlias, ref registeredTypes, out var elementType))
             return false;
 
         type = genericTypeDefinition.MakeGenericType(elementType);
@@ -174,14 +180,15 @@ public static class WorkflowJsonTypeResolver
         return false;
     }
 
-    private static bool TryResolveRegisteredLegacyTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
+    private static bool TryResolveRegisteredLegacyTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
-        var registeredTypes = GetRegisteredTypes(wellKnownTypeRegistry);
+        registeredTypes ??= GetRegisteredTypes(wellKnownTypeRegistry);
+        var registeredTypeSnapshot = registeredTypes;
 
-        if (TryResolveRegisteredSimpleAssemblyQualifiedName(registeredTypes, typeAlias, out type))
+        if (TryResolveRegisteredSimpleAssemblyQualifiedName(registeredTypeSnapshot, typeAlias, out type))
             return true;
 
-        if (TryResolveLegacyGenericCollectionTypeName(wellKnownTypeRegistry, typeAlias, out type))
+        if (TryResolveLegacyGenericCollectionTypeName(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type))
             return true;
 
         Type? resolvedType;
@@ -190,8 +197,8 @@ public static class WorkflowJsonTypeResolver
         {
             resolvedType = Type.GetType(
                 typeAlias,
-                assemblyName => ResolveAssembly(registeredTypes, assemblyName),
-                (assembly, typeName, ignoreCase) => ResolveType(registeredTypes, assembly, typeName, ignoreCase),
+                assemblyName => ResolveAssembly(registeredTypeSnapshot, assemblyName),
+                (assembly, typeName, ignoreCase) => ResolveType(registeredTypeSnapshot, assembly, typeName, ignoreCase),
                 false);
         }
         catch (Exception e) when (e is ArgumentException or FileLoadException)
@@ -217,7 +224,7 @@ public static class WorkflowJsonTypeResolver
         return type != null;
     }
 
-    private static bool TryResolveLegacyGenericCollectionTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
+    private static bool TryResolveLegacyGenericCollectionTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
         type = null!;
 
@@ -234,7 +241,7 @@ public static class WorkflowJsonTypeResolver
                 continue;
 
             var elementTypeAlias = typeAlias[prefix.Length..separatorIndex];
-            if (!TryResolveType(wellKnownTypeRegistry, elementTypeAlias, out var elementType))
+            if (!TryResolveType(wellKnownTypeRegistry, elementTypeAlias, ref registeredTypes, out var elementType))
                 return false;
 
             // The resolver only closes known collection definitions over registered element types.

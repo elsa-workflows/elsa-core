@@ -38,5 +38,6 @@ public class OrderDefinition<T, TProp>
     /// <summary>
     /// A best-effort textual representation of the key selector for cache-key generation.
     /// </summary>
+    [JsonIgnore]
     public string? KeySelectorText => KeySelector?.ToString();
 }
