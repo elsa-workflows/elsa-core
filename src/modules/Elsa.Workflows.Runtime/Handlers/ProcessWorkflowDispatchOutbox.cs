@@ -16,6 +16,9 @@ public class ProcessWorkflowDispatchOutbox(IWorkflowDispatchOutboxProcessor proc
         if (!options.Value.UseTransactionalOutbox || !options.Value.ProcessOutboxAfterCommit)
             return;
 
+        if (!notification.WorkflowState.HasWorkflowDispatchOutboxItems())
+            return;
+
         await processor.ProcessAsync(cancellationToken);
     }
 }

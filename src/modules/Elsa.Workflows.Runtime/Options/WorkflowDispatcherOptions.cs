@@ -19,8 +19,11 @@ public class WorkflowDispatcherOptions
     public bool UseTransactionalOutbox { get; set; }
 
     /// <summary>
-    /// Gets or sets whether the outbox should be processed immediately after each workflow state commit.
+    /// Gets or sets whether the shared outbox processor should run immediately after a workflow state commit that contains outbox items.
     /// </summary>
+    /// <remarks>
+    /// The immediate processor drains eligible pending items from the shared outbox. Disable this option to rely only on the recurring outbox sweep when commit latency is more important than eager dispatch.
+    /// </remarks>
     public bool ProcessOutboxAfterCommit { get; set; } = true;
 
     /// <summary>
