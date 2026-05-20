@@ -5,7 +5,6 @@ using Elsa.Workflows.Api.RealTime.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -28,14 +27,14 @@ public class WorkflowInstanceHub : Hub<IWorkflowInstanceClient>
 
     /// <inheritdoc />
     [ActivatorUtilitiesConstructor]
-    public WorkflowInstanceHub(IWorkflowInstanceStore workflowInstanceStore, ITenantAccessor tenantAccessor)
+    public WorkflowInstanceHub(IWorkflowInstanceStore workflowInstanceStore, ITenantAccessor? tenantAccessor = null)
     {
         _workflowInstanceStore = workflowInstanceStore;
         _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
-    public WorkflowInstanceHub(IWorkflowRuntime workflowRuntime)
+    public WorkflowInstanceHub()
     {
     }
     
@@ -70,19 +69,22 @@ public class WorkflowInstanceHub : Hub<IWorkflowInstanceClient>
         return user.FindAll(PermissionsClaimType).Any(x => x.Value is PermissionNames.All or ReadAllPermission or ReadWorkflowInstancesPermission);
     }
 
-    private bool TryGetRequiredServices([NotNullWhen(true)] out IWorkflowInstanceStore? workflowInstanceStore, [NotNullWhen(true)] out ITenantAccessor? tenantAccessor)
+    private bool TryGetRequiredServices([NotNullWhen(true)] out IWorkflowInstanceStore? workflowInstanceStore, out ITenantAccessor? tenantAccessor)
     {
         var services = Context.GetHttpContext()?.RequestServices;
         workflowInstanceStore = _workflowInstanceStore ?? services?.GetService<IWorkflowInstanceStore>();
         tenantAccessor = _tenantAccessor ?? services?.GetService<ITenantAccessor>();
 
-        return workflowInstanceStore != null && tenantAccessor != null;
+        return workflowInstanceStore != null;
     }
 
-    private static bool CanAccessTenant(WorkflowInstance? workflowInstance, ITenantAccessor tenantAccessor)
+    private static bool CanAccessTenant(WorkflowInstance? workflowInstance, ITenantAccessor? tenantAccessor)
     {
         if (workflowInstance == null)
             return false;
+
+        if (tenantAccessor == null)
+            return true;
 
         var workflowInstanceTenantId = workflowInstance.TenantId.NormalizeTenantId();
 

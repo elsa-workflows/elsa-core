@@ -103,6 +103,20 @@ public class WorkflowInstanceHubTests
         await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ObserveInstanceAsync_WithoutTenantAccessor_JoinsVisibleInstanceGroup()
+    {
+        var hub = new WorkflowInstanceHub(_workflowInstanceStore)
+        {
+            Context = _context,
+            Groups = _groups
+        };
+
+        await hub.ObserveInstanceAsync(WorkflowInstanceId);
+
+        await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, Arg.Any<CancellationToken>());
+    }
+
     private void UseUser(params string[] permissions)
     {
         var claims = permissions.Select(x => new Claim("permissions", x));
