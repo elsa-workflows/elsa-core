@@ -17,7 +17,7 @@ internal static class WorkflowExecutionHelper
         IWorkflowRuntime workflowRuntime,
         IWorkflowStarter workflowStarter,
         IApiSerializer apiSerializer,
-        PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService,
+        WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
@@ -31,10 +31,10 @@ internal static class WorkflowExecutionHelper
             return;
         }
 
-        var pythonAuthorizationResult = await pythonAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, httpContext.User, cancellationToken);
-        if (pythonAuthorizationResult != PythonWorkflowDefinitionAuthorizationResult.Allowed)
+        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, httpContext.User, cancellationToken);
+        if (!scriptAuthorizationResult.Succeeded)
         {
-            await SendPythonAuthorizationFailureAsync(httpContext, pythonAuthorizationResult, cancellationToken);
+            await SendScriptAuthorizationFailureAsync(httpContext, scriptAuthorizationResult, cancellationToken);
             return;
         }
         
@@ -97,15 +97,15 @@ internal static class WorkflowExecutionHelper
         await httpContext.Response.WriteAsync(faultedResponse, cancellationToken);
     }
 
-    private static async Task SendPythonAuthorizationFailureAsync(HttpContext httpContext, PythonWorkflowDefinitionAuthorizationResult result, CancellationToken cancellationToken)
+    private static async Task SendScriptAuthorizationFailureAsync(HttpContext httpContext, WorkflowDefinitionScriptAuthorizationResult result, CancellationToken cancellationToken)
     {
-        if (result == PythonWorkflowDefinitionAuthorizationResult.MissingPermission)
+        if (result.FailureReason == WorkflowDefinitionScriptAuthorizationFailureReason.MissingPermission)
         {
             await httpContext.Response.SendForbiddenAsync(cancellation: cancellationToken);
             return;
         }
 
         httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-        await httpContext.Response.WriteAsync(PythonWorkflowDefinitionAuthorizationService.HostDisabledMessage, cancellationToken);
+        await httpContext.Response.WriteAsync(result.Message!, cancellationToken);
     }
 }

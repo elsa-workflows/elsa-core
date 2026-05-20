@@ -18,19 +18,19 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
     private readonly IWorkflowDefinitionLinker _linker;
     private readonly IAuthorizationService _authorizationService;
-    private readonly PythonWorkflowDefinitionAuthorizationService _pythonAuthorizationService;
+    private readonly WorkflowDefinitionScriptAuthorizationService _scriptAuthorizationService;
 
     /// <inheritdoc />
     public Import(
         IWorkflowDefinitionImporter workflowDefinitionImporter,
         IWorkflowDefinitionLinker linker,
         IAuthorizationService authorizationService,
-        PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService)
+        WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService)
     {
         _workflowDefinitionImporter = workflowDefinitionImporter;
         _linker = linker;
         _authorizationService = authorizationService;
-        _pythonAuthorizationService = pythonAuthorizationService;
+        _scriptAuthorizationService = scriptAuthorizationService;
     }
 
     /// <inheritdoc />
@@ -47,10 +47,10 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
         var definitionId = model.DefinitionId;
         var isNew = string.IsNullOrWhiteSpace(definitionId);
 
-        var pythonAuthorizationResult = await _pythonAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
-        if (pythonAuthorizationResult != PythonWorkflowDefinitionAuthorizationResult.Allowed)
+        var scriptAuthorizationResult = await _scriptAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
+        if (!scriptAuthorizationResult.Succeeded)
         {
-            await PythonWorkflowDefinitionAuthorizationFailure.SendAsync(pythonAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
             return;
         }
 
