@@ -29,17 +29,37 @@ public class ExcludeFromHashConverter : JsonConverter<object>
         {
             var attribute = property.GetCustomAttribute<ExcludeFromHashAttribute>();
             var jsonIgnoreAttribute = property.GetCustomAttribute<JsonIgnoreAttribute>();
+            var propertyValue = property.GetValue(value);
 
-            if (attribute != null || jsonIgnoreAttribute != null)
+            if (attribute != null || ShouldIgnoreProperty(jsonIgnoreAttribute, propertyValue))
             {
                 continue;
             }
 
             writer.WritePropertyName(property.Name);
-            JsonSerializer.Serialize(writer, property.GetValue(value), newOptions);
+            JsonSerializer.Serialize(writer, propertyValue, newOptions);
         }
 
         writer.WriteEndObject();
+    }
+
+    private static bool ShouldIgnoreProperty(JsonIgnoreAttribute? attribute, object? value)
+    {
+        return attribute?.Condition switch
+        {
+            null => false,
+            JsonIgnoreCondition.Never => false,
+            JsonIgnoreCondition.Always => true,
+            JsonIgnoreCondition.WhenWritingNull => value == null,
+            JsonIgnoreCondition.WhenWritingDefault => value == null || IsDefaultValue(value),
+            _ => true
+        };
+    }
+
+    private static bool IsDefaultValue(object value)
+    {
+        var type = value.GetType();
+        return type.IsValueType && value.Equals(Activator.CreateInstance(type));
     }
     
     private JsonSerializerOptions GetClonedOptions(JsonSerializerOptions options)

@@ -176,7 +176,7 @@ public static class WorkflowJsonTypeResolver
 
     private static bool TryResolveRegisteredLegacyTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
     {
-        var registeredTypes = wellKnownTypeRegistry.ListTypes().ToArray();
+        var registeredTypes = wellKnownTypeRegistry.ListTypes();
 
         if (TryResolveRegisteredSimpleAssemblyQualifiedName(registeredTypes, typeAlias, out type))
             return true;

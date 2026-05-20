@@ -151,6 +151,9 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// </summary>
     public WorkflowRuntimeFeature AddWorkflow(Type workflowType)
     {
+        if (!typeof(IWorkflow).IsAssignableFrom(workflowType))
+            throw new ArgumentException($"Workflow type '{workflowType.FullName}' must implement {nameof(IWorkflow)}.", nameof(workflowType));
+
         Workflows.Add(workflowType);
         WorkflowTypes.Add(workflowType);
         return this;
