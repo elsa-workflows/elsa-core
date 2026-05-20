@@ -11,6 +11,7 @@ public class DefaultSecretHasher : ISecretHasher
     private const string Algorithm = "pbkdf2-sha256";
     private const char Separator = '$';
     private const int DefaultIterationCount = 210_000;
+    private const int MaxIterationCount = DefaultIterationCount * 4;
     private const int KeySize = 32;
 
     /// <inheritdoc />
@@ -58,13 +59,15 @@ public class DefaultSecretHasher : ISecretHasher
         if (TryReadPbkdf2Hash(password, out var iterationCount, out var expectedHash))
         {
             var providedHash = HashSecret(passwordBytes, salt, iterationCount);
-            needsRehash = iterationCount < DefaultIterationCount;
-            return CryptographicOperations.FixedTimeEquals(providedHash, expectedHash);
+            var matches = CryptographicOperations.FixedTimeEquals(providedHash, expectedHash);
+            needsRehash = matches && iterationCount < DefaultIterationCount;
+            return matches;
         }
 
         var legacyHash = HashLegacySha256(passwordBytes, salt);
-        needsRehash = CryptographicOperations.FixedTimeEquals(legacyHash, password);
-        return needsRehash;
+        var isLegacyMatch = CryptographicOperations.FixedTimeEquals(legacyHash, password);
+        needsRehash = isLegacyMatch;
+        return isLegacyMatch;
     }
 
     /// <inheritdoc />
@@ -98,7 +101,7 @@ public class DefaultSecretHasher : ISecretHasher
         if (segments.Length != 3 || !string.Equals(segments[0], Algorithm, StringComparison.Ordinal))
             return false;
 
-        if (!int.TryParse(segments[1], out iterationCount) || iterationCount <= 0)
+        if (!int.TryParse(segments[1], out iterationCount) || iterationCount <= 0 || iterationCount > MaxIterationCount)
             return false;
 
         try

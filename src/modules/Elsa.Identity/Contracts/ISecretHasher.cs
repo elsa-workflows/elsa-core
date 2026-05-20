@@ -28,7 +28,7 @@ public interface ISecretHasher
     /// </summary>
     /// <param name="secret">The secret to hash.</param>
     /// <param name="salt">The salt to use.</param>
-    /// <returns>The hashed secret.</returns>
+    /// <returns>The hashed secret bytes. Implementations should return a self-describing format that <see cref="VerifySecret(string, HashedSecret, out bool)"/> can parse; the default implementation returns a UTF-8 encoded PBKDF2-SHA256 envelope.</returns>
     byte[] HashSecret(byte[] secret, byte[] salt);
     
     /// <summary>

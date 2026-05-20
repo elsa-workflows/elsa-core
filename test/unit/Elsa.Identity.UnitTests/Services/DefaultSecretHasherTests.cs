@@ -44,6 +44,30 @@ public class DefaultSecretHasherTests
     }
 
     [Fact]
+    public void VerifySecret_WithWrongPasswordAndLowerIterationCount_DoesNotRequestRehash()
+    {
+        var hashedSecret = CreatePbkdf2Hash("secret", 1);
+
+        var verified = _hasher.VerifySecret("wrong-secret", hashedSecret, out var needsRehash);
+
+        Assert.False(verified);
+        Assert.False(needsRehash);
+    }
+
+    [Fact]
+    public void VerifySecret_RejectsPbkdf2HashWithExcessiveIterations()
+    {
+        var salt = _hasher.GenerateSalt();
+        var storedHash = Encoding.UTF8.GetBytes("pbkdf2-sha256$999999999$" + Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)));
+        var hashedSecret = HashedSecret.FromBytes(storedHash, salt);
+
+        var verified = _hasher.VerifySecret("secret", hashedSecret, out var needsRehash);
+
+        Assert.False(verified);
+        Assert.False(needsRehash);
+    }
+
+    [Fact]
     public async Task ValidateAsync_RehashesLegacyUserPassword()
     {
         var userStore = new MemoryUserStore(new MemoryStore<User>());
@@ -99,5 +123,14 @@ public class DefaultSecretHasherTests
         var secretBytes = Encoding.UTF8.GetBytes(secret);
         var hash = SHA256.HashData(secretBytes.Concat(salt).ToArray());
         return HashedSecret.FromBytes(hash, salt);
+    }
+
+    private static HashedSecret CreatePbkdf2Hash(string secret, int iterationCount)
+    {
+        var salt = RandomNumberGenerator.GetBytes(32);
+        var secretBytes = Encoding.UTF8.GetBytes(secret);
+        var hash = Rfc2898DeriveBytes.Pbkdf2(secretBytes, salt, iterationCount, HashAlgorithmName.SHA256, 32);
+        var envelope = Encoding.UTF8.GetBytes($"pbkdf2-sha256${iterationCount}${Convert.ToBase64String(hash)}");
+        return HashedSecret.FromBytes(envelope, salt);
     }
 }
