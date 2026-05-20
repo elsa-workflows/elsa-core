@@ -12,6 +12,8 @@ namespace Elsa.Workflows.Api.Endpoints.Scripting.ExpressionDescriptors.List;
 [UsedImplicitly]
 internal class List(IExpressionDescriptorRegistry expressionDescriptorRegistry) : ElsaEndpointWithoutRequest<ListResponse<ExpressionDescriptorModel>>
 {
+    private const string PythonExpressionType = "Python";
+
     /// <inheritdoc />
     public override void Configure()
     {
@@ -30,7 +32,7 @@ internal class List(IExpressionDescriptorRegistry expressionDescriptorRegistry) 
 
     private bool CanListDescriptor(ExpressionDescriptor descriptor)
     {
-        return descriptor.Type != "Python" ||
+        return descriptor.Type != PythonExpressionType ||
                (descriptor.IsBrowsable &&
                 User.Claims.Any(x => x.Type == "permissions" && (x.Value == PermissionNames.All || x.Value == PermissionNames.ExecutePythonExpressions)));
     }
