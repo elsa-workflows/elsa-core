@@ -27,7 +27,16 @@ public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions
     /// <inheritdoc />
     public void Configure(string? name, JwtBearerOptions options)
     {
-        var requiredTokenUse = name == IdentityAuthenticationSchemes.RefreshToken ? TokenUse.Refresh : TokenUse.Access;
+        var requiredTokenUse = name switch
+        {
+            IdentityAuthenticationSchemes.AccessToken => TokenUse.Access,
+            IdentityAuthenticationSchemes.RefreshToken => TokenUse.Refresh,
+            _ => null
+        };
+
+        if (requiredTokenUse == null)
+            return;
+
         _identityTokenOptions.Value.ConfigureJwtBearerOptions(options, requiredTokenUse);
     }
 }

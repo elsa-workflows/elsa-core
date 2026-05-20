@@ -7,8 +7,6 @@ namespace Elsa.Identity.UnitTests.Options;
 
 public class ConfigureJwtBearerOptionsTests
 {
-    private const string SigningKey = "test-signing-key-with-at-least-32-chars";
-
     [Fact]
     public async Task Configure_UsesAccessTokenValidationForDefaultBearerScheme()
     {
@@ -27,16 +25,32 @@ public class ConfigureJwtBearerOptionsTests
         Assert.NotNull(result.Failure);
     }
 
+    [Fact]
+    public void Configure_SkipsNonElsaManagedSchemes()
+    {
+        var configureOptions = CreateConfigureOptions();
+        var options = new JwtBearerOptions();
+
+        configureOptions.Configure("ThirdPartyBearer", options);
+
+        Assert.Null(options.TokenValidationParameters.ValidIssuer);
+    }
+
     private static JwtBearerOptions Configure(string scheme)
     {
-        var configureOptions = new ConfigureJwtBearerOptions(Microsoft.Extensions.Options.Options.Create(new IdentityTokenOptions
-        {
-            SigningKey = SigningKey
-        }));
+        var configureOptions = CreateConfigureOptions();
         var options = new JwtBearerOptions();
 
         configureOptions.Configure(scheme, options);
 
         return options;
+    }
+
+    private static ConfigureJwtBearerOptions CreateConfigureOptions()
+    {
+        return new ConfigureJwtBearerOptions(Microsoft.Extensions.Options.Options.Create(new IdentityTokenOptions
+        {
+            SigningKey = IdentityTokenTestConstants.SigningKey
+        }));
     }
 }

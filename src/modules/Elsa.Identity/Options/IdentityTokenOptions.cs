@@ -70,17 +70,19 @@ public class IdentityTokenOptions
             LifetimeValidator = ValidateLifetime,
             NameClaimType = JwtRegisteredClaimNames.Name
         };
-        options.Events = new JwtBearerEvents
+        options.Events ??= new JwtBearerEvents();
+        var previousOnTokenValidated = options.Events.OnTokenValidated;
+        options.Events.OnTokenValidated = async context =>
         {
-            OnTokenValidated = context =>
-            {
-                var tokenUse = context.Principal?.FindFirst(TokenUse.ClaimType)?.Value;
+            await previousOnTokenValidated(context);
 
-                if (!string.Equals(tokenUse, requiredTokenUse, StringComparison.Ordinal))
-                    context.Fail($"The token is not a valid {requiredTokenUse} token.");
+            if (context.Result?.Failure != null || context.Result?.None == true)
+                return;
 
-                return Task.CompletedTask;
-            }
+            var tokenUse = context.Principal?.FindFirst(TokenUse.ClaimType)?.Value;
+
+            if (!string.Equals(tokenUse, requiredTokenUse, StringComparison.Ordinal))
+                context.Fail($"The token is not a valid {requiredTokenUse} token.");
         };
     }
 

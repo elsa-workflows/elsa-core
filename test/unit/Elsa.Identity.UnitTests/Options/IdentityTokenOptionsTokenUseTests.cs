@@ -11,8 +11,6 @@ namespace Elsa.Identity.UnitTests.Options;
 
 public class IdentityTokenOptionsTokenUseTests
 {
-    private const string SigningKey = "test-signing-key-with-at-least-32-chars";
-
     [Fact]
     public async Task AccessTokenSchemeRejectsRefreshToken()
     {
@@ -45,22 +43,83 @@ public class IdentityTokenOptionsTokenUseTests
         Assert.Null(result.Failure);
     }
 
-    private static async Task<AuthenticateResult> ValidateTokenUseAsync(string requiredTokenUse, string actualTokenUse)
+    [Fact]
+    public async Task AccessTokenSchemeRejectsTokenWithMissingTokenUseClaim()
+    {
+        var result = await ValidateTokenUseAsync(requiredTokenUse: TokenUse.Access, actualTokenUse: null);
+
+        Assert.NotNull(result.Failure);
+    }
+
+    [Fact]
+    public async Task OnTokenValidatedRunsPreviousHandlerBeforeTokenUseEnforcement()
+    {
+        var previousHandlerCalled = false;
+        var identityOptions = new IdentityTokenOptions
+        {
+            SigningKey = IdentityTokenTestConstants.SigningKey
+        };
+        var jwtBearerOptions = new JwtBearerOptions
+        {
+            Events = new JwtBearerEvents
+            {
+                OnTokenValidated = context =>
+                {
+                    previousHandlerCalled = true;
+                    context.Success();
+                    return Task.CompletedTask;
+                }
+            }
+        };
+        identityOptions.ConfigureJwtBearerOptions(jwtBearerOptions, TokenUse.Access);
+
+        var result = await ValidateTokenUseAsync(jwtBearerOptions, actualTokenUse: TokenUse.Refresh);
+
+        Assert.True(previousHandlerCalled);
+        Assert.NotNull(result.Failure);
+    }
+
+    [Fact]
+    public async Task OnTokenValidatedPreservesPreviousNoResult()
     {
         var identityOptions = new IdentityTokenOptions
         {
-            SigningKey = SigningKey
+            SigningKey = IdentityTokenTestConstants.SigningKey
+        };
+        var jwtBearerOptions = new JwtBearerOptions
+        {
+            Events = new JwtBearerEvents
+            {
+                OnTokenValidated = context =>
+                {
+                    context.NoResult();
+                    return Task.CompletedTask;
+                }
+            }
+        };
+        identityOptions.ConfigureJwtBearerOptions(jwtBearerOptions, TokenUse.Access);
+
+        var result = await ValidateTokenUseAsync(jwtBearerOptions, actualTokenUse: TokenUse.Access);
+
+        Assert.True(result.None);
+    }
+
+    private static async Task<AuthenticateResult> ValidateTokenUseAsync(string requiredTokenUse, string? actualTokenUse)
+    {
+        var identityOptions = new IdentityTokenOptions
+        {
+            SigningKey = IdentityTokenTestConstants.SigningKey
         };
         var jwtBearerOptions = new JwtBearerOptions();
         identityOptions.ConfigureJwtBearerOptions(jwtBearerOptions, requiredTokenUse);
         return await ValidateTokenUseAsync(jwtBearerOptions, actualTokenUse);
     }
 
-    public static async Task<AuthenticateResult> ValidateTokenUseAsync(JwtBearerOptions jwtBearerOptions, string actualTokenUse)
+    public static async Task<AuthenticateResult> ValidateTokenUseAsync(JwtBearerOptions jwtBearerOptions, string? actualTokenUse)
     {
         var identityOptions = new IdentityTokenOptions
         {
-            SigningKey = SigningKey
+            SigningKey = IdentityTokenTestConstants.SigningKey
         };
         var principal = ValidateToken(CreateToken(identityOptions, actualTokenUse), jwtBearerOptions.TokenValidationParameters, out var securityToken);
         var context = new TokenValidatedContext(
@@ -77,18 +136,22 @@ public class IdentityTokenOptionsTokenUseTests
         return context.Result ?? AuthenticateResult.Success(new AuthenticationTicket(principal, JwtBearerDefaults.AuthenticationScheme));
     }
 
-    private static string CreateToken(IdentityTokenOptions options, string tokenUse)
+    private static string CreateToken(IdentityTokenOptions options, string? tokenUse)
     {
         var now = DateTime.UtcNow;
         var credentials = new SigningCredentials(options.CreateSecurityKey(), SecurityAlgorithms.HmacSha256);
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Name, "alice")
+        };
+
+        if (tokenUse != null)
+            claims.Add(new Claim(TokenUse.ClaimType, tokenUse));
+
         var token = new JwtSecurityToken(
             issuer: options.Issuer,
             audience: options.Audience,
-            claims:
-            [
-                new Claim(JwtRegisteredClaimNames.Name, "alice"),
-                new Claim(TokenUse.ClaimType, tokenUse)
-            ],
+            claims: claims,
             notBefore: now,
             expires: now.AddMinutes(5),
             signingCredentials: credentials);
