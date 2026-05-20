@@ -15,10 +15,13 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
+using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
+using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Workflows.Runtime.Stores;
 using Elsa.Workflows.Runtime.Tasks;
 using Elsa.Workflows.Runtime.UIHints;
@@ -422,6 +425,19 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 
     private void RegisterWorkflowTypeAliases(ExpressionOptions options)
     {
+        options.RegisterTypeAlias(typeof(EventBookmarkPayload), nameof(EventBookmarkPayload));
+        options.RegisterTypeAlias(typeof(ExecuteWorkflowPayload), nameof(ExecuteWorkflowPayload));
+        options.RegisterTypeAlias(typeof(RunTaskBookmarkPayload), nameof(RunTaskBookmarkPayload));
+        options.RegisterTypeAlias(typeof(BookmarkTokenPayload), nameof(BookmarkTokenPayload));
+        options.RegisterTypeAlias(typeof(EventTokenPayload), nameof(EventTokenPayload));
+        options.RegisterTypeAlias(typeof(WorkflowInterruptedPayload), nameof(WorkflowInterruptedPayload));
+        options.RegisterTypeAlias(typeof(BackgroundActivityStimulus), nameof(BackgroundActivityStimulus));
+        options.RegisterTypeAlias(typeof(BulkDispatchWorkflowsStimulus), nameof(BulkDispatchWorkflowsStimulus));
+        options.RegisterTypeAlias(typeof(DispatchWorkflowStimulus), nameof(DispatchWorkflowStimulus));
+        options.RegisterTypeAlias(typeof(EventStimulus), nameof(EventStimulus));
+        options.RegisterTypeAlias(typeof(ExecuteWorkflowStimulus), nameof(ExecuteWorkflowStimulus));
+        options.RegisterTypeAlias(typeof(RunTaskStimulus), nameof(RunTaskStimulus));
+
         foreach (var workflowType in WorkflowTypes)
             options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName());
     }

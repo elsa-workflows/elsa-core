@@ -8,6 +8,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.ActivationValidators;
+using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Builders;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Exceptions;
@@ -167,6 +168,16 @@ public class WorkflowsFeature : FeatureBase
         {
             options.RegisterTypeAlias(typeof(ExceptionState), nameof(ExceptionState));
             options.RegisterTypeAlias(typeof(FaultException), nameof(FaultException));
+            options.RegisterTypeAlias(typeof(VariablesDictionary), nameof(VariablesDictionary));
+            options.RegisterTypeAlias(typeof(Token), nameof(Token));
+            options.RegisterTypeAlias(typeof(Exception), nameof(Exception));
+            options.RegisterTypeAlias(typeof(ArgumentException), nameof(ArgumentException));
+            options.RegisterTypeAlias(typeof(ArgumentNullException), nameof(ArgumentNullException));
+            options.RegisterTypeAlias(typeof(InvalidOperationException), nameof(InvalidOperationException));
+            options.RegisterTypeAlias(typeof(OperationCanceledException), nameof(OperationCanceledException));
+            options.RegisterTypeAlias(typeof(TaskCanceledException), nameof(TaskCanceledException));
+            options.RegisterTypeAlias(typeof(TimeoutException), nameof(TimeoutException));
+            options.RegisterTypeAlias(typeof(NotSupportedException), nameof(NotSupportedException));
             options.RegisterTypeAlias(typeof(JObject), nameof(JObject));
             options.RegisterTypeAlias(typeof(JArray), nameof(JArray));
         });

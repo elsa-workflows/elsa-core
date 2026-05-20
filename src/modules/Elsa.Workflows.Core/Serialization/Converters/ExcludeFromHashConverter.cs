@@ -28,8 +28,9 @@ public class ExcludeFromHashConverter : JsonConverter<object>
         foreach (var property in value.GetType().GetProperties())
         {
             var attribute = property.GetCustomAttribute<ExcludeFromHashAttribute>();
+            var jsonIgnoreAttribute = property.GetCustomAttribute<JsonIgnoreAttribute>();
 
-            if (attribute != null)
+            if (attribute != null || jsonIgnoreAttribute != null)
             {
                 continue;
             }
