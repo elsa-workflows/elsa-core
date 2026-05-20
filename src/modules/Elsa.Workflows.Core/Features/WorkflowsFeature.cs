@@ -170,6 +170,12 @@ public class WorkflowsFeature : FeatureBase
             options.RegisterTypeAlias(typeof(FaultException), nameof(FaultException));
             options.RegisterTypeAlias(typeof(VariablesDictionary), nameof(VariablesDictionary));
             options.RegisterTypeAlias(typeof(Token), nameof(Token));
+            options.RegisterTypeAlias(typeof(FlowJoinMode), "Elsa.Workflows.Core.Activities.Flowchart.Models.FlowJoinMode, Elsa.Workflows.Core");
+            options.RegisterTypeAlias(typeof(FlowJoinMode), typeof(FlowJoinMode).GetSimpleAssemblyQualifiedName());
+            options.RegisterTypeAlias(typeof(FlowJoinMode), nameof(FlowJoinMode));
+            options.RegisterTypeAlias(typeof(WorkflowStorageDriver), typeof(WorkflowStorageDriver).GetSimpleAssemblyQualifiedName());
+            options.RegisterTypeAlias(typeof(WorkflowInstanceStorageDriver), typeof(WorkflowInstanceStorageDriver).GetSimpleAssemblyQualifiedName());
+            options.RegisterTypeAlias(typeof(FaultStrategy), typeof(FaultStrategy).GetSimpleAssemblyQualifiedName());
             options.RegisterTypeAlias(typeof(Exception), nameof(Exception));
             options.RegisterTypeAlias(typeof(ArgumentException), nameof(ArgumentException));
             options.RegisterTypeAlias(typeof(ArgumentNullException), nameof(ArgumentNullException));

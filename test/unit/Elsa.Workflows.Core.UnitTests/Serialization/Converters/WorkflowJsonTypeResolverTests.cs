@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Expressions.Options;
 using Elsa.Expressions.Services;
+using Elsa.Extensions;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.State;
@@ -38,6 +39,26 @@ public sealed class WorkflowJsonTypeResolverTests
         var result = JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(typeAlias), _options);
 
         Assert.Equal(expectedType, result);
+    }
+
+    [Fact]
+    public void When_DeserializeRegisteredLegacyAssemblyQualifiedTypeAlias_Then_ReturnsExpectedType()
+    {
+        var typeAlias = typeof(RegisteredPayload).GetSimpleAssemblyQualifiedName();
+
+        var result = JsonSerializer.Deserialize<Type>(JsonString(typeAlias), _options);
+
+        Assert.Equal(typeof(RegisteredPayload), result);
+    }
+
+    [Fact]
+    public void When_DeserializeRegisteredLegacyGenericCollectionTypeAlias_Then_ReturnsExpectedType()
+    {
+        var typeAlias = typeof(List<RegisteredPayload>).GetSimpleAssemblyQualifiedName();
+
+        var result = JsonSerializer.Deserialize<Type>(JsonString(typeAlias), _options);
+
+        Assert.Equal(typeof(List<RegisteredPayload>), result);
     }
 
     [Theory]
@@ -93,9 +114,25 @@ public sealed class WorkflowJsonTypeResolverTests
     [InlineData(typeof(System.Text.StringBuilder))]
     [InlineData(typeof(System.Text.StringBuilder[]))]
     [InlineData(typeof(List<System.Text.StringBuilder>))]
-    public void When_SerializeUnsupportedType_Then_ThrowsJsonException(Type type)
+    public void When_SerializeUnsupportedType_Then_EmitsLegacyTypeNameThatCannotBeDeserialized(Type type)
     {
-        Assert.Throws<JsonException>(() => JsonSerializer.Serialize(type, _options));
+        var json = JsonSerializer.Serialize(type, _options);
+        var typeAlias = JsonSerializer.Deserialize<string>(json);
+
+        Assert.Equal(type.GetSimpleAssemblyQualifiedName(), typeAlias);
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<Type>(json, _options));
+    }
+
+    [Fact]
+    public void When_SerializePolymorphicObjectWithUnregisteredType_Then_OmitsTypeMetadata()
+    {
+        var json = JsonSerializer.Serialize<object>(new UnregisteredPayload { Name = "Alice" }, _options);
+
+        var result = JsonSerializer.Deserialize<object>(json, _options);
+
+        Assert.DoesNotContain("\"_type\"", json);
+        var payload = Assert.IsAssignableFrom<IDictionary<string, object>>(result);
+        Assert.Equal("Alice", payload["name"]);
     }
 
     [Fact]
@@ -220,6 +257,11 @@ public sealed class WorkflowJsonTypeResolverTests
     };
 
     public sealed class RegisteredPayload
+    {
+        public string? Name { get; set; }
+    }
+
+    public sealed class UnregisteredPayload
     {
         public string? Name { get; set; }
     }

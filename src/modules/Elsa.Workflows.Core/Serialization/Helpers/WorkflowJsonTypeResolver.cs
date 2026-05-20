@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
+using System.Reflection;
 using System.Text.Json;
 using Elsa.Expressions.Contracts;
+using Elsa.Extensions;
 
 namespace Elsa.Workflows.Serialization.Helpers;
 
@@ -64,6 +66,12 @@ public static class WorkflowJsonTypeResolver
         if (TryResolveGenericCollectionType(wellKnownTypeRegistry, typeAlias, out var genericCollectionType))
         {
             type = genericCollectionType;
+            return true;
+        }
+
+        if (TryResolveRegisteredLegacyTypeName(wellKnownTypeRegistry, typeAlias, out var legacyType))
+        {
+            type = legacyType;
             return true;
         }
 
@@ -164,5 +172,103 @@ public static class WorkflowJsonTypeResolver
 
         alias = null!;
         return false;
+    }
+
+    private static bool TryResolveRegisteredLegacyTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
+    {
+        var registeredTypes = wellKnownTypeRegistry.ListTypes().ToArray();
+
+        if (TryResolveRegisteredSimpleAssemblyQualifiedName(registeredTypes, typeAlias, out type))
+            return true;
+
+        if (TryResolveLegacyGenericCollectionTypeName(wellKnownTypeRegistry, typeAlias, out type))
+            return true;
+
+        Type? resolvedType;
+
+        try
+        {
+            resolvedType = Type.GetType(
+                typeAlias,
+                assemblyName => ResolveAssembly(registeredTypes, assemblyName),
+                (assembly, typeName, ignoreCase) => ResolveType(registeredTypes, assembly, typeName, ignoreCase),
+                false);
+        }
+        catch (Exception e) when (e is ArgumentException or FileLoadException)
+        {
+            resolvedType = null;
+        }
+
+        type = resolvedType!;
+        return resolvedType != null;
+    }
+
+    private static bool TryResolveRegisteredSimpleAssemblyQualifiedName(IEnumerable<Type> registeredTypes, string typeAlias, out Type type)
+    {
+        type = registeredTypes.FirstOrDefault(x =>
+            string.Equals(x.GetSimpleAssemblyQualifiedName(), typeAlias, StringComparison.Ordinal) ||
+            string.Equals(x.AssemblyQualifiedName, typeAlias, StringComparison.Ordinal))!;
+
+        return type != null;
+    }
+
+    private static bool TryResolveLegacyGenericCollectionTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
+    {
+        type = null!;
+
+        foreach (var genericTypeDefinition in GenericCollectionTypes.Values)
+        {
+            var prefix = $"{genericTypeDefinition.FullName}[[";
+            var separatorIndex = typeAlias.LastIndexOf("]], ", StringComparison.Ordinal);
+
+            if (!typeAlias.StartsWith(prefix, StringComparison.Ordinal) || separatorIndex <= prefix.Length)
+                continue;
+
+            var assemblyName = typeAlias[(separatorIndex + 4)..].Split(',')[0];
+            if (!string.Equals(assemblyName, genericTypeDefinition.Assembly.GetName().Name, StringComparison.Ordinal))
+                continue;
+
+            var elementTypeAlias = typeAlias[prefix.Length..separatorIndex];
+            if (!TryResolveType(wellKnownTypeRegistry, elementTypeAlias, out var elementType))
+                return false;
+
+            // The resolver only closes known collection definitions over registered element types.
+#pragma warning disable IL2055
+            type = genericTypeDefinition.MakeGenericType(elementType);
+#pragma warning restore IL2055
+            return true;
+        }
+
+        return false;
+    }
+
+    private static Assembly? ResolveAssembly(IEnumerable<Type> registeredTypes, AssemblyName assemblyName)
+    {
+        var coreLibAssembly = typeof(List<>).Assembly;
+        if (AssemblyName.ReferenceMatchesDefinition(coreLibAssembly.GetName(), assemblyName))
+            return coreLibAssembly;
+
+        return registeredTypes
+            .Select(x => x.Assembly)
+            .Distinct()
+            .FirstOrDefault(x => AssemblyName.ReferenceMatchesDefinition(x.GetName(), assemblyName));
+    }
+
+    private static Type? ResolveType(IEnumerable<Type> registeredTypes, Assembly? assembly, string typeName, bool ignoreCase)
+    {
+        if (assembly == typeof(List<>).Assembly)
+        {
+            var genericCollectionType = GenericCollectionTypes.Values.FirstOrDefault(x =>
+                x.FullName != null && string.Equals(x.FullName, typeName, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
+
+            if (genericCollectionType != null)
+                return genericCollectionType;
+        }
+
+        return registeredTypes.FirstOrDefault(x =>
+            x.Assembly == assembly &&
+            x.FullName != null &&
+            (string.Equals(x.FullName, typeName, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ||
+             string.Equals(x.FullName.Replace('+', '.'), typeName, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal)));
     }
 }

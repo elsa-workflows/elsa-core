@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
+using Elsa.Extensions;
 using Elsa.Workflows.Serialization.Helpers;
 using JetBrains.Annotations;
 
@@ -36,11 +37,10 @@ public class TypeJsonConverter : JsonConverter<Type>
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, Type value, JsonSerializerOptions options)
     {
-        if (!WorkflowJsonTypeResolver.TryGetAlias(_wellKnownTypeRegistry, value, out var alias))
-        {
-            throw new JsonException($"Type '{value.FullName}' does not have a registered or supported workflow JSON type alias.");
-        }
+        var typeAlias = WorkflowJsonTypeResolver.TryGetAlias(_wellKnownTypeRegistry, value, out var alias)
+            ? alias
+            : value.GetSimpleAssemblyQualifiedName();
 
-        writer.WriteStringValue(alias);
+        writer.WriteStringValue(typeAlias);
     }
 }

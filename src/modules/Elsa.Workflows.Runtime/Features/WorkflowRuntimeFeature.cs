@@ -430,6 +430,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         options.RegisterTypeAlias(typeof(RunTaskBookmarkPayload), nameof(RunTaskBookmarkPayload));
         options.RegisterTypeAlias(typeof(BookmarkTokenPayload), nameof(BookmarkTokenPayload));
         options.RegisterTypeAlias(typeof(EventTokenPayload), nameof(EventTokenPayload));
+        options.RegisterTypeAlias(typeof(ExecuteWorkflowResult), nameof(ExecuteWorkflowResult));
         options.RegisterTypeAlias(typeof(WorkflowInterruptedPayload), nameof(WorkflowInterruptedPayload));
         options.RegisterTypeAlias(typeof(BackgroundActivityStimulus), nameof(BackgroundActivityStimulus));
         options.RegisterTypeAlias(typeof(BulkDispatchWorkflowsStimulus), nameof(BulkDispatchWorkflowsStimulus));

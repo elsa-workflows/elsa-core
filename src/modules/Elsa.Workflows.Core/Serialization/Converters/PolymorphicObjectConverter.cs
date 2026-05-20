@@ -219,8 +219,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         {
             writer.WriteStartObject();
             writer.WriteString(IslandPropertyName, value.ToString());
-            writer.WritePropertyName(TypePropertyName);
-            WriteType(writer, type, newOptions);
+            WriteTypeMetadata(writer, type);
             writer.WriteEndObject();
             return;
         }
@@ -291,10 +290,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         if (type != typeof(ExpandoObject))
         {
             if (shouldWriteTypeField)
-            {
-                writer.WritePropertyName(TypePropertyName);
-                WriteType(writer, type, newOptions);
-            }
+                WriteTypeMetadata(writer, type);
         }
 
         writer.WriteEndObject();
@@ -355,10 +351,13 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         return typeName != null ? WorkflowJsonTypeResolver.ResolveType(_wellKnownTypeRegistry, typeName) : default;
     }
 
-    private void WriteType(Utf8JsonWriter writer, Type type, JsonSerializerOptions options)
+    private void WriteTypeMetadata(Utf8JsonWriter writer, Type type)
     {
-        var typeJsonConverter = options.Converters.OfType<TypeJsonConverter>().FirstOrDefault() ?? new TypeJsonConverter(_wellKnownTypeRegistry);
-        typeJsonConverter.Write(writer, type, options);
+        if (!WorkflowJsonTypeResolver.TryGetAlias(_wellKnownTypeRegistry, type, out var typeAlias))
+            return;
+
+        writer.WritePropertyName(TypePropertyName);
+        writer.WriteStringValue(typeAlias);
     }
 
     private static object ReadPrimitive(ref Utf8JsonReader reader, JsonSerializerOptions options)
