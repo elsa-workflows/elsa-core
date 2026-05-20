@@ -1,4 +1,3 @@
-using System.Text;
 using Elsa.Identity.Options;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -53,7 +52,7 @@ public class ValidateIdentityTokenOptions : IValidateOptions<IdentityTokenOption
             return ValidateOptionsResult.Success;
         }
 
-        if (Encoding.ASCII.GetByteCount(signingKey) < MinimumSigningKeyByteLength)
+        if (!IsPrintableAscii(signingKey) || signingKey.Length < MinimumSigningKeyByteLength)
             return ValidateOptionsResult.Fail($"SigningKey must be at least {MinimumSigningKeyByteLength} ASCII characters long. Configure a secure random JWT signing key through configuration, environment variables, or a secrets manager.");
 
         return ValidateOptionsResult.Success;
@@ -63,4 +62,6 @@ public class ValidateIdentityTokenOptions : IValidateOptions<IdentityTokenOption
     {
         return _environment is not null && (_environment.IsDevelopment() || string.Equals(_environment.EnvironmentName, DemoEnvironmentName, StringComparison.OrdinalIgnoreCase));
     }
+
+    private static bool IsPrintableAscii(string value) => value.All(x => x is >= ' ' and <= '~');
 }

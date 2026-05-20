@@ -15,6 +15,7 @@ public class IdentityTokenOptionsValidationTests
         { options => options.SigningKey = string.Empty, "SigningKey is required" },
         { options => options.SigningKey = " ", "SigningKey is required" },
         { options => options.SigningKey = "short-signing-key", "at least 32 ASCII characters" },
+        { options => options.SigningKey = new string('é', 32), "at least 32 ASCII characters" },
         { options => options.SigningKey = "sufficiently-large-secret-signing-key", "known public default" },
         { options => options.SigningKey = "CHANGE_ME_TO_A_SECURE_RANDOM_KEY", "known public default" },
     };
@@ -41,6 +42,18 @@ public class IdentityTokenOptionsValidationTests
         var options = serviceProvider.GetRequiredService<IOptions<IdentityTokenOptions>>().Value;
 
         Assert.Equal("CHANGE_ME_TO_A_SECURE_RANDOM_KEY", options.SigningKey);
+    }
+
+    [Fact]
+    public void RejectsKnownDefaultSigningKeyInExplicitProductionMode()
+    {
+        using var serviceProvider = CreateServiceProvider(
+            options => options.SigningKey = "CHANGE_ME_TO_A_SECURE_RANDOM_KEY",
+            "Production");
+
+        var exception = Assert.Throws<OptionsValidationException>(() => _ = serviceProvider.GetRequiredService<IOptions<IdentityTokenOptions>>().Value);
+
+        Assert.Contains(exception.Failures, failure => failure.Contains("known public default"));
     }
 
     [Theory]
