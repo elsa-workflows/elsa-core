@@ -108,7 +108,8 @@ public static class WorkflowInstrumentation
     internal static void StopActivity(ActivityInstrumentationScope scope, ActivityExecutionContext context, Exception? exception)
     {
         var activity = scope.Activity;
-        var faulted = exception != null || context.Status == Workflows.ActivityStatus.Faulted;
+        var cancelled = exception is OperationCanceledException || context.Status == Workflows.ActivityStatus.Canceled;
+        var faulted = !cancelled && (exception != null || context.Status == Workflows.ActivityStatus.Faulted);
         var duration = Stopwatch.GetElapsedTime(scope.StartTimestamp).TotalSeconds;
 
         ActivityDuration.Record(duration, CreateActivityTags(context, faulted));
@@ -219,7 +220,6 @@ public static class WorkflowInstrumentation
             { ActivityFaulted, faulted }
         };
 
-        AddIfNotNull(ref tags, ActivityName, currentActivity.Name ?? context.ActivityDescriptor.DisplayName ?? context.ActivityDescriptor.Name);
         AddIfNotNull(ref tags, TenantId, context.WorkflowExecutionContext.Workflow.Identity.TenantId);
         return tags;
     }

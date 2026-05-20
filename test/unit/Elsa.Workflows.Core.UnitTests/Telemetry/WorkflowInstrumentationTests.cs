@@ -43,8 +43,25 @@ public class WorkflowInstrumentationTests
         Assert.Equal(activity.Type, tags[WorkflowInstrumentation.ActivityType]);
         Assert.Equal(ActivityStatus.Completed.ToString(), tags[WorkflowInstrumentation.ActivityStatus]);
         var activityDuration = Assert.Single(meterCapture.DoubleMeasurements, x => x.InstrumentName == "elsa.activity.duration" && x.Value >= 0);
-        Assert.Equal("Test activity", activityDuration.Tags[WorkflowInstrumentation.ActivityName]);
+        Assert.False(activityDuration.Tags.ContainsKey(WorkflowInstrumentation.ActivityName));
         Assert.Equal(false, activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]);
+    }
+
+    [Fact]
+    public async Task ActivityInvoker_Should_Not_Record_Faulted_Metric_When_Pipeline_Cancels()
+    {
+        using var activityCapture = new ActivityCapture();
+        using var meterCapture = new MeterCapture();
+        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var invoker = new ActivityInvoker(new CancellingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => invoker.InvokeAsync(context));
+
+        var span = Assert.Single(activityCapture.StoppedActivities);
+        Assert.Equal(ActivityStatusCode.Ok, span.Status);
+        var activityDuration = Assert.Single(meterCapture.DoubleMeasurements, x => x.InstrumentName == "elsa.activity.duration" && x.Value >= 0);
+        Assert.Equal(false, activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]);
+        Assert.Equal(ActivityStatus.Canceled.ToString(), activityDuration.Tags[WorkflowInstrumentation.ActivityStatus]);
     }
 
     [Fact]
@@ -198,6 +215,19 @@ public class WorkflowInstrumentationTests
         {
             context.JournalData["Outcomes"] = null!;
             throw new InvalidOperationException("Pipeline failed");
+        }
+    }
+
+    private sealed class CancellingActivityExecutionPipeline : IActivityExecutionPipeline
+    {
+        public ActivityMiddlewareDelegate Pipeline => _ => ValueTask.CompletedTask;
+
+        public ActivityMiddlewareDelegate Setup(Action<IActivityExecutionPipelineBuilder> setup) => Pipeline;
+
+        public Task ExecuteAsync(ActivityExecutionContext context)
+        {
+            context.TransitionTo(ActivityStatus.Canceled);
+            throw new OperationCanceledException();
         }
     }
 
