@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
@@ -11,6 +12,8 @@ namespace Elsa.Workflows.Serialization.Helpers;
 /// </summary>
 public static class WorkflowJsonTypeResolver
 {
+    private static readonly ConditionalWeakTable<IWellKnownTypeRegistry, RegisteredTypeSnapshot> RegisteredTypeSnapshots = new();
+
     private static readonly IDictionary<string, Type> GenericCollectionTypes = new Dictionary<string, Type>(StringComparer.Ordinal)
     {
         ["IEnumerable"] = typeof(IEnumerable<>),
@@ -176,7 +179,7 @@ public static class WorkflowJsonTypeResolver
 
     private static bool TryResolveRegisteredLegacyTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
     {
-        var registeredTypes = wellKnownTypeRegistry.ListTypes();
+        var registeredTypes = GetRegisteredTypes(wellKnownTypeRegistry);
 
         if (TryResolveRegisteredSimpleAssemblyQualifiedName(registeredTypes, typeAlias, out type))
             return true;
@@ -201,6 +204,11 @@ public static class WorkflowJsonTypeResolver
 
         type = resolvedType!;
         return resolvedType != null;
+    }
+
+    private static IReadOnlyList<Type> GetRegisteredTypes(IWellKnownTypeRegistry wellKnownTypeRegistry)
+    {
+        return RegisteredTypeSnapshots.GetValue(wellKnownTypeRegistry, registry => new(registry.ListTypes().ToArray())).Types;
     }
 
     private static bool TryResolveRegisteredSimpleAssemblyQualifiedName(IEnumerable<Type> registeredTypes, string typeAlias, out Type type)
@@ -271,4 +279,6 @@ public static class WorkflowJsonTypeResolver
             (string.Equals(x.FullName, typeName, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ||
              string.Equals(x.FullName.Replace('+', '.'), typeName, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal)));
     }
+
+    private sealed record RegisteredTypeSnapshot(IReadOnlyList<Type> Types);
 }

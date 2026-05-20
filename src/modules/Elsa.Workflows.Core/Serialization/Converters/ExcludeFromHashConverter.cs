@@ -40,7 +40,7 @@ public class ExcludeFromHashConverter : JsonConverter<object>
 
             var propertyValue = property.GetValue(value);
 
-            if (ShouldIgnoreProperty(jsonIgnoreAttribute, propertyValue))
+            if (ShouldIgnoreProperty(jsonIgnoreAttribute, property.PropertyType, propertyValue))
                 continue;
 
             writer.WritePropertyName(property.Name);
@@ -55,7 +55,7 @@ public class ExcludeFromHashConverter : JsonConverter<object>
         return attribute?.Condition == JsonIgnoreCondition.Always;
     }
 
-    private static bool ShouldIgnoreProperty(JsonIgnoreAttribute? attribute, object? value)
+    private static bool ShouldIgnoreProperty(JsonIgnoreAttribute? attribute, Type declaredType, object? value)
     {
         return attribute?.Condition switch
         {
@@ -63,15 +63,14 @@ public class ExcludeFromHashConverter : JsonConverter<object>
             JsonIgnoreCondition.Never => false,
             JsonIgnoreCondition.Always => true,
             JsonIgnoreCondition.WhenWritingNull => value == null,
-            JsonIgnoreCondition.WhenWritingDefault => value == null || IsDefaultValue(value),
+            JsonIgnoreCondition.WhenWritingDefault => value == null || IsDefaultValue(declaredType, value),
             _ => throw new JsonException($"Unsupported JSON ignore condition '{attribute.Condition}'.")
         };
     }
 
-    private static bool IsDefaultValue(object value)
+    private static bool IsDefaultValue(Type declaredType, object value)
     {
-        var type = value.GetType();
-        return type.IsValueType && value.Equals(Activator.CreateInstance(type));
+        return declaredType.IsValueType && value.Equals(Activator.CreateInstance(declaredType));
     }
     
     private JsonSerializerOptions GetClonedOptions(JsonSerializerOptions options)

@@ -60,6 +60,14 @@ public class ExcludeFromHashConverterTests
         Assert.DoesNotContain("\"Secret\"", json);
     }
 
+    [Fact]
+    public void Write_IncludesNullableValueTypeWithDefaultUnderlyingValue_WhenIgnoringDefaults()
+    {
+        var json = JsonSerializer.Serialize<object>(new DefaultIgnoreNullableModel { Count = 0 }, _options);
+
+        Assert.Contains("\"Count\":0", json);
+    }
+
     private sealed class ConditionalIgnoreModel
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -87,5 +95,11 @@ public class ExcludeFromHashConverterTests
     {
         [JsonIgnore]
         public string Secret => throw new InvalidOperationException();
+    }
+
+    private sealed class DefaultIgnoreNullableModel
+    {
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public int? Count { get; set; }
     }
 }

@@ -63,6 +63,7 @@ public class AlterationsFeature : FeatureBase
         Services.Configure<ExpressionOptions>(options =>
         {
             options.RegisterTypeAlias(typeof(AlterationPlanParams), typeof(AlterationPlanParams).GetSimpleAssemblyQualifiedName());
+            options.RegisterTypeAlias(typeof(AlterationPlanParams), nameof(AlterationPlanParams));
         });
 
         Services.AddScoped<IAlterationPlanManager, AlterationPlanManager>();
