@@ -19,6 +19,6 @@ public class ProcessWorkflowDispatchOutbox(IWorkflowDispatchOutboxProcessor proc
         if (!notification.WorkflowState.HasWorkflowDispatchOutboxItems())
             return;
 
-        await processor.ProcessAsync(cancellationToken);
+        await processor.TryProcessAsync(cancellationToken);
     }
 }

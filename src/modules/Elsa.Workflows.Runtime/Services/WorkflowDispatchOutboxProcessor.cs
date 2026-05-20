@@ -32,22 +32,42 @@ public class WorkflowDispatchOutboxProcessor(
     {
         await using (await distributedLockProvider.AcquireLockAsync(LockResource, distributedLockingOptions.Value.LockAcquisitionTimeout, cancellationToken))
         {
-            var items = (await store.FindManyAsync(cancellationToken)).OrderBy(x => x.CreatedAt).ToList();
+            await ProcessPendingItemsAsync(cancellationToken);
+        }
+    }
 
-            foreach (var item in items)
+    /// <inheritdoc />
+    public async Task<bool> TryProcessAsync(CancellationToken cancellationToken = default)
+    {
+        await using var handle = await distributedLockProvider.TryAcquireLockAsync(LockResource, TimeSpan.Zero, cancellationToken);
+
+        if (handle == null)
+        {
+            logger.LogDebug("Skipping eager workflow dispatch outbox processing because another processor owns the lock.");
+            return false;
+        }
+
+        await ProcessPendingItemsAsync(cancellationToken);
+        return true;
+    }
+
+    private async Task ProcessPendingItemsAsync(CancellationToken cancellationToken)
+    {
+        var items = (await store.FindManyAsync(cancellationToken)).OrderBy(x => x.CreatedAt).ToList();
+
+        foreach (var item in items)
+        {
+            try
             {
-                try
-                {
-                    await ProcessAsync(item, cancellationToken);
-                }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                {
-                    throw;
-                }
-                catch (Exception e) when (e is not OperationCanceledException)
-                {
-                    await HandleDeliveryFailureAsync(item, e, cancellationToken);
-                }
+                await ProcessAsync(item, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                await HandleDeliveryFailureAsync(item, e, cancellationToken);
             }
         }
     }

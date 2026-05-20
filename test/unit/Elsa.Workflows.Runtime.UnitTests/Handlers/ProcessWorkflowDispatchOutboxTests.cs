@@ -25,7 +25,7 @@ public class ProcessWorkflowDispatchOutboxTests
 
         await handler.HandleAsync(notification, CancellationToken.None);
 
-        await _processor.DidNotReceive().ProcessAsync(Arg.Any<CancellationToken>());
+        await _processor.DidNotReceive().TryProcessAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public class ProcessWorkflowDispatchOutboxTests
 
         await handler.HandleAsync(notification, CancellationToken.None);
 
-        await _processor.Received(1).ProcessAsync(CancellationToken.None);
+        await _processor.Received(1).TryProcessAsync(CancellationToken.None);
     }
 
     private ProcessWorkflowDispatchOutbox CreateHandler() => new(_processor, Microsoft.Extensions.Options.Options.Create(_options));
