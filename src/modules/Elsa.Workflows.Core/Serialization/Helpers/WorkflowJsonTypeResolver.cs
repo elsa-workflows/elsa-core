@@ -22,8 +22,12 @@ public static class WorkflowJsonTypeResolver
         ["Collection"] = typeof(Collection<>)
     };
 
-    private static readonly IDictionary<Type, string> GenericCollectionAliases =
-        GenericCollectionTypes.ToDictionary(x => x.Value, x => x.Key);
+    private static readonly IDictionary<Type, string> GenericCollectionAliases = new Dictionary<Type, string>
+    {
+        [typeof(List<>)] = "List",
+        [typeof(HashSet<>)] = "HashSet",
+        [typeof(Collection<>)] = "Collection"
+    };
 
     /// <summary>
     /// Resolves the specified workflow JSON type alias.
@@ -90,7 +94,7 @@ public static class WorkflowJsonTypeResolver
         {
             var genericTypeDefinition = type.GetGenericTypeDefinition();
 
-            if (GenericCollectionAliases.TryGetValue(genericTypeDefinition, out var genericTypeAlias) &&
+            if (TryGetWritableGenericCollectionAlias(genericTypeDefinition, out var genericTypeAlias) &&
                 TryGetAlias(wellKnownTypeRegistry, type.GenericTypeArguments[0], out var elementTypeAlias))
             {
                 alias = $"{genericTypeAlias}<{elementTypeAlias}>";
@@ -122,7 +126,7 @@ public static class WorkflowJsonTypeResolver
         type = null!;
         var genericStart = typeAlias.IndexOf('<', StringComparison.Ordinal);
 
-        if (genericStart <= 0 || !typeAlias.EndsWith('>'))
+        if (genericStart <= 0 || !typeAlias.EndsWith(">", StringComparison.Ordinal))
             return false;
 
         var genericTypeAlias = typeAlias[..genericStart];
@@ -135,5 +139,30 @@ public static class WorkflowJsonTypeResolver
 
         type = genericTypeDefinition.MakeGenericType(elementType);
         return true;
+    }
+
+    private static bool TryGetWritableGenericCollectionAlias(Type genericTypeDefinition, out string alias)
+    {
+        if (GenericCollectionAliases.TryGetValue(genericTypeDefinition, out alias!))
+            return true;
+
+        if (genericTypeDefinition == typeof(ISet<>))
+        {
+            alias = "HashSet";
+            return true;
+        }
+
+        if (genericTypeDefinition == typeof(IEnumerable<>) ||
+            genericTypeDefinition == typeof(ICollection<>) ||
+            genericTypeDefinition == typeof(IList<>) ||
+            genericTypeDefinition == typeof(IReadOnlyCollection<>) ||
+            genericTypeDefinition == typeof(IReadOnlyList<>))
+        {
+            alias = "List";
+            return true;
+        }
+
+        alias = null!;
+        return false;
     }
 }

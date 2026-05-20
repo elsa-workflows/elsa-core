@@ -2,7 +2,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Expressions.Options;
 using Elsa.Expressions.Services;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.State;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.Core.UnitTests.Serialization.Converters;
@@ -15,6 +17,8 @@ public sealed class WorkflowJsonTypeResolverTests
 
     public WorkflowJsonTypeResolverTests()
     {
+        _wellKnownTypeRegistry.RegisterType(typeof(ExceptionState), nameof(ExceptionState));
+        _wellKnownTypeRegistry.RegisterType(typeof(FaultException), nameof(FaultException));
         _wellKnownTypeRegistry.RegisterType(typeof(RegisteredPayload), "RegisteredPayload");
         _options = CreateOptions(_wellKnownTypeRegistry);
     }
@@ -26,6 +30,8 @@ public sealed class WorkflowJsonTypeResolverTests
     [InlineData("List<String>", typeof(List<string>))]
     [InlineData("List<String[]>", typeof(List<string[]>))]
     [InlineData("List<List<String>>", typeof(List<List<string>>))]
+    [InlineData("ExceptionState", typeof(ExceptionState))]
+    [InlineData("FaultException", typeof(FaultException))]
     [InlineData("ObjectDictionary", typeof(IDictionary<string, object>))]
     public void When_DeserializeRegisteredTypeAlias_Then_ReturnsExpectedType(string typeAlias, Type expectedType)
     {
@@ -41,7 +47,8 @@ public sealed class WorkflowJsonTypeResolverTests
     [InlineData(typeof(List<string>), "List<String>")]
     [InlineData(typeof(List<string[]>), "List<String[]>")]
     [InlineData(typeof(List<List<string>>), "List<List<String>>")]
-    [InlineData(typeof(IReadOnlyList<string>), "IReadOnlyList<String>")]
+    [InlineData(typeof(ExceptionState), "ExceptionState")]
+    [InlineData(typeof(FaultException), "FaultException")]
     public void When_SerializeSupportedType_Then_EmitsAliasThatCanBeDeserialized(Type type, string expectedAlias)
     {
         var json = JsonSerializer.Serialize(type, _options);
@@ -50,6 +57,23 @@ public sealed class WorkflowJsonTypeResolverTests
 
         Assert.Equal(expectedAlias, alias);
         Assert.Equal(type, result);
+    }
+
+    [Theory]
+    [InlineData(typeof(IEnumerable<string>), "List<String>", typeof(List<string>))]
+    [InlineData(typeof(ICollection<string>), "List<String>", typeof(List<string>))]
+    [InlineData(typeof(IList<string>), "List<String>", typeof(List<string>))]
+    [InlineData(typeof(IReadOnlyCollection<string>), "List<String>", typeof(List<string>))]
+    [InlineData(typeof(IReadOnlyList<string>), "List<String>", typeof(List<string>))]
+    [InlineData(typeof(ISet<string>), "HashSet<String>", typeof(HashSet<string>))]
+    public void When_SerializeInterfaceCollectionType_Then_EmitsInstantiableAlias(Type type, string expectedAlias, Type expectedRoundTripType)
+    {
+        var json = JsonSerializer.Serialize(type, _options);
+        var alias = JsonSerializer.Deserialize<string>(json);
+        var result = JsonSerializer.Deserialize<Type>(json, _options);
+
+        Assert.Equal(expectedAlias, alias);
+        Assert.Equal(expectedRoundTripType, result);
     }
 
     [Theory]

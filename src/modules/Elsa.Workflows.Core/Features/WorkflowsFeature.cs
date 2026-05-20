@@ -10,6 +10,7 @@ using Elsa.Features.Services;
 using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Builders;
 using Elsa.Workflows.CommitStates;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.LogPersistence.Strategies;
@@ -22,6 +23,7 @@ using Elsa.Workflows.Serialization.Configurators;
 using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Serialization.Serializers;
 using Elsa.Workflows.Services;
+using Elsa.Workflows.State;
 using Elsa.Workflows.UIHints.CheckList;
 using Elsa.Workflows.UIHints.Dictionary;
 using Elsa.Workflows.UIHints.Dropdown;
@@ -163,6 +165,8 @@ public class WorkflowsFeature : FeatureBase
     {
         services.Configure<ExpressionOptions>(options =>
         {
+            options.RegisterTypeAlias(typeof(ExceptionState), nameof(ExceptionState));
+            options.RegisterTypeAlias(typeof(FaultException), nameof(FaultException));
             options.RegisterTypeAlias(typeof(JObject), nameof(JObject));
             options.RegisterTypeAlias(typeof(JArray), nameof(JArray));
         });

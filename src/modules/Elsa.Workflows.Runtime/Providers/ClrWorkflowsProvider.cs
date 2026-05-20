@@ -1,4 +1,6 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Expressions.Contracts;
+using Elsa.Extensions;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Runtime.Features;
 using Elsa.Workflows.Runtime.Options;
@@ -13,6 +15,7 @@ namespace Elsa.Workflows.Runtime.Providers;
 [UsedImplicitly]
 public class ClrWorkflowsProvider(
     IOptions<RuntimeOptions> options,
+    IWellKnownTypeRegistry wellKnownTypeRegistry,
     IWorkflowBuilderFactory workflowBuilderFactory,
     IServiceProvider serviceProvider) : IWorkflowsProvider
 {
@@ -32,6 +35,7 @@ public class ClrWorkflowsProvider(
         var builder = workflowBuilderFactory.CreateBuilder();
         var workflowBuilder = await workflowFactory(serviceProvider);
         var workflowBuilderType = workflowBuilder.GetType();
+        wellKnownTypeRegistry.RegisterType(workflowBuilderType, workflowBuilderType.GetSimpleAssemblyQualifiedName());
         await workflowBuilder.BuildAsync(builder, cancellationToken);
         var workflow = await builder.BuildWorkflowAsync(cancellationToken);
         var versionSuffix = $"v{workflow.Version}";
