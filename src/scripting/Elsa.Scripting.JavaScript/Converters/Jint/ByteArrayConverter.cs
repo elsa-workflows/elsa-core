@@ -11,14 +11,15 @@ namespace Elsa.Scripting.JavaScript.Converters.Jint
     {
         public bool TryConvert(Engine engine, object value, out JsValue result)
         {
-            result = JsValue.Null;
-            
-            if (value is not byte[] buffer)
-                return false;
+            if (value is byte[] bytes)
+            {
+                var buffer = engine.Intrinsics.ArrayBuffer.Construct(bytes);
+                result = buffer;
+                return true;
+            }
 
-            result = new ObjectWrapper(engine, buffer);
-            
-            return true;
+            result = JsValue.Null;
+            return false;
         }
     }
 }
