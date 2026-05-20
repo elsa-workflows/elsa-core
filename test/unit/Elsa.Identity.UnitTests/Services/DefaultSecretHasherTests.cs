@@ -56,6 +56,17 @@ public class DefaultSecretHasherTests
     }
 
     [Fact]
+    public void VerifySecret_WithCorrectPasswordAndLowerIterationCount_RequestsRehash()
+    {
+        var hashedSecret = CreatePbkdf2Hash("secret", 1);
+
+        var verified = _hasher.VerifySecret("secret", hashedSecret, out var needsRehash);
+
+        Assert.True(verified);
+        Assert.True(needsRehash);
+    }
+
+    [Fact]
     public void VerifySecret_RejectsPbkdf2HashWithExcessiveIterations()
     {
         var salt = _hasher.GenerateSalt();
@@ -74,6 +85,17 @@ public class DefaultSecretHasherTests
         var salt = _hasher.GenerateSalt();
         var storedHash = Encoding.UTF8.GetBytes("pbkdf2-sha256$600000$" + Convert.ToBase64String(RandomNumberGenerator.GetBytes(16)));
         var hashedSecret = HashedSecret.FromBytes(storedHash, salt);
+
+        var verified = _hasher.VerifySecret("secret", hashedSecret, out var needsRehash);
+
+        Assert.False(verified);
+        Assert.False(needsRehash);
+    }
+
+    [Fact]
+    public void VerifySecret_RejectsMalformedLegacyHashWithInvalidKeyLength()
+    {
+        var hashedSecret = HashedSecret.FromBytes(RandomNumberGenerator.GetBytes(16), _hasher.GenerateSalt());
 
         var verified = _hasher.VerifySecret("secret", hashedSecret, out var needsRehash);
 
@@ -148,6 +170,8 @@ public class DefaultSecretHasherTests
         var validatedUser = await validator.ValidateAsync("alice", "secret");
 
         Assert.Same(user, validatedUser);
+        Assert.Equal(legacyHash.EncodeSecret(), user.HashedPassword);
+        Assert.Equal(legacyHash.EncodeSalt(), user.HashedPasswordSalt);
     }
 
     [Fact]
@@ -193,6 +217,8 @@ public class DefaultSecretHasherTests
         var validatedApplication = await validator.ValidateAsync(apiKey);
 
         Assert.Same(application, validatedApplication);
+        Assert.Equal(legacyHash.EncodeSecret(), application.HashedApiKey);
+        Assert.Equal(legacyHash.EncodeSalt(), application.HashedApiKeySalt);
     }
 
     [Fact]

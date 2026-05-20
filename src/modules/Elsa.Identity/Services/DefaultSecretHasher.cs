@@ -65,6 +65,12 @@ public class DefaultSecretHasher : ISecretHasher
         }
 
         var legacyHash = HashLegacySha256(passwordBytes, salt);
+        if (password.Length != legacyHash.Length)
+        {
+            needsRehash = false;
+            return false;
+        }
+
         var isLegacyMatch = CryptographicOperations.FixedTimeEquals(legacyHash, password);
         needsRehash = isLegacyMatch;
         return isLegacyMatch;
@@ -88,7 +94,10 @@ public class DefaultSecretHasher : ISecretHasher
 
     private static byte[] HashLegacySha256(byte[] secret, byte[] salt)
     {
-        return SHA256.HashData(secret.Concat(salt).ToArray());
+        using var sha256 = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        sha256.AppendData(secret);
+        sha256.AppendData(salt);
+        return sha256.GetHashAndReset();
     }
 
     private static bool TryReadPbkdf2Hash(byte[] secret, out int iterationCount, out byte[] hash)

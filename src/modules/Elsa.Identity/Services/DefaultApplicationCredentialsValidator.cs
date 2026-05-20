@@ -62,6 +62,8 @@ public class DefaultApplicationCredentialsValidator : IApplicationCredentialsVal
 
         if (needsRehash && _applicationStore != null)
         {
+            var previousHashedApiKey = application.HashedApiKey;
+            var previousHashedApiKeySalt = application.HashedApiKeySalt;
             var hashedApiKey = _secretHasher.HashSecret(apiKey);
             application.HashedApiKey = hashedApiKey.EncodeSecret();
             application.HashedApiKeySalt = hashedApiKey.EncodeSalt();
@@ -69,8 +71,16 @@ public class DefaultApplicationCredentialsValidator : IApplicationCredentialsVal
             {
                 await _applicationStore.SaveAsync(application, cancellationToken);
             }
-            catch (Exception e)
+            catch (OperationCanceledException)
             {
+                application.HashedApiKey = previousHashedApiKey;
+                application.HashedApiKeySalt = previousHashedApiKeySalt;
+                throw;
+            }
+            catch (InvalidOperationException e)
+            {
+                application.HashedApiKey = previousHashedApiKey;
+                application.HashedApiKeySalt = previousHashedApiKeySalt;
                 _logger.LogWarning(e, "Failed to save upgraded API key hash for application {ApplicationId}.", application.Id);
             }
         }

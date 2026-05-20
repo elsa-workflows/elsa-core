@@ -56,6 +56,8 @@ public class DefaultUserCredentialsValidator : IUserCredentialsValidator
 
         if (needsRehash && _userStore != null)
         {
+            var previousHashedPassword = user.HashedPassword;
+            var previousHashedPasswordSalt = user.HashedPasswordSalt;
             var hashedPassword = _secretHasher.HashSecret(password);
             user.HashedPassword = hashedPassword.EncodeSecret();
             user.HashedPasswordSalt = hashedPassword.EncodeSalt();
@@ -63,8 +65,16 @@ public class DefaultUserCredentialsValidator : IUserCredentialsValidator
             {
                 await _userStore.SaveAsync(user, cancellationToken);
             }
+            catch (OperationCanceledException)
+            {
+                user.HashedPassword = previousHashedPassword;
+                user.HashedPasswordSalt = previousHashedPasswordSalt;
+                throw;
+            }
             catch (Exception e)
             {
+                user.HashedPassword = previousHashedPassword;
+                user.HashedPasswordSalt = previousHashedPasswordSalt;
                 _logger.LogWarning(e, "Failed to save upgraded password hash for user {UserId}.", user.Id);
             }
         }
