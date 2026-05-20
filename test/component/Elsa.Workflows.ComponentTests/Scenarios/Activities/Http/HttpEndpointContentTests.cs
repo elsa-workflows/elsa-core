@@ -8,6 +8,8 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Http;
 
 public class HttpEndpointContentTests(App app) : AppComponentTest(app)
 {
+    private const string RequestSizeLimitPath = "test/request-size-limit";
+
     [Fact]
     public async Task JsonContent_ValidJson_ReturnsEchoedJson()
     {
@@ -103,6 +105,37 @@ public class HttpEndpointContentTests(App app) : AppComponentTest(app)
         AssertOkResponseContains(response, responseContent, "No form data received");
     }
 
+    [Fact]
+    public async Task RequestSizeLimit_NoContentLengthOversizedBody_ReturnsPayloadTooLarge()
+    {
+        // Arrange
+        var client = WorkflowServer.CreateHttpWorkflowClient();
+        using var content = new NoLengthStringContent("0123456789", "text/plain");
+        Assert.Null(content.Headers.ContentLength);
+
+        // Act
+        var response = await client.PostAsync(RequestSizeLimitPath, content);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RequestSizeLimit_NoContentLengthSmallBody_ReturnsEchoedContent()
+    {
+        // Arrange
+        var client = WorkflowServer.CreateHttpWorkflowClient();
+        using var content = new NoLengthStringContent("small", "text/plain");
+        Assert.Null(content.Headers.ContentLength);
+
+        // Act
+        var response = await client.PostAsync(RequestSizeLimitPath, content);
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        AssertOkResponseContains(response, responseContent, "small");
+    }
+
     private async Task<HttpResponseMessage> PostJsonContentAsync(string jsonContent)
     {
         var client = WorkflowServer.CreateHttpWorkflowClient();
@@ -130,6 +163,29 @@ public class HttpEndpointContentTests(App app) : AppComponentTest(app)
         foreach (var fragment in expectedFragments)
         {
             Assert.Contains(fragment, responseContent);
+        }
+    }
+
+    private sealed class NoLengthStringContent : HttpContent
+    {
+        private readonly string _content;
+
+        public NoLengthStringContent(string content, string mediaType)
+        {
+            _content = content;
+            Headers.ContentType = new(mediaType);
+        }
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+        {
+            var bytes = Encoding.UTF8.GetBytes(_content);
+            return stream.WriteAsync(bytes, 0, bytes.Length);
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
         }
     }
 }
