@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
+using Elsa.Options;
 using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Requirements;
 using JetBrains.Annotations;
@@ -53,6 +54,11 @@ public class DefaultAuthenticationFeature : IShellFeature
         RestartRequired = true)]
     public bool UseDevelopmentAdminApiKey { get; set; }
 
+    /// <summary>
+    /// Gets or sets whether localhost requests may satisfy the security-root permission requirement without other credentials.
+    /// </summary>
+    public bool EnableLocalHostPermissionGrant { get; set; }
+
     public void ConfigureServices(IServiceCollection services)
     {
         var resolvedAdminApiKey = UseDevelopmentAdminApiKey ? AdminApiKeyProvider.DevelopmentApiKey : AdminApiKey;
@@ -61,6 +67,7 @@ public class DefaultAuthenticationFeature : IShellFeature
 
         services.ConfigureOptions<ConfigureJwtBearerOptions>();
         services.AddIdentityTokenOptionsValidation();
+        services.Configure<LocalHostPermissionRequirementOptions>(options => options.EnableLocalHostPermissionGrant = EnableLocalHostPermissionGrant);
         services.Configure<AdminApiKeyOptions>(options =>
         {
             options.ApiKey = resolvedAdminApiKey;
@@ -93,7 +100,10 @@ public class DefaultAuthenticationFeature : IShellFeature
 
         services.AddAuthorization(options =>
         {
-            options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.RequireAuthenticatedUser());
+            if (EnableLocalHostPermissionGrant)
+                options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostPermissionRequirement()));
+            else
+                options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.RequireAuthenticatedUser());
         });
     }
 }

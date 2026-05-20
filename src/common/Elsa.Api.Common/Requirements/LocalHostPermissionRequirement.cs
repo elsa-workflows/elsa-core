@@ -1,14 +1,16 @@
 using System.Security.Claims;
 using Elsa.Extensions;
+using Elsa.Options;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Requirements;
 
 /// <summary>
-/// Add the "create:application" permission to the current user if the request is local.
+/// Adds security-root bootstrap permissions to the current user when explicit localhost permission grants are enabled and the request is local.
 /// </summary>
 public class LocalHostPermissionRequirement : IAuthorizationRequirement
 {
@@ -18,32 +20,58 @@ public class LocalHostPermissionRequirement : IAuthorizationRequirement
 [PublicAPI]
 public class LocalHostPermissionRequirementHandler : AuthorizationHandler<LocalHostPermissionRequirement>
 {
+    private static readonly string[] BootstrapPermissions =
+    [
+        "create:application",
+        "create:user",
+        "create:role"
+    ];
+
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IOptions<LocalHostPermissionRequirementOptions> _options;
 
     /// <inheritdoc />
-    public LocalHostPermissionRequirementHandler(IHttpContextAccessor httpContextAccessor)
+    public LocalHostPermissionRequirementHandler(IHttpContextAccessor httpContextAccessor) : this(
+        httpContextAccessor,
+        Microsoft.Extensions.Options.Options.Create(new LocalHostPermissionRequirementOptions()))
+    {
+    }
+
+    /// <inheritdoc />
+    public LocalHostPermissionRequirementHandler(IHttpContextAccessor httpContextAccessor, IOptions<LocalHostPermissionRequirementOptions> options)
     {
         _httpContextAccessor = httpContextAccessor;
+        _options = options;
     }
 
     /// <inheritdoc />
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, LocalHostPermissionRequirement requirement)
     {
-        if (_httpContextAccessor.HttpContext?.Request.IsLocal() == false)
+        if (!_options.Value.EnableLocalHostPermissionGrant)
             return Task.CompletedTask;
-        
-        var currentIdentity = context.User.Identity;
 
-        if (currentIdentity?.IsAuthenticated == false)
+        if (_httpContextAccessor.HttpContext?.Request.IsLocal() != true)
+            return Task.CompletedTask;
+
+        if (context.User.Identities.Any(x => x.IsAuthenticated))
         {
-            var identity = new ClaimsIdentity(JwtBearerDefaults.AuthenticationScheme);
-            identity.AddClaim(new Claim("permissions", "create:application"));
-            identity.AddClaim(new Claim("permissions", "create:user"));
-            identity.AddClaim(new Claim("permissions", "create:role"));
-            context.User.AddIdentity(identity);
+            if (HasBootstrapPermissions(context.User))
+                context.Succeed(requirement);
+
+            return Task.CompletedTask;
         }
+
+        var identity = new ClaimsIdentity(JwtBearerDefaults.AuthenticationScheme);
+        identity.AddClaims(BootstrapPermissions.Select(permission => new Claim(PermissionNames.ClaimType, permission)));
+        context.User.AddIdentity(identity);
 
         context.Succeed(requirement);
         return Task.CompletedTask;
+    }
+
+    private static bool HasBootstrapPermissions(ClaimsPrincipal user)
+    {
+        var permissions = user.FindAll(PermissionNames.ClaimType).Select(x => x.Value).ToHashSet(StringComparer.Ordinal);
+        return permissions.Contains(PermissionNames.All) || BootstrapPermissions.All(permissions.Contains);
     }
 }
