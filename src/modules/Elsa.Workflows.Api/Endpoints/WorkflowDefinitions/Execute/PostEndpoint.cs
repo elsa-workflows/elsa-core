@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Elsa.Abstractions;
+using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
@@ -14,7 +15,8 @@ internal class PostEndpoint(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowRuntime workflowRuntime,
     IWorkflowStarter workflowStarter,
-    IApiSerializer apiSerializer)
+    IApiSerializer apiSerializer,
+    PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService)
     : ElsaEndpointWithoutRequest<Response>
 {
     /// <inheritdoc />
@@ -71,6 +73,7 @@ internal class PostEndpoint(
             workflowRuntime,
             workflowStarter,
             apiSerializer,
+            pythonAuthorizationService,
             HttpContext,
             cancellationToken);
     }

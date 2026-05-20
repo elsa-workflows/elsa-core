@@ -2,6 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
+using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
@@ -10,7 +11,12 @@ using Microsoft.AspNetCore.Authorization;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkPublish;
 
 [PublicAPI]
-internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IAuthorizationService authorizationService)
+internal class BulkPublish(
+    IWorkflowDefinitionStore store,
+    IWorkflowDefinitionPublisher workflowDefinitionPublisher,
+    IAuthorizationService authorizationService,
+    IWorkflowDefinitionService workflowDefinitionService,
+    PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService)
     : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
@@ -63,6 +69,14 @@ internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
                 continue;
             }
 
+            var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+            var pythonAuthorizationResult = await pythonAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, User, cancellationToken);
+            if (pythonAuthorizationResult != PythonWorkflowDefinitionAuthorizationResult.Allowed)
+            {
+                await PythonWorkflowDefinitionAuthorizationFailure.SendAsync(pythonAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+                return null!;
+            }
+
             var result = await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
             published.Add(definitionId);
             
@@ -72,4 +86,5 @@ internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
 
         return new(published, alreadyPublished, notFound, skipped, updatedConsumers);
     }
+
 }

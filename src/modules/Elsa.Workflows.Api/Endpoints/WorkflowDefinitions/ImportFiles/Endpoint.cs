@@ -2,6 +2,7 @@ using System.IO.Compression;
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
+using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
@@ -22,6 +23,7 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
     private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
     private readonly IApiSerializer _apiSerializer;
     private readonly IAuthorizationService _authorizationService;
+    private readonly PythonWorkflowDefinitionAuthorizationService _pythonAuthorizationService;
 
     /// <inheritdoc />
     public ImportFiles(
@@ -29,13 +31,15 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
         IWorkflowDefinitionImporter workflowDefinitionImporter,
         WorkflowDefinitionMapper workflowDefinitionMapper,
         IApiSerializer apiSerializer,
-        IAuthorizationService authorizationService)
+        IAuthorizationService authorizationService,
+        PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService)
     {
         _workflowDefinitionService = workflowDefinitionService;
         _workflowDefinitionImporter = workflowDefinitionImporter;
         _workflowDefinitionMapper = workflowDefinitionMapper;
         _apiSerializer = apiSerializer;
         _authorizationService = authorizationService;
+        _pythonAuthorizationService = pythonAuthorizationService;
     }
 
     /// <inheritdoc />
@@ -61,11 +65,11 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
         {
             var count = await ImportFilesAsync(Files, cancellationToken);
 
-            if (!ValidationFailed)
+            if (!ValidationFailed && !HttpContext.Response.HasStarted)
                 await Send.OkAsync(new { Count = count }, cancellationToken);
         }
 
-        if (ValidationFailed)
+        if (ValidationFailed && !HttpContext.Response.HasStarted)
             await Send.ErrorsAsync(400, cancellationToken);
     }
 
@@ -75,6 +79,9 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
 
         foreach (var file in files)
         {
+            if (HttpContext.Response.HasStarted)
+                return count;
+
             var fileStream = file.OpenReadStream();
 
             // Check if the file is a JSON file or a ZIP file.
@@ -115,6 +122,13 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
 
     private async Task<ImportWorkflowResult> ImportSingleWorkflowDefinitionAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
+        var pythonAuthorizationResult = await _pythonAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
+        if (pythonAuthorizationResult != PythonWorkflowDefinitionAuthorizationResult.Allowed)
+        {
+            await PythonWorkflowDefinitionAuthorizationFailure.SendAsync(pythonAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+            return new(false, null!, []);
+        }
+
         // Import workflow
         var saveWorkflowRequest = new SaveWorkflowDefinitionRequest
         {

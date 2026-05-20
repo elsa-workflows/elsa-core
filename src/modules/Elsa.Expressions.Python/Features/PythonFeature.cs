@@ -1,4 +1,5 @@
 using Elsa.Common.Features;
+using Elsa.Expressions.Python.ActivityDescriptorModifiers;
 using Elsa.Expressions.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -47,6 +48,7 @@ public class PythonFeature : FeatureBase
         Services
             .AddScoped<IPythonEvaluator, PythonNetPythonEvaluator>()
             .AddExpressionDescriptorProvider<PythonExpressionDescriptorProvider>()
+            .AddSingleton<IActivityDescriptorModifier, PythonActivityDescriptorModifier>()
             ;
 
         // Handlers.

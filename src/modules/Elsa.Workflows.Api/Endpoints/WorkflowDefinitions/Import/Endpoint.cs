@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
+using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
@@ -17,16 +18,19 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
     private readonly IWorkflowDefinitionLinker _linker;
     private readonly IAuthorizationService _authorizationService;
+    private readonly PythonWorkflowDefinitionAuthorizationService _pythonAuthorizationService;
 
     /// <inheritdoc />
     public Import(
         IWorkflowDefinitionImporter workflowDefinitionImporter,
         IWorkflowDefinitionLinker linker,
-        IAuthorizationService authorizationService)
+        IAuthorizationService authorizationService,
+        PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService)
     {
         _workflowDefinitionImporter = workflowDefinitionImporter;
         _linker = linker;
         _authorizationService = authorizationService;
+        _pythonAuthorizationService = pythonAuthorizationService;
     }
 
     /// <inheritdoc />
@@ -42,6 +46,14 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
     {
         var definitionId = model.DefinitionId;
         var isNew = string.IsNullOrWhiteSpace(definitionId);
+
+        var pythonAuthorizationResult = await _pythonAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
+        if (pythonAuthorizationResult != PythonWorkflowDefinitionAuthorizationResult.Allowed)
+        {
+            await PythonWorkflowDefinitionAuthorizationFailure.SendAsync(pythonAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+            return;
+        }
+
         var result = await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
         var definition = result.WorkflowDefinition;
 
@@ -86,4 +98,5 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
 
         return result;
     }
+
 }
