@@ -34,7 +34,7 @@ public class SimulateResponseEndpoint(SimulateResponseSessionStore sessionStore,
             return;
         }
 
-        var currentCode = nextIndex < codes.Length ? codes[nextIndex] : codes[^1];
+        var currentCode = codes[nextIndex];
         var message = StatusMessages.TryGetValue(currentCode, out var reason)
             ? reason
             : $"Status Code {currentCode}";

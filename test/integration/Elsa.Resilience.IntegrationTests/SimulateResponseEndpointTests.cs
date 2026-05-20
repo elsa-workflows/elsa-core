@@ -115,11 +115,11 @@ public class SimulateResponseEndpointTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.InternalServerError, acceptedAfterExpiration.StatusCode);
     }
 
-    private Task<HttpResponseMessage> GetAuthenticatedAsync(string requestUri)
+    private async Task<HttpResponseMessage> GetAuthenticatedAsync(string requestUri)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
         request.Headers.Add(TestAuthenticationHandler.PermissionHeader, "*");
-        return HttpClient.SendAsync(request);
+        return await HttpClient.SendAsync(request);
     }
 
     private sealed class TestTimeProvider : TimeProvider
