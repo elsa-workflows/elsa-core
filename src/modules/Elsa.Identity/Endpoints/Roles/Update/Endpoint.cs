@@ -8,7 +8,7 @@ namespace Elsa.Identity.Endpoints.Roles.Update;
 /// An endpoint that updates an existing role.
 /// </summary>
 [PublicAPI]
-internal class Update(IRoleStore roleStore) : ElsaEndpoint<Request, Response>
+internal class Update(IRoleStore roleStore, IRoleAuthorizationService roleAuthorizationService) : ElsaEndpoint<Request, Response>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -30,6 +30,12 @@ internal class Update(IRoleStore roleStore) : ElsaEndpoint<Request, Response>
         if (role == null)
         {
             await Send.NotFoundAsync(cancellationToken);
+            return;
+        }
+
+        if (!roleAuthorizationService.CanMutateRole(User, role, request.Permissions))
+        {
+            await Send.ForbiddenAsync(cancellationToken);
             return;
         }
 
