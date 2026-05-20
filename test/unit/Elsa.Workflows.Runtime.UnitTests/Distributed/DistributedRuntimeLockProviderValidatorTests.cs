@@ -72,6 +72,22 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     }
 
     [Fact]
+    public void Validate_IgnoresNullEntries_WhenProviderCollectionContainsNull()
+    {
+        var validator = CreateValidator(new NullableCompositeDistributedLockProvider([new CustomDistributedLockProvider(), null]));
+
+        validator.Validate();
+    }
+
+    [Fact]
+    public void Validate_IgnoresThrowingProviderProperties()
+    {
+        var validator = CreateValidator(new ThrowingPropertyDistributedLockProvider());
+
+        validator.Validate();
+    }
+
+    [Fact]
     public void Validate_UsesReferenceEquality_WhenProvidersOverrideEquality()
     {
         var validator = CreateValidator(new CompositeDistributedLockProvider([
@@ -144,6 +160,20 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         public IReadOnlyCollection<IDistributedLockProvider> Providers { get; } = providers;
 
         public IDistributedLock CreateLock(string name) => Providers.First().CreateLock(name);
+    }
+
+    private class NullableCompositeDistributedLockProvider(IReadOnlyCollection<IDistributedLockProvider?> providers) : IDistributedLockProvider
+    {
+        public IReadOnlyCollection<IDistributedLockProvider?> Providers { get; } = providers;
+
+        public IDistributedLock CreateLock(string name) => Providers.OfType<IDistributedLockProvider>().First().CreateLock(name);
+    }
+
+    private class ThrowingPropertyDistributedLockProvider : IDistributedLockProvider
+    {
+        public IDistributedLockProvider InnerProvider => throw new NotSupportedException("Property unavailable.");
+
+        public IDistributedLock CreateLock(string name) => new CustomDistributedLock(name);
     }
 
     private class CustomDistributedLockProvider : IDistributedLockProvider

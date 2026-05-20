@@ -185,16 +185,17 @@ Example Redis setup:
 
 ```csharp
 using Medallion.Threading.Redis;
+using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+    ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis")));
 
 elsa.UseWorkflowRuntime(runtime =>
 {
     runtime.UseDistributedRuntime();
-    runtime.DistributedLockProvider = _ =>
-    {
-        var connection = ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis"));
-        return new RedisDistributedSynchronizationProvider(connection.GetDatabase());
-    };
+    runtime.DistributedLockProvider = sp =>
+        new RedisDistributedSynchronizationProvider(sp.GetRequiredService<IConnectionMultiplexer>().GetDatabase());
 });
 ```
 

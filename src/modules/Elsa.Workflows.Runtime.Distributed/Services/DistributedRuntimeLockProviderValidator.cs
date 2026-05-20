@@ -93,7 +93,7 @@ public class DistributedRuntimeLockProviderValidator(
             {
                 value = property.GetValue(provider);
             }
-            catch (TargetInvocationException ex)
+            catch (Exception ex)
             {
                 logger.LogDebug(ex, "Skipping distributed lock provider property {PropertyName} because the getter threw.", property.Name);
                 continue;
@@ -105,7 +105,10 @@ public class DistributedRuntimeLockProviderValidator(
             if (value is IEnumerable<IDistributedLockProvider> innerProviders)
             {
                 foreach (var providerItem in innerProviders)
-                    yield return providerItem;
+                {
+                    if (providerItem != null)
+                        yield return providerItem;
+                }
             }
         }
     }
