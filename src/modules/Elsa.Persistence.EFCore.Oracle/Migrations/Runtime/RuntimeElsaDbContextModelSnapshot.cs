@@ -56,7 +56,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
@@ -90,7 +90,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                         .HasColumnType("NCLOB");
 
                     b.Property<string>("SerializedActivityStateCompressionAlgorithm")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NVARCHAR2(200)");
 
                     b.Property<string>("SerializedException")
                         .HasColumnType("NCLOB");
@@ -446,7 +446,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
 
                     b.Property<string>("ActivityNodeId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
@@ -459,7 +459,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Message")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("ParentActivityInstanceId")
                         .HasColumnType("NVARCHAR2(450)");
@@ -474,7 +474,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                         .HasColumnType("NCLOB");
 
                     b.Property<string>("Source")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("NVARCHAR2(450)");
@@ -582,7 +582,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                         .HasColumnType("NCLOB");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NVARCHAR2(200)");
 
                     b.Property<string>("WorkflowInstanceId")
                         .HasColumnType("NVARCHAR2(450)");
