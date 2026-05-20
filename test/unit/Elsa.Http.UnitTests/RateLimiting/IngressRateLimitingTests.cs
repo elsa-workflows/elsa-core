@@ -40,10 +40,12 @@ public class IngressRateLimitingTests
         Assert.Equal(HttpStatusCode.TooManyRequests, secondResponse.StatusCode);
     }
 
-    [Fact]
-    public async Task UseWorkflowsRateLimiting_NormalizesHttpWorkflowBasePath()
+    [Theory]
+    [InlineData("/workflows/")]
+    [InlineData("workflows")]
+    public async Task UseWorkflowsRateLimiting_NormalizesHttpWorkflowBasePath(string basePath)
     {
-        await using var app = await CreateAppAsync(app => app.UseWorkflowsRateLimiting("/workflows/", PolicyName));
+        await using var app = await CreateAppAsync(app => app.UseWorkflowsRateLimiting(basePath, PolicyName));
         var client = app.GetTestClient();
 
         var firstResponse = await client.GetAsync("/workflows/hello-world");
@@ -51,6 +53,32 @@ public class IngressRateLimitingTests
 
         Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
         Assert.Equal(HttpStatusCode.TooManyRequests, secondResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task UseWorkflowsApiRateLimiting_NormalizesRoutePrefixWhitespace()
+    {
+        await using var app = await CreateAppAsync(app => app.UseWorkflowsApiRateLimiting(" elsa/api ", PolicyName));
+        var client = app.GetTestClient();
+
+        var firstResponse = await client.GetAsync("/elsa/api/workflow-definitions");
+        var secondResponse = await client.GetAsync("/elsa/api/workflow-definitions");
+
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, secondResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task UseWorkflowsApiRateLimiting_DoesNotApplyWhitespaceOnlyRoutePrefixToAllPaths()
+    {
+        await using var app = await CreateAppAsync(app => app.UseWorkflowsApiRateLimiting("   ", PolicyName));
+        var client = app.GetTestClient();
+
+        var firstResponse = await client.GetAsync("/other/path");
+        var secondResponse = await client.GetAsync("/other/path");
+
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
     }
 
     [Fact]

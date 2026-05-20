@@ -55,7 +55,7 @@ public static class WebApplicationExtensions
         if (string.IsNullOrWhiteSpace(policyName))
             return app;
 
-        var pathPrefix = "/" + routePrefix.Trim('/');
+        var pathPrefix = NormalizeRoutePrefixPath(routePrefix);
         return app.UseRateLimitingPolicyForPath(pathPrefix, policyName, "Elsa API rate limiting endpoint");
     }
 
@@ -138,6 +138,13 @@ public static class WebApplicationExtensions
 
         if (policyFound == false)
             throw new InvalidOperationException($"Rate limiting policy '{policyName}' is not registered. Register the policy with services.AddRateLimiter(...) before applying Elsa rate limiting middleware.");
+    }
+
+    private static PathString NormalizeRoutePrefixPath(string routePrefix)
+    {
+        var value = routePrefix.Trim().Trim('/');
+
+        return string.IsNullOrEmpty(value) ? PathString.Empty : new PathString("/" + value);
     }
 
     private static bool? TryHasRateLimiterServices(IServiceProvider serviceProvider)

@@ -23,15 +23,26 @@ public static class ApplicationBuilderExtensions
     /// <param name="policyName">The registered ASP.NET Core rate limiting policy name. Leave empty to skip rate limiting.</param>
     public static IApplicationBuilder UseWorkflowsRateLimiting(this IApplicationBuilder app, PathString? basePath, string? policyName)
     {
-        if (string.IsNullOrWhiteSpace(policyName) || !basePath.HasValue)
-            return app;
-
-        return app.UseRateLimitingPolicyForPath(NormalizeBasePath(basePath.Value), policyName, "Elsa HTTP workflow trigger rate limiting endpoint");
+        return app.UseWorkflowsRateLimiting(basePath?.Value, policyName);
     }
 
-    private static PathString NormalizeBasePath(PathString basePath)
+    /// <summary>
+    /// Applies an ASP.NET Core rate limiting policy to inbound HTTP workflow trigger routes.
+    /// </summary>
+    /// <param name="app">The application builder.</param>
+    /// <param name="basePath">The HTTP workflow trigger base path to protect.</param>
+    /// <param name="policyName">The registered ASP.NET Core rate limiting policy name. Leave empty to skip rate limiting.</param>
+    public static IApplicationBuilder UseWorkflowsRateLimiting(this IApplicationBuilder app, string? basePath, string? policyName)
     {
-        var value = basePath.Value?.Trim();
+        if (string.IsNullOrWhiteSpace(policyName) || string.IsNullOrWhiteSpace(basePath))
+            return app;
+
+        return app.UseRateLimitingPolicyForPath(NormalizeBasePath(basePath), policyName, "Elsa HTTP workflow trigger rate limiting endpoint");
+    }
+
+    private static PathString NormalizeBasePath(string basePath)
+    {
+        var value = basePath.Trim();
 
         if (string.IsNullOrEmpty(value))
             return PathString.Empty;
