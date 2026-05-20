@@ -97,6 +97,16 @@ public class ZipManagerTests : IDisposable
         Assert.Empty(Directory.EnumerateFileSystemEntries(_cacheDirectory));
     }
 
+    [Fact]
+    public async Task CreateAsync_TooLongToken_DoesNotCacheFile()
+    {
+        var downloadId = new string('a', 129);
+
+        await CreateCachedZipAsync(downloadId, "cached zip");
+
+        Assert.Empty(Directory.EnumerateFileSystemEntries(_cacheDirectory));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_cacheDirectory))
