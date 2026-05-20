@@ -68,6 +68,7 @@ public class WorkflowInstanceFilterTimestampTests
 
         Assert.Contains("Invalid timestamp filter column", exception.Message);
         Assert.Contains("CreatedAt, UpdatedAt, FinishedAt", exception.Message);
+        Assert.Equal($"{nameof(WorkflowInstanceFilter.TimestampFilters)}.Column", exception.ParamName);
     }
 
     [Fact]

@@ -16,6 +16,7 @@ using SubmitEndpoint = Elsa.Alterations.Endpoints.Alterations.Submit.Submit;
 
 namespace Elsa.Alterations.IntegrationTests;
 
+[Collection(EndpointSecurityTestCollection.Name)]
 public class AlterationsApiTimestampFilterTests : IAsyncLifetime
 {
     private WebApplication? _app;
