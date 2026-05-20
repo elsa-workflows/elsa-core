@@ -20,13 +20,43 @@ public sealed class WorkflowJsonTypeResolverTests
     [Theory]
     [InlineData("String", typeof(string))]
     [InlineData("String[]", typeof(string[]))]
+    [InlineData("String[][]", typeof(string[][]))]
     [InlineData("List<String>", typeof(List<string>))]
+    [InlineData("List<String[]>", typeof(List<string[]>))]
+    [InlineData("List<List<String>>", typeof(List<List<string>>))]
     [InlineData("ObjectDictionary", typeof(IDictionary<string, object>))]
     public void When_DeserializeRegisteredTypeAlias_Then_ReturnsExpectedType(string typeAlias, Type expectedType)
     {
         var result = JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(typeAlias), _options);
 
         Assert.Equal(expectedType, result);
+    }
+
+    [Theory]
+    [InlineData(typeof(string), "String")]
+    [InlineData(typeof(string[]), "String[]")]
+    [InlineData(typeof(string[][]), "String[][]")]
+    [InlineData(typeof(List<string>), "List<String>")]
+    [InlineData(typeof(List<string[]>), "List<String[]>")]
+    [InlineData(typeof(List<List<string>>), "List<List<String>>")]
+    [InlineData(typeof(IReadOnlyList<string>), "IReadOnlyList<String>")]
+    public void When_SerializeSupportedType_Then_EmitsAliasThatCanBeDeserialized(Type type, string expectedAlias)
+    {
+        var json = JsonSerializer.Serialize(type, _options);
+        var alias = JsonSerializer.Deserialize<string>(json);
+        var result = JsonSerializer.Deserialize<Type>(json, _options);
+
+        Assert.Equal(expectedAlias, alias);
+        Assert.Equal(type, result);
+    }
+
+    [Theory]
+    [InlineData(typeof(System.Text.StringBuilder))]
+    [InlineData(typeof(System.Text.StringBuilder[]))]
+    [InlineData(typeof(List<System.Text.StringBuilder>))]
+    public void When_SerializeUnsupportedType_Then_ThrowsJsonException(Type type)
+    {
+        Assert.Throws<JsonException>(() => JsonSerializer.Serialize(type, _options));
     }
 
     [Fact]

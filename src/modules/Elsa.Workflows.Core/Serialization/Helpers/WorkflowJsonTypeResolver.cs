@@ -22,6 +22,9 @@ public static class WorkflowJsonTypeResolver
         ["Collection"] = typeof(Collection<>)
     };
 
+    private static readonly IDictionary<Type, string> GenericCollectionAliases =
+        GenericCollectionTypes.ToDictionary(x => x.Value, x => x.Key);
+
     /// <summary>
     /// Resolves the specified workflow JSON type alias.
     /// </summary>
@@ -30,16 +33,73 @@ public static class WorkflowJsonTypeResolver
         if (string.IsNullOrWhiteSpace(typeAlias))
             throw new JsonException("The workflow JSON type alias is missing.");
 
+        if (TryResolveType(wellKnownTypeRegistry, typeAlias, out var type))
+            return type;
+
+        throw new JsonException(
+            $"Unknown workflow JSON type alias '{typeAlias}'. Only registered aliases and supported compound aliases can be deserialized.");
+    }
+
+    /// <summary>
+    /// Attempts to resolve the specified workflow JSON type alias.
+    /// </summary>
+    public static bool TryResolveType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
+    {
         if (wellKnownTypeRegistry.TryGetType(typeAlias, out var registeredType))
-            return registeredType;
+        {
+            type = registeredType;
+            return true;
+        }
 
         if (TryResolveArrayType(wellKnownTypeRegistry, typeAlias, out var arrayType))
-            return arrayType;
+        {
+            type = arrayType;
+            return true;
+        }
 
         if (TryResolveGenericCollectionType(wellKnownTypeRegistry, typeAlias, out var genericCollectionType))
-            return genericCollectionType;
+        {
+            type = genericCollectionType;
+            return true;
+        }
 
-        throw new JsonException($"Unknown workflow JSON type alias '{typeAlias}'.");
+        type = null!;
+        return false;
+    }
+
+    /// <summary>
+    /// Attempts to return a workflow JSON type alias that this resolver can read back.
+    /// </summary>
+    public static bool TryGetAlias(IWellKnownTypeRegistry wellKnownTypeRegistry, Type type, out string alias)
+    {
+        if (wellKnownTypeRegistry.TryGetAlias(type, out alias!))
+            return true;
+
+        if (type.IsArray)
+        {
+            var elementType = type.GetElementType()!;
+
+            if (TryGetAlias(wellKnownTypeRegistry, elementType, out var elementTypeAlias))
+            {
+                alias = $"{elementTypeAlias}[]";
+                return true;
+            }
+        }
+
+        if (type is { IsGenericType: true, GenericTypeArguments.Length: 1 })
+        {
+            var genericTypeDefinition = type.GetGenericTypeDefinition();
+
+            if (GenericCollectionAliases.TryGetValue(genericTypeDefinition, out var genericTypeAlias) &&
+                TryGetAlias(wellKnownTypeRegistry, type.GenericTypeArguments[0], out var elementTypeAlias))
+            {
+                alias = $"{genericTypeAlias}<{elementTypeAlias}>";
+                return true;
+            }
+        }
+
+        alias = null!;
+        return false;
     }
 
     private static bool TryResolveArrayType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
@@ -50,7 +110,7 @@ public static class WorkflowJsonTypeResolver
             return false;
 
         var elementTypeAlias = typeAlias[..^2];
-        if (!wellKnownTypeRegistry.TryGetType(elementTypeAlias, out var elementType))
+        if (!TryResolveType(wellKnownTypeRegistry, elementTypeAlias, out var elementType))
             return false;
 
         type = elementType.MakeArrayType();
@@ -70,7 +130,7 @@ public static class WorkflowJsonTypeResolver
             return false;
 
         var elementTypeAlias = typeAlias[(genericStart + 1)..^1];
-        if (!wellKnownTypeRegistry.TryGetType(elementTypeAlias, out var elementType))
+        if (!TryResolveType(wellKnownTypeRegistry, elementTypeAlias, out var elementType))
             return false;
 
         type = genericTypeDefinition.MakeGenericType(elementType);
