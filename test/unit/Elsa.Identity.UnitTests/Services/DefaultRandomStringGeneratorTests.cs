@@ -9,7 +9,7 @@ public class DefaultRandomStringGeneratorTests
     {
         var generator = new DefaultRandomStringGenerator();
 
-        var value = generator.Generate(64, ['a', 'b']);
+        var value = generator.Generate(64, new[] { 'a', 'b' });
 
         Assert.Equal(64, value.Length);
         Assert.All(value, x => Assert.True(x is 'a' or 'b'));

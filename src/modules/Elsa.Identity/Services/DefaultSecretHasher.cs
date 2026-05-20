@@ -30,8 +30,15 @@ public class DefaultSecretHasher : ISecretHasher
     public HashedSecret HashSecret(string secret, byte[] salt)
     {
         var passwordBytes = Encoding.UTF8.GetBytes(secret);
-        var hashedPassword = HashSecret(passwordBytes, salt);
-        return HashedSecret.FromBytes(hashedPassword, salt);
+        try
+        {
+            var hashedPassword = HashSecret(passwordBytes, salt);
+            return HashedSecret.FromBytes(hashedPassword, salt);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(passwordBytes);
+        }
     }
 
     /// <inheritdoc />
@@ -60,33 +67,55 @@ public class DefaultSecretHasher : ISecretHasher
         var storedSecretBytes = hashedSecret.Secret;
         var saltBytes = hashedSecret.Salt;
         var clearTextBytes = Encoding.UTF8.GetBytes(clearTextSecret);
+        byte[]? providedHash = null;
+        byte[]? legacyHash = null;
 
-        if (TryReadPbkdf2Hash(storedSecretBytes, out var iterationCount, out var expectedHash))
+        try
         {
-            var providedHash = HashSecret(clearTextBytes, saltBytes, iterationCount);
-            var matches = CryptographicOperations.FixedTimeEquals(providedHash, expectedHash);
-            needsRehash = matches && iterationCount < DefaultIterationCount;
-            return matches;
-        }
+            if (TryReadPbkdf2Hash(storedSecretBytes, out var iterationCount, out var expectedHash))
+            {
+                providedHash = HashSecret(clearTextBytes, saltBytes, iterationCount);
+                var matches = CryptographicOperations.FixedTimeEquals(providedHash, expectedHash);
+                needsRehash = matches && iterationCount < DefaultIterationCount;
+                return matches;
+            }
 
-        var legacyHash = HashLegacySha256(clearTextBytes, saltBytes);
-        if (storedSecretBytes.Length != legacyHash.Length)
+            legacyHash = HashLegacySha256(clearTextBytes, saltBytes);
+            if (storedSecretBytes.Length != legacyHash.Length)
+            {
+                needsRehash = false;
+                return false;
+            }
+
+            var isLegacyMatch = CryptographicOperations.FixedTimeEquals(legacyHash, storedSecretBytes);
+            needsRehash = isLegacyMatch;
+            return isLegacyMatch;
+        }
+        finally
         {
-            needsRehash = false;
-            return false;
-        }
+            CryptographicOperations.ZeroMemory(clearTextBytes);
 
-        var isLegacyMatch = CryptographicOperations.FixedTimeEquals(legacyHash, storedSecretBytes);
-        needsRehash = isLegacyMatch;
-        return isLegacyMatch;
+            if (providedHash is not null)
+                CryptographicOperations.ZeroMemory(providedHash);
+
+            if (legacyHash is not null)
+                CryptographicOperations.ZeroMemory(legacyHash);
+        }
     }
 
     /// <inheritdoc />
     public byte[] HashSecret(byte[] secret, byte[] salt)
     {
         var hash = HashSecret(secret, salt, DefaultIterationCount);
-        var encodedHash = Convert.ToBase64String(hash);
-        return Encoding.UTF8.GetBytes($"{Algorithm}{Separator}{DefaultIterationCount.ToString(CultureInfo.InvariantCulture)}{Separator}{encodedHash}");
+        try
+        {
+            var encodedHash = Convert.ToBase64String(hash);
+            return Encoding.UTF8.GetBytes($"{Algorithm}{Separator}{DefaultIterationCount.ToString(CultureInfo.InvariantCulture)}{Separator}{encodedHash}");
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(hash);
+        }
     }
 
     /// <inheritdoc />
