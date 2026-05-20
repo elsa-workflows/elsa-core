@@ -161,8 +161,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         {
             Hash = bookmarkHash,
             WorkflowInstanceId = workflowInstanceId,
-            CorrelationId = correlationId,
-            TenantAgnostic = true
+            CorrelationId = correlationId
         };
         return await bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken);
     }
