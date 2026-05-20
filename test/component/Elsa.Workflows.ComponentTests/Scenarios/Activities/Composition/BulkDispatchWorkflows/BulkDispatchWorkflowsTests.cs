@@ -190,16 +190,19 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
             DefinitionId = childWorkflowDefinitionId,
             ParentWorkflowInstanceIds = [parentWorkflowInstanceId]
         };
+        var actualChildCount = 0;
 
         while (DateTimeOffset.UtcNow < timeoutAt)
         {
             var instances = (await _workflowInstanceStore.FindManyAsync(filter)).ToList();
+            actualChildCount = instances.Count;
+
             if (instances.Count >= expectedChildCount)
                 return instances;
 
             await Task.Delay(TimeSpan.FromMilliseconds(100));
         }
 
-        throw new TimeoutException($"Expected {expectedChildCount} child workflow instances of definition '{childWorkflowDefinitionId}' for parent '{parentWorkflowInstanceId}'.");
+        throw new TimeoutException($"Expected {expectedChildCount} child workflow instances of definition '{childWorkflowDefinitionId}' for parent '{parentWorkflowInstanceId}', but found {actualChildCount}.");
     }
 }
