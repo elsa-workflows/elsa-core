@@ -79,6 +79,17 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     }
 
     [Fact]
+    public void Validate_Throws_WhenNullableProviderCollectionContainsFileSystemProvider()
+    {
+        var validator = CreateValidator(new NullableCompositeDistributedLockProvider([new CustomDistributedLockProvider(), null, _fileProvider]));
+
+        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
+
+        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
+        Assert.Contains(nameof(NullableCompositeDistributedLockProvider), exception.Message);
+    }
+
+    [Fact]
     public void Validate_IgnoresThrowingProviderProperties()
     {
         var validator = CreateValidator(new ThrowingPropertyDistributedLockProvider());

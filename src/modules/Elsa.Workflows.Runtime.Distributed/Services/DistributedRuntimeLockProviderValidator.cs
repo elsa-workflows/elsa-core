@@ -84,7 +84,7 @@ public class DistributedRuntimeLockProviderValidator(
                 continue;
 
             var returnsDistributedLockProvider = typeof(IDistributedLockProvider).IsAssignableFrom(property.PropertyType);
-            var returnsDistributedLockProviders = typeof(IEnumerable<IDistributedLockProvider>).IsAssignableFrom(property.PropertyType);
+            var returnsDistributedLockProviders = typeof(System.Collections.IEnumerable).IsAssignableFrom(property.PropertyType) && property.PropertyType != typeof(string);
 
             if (!returnsDistributedLockProvider && !returnsDistributedLockProviders)
                 continue;
@@ -102,7 +102,7 @@ public class DistributedRuntimeLockProviderValidator(
 
             if (value is IDistributedLockProvider innerProvider)
                 providers.Add(innerProvider);
-            else if (value is IEnumerable<IDistributedLockProvider> innerProviders)
+            else if (value is System.Collections.IEnumerable innerProviders)
             {
                 try
                 {
@@ -110,8 +110,8 @@ public class DistributedRuntimeLockProviderValidator(
 
                     foreach (var providerItem in innerProviders)
                     {
-                        if (providerItem != null)
-                            providerItems.Add(providerItem);
+                        if (providerItem is IDistributedLockProvider distributedLockProvider)
+                            providerItems.Add(distributedLockProvider);
                     }
 
                     providers.AddRange(providerItems);
