@@ -21,7 +21,8 @@ public class AlterationsApiTimestampFilterTests : IAsyncLifetime
 {
     private WebApplication? _app;
     private bool _wasSecurityEnabled;
-    private HttpClient _httpClient = null!;
+    private HttpClient? _httpClient;
+    private HttpClient HttpClient => _httpClient ?? throw new InvalidOperationException("The test HTTP client has not been initialized.");
 
     public async Task InitializeAsync()
     {
@@ -58,7 +59,7 @@ public class AlterationsApiTimestampFilterTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
-        _httpClient.Dispose();
+        _httpClient?.Dispose();
 
         if (_app == null)
             return;
@@ -72,7 +73,7 @@ public class AlterationsApiTimestampFilterTests : IAsyncLifetime
     [InlineData("/alterations/submit")]
     public async Task Post_WithInjectedTimestampFilterColumn_ReturnsBadRequest(string path)
     {
-        var response = await _httpClient.PostAsJsonAsync(path, CreateRequest(path));
+        var response = await HttpClient.PostAsJsonAsync(path, CreateRequest(path));
         var body = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -82,9 +83,9 @@ public class AlterationsApiTimestampFilterTests : IAsyncLifetime
     [Fact]
     public async Task Submit_WithNullFilter_DoesNotReturnServerError()
     {
-        var response = await _httpClient.PostAsJsonAsync("/alterations/submit", new { filter = (object?)null });
+        var response = await HttpClient.PostAsJsonAsync("/alterations/submit", new { filter = (object?)null });
 
-        Assert.NotEqual(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Theory]
@@ -92,7 +93,7 @@ public class AlterationsApiTimestampFilterTests : IAsyncLifetime
     [InlineData("/alterations/submit")]
     public async Task Post_WithNullTimestampFilter_ReturnsBadRequest(string path)
     {
-        var response = await _httpClient.PostAsJsonAsync(path, CreateRequestWithNullTimestampFilter(path));
+        var response = await HttpClient.PostAsJsonAsync(path, CreateRequestWithNullTimestampFilter(path));
         var body = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -104,7 +105,7 @@ public class AlterationsApiTimestampFilterTests : IAsyncLifetime
     [InlineData("/alterations/submit")]
     public async Task Post_WithMultipleInvalidTimestampFilters_ReturnsAllValidationErrors(string path)
     {
-        var response = await _httpClient.PostAsJsonAsync(path, CreateRequestWithMultipleInvalidTimestampFilters(path));
+        var response = await HttpClient.PostAsJsonAsync(path, CreateRequestWithMultipleInvalidTimestampFilters(path));
         var body = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
