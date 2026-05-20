@@ -7,6 +7,7 @@ using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Persistence.EFCore.Modules.Runtime;
@@ -27,6 +28,27 @@ public class EFBookmarkQueueDeadLetterStore(Store<RuntimeElsaDbContext, Bookmark
     public Task AddAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default)
     {
         return store.AddAsync(record, OnSaveAsync, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<BookmarkQueueDeadLetterItem?> TryMarkReplayedAsync(string id, string queueItemId, DateTimeOffset replayedAt, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        var affectedRows = await dbContext.Set<BookmarkQueueDeadLetterItem>()
+            .Where(x => x.Id == id && x.CanReplay && x.ReplayedAt == null)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(x => x.CanReplay, false)
+                    .SetProperty(x => x.ReplayedAt, replayedAt)
+                    .SetProperty(x => x.ReplayedQueueItemId, queueItemId),
+                cancellationToken);
+
+        if (affectedRows == 0)
+            return null;
+
+        var entity = await dbContext.Set<BookmarkQueueDeadLetterItem>().AsNoTracking().FirstAsync(x => x.Id == id, cancellationToken);
+        await OnLoadAsync(dbContext, entity, cancellationToken);
+        return entity;
     }
 
     /// <inheritdoc />

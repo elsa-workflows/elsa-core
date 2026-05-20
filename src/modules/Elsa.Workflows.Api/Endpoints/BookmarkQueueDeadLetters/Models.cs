@@ -10,21 +10,6 @@ public class ListRequest
     public string? WorkflowInstanceId { get; set; }
 }
 
-public class GetRequest
-{
-    public string Id { get; set; } = null!;
-}
-
-public class DeleteRequest
-{
-    public string Id { get; set; } = null!;
-}
-
-public class ReplayRequest
-{
-    public string Id { get; set; } = null!;
-}
-
 public class ListResponse(ICollection<BookmarkQueueDeadLetterItem> items, long totalCount)
 {
     public ICollection<BookmarkQueueDeadLetterItem> Items { get; set; } = items;

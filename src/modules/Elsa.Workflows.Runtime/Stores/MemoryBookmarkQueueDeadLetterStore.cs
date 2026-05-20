@@ -12,6 +12,8 @@ namespace Elsa.Workflows.Runtime.Stores;
 [UsedImplicitly]
 public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLetterItem> store) : IBookmarkQueueDeadLetterStore
 {
+    private readonly object _lock = new();
+
     /// <inheritdoc />
     public Task SaveAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default)
     {
@@ -24,6 +26,23 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
     {
         store.Add(record, x => x.Id);
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task<BookmarkQueueDeadLetterItem?> TryMarkReplayedAsync(string id, string queueItemId, DateTimeOffset replayedAt, CancellationToken cancellationToken = default)
+    {
+        lock (_lock)
+        {
+            var entity = store.Find(x => x.Id == id);
+            if (entity == null || !entity.CanReplay || entity.ReplayedAt != null)
+                return Task.FromResult<BookmarkQueueDeadLetterItem?>(null);
+
+            entity.ReplayedAt = replayedAt;
+            entity.ReplayedQueueItemId = queueItemId;
+            entity.CanReplay = false;
+            store.Save(entity, x => x.Id);
+            return Task.FromResult<BookmarkQueueDeadLetterItem?>(entity);
+        }
     }
 
     /// <inheritdoc />

@@ -134,6 +134,50 @@ public class BookmarkQueueDeadLetterTests
         await _signaler.Received(1).TriggerAsync(Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ReplayAsync_WhenCalledConcurrently_EnqueuesSingleItem()
+    {
+        await _deadLetterStore.AddAsync(new BookmarkQueueDeadLetterItem
+        {
+            Id = "dead-letter",
+            OriginalQueueItemId = "original",
+            WorkflowInstanceId = "workflow-instance",
+            BookmarkId = "bookmark",
+            StimulusHash = "hash",
+            ActivityTypeName = "activity",
+            OriginalCreatedAt = _now.AddMinutes(-2),
+            DeadLetteredAt = _now.AddMinutes(-1),
+            Reason = "Expired",
+            CanReplay = true
+        });
+        var manager = CreateManager();
+
+        var results = await Task.WhenAll(
+            manager.ReplayAsync("dead-letter"),
+            manager.ReplayAsync("dead-letter"));
+
+        Assert.Single(results, x => x.Succeeded);
+        Assert.Single(results, x => !x.Succeeded && x.Reason == ReplayBookmarkQueueDeadLetterResult.ReasonNotReplayable);
+        var queueItems = await _queueStore.FindManyAsync(new BookmarkQueueFilter());
+        Assert.Single(queueItems);
+        await _signaler.Received(1).TriggerAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DeadLetterAsync_WhenOriginalQueueItemAlreadyDeadLettered_ReturnsExistingItem()
+    {
+        var item = NewQueueItem("original", _now.AddMinutes(-2));
+        var manager = CreateManager();
+
+        var first = await manager.DeadLetterAsync(item, "Expired");
+        var second = await manager.DeadLetterAsync(item, "Failed", new InvalidOperationException("resume failed"));
+
+        Assert.Same(first, second);
+        var deadLetters = await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter());
+        Assert.Single(deadLetters);
+        Assert.Equal("Expired", first.Reason);
+    }
+
     private DefaultBookmarkQueuePurger CreatePurger(BookmarkQueuePurgeOptions options)
     {
         return new(

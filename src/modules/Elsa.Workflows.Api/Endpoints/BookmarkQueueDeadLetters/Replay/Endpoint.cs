@@ -20,7 +20,7 @@ internal class Endpoint(IBookmarkQueueDeadLetterManager manager) : ElsaEndpointW
         var id = Route<string>("id")!;
         var result = await manager.ReplayAsync(id, cancellationToken);
 
-        if (result.Reason == "NotFound")
+        if (result.Reason == ReplayBookmarkQueueDeadLetterResult.ReasonNotFound)
         {
             await Send.NotFoundAsync(cancellationToken);
             return;

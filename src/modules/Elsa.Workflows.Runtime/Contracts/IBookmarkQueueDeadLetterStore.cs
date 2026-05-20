@@ -21,6 +21,11 @@ public interface IBookmarkQueueDeadLetterStore
     Task AddAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Atomically marks a replayable dead-letter item as replayed.
+    /// </summary>
+    Task<BookmarkQueueDeadLetterItem?> TryMarkReplayedAsync(string id, string queueItemId, DateTimeOffset replayedAt, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Returns the first bookmark queue dead-letter item matching the specified filter.
     /// </summary>
     Task<BookmarkQueueDeadLetterItem?> FindAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default);

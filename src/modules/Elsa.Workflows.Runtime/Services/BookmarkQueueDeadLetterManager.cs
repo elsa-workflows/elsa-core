@@ -15,6 +15,10 @@ public class BookmarkQueueDeadLetterManager(
 {
     public async Task<BookmarkQueueDeadLetterItem> DeadLetterAsync(BookmarkQueueItem item, string reason, Exception? exception = null, CancellationToken cancellationToken = default)
     {
+        var existing = await deadLetterStore.FindAsync(new BookmarkQueueDeadLetterFilter { OriginalQueueItemId = item.Id }, cancellationToken);
+        if (existing != null)
+            return existing;
+
         var deadLetterItem = new BookmarkQueueDeadLetterItem
         {
             Id = identityGenerator.GenerateId(),
@@ -50,17 +54,21 @@ public class BookmarkQueueDeadLetterManager(
 
     public async Task<ReplayBookmarkQueueDeadLetterResult> ReplayAsync(string id, CancellationToken cancellationToken = default)
     {
-        var item = await deadLetterStore.FindAsync(new BookmarkQueueDeadLetterFilter { Id = id }, cancellationToken);
+        var queueItemId = identityGenerator.GenerateId();
+        var replayedAt = systemClock.UtcNow;
+        var item = await deadLetterStore.TryMarkReplayedAsync(id, queueItemId, replayedAt, cancellationToken);
 
         if (item == null)
-            return new(false, null, "NotFound");
-
-        if (!item.CanReplay || item.ReplayedAt != null)
-            return new(false, item.ReplayedQueueItemId, "NotReplayable");
+        {
+            var existing = await deadLetterStore.FindAsync(new BookmarkQueueDeadLetterFilter { Id = id }, cancellationToken);
+            return existing == null
+                ? new(false, null, ReplayBookmarkQueueDeadLetterResult.ReasonNotFound)
+                : new(false, existing.ReplayedQueueItemId, ReplayBookmarkQueueDeadLetterResult.ReasonNotReplayable);
+        }
 
         var queueItem = new BookmarkQueueItem
         {
-            Id = identityGenerator.GenerateId(),
+            Id = queueItemId,
             TenantId = item.TenantId,
             WorkflowInstanceId = item.WorkflowInstanceId,
             CorrelationId = item.CorrelationId,
@@ -72,12 +80,7 @@ public class BookmarkQueueDeadLetterManager(
             CreatedAt = systemClock.UtcNow
         };
 
-        item.ReplayedAt = systemClock.UtcNow;
-        item.ReplayedQueueItemId = queueItem.Id;
-        item.CanReplay = false;
-
         await bookmarkQueueStore.AddAsync(queueItem, cancellationToken);
-        await deadLetterStore.SaveAsync(item, cancellationToken);
         await bookmarkQueueSignaler.TriggerAsync(cancellationToken);
 
         logger.LogInformation(
