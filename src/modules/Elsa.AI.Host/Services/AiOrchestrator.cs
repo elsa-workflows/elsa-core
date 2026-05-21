@@ -28,12 +28,21 @@ public class AiOrchestrator(
         var sequence = 0L;
         var provider = SelectProvider(request);
         var conversation = await conversationStore.FindAsync(conversationId, cancellationToken);
+        if (conversation != null && !BelongsToTenant(conversation, request.TenantId))
+        {
+            conversation = null;
+            conversationId = Guid.NewGuid().ToString("N");
+        }
+
         var messages = conversation?.Messages.ToList() ?? [];
         var isDuplicateReconnectMessage = request.IsReconnect && IsDuplicateUserMessage(messages, request.Message);
         var providerHistory = isDuplicateReconnectMessage ? messages.Take(messages.Count - 1).ToList() : messages.ToList();
+        var userMessage = isDuplicateReconnectMessage
+            ? messages.Last()
+            : CreateMessage(conversationId, AiMessageRole.User, request.Message, sequence);
 
         if (!isDuplicateReconnectMessage)
-            messages.Add(CreateMessage(conversationId, AiMessageRole.User, request.Message, sequence));
+            messages.Add(userMessage);
 
         var toolResults = new List<AiToolTurnResult>();
 
@@ -64,12 +73,13 @@ public class AiOrchestrator(
             for (var turn = 0; turn < MaxProviderTurns; turn++)
             {
                 var currentTurnToolResults = new List<AiToolTurnResult>();
+                var currentTurnMessages = new List<AiMessage>();
                 var assistantContent = new StringBuilder();
 
                 await foreach (var providerEvent in provider.ExecuteTurnAsync(new AiTurnRequest
                                {
                                    ConversationId = conversationId,
-                                   Message = request.Message,
+                                   Message = turn == 0 ? request.Message : "",
                                    Messages = providerHistory.ToList(),
                                    Context = context,
                                    Tools = tools,
@@ -94,21 +104,31 @@ public class AiOrchestrator(
                     yield return toolExecution.StreamEvent;
 
                     currentTurnToolResults.Add(toolExecution.TurnResult);
-                    messages.Add(CreateMessage(conversationId, AiMessageRole.Tool, toolExecution.TurnResult.Result.Summary, toolExecution.StreamEvent.Sequence, new JsonObject
+                    var toolMessage = CreateMessage(conversationId, AiMessageRole.Tool, toolExecution.TurnResult.Result.Summary, toolExecution.StreamEvent.Sequence, new JsonObject
                     {
                         ["toolCallId"] = toolExecution.TurnResult.ToolCallId,
                         ["toolName"] = toolExecution.TurnResult.ToolName,
                         ["status"] = toolExecution.TurnResult.Result.Status.ToString()
-                    }));
+                    });
+                    messages.Add(toolMessage);
+                    currentTurnMessages.Add(toolMessage);
                 }
 
                 if (assistantContent.Length > 0)
-                    messages.Add(CreateMessage(conversationId, AiMessageRole.Assistant, assistantContent.ToString(), sequence - 1));
+                {
+                    var assistantMessage = CreateMessage(conversationId, AiMessageRole.Assistant, assistantContent.ToString(), sequence - 1);
+                    messages.Add(assistantMessage);
+                    currentTurnMessages.Add(assistantMessage);
+                }
 
                 if (currentTurnToolResults.Count == 0)
                     break;
 
                 toolResults.AddRange(currentTurnToolResults);
+                if (providerHistory.All(x => x.Id != userMessage.Id))
+                    providerHistory.Add(userMessage);
+
+                providerHistory.AddRange(currentTurnMessages);
 
                 if (turn == MaxProviderTurns - 1)
                     yield return CreateEvent("assistant.delta", conversationId, sequence++, new JsonObject
@@ -353,6 +373,12 @@ public class AiOrchestrator(
 
     private static string NormalizeMessage(string message) =>
         message.ReplaceLineEndings("\n").Trim();
+
+    private static bool BelongsToTenant(AiConversation conversation, string? tenantId) =>
+        string.Equals(NormalizeTenantId(conversation.TenantId), NormalizeTenantId(tenantId), StringComparison.Ordinal);
+
+    private static string NormalizeTenantId(string? tenantId) =>
+        string.IsNullOrWhiteSpace(tenantId) ? "" : tenantId;
 
     private async ValueTask SaveConversationAsync(string conversationId, AiChatRequest request, AiConversationStatus status, IReadOnlyCollection<AiMessage> messages, AiConversation? conversation, CancellationToken cancellationToken)
     {

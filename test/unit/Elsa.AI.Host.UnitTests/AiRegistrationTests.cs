@@ -4,6 +4,7 @@ using Elsa.AI.Host.Extensions;
 using Elsa.AI.Host.Options;
 using Elsa.AI.Host.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
 
@@ -85,6 +86,19 @@ public class AiRegistrationTests
         Assert.True(service.IsEnabled(definition));
     }
 
+    [Fact(DisplayName = "AI host validates duplicate context providers on startup")]
+    public async Task AiHostValidatesDuplicateContextProvidersOnStartup()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiContextProvider>(new DuplicateContextProvider("WorkflowDefinition"));
+
+        using var provider = services.BuildServiceProvider();
+        var validator = provider.GetServices<IHostedService>().OfType<AiContextProviderValidationHostedService>().Single();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => validator.StartAsync(CancellationToken.None));
+    }
+
     [Fact(DisplayName = "In-memory conversation store evicts expired conversations")]
     public async Task InMemoryConversationStoreEvictsExpiredConversations()
     {
@@ -121,5 +135,13 @@ public class AiRegistrationTests
     {
         public ValueTask RecordAsync(AiAuditEvent auditEvent, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("Audit sink unavailable.");
+    }
+
+    private class DuplicateContextProvider(string kind) : IAiContextProvider
+    {
+        public string Kind { get; } = kind;
+
+        public ValueTask<AiResolvedContext> ResolveAsync(AiContextResolutionRequest request, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiResolvedContext { Kind = Kind });
     }
 }

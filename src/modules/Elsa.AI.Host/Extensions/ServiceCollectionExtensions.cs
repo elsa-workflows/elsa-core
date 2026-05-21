@@ -5,6 +5,7 @@ using Elsa.AI.Host.Services;
 using Elsa.AI.Host.Streaming;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 
 namespace Elsa.AI.Host.Extensions;
 
@@ -22,6 +23,7 @@ public static class ServiceCollectionExtensions
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IAiContextProvider, WorkflowDefinitionContextProvider>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IAiContextProvider, WorkflowInstanceContextProvider>());
         services.TryAddSingleton<AiContextResolver>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, AiContextProviderValidationHostedService>());
         services.TryAddSingleton<AiToolEnablementService>();
         services.TryAddSingleton<IAiToolRegistry, AiToolRegistry>();
         services.TryAddSingleton<IAiOrchestrator, AiOrchestrator>();

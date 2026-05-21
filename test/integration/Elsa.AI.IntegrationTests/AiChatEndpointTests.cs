@@ -322,6 +322,56 @@ public class AiChatEndpointTests
         Assert.Single(userMessages);
     }
 
+    [Fact(DisplayName = "Chat orchestration does not load foreign tenant conversation history")]
+    public async Task ChatOrchestrationDoesNotLoadForeignTenantConversationHistory()
+    {
+        var provider = new CapturingTurnProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiProvider>(provider);
+        using var serviceProvider = services.BuildServiceProvider();
+        var orchestrator = serviceProvider.GetRequiredService<IAiOrchestrator>();
+        var store = serviceProvider.GetRequiredService<IAiConversationStore>();
+
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-1",
+            TenantId = "tenant-a",
+            UserId = "user-a",
+            Status = AiConversationStatus.Completed,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            Messages =
+            [
+                new AiMessage
+                {
+                    Id = "message-1",
+                    ConversationId = "conversation-1",
+                    Role = AiMessageRole.User,
+                    Content = "Tenant A secret",
+                    CreatedAt = DateTimeOffset.UtcNow
+                }
+            ]
+        });
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           TenantId = "tenant-b",
+                           UserId = "user-b",
+                           Message = "Continue"
+                       }))
+        {
+        }
+
+        var request = Assert.Single(provider.Requests);
+        var original = await store.FindAsync("conversation-1");
+
+        Assert.DoesNotContain(request.Messages, x => x.Content == "Tenant A secret");
+        Assert.Equal("tenant-a", original!.TenantId);
+        Assert.Single(original.Messages);
+    }
+
     [Fact(DisplayName = "Chat orchestration limits resolved context payloads")]
     public async Task ChatOrchestrationLimitsResolvedContextPayloads()
     {

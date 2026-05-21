@@ -22,4 +22,12 @@ public class AiPersistenceRegistrationTests
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<AiDbContext>());
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<IAiProposalStore>());
     }
+
+    [Fact(DisplayName = "AI persistence store registration requires a DbContext provider")]
+    public void AiPersistenceStoreRegistrationRequiresDbContextProvider()
+    {
+        var services = new ServiceCollection();
+
+        Assert.Throws<InvalidOperationException>(() => services.AddAiPersistenceStores());
+    }
 }

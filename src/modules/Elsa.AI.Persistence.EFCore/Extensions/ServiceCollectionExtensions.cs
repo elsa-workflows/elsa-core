@@ -13,7 +13,7 @@ public static class ServiceCollectionExtensions
         if (!services.Any(x => x.ServiceType == typeof(DbContextOptions<AiDbContext>)))
         {
             if (configureDbContext == null)
-                services.AddDbContext<AiDbContext>();
+                throw new InvalidOperationException($"Register {nameof(DbContextOptions<AiDbContext>)} before calling {nameof(AddAiPersistenceStores)}, or call {nameof(AddAiPersistenceStores)} with a database provider configuration.");
             else
                 services.AddDbContext<AiDbContext>(configureDbContext);
         }
