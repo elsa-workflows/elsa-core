@@ -15,7 +15,7 @@ public record AiProposal
     public ICollection<AiValidationDiagnostic> ValidationDiagnostics { get; init; } = [];
     public AiGraphDiff? GraphDiff { get; init; }
     public string CreatedBy { get; init; } = default!;
-    public DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
     public string? ReviewedBy { get; init; }
     public DateTimeOffset? ReviewedAt { get; init; }
     public string? AppliedBy { get; init; }

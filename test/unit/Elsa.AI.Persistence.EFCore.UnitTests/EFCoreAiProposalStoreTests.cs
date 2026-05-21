@@ -43,8 +43,7 @@ public class EFCoreAiProposalStoreTests : IAsyncLifetime
         {
             ConversationId = "conversation-1",
             Kind = AiProposalKind.WorkflowCreate,
-            CreatedBy = "user-1",
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedBy = "user-1"
         };
 
         await store.SaveAsync(proposal);
@@ -54,6 +53,7 @@ public class EFCoreAiProposalStoreTests : IAsyncLifetime
 
         Assert.NotNull(reloaded);
         Assert.False(string.IsNullOrWhiteSpace(reloaded.Id));
+        Assert.NotEqual(default, reloaded.CreatedAt);
     }
 
     [Fact(DisplayName = "Proposal store validates required proposal fields before saving")]
