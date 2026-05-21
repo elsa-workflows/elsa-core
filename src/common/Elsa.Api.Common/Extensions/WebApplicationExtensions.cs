@@ -20,6 +20,12 @@ namespace Elsa.Extensions;
 [PublicAPI]
 public static class WebApplicationExtensions
 {
+    private static readonly RequestDelegate NotFoundRequestDelegate = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return Task.CompletedTask;
+    };
+
     /// <summary>
     /// Registers the FastEndpoints middleware configured for use with Elsa API endpoints.
     /// </summary>
@@ -148,9 +154,9 @@ public static class WebApplicationExtensions
             : new EndpointMetadataCollection(originalEndpoint.Metadata.Where(x => x is not EnableRateLimitingAttribute and not DisableRateLimitingAttribute).Concat([rateLimitingMetadata]));
 
         if (originalEndpoint is RouteEndpoint routeEndpoint)
-            return new RouteEndpoint(routeEndpoint.RequestDelegate ?? (_ => Task.CompletedTask), routeEndpoint.RoutePattern, routeEndpoint.Order, metadata, routeEndpoint.DisplayName ?? displayName);
+            return new RouteEndpoint(routeEndpoint.RequestDelegate ?? NotFoundRequestDelegate, routeEndpoint.RoutePattern, routeEndpoint.Order, metadata, routeEndpoint.DisplayName ?? displayName);
 
-        return new Endpoint(originalEndpoint?.RequestDelegate ?? (_ => Task.CompletedTask), metadata, originalEndpoint?.DisplayName ?? displayName);
+        return new Endpoint(originalEndpoint?.RequestDelegate ?? NotFoundRequestDelegate, metadata, originalEndpoint?.DisplayName ?? displayName);
     }
 
     private static ValueTask<object?> DeserializeRequestAsync(HttpRequest httpRequest, Type modelType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)

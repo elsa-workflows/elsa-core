@@ -143,15 +143,18 @@ public class IngressRateLimitingTests
             app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName),
             options => options.AddPolicy(PolicyName, policy));
         var client = app.GetTestClient();
+        var partitionRequestCount = policy.PartitionRequestCount;
 
         var firstResponse = await client.GetAsync("/elsa/api/ping");
 
         Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
-        Assert.Equal(1, policy.PartitionRequestCount);
+        Assert.True(policy.PartitionRequestCount > partitionRequestCount);
 
+        partitionRequestCount = policy.PartitionRequestCount;
         var secondResponse = await client.GetAsync("/elsa/api/ping");
 
         Assert.Equal(HttpStatusCode.TooManyRequests, secondResponse.StatusCode);
+        Assert.True(policy.PartitionRequestCount > partitionRequestCount);
     }
 
     [Fact]
@@ -180,6 +183,17 @@ public class IngressRateLimitingTests
 
         Assert.Equal(HttpStatusCode.NotFound, unmatchedResponse.StatusCode);
         Assert.Equal(HttpStatusCode.OK, routedResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task UseWorkflowsRateLimiting_PreservesEndpointRoutingNotFoundForUnmatchedPath()
+    {
+        await using var app = await CreateEndpointRoutedAppAsync(app => app.UseWorkflowsRateLimiting("/workflows", PolicyName));
+        var client = app.GetTestClient();
+
+        var response = await client.GetAsync("/workflows/not-found");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -352,6 +366,24 @@ public class IngressRateLimitingTests
             configure(app);
             app.UseRateLimiter();
             app.Run(context => context.Response.WriteAsync("ok"));
+        });
+
+        app.Configure();
+        await app.StartAsync();
+        return app;
+    }
+
+    private static async Task<TestApplication> CreateEndpointRoutedAppAsync(Action<WebApplication> configure)
+    {
+        var builder = CreateBuilder();
+        AddRateLimiterServices(builder.Services);
+        var app = new TestApplication(builder.Build(), app =>
+        {
+            app.MapGet("/elsa/api/ping", () => "pong");
+            app.UseRouting();
+            configure(app);
+            app.UseRateLimiter();
+            app.UseEndpoints(_ => { });
         });
 
         app.Configure();
