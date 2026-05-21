@@ -67,6 +67,25 @@ public class WorkflowInstrumentationTests
     }
 
     [Fact]
+    public async Task ActivityInvoker_Should_Record_Canceled_Status_When_Pipeline_Cancels_Before_Status_Transition()
+    {
+        using var activityCapture = new ActivityCapture();
+        using var meterCapture = new MeterCapture();
+        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var invoker = new ActivityInvoker(new NonMutatingCancellingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => invoker.InvokeAsync(context));
+
+        var span = GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
+        Assert.Equal(ActivityStatusCode.Ok, span.Status);
+        Assert.Equal(ActivityStatus.Canceled.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus));
+        Assert.Equal(false, GetTag(span.TagObjects, WorkflowInstrumentation.ActivityFaulted));
+        var activityDuration = GetActivityDuration(meterCapture, context);
+        Assert.Equal(ActivityStatus.Canceled.ToString(), activityDuration.Tags[WorkflowInstrumentation.ActivityStatus]);
+        Assert.Equal(false, activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]);
+    }
+
+    [Fact]
     public async Task WorkflowRunner_Should_Record_Completed_Metric_When_Pipeline_Finishes()
     {
         using var activityCapture = new ActivityCapture();
@@ -353,6 +372,15 @@ public class WorkflowInstrumentationTests
             context.TransitionTo(ActivityStatus.Canceled);
             throw new OperationCanceledException();
         }
+    }
+
+    private sealed class NonMutatingCancellingActivityExecutionPipeline : IActivityExecutionPipeline
+    {
+        public ActivityMiddlewareDelegate Pipeline => _ => ValueTask.CompletedTask;
+
+        public ActivityMiddlewareDelegate Setup(Action<IActivityExecutionPipelineBuilder> setup) => Pipeline;
+
+        public Task ExecuteAsync(ActivityExecutionContext context) => throw new OperationCanceledException();
     }
 
     private sealed class CompletingWorkflowExecutionPipeline : IWorkflowExecutionPipeline

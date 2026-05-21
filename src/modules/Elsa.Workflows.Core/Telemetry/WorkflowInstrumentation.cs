@@ -115,13 +115,14 @@ public static class WorkflowInstrumentation
         var activity = scope.Activity;
         var cancelled = exception is OperationCanceledException || context.Status == Workflows.ActivityStatus.Canceled;
         var faulted = !cancelled && (exception != null || context.Status == Workflows.ActivityStatus.Faulted);
+        var activityStatus = cancelled ? Workflows.ActivityStatus.Canceled : context.Status;
         var duration = Stopwatch.GetElapsedTime(scope.StartTimestamp).TotalSeconds;
 
-        ActivityDuration.Record(duration, CreateActivityTags(context, faulted));
+        ActivityDuration.Record(duration, CreateActivityTags(context, activityStatus, faulted));
 
         if (activity != null)
         {
-            SetActivityTags(activity, context);
+            SetActivityTags(activity, context, activityStatus);
             activity.SetTag(ActivityFaulted, faulted);
             if (faulted)
                 activity.SetTag(ActivityStatus, Workflows.ActivityStatus.Faulted.ToString());
@@ -151,15 +152,16 @@ public static class WorkflowInstrumentation
         AddIfNotNull(activity, TenantId, identity.TenantId);
     }
 
-    private static void SetActivityTags(DiagnosticsActivity activity, ActivityExecutionContext context)
+    private static void SetActivityTags(DiagnosticsActivity activity, ActivityExecutionContext context, Workflows.ActivityStatus? activityStatusOverride = null)
     {
         var currentActivity = context.Activity;
+        var activityStatus = activityStatusOverride ?? context.Status;
 
         activity.SetTag(ActivityId, currentActivity.Id);
         activity.SetTag(ActivityType, currentActivity.Type);
         activity.SetTag(ActivityVersion, currentActivity.Version);
         activity.SetTag(ActivityExecutionId, context.Id);
-        activity.SetTag(ActivityStatus, context.Status.ToString());
+        activity.SetTag(ActivityStatus, activityStatus.ToString());
         AddIfNotNull(activity, ActivityName, currentActivity.Name ?? context.ActivityDescriptor.DisplayName ?? context.ActivityDescriptor.Name);
         AddIfNotNull(activity, ActivityParentExecutionId, context.ParentActivityExecutionContext?.Id);
         AddIfNotNull(activity, ActivityScheduledByExecutionId, context.SchedulingActivityExecutionId);
@@ -224,7 +226,7 @@ public static class WorkflowInstrumentation
         return tags;
     }
 
-    private static TagList CreateActivityTags(ActivityExecutionContext context, bool faulted)
+    private static TagList CreateActivityTags(ActivityExecutionContext context, Workflows.ActivityStatus activityStatus, bool faulted)
     {
         var currentActivity = context.Activity;
         var tags = new TagList
@@ -233,7 +235,7 @@ public static class WorkflowInstrumentation
             { WorkflowDefinitionId, context.WorkflowExecutionContext.Workflow.Identity.DefinitionId },
             { ActivityType, currentActivity.Type },
             { ActivityVersion, currentActivity.Version },
-            { ActivityStatus, faulted ? Workflows.ActivityStatus.Faulted.ToString() : context.Status.ToString() },
+            { ActivityStatus, faulted ? Workflows.ActivityStatus.Faulted.ToString() : activityStatus.ToString() },
             { ActivityFaulted, faulted }
         };
 
