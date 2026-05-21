@@ -18,15 +18,19 @@ public class AiContextResolver(IEnumerable<IAiContextProvider> providers)
     public async ValueTask<IReadOnlyCollection<AiResolvedContext>> ResolveAsync(AiChatRequest request, CancellationToken cancellationToken = default)
     {
         var resolved = new List<AiResolvedContext>();
-
-        foreach (var attachment in request.Attachments)
-        {
-            if (!_providers.TryGetValue(attachment.Kind, out var provider))
-                continue;
-
-            var context = await provider.ResolveAsync(new AiContextResolutionRequest
+        var attachmentsWithProviders = request.Attachments
+            .Select(attachment => new
             {
                 Attachment = attachment,
+                Provider = _providers.GetValueOrDefault(attachment.Kind)
+            })
+            .Where(x => x.Provider != null);
+
+        foreach (var item in attachmentsWithProviders)
+        {
+            var context = await item.Provider!.ResolveAsync(new AiContextResolutionRequest
+            {
+                Attachment = item.Attachment,
                 TenantId = request.TenantId,
                 UserId = request.UserId
             }, cancellationToken);

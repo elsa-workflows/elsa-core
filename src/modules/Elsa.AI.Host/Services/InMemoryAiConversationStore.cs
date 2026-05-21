@@ -31,11 +31,8 @@ public class InMemoryAiConversationStore(IOptions<AiHostOptions> options) : IAiC
 
     private void PruneExpired()
     {
-        foreach (var conversation in _conversations.Values)
-        {
-            if (IsExpired(conversation))
-                _conversations.TryRemove(conversation.Id, out _);
-        }
+        foreach (var conversation in _conversations.Values.Where(IsExpired))
+            _conversations.TryRemove(conversation.Id, out _);
     }
 
     private bool IsExpired(AiConversation conversation)

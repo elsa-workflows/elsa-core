@@ -25,6 +25,8 @@ public class AiDbContext(DbContextOptions<AiDbContext> options) : DbContext(opti
             entity.ToTable("AiAuditRecords");
             entity.HasKey(x => x.Id);
             entity.HasIndex(x => new { x.TenantId, x.ConversationId });
+            entity.HasIndex(x => x.ActorId);
+            entity.HasIndex(x => new { x.TenantId, x.Timestamp });
             entity.HasIndex(x => x.ProposalId);
             entity.HasIndex(x => x.ToolInvocationId);
             entity.Property(x => x.Type).IsRequired();

@@ -18,7 +18,7 @@ public class AiAuditSink(IServiceScopeFactory scopeFactory, ILogger<AiAuditSink>
             {
                 await handler.RecordAsync(auditEvent, cancellationToken);
             }
-            catch (Exception e)
+            catch (Exception e) when (e is not OperationCanceledException)
             {
                 logger.LogWarning(e, "AI audit handler {HandlerType} failed while recording event {AuditEventType}.", handler.GetType().Name, auditEvent.Type);
             }

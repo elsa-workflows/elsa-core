@@ -128,6 +128,7 @@ public class AiChatEndpointTests
                            Message = "Explain this workflow"
                        }))
         {
+            // Intentionally drain the stream to completion.
         }
 
         Assert.Collection(
@@ -161,6 +162,34 @@ public class AiChatEndpointTests
             events.Add(streamEvent);
 
         Assert.Contains(events, x => x.Type == "conversation.completed");
+    }
+
+    [Fact(DisplayName = "Chat orchestration emits terminal events when context resolution fails")]
+    public async Task ChatOrchestrationEmitsTerminalEventsWhenContextResolutionFails()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiContextProvider, ThrowingContextProvider>();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var store = provider.GetRequiredService<IAiConversationStore>();
+        var events = new List<AiStreamEvent>();
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "Explain this workflow",
+                           Attachments = [new AiContextAttachment { Kind = ThrowingContextProvider.ContextKind, ReferenceId = "workflow-1" }]
+                       }))
+            events.Add(streamEvent);
+
+        var conversation = await store.FindAsync("conversation-1");
+
+        Assert.Contains(events, x => x.Type == "conversation.started");
+        Assert.Contains(events, x => x.Type == "conversation.error");
+        Assert.Contains(events, x => x.Type == "conversation.completed");
+        Assert.Equal(AiConversationStatus.Failed, conversation!.Status);
     }
 
     [Fact(DisplayName = "Chat orchestration executes provider tool calls")]
@@ -232,6 +261,7 @@ public class AiChatEndpointTests
                            Message = "Explain this workflow"
                        }))
         {
+            // Intentionally drain the stream to completion.
         }
 
         var conversation = await store.FindAsync("conversation-1");
@@ -258,6 +288,7 @@ public class AiChatEndpointTests
                            Message = "First"
                        }))
         {
+            // Intentionally drain the stream to completion.
         }
 
         await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
@@ -267,6 +298,7 @@ public class AiChatEndpointTests
                            Message = "Second"
                        }))
         {
+            // Intentionally drain the stream to completion.
         }
 
         var secondRequest = provider.Requests.Last();
@@ -314,6 +346,7 @@ public class AiChatEndpointTests
                            IsReconnect = true
                        }))
         {
+            // Intentionally drain the stream to completion.
         }
 
         var conversation = await store.FindAsync("conversation-1");
@@ -575,6 +608,15 @@ public class AiChatEndpointTests
                 Data = new JsonObject { ["content"] = new string('d', 512) },
                 Metadata = new JsonObject { ["content"] = new string('m', 512) }
             });
+    }
+
+    private class ThrowingContextProvider : IAiContextProvider
+    {
+        public const string ContextKind = "ThrowingContext";
+        public string Kind => ContextKind;
+
+        public ValueTask<AiResolvedContext> ResolveAsync(AiContextResolutionRequest request, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Context unavailable.");
     }
 
     private class ToolContinuationAiProvider : IAiProvider

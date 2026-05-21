@@ -50,14 +50,40 @@ public class AiOrchestrator(
         await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, messages, conversation, cancellationToken);
         await RecordChatAuditAsync("chat.started", request, conversationId, provider?.Name, cancellationToken);
 
-        var context = LimitResolvedContext(await contextResolver.ResolveAsync(request, cancellationToken));
-        var tools = await toolRegistry.ListAsync(new AiToolQuery
+        IReadOnlyCollection<AiResolvedContext> context = [];
+        IReadOnlyCollection<AiToolDefinition> tools = [];
+        Exception? preparationError = null;
+
+        try
         {
-            Agent = request.Agent,
-            ActorId = request.UserId,
-            TenantId = request.TenantId,
-            UserPermissions = request.UserPermissions
-        }, cancellationToken);
+            context = LimitResolvedContext(await contextResolver.ResolveAsync(request, cancellationToken));
+            tools = await toolRegistry.ListAsync(new AiToolQuery
+            {
+                Agent = request.Agent,
+                ActorId = request.UserId,
+                TenantId = request.TenantId,
+                UserPermissions = request.UserPermissions
+            }, cancellationToken);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            preparationError = e;
+        }
+
+        if (preparationError != null)
+        {
+            const string content = "Weaver could not prepare AI context or tools for this request.";
+            logger.LogWarning(preparationError, "Failed to prepare AI chat context or tools for conversation {ConversationId}.", conversationId);
+            yield return CreateEvent("conversation.error", conversationId, sequence++, new JsonObject
+            {
+                ["content"] = content
+            });
+            messages.Add(CreateMessage(conversationId, AiMessageRole.Assistant, content, sequence - 1));
+            await SaveConversationAsync(conversationId, request, AiConversationStatus.Failed, messages, conversation, cancellationToken);
+            await RecordChatAuditAsync("chat.failed", request, conversationId, provider?.Name, cancellationToken);
+            yield return CreateEvent("conversation.completed", conversationId, sequence);
+            yield break;
+        }
 
         if (provider == null)
         {
@@ -183,7 +209,12 @@ public class AiOrchestrator(
                 ActorId = request.UserId,
                 ConversationId = conversationId,
                 Timestamp = DateTimeOffset.UtcNow,
-                Summary = type == "chat.started" ? "Chat started" : "Chat completed",
+                Summary = type switch
+                {
+                    "chat.started" => "Chat started",
+                    "chat.failed" => "Chat failed",
+                    _ => "Chat completed"
+                },
                 Data = new JsonObject
                 {
                     ["agent"] = request.Agent,
@@ -192,7 +223,7 @@ public class AiOrchestrator(
                 }
             }, cancellationToken);
         }
-        catch (Exception e)
+        catch (Exception e) when (e is not OperationCanceledException)
         {
             logger.LogWarning(e, "Failed to record AI chat audit event {AuditEventType} for conversation {ConversationId}.", type, conversationId);
         }
@@ -228,7 +259,7 @@ public class AiOrchestrator(
 
             return CreateToolExecutionResult(conversationId, sequence, toolCall, LimitToolResult(result));
         }
-        catch (Exception e)
+        catch (Exception e) when (e is not OperationCanceledException)
         {
             logger.LogWarning(e, "AI tool {ToolName} failed for conversation {ConversationId}.", toolCall.Name, conversationId);
             await RecordToolAuditAsync("tool.failed", request, conversationId, toolCall, cancellationToken);
@@ -255,7 +286,7 @@ public class AiOrchestrator(
                 }
             }, cancellationToken);
         }
-        catch (Exception e)
+        catch (Exception e) when (e is not OperationCanceledException)
         {
             logger.LogWarning(e, "Failed to record AI tool audit event {AuditEventType} for tool {ToolName}.", type, toolCall.Name);
         }
