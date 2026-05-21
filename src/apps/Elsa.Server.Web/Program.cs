@@ -242,14 +242,6 @@ app.MapWorkflowsApi(routePrefix);
 // Routing used for SignalR.
 app.UseRouting();
 
-// Security.
-app.UseAuthentication();
-app.UseAuthorization();
-
-// Multitenancy.
-if (useMultitenancy)
-    app.UseTenants();
-
 app.UseWorkflowsApiRateLimiting(routePrefix, apiEndpointOptions.RateLimitingPolicyName);
 
 // Elsa HTTP Endpoint activities.
@@ -259,6 +251,15 @@ if (useIngressRateLimiting ||
     !string.IsNullOrWhiteSpace(apiEndpointOptions.RateLimitingPolicyName) ||
     !string.IsNullOrWhiteSpace(httpActivityOptions.RateLimitingPolicyName))
     app.UseRateLimiter();
+
+// Security.
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Multitenancy.
+if (useMultitenancy)
+    app.UseTenants();
+
 // Captures unhandled exceptions and returns a JSON response.
 app.UseJsonSerializationErrorHandler();
 
