@@ -1,6 +1,7 @@
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.AI.Host.UnitTests;
 
@@ -9,13 +10,12 @@ public class AiToolRegistryTests
     [Fact(DisplayName = "Tool registry excludes host and cross-tenant denied tools from tenant queries")]
     public async Task ToolRegistryExcludesHostAndCrossTenantDeniedToolsFromTenantQueries()
     {
-        var registry = new AiToolRegistry(
+        var registry = CreateRegistry(
             [
                 new TestTool(new AiToolDefinition { Name = "tenant", DisplayName = "Tenant", TenantBehavior = AiTenantBehavior.TenantScoped }),
                 new TestTool(new AiToolDefinition { Name = "host", DisplayName = "Host", TenantBehavior = AiTenantBehavior.HostScoped }),
                 new TestTool(new AiToolDefinition { Name = "cross", DisplayName = "Cross", TenantBehavior = AiTenantBehavior.CrossTenantDenied })
-            ],
-            new AiToolEnablementService());
+            ]);
 
         var tools = await registry.ListAsync(new AiToolQuery
         {
@@ -30,7 +30,7 @@ public class AiToolRegistryTests
     [Fact(DisplayName = "Tool registry allows cross-tenant denied tools for explicit tenant allowlists")]
     public async Task ToolRegistryAllowsCrossTenantDeniedToolsForExplicitTenantAllowlists()
     {
-        var registry = new AiToolRegistry(
+        var registry = CreateRegistry(
             [
                 new TestTool(new AiToolDefinition
                 {
@@ -39,8 +39,7 @@ public class AiToolRegistryTests
                     TenantBehavior = AiTenantBehavior.CrossTenantDenied,
                     TenantIds = ["tenant-1"]
                 })
-            ],
-            new AiToolEnablementService());
+            ]);
 
         var tools = await registry.ListAsync(new AiToolQuery
         {
@@ -55,12 +54,11 @@ public class AiToolRegistryTests
     [Fact(DisplayName = "Tool registry excludes cross-tenant denied tools from host queries")]
     public async Task ToolRegistryExcludesCrossTenantDeniedToolsFromHostQueries()
     {
-        var registry = new AiToolRegistry(
+        var registry = CreateRegistry(
             [
                 new TestTool(new AiToolDefinition { Name = "host", DisplayName = "Host", TenantBehavior = AiTenantBehavior.HostScoped }),
                 new TestTool(new AiToolDefinition { Name = "cross", DisplayName = "Cross", TenantBehavior = AiTenantBehavior.CrossTenantDenied })
-            ],
-            new AiToolEnablementService());
+            ]);
 
         var tools = await registry.ListAsync(new AiToolQuery
         {
@@ -74,11 +72,10 @@ public class AiToolRegistryTests
     [Fact(DisplayName = "Tool registry exposes default tools without tenant context")]
     public async Task ToolRegistryExposesDefaultToolsWithoutTenantContext()
     {
-        var registry = new AiToolRegistry(
+        var registry = CreateRegistry(
             [
                 new TestTool(new AiToolDefinition { Name = "default", DisplayName = "Default" })
-            ],
-            new AiToolEnablementService());
+            ]);
 
         var tools = await registry.ListAsync(new AiToolQuery { ActorId = "user-1" });
 
@@ -89,7 +86,7 @@ public class AiToolRegistryTests
     [Fact(DisplayName = "Tool registry find applies tenant and actor filters")]
     public async Task ToolRegistryFindAppliesTenantAndActorFilters()
     {
-        var registry = new AiToolRegistry(
+        var registry = CreateRegistry(
             [
                 new TestTool(new AiToolDefinition
                 {
@@ -100,8 +97,7 @@ public class AiToolRegistryTests
                     TenantIds = ["tenant-1"],
                     ActorIds = ["user-1"]
                 })
-            ],
-            new AiToolEnablementService());
+            ]);
 
         var allowed = await registry.FindAsync("restricted", new AiToolQuery { TenantId = "tenant-1", ActorId = "user-1" });
         var denied = await registry.FindAsync("restricted", new AiToolQuery { TenantId = "tenant-2", ActorId = "user-1" });
@@ -113,7 +109,7 @@ public class AiToolRegistryTests
     [Fact(DisplayName = "Tool registry enforces tool permission requirements")]
     public async Task ToolRegistryEnforcesToolPermissionRequirements()
     {
-        var registry = new AiToolRegistry(
+        var registry = CreateRegistry(
             [
                 new TestTool(new AiToolDefinition
                 {
@@ -123,8 +119,7 @@ public class AiToolRegistryTests
                     TenantBehavior = AiTenantBehavior.TenantScoped,
                     Permissions = ["workflows:write"]
                 })
-            ],
-            new AiToolEnablementService());
+            ]);
 
         var denied = await registry.FindAsync("restricted", new AiToolQuery { TenantId = "tenant-1", ActorId = "user-1" });
         var allowed = await registry.FindAsync("restricted", new AiToolQuery
@@ -141,7 +136,7 @@ public class AiToolRegistryTests
     [Fact(DisplayName = "Tool registry honors tenant and actor allowlists")]
     public async Task ToolRegistryHonorsTenantAndActorAllowlists()
     {
-        var registry = new AiToolRegistry(
+        var registry = CreateRegistry(
             [
                 new TestTool(new AiToolDefinition
                 {
@@ -164,8 +159,7 @@ public class AiToolRegistryTests
                     DisplayName = "Wrong actor",
                     ActorIds = ["user-2"]
                 })
-            ],
-            new AiToolEnablementService());
+            ]);
 
         var tools = await registry.ListAsync(new AiToolQuery
         {
@@ -175,6 +169,16 @@ public class AiToolRegistryTests
 
         var tool = Assert.Single(tools);
         Assert.Equal("matching", tool.Name);
+    }
+
+    private static AiToolRegistry CreateRegistry(IReadOnlyCollection<IAiTool> tools)
+    {
+        var services = new ServiceCollection();
+        foreach (var tool in tools)
+            services.AddScoped<IAiTool>(_ => tool);
+
+        var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        return new AiToolRegistry(provider.GetRequiredService<IServiceScopeFactory>(), new AiToolEnablementService());
     }
 
     private class TestTool(AiToolDefinition definition) : IAiTool

@@ -133,6 +133,25 @@ public class AiRegistrationTests
         Assert.Null(result);
     }
 
+    [Fact(DisplayName = "In-memory conversation store does not retain ephemeral conversations")]
+    public async Task InMemoryConversationStoreDoesNotRetainEphemeralConversations()
+    {
+        var store = new InMemoryAiConversationStore(MicrosoftOptions.Create(new AiHostOptions()));
+
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-1",
+            UserId = "user-1",
+            RetentionMode = AiRetentionMode.Ephemeral,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow
+        });
+
+        var result = await store.FindAsync("conversation-1");
+
+        Assert.Null(result);
+    }
+
     private class ScopedAuditHandler : IAiAuditEventHandler
     {
         public static int RecordedCount { get; set; }

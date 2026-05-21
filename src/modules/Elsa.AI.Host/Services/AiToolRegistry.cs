@@ -1,15 +1,15 @@
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.AI.Host.Services;
 
-public class AiToolRegistry(IEnumerable<IAiTool> tools, AiToolEnablementService enablementService) : IAiToolRegistry
+public class AiToolRegistry(IServiceScopeFactory scopeFactory, AiToolEnablementService enablementService) : IAiToolRegistry
 {
-    private readonly IReadOnlyCollection<IAiTool> _tools = tools.ToList();
-
     public ValueTask<IReadOnlyCollection<AiToolDefinition>> ListAsync(AiToolQuery query, CancellationToken cancellationToken = default)
     {
-        var definitions = _tools
+        using var scope = scopeFactory.CreateScope();
+        var definitions = scope.ServiceProvider.GetServices<IAiTool>()
             .Select(x => x.Definition)
             .Where(x => IsVisible(x, query))
             .Select(x => x with { IsEnabled = enablementService.IsEnabled(x) })
@@ -20,9 +20,17 @@ public class AiToolRegistry(IEnumerable<IAiTool> tools, AiToolEnablementService 
 
     public ValueTask<IAiTool?> FindAsync(string name, AiToolQuery query, CancellationToken cancellationToken = default)
     {
-        var tool = _tools.FirstOrDefault(x => string.Equals(x.Definition.Name, name, StringComparison.OrdinalIgnoreCase));
+        var scope = scopeFactory.CreateScope();
+        var tool = scope.ServiceProvider.GetServices<IAiTool>().FirstOrDefault(x => string.Equals(x.Definition.Name, name, StringComparison.OrdinalIgnoreCase));
         if (tool == null || !IsVisible(tool.Definition, query) || !enablementService.IsEnabled(tool.Definition))
+        {
+            scope.Dispose();
             tool = null;
+        }
+        else
+        {
+            tool = new ScopedAiTool(scope, tool);
+        }
 
         return ValueTask.FromResult(tool);
     }
@@ -67,5 +75,22 @@ public class AiToolRegistry(IEnumerable<IAiTool> tools, AiToolEnablementService 
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         return grantedPermissions.Contains(PermissionNames.All) || definition.Permissions.All(grantedPermissions.Contains);
+    }
+
+    private class ScopedAiTool(IServiceScope scope, IAiTool inner) : IAiTool
+    {
+        public AiToolDefinition Definition => inner.Definition;
+
+        public async ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await inner.ExecuteAsync(context, cancellationToken);
+            }
+            finally
+            {
+                scope.Dispose();
+            }
+        }
     }
 }

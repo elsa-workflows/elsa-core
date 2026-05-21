@@ -23,6 +23,6 @@ internal static class AiHttpContextIdentity
             .FindAll(PermissionNames.ClaimType)
             .Select(x => x.Value)
             .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.Ordinal)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList() ?? [];
 }
