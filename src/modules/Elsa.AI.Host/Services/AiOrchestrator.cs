@@ -513,6 +513,8 @@ public class AiOrchestrator(
     private async ValueTask SaveConversationAsync(string conversationId, AiChatRequest request, AiConversationStatus status, IReadOnlyCollection<AiMessage> messages, AiConversation? conversation, string? providerSessionId, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
+        var retentionMode = conversation?.RetentionMode ?? AiRetentionMode.Configured;
+        var retentionExpiresAt = conversation?.RetentionExpiresAt ?? (retentionMode == AiRetentionMode.Configured ? now.Add(options.Value.ConversationRetention) : null);
 
         await conversationStore.SaveAsync(new AiConversation
         {
@@ -523,8 +525,8 @@ public class AiOrchestrator(
             CreatedAt = conversation is null || conversation.CreatedAt == default ? now : conversation.CreatedAt,
             UpdatedAt = now,
             ProviderSessionId = providerSessionId ?? conversation?.ProviderSessionId,
-            RetentionMode = conversation?.RetentionMode ?? AiRetentionMode.Configured,
-            RetentionExpiresAt = conversation?.RetentionExpiresAt,
+            RetentionMode = retentionMode,
+            RetentionExpiresAt = retentionExpiresAt,
             Messages = messages.ToList()
         }, cancellationToken);
     }

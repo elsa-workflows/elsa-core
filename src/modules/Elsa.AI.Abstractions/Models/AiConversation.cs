@@ -50,7 +50,7 @@ public record AiStreamEvent
 
 public record AiSessionHandle
 {
-    public string Id { get; init; } = default!;
+    public string Id { get; init; } = Guid.NewGuid().ToString("N");
     public string? ProviderSessionId { get; init; }
 }
 

@@ -274,6 +274,7 @@ public class AiChatEndpointTests
 
         Assert.NotNull(conversation);
         Assert.Equal(AiConversationStatus.Completed, conversation.Status);
+        Assert.NotNull(conversation.RetentionExpiresAt);
         Assert.Contains(conversation.Messages, x => x.Role == AiMessageRole.User && x.Content == "Explain this workflow");
     }
 
@@ -303,6 +304,39 @@ public class AiChatEndpointTests
 
         Assert.Equal("conversation-1", sessionRequest.ConversationId);
         Assert.Equal("provider-session-conversation-1", conversation!.ProviderSessionId);
+    }
+
+    [Fact(DisplayName = "Chat orchestration persists generated provider session IDs")]
+    public async Task ChatOrchestrationPersistsGeneratedProviderSessionIds()
+    {
+        var provider = new DefaultSessionHandleProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiProvider>(provider);
+        using var serviceProvider = services.BuildServiceProvider();
+        var orchestrator = serviceProvider.GetRequiredService<IAiOrchestrator>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "First"
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "Second"
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        Assert.Single(provider.SessionRequests);
     }
 
     [Fact(DisplayName = "Chat orchestration forwards persisted message history")]
@@ -763,6 +797,34 @@ public class AiChatEndpointTests
         {
             await Task.Yield();
             Requests.Add(request);
+
+            yield return new AiProviderEvent
+            {
+                Type = "assistant.delta",
+                Sequence = 1,
+                Timestamp = DateTimeOffset.UtcNow,
+                Data = new JsonObject
+                {
+                    ["content"] = "Captured"
+                }
+            };
+        }
+    }
+
+    private class DefaultSessionHandleProvider : IAiProvider
+    {
+        public string Name => "default-session-handle";
+        public List<CreateAiSessionRequest> SessionRequests { get; } = [];
+
+        public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default)
+        {
+            SessionRequests.Add(request);
+            return ValueTask.FromResult(new AiSessionHandle());
+        }
+
+        public async IAsyncEnumerable<AiProviderEvent> ExecuteTurnAsync(AiTurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.Yield();
 
             yield return new AiProviderEvent
             {
