@@ -34,7 +34,7 @@ public class EFCoreAiAuditSinkTests : IAsyncLifetime
     {
         await _connection.OpenAsync();
         _dbContext = new AiDbContext(new DbContextOptionsBuilder<AiDbContext>().UseSqlite(_connection).Options);
-        await _dbContext.Database.EnsureCreatedAsync();
+        await _dbContext.Database.MigrateAsync();
     }
 
     public async Task DisposeAsync()

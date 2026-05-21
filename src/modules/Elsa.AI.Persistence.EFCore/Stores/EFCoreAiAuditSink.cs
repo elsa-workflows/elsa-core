@@ -1,11 +1,10 @@
-using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Services;
 using Elsa.AI.Persistence.EFCore.Entities;
 
 namespace Elsa.AI.Persistence.EFCore.Stores;
 
-public class EFCoreAiAuditSink(AiDbContext dbContext) : IAiAuditSink, IAiAuditEventHandler
+public class EFCoreAiAuditSink(AiDbContext dbContext) : IAiAuditEventHandler
 {
     public async ValueTask RecordAsync(AiAuditEvent auditEvent, CancellationToken cancellationToken = default)
     {

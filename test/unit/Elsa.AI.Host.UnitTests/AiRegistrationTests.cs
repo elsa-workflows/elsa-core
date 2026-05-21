@@ -41,6 +41,30 @@ public class AiRegistrationTests
         Assert.Equal(1, ScopedAuditHandler.RecordedCount);
     }
 
+    [Fact(DisplayName = "Tool enablement supports concurrent access")]
+    public void ToolEnablementSupportsConcurrentAccess()
+    {
+        var service = new AiToolEnablementService();
+        var definition = new AiToolDefinition
+        {
+            Name = "workflow.propose",
+            Mutability = AiToolMutability.Proposal
+        };
+
+        Parallel.For(0, 1000, index =>
+        {
+            if (index % 2 == 0)
+                service.Enable(definition.Name);
+            else
+                service.Disable(definition.Name);
+
+            _ = service.IsEnabled(definition);
+        });
+
+        service.Enable(definition.Name);
+        Assert.True(service.IsEnabled(definition));
+    }
+
     private class ScopedAuditHandler : IAiAuditEventHandler
     {
         public static int RecordedCount { get; set; }

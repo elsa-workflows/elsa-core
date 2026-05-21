@@ -35,11 +35,39 @@ public class EFCoreAiProposalStoreTests : IAsyncLifetime
         Assert.Equal("Create a workflow", reloaded.Rationale);
     }
 
+    [Fact(DisplayName = "Proposal store reads enum values case-insensitively")]
+    public async Task ProposalStoreReadsEnumValuesCaseInsensitively()
+    {
+        var store = new EFCoreAiProposalStore(_dbContext);
+        var proposal = new AiProposal
+        {
+            Id = "proposal-2",
+            ConversationId = "conversation-1",
+            Kind = AiProposalKind.WorkflowCreate,
+            Status = AiProposalStatus.Validated,
+            CreatedBy = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        await store.SaveAsync(proposal);
+        var record = await _dbContext.Proposals.FindAsync(proposal.Id);
+        record!.Kind = "workflowcreate";
+        record.Status = "validated";
+        await _dbContext.SaveChangesAsync();
+        _dbContext.ChangeTracker.Clear();
+
+        var reloaded = await store.FindAsync(proposal.Id);
+
+        Assert.NotNull(reloaded);
+        Assert.Equal(AiProposalKind.WorkflowCreate, reloaded.Kind);
+        Assert.Equal(AiProposalStatus.Validated, reloaded.Status);
+    }
+
     public async Task InitializeAsync()
     {
         await _connection.OpenAsync();
         _dbContext = new AiDbContext(new DbContextOptionsBuilder<AiDbContext>().UseSqlite(_connection).Options);
-        await _dbContext.Database.EnsureCreatedAsync();
+        await _dbContext.Database.MigrateAsync();
     }
 
     public async Task DisposeAsync()
