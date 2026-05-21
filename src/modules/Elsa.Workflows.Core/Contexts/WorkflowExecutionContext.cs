@@ -301,6 +301,11 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// The date and time the workflow execution context has finished.
     public DateTimeOffset? FinishedAt { get; set; }
 
+    /// <summary>
+    /// Gets or sets the exception that occurred during workflow execution, if any.
+    /// </summary>
+    public Exception? Exception { get; set; }
+
     /// Gets the clock used to determine the current time.
     public ISystemClock SystemClock { get; }
 
@@ -713,4 +718,3 @@ public partial class WorkflowExecutionContext : IExecutionContext
         return _commitStateHandler.CommitAsync(this, CancellationToken);
     }
 }
-

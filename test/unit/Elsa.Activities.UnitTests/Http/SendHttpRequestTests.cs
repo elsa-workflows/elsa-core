@@ -69,15 +69,29 @@ public class SendHttpRequestTests
     public async Task Should_Propagate_Current_Trace_Context()
     {
         // Arrange
+        ActivityTraceId parentTraceId = default;
         using var listener = new ActivityListener
         {
             ShouldListenTo = source => source.Name == TestActivitySourceName || source.Name == "System.Net.Http",
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
+            Sample = (ref ActivityCreationOptions<ActivityContext> options) => options.Source.Name switch
+            {
+                TestActivitySourceName => ActivitySamplingResult.AllDataAndRecorded,
+                "System.Net.Http" when parentTraceId != default && options.Parent.TraceId == parentTraceId => ActivitySamplingResult.AllDataAndRecorded,
+                _ => ActivitySamplingResult.None
+            },
+            SampleUsingParentId = (ref ActivityCreationOptions<string> options) => options.Source.Name switch
+            {
+                TestActivitySourceName => ActivitySamplingResult.AllDataAndRecorded,
+                "System.Net.Http" when parentTraceId != default && options.Parent?.Contains(parentTraceId.ToString(), StringComparison.OrdinalIgnoreCase) == true => ActivitySamplingResult.AllDataAndRecorded,
+                _ => ActivitySamplingResult.None
+            }
         };
         ActivitySource.AddActivityListener(listener);
 
         using var source = new ActivitySource(TestActivitySourceName);
         using var parentActivity = source.StartActivity("parent");
+        Assert.NotNull(parentActivity);
+        parentTraceId = parentActivity.TraceId;
         await using var server = new TraceContextServer();
         using var httpClient = new HttpClient();
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
@@ -92,7 +106,6 @@ public class SendHttpRequestTests
         var headers = await server.GetRequestHeadersAsync();
 
         // Assert
-        Assert.NotNull(parentActivity);
         Assert.True(headers.TryGetValue("traceparent", out var traceParent));
         var traceParentParts = traceParent.Split('-');
         Assert.Equal(4, traceParentParts.Length);
@@ -297,12 +310,28 @@ public class SendHttpRequestTests
 
         private static async Task<Dictionary<string, string>> ReadHeadersAsync(NetworkStream stream, CancellationToken cancellationToken)
         {
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(HeaderReadTimeout);
+
+            try
+            {
+                return await ReadHeadersCoreAsync(stream, timeout.Token);
+            }
+            catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new TimeoutException("Timed out while reading the HTTP request headers.", ex);
+            }
+        }
+
+        private static async Task<Dictionary<string, string>> ReadHeadersCoreAsync(NetworkStream stream, CancellationToken cancellationToken)
+        {
+            using var reader = new StreamReader(stream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, bufferSize: 1024, leaveOpen: true);
             var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            if (await ReadLineAsync(stream, cancellationToken) == null)
+            if (await ReadLineAsync(reader, cancellationToken) == null)
                 throw new IOException("The HTTP client closed the connection before sending a request line.");
 
-            while (await ReadLineAsync(stream, cancellationToken) is { } line)
+            while (await ReadLineAsync(reader, cancellationToken) is { } line)
             {
                 if (line.Length == 0)
                     return headers;
@@ -316,48 +345,14 @@ public class SendHttpRequestTests
             throw new IOException("The HTTP client closed the connection before completing the request headers.");
         }
 
-        private static async Task<string?> ReadLineAsync(NetworkStream stream, CancellationToken cancellationToken)
+        private static async Task<string?> ReadLineAsync(StreamReader reader, CancellationToken cancellationToken)
         {
-            var line = new List<byte>();
-            var buffer = new byte[1];
+            var line = await reader.ReadLineAsync(cancellationToken);
 
-            while (true)
-            {
-                var bytesRead = await ReadWithTimeoutAsync(stream, buffer, cancellationToken);
+            if (line?.Length > MaxHeaderLineLength)
+                throw new InvalidDataException($"The HTTP request header line exceeded {MaxHeaderLineLength} bytes.");
 
-                if (bytesRead == 0)
-                    return line.Count == 0 ? null : Encoding.ASCII.GetString(line.ToArray());
-
-                var value = buffer[0];
-
-                if (value == '\n')
-                {
-                    if (line.Count > 0 && line[^1] == '\r')
-                        line.RemoveAt(line.Count - 1);
-
-                    return Encoding.ASCII.GetString(line.ToArray());
-                }
-
-                line.Add(value);
-
-                if (line.Count > MaxHeaderLineLength)
-                    throw new InvalidDataException($"The HTTP request header line exceeded {MaxHeaderLineLength} bytes.");
-            }
-        }
-
-        private static async Task<int> ReadWithTimeoutAsync(NetworkStream stream, byte[] buffer, CancellationToken cancellationToken)
-        {
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeout.CancelAfter(HeaderReadTimeout);
-
-            try
-            {
-                return await stream.ReadAsync(buffer.AsMemory(0, 1), timeout.Token);
-            }
-            catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
-            {
-                throw new TimeoutException("Timed out while reading the HTTP request headers.", ex);
-            }
+            return line;
         }
 
         private static bool IsExpectedTeardownException(Exception exception)
