@@ -94,17 +94,18 @@ public static class WorkflowInstrumentation
         var workflowException = exception ?? (context.SubStatus == Workflows.WorkflowSubStatus.Faulted ? context.Exception : null);
         var cancelled = exception is OperationCanceledException || context.SubStatus == Workflows.WorkflowSubStatus.Cancelled;
         var faulted = !cancelled && (workflowException != null || context.SubStatus == Workflows.WorkflowSubStatus.Faulted);
+        var workflowSubStatus = faulted ? Workflows.WorkflowSubStatus.Faulted : (Workflows.WorkflowSubStatus?)null;
 
         if (activity != null)
         {
-            SetWorkflowTags(activity, context);
+            SetWorkflowTags(activity, context, workflowSubStatus);
             activity.SetTag(WorkflowFaulted, faulted);
             SetError(activity, workflowException, faulted);
             activity.Dispose();
         }
 
         if (faulted)
-            WorkflowFaultedCounter.Add(1, CreateWorkflowTags(context));
+            WorkflowFaultedCounter.Add(1, CreateWorkflowTags(context, workflowSubStatusOverride: workflowSubStatus));
         else if (context.SubStatus == Workflows.WorkflowSubStatus.Finished)
             WorkflowCompletedCounter.Add(1, CreateWorkflowTags(context));
     }
@@ -130,18 +131,20 @@ public static class WorkflowInstrumentation
         }
     }
 
-    private static void SetWorkflowTags(DiagnosticsActivity activity, WorkflowExecutionContext context)
+    private static void SetWorkflowTags(DiagnosticsActivity activity, WorkflowExecutionContext context, Workflows.WorkflowSubStatus? workflowSubStatusOverride = null)
     {
         var workflow = context.Workflow;
         var identity = workflow.Identity;
+        var workflowSubStatus = workflowSubStatusOverride ?? context.SubStatus;
+        var workflowStatus = GetWorkflowStatus(context, workflowSubStatusOverride);
 
         activity.SetTag(WorkflowSystem, SystemName);
         activity.SetTag(WorkflowInstanceId, context.Id);
         activity.SetTag(WorkflowDefinitionId, identity.DefinitionId);
         activity.SetTag(WorkflowDefinitionVersion, identity.Version);
         activity.SetTag(WorkflowDefinitionVersionId, identity.Id);
-        activity.SetTag(WorkflowStatus, context.Status.ToString());
-        activity.SetTag(WorkflowSubStatus, context.SubStatus.ToString());
+        activity.SetTag(WorkflowStatus, workflowStatus.ToString());
+        activity.SetTag(WorkflowSubStatus, workflowSubStatus.ToString());
         AddIfNotNull(activity, WorkflowName, workflow.WorkflowMetadata.Name ?? workflow.Name);
         AddIfNotNull(activity, WorkflowParentInstanceId, context.ParentWorkflowInstanceId);
         AddIfNotNull(activity, WorkflowCorrelationId, context.CorrelationId);
@@ -197,10 +200,12 @@ public static class WorkflowInstrumentation
         }
     }
 
-    private static TagList CreateWorkflowTags(WorkflowExecutionContext context, bool includeExecutionStatus = true)
+    private static TagList CreateWorkflowTags(WorkflowExecutionContext context, bool includeExecutionStatus = true, Workflows.WorkflowSubStatus? workflowSubStatusOverride = null)
     {
         var workflow = context.Workflow;
         var identity = workflow.Identity;
+        var workflowSubStatus = workflowSubStatusOverride ?? context.SubStatus;
+        var workflowStatus = GetWorkflowStatus(context, workflowSubStatusOverride);
         var tags = new TagList
         {
             { WorkflowSystem, SystemName },
@@ -210,8 +215,8 @@ public static class WorkflowInstrumentation
 
         if (includeExecutionStatus)
         {
-            tags.Add(WorkflowStatus, context.Status.ToString());
-            tags.Add(WorkflowSubStatus, context.SubStatus.ToString());
+            tags.Add(WorkflowStatus, workflowStatus.ToString());
+            tags.Add(WorkflowSubStatus, workflowSubStatus.ToString());
         }
 
         AddIfNotNull(ref tags, WorkflowName, workflow.WorkflowMetadata.Name ?? workflow.Name);
@@ -234,6 +239,18 @@ public static class WorkflowInstrumentation
 
         AddIfNotNull(ref tags, TenantId, context.WorkflowExecutionContext.Workflow.Identity.TenantId);
         return tags;
+    }
+
+    private static Workflows.WorkflowStatus GetWorkflowStatus(WorkflowExecutionContext context, Workflows.WorkflowSubStatus? workflowSubStatusOverride)
+    {
+        if (workflowSubStatusOverride == null)
+            return context.Status;
+
+        return workflowSubStatusOverride.Value switch
+        {
+            Workflows.WorkflowSubStatus.Cancelled or Workflows.WorkflowSubStatus.Faulted or Workflows.WorkflowSubStatus.Finished => Workflows.WorkflowStatus.Finished,
+            _ => Workflows.WorkflowStatus.Running
+        };
     }
 
     private static void AddIfNotNull(ref TagList tags, string key, object? value)

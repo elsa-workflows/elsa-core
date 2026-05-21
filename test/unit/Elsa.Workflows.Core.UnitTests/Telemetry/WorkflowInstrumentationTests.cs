@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Linq;
 using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
@@ -108,7 +109,10 @@ public class WorkflowInstrumentationTests
         var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
         Assert.Equal("workflow.execute", span.OperationName);
         Assert.Equal(ActivityStatusCode.Error, span.Status);
+        Assert.Equal(WorkflowSubStatus.Executing, context.SubStatus);
         Assert.Equal(context.Id, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowInstanceId));
+        Assert.Equal(WorkflowStatus.Finished.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowStatus));
+        Assert.Equal(WorkflowSubStatus.Faulted.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus));
         Assert.Equal(typeof(InvalidOperationException).FullName, GetTag(span.TagObjects, WorkflowInstrumentation.ExceptionType));
         Assert.False(HasTag(span.TagObjects, "exception.message"));
         Assert.False(HasTag(span.TagObjects, "exception.stacktrace"));
@@ -122,6 +126,8 @@ public class WorkflowInstrumentationTests
         Assert.False(faulted.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
         Assert.Equal("Test workflow", started.Tags[WorkflowInstrumentation.WorkflowName]);
         Assert.Equal("Test workflow", faulted.Tags[WorkflowInstrumentation.WorkflowName]);
+        Assert.Equal(WorkflowStatus.Finished.ToString(), faulted.Tags[WorkflowInstrumentation.WorkflowStatus]);
+        Assert.Equal(WorkflowSubStatus.Faulted.ToString(), faulted.Tags[WorkflowInstrumentation.WorkflowSubStatus]);
     }
 
     [Fact]
@@ -295,11 +301,8 @@ public class WorkflowInstrumentationTests
         object? value = null;
         var found = false;
 
-        foreach (var tag in tags)
+        foreach (var tag in tags.Where(tag => tag.Key == key))
         {
-            if (tag.Key != key)
-                continue;
-
             value = tag.Value;
             found = true;
         }
