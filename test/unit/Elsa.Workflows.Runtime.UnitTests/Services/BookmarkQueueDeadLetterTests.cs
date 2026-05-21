@@ -54,7 +54,7 @@ public class BookmarkQueueDeadLetterTests
     }
 
     [Fact]
-    public async Task PurgeAsync_DoesNotDeadLetterExpiredItemAlreadyRemovedByProcessor()
+    public async Task PurgeAsync_WhenExpiredItemWasAlreadyRemoved_LeavesDeadLetterForRetry()
     {
         var expired = NewQueueItem("expired", _now.AddMinutes(-2));
         await _queueStore.AddAsync(expired);
@@ -69,6 +69,28 @@ public class BookmarkQueueDeadLetterTests
 
         await purger.PurgeAsync();
 
+        var deadLetter = Assert.Single((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList());
+        Assert.Equal("expired", deadLetter.OriginalQueueItemId);
+    }
+
+    [Fact]
+    public async Task PurgeAsync_WhenDeadLetterWriteFails_DoesNotDeleteQueueItem()
+    {
+        var expired = NewQueueItem("expired", _now.AddMinutes(-2));
+        await _queueStore.AddAsync(expired);
+        var deadLetterStore = new ThrowingAddDeadLetterStore(_deadLetterStore);
+        var purger = new DefaultBookmarkQueuePurger(
+            _queueStore,
+            deadLetterStore,
+            CreateManager(deadLetterStore),
+            _clock,
+            Microsoft.Extensions.Options.Options.Create(new BookmarkQueuePurgeOptions { Ttl = TimeSpan.FromMinutes(1), DeadLetterTtl = TimeSpan.FromDays(7) }),
+            NullLogger<DefaultBookmarkQueuePurger>.Instance);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => purger.PurgeAsync());
+
+        var retained = await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "expired" });
+        Assert.NotNull(retained);
         Assert.Empty(await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter()));
     }
 
@@ -491,6 +513,31 @@ public class BookmarkQueueDeadLetterTests
             await _allFindsCompleted.Task.WaitAsync(cancellationToken);
             return result;
         }
+
+        public Task<IEnumerable<BookmarkQueueDeadLetterItem>> FindManyAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default) =>
+            inner.FindManyAsync(filter, cancellationToken);
+
+        public Task<Page<BookmarkQueueDeadLetterItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueDeadLetterItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default) =>
+            inner.PageAsync(pageArgs, orderBy, cancellationToken);
+
+        public Task<Page<BookmarkQueueDeadLetterItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueDeadLetterFilter filter, BookmarkQueueDeadLetterItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default) =>
+            inner.PageAsync(pageArgs, filter, orderBy, cancellationToken);
+
+        public Task<long> DeleteAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default) => inner.DeleteAsync(filter, cancellationToken);
+    }
+
+    private sealed class ThrowingAddDeadLetterStore(IBookmarkQueueDeadLetterStore inner) : IBookmarkQueueDeadLetterStore
+    {
+        public Task SaveAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default) => inner.SaveAsync(record, cancellationToken);
+
+        public Task AddAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default) => throw new InvalidOperationException("dead-letter write failed");
+
+        public Task<BookmarkQueueDeadLetterItem> AddOrGetExistingAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default) => throw new InvalidOperationException("dead-letter write failed");
+
+        public Task<BookmarkQueueDeadLetterItem?> TryMarkReplayedAsync(string id, string queueItemId, DateTimeOffset replayedAt, CancellationToken cancellationToken = default) =>
+            inner.TryMarkReplayedAsync(id, queueItemId, replayedAt, cancellationToken);
+
+        public Task<BookmarkQueueDeadLetterItem?> FindAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default) => inner.FindAsync(filter, cancellationToken);
 
         public Task<IEnumerable<BookmarkQueueDeadLetterItem>> FindManyAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default) =>
             inner.FindManyAsync(filter, cancellationToken);

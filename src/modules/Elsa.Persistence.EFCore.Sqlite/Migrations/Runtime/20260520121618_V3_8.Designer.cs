@@ -178,14 +178,13 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                     b.Property<string>("CorrelationId")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("DeadLetteredAt")
-                        .IsRequired()
+                    b.Property<DateTimeOffset>("DeadLetteredAt")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("DeliveryAttempts")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("LastAttemptedAt")
+                    b.Property<DateTimeOffset?>("LastAttemptedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("LastErrorMessage")
@@ -194,8 +193,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                     b.Property<string>("LastErrorType")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("OriginalCreatedAt")
-                        .IsRequired()
+                    b.Property<DateTimeOffset>("OriginalCreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("OriginalQueueItemId")
@@ -206,7 +204,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ReplayedAt")
+                    b.Property<DateTimeOffset?>("ReplayedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ReplayedQueueItemId")
@@ -269,7 +267,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                     b.Property<int>("DeliveryAttempts")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("LastAttemptedAt")
+                    b.Property<DateTimeOffset?>("LastAttemptedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("LastErrorMessage")

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -18,7 +19,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                 nullable: false,
                 defaultValue: 0);
 
-            migrationBuilder.AddColumn<string>(
+            migrationBuilder.AddColumn<DateTimeOffset>(
                 name: "LastAttemptedAt",
                 schema: "Elsa",
                 table: "BookmarkQueueItems",
@@ -52,15 +53,15 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                     StimulusHash = table.Column<string>(type: "TEXT", nullable: true),
                     ActivityInstanceId = table.Column<string>(type: "TEXT", nullable: true),
                     ActivityTypeName = table.Column<string>(type: "TEXT", nullable: true),
-                    OriginalCreatedAt = table.Column<string>(type: "TEXT", nullable: false),
-                    DeadLetteredAt = table.Column<string>(type: "TEXT", nullable: false),
+                    OriginalCreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
+                    DeadLetteredAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
                     Reason = table.Column<string>(type: "TEXT", nullable: false),
                     DeliveryAttempts = table.Column<int>(type: "INTEGER", nullable: false),
-                    LastAttemptedAt = table.Column<string>(type: "TEXT", nullable: true),
+                    LastAttemptedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
                     LastErrorType = table.Column<string>(type: "TEXT", nullable: true),
                     LastErrorMessage = table.Column<string>(type: "TEXT", nullable: true),
                     CanReplay = table.Column<bool>(type: "INTEGER", nullable: false),
-                    ReplayedAt = table.Column<string>(type: "TEXT", nullable: true),
+                    ReplayedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
                     ReplayedQueueItemId = table.Column<string>(type: "TEXT", nullable: true),
                     SerializedOptions = table.Column<string>(type: "TEXT", nullable: true),
                     TenantId = table.Column<string>(type: "TEXT", nullable: true)
