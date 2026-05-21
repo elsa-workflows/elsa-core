@@ -1,6 +1,7 @@
 using Elsa.Common;
 using Elsa.Common.DistributedHosting;
 using Elsa.Common.DistributedHosting.DistributedLocks;
+using Elsa.Common.Multitenancy;
 using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management;
@@ -63,7 +64,46 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.DidNotReceiveWithAnyArgs().FindManyAsync(default, default);
     }
 
-    private WorkflowDispatchOutboxProcessor CreateProcessor(IDistributedLockProvider? distributedLockProvider = null)
+    [Fact]
+    public async Task ProcessAsync_UsesTenantScopedProcessorLock_WhenTenantContextIsAvailable()
+    {
+        var lockProvider = new RecordingDistributedSynchronizationProvider();
+        var tenantAccessor = new DefaultTenantAccessor();
+        var processor = CreateProcessor(lockProvider, tenantAccessor);
+        using var tenantScope = tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                Assert.Equal("Elsa:WorkflowDispatchOutbox:Processor:tenant-a", lockProvider.CurrentLockName);
+                return [];
+            });
+
+        await processor.ProcessAsync();
+
+        await _store.Received(1).FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task TryProcessAsync_UsesTenantScopedProcessorLock_WhenTenantContextIsAvailable()
+    {
+        var lockProvider = new RecordingDistributedSynchronizationProvider();
+        var tenantAccessor = new DefaultTenantAccessor();
+        var processor = CreateProcessor(lockProvider, tenantAccessor);
+        using var tenantScope = tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                Assert.Equal("Elsa:WorkflowDispatchOutbox:Processor:tenant-a", lockProvider.CurrentLockName);
+                return [];
+            });
+
+        var result = await processor.TryProcessAsync();
+
+        Assert.True(result);
+        await _store.Received(1).FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    private WorkflowDispatchOutboxProcessor CreateProcessor(IDistributedLockProvider? distributedLockProvider = null, ITenantAccessor? tenantAccessor = null)
     {
         return new(
             _store,
@@ -73,7 +113,8 @@ public class WorkflowDispatchOutboxProcessorTests
             _systemClock,
             Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()),
             Microsoft.Extensions.Options.Options.Create(_options),
-            NullLogger<WorkflowDispatchOutboxProcessor>.Instance);
+            NullLogger<WorkflowDispatchOutboxProcessor>.Instance,
+            tenantAccessor);
     }
 
     [Fact]

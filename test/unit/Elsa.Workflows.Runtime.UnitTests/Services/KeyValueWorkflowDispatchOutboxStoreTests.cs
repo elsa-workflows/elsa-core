@@ -41,7 +41,7 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
 
         Assert.Equal(["oldest", "middle"], result.Select(x => x.Id));
         await _keyValueStore.Received(1).FindManyAsync(
-            Arg.Is<KeyValueFilter>(x => x.OrderByKey && x.Take == 2),
+            Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Index:" && x.OrderByKey && x.Take == 2),
             Arg.Any<CancellationToken>());
     }
 
@@ -152,6 +152,27 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
             Arg.Is<SerializedKeyValuePair>(x => x.Key == $"Elsa:WorkflowDispatchOutbox:Index:{orphan.CreatedAt.UtcTicks:D20}:orphan" && x.SerializedValue == "orphan"),
             Arg.Any<CancellationToken>());
         await _keyValueStore.Received(1).DeleteAsync("Elsa:WorkflowDispatchOutbox:Recovery:orphan", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task FindManyAsync_AppliesCallerLimitToRecoveryScan()
+    {
+        var first = CreateItem("orphan-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
+        var second = CreateItem("orphan-2", new DateTimeOffset(2026, 5, 20, 12, 1, 0, TimeSpan.Zero));
+        _payloadSerializer.Items = new[] { first, second }.ToDictionary(x => x.Id);
+        _keyValueStore.FindAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:State:LegacyScanCompleted"), Arg.Any<CancellationToken>())
+            .Returns(new SerializedKeyValuePair { Key = "Elsa:WorkflowDispatchOutbox:State:LegacyScanCompleted", SerializedValue = "true" });
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Recovery:" && x.StartsWith), Arg.Any<CancellationToken>())
+            .Returns([CreateRecoveryRecord(first), CreateRecoveryRecord(second)]);
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Keys != null), Arg.Any<CancellationToken>())
+            .Returns([CreateItemRecord(first), CreateItemRecord(second)]);
+
+        var result = (await _store.FindManyAsync(2)).ToList();
+
+        Assert.Equal(["orphan-1", "orphan-2"], result.Select(x => x.Id));
+        await _keyValueStore.Received(1).FindManyAsync(
+            Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Recovery:" && x.StartsWith && x.OrderByKey && x.Take == 2),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

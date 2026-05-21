@@ -1,6 +1,7 @@
 using Elsa.Common;
 using Elsa.Common.DistributedHosting;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Tenants.Mediator;
@@ -24,7 +25,8 @@ public class WorkflowDispatchOutboxProcessor(
     ISystemClock systemClock,
     IOptions<DistributedLockingOptions> distributedLockingOptions,
     IOptions<WorkflowDispatcherOptions> dispatcherOptions,
-    ILogger<WorkflowDispatchOutboxProcessor> logger) : IWorkflowDispatchOutboxProcessor
+    ILogger<WorkflowDispatchOutboxProcessor> logger,
+    ITenantAccessor? tenantAccessor = null) : IWorkflowDispatchOutboxProcessor
 {
     private const string LockResource = "Elsa:WorkflowDispatchOutbox:Processor";
 
@@ -35,7 +37,7 @@ public class WorkflowDispatchOutboxProcessor(
 
         try
         {
-            handle = await distributedLockProvider.TryAcquireLockAsync(LockResource, distributedLockingOptions.Value.LockAcquisitionTimeout, cancellationToken);
+            handle = await distributedLockProvider.TryAcquireLockAsync(GetLockResource(), distributedLockingOptions.Value.LockAcquisitionTimeout, cancellationToken);
         }
         catch (TimeoutException e) when (!cancellationToken.IsCancellationRequested)
         {
@@ -62,7 +64,7 @@ public class WorkflowDispatchOutboxProcessor(
 
         try
         {
-            handle = await distributedLockProvider.TryAcquireLockAsync(LockResource, TimeSpan.Zero, cancellationToken);
+            handle = await distributedLockProvider.TryAcquireLockAsync(GetLockResource(), TimeSpan.Zero, cancellationToken);
         }
         catch (TimeoutException e) when (!cancellationToken.IsCancellationRequested)
         {
@@ -103,6 +105,12 @@ public class WorkflowDispatchOutboxProcessor(
                 logger.LogError(e, "Failed to process workflow dispatch outbox item {OutboxItemId}; processing will continue with the next item.", item.Id);
             }
         }
+    }
+
+    private string GetLockResource()
+    {
+        var tenantId = tenantAccessor?.Tenant?.Id;
+        return string.IsNullOrWhiteSpace(tenantId) ? LockResource : $"{LockResource}:{tenantId}";
     }
 
     private async Task ProcessAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)

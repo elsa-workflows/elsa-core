@@ -68,7 +68,7 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
     public async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindManyAsync(int maxCount, CancellationToken cancellationToken = default)
     {
         var indexedItems = await FindIndexedItemsAsync(maxCount, cancellationToken);
-        var recoverableItems = await FindRecoveryItemsAsync(cancellationToken);
+        var recoverableItems = await FindRecoveryItemsAsync(maxCount, cancellationToken);
         var legacyItems = await FindLegacyItemsAsync(maxCount, cancellationToken);
         var items = indexedItems
             .Concat(recoverableItems)
@@ -161,12 +161,14 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
         return items;
     }
 
-    private async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindRecoveryItemsAsync(CancellationToken cancellationToken)
+    private async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindRecoveryItemsAsync(int maxCount, CancellationToken cancellationToken)
     {
         var recoveryRecords = (await keyValueStore.FindManyAsync(new KeyValueFilter
         {
             Key = RecoveryKeyPrefix,
-            StartsWith = true
+            StartsWith = true,
+            OrderByKey = true,
+            Take = maxCount > 0 ? maxCount : null
         }, cancellationToken)).ToList();
 
         if (recoveryRecords.Count == 0)
