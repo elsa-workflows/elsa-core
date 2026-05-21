@@ -6,7 +6,7 @@ namespace Elsa.AI.Host.Context;
 /// <summary>
 /// Placeholder workflow definition context provider. Replace this implementation with a workflow-management-backed resolver before using workflow context for production AI reasoning.
 /// </summary>
-public class WorkflowDefinitionContextProvider : IAiContextProvider
+public class WorkflowDefinitionContextProvider : IAiContextProvider, IPlaceholderAiContextProvider
 {
     public string Kind => "WorkflowDefinition";
 

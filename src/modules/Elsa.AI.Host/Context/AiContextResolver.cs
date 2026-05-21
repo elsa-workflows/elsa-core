@@ -84,6 +84,12 @@ public class AiContextResolver(IEnumerable<IAiContextProvider> providers)
     {
         return providers
             .GroupBy(x => x.Kind, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(x => x.Key, x => x.Last(), StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(x => x.Key, SelectProvider, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static IAiContextProvider SelectProvider(IEnumerable<IAiContextProvider> providers)
+    {
+        var providerList = providers.ToList();
+        return providerList.LastOrDefault(x => x is not IPlaceholderAiContextProvider) ?? providerList.Last();
     }
 }

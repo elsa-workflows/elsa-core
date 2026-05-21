@@ -6,7 +6,7 @@ namespace Elsa.AI.Host.Context;
 /// <summary>
 /// Placeholder workflow instance context provider. Replace this implementation with a runtime-backed resolver before using instance context for production AI reasoning.
 /// </summary>
-public class WorkflowInstanceContextProvider : IAiContextProvider
+public class WorkflowInstanceContextProvider : IAiContextProvider, IPlaceholderAiContextProvider
 {
     public string Kind => "WorkflowInstance";
 

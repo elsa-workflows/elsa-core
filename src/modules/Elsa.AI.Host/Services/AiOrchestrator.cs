@@ -194,10 +194,14 @@ public class AiOrchestrator(
                 await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, messages, conversation, providerSessionId, cancellationToken);
 
                 if (turn == MaxProviderTurns - 1)
+                {
+                    const string content = "Tool execution stopped because the provider requested too many continuation turns.";
                     yield return CreateEvent("assistant.delta", conversationId, sequence++, new JsonObject
                     {
-                        ["content"] = "Tool execution stopped because the provider requested too many continuation turns."
+                        ["content"] = content
                     });
+                    messages.Add(CreateMessage(conversationId, AiMessageRole.Assistant, content, sequence - 1));
+                }
             }
         }
 
@@ -294,6 +298,7 @@ public class AiOrchestrator(
         if (tool == null)
         {
             var result = new AiToolResult { Status = AiToolInvocationStatus.Failed, Error = $"Tool '{toolCall.Name}' was not found." };
+            await RecordToolAuditAsync("tool.failed", request, conversationId, toolCall, cancellationToken);
             return CreateToolExecutionResult(conversationId, sequence, toolCall, result);
         }
 

@@ -71,6 +71,21 @@ public class AiContextResolverTests
         Assert.Equal("second", context.Summary);
     }
 
+    [Fact(DisplayName = "Context resolver prefers real providers over placeholders")]
+    public async Task ContextResolverPrefersRealProvidersOverPlaceholders()
+    {
+        var resolver = new AiContextResolver([new DuplicateContextProvider("real", "WorkflowDefinition"), new WorkflowDefinitionContextProvider()]);
+
+        var result = await resolver.ResolveAsync(new AiChatRequest
+        {
+            UserId = "user-1",
+            Attachments = [new AiContextAttachment { Kind = "WorkflowDefinition", ReferenceId = "workflow-1" }]
+        });
+
+        var context = Assert.Single(result);
+        Assert.Equal("real", context.Summary);
+    }
+
     private class SensitiveContextProvider : IAiContextProvider
     {
         public string Kind => "Sensitive";
@@ -95,9 +110,9 @@ public class AiContextResolverTests
         }
     }
 
-    private class DuplicateContextProvider(string summary) : IAiContextProvider
+    private class DuplicateContextProvider(string summary, string kind = "Duplicate") : IAiContextProvider
     {
-        public string Kind => "Duplicate";
+        public string Kind => kind;
 
         public ValueTask<AiResolvedContext> ResolveAsync(AiContextResolutionRequest request, CancellationToken cancellationToken = default)
         {

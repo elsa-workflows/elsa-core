@@ -294,6 +294,33 @@ public class AiChatEndpointTests
         Assert.Equal("Echoed", toolResult.Data["summary"]!.GetValue<string>());
     }
 
+    [Fact(DisplayName = "Chat orchestration audits unresolved tool calls")]
+    public async Task ChatOrchestrationAuditsUnresolvedToolCalls()
+    {
+        var auditSink = new CapturingAuditSink();
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.RemoveAll<IAiAuditSink>();
+        services.AddSingleton<IAiAuditSink>(auditSink);
+        services.AddSingleton<IAiProvider, ToolCallAiProvider>();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           TenantId = "tenant-1",
+                           Message = "Use a tool"
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        var toolAudit = Assert.Single(auditSink.Events, x => x.Type == "tool.failed");
+        Assert.Equal("tool-call-1", toolAudit.ToolInvocationId);
+        Assert.Equal("echo", toolAudit.Data["toolName"]!.GetValue<string>());
+    }
+
     [Fact(DisplayName = "Chat orchestration redacts tool exception messages from stream events")]
     public async Task ChatOrchestrationRedactsToolExceptionMessagesFromStreamEvents()
     {
@@ -831,6 +858,35 @@ public class AiChatEndpointTests
         Assert.Equal(64, data["maxBytes"]!.GetValue<int>());
     }
 
+    [Fact(DisplayName = "Chat orchestration persists max tool turn warning")]
+    public async Task ChatOrchestrationPersistsMaxToolTurnWarning()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiProvider, EndlessToolCallAiProvider>();
+        services.AddSingleton<IAiTool, EchoTool>();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var store = provider.GetRequiredService<IAiConversationStore>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           TenantId = "tenant-1",
+                           Message = "Use tools forever"
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        var conversation = await store.FindAsync("conversation-1");
+
+        Assert.Contains(
+            conversation!.Messages,
+            x => x.Role == AiMessageRole.Assistant && x.Content == "Tool execution stopped because the provider requested too many continuation turns.");
+    }
+
     private static string? GetToolResultSummary(AiTurnRequest request) =>
         request.ToolResults.FirstOrDefault()?.Result.Summary ??
         request.Messages.LastOrDefault(x => x.Role == AiMessageRole.Tool)?.Content;
@@ -1054,6 +1110,38 @@ public class AiChatEndpointTests
                 Data = new JsonObject
                 {
                     ["id"] = "tool-call-1",
+                    ["toolName"] = "echo",
+                    ["arguments"] = new JsonObject
+                    {
+                        ["text"] = "hello"
+                    }
+                }
+            };
+        }
+    }
+
+    private class EndlessToolCallAiProvider : IAiProvider
+    {
+        private int _index;
+
+        public string Name => "endless-tool-caller";
+
+        public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiSessionHandle { Id = request.ConversationId });
+
+        public async IAsyncEnumerable<AiProviderEvent> ExecuteTurnAsync(AiTurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.Yield();
+            var id = Interlocked.Increment(ref _index);
+
+            yield return new AiProviderEvent
+            {
+                Type = "tool.call",
+                Sequence = 1,
+                Timestamp = DateTimeOffset.UtcNow,
+                Data = new JsonObject
+                {
+                    ["id"] = $"tool-call-{id}",
                     ["toolName"] = "echo",
                     ["arguments"] = new JsonObject
                     {
