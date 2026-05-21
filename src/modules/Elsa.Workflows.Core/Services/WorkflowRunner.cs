@@ -7,6 +7,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
+using Elsa.Workflows.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows;
@@ -213,13 +214,33 @@ public class WorkflowRunner(
         await notificationSender.SendAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken);
 
         // If the status is Pending, it means the workflow is started for the first time.
-        if (workflowExecutionContext.SubStatus == WorkflowSubStatus.Pending)
+        var isStarting = workflowExecutionContext.SubStatus == WorkflowSubStatus.Pending;
+        if (isStarting)
         {
             workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
             await notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), cancellationToken);
         }
 
-        await pipeline.ExecuteAsync(workflowExecutionContext);
+        var telemetryScope = WorkflowInstrumentation.StartWorkflow(workflowExecutionContext, isStarting);
+        Exception? workflowExecutionException = null;
+
+        try
+        {
+            await pipeline.ExecuteAsync(workflowExecutionContext);
+        }
+        catch (Exception e)
+        {
+            if (e is not OperationCanceledException)
+                workflowExecutionContext.Exception ??= e;
+
+            workflowExecutionException = e;
+            throw;
+        }
+        finally
+        {
+            WorkflowInstrumentation.StopWorkflow(telemetryScope, workflowExecutionContext, workflowExecutionException);
+        }
+
         var workflowState = workflowStateExtractor.Extract(workflowExecutionContext);
 
         if (workflowState.Status == WorkflowStatus.Finished)
