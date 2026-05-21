@@ -1,3 +1,5 @@
+using Elsa.Workflows;
+
 namespace Elsa.Workflows.Runtime.Helpers;
 
 internal sealed class WorkflowFactoryDictionary : Dictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>>, IWorkflowTypeRegistry

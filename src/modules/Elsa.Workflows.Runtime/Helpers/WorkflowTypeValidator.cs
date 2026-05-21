@@ -1,3 +1,5 @@
+using Elsa.Workflows;
+
 namespace Elsa.Workflows.Runtime.Helpers;
 
 internal static class WorkflowTypeValidator
