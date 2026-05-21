@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.SasTokens.Contracts;
@@ -15,6 +16,8 @@ namespace Elsa.Workflows.Api.Endpoints.Bookmarks.Resume;
 [PublicAPI]
 internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResumer, IBookmarkQueue bookmarkQueue, IPayloadSerializer payloadSerializer, IApiSerializer apiSerializer) : ElsaEndpointWithoutRequest
 {
+    private const long MaxBookmarkResumeBodySize = 1024 * 1024;
+
     /// <inheritdoc />
     public override void Configure()
     {
@@ -83,8 +86,9 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
         if (HttpContext.Request.ContentLength == 0)
             return null;
 
-        using var reader = new StreamReader(HttpContext.Request.Body, leaveOpen: true);
-        var body = await reader.ReadToEndAsync(cancellationToken);
+        var body = await ReadRequestBodyAsync(cancellationToken);
+        if (ValidationFailed)
+            return null;
 
         if (string.IsNullOrWhiteSpace(body))
             return null;
@@ -107,6 +111,38 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
         }
     }
     
+    private async ValueTask<string?> ReadRequestBodyAsync(CancellationToken cancellationToken)
+    {
+        var request = HttpContext.Request;
+        if (request.ContentLength is > MaxBookmarkResumeBodySize)
+        {
+            AddError("Request body is too large.");
+            return null;
+        }
+
+        await using var body = new MemoryStream();
+        var buffer = new byte[81920];
+        long totalBytesRead = 0;
+
+        while (true)
+        {
+            var bytesRead = await request.Body.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken);
+            if (bytesRead == 0)
+                break;
+
+            totalBytesRead += bytesRead;
+            if (totalBytesRead > MaxBookmarkResumeBodySize)
+            {
+                AddError("Request body is too large.");
+                return null;
+            }
+
+            await body.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
+        }
+
+        return body.Length == 0 ? null : Encoding.UTF8.GetString(body.ToArray());
+    }
+
     private async Task ResumeBookmarkedWorkflowAsync(BookmarkTokenPayload tokenPayload, IDictionary<string, object>? input, bool asynchronous, CancellationToken cancellationToken)
     {
         var bookmarkId = tokenPayload.BookmarkId;

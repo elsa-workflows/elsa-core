@@ -1,7 +1,7 @@
 <Project>
 
     <PropertyGroup>
-        <Include Condition="'$(CoverageIncludeFilter)' != ''">$(CoverageIncludeFilter)</Include>
+        <Include Condition="'$(CollectCoverage)' == 'true' and '$(CoverageIncludeFilter)' != ''">$(CoverageIncludeFilter)</Include>
     </PropertyGroup>
 
 </Project>

@@ -11,6 +11,7 @@ namespace Elsa.Workflows.IntegrationTests.Api.Bookmarks;
 
 public class ResumeEndpointSecurityTests
 {
+    private const int MaxRequestBodySize = 1024 * 1024;
     private readonly ITokenService _tokenService = Substitute.For<ITokenService>();
     private readonly IPayloadSerializer _payloadSerializer = Substitute.For<IPayloadSerializer>();
     private readonly IApiSerializer _apiSerializer = Substitute.For<IApiSerializer>();
@@ -120,6 +121,24 @@ public class ResumeEndpointSecurityTests
         await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Post_WithTooLargeBody_ReturnsBadRequest(bool includeContentLength)
+    {
+        var body = new string('a', MaxRequestBodySize + 1);
+        var context = CreateHttpContext(HttpMethods.Post, "?t=valid", body, includeContentLength);
+        var sut = CreateEndpoint(context);
+        ArrangeValidToken();
+
+        await sut.HandleAsync(CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        _apiSerializer.Received(0).Deserialize<Request>(Arg.Any<string>());
+        await _workflowResumer.DidNotReceive().ResumeAsync(Arg.Any<ResumeBookmarkRequest>(), Arg.Any<CancellationToken>());
+        await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
+    }
+
     private Resume CreateEndpoint(DefaultHttpContext context)
     {
         return Factory.Create<Resume>(context, _tokenService, _workflowResumer, _bookmarkQueue, _payloadSerializer, _apiSerializer);
@@ -135,7 +154,7 @@ public class ResumeEndpointSecurityTests
             });
     }
 
-    private static DefaultHttpContext CreateHttpContext(string method, string queryString, string? body = null)
+    private static DefaultHttpContext CreateHttpContext(string method, string queryString, string? body = null, bool includeContentLength = true)
     {
         var context = new DefaultHttpContext();
         context.Request.Method = method;
@@ -147,7 +166,9 @@ public class ResumeEndpointSecurityTests
 
         var bodyBytes = Encoding.UTF8.GetBytes(body);
         context.Request.Body = new MemoryStream(bodyBytes);
-        context.Request.ContentLength = bodyBytes.Length;
+        if (includeContentLength)
+            context.Request.ContentLength = bodyBytes.Length;
+
         context.Request.ContentType = "application/json";
         return context;
     }

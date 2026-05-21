@@ -90,7 +90,15 @@ public class DataProtectorTokenServiceTests : IDisposable
 
     public void Dispose()
     {
-        Directory.Delete(_keyDirectory, true);
+        try
+        {
+            if (Directory.Exists(_keyDirectory))
+                Directory.Delete(_keyDirectory, true);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // Cleanup failures should not fail token behavior tests.
+        }
     }
 
     private static void AssertPayload(TokenPayload expected, TokenPayload actual)

@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.IO.Compression;
 using Elsa.Common;
 using Elsa.Http.Options;
@@ -13,6 +14,7 @@ namespace Elsa.Http.Services;
 internal class ZipManager
 {
     private const int MaxDownloadCorrelationIdLength = 128;
+    private static readonly SearchValues<char> DownloadCorrelationIdCharacters = SearchValues.Create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_");
     private readonly ISystemClock _clock;
     private readonly IFileCacheStorageProvider _fileCacheStorageProvider;
     private readonly IOptions<HttpFileCacheOptions> _fileCacheOptions;
@@ -217,8 +219,7 @@ internal class ZipManager
         if (string.IsNullOrWhiteSpace(value) || value.Length > MaxDownloadCorrelationIdLength)
             return false;
 
-        var invalidCharacters = value.Where(c => c is not (>= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '-' or '_'));
-        return !invalidCharacters.Any();
+        return value.AsSpan().IndexOfAnyExcept(DownloadCorrelationIdCharacters) < 0;
     }
 
     private bool TryGetSafeBlobPath(string path, string expectedFilename, out string safeBlobPath)
