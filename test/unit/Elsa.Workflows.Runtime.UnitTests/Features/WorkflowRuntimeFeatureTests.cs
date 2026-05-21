@@ -4,7 +4,10 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Extensions;
 using Elsa.Workflows;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Features;
+using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Providers;
 using NSubstitute;
 using RuntimeFeature = Elsa.Workflows.Runtime.Features.WorkflowRuntimeFeature;
 using ShellRuntimeFeature = Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature;
@@ -90,6 +93,26 @@ public class WorkflowRuntimeFeatureTests
     }
 
     [Fact]
+    public async Task ClrWorkflowsProvider_MaterializesWorkflowOnce_WhenCanonicalAndLegacyKeysExist()
+    {
+        CountingWorkflow.CreatedCount = 0;
+        var builder = Substitute.For<IWorkflowBuilder>();
+        var builderFactory = Substitute.For<IWorkflowBuilderFactory>();
+        var provider = new ClrWorkflowsProvider(
+            Microsoft.Extensions.Options.Options.Create(new RuntimeOptions { Workflows = _feature.Workflows }),
+            builderFactory,
+            Substitute.For<IServiceProvider>());
+        builderFactory.CreateBuilder().Returns(builder);
+        builder.BuildWorkflowAsync(Arg.Any<CancellationToken>()).Returns(new Workflow());
+
+        _feature.Workflows.Add(typeof(CountingWorkflow));
+        var workflows = await provider.GetWorkflowsAsync();
+
+        Assert.Single(workflows);
+        Assert.Equal(1, CountingWorkflow.CreatedCount);
+    }
+
+    [Fact]
     public void ShellWorkflowsAdd_RegistersWorkflowTypeAlias()
     {
         var workflowType = typeof(GenericWorkflow<int>);
@@ -159,6 +182,21 @@ public class WorkflowRuntimeFeatureTests
 
     private sealed class GenericWorkflow<T> : IWorkflow
     {
+        public ValueTask BuildAsync(IWorkflowBuilder builder, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    public sealed class CountingWorkflow : IWorkflow
+    {
+        public static int CreatedCount { get; set; }
+
+        public CountingWorkflow()
+        {
+            CreatedCount++;
+        }
+
         public ValueTask BuildAsync(IWorkflowBuilder builder, CancellationToken cancellationToken = default)
         {
             return ValueTask.CompletedTask;
