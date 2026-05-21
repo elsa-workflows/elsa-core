@@ -99,8 +99,8 @@ public class AiRegistrationTests
         Assert.True(service.IsEnabled(definition));
     }
 
-    [Fact(DisplayName = "AI host validates duplicate context providers on startup")]
-    public async Task AiHostValidatesDuplicateContextProvidersOnStartup()
+    [Fact(DisplayName = "AI host allows context provider overrides on startup")]
+    public async Task AiHostAllowsContextProviderOverridesOnStartup()
     {
         var services = new ServiceCollection();
         services.AddAiHostServices();
@@ -109,7 +109,7 @@ public class AiRegistrationTests
         using var provider = services.BuildServiceProvider();
         var validator = provider.GetServices<IHostedService>().OfType<AiContextProviderValidationHostedService>().Single();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => validator.StartAsync(CancellationToken.None));
+        await validator.StartAsync(CancellationToken.None);
     }
 
     [Fact(DisplayName = "In-memory conversation store evicts expired conversations")]

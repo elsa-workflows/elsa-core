@@ -84,19 +84,6 @@ public class AiContextResolver(IEnumerable<IAiContextProvider> providers)
     {
         return providers
             .GroupBy(x => x.Kind, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(
-                x => x.Key,
-                x =>
-                {
-                    var group = x.ToList();
-                    if (group.Count > 1)
-                    {
-                        var providerNames = string.Join(", ", group.Select(provider => provider.GetType().Name));
-                        throw new InvalidOperationException($"Multiple AI context providers are registered for kind '{x.Key}': {providerNames}.");
-                    }
-
-                    return group[0];
-                },
-                StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(x => x.Key, x => x.Last(), StringComparer.OrdinalIgnoreCase);
     }
 }

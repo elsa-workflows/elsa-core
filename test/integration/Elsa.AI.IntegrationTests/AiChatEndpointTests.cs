@@ -275,6 +275,7 @@ public class AiChatEndpointTests
         Assert.NotNull(conversation);
         Assert.Equal(AiConversationStatus.Completed, conversation.Status);
         Assert.NotNull(conversation.RetentionExpiresAt);
+        Assert.True(conversation.Messages.Single(x => x.Role == AiMessageRole.User).StreamSequence > 0);
         Assert.Contains(conversation.Messages, x => x.Role == AiMessageRole.User && x.Content == "Explain this workflow");
     }
 

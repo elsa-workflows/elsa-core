@@ -56,6 +56,8 @@ public class AiOrchestrator(
 
         var isDuplicateReconnectMessage = request.IsReconnect && HasReconnectUserMessage(conversation, request.Message);
         var providerHistory = messages.ToList();
+        yield return CreateEvent("conversation.started", conversationId, sequence++);
+
         var userMessage = isDuplicateReconnectMessage
             ? messages.Last(x => x.Role == AiMessageRole.User && string.Equals(NormalizeMessage(x.Content), NormalizeMessage(request.Message), StringComparison.Ordinal))
             : CreateMessage(conversationId, AiMessageRole.User, request.Message, sequence);
@@ -65,7 +67,6 @@ public class AiOrchestrator(
 
         var toolResults = isDuplicateReconnectMessage ? RestoreToolResults(messages) : new List<AiToolTurnResult>();
 
-        yield return CreateEvent("conversation.started", conversationId, sequence++);
         await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, messages, conversation, providerSessionId, cancellationToken);
         await RecordChatAuditAsync("chat.started", request, conversationId, provider?.Name, cancellationToken);
 
