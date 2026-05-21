@@ -4,7 +4,7 @@ using Elsa.Identity.Models;
 
 namespace Elsa.Identity.UnitTests.Services;
 
-public class ISecretHasherTests
+public class SecretHasherDefaultOverloadTests
 {
     private readonly ISecretHasher _hasher = new BackwardCompatibleSecretHasher();
 

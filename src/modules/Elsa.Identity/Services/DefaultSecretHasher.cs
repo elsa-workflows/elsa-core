@@ -66,13 +66,13 @@ public class DefaultSecretHasher : ISecretHasher
         var storedSecretBytes = hashedSecret.Secret;
         var saltBytes = hashedSecret.Salt;
         var clearTextBytes = Encoding.UTF8.GetBytes(clearTextSecret);
-        byte[]? expectedHash = null;
+        Span<byte> expectedHash = stackalloc byte[KeySize];
         byte[]? providedHash = null;
         byte[]? legacyHash = null;
 
         try
         {
-            if (TryReadPbkdf2Hash(storedSecretBytes, out var iterationCount, out expectedHash))
+            if (TryReadPbkdf2Hash(storedSecretBytes, expectedHash, out var iterationCount))
             {
                 providedHash = HashSecret(clearTextBytes, saltBytes, iterationCount);
                 var matches = CryptographicOperations.FixedTimeEquals(providedHash, expectedHash);
@@ -101,8 +101,7 @@ public class DefaultSecretHasher : ISecretHasher
             if (legacyHash is not null)
                 CryptographicOperations.ZeroMemory(legacyHash);
 
-            if (expectedHash is not null)
-                CryptographicOperations.ZeroMemory(expectedHash);
+            CryptographicOperations.ZeroMemory(expectedHash);
         }
     }
 
@@ -160,10 +159,9 @@ public class DefaultSecretHasher : ISecretHasher
         return sha256.GetHashAndReset();
     }
 
-    private static bool TryReadPbkdf2Hash(byte[] storedSecretBytes, out int iterationCount, out byte[] hash)
+    private static bool TryReadPbkdf2Hash(byte[] storedSecretBytes, Span<byte> hash, out int iterationCount)
     {
         iterationCount = 0;
-        hash = [];
 
         var envelope = storedSecretBytes.AsSpan();
         var algorithmSeparatorIndex = envelope.IndexOf(SeparatorByte);
@@ -184,14 +182,12 @@ public class DefaultSecretHasher : ISecretHasher
             return false;
 
         var encodedHashBytes = iterationAndHashBytes[(iterationSeparatorIndex + 1)..];
-        hash = new byte[KeySize];
         var status = Base64.DecodeFromUtf8(encodedHashBytes, hash, out var consumed, out var written);
         if (status == OperationStatus.Done && consumed == encodedHashBytes.Length && written == KeySize)
             return true;
 
         iterationCount = 0;
         CryptographicOperations.ZeroMemory(hash);
-        hash = [];
         return false;
     }
 }
