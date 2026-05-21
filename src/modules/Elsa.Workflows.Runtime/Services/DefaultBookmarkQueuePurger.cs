@@ -40,16 +40,23 @@ public class DefaultBookmarkQueuePurger(
             if (items.Count == 0)
                 break;
 
-            var deadLetters = (await deadLetterManager.DeadLetterManyAsync(items, "Expired", cancellationToken: cancellationToken)).ToList();
             var itemIds = items.Select(x => x.Id).ToList();
-            var deletedCount = await store.DeleteAsync(new BookmarkQueueFilter
+            var activeItemIds = (await store.FindManyAsync(new BookmarkQueueFilter
             {
                 Ids = itemIds
-            }, cancellationToken);
+            }, cancellationToken)).Select(x => x.Id).ToList();
+            var deadLetters = (await deadLetterManager.DeadLetterManyAsync(items, "Expired", cancellationToken: cancellationToken)).ToList();
+            var deletedCount = activeItemIds.Count == 0
+                ? 0
+                : await store.DeleteAsync(new BookmarkQueueFilter
+                {
+                    Ids = activeItemIds
+                }, cancellationToken);
+            var alreadyRemovedItemIds = itemIds.Except(activeItemIds).ToHashSet();
 
-            if (deletedCount != items.Count)
+            if (alreadyRemovedItemIds.Count > 0)
             {
-                foreach (var deadLetter in deadLetters.Where(x => x.CanReplay && x.Reason == "Expired"))
+                foreach (var deadLetter in deadLetters.Where(x => x.CanReplay && x.Reason == "Expired" && alreadyRemovedItemIds.Contains(x.OriginalQueueItemId)))
                 {
                     deadLetter.CanReplay = false;
                     await deadLetterStore.SaveAsync(deadLetter, cancellationToken);
@@ -60,9 +67,6 @@ public class DefaultBookmarkQueuePurger(
                 "Recorded {DeadLetterCount} expired bookmark queue dead-letter items and deleted {DeletedCount} active queue items.",
                 deadLetters.Count,
                 deletedCount);
-
-            if (deletedCount == 0)
-                break;
         }
 
         await PurgeDeadLettersAsync(now, cancellationToken);

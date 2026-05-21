@@ -50,6 +50,7 @@ public class BookmarkQueueDeadLetterTests
         Assert.Single(deadLetters);
         Assert.Equal("expired", deadLetters[0].OriginalQueueItemId);
         Assert.Equal("Expired", deadLetters[0].Reason);
+        Assert.Equal(_now, deadLetters[0].DeadLetteredAt);
         Assert.True(deadLetters[0].CanReplay);
     }
 
@@ -106,6 +107,31 @@ public class BookmarkQueueDeadLetterTests
         Assert.Equal(ReplayBookmarkQueueDeadLetterResult.ReasonNotReplayable, replayResult.Reason);
         Assert.Empty(await _queueStore.FindManyAsync(new BookmarkQueueFilter()));
         await _signaler.DidNotReceive().TriggerAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task PurgeAsync_WhenOneExpiredItemWasAlreadyRemoved_KeepsReplayForDeletedItemsOnly()
+    {
+        var removed = NewQueueItem("removed", _now.AddMinutes(-3));
+        var retained = NewQueueItem("retained", _now.AddMinutes(-2));
+        await _queueStore.AddAsync(removed);
+        await _queueStore.AddAsync(retained);
+        var queueStore = new DeletingFirstAfterPageQueueStore(_queueStore);
+        var purger = new DefaultBookmarkQueuePurger(
+            queueStore,
+            _deadLetterStore,
+            CreateManager(),
+            _clock,
+            Microsoft.Extensions.Options.Options.Create(new BookmarkQueuePurgeOptions { Ttl = TimeSpan.FromMinutes(1), DeadLetterTtl = TimeSpan.FromDays(7), BatchSize = 10 }),
+            NullLogger<DefaultBookmarkQueuePurger>.Instance);
+
+        await purger.PurgeAsync();
+
+        var deadLetters = (await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).OrderBy(x => x.OriginalQueueItemId).ToList();
+        Assert.Equal(["removed", "retained"], deadLetters.Select(x => x.OriginalQueueItemId));
+        Assert.False(deadLetters[0].CanReplay);
+        Assert.True(deadLetters[1].CanReplay);
+        Assert.Empty(await _queueStore.FindManyAsync(new BookmarkQueueFilter()));
     }
 
     [Fact]
@@ -559,6 +585,35 @@ public class BookmarkQueueDeadLetterTests
             var page = await inner.PageAsync(pageArgs, filter, orderBy, cancellationToken);
             foreach (var item in page.Items)
                 await inner.DeleteAsync(new BookmarkQueueFilter { Id = item.Id }, cancellationToken);
+
+            return page;
+        }
+
+        public Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => inner.DeleteAsync(filter, cancellationToken);
+    }
+
+    private sealed class DeletingFirstAfterPageQueueStore(IBookmarkQueueStore inner) : IBookmarkQueueStore
+    {
+        private bool _deleted;
+
+        public Task SaveAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default) => inner.SaveAsync(record, cancellationToken);
+
+        public Task AddAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default) => inner.AddAsync(record, cancellationToken);
+
+        public Task<BookmarkQueueItem?> FindAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => inner.FindAsync(filter, cancellationToken);
+
+        public Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => inner.FindManyAsync(filter, cancellationToken);
+
+        public Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default) => inner.PageAsync(pageArgs, orderBy, cancellationToken);
+
+        public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
+        {
+            var page = await inner.PageAsync(pageArgs, filter, orderBy, cancellationToken);
+            if (!_deleted && page.Items.Count > 0)
+            {
+                _deleted = true;
+                await inner.DeleteAsync(new BookmarkQueueFilter { Id = page.Items.First().Id }, cancellationToken);
+            }
 
             return page;
         }

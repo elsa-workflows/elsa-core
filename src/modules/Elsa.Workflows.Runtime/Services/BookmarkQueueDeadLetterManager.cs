@@ -69,7 +69,7 @@ public class BookmarkQueueDeadLetterManager(
             ActivityTypeName = item.ActivityTypeName,
             Options = item.Options,
             OriginalCreatedAt = item.CreatedAt,
-            DeadLetteredAt = systemClock.UtcNow,
+            DeadLetteredAt = now,
             Reason = reason,
             DeliveryAttempts = item.DeliveryAttempts,
             LastAttemptedAt = item.LastAttemptedAt,
