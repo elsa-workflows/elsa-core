@@ -289,16 +289,19 @@ public class WorkflowDispatchOutboxProcessor(
 
     private async Task RemoveCommittedMarkerAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
     {
-        var owner = await workflowInstanceStore.FindAsync(new WorkflowInstanceFilter { Id = item.OwnerWorkflowInstanceId }, cancellationToken);
-
-        if (owner == null)
-            return;
-
-        if (!owner.WorkflowState.RemoveWorkflowDispatchOutboxItem(item.Id))
-            return;
+        var lockResource = $"workflow-instance:{item.OwnerWorkflowInstanceId}";
 
         try
         {
+            await using var handle = await distributedLockProvider.AcquireLockAsync(lockResource, distributedLockingOptions.Value.LockAcquisitionTimeout, cancellationToken);
+            var owner = await workflowInstanceStore.FindAsync(new WorkflowInstanceFilter { Id = item.OwnerWorkflowInstanceId }, cancellationToken);
+
+            if (owner == null)
+                return;
+
+            if (!owner.WorkflowState.RemoveWorkflowDispatchOutboxItem(item.Id))
+                return;
+
             await workflowInstanceStore.SaveAsync(owner, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

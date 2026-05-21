@@ -19,7 +19,7 @@ public class DispatchWorkflowCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_CreatesAndRunsWorkflow_WhenCommandInstanceAlreadyExistsAndIdempotencyIsNotRequested()
+    public async Task HandleAsync_DoesNotCheckExistingInstanceAndCreatesAndRunsWorkflow_WhenIdempotencyIsNotRequested()
     {
         var command = new DispatchWorkflowDefinitionCommand("definition-version-1")
         {

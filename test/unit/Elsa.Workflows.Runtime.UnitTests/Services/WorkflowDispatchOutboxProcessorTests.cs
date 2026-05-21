@@ -220,6 +220,29 @@ public class WorkflowDispatchOutboxProcessorTests
     }
 
     [Fact]
+    public async Task ProcessAsync_SavesMarkerRemovalWhileHoldingOwnerWorkflowInstanceLock()
+    {
+        var lockProvider = new RecordingDistributedSynchronizationProvider();
+        var processor = CreateProcessor(lockProvider);
+        var item = CreateItem();
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
+        _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
+        _workflowInstanceStore.SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                Assert.Equal("workflow-instance:parent-1", lockProvider.CurrentLockName);
+                return ValueTask.CompletedTask;
+            });
+
+        await processor.ProcessAsync();
+
+        await _workflowInstanceStore.Received(1).SaveAsync(
+            Arg.Is<WorkflowInstance>(x => !x.WorkflowState.HasWorkflowDispatchOutboxItem(item.Id)),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ProcessAsync_DoesNotRecreateOutboxItem_WhenMarkerCleanupFails()
     {
         var item = CreateItem();
@@ -397,6 +420,72 @@ public class WorkflowDispatchOutboxProcessorTests
     private class TimeoutDistributedSynchronizationProvider : IDistributedLockProvider
     {
         public IDistributedLock CreateLock(string name) => new TimeoutDistributedLock(name);
+    }
+
+    private class RecordingDistributedSynchronizationProvider : IDistributedLockProvider
+    {
+        private readonly AsyncLocal<Stack<string>?> _heldLockNames = new();
+
+        public string? CurrentLockName => _heldLockNames.Value is { Count: > 0 } heldLockNames ? heldLockNames.Peek() : null;
+
+        public IDistributedLock CreateLock(string name) => new RecordingDistributedLock(this, name);
+
+        private IDistributedSynchronizationHandle Acquire(string name)
+        {
+            var heldLockNames = _heldLockNames.Value ??= new Stack<string>();
+            heldLockNames.Push(name);
+            return new RecordingDistributedSynchronizationHandle(this, name);
+        }
+
+        private void Release(string name)
+        {
+            var heldLockNames = _heldLockNames.Value ?? throw new InvalidOperationException("No distributed locks are held.");
+            var currentLockName = heldLockNames.Pop();
+
+            if (currentLockName != name)
+                throw new InvalidOperationException($"Expected to release distributed lock '{currentLockName}', but '{name}' was released.");
+
+            if (heldLockNames.Count == 0)
+                _heldLockNames.Value = null;
+        }
+
+        private class RecordingDistributedLock(RecordingDistributedSynchronizationProvider provider, string name) : IDistributedLock
+        {
+            public string Name => name;
+
+            public IDistributedSynchronizationHandle? TryAcquire(TimeSpan timeout = default, CancellationToken cancellationToken = default) => provider.Acquire(name);
+
+            public IDistributedSynchronizationHandle Acquire(TimeSpan? timeout = null, CancellationToken cancellationToken = default) => provider.Acquire(name);
+
+            public ValueTask<IDistributedSynchronizationHandle?> TryAcquireAsync(TimeSpan timeout = default, CancellationToken cancellationToken = default)
+            {
+                return new ValueTask<IDistributedSynchronizationHandle?>(provider.Acquire(name));
+            }
+
+            public ValueTask<IDistributedSynchronizationHandle> AcquireAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+            {
+                return new ValueTask<IDistributedSynchronizationHandle>(provider.Acquire(name));
+            }
+        }
+
+        private class RecordingDistributedSynchronizationHandle(RecordingDistributedSynchronizationProvider provider, string name) : IDistributedSynchronizationHandle
+        {
+            private int _disposed;
+
+            public CancellationToken HandleLostToken => CancellationToken.None;
+
+            public void Dispose()
+            {
+                if (Interlocked.Exchange(ref _disposed, 1) == 0)
+                    provider.Release(name);
+            }
+
+            public ValueTask DisposeAsync()
+            {
+                Dispose();
+                return ValueTask.CompletedTask;
+            }
+        }
     }
 
     private class ContendedDistributedLock(string name) : IDistributedLock
