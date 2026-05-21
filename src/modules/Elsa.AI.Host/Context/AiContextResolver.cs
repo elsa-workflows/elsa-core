@@ -7,9 +7,7 @@ public class AiContextResolver(IEnumerable<IAiContextProvider> providers)
 {
     private static readonly string[] SensitiveKeyFragments = ["secret", "token", "password", "apikey", "api_key", "api-key", "authorization", "credential", "bearer"];
     private const string Redacted = "[redacted]";
-    private readonly Dictionary<string, IAiContextProvider> _providers = providers
-        .GroupBy(x => x.Kind, StringComparer.OrdinalIgnoreCase)
-        .ToDictionary(x => x.Key, x => x.Last(), StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, IAiContextProvider> _providers = BuildProviders(providers);
 
     public async ValueTask<IReadOnlyCollection<AiResolvedContext>> ResolveAsync(AiChatRequest request, CancellationToken cancellationToken = default)
     {
@@ -66,4 +64,24 @@ public class AiContextResolver(IEnumerable<IAiContextProvider> providers)
 
     private static bool IsSensitiveKey(string key) =>
         SensitiveKeyFragments.Any(fragment => key.Contains(fragment, StringComparison.OrdinalIgnoreCase));
+
+    private static Dictionary<string, IAiContextProvider> BuildProviders(IEnumerable<IAiContextProvider> providers)
+    {
+        return providers
+            .GroupBy(x => x.Kind, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                x => x.Key,
+                x =>
+                {
+                    var group = x.ToList();
+                    if (group.Count > 1)
+                    {
+                        var providerNames = string.Join(", ", group.Select(provider => provider.GetType().Name));
+                        throw new InvalidOperationException($"Multiple AI context providers are registered for kind '{x.Key}': {providerNames}.");
+                    }
+
+                    return group[0];
+                },
+                StringComparer.OrdinalIgnoreCase);
+    }
 }

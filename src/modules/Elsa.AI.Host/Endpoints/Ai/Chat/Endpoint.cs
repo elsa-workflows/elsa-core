@@ -2,6 +2,7 @@ using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
+using Elsa.AI.Host.Endpoints.Ai;
 using Elsa.AI.Host.Options;
 using Elsa.AI.Host.Permissions;
 using Elsa.AI.Host.Streaming;
@@ -25,7 +26,12 @@ public class Endpoint(
 
     public override async Task HandleAsync(AiChatRequest request, CancellationToken cancellationToken)
     {
-        request = request with { ConversationId = request.ConversationId ?? Guid.NewGuid().ToString("N") };
+        request = request with
+        {
+            ConversationId = request.ConversationId ?? Guid.NewGuid().ToString("N"),
+            TenantId = AiHttpContextIdentity.GetTenantId(HttpContext),
+            UserId = AiHttpContextIdentity.GetActorId(HttpContext)
+        };
         var response = HttpContext.Response;
         response.ContentType = "text/event-stream";
         response.Headers.CacheControl = "no-cache";

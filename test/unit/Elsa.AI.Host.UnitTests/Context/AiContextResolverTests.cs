@@ -55,25 +55,10 @@ public class AiContextResolverTests
         Assert.Equal("visible", context.Data["displayName"]!.GetValue<string>());
     }
 
-    [Fact(DisplayName = "Context resolver uses last provider when kinds duplicate")]
-    public async Task ContextResolverUsesLastProviderWhenKindsDuplicate()
+    [Fact(DisplayName = "Context resolver rejects duplicate provider kinds")]
+    public void ContextResolverRejectsDuplicateProviderKinds()
     {
-        var resolver = new AiContextResolver([new DuplicateContextProvider("first"), new DuplicateContextProvider("second")]);
-
-        var result = await resolver.ResolveAsync(new AiChatRequest
-        {
-            UserId = "user-1",
-            Attachments =
-            [
-                new AiContextAttachment
-                {
-                    Kind = "Duplicate"
-                }
-            ]
-        });
-
-        var context = Assert.Single(result);
-        Assert.Equal("second", context.Summary);
+        Assert.Throws<InvalidOperationException>(() => new AiContextResolver([new DuplicateContextProvider("first"), new DuplicateContextProvider("second")]));
     }
 
     private class SensitiveContextProvider : IAiContextProvider
