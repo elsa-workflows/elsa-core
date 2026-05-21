@@ -2,7 +2,7 @@ using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Endpoints.Ai.Capabilities;
 using Elsa.AI.Host.Options;
-using Microsoft.Extensions.Options;
+using MicrosoftOptions = Microsoft.Extensions.Options.Options;
 
 namespace Elsa.AI.IntegrationTests;
 
@@ -12,7 +12,7 @@ public class AiCapabilitiesEndpointTests
     public async Task CapabilitiesEndpointAdvertisesWeaverMvpCapabilities()
     {
         var endpoint = new Endpoint(
-            Options.Create(new AiHostOptions()),
+            MicrosoftOptions.Create(new AiHostOptions()),
             [new TestAiProvider()],
             [new TestConversationStore()],
             [new TestProposalStore()]);
@@ -33,7 +33,7 @@ public class AiCapabilitiesEndpointTests
     public async Task CapabilitiesEndpointHidesUnavailableCapabilities()
     {
         var endpoint = new Endpoint(
-            Options.Create(new AiHostOptions { StreamingEnabled = false }),
+            MicrosoftOptions.Create(new AiHostOptions { StreamingEnabled = false }),
             [new TestAiProvider()],
             [new TestConversationStore()],
             []);
