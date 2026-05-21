@@ -24,13 +24,15 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
         await keyValueStore.SaveAsync(new SerializedKeyValuePair
         {
             Key = GetRecoveryKey(item.Id),
-            SerializedValue = item.Id
+            SerializedValue = item.Id,
+            TenantId = item.TenantId
         }, cancellationToken);
 
         await keyValueStore.SaveAsync(new SerializedKeyValuePair
         {
             Key = GetItemKey(item.Id),
-            SerializedValue = payloadSerializer.Serialize(item)
+            SerializedValue = payloadSerializer.Serialize(item),
+            TenantId = item.TenantId
         }, cancellationToken);
 
         await SaveIndexAsync(item, cancellationToken);
@@ -44,13 +46,15 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
         await keyValueStore.SaveAsync(new SerializedKeyValuePair
         {
             Key = indexKey,
-            SerializedValue = item.Id
+            SerializedValue = item.Id,
+            TenantId = item.TenantId
         }, cancellationToken);
 
         await keyValueStore.SaveAsync(new SerializedKeyValuePair
         {
             Key = GetIndexByIdKey(item.Id),
-            SerializedValue = indexKey
+            SerializedValue = indexKey,
+            TenantId = item.TenantId
         }, cancellationToken);
     }
 

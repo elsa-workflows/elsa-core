@@ -208,20 +208,21 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
     public async Task SaveAsync_WritesItemAndSortableIndex()
     {
         var item = CreateItem("outbox-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
+        item.TenantId = "tenant-1";
 
         await _store.SaveAsync(item);
 
         await _keyValueStore.Received(1).SaveAsync(
-            Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Recovery:outbox-1" && x.SerializedValue == "outbox-1"),
+            Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Recovery:outbox-1" && x.SerializedValue == "outbox-1" && x.TenantId == "tenant-1"),
             Arg.Any<CancellationToken>());
         await _keyValueStore.Received(1).SaveAsync(
-            Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Items:outbox-1" && x.SerializedValue == "outbox-1"),
+            Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Items:outbox-1" && x.SerializedValue == "outbox-1" && x.TenantId == "tenant-1"),
             Arg.Any<CancellationToken>());
         await _keyValueStore.Received(1).SaveAsync(
-            Arg.Is<SerializedKeyValuePair>(x => x.Key == $"Elsa:WorkflowDispatchOutbox:Index:{item.CreatedAt.UtcTicks:D20}:outbox-1" && x.SerializedValue == "outbox-1"),
+            Arg.Is<SerializedKeyValuePair>(x => x.Key == $"Elsa:WorkflowDispatchOutbox:Index:{item.CreatedAt.UtcTicks:D20}:outbox-1" && x.SerializedValue == "outbox-1" && x.TenantId == "tenant-1"),
             Arg.Any<CancellationToken>());
         await _keyValueStore.Received(1).SaveAsync(
-            Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:IndexById:outbox-1" && x.SerializedValue == $"Elsa:WorkflowDispatchOutbox:Index:{item.CreatedAt.UtcTicks:D20}:outbox-1"),
+            Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:IndexById:outbox-1" && x.SerializedValue == $"Elsa:WorkflowDispatchOutbox:Index:{item.CreatedAt.UtcTicks:D20}:outbox-1" && x.TenantId == "tenant-1"),
             Arg.Any<CancellationToken>());
         await _keyValueStore.Received(1).DeleteAsync("Elsa:WorkflowDispatchOutbox:Recovery:outbox-1", Arg.Any<CancellationToken>());
     }
