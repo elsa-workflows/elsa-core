@@ -30,9 +30,12 @@ public class AiToolRegistry(IEnumerable<IAiTool> tools, AiToolEnablementService 
 
     private static bool IsVisibleForTenant(AiToolDefinition definition, string? tenantId)
     {
+        if (definition.TenantBehavior == AiTenantBehavior.CrossTenantDenied)
+            return false;
+
         if (!string.IsNullOrWhiteSpace(tenantId))
         {
-            if (definition.TenantBehavior is AiTenantBehavior.HostScoped or AiTenantBehavior.CrossTenantDenied)
+            if (definition.TenantBehavior == AiTenantBehavior.HostScoped)
                 return false;
 
             return definition.TenantIds.Count == 0 || definition.TenantIds.Contains(tenantId, StringComparer.OrdinalIgnoreCase);

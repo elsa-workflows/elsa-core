@@ -27,6 +27,26 @@ public class AiToolRegistryTests
         Assert.Equal("tenant", tool.Name);
     }
 
+    [Fact(DisplayName = "Tool registry excludes cross-tenant denied tools from host queries")]
+    public async Task ToolRegistryExcludesCrossTenantDeniedToolsFromHostQueries()
+    {
+        var registry = new AiToolRegistry(
+            [
+                new TestTool(new AiToolDefinition { Name = "host", DisplayName = "Host", TenantBehavior = AiTenantBehavior.HostScoped }),
+                new TestTool(new AiToolDefinition { Name = "cross", DisplayName = "Cross", TenantBehavior = AiTenantBehavior.CrossTenantDenied })
+            ],
+            new AiToolEnablementService());
+
+        var tools = await registry.ListAsync(new AiToolQuery
+        {
+            ActorId = "user-1"
+        });
+
+        var tool = Assert.Single(tools);
+        Assert.Equal("host", tool.Name);
+    }
+
+
     [Fact(DisplayName = "Tool registry honors tenant and actor allowlists")]
     public async Task ToolRegistryHonorsTenantAndActorAllowlists()
     {

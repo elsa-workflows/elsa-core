@@ -16,6 +16,7 @@ public class EFCoreAiProposalStore(AiDbContext dbContext) : IAiProposalStore
 
     public async ValueTask SaveAsync(AiProposal proposal, CancellationToken cancellationToken = default)
     {
+        Validate(proposal);
         var record = await dbContext.Proposals.FindAsync([proposal.Id], cancellationToken);
         if (record == null)
         {
@@ -73,4 +74,13 @@ public class EFCoreAiProposalStore(AiDbContext dbContext) : IAiProposalStore
 
     private static TEnum ParseEnum<TEnum>(string value, TEnum defaultValue) where TEnum : struct =>
         Enum.TryParse<TEnum>(value, ignoreCase: true, out var result) ? result : defaultValue;
+
+    private static void Validate(AiProposal proposal)
+    {
+        if (string.IsNullOrWhiteSpace(proposal.ConversationId))
+            throw new ArgumentException("A proposal conversation ID is required.", nameof(proposal));
+
+        if (string.IsNullOrWhiteSpace(proposal.CreatedBy))
+            throw new ArgumentException("A proposal creator is required.", nameof(proposal));
+    }
 }
