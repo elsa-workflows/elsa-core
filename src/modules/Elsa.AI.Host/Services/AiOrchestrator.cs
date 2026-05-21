@@ -70,11 +70,13 @@ public class AiOrchestrator(
         }
         else
         {
+            var assistantContent = new StringBuilder();
+
             for (var turn = 0; turn < MaxProviderTurns; turn++)
             {
                 var currentTurnToolResults = new List<AiToolTurnResult>();
                 var currentTurnMessages = new List<AiMessage>();
-                var assistantContent = new StringBuilder();
+                assistantContent.Clear();
 
                 await foreach (var providerEvent in provider.ExecuteTurnAsync(new AiTurnRequest
                                {

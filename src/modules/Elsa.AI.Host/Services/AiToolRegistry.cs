@@ -18,11 +18,6 @@ public class AiToolRegistry(IEnumerable<IAiTool> tools, AiToolEnablementService 
         return ValueTask.FromResult<IReadOnlyCollection<AiToolDefinition>>(definitions);
     }
 
-    public ValueTask<IAiTool?> FindAsync(string name, CancellationToken cancellationToken = default)
-    {
-        return FindAsync(name, new AiToolQuery(), cancellationToken);
-    }
-
     public ValueTask<IAiTool?> FindAsync(string name, AiToolQuery query, CancellationToken cancellationToken = default)
     {
         var tool = _tools.FirstOrDefault(x => string.Equals(x.Definition.Name, name, StringComparison.OrdinalIgnoreCase));

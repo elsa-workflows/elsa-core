@@ -8,15 +8,20 @@ public class AiStreamSessionManager
 
     public void MarkDisconnected(string conversationId, TimeSpan graceWindow)
     {
-        _disconnectDeadlines[conversationId] = DateTimeOffset.UtcNow.Add(graceWindow);
+        var now = DateTimeOffset.UtcNow;
+        _disconnectDeadlines[conversationId] = now.Add(graceWindow);
+        PruneExpired(now);
     }
 
     public bool CanReconnect(string conversationId)
     {
+        var now = DateTimeOffset.UtcNow;
+        PruneExpired(now);
+
         if (!_disconnectDeadlines.TryGetValue(conversationId, out var deadline))
             return false;
 
-        if (deadline < DateTimeOffset.UtcNow)
+        if (deadline < now)
         {
             _disconnectDeadlines.TryRemove(conversationId, out _);
             return false;
@@ -24,5 +29,14 @@ public class AiStreamSessionManager
 
         _disconnectDeadlines.TryRemove(conversationId, out _);
         return true;
+    }
+
+    private void PruneExpired(DateTimeOffset now)
+    {
+        foreach (var (conversationId, deadline) in _disconnectDeadlines)
+        {
+            if (deadline < now)
+                _disconnectDeadlines.TryRemove(conversationId, out _);
+        }
     }
 }

@@ -345,6 +345,7 @@ public class AiChatEndpointTests
                                Message = "Use a tool"
                            }))
             {
+                // Intentionally drain the stream until the provider interruption is observed.
             }
         });
 
@@ -361,6 +362,7 @@ public class AiChatEndpointTests
                            IsReconnect = true
                        }))
         {
+            // Intentionally drain the stream to completion.
         }
 
         var reconnectRequest = provider.Requests.Last();
@@ -417,6 +419,7 @@ public class AiChatEndpointTests
                            Message = "Continue"
                        }))
         {
+            // Intentionally drain the stream to completion.
         }
 
         var request = Assert.Single(provider.Requests);
@@ -445,6 +448,7 @@ public class AiChatEndpointTests
                            Attachments = [new AiContextAttachment { Kind = LargeContextProvider.ContextKind, ReferenceId = "workflow-1" }]
                        }))
         {
+            // Intentionally drain the stream to completion.
         }
 
         var context = Assert.Single(provider.Requests.Single().Context);
