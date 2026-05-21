@@ -14,12 +14,7 @@ public static class WorkflowDictionaryExtensions
     /// </summary>
     public static void Add<TWorkflow>(this IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> dictionary) where TWorkflow : IWorkflow
     {
-        // FullName should never be null here, as we filter out generic types
-        dictionary.Add(typeof(TWorkflow).FullName!, sp =>
-        {
-            var workflow = ActivatorUtilities.GetServiceOrCreateInstance<TWorkflow>(sp);
-            return new ValueTask<IWorkflow>(workflow);
-        });
+        dictionary.Add(typeof(TWorkflow));
     }
     
     /// <summary>
@@ -27,8 +22,7 @@ public static class WorkflowDictionaryExtensions
     /// </summary>
     public static void Add(this IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> dictionary, Type workflowType)
     {
-        // FullName should never be null here, as we filter out generic types
-        dictionary.Add(workflowType.FullName!, sp =>
+        dictionary.Add(workflowType.GetSimpleAssemblyQualifiedName(), sp =>
         {
             var workflow = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(sp, workflowType);
             return new ValueTask<IWorkflow>(workflow);

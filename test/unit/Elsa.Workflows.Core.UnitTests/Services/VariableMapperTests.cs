@@ -1,4 +1,5 @@
 using Elsa.Expressions.Services;
+using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Services;
@@ -15,6 +16,7 @@ public class VariableMapperTests
     {
         _registry.RegisterType(typeof(string), "String");
         _registry.RegisterType(typeof(WorkflowStorageDriver), nameof(WorkflowStorageDriver));
+        _registry.RegisterType(typeof(MemoryStorageDriver), typeof(MemoryStorageDriver).GetSimpleAssemblyQualifiedName());
         _mapper = new(_registry, NullLogger<VariableMapper>.Instance);
     }
 
@@ -32,6 +34,14 @@ public class VariableMapperTests
         var variable = _mapper.Map(new VariableModel("id", "name", "String", "value", nameof(WorkflowStorageDriver)));
 
         Assert.Equal(typeof(WorkflowStorageDriver), variable.StorageDriverType);
+    }
+
+    [Fact]
+    public void Map_ResolvesRegisteredMemoryStorageDriverAssemblyQualifiedName()
+    {
+        var variable = _mapper.Map(new VariableModel("id", "name", "String", "value", typeof(MemoryStorageDriver).GetSimpleAssemblyQualifiedName()));
+
+        Assert.Equal(typeof(MemoryStorageDriver), variable.StorageDriverType);
     }
 
     [Fact]

@@ -177,6 +177,8 @@ public class WorkflowsFeature : FeatureBase
             options.RegisterTypeAlias(typeof(WorkflowStorageDriver), nameof(WorkflowStorageDriver));
             options.RegisterTypeAlias(typeof(WorkflowInstanceStorageDriver), typeof(WorkflowInstanceStorageDriver).GetSimpleAssemblyQualifiedName());
             options.RegisterTypeAlias(typeof(WorkflowInstanceStorageDriver), nameof(WorkflowInstanceStorageDriver));
+            options.RegisterTypeAlias(typeof(MemoryStorageDriver), typeof(MemoryStorageDriver).GetSimpleAssemblyQualifiedName());
+            options.RegisterTypeAlias(typeof(MemoryStorageDriver), nameof(MemoryStorageDriver));
             options.RegisterTypeAlias(typeof(FaultStrategy), typeof(FaultStrategy).GetSimpleAssemblyQualifiedName());
             options.RegisterTypeAlias(typeof(FaultStrategy), nameof(FaultStrategy));
             options.RegisterTypeAlias(typeof(Exception), nameof(Exception));

@@ -76,6 +76,23 @@ public class ExcludeFromHashConverterTests
         Assert.Contains("\"Name\":\"Alice\"", json);
     }
 
+    [Fact]
+    public void Write_ExcludesStaticProperties()
+    {
+        var json = JsonSerializer.Serialize<object>(new StaticPropertyModel { Name = "Alice" }, _options);
+
+        Assert.Contains("\"Name\":\"Alice\"", json);
+        Assert.DoesNotContain("\"Secret\"", json);
+    }
+
+    [Fact]
+    public void Write_OrdersPropertiesByOrdinalName()
+    {
+        var json = JsonSerializer.Serialize<object>(new OrderedModel { B = "second", A = "first" }, _options);
+
+        Assert.True(json.IndexOf("\"A\"", StringComparison.Ordinal) < json.IndexOf("\"B\"", StringComparison.Ordinal));
+    }
+
     private sealed class ConditionalIgnoreModel
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -115,5 +132,19 @@ public class ExcludeFromHashConverterTests
     {
         [JsonIgnore(Condition = (JsonIgnoreCondition)999)]
         public string? Name { get; set; }
+    }
+
+    private sealed class StaticPropertyModel
+    {
+        public static string Secret => throw new InvalidOperationException();
+
+        public string? Name { get; set; }
+    }
+
+    private sealed class OrderedModel
+    {
+        public string? B { get; set; }
+
+        public string? A { get; set; }
     }
 }

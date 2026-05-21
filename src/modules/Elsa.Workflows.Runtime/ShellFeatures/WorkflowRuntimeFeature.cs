@@ -37,7 +37,6 @@ namespace Elsa.Workflows.Runtime.ShellFeatures;
 public class WorkflowRuntimeFeature : IShellFeature
 {
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
-    private ISet<Type> WorkflowTypes { get; } = new HashSet<Type>();
 
     /// <summary>
     /// A list of workflow builders configured during application startup.
@@ -154,7 +153,6 @@ public class WorkflowRuntimeFeature : IShellFeature
     {
         WorkflowTypeValidator.Validate(workflowType);
         Workflows.Add(workflowType);
-        WorkflowTypes.Add(workflowType);
         return this;
     }
 
@@ -165,7 +163,7 @@ public class WorkflowRuntimeFeature : IShellFeature
     public WorkflowRuntimeFeature AddWorkflowsFrom(Assembly assembly)
     {
         var workflowTypes = assembly.GetExportedTypes()
-            .Where(x => typeof(IWorkflow).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, IsGenericType: false })
+            .Where(x => typeof(IWorkflow).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, ContainsGenericParameters: false })
             .ToList();
 
         foreach (var workflowType in workflowTypes)
@@ -346,6 +344,6 @@ public class WorkflowRuntimeFeature : IShellFeature
 
     private void RegisterWorkflowTypeAliases(ExpressionOptions options)
     {
-        WorkflowRuntimeTypeAliasRegistrar.Register(options, WorkflowTypes);
+        WorkflowRuntimeTypeAliasRegistrar.Register(options, Workflows.Keys);
     }
 }

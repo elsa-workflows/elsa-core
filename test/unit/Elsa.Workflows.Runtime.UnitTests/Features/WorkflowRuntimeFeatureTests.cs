@@ -1,4 +1,5 @@
 using Elsa.Features.Services;
+using Elsa.Extensions;
 using Elsa.Workflows;
 using NSubstitute;
 using RuntimeFeature = Elsa.Workflows.Runtime.Features.WorkflowRuntimeFeature;
@@ -35,6 +36,26 @@ public class WorkflowRuntimeFeatureTests
     public void ShellAddWorkflow_Throws_WhenWorkflowTypeIsNotInstantiable(Type workflowType)
     {
         Assert.Throws<ArgumentException>(() => _shellFeature.AddWorkflow(workflowType));
+    }
+
+    [Fact]
+    public void AddWorkflow_AllowsClosedGenericWorkflowType()
+    {
+        var workflowType = typeof(GenericWorkflow<int>);
+
+        _feature.AddWorkflow(workflowType);
+
+        Assert.Contains(workflowType.GetSimpleAssemblyQualifiedName(), _feature.Workflows.Keys);
+    }
+
+    [Fact]
+    public void ShellAddWorkflow_AllowsClosedGenericWorkflowType()
+    {
+        var workflowType = typeof(GenericWorkflow<int>);
+
+        _shellFeature.AddWorkflow(workflowType);
+
+        Assert.Contains(workflowType.GetSimpleAssemblyQualifiedName(), _shellFeature.Workflows.Keys);
     }
 
     public static TheoryData<Type> NonInstantiableWorkflowTypes() => new()

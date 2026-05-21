@@ -44,8 +44,9 @@ public class ExcludeFromHashConverter : JsonConverter<object>
 
     private static PropertyMetadata[] GetSerializableProperties(Type type)
     {
-        return PropertyCache.GetOrAdd(type, static itemType => itemType.GetProperties()
+        return PropertyCache.GetOrAdd(type, static itemType => itemType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
             .Where(property => property.GetIndexParameters().Length == 0)
+            .OrderBy(property => property.Name, StringComparer.Ordinal)
             .Select(property => new
             {
                 Property = property,

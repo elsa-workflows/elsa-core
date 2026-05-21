@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Runtime;
 
 internal static class WorkflowRuntimeTypeAliasRegistrar
 {
-    public static void Register(ExpressionOptions options, IEnumerable<Type> workflowTypes)
+    public static void Register(ExpressionOptions options, IEnumerable<string> workflowTypeNames)
     {
         options.RegisterTypeAlias(typeof(EventBookmarkPayload), nameof(EventBookmarkPayload));
         options.RegisterTypeAlias(typeof(ExecuteWorkflowPayload), nameof(ExecuteWorkflowPayload));
@@ -23,7 +23,13 @@ internal static class WorkflowRuntimeTypeAliasRegistrar
         options.RegisterTypeAlias(typeof(ExecuteWorkflowStimulus), nameof(ExecuteWorkflowStimulus));
         options.RegisterTypeAlias(typeof(RunTaskStimulus), nameof(RunTaskStimulus));
 
-        foreach (var workflowType in workflowTypes)
+        foreach (var workflowType in workflowTypeNames.Select(ResolveWorkflowType).OfType<Type>().Distinct())
             options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName());
+    }
+
+    private static Type? ResolveWorkflowType(string workflowTypeName)
+    {
+        return Type.GetType(workflowTypeName, throwOnError: false) ??
+               AppDomain.CurrentDomain.GetAssemblies().Select(x => x.GetType(workflowTypeName, throwOnError: false)).FirstOrDefault(x => x != null);
     }
 }

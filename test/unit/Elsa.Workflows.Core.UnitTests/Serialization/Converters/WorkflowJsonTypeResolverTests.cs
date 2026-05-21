@@ -4,6 +4,7 @@ using Elsa.Expressions.Options;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Exceptions;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.State;
@@ -141,7 +142,7 @@ public sealed class WorkflowJsonTypeResolverTests
     }
 
     [Fact]
-    public void When_ConfigureWorkflowsFeature_Then_RegistersNullReferenceExceptionAlias()
+    public void When_ConfigureWorkflowsFeature_Then_RegistersCoreAliases()
     {
         var services = new ServiceCollection();
         var module = services.CreateModule();
@@ -158,6 +159,12 @@ public sealed class WorkflowJsonTypeResolverTests
         Assert.Equal(nameof(NullReferenceException), alias);
         Assert.True(typeRegistered);
         Assert.Equal(typeof(NullReferenceException), type);
+        Assert.True(registry.TryGetAlias(typeof(MemoryStorageDriver), out var memoryStorageDriverAlias));
+        Assert.Equal(nameof(MemoryStorageDriver), memoryStorageDriverAlias);
+        Assert.True(registry.TryGetType(nameof(MemoryStorageDriver), out var memoryStorageDriverType));
+        Assert.Equal(typeof(MemoryStorageDriver), memoryStorageDriverType);
+        Assert.True(registry.TryGetType(typeof(MemoryStorageDriver).GetSimpleAssemblyQualifiedName(), out var legacyMemoryStorageDriverType));
+        Assert.Equal(typeof(MemoryStorageDriver), legacyMemoryStorageDriverType);
     }
 
     [Fact]
