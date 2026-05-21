@@ -94,7 +94,7 @@ public static class WorkflowInstrumentation
         var workflowException = exception ?? (context.SubStatus == Workflows.WorkflowSubStatus.Faulted ? context.Exception : null);
         var cancelled = exception is OperationCanceledException || context.SubStatus == Workflows.WorkflowSubStatus.Cancelled;
         var faulted = !cancelled && (workflowException != null || context.SubStatus == Workflows.WorkflowSubStatus.Faulted);
-        var workflowSubStatus = faulted ? Workflows.WorkflowSubStatus.Faulted : (Workflows.WorkflowSubStatus?)null;
+        var workflowSubStatus = cancelled ? Workflows.WorkflowSubStatus.Cancelled : faulted ? Workflows.WorkflowSubStatus.Faulted : (Workflows.WorkflowSubStatus?)null;
 
         if (activity != null)
         {
