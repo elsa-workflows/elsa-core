@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using System.Reflection;
 using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
@@ -113,7 +112,14 @@ public class WorkflowInstrumentationTests
         Assert.Equal("workflow.execute", span.OperationName);
         Assert.Equal(ActivityStatusCode.Error, span.Status);
         Assert.Equal(context.Id, tags[WorkflowInstrumentation.WorkflowInstanceId]);
-        Assert.Equal(typeof(InvalidOperationException).FullName, tags[WorkflowInstrumentation.ErrorType]);
+        Assert.Equal(typeof(InvalidOperationException).FullName, tags[WorkflowInstrumentation.ExceptionType]);
+        Assert.False(tags.ContainsKey("exception.message"));
+        Assert.False(tags.ContainsKey("exception.stacktrace"));
+        var exceptionEvent = Assert.Single(span.Events, x => x.Name == "exception");
+        var exceptionEventTags = exceptionEvent.Tags.ToDictionary(x => x.Key, x => x.Value);
+        Assert.Equal(typeof(InvalidOperationException).FullName, exceptionEventTags[WorkflowInstrumentation.ExceptionType]);
+        Assert.False(exceptionEventTags.ContainsKey("exception.message"));
+        Assert.False(exceptionEventTags.ContainsKey("exception.stacktrace"));
         var started = GetWorkflowMeasurement(meterCapture, "elsa.workflow.started", context);
         var faulted = GetWorkflowMeasurement(meterCapture, "elsa.workflow.faulted", context);
         Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
@@ -154,7 +160,7 @@ public class WorkflowInstrumentationTests
             .Returns(callInfo =>
             {
                 if (callInfo.Arg<INotification>() is WorkflowExecuting)
-                    TransitionWorkflowTo(context, WorkflowSubStatus.Cancelled);
+                    context.Cancel();
 
                 return Task.CompletedTask;
             });
@@ -186,7 +192,7 @@ public class WorkflowInstrumentationTests
     }
 
     [Fact]
-    public async Task ActivityInvoker_Should_Not_Emit_ErrorType_When_Faulted_Without_Exception()
+    public async Task ActivityInvoker_Should_Not_Emit_ExceptionType_When_Faulted_Without_Exception()
     {
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
@@ -198,7 +204,7 @@ public class WorkflowInstrumentationTests
         var span = GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
         var tags = span.TagObjects.ToDictionary(x => x.Key, x => x.Value);
         Assert.Equal(ActivityStatusCode.Error, span.Status);
-        Assert.False(tags.ContainsKey(WorkflowInstrumentation.ErrorType));
+        Assert.False(tags.ContainsKey(WorkflowInstrumentation.ExceptionType));
     }
 
     [Fact]
@@ -216,7 +222,7 @@ public class WorkflowInstrumentationTests
         var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
         var tags = span.TagObjects.ToDictionary(x => x.Key, x => x.Value);
         Assert.Equal(ActivityStatusCode.Error, span.Status);
-        Assert.Equal(typeof(InvalidOperationException).FullName, tags[WorkflowInstrumentation.ErrorType]);
+        Assert.Equal(typeof(InvalidOperationException).FullName, tags[WorkflowInstrumentation.ExceptionType]);
         Assert.Equal(exception, context.Exception);
         _ = GetWorkflowMeasurement(meterCapture, "elsa.workflow.faulted", context);
     }
@@ -253,12 +259,6 @@ public class WorkflowInstrumentationTests
             new WorkflowLoggerStateGenerator(),
             Substitute.For<ICommitStateHandler>(),
             NullLogger<WorkflowRunner>.Instance);
-    }
-
-    private static void TransitionWorkflowTo(WorkflowExecutionContext context, WorkflowSubStatus subStatus)
-    {
-        var transitionTo = typeof(WorkflowExecutionContext).GetMethod("TransitionTo", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        transitionTo.Invoke(context, new object?[] { subStatus });
     }
 
     private static DiagnosticsActivity GetStoppedActivity(ActivityCapture capture, string operationName, string tagKey, object? tagValue)
@@ -405,11 +405,14 @@ public class WorkflowInstrumentationTests
 
         public WorkflowMiddlewareDelegate Setup(Action<IWorkflowExecutionPipelineBuilder> setup) => Pipeline;
 
-        public Task ExecuteAsync(WorkflowExecutionContext context)
+        public async Task ExecuteAsync(WorkflowExecutionContext context)
         {
-            context.Exception = exception;
-            TransitionWorkflowTo(context, WorkflowSubStatus.Faulted);
-            return Task.CompletedTask;
+            var middleware = new ExceptionHandlingMiddleware(
+                _ => throw exception,
+                context.SystemClock,
+                NullLogger<ExceptionHandlingMiddleware>.Instance);
+
+            await middleware.InvokeAsync(context);
         }
     }
 

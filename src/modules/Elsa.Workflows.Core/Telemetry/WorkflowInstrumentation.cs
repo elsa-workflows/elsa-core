@@ -40,7 +40,10 @@ public static class WorkflowInstrumentation
     public const string ActivityFaulted = "workflow.activity.faulted";
 
     public const string TenantId = "elsa.tenant.id";
-    public const string ErrorType = "error.type";
+    public const string ExceptionType = "exception.type";
+
+    [Obsolete("Use ExceptionType. Workflow spans follow OpenTelemetry exception semantic conventions.")]
+    public const string ErrorType = ExceptionType;
 
     private const string SystemName = "elsa";
     private const string WorkflowExecuteOperation = "workflow.execute";
@@ -182,7 +185,14 @@ public static class WorkflowInstrumentation
         activity.SetStatus(ActivityStatusCode.Error, "Faulted");
 
         if (exception != null)
-            activity.SetTag(ErrorType, exception.GetType().FullName);
+        {
+            var exceptionType = exception.GetType().FullName;
+            activity.SetTag(ExceptionType, exceptionType);
+            activity.AddEvent(new("exception", tags: new ActivityTagsCollection
+            {
+                { ExceptionType, exceptionType }
+            }));
+        }
     }
 
     private static TagList CreateWorkflowTags(WorkflowExecutionContext context, bool includeExecutionStatus = true)

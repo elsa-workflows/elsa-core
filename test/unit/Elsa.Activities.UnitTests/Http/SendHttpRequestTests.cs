@@ -115,6 +115,24 @@ public class SendHttpRequestTests
     }
 
     [Theory]
+    [MemberData(nameof(ExpectedTraceContextServerTeardownTasks))]
+    public async Task TraceContextServer_Dispose_Should_Ignore_Expected_Completed_Request_Task_Failures(Task<Dictionary<string, string>> requestTask)
+    {
+        var server = TraceContextServer.CreateForTeardownTest(requestTask);
+
+        await server.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task TraceContextServer_Dispose_Should_Rethrow_Unexpected_Completed_Request_Task_Failures()
+    {
+        var requestTask = Task.FromException<Dictionary<string, string>>(new InvalidDataException("Malformed request."));
+        var server = TraceContextServer.CreateForTeardownTest(requestTask);
+
+        await Assert.ThrowsAsync<InvalidDataException>(async () => await server.DisposeAsync());
+    }
+
+    [Theory]
     [InlineData(new[]{200, 404}, new[]{"mockActivity200", "mockActivity404"}, "mockUnmatchedActivity", HttpStatusCode.NotFound, "mockActivity404")]
     [InlineData(new[]{200, 404}, new[]{"mockActivity200", "mockActivity404"}, "mockUnmatchedActivity", HttpStatusCode.InternalServerError, "mockUnmatchedActivity")]
     public async Task Should_Schedule_Activity_According_To_Handlers(int[] statusCodes, string[] activityNames, string handler, HttpStatusCode expectedStatusCode, string expectedScheduledActivityName)
@@ -266,7 +284,15 @@ public class SendHttpRequestTests
             _requestTask = AcceptRequestAsync();
         }
 
+        private TraceContextServer(Task<Dictionary<string, string>> requestTask)
+        {
+            Uri = new("http://127.0.0.1/");
+            _requestTask = requestTask;
+        }
+
         public Uri Uri { get; }
+
+        public static TraceContextServer CreateForTeardownTest(Task<Dictionary<string, string>> requestTask) => new(requestTask);
 
         public async Task<Dictionary<string, string>> GetRequestHeadersAsync()
         {
@@ -283,7 +309,6 @@ public class SendHttpRequestTests
         public async ValueTask DisposeAsync()
         {
             using var cancellationTokenSource = _cancellationTokenSource;
-            var requestTaskCompleted = _requestTask.IsCompleted;
             cancellationTokenSource.Cancel();
             _listener.Stop();
 
@@ -291,7 +316,7 @@ public class SendHttpRequestTests
             {
                 await _requestTask.WaitAsync(TeardownTimeout).ConfigureAwait(false);
             }
-            catch (Exception ex) when (!requestTaskCompleted && IsExpectedTeardownException(ex))
+            catch (Exception ex) when (IsExpectedTeardownException(ex))
             {
                 Trace.WriteLine($"TraceContextServer teardown ignored exception: {ex}");
             }
@@ -357,9 +382,18 @@ public class SendHttpRequestTests
 
         private static bool IsExpectedTeardownException(Exception exception)
         {
-            return exception is OperationCanceledException or ObjectDisposedException or SocketException or TimeoutException ||
+            return exception is IOException or OperationCanceledException or ObjectDisposedException or SocketException or TimeoutException ||
                    exception.InnerException is not null && IsExpectedTeardownException(exception.InnerException);
         }
+    }
+
+    public static TheoryData<Task<Dictionary<string, string>>> ExpectedTraceContextServerTeardownTasks()
+    {
+        return new()
+        {
+            Task.FromException<Dictionary<string, string>>(new IOException("The HTTP client closed the connection during teardown.")),
+            Task.FromCanceled<Dictionary<string, string>>(new CancellationToken(canceled: true))
+        };
     }
 
     private static SendHttpRequest CreateSendHttpRequest(
