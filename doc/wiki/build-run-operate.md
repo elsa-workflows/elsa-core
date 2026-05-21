@@ -139,7 +139,7 @@ Console log diagnostics endpoints include (when `Elsa.Diagnostics.ConsoleLogs` i
 - `POST /elsa/api/diagnostics/console-logs/recent`
 - `GET /elsa/api/diagnostics/console-logs/sources`
 
-Health checks are mapped to `/` in the reference server.
+Health checks are mapped to `/` and `/health/live` for process liveness and `/health/ready` for Elsa runtime readiness in the reference server. See [Health Checks](health-checks.md) for Kubernetes liveness/readiness recommendations and Elsa-specific runtime readiness probes.
 
 ## Runtime Knobs
 

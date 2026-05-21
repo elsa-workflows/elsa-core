@@ -320,9 +320,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     /// </summary>
     private void SyncExistingCopies(List<WorkflowDefinition> primary, HashSet<WorkflowDefinition> secondary)
     {
-        var ids = secondary.Select(x => x.Id).Distinct().ToList();
-        var latestWorkflowDefinitions = primary.Where(x => ids.Contains(x.Id)).ToList();
-        primary.RemoveAll(x => latestWorkflowDefinitions.Contains(x));
-        primary.AddRange(secondary.Where(x => ids.Contains(x.Id)));
+        var ids = secondary.Select(x => x.Id).ToHashSet();
+        primary.RemoveAll(x => ids.Contains(x.Id));
+        primary.AddRange(secondary);
     }
 }

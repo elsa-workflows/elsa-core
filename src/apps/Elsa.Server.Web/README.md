@@ -6,6 +6,28 @@ This project represents an Elsa application that hosts workflows and exposes API
 
 `appsettings.json` does not include production-usable default admin credentials or API keys. Configure initial users and applications through environment-specific configuration or a secret manager.
 
+## Ingress Rate Limiting
+
+The reference server includes opt-in ASP.NET Core rate limiting for Elsa management API requests and public HTTP workflow trigger routes. Enable it by setting `IngressRateLimiting:Enabled` to `true`.
+
+Default policies are intentionally conservative and queue-free:
+
+```json
+"IngressRateLimiting": {
+  "Enabled": true,
+  "ApiPermitLimit": 120,
+  "ApiWindowSeconds": 60,
+  "ApiQueueLimit": 0,
+  "HttpWorkflowPermitLimit": 60,
+  "HttpWorkflowWindowSeconds": 60,
+  "HttpWorkflowQueueLimit": 0
+}
+```
+
+Tune these values for production traffic and deployment topology. To disable the reference rate limiting behavior, leave `Enabled` as `false` and do not configure external policy names. Custom hosts can register their own named ASP.NET Core rate limiter policies with `services.AddRateLimiter(...)`, pass the policy names through `ApiEndpointOptions.RateLimitingPolicyName` and `HttpActivityOptions.RateLimitingPolicyName`, map Elsa API endpoints with `MapWorkflowsApi(...)`, call `UseWorkflowsApiRateLimiting(...)` and `UseWorkflowsRateLimiting(...)` after endpoint routing has selected endpoints, then call `app.UseRateLimiter()` once for the host pipeline. The Elsa hooks only attach endpoint metadata; ASP.NET Core validates configured policy names when the rate limiter middleware handles matching requests.
+
+In the reference server, `IngressRateLimiting:RegisterReferencePolicies` controls whether the built-in fixed-window policies are registered; when it is unset, it defaults to the value of `Enabled`. `Enabled` controls default policy-name assignment and the reference-server middleware toggle. Externally configured policy names are preserved. Set a policy option to an empty string to explicitly disable rate limiting for that surface even when reference policies are registered.
+
 ## OpenTelemetry (MacOS)
 
 COR_ENABLE_PROFILING=1

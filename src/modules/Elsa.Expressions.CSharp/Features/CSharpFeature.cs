@@ -1,5 +1,6 @@
 using Elsa.Caching.Features;
 using Elsa.Common.Features;
+using Elsa.Expressions.CSharp.ActivityDescriptorModifiers;
 using Elsa.Expressions.CSharp.Activities;
 using Elsa.Expressions.CSharp.Contracts;
 using Elsa.Expressions.CSharp.Options;
@@ -42,6 +43,7 @@ public class CSharpFeature : FeatureBase
         Services
             .AddExpressionDescriptorProvider<CSharpExpressionDescriptorProvider>()
             .AddScoped<ICSharpEvaluator, CSharpEvaluator>()
+            .AddSingleton<IActivityDescriptorModifier, CSharpActivityDescriptorModifier>()
             ;
 
         // Handlers.

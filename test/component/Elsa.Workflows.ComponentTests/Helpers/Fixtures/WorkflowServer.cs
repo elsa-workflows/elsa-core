@@ -109,6 +109,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     });
                     runtime.UseCache();
                     runtime.UseDistributedRuntime();
+                    runtime.DistributedLockingOptions = options => options.AllowLocalLockProviderInDistributedRuntime = true;
                     // Use test-specific bookmark queue worker without throttling to prevent timeouts
                     runtime.BookmarkQueueWorker = sp => sp.GetRequiredService<TestBookmarkQueueWorker>();
                 });

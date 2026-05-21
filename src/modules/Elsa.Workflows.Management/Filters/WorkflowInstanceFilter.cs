@@ -11,6 +11,18 @@ namespace Elsa.Workflows.Management.Filters;
 /// </summary>
 public class WorkflowInstanceFilter
 {
+    private static readonly string[] TimestampFilterColumns =
+    [
+        nameof(WorkflowInstance.CreatedAt),
+        nameof(WorkflowInstance.UpdatedAt),
+        nameof(WorkflowInstance.FinishedAt)
+    ];
+
+    /// <summary>
+    /// The workflow instance timestamp columns that can be used by <see cref="TimestampFilters"/>.
+    /// </summary>
+    public static IReadOnlyCollection<string> AllowedTimestampFilterColumns { get; } = Array.AsReadOnly(TimestampFilterColumns);
+
     /// <summary>
     /// Filter workflow instances by ID.
     /// </summary>
@@ -154,7 +166,10 @@ public class WorkflowInstanceFilter
         {
             foreach (var timestampFilter in TimestampFilters)
             {
-                var column = timestampFilter.Column;
+                if (timestampFilter == null)
+                    throw new ArgumentException("Timestamp filter must be specified.", nameof(TimestampFilters));
+
+                var column = NormalizeTimestampFilterColumn(timestampFilter.Column);
                 var timestamp = timestampFilter.Timestamp;
                 var isZeroTime = timestamp.TimeOfDay == TimeSpan.Zero;
                 var startDay = new DateTimeOffset(timestamp.Date);
@@ -193,5 +208,58 @@ public class WorkflowInstanceFilter
         }
 
         return query;
+    }
+
+    /// <summary>
+    /// Validates timestamp filters.
+    /// </summary>
+    public static IEnumerable<string> ValidateTimestampFilters(IEnumerable<TimestampFilter>? timestampFilters)
+    {
+        if (timestampFilters == null)
+            yield break;
+
+        foreach (var (timestampFilter, index) in timestampFilters.Select((value, index) => (value, index)))
+        {
+            if (timestampFilter == null)
+            {
+                yield return $"Timestamp filter at index {index} must be specified.";
+                continue;
+            }
+
+            if (!TryNormalizeTimestampFilterColumn(timestampFilter.Column, out _, out var error))
+                yield return $"Timestamp filter at index {index}: {error}";
+        }
+    }
+
+    /// <summary>
+    /// Resolves a timestamp filter column to its canonical workflow instance property name.
+    /// </summary>
+    public static bool TryNormalizeTimestampFilterColumn(string? column, [NotNullWhen(true)] out string? normalizedColumn, [NotNullWhen(false)] out string? error)
+    {
+        normalizedColumn = null;
+        error = null;
+
+        if (string.IsNullOrWhiteSpace(column))
+        {
+            error = "Timestamp filter column must be specified.";
+            return false;
+        }
+
+        var trimmedColumn = column.Trim();
+        normalizedColumn = TimestampFilterColumns.FirstOrDefault(x => string.Equals(x, trimmedColumn, StringComparison.OrdinalIgnoreCase));
+
+        if (normalizedColumn != null)
+            return true;
+
+        error = $"Invalid timestamp filter column. Allowed columns are: {string.Join(", ", TimestampFilterColumns)}.";
+        return false;
+    }
+
+    private static string NormalizeTimestampFilterColumn(string? column)
+    {
+        if (TryNormalizeTimestampFilterColumn(column, out var normalizedColumn, out var error))
+            return normalizedColumn;
+
+        throw new ArgumentException(error, $"{nameof(TimestampFilters)}.Column");
     }
 }

@@ -50,6 +50,26 @@ public class BookmarkQueueItem : Entity
     public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>
+    /// The number of failed delivery attempts.
+    /// </summary>
+    public int DeliveryAttempts { get; set; }
+
+    /// <summary>
+    /// The timestamp of the last failed delivery attempt.
+    /// </summary>
+    public DateTimeOffset? LastAttemptedAt { get; set; }
+
+    /// <summary>
+    /// The type of the last exception observed while processing this item.
+    /// </summary>
+    public string? LastErrorType { get; set; }
+
+    /// <summary>
+    /// The message of the last exception observed while processing this item.
+    /// </summary>
+    public string? LastErrorMessage { get; set; }
+
+    /// <summary>
     /// Creates a <see cref="BookmarkFilter"/> from this bookmark queue item.
     /// </summary>
     public BookmarkFilter CreateBookmarkFilter()
