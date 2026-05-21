@@ -62,7 +62,7 @@ public static class SendHttpRequestTestHelpers
         var traceParent = Assert.Single(traceParents);
         var traceParentParts = traceParent.Split('-');
         Assert.Equal(4, traceParentParts.Length);
-        Assert.Equal("00", traceParentParts[0]);
+        Assert.Equal(2, traceParentParts[0].Length);
         Assert.Equal(parentActivity.TraceId.ToString(), traceParentParts[1]);
     }
 

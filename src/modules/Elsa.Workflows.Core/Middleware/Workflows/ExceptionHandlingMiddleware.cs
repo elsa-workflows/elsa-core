@@ -50,7 +50,7 @@ public class ExceptionHandlingMiddleware : IWorkflowExecutionMiddleware
             var now = _systemClock.UtcNow;
             var activity = context.Workflow;
             var incident = new ActivityIncident(activity.Id, activity.NodeId ,activity.Type, e.Message, exceptionState, now);
-            context.Exception = e;
+            context.Exception ??= e;
             context.Incidents.Add(incident);
             context.TransitionTo(WorkflowSubStatus.Faulted);
             context.AddExecutionLogEntry("Faulted", e.Message, exceptionState);
