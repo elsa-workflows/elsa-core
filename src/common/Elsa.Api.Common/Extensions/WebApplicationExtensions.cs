@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows;
@@ -6,6 +7,7 @@ using FastEndpoints;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,43 +15,144 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Extensions;
 
 /// <summary>
-/// Provides extension methods to add the FastEndpoints middleware configured for use with Elsa API endpoints. 
+/// Provides extension methods to add FastEndpoints configured for use with Elsa API endpoints.
 /// </summary>
 [PublicAPI]
 public static class WebApplicationExtensions
 {
+    private static readonly RequestDelegate NotFoundRequestDelegate = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return Task.CompletedTask;
+    };
+
     /// <summary>
-    /// Register the FastEndpoints middleware configured for use with with Elsa API endpoints.
+    /// Registers the FastEndpoints middleware configured for use with Elsa API endpoints.
     /// </summary>
     /// <param name="app"></param>
     /// <param name="routePrefix">The route prefix to apply to Elsa API endpoints.</param>
     /// <example>E.g. "elsa/api" will expose endpoints like this: "/elsa/api/workflow-definitions"</example>
     public static IApplicationBuilder UseWorkflowsApi(this IApplicationBuilder app, string routePrefix = "elsa/api")
     {
-        return app.UseFastEndpoints(config =>
-        {
-            config.Endpoints.RoutePrefix = routePrefix;
-            config.Serializer.RequestDeserializer = DeserializeRequestAsync;
-            config.Serializer.ResponseSerializer = SerializeRequestAsync;
-
-            config.Binding.ValueParserFor<DateTimeOffset>(s =>
-                new(DateTimeOffset.TryParse(s.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var result), result));
-        });
+        return app.UseFastEndpoints(config => ConfigureWorkflowsApi(config, routePrefix));
     }
 
     /// <summary>
-    /// Register the FastEndpoints middleware configured for use with with Elsa API endpoints.
+    /// Applies an ASP.NET Core rate limiting policy to requests targeting the Elsa API route prefix.
+    /// </summary>
+    /// <param name="app">The application builder.</param>
+    /// <param name="routePrefix">The route prefix used by Elsa API endpoints.</param>
+    /// <param name="policyName">The registered ASP.NET Core rate limiting policy name. Leave empty to skip rate limiting.</param>
+    public static IApplicationBuilder UseWorkflowsApiRateLimiting(this IApplicationBuilder app, string routePrefix = "elsa/api", string? policyName = null)
+    {
+        if (string.IsNullOrWhiteSpace(policyName))
+            return app;
+
+        var pathPrefix = NormalizeRoutePrefixPath(routePrefix);
+        return app.UseRateLimitingPolicyForPath(pathPrefix, policyName, "Elsa API rate limiting endpoint", requireMatchedEndpoint: true);
+    }
+
+    /// <summary>
+    /// Maps FastEndpoints endpoint routes configured for use with Elsa API endpoints.
     /// </summary>
     /// <param name="routes">The <see cref="IEndpointRouteBuilder"/> to register the endpoints with.</param>
     /// <param name="routePrefix">The route prefix to apply to Elsa API endpoints.</param>
     /// <example>E.g. "elsa/api" will expose endpoints like this: "/elsa/api/workflow-definitions"</example>
     public static IEndpointRouteBuilder MapWorkflowsApi(this IEndpointRouteBuilder routes, string routePrefix = "elsa/api") =>
-        routes.MapFastEndpoints(config =>
-        {
-            config.Endpoints.RoutePrefix = routePrefix;
-            config.Serializer.RequestDeserializer = DeserializeRequestAsync;
-            config.Serializer.ResponseSerializer = SerializeRequestAsync;
-        });
+        routes.MapFastEndpoints(config => ConfigureWorkflowsApi(config, routePrefix));
+
+    /// <summary>
+    /// Applies an ASP.NET Core rate limiting policy to requests targeting the specified path prefix.
+    /// </summary>
+    /// <param name="app">The application builder.</param>
+    /// <param name="pathPrefix">The path prefix to protect.</param>
+    /// <param name="policyName">The registered ASP.NET Core rate limiting policy name.</param>
+    /// <param name="displayName">The endpoint display name used for rate limiting metadata.</param>
+    /// <remarks>
+    /// This method only attaches rate limiting metadata. In endpoint-routed pipelines, call this after routing has selected an endpoint
+    /// and before the host's single <c>app.UseRateLimiter()</c> middleware. ASP.NET Core validates the configured policy when the
+    /// rate limiter middleware handles matching requests.
+    /// </remarks>
+    public static IApplicationBuilder UseRateLimitingPolicyForPath(this IApplicationBuilder app, PathString pathPrefix, string policyName, string displayName) =>
+        app.UseRateLimitingPolicyForPath(pathPrefix, policyName, displayName, true);
+
+    /// <summary>
+    /// Applies an ASP.NET Core rate limiting policy to requests targeting the specified path prefix.
+    /// </summary>
+    /// <param name="app">The application builder.</param>
+    /// <param name="pathPrefix">The path prefix to protect.</param>
+    /// <param name="policyName">The registered ASP.NET Core rate limiting policy name.</param>
+    /// <param name="displayName">The endpoint display name used for rate limiting metadata.</param>
+    /// <param name="requireMatchedEndpoint">Whether to skip rate limiting when endpoint routing selected no endpoint.</param>
+    public static IApplicationBuilder UseRateLimitingPolicyForPath(this IApplicationBuilder app, PathString pathPrefix, string policyName, string displayName, bool requireMatchedEndpoint)
+    {
+        if (!pathPrefix.HasValue || string.IsNullOrWhiteSpace(policyName))
+            return app;
+
+        var rateLimitingMetadata = new EnableRateLimitingAttribute(policyName);
+        var fallbackEndpoint = CreateRateLimitingEndpoint(null, rateLimitingMetadata, displayName);
+        var endpointCache = new ConditionalWeakTable<Endpoint, Endpoint>();
+
+        return app.UseWhen(
+            context => context.Request.Path.StartsWithSegments(pathPrefix, StringComparison.OrdinalIgnoreCase),
+            branch =>
+            {
+                branch.Use(async (context, next) =>
+                {
+                    var originalEndpoint = context.GetEndpoint();
+                    if (requireMatchedEndpoint && originalEndpoint == null)
+                    {
+                        await next(context);
+                        return;
+                    }
+
+                    var rateLimitingEndpoint = originalEndpoint == null
+                        ? fallbackEndpoint
+                        : endpointCache.GetValue(originalEndpoint, endpoint => CreateRateLimitingEndpoint(endpoint, rateLimitingMetadata, displayName));
+
+                    context.SetEndpoint(rateLimitingEndpoint);
+
+                    try
+                    {
+                        await next(context);
+                    }
+                    finally
+                    {
+                        if (ReferenceEquals(context.GetEndpoint(), rateLimitingEndpoint))
+                            context.SetEndpoint(originalEndpoint);
+                    }
+                });
+            });
+    }
+
+    private static PathString NormalizeRoutePrefixPath(string routePrefix)
+    {
+        var value = routePrefix.Trim().Trim('/');
+
+        return string.IsNullOrEmpty(value) ? PathString.Empty : new PathString("/" + value);
+    }
+
+    private static void ConfigureWorkflowsApi(Config config, string routePrefix)
+    {
+        config.Endpoints.RoutePrefix = routePrefix;
+        config.Serializer.RequestDeserializer = DeserializeRequestAsync;
+        config.Serializer.ResponseSerializer = SerializeRequestAsync;
+
+        config.Binding.ValueParserFor<DateTimeOffset>(s =>
+            new(DateTimeOffset.TryParse(s.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var result), result));
+    }
+
+    private static Endpoint CreateRateLimitingEndpoint(Endpoint? originalEndpoint, EnableRateLimitingAttribute rateLimitingMetadata, string displayName)
+    {
+        var metadata = originalEndpoint == null
+            ? new EndpointMetadataCollection(rateLimitingMetadata)
+            : new EndpointMetadataCollection(originalEndpoint.Metadata.Where(x => x is not EnableRateLimitingAttribute and not DisableRateLimitingAttribute).Concat([rateLimitingMetadata]));
+
+        if (originalEndpoint is RouteEndpoint routeEndpoint)
+            return new RouteEndpoint(routeEndpoint.RequestDelegate ?? NotFoundRequestDelegate, routeEndpoint.RoutePattern, routeEndpoint.Order, metadata, routeEndpoint.DisplayName ?? displayName);
+
+        return new Endpoint(originalEndpoint?.RequestDelegate ?? NotFoundRequestDelegate, metadata, originalEndpoint?.DisplayName ?? displayName);
+    }
 
     private static ValueTask<object?> DeserializeRequestAsync(HttpRequest httpRequest, Type modelType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
     {

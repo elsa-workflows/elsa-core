@@ -43,4 +43,10 @@ public class HttpActivityOptions
     /// and not waiting for the end of the HttpMiddleware. 
     /// </summary>
     public bool WriteHttpResponseSynchronously { get; set; } = false;
+
+    /// <summary>
+    /// The ASP.NET Core rate limiting policy to apply to inbound HTTP workflow trigger routes.
+    /// <c>null</c> means unspecified and allows a host to assign a default policy; an empty string disables HTTP workflow trigger rate limiting.
+    /// </summary>
+    public string? RateLimitingPolicyName { get; set; }
 }

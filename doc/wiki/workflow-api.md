@@ -20,11 +20,11 @@ The module extension is [UseWorkflowsApi](../../src/modules/Elsa.Workflows.Api/E
 
 ## Route Prefix
 
-The default route prefix is `elsa/api`, defined in [ApiEndpointOptions](../../src/modules/Elsa.Workflows.Api/Options/ApiEndpointOptions.cs). ASP.NET hosts apply it with [UseWorkflowsApi](../../src/common/Elsa.Api.Common/Extensions/WebApplicationExtensions.cs):
+The default route prefix is `elsa/api`, defined in [ApiEndpointOptions](../../src/modules/Elsa.Workflows.Api/Options/ApiEndpointOptions.cs). Endpoint-routed ASP.NET hosts apply it with [MapWorkflowsApi](../../src/common/Elsa.Api.Common/Extensions/WebApplicationExtensions.cs):
 
 ```csharp
 var routePrefix = app.Services.GetRequiredService<IOptions<ApiEndpointOptions>>().Value.RoutePrefix;
-app.UseWorkflowsApi(routePrefix);
+app.MapWorkflowsApi(routePrefix);
 ```
 
 With the default prefix, endpoint paths look like `/elsa/api/workflow-definitions`.

@@ -1,9 +1,11 @@
 using System.Text.Encodings.Web;
+using System.Threading.RateLimiting;
 using Elsa.Caching.Options;
 using Elsa.Common.RecurringTasks;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Features.Services;
+using Elsa.Http.Options;
 using Elsa.Identity.Multitenancy;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
@@ -26,6 +28,7 @@ using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 
@@ -35,6 +38,8 @@ const bool useSignalR = false; // Disabled until Elsa Studio sends authenticated
 const bool useStructuredLogs = false; // Enable to inspect backend logs from Elsa Studio.
 const bool useMultitenancy = true;
 const bool disableVariableWrappers = false;
+const string elsaApiRateLimitingPolicy = "elsa-api";
+const string httpWorkflowRateLimitingPolicy = "elsa-http-workflows";
 
 ObjectConverter.StrictMode = true;
 
@@ -43,6 +48,9 @@ var services = builder.Services;
 var configuration = builder.Configuration;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
+var ingressRateLimitingSection = configuration.GetSection("IngressRateLimiting");
+var useIngressRateLimiting = ingressRateLimitingSection.GetValue("Enabled", false);
+var registerIngressRateLimitingPolicies = ingressRateLimitingSection.GetValue("RegisterReferencePolicies", useIngressRateLimiting);
 var configuredAllowLocalDistributedRuntimeLockProvider = configuration.GetValue<bool?>("DistributedRuntime:AllowLocalLockProviderInDistributedRuntime");
 var allowLocalDistributedRuntimeLockProvider =
     configuredAllowLocalDistributedRuntimeLockProvider ?? builder.Environment.IsDevelopment();
@@ -159,6 +167,42 @@ services.Configure<RuntimeOptions>(options => { options.InactivityThreshold = Ti
 services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(3600));
 services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.Configure<IncidentOptions>(options => options.DefaultIncidentStrategy = typeof(ContinueWithIncidentsStrategy));
+if (useIngressRateLimiting)
+{
+    services.PostConfigure<ApiEndpointOptions>(options =>
+    {
+        if (options.RateLimitingPolicyName == null)
+            options.RateLimitingPolicyName = elsaApiRateLimitingPolicy;
+    });
+    services.PostConfigure<HttpActivityOptions>(options =>
+    {
+        if (options.RateLimitingPolicyName == null)
+            options.RateLimitingPolicyName = httpWorkflowRateLimitingPolicy;
+    });
+}
+
+services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    if (registerIngressRateLimitingPolicies)
+    {
+        options.AddFixedWindowLimiter(elsaApiRateLimitingPolicy, limiterOptions =>
+        {
+            limiterOptions.PermitLimit = ingressRateLimitingSection.GetValue("ApiPermitLimit", 120);
+            limiterOptions.Window = TimeSpan.FromSeconds(ingressRateLimitingSection.GetValue("ApiWindowSeconds", 60));
+            limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            limiterOptions.QueueLimit = ingressRateLimitingSection.GetValue("ApiQueueLimit", 0);
+        });
+        options.AddFixedWindowLimiter(httpWorkflowRateLimitingPolicy, limiterOptions =>
+        {
+            limiterOptions.PermitLimit = ingressRateLimitingSection.GetValue("HttpWorkflowPermitLimit", 60);
+            limiterOptions.Window = TimeSpan.FromSeconds(ingressRateLimitingSection.GetValue("HttpWorkflowWindowSeconds", 60));
+            limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            limiterOptions.QueueLimit = ingressRateLimitingSection.GetValue("HttpWorkflowQueueLimit", 0);
+        });
+    }
+});
 services
     .AddHealthChecks()
     .AddElsaReadinessChecks(includeDistributedLocks: true);
@@ -195,8 +239,23 @@ app.MapHealthChecks("/", new()
     Predicate = _ => false
 });
 
+// Elsa API endpoints for designer.
+var apiEndpointOptions = app.Services.GetRequiredService<IOptions<ApiEndpointOptions>>().Value;
+var routePrefix = apiEndpointOptions.RoutePrefix;
+app.MapWorkflowsApi(routePrefix);
+
 // Routing used for SignalR.
 app.UseRouting();
+
+app.UseWorkflowsApiRateLimiting(routePrefix, apiEndpointOptions.RateLimitingPolicyName);
+
+// Elsa HTTP Endpoint activities.
+var httpActivityOptions = app.Services.GetRequiredService<IOptions<HttpActivityOptions>>().Value;
+app.UseWorkflowsRateLimiting(httpActivityOptions.BasePath, httpActivityOptions.RateLimitingPolicyName);
+if (useIngressRateLimiting ||
+    !string.IsNullOrWhiteSpace(apiEndpointOptions.RateLimitingPolicyName) ||
+    !string.IsNullOrWhiteSpace(httpActivityOptions.RateLimitingPolicyName))
+    app.UseRateLimiter();
 
 // Security.
 app.UseAuthentication();
@@ -206,14 +265,9 @@ app.UseAuthorization();
 if (useMultitenancy)
     app.UseTenants();
 
-// Elsa API endpoints for designer.
-var routePrefix = app.Services.GetRequiredService<IOptions<ApiEndpointOptions>>().Value.RoutePrefix;
-app.UseWorkflowsApi(routePrefix);
-
 // Captures unhandled exceptions and returns a JSON response.
 app.UseJsonSerializationErrorHandler();
 
-// Elsa HTTP Endpoint activities.
 app.UseWorkflows();
 
 app.MapControllers();
