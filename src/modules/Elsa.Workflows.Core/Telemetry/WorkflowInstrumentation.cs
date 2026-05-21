@@ -122,6 +122,8 @@ public static class WorkflowInstrumentation
         {
             SetActivityTags(activity, context);
             activity.SetTag(ActivityFaulted, faulted);
+            if (faulted)
+                activity.SetTag(ActivityStatus, Workflows.ActivityStatus.Faulted.ToString());
             SetActivityOutcome(activity, context);
             SetError(activity, exception ?? context.Exception, faulted);
             activity.Dispose();

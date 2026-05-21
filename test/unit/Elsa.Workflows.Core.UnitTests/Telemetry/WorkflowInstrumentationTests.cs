@@ -38,11 +38,10 @@ public class WorkflowInstrumentationTests
         await invoker.InvokeAsync(context);
 
         var span = GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
-        var tags = span.TagObjects.ToDictionary(x => x.Key, x => x.Value);
         Assert.Equal("activity.execute", span.OperationName);
-        Assert.Equal(activity.Type, tags[WorkflowInstrumentation.ActivityType]);
-        Assert.Equal(context.WorkflowExecutionContext.Workflow.Identity.Id, tags[WorkflowInstrumentation.WorkflowDefinitionVersionId]);
-        Assert.Equal(ActivityStatus.Completed.ToString(), tags[WorkflowInstrumentation.ActivityStatus]);
+        Assert.Equal(activity.Type, GetTag(span.TagObjects, WorkflowInstrumentation.ActivityType));
+        Assert.Equal(context.WorkflowExecutionContext.Workflow.Identity.Id, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowDefinitionVersionId));
+        Assert.Equal(ActivityStatus.Completed.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus));
         var activityDuration = GetActivityDuration(meterCapture, context);
         Assert.False(activityDuration.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
         Assert.False(activityDuration.Tags.ContainsKey(WorkflowInstrumentation.ActivityName));
@@ -80,13 +79,12 @@ public class WorkflowInstrumentationTests
         await runner.RunAsync(context);
 
         var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
-        var tags = span.TagObjects.ToDictionary(x => x.Key, x => x.Value);
         Assert.Equal(ActivityStatusCode.Ok, span.Status);
-        Assert.Equal(context.Workflow.Identity.Id, tags[WorkflowInstrumentation.WorkflowDefinitionVersionId]);
-        Assert.True(tags.TryGetValue(WorkflowInstrumentation.WorkflowSubStatus, out var workflowSubStatus));
+        Assert.Equal(context.Workflow.Identity.Id, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowDefinitionVersionId));
+        var workflowSubStatus = GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus);
         Assert.Equal(WorkflowSubStatus.Finished.ToString(), workflowSubStatus);
-        Assert.Equal("parent-instance-id", tags[WorkflowInstrumentation.WorkflowParentInstanceId]);
-        Assert.False(tags.ContainsKey("workflow.parent_instance.id"));
+        Assert.Equal("parent-instance-id", GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowParentInstanceId));
+        Assert.False(HasTag(span.TagObjects, "workflow.parent_instance.id"));
         var started = GetWorkflowMeasurement(meterCapture, "elsa.workflow.started", context);
         var completed = GetWorkflowMeasurement(meterCapture, "elsa.workflow.completed", context);
         Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
@@ -108,18 +106,16 @@ public class WorkflowInstrumentationTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(context));
 
         var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
-        var tags = span.TagObjects.ToDictionary(x => x.Key, x => x.Value);
         Assert.Equal("workflow.execute", span.OperationName);
         Assert.Equal(ActivityStatusCode.Error, span.Status);
-        Assert.Equal(context.Id, tags[WorkflowInstrumentation.WorkflowInstanceId]);
-        Assert.Equal(typeof(InvalidOperationException).FullName, tags[WorkflowInstrumentation.ExceptionType]);
-        Assert.False(tags.ContainsKey("exception.message"));
-        Assert.False(tags.ContainsKey("exception.stacktrace"));
+        Assert.Equal(context.Id, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowInstanceId));
+        Assert.Equal(typeof(InvalidOperationException).FullName, GetTag(span.TagObjects, WorkflowInstrumentation.ExceptionType));
+        Assert.False(HasTag(span.TagObjects, "exception.message"));
+        Assert.False(HasTag(span.TagObjects, "exception.stacktrace"));
         var exceptionEvent = Assert.Single(span.Events, x => x.Name == "exception");
-        var exceptionEventTags = exceptionEvent.Tags.ToDictionary(x => x.Key, x => x.Value);
-        Assert.Equal(typeof(InvalidOperationException).FullName, exceptionEventTags[WorkflowInstrumentation.ExceptionType]);
-        Assert.False(exceptionEventTags.ContainsKey("exception.message"));
-        Assert.False(exceptionEventTags.ContainsKey("exception.stacktrace"));
+        Assert.Equal(typeof(InvalidOperationException).FullName, GetTag(exceptionEvent.Tags, WorkflowInstrumentation.ExceptionType));
+        Assert.False(HasTag(exceptionEvent.Tags, "exception.message"));
+        Assert.False(HasTag(exceptionEvent.Tags, "exception.stacktrace"));
         var started = GetWorkflowMeasurement(meterCapture, "elsa.workflow.started", context);
         var faulted = GetWorkflowMeasurement(meterCapture, "elsa.workflow.faulted", context);
         Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
@@ -140,10 +136,9 @@ public class WorkflowInstrumentationTests
         await Assert.ThrowsAsync<OperationCanceledException>(() => runner.RunAsync(context));
 
         var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
-        var tags = span.TagObjects.ToDictionary(x => x.Key, x => x.Value);
         Assert.Equal(ActivityStatusCode.Ok, span.Status);
-        Assert.Equal(WorkflowSubStatus.Cancelled.ToString(), tags[WorkflowInstrumentation.WorkflowSubStatus]);
-        Assert.Equal(false, tags[WorkflowInstrumentation.WorkflowFaulted]);
+        Assert.Equal(WorkflowSubStatus.Cancelled.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus));
+        Assert.Equal(false, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowFaulted));
         Assert.DoesNotContain(meterCapture.LongMeasurements, x => IsWorkflowMeasurement(x, "elsa.workflow.faulted", context));
     }
 
@@ -186,6 +181,8 @@ public class WorkflowInstrumentationTests
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => invoker.InvokeAsync(context));
 
         Assert.Equal("Pipeline failed", exception.Message);
+        var span = GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
+        Assert.Equal(ActivityStatus.Faulted.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus));
         var activityDuration = GetActivityDuration(meterCapture, context);
         Assert.Equal(true, activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]);
         Assert.Equal(ActivityStatus.Faulted.ToString(), activityDuration.Tags[WorkflowInstrumentation.ActivityStatus]);
@@ -202,9 +199,9 @@ public class WorkflowInstrumentationTests
         await invoker.InvokeAsync(context);
 
         var span = GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
-        var tags = span.TagObjects.ToDictionary(x => x.Key, x => x.Value);
         Assert.Equal(ActivityStatusCode.Error, span.Status);
-        Assert.False(tags.ContainsKey(WorkflowInstrumentation.ExceptionType));
+        Assert.Equal(ActivityStatus.Faulted.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus));
+        Assert.False(HasTag(span.TagObjects, WorkflowInstrumentation.ExceptionType));
     }
 
     [Fact]
@@ -220,9 +217,8 @@ public class WorkflowInstrumentationTests
         await runner.RunAsync(context);
 
         var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
-        var tags = span.TagObjects.ToDictionary(x => x.Key, x => x.Value);
         Assert.Equal(ActivityStatusCode.Error, span.Status);
-        Assert.Equal(typeof(InvalidOperationException).FullName, tags[WorkflowInstrumentation.ExceptionType]);
+        Assert.Equal(typeof(InvalidOperationException).FullName, GetTag(span.TagObjects, WorkflowInstrumentation.ExceptionType));
         Assert.Equal(exception, context.Exception);
         _ = GetWorkflowMeasurement(meterCapture, "elsa.workflow.faulted", context);
     }
@@ -268,7 +264,7 @@ public class WorkflowInstrumentationTests
             activity.TagObjects.Any(tag => tag.Key == tagKey && Equals(tag.Value, tagValue)));
     }
 
-    private static Measurement<double> GetActivityDuration(MeterCapture capture, ActivityExecutionContext context)
+    private static CapturedMeasurement<double> GetActivityDuration(MeterCapture capture, ActivityExecutionContext context)
     {
         return Assert.Single(capture.DoubleMeasurements, measurement =>
             measurement.InstrumentName == "elsa.activity.duration" &&
@@ -277,12 +273,12 @@ public class WorkflowInstrumentationTests
             HasTag(measurement.Tags, WorkflowInstrumentation.ActivityType, context.Activity.Type));
     }
 
-    private static Measurement<long> GetWorkflowMeasurement(MeterCapture capture, string instrumentName, WorkflowExecutionContext context)
+    private static CapturedMeasurement<long> GetWorkflowMeasurement(MeterCapture capture, string instrumentName, WorkflowExecutionContext context)
     {
         return Assert.Single(capture.LongMeasurements, measurement => IsWorkflowMeasurement(measurement, instrumentName, context));
     }
 
-    private static bool IsWorkflowMeasurement(Measurement<long> measurement, string instrumentName, WorkflowExecutionContext context)
+    private static bool IsWorkflowMeasurement(CapturedMeasurement<long> measurement, string instrumentName, WorkflowExecutionContext context)
     {
         return measurement.InstrumentName == instrumentName &&
                measurement.Value == 1 &&
@@ -292,6 +288,29 @@ public class WorkflowInstrumentationTests
     private static bool HasTag(IReadOnlyDictionary<string, object?> tags, string key, object? value)
     {
         return tags.TryGetValue(key, out var tagValue) && Equals(tagValue, value);
+    }
+
+    private static object? GetTag(IEnumerable<KeyValuePair<string, object?>> tags, string key)
+    {
+        object? value = null;
+        var found = false;
+
+        foreach (var tag in tags)
+        {
+            if (tag.Key != key)
+                continue;
+
+            value = tag.Value;
+            found = true;
+        }
+
+        Assert.True(found, $"Expected tag '{key}' to be present.");
+        return value;
+    }
+
+    private static bool HasTag(IEnumerable<KeyValuePair<string, object?>> tags, string key)
+    {
+        return tags.Any(tag => tag.Key == key);
     }
 
     private sealed class CompletingActivityExecutionPipeline : IActivityExecutionPipeline
@@ -468,8 +487,8 @@ public class WorkflowInstrumentationTests
             _listener.Start();
         }
 
-        public ConcurrentQueue<Measurement<long>> LongMeasurements { get; } = new();
-        public ConcurrentQueue<Measurement<double>> DoubleMeasurements { get; } = new();
+        public ConcurrentQueue<CapturedMeasurement<long>> LongMeasurements { get; } = new();
+        public ConcurrentQueue<CapturedMeasurement<double>> DoubleMeasurements { get; } = new();
 
         public void Dispose() => _listener.Dispose();
 
@@ -497,7 +516,7 @@ public class WorkflowInstrumentationTests
         }
     }
 
-    private readonly record struct Measurement<T>(string InstrumentName, T Value, IReadOnlyDictionary<string, object?> Tags);
+    private readonly record struct CapturedMeasurement<T>(string InstrumentName, T Value, IReadOnlyDictionary<string, object?> Tags);
 }
 
 [CollectionDefinition(nameof(WorkflowInstrumentationTestCollection), DisableParallelization = true)]
