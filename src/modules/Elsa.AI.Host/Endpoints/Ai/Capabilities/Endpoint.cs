@@ -23,9 +23,11 @@ public class Endpoint(
     public override Task<Response> ExecuteAsync(CancellationToken cancellationToken)
     {
         var optionsValue = options.Value;
+        var providerOptions = optionsValue.Providers.ToList();
+        var hasEnabledProvider = providers.Any(x => providerOptions.IsProviderEnabled(x.Name));
 
         return Task.FromResult(new Response(
-            optionsValue.StreamingEnabled && providers.Any(),
+            optionsValue.StreamingEnabled && hasEnabledProvider,
             optionsValue.ConversationPersistenceEnabled && conversationStores.Any(),
             optionsValue.ProposalReviewEnabled && proposalStores.Any(),
             optionsValue.SupportedAttachmentKinds.ToList(),

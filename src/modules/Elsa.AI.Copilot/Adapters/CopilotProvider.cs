@@ -11,10 +11,12 @@ public class CopilotProvider(IOptions<CopilotOptions> options) : IAiProvider
 
     public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default)
     {
+        var providerName = request.ProviderConfiguration?.Name ?? options.Value.ProviderName ?? "copilot";
+
         return ValueTask.FromResult(new AiSessionHandle
         {
             Id = request.ConversationId,
-            ProviderSessionId = $"{options.Value.ProviderName}:{request.ConversationId}"
+            ProviderSessionId = $"{providerName}:{request.ConversationId}"
         });
     }
 

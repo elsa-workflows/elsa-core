@@ -26,7 +26,8 @@ public class AiOrchestrator(
     {
         var conversationId = request.ConversationId ?? Guid.NewGuid().ToString("N");
         var sequence = 0L;
-        var provider = SelectProvider(request);
+        var providerSelection = SelectProvider(request);
+        var provider = providerSelection.Provider;
         var conversation = await conversationStore.FindAsync(conversationId, cancellationToken);
         if (conversation != null && (!BelongsToTenant(conversation, request.TenantId) || !BelongsToUser(conversation, request.UserId)))
         {
@@ -49,7 +50,8 @@ public class AiOrchestrator(
             {
                 ConversationId = conversationId,
                 Agent = request.Agent,
-                TenantId = request.TenantId
+                TenantId = request.TenantId,
+                ProviderConfiguration = providerSelection.Configuration
             }, cancellationToken);
             providerSessionId = session.ProviderSessionId ?? session.Id;
         }
@@ -134,7 +136,8 @@ public class AiOrchestrator(
                                    Context = context,
                                    Tools = tools,
                                    ToolResults = pendingToolResults.ToList(),
-                                   Agent = request.Agent
+                                   Agent = request.Agent,
+                                   ProviderConfiguration = providerSelection.Configuration
                                }, cancellationToken))
                 {
                     var streamEvent = streamEventMapper.Map(conversationId, providerEvent) with { Sequence = sequence++ };
@@ -212,15 +215,34 @@ public class AiOrchestrator(
             Data = data ?? []
         };
 
-    private IAiProvider? SelectProvider(AiChatRequest request)
+    private ProviderSelection SelectProvider(AiChatRequest request)
     {
-        var availableProviders = providers.ToList();
+        var providerOptions = options.Value.Providers.ToList();
+        var configuredProviders = providerOptions.Where(x => x.Enabled).ToList();
+        var availableProviders = providers
+            .Where(x => providerOptions.IsProviderEnabled(x.Name))
+            .ToList();
         var providerName = request.ProviderName ?? FindAgentProviderName(request.Agent) ?? options.Value.DefaultProviderName;
 
         if (!string.IsNullOrWhiteSpace(providerName))
-            return availableProviders.FirstOrDefault(x => string.Equals(x.Name, providerName, StringComparison.OrdinalIgnoreCase));
+        {
+            var configuredProvider = configuredProviders.FirstOrDefault(x => string.Equals(x.Name, providerName, StringComparison.OrdinalIgnoreCase));
+            var provider = configuredProvider != null
+                ? availableProviders.FirstOrDefault(x => string.Equals(x.Name, configuredProvider.Name, StringComparison.OrdinalIgnoreCase)) ??
+                  availableProviders.FirstOrDefault(x => string.Equals(x.Name, configuredProvider.Provider, StringComparison.OrdinalIgnoreCase))
+                : availableProviders.FirstOrDefault(x => string.Equals(x.Name, providerName, StringComparison.OrdinalIgnoreCase));
 
-        return availableProviders.Count == 1 ? availableProviders[0] : null;
+            return new ProviderSelection(provider, configuredProvider?.ToProviderConfiguration());
+        }
+
+        if (availableProviders.Count != 1)
+            return new ProviderSelection(null, null);
+
+        var selectedProvider = availableProviders[0];
+        var selectedConfiguration = configuredProviders.FirstOrDefault(x => string.Equals(x.Name, selectedProvider.Name, StringComparison.OrdinalIgnoreCase) ||
+                                                                            string.Equals(x.Provider, selectedProvider.Name, StringComparison.OrdinalIgnoreCase));
+
+        return new ProviderSelection(selectedProvider, selectedConfiguration?.ToProviderConfiguration());
     }
 
     private string? FindAgentProviderName(string? agent) =>
@@ -549,4 +571,5 @@ public class AiOrchestrator(
 
     private readonly record struct ToolCall(string Id, string Name, JsonObject Arguments);
     private readonly record struct ToolExecutionResult(AiStreamEvent StreamEvent, AiToolTurnResult TurnResult);
+    private readonly record struct ProviderSelection(IAiProvider? Provider, AiProviderConfiguration? Configuration);
 }

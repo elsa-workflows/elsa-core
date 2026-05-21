@@ -110,6 +110,81 @@ public class AiChatEndpointTests
         Assert.Equal("second", delta.Data["provider"]!.GetValue<string>());
     }
 
+    [Fact(DisplayName = "Chat orchestration ignores disabled configured providers")]
+    public async Task ChatOrchestrationIgnoresDisabledConfiguredProviders()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices(options =>
+        {
+            options.Providers =
+            [
+                new()
+                {
+                    Name = "disabled",
+                    Provider = "disabled",
+                    Enabled = false
+                }
+            ];
+        });
+        services.AddSingleton<IAiProvider>(new NamedAiProvider("disabled"));
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var events = new List<AiStreamEvent>();
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           ProviderName = "disabled",
+                           Message = "Explain this workflow"
+                       }))
+            events.Add(streamEvent);
+
+        var delta = Assert.Single(events, x => x.Type == "assistant.delta");
+        Assert.Equal("Weaver is ready, but no AI provider is configured.", delta.Data["content"]!.GetValue<string>());
+    }
+
+    [Fact(DisplayName = "Chat orchestration passes selected provider configuration")]
+    public async Task ChatOrchestrationPassesSelectedProviderConfiguration()
+    {
+        var capturingProvider = new CapturingTurnProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices(options =>
+        {
+            options.Providers =
+            [
+                new()
+                {
+                    Name = "configured",
+                    Provider = capturingProvider.Name,
+                    Model = "model-1",
+                    ApiKeySecretName = "secret-1",
+                    Endpoint = "https://example.local"
+                }
+            ];
+        });
+        services.AddSingleton<IAiProvider>(capturingProvider);
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           ProviderName = "configured",
+                           Message = "Explain this workflow"
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        var sessionRequest = Assert.Single(capturingProvider.SessionRequests);
+        var turnRequest = Assert.Single(capturingProvider.Requests);
+        Assert.Equal("configured", sessionRequest.ProviderConfiguration!.Name);
+        Assert.Equal(capturingProvider.Name, turnRequest.ProviderConfiguration!.Provider);
+        Assert.Equal("model-1", turnRequest.ProviderConfiguration.Model);
+        Assert.Equal("secret-1", turnRequest.ProviderConfiguration.ApiKeySecretName);
+        Assert.Equal("https://example.local", turnRequest.ProviderConfiguration.Endpoint);
+    }
+
     [Fact(DisplayName = "Chat orchestration records start and completion audit events")]
     public async Task ChatOrchestrationRecordsStartAndCompletionAuditEvents()
     {

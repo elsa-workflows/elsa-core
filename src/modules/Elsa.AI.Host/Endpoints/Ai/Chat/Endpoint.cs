@@ -41,10 +41,12 @@ public class Endpoint(
         response.Headers.Connection = "keep-alive";
 
         var completed = false;
+        var disconnectedConversationId = request.ConversationId;
         try
         {
             await foreach (var streamEvent in orchestrator.ExecuteChatAsync(request, cancellationToken))
             {
+                disconnectedConversationId = streamEvent.ConversationId;
                 await response.WriteAsync($"event: {streamEvent.Type}\n", cancellationToken);
                 await response.WriteAsync($"data: {JsonSerializer.Serialize(streamEvent)}\n\n", cancellationToken);
                 await response.Body.FlushAsync(cancellationToken);
@@ -58,7 +60,7 @@ public class Endpoint(
         finally
         {
             if (!completed)
-                sessionManager.MarkDisconnected(request.ConversationId, options.Value.ReconnectGrace);
+                sessionManager.MarkDisconnected(disconnectedConversationId, options.Value.ReconnectGrace);
         }
     }
 }

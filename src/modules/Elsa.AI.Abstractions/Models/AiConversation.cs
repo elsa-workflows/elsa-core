@@ -59,6 +59,7 @@ public record CreateAiSessionRequest
     public string ConversationId { get; init; } = default!;
     public string? Agent { get; init; }
     public string? TenantId { get; init; }
+    public AiProviderConfiguration? ProviderConfiguration { get; init; }
     public JsonObject Metadata { get; init; } = [];
 }
 
@@ -71,6 +72,16 @@ public record AiTurnRequest
     public IReadOnlyCollection<AiToolDefinition> Tools { get; init; } = [];
     public IReadOnlyCollection<AiToolTurnResult> ToolResults { get; init; } = [];
     public string? Agent { get; init; }
+    public AiProviderConfiguration? ProviderConfiguration { get; init; }
+}
+
+public record AiProviderConfiguration
+{
+    public string Name { get; init; } = default!;
+    public string Provider { get; init; } = default!;
+    public string? Model { get; init; }
+    public string? ApiKeySecretName { get; init; }
+    public string? Endpoint { get; init; }
 }
 
 public record AiToolTurnResult
