@@ -9,6 +9,8 @@ namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
 /// Serializes an object to JSON, excluding properties marked with <see cref="ExcludeFromHashAttribute"/>.
+/// Properties ignored by <see cref="JsonIgnoreAttribute"/> are also excluded according to their configured ignore condition;
+/// avoid adding or changing these attributes on bookmark or stimulus payloads whose hashes must remain compatible with existing stored hashes.
 /// </summary>
 public class ExcludeFromHashConverter : JsonConverter<object>
 {

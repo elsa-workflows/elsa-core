@@ -1,3 +1,5 @@
+using System.Reflection;
+using Elsa.Expressions.Options;
 using Elsa.Features.Services;
 using Elsa.Extensions;
 using Elsa.Workflows;
@@ -58,6 +60,34 @@ public class WorkflowRuntimeFeatureTests
         Assert.Contains(workflowType.GetSimpleAssemblyQualifiedName(), _shellFeature.Workflows.Keys);
     }
 
+    [Fact]
+    public void RegisterWorkflowTypeAliases_RegistersOnlyTrackedWorkflowTypes()
+    {
+        var workflowType = typeof(GenericWorkflow<int>);
+        var options = new ExpressionOptions();
+        _feature.AddWorkflow(workflowType);
+        _feature.Workflows[typeof(NotAWorkflow).AssemblyQualifiedName!] = _ => new ValueTask<IWorkflow>(new GenericWorkflow<int>());
+
+        RegisterWorkflowTypeAliases(_feature, options);
+
+        Assert.Equal(workflowType, options.AliasTypeDictionary[workflowType.GetSimpleAssemblyQualifiedName()]);
+        Assert.DoesNotContain(typeof(NotAWorkflow).AssemblyQualifiedName!, options.AliasTypeDictionary.Keys);
+    }
+
+    [Fact]
+    public void ShellRegisterWorkflowTypeAliases_RegistersOnlyTrackedWorkflowTypes()
+    {
+        var workflowType = typeof(GenericWorkflow<int>);
+        var options = new ExpressionOptions();
+        _shellFeature.AddWorkflow(workflowType);
+        _shellFeature.Workflows[typeof(NotAWorkflow).AssemblyQualifiedName!] = _ => new ValueTask<IWorkflow>(new GenericWorkflow<int>());
+
+        RegisterWorkflowTypeAliases(_shellFeature, options);
+
+        Assert.Equal(workflowType, options.AliasTypeDictionary[workflowType.GetSimpleAssemblyQualifiedName()]);
+        Assert.DoesNotContain(typeof(NotAWorkflow).AssemblyQualifiedName!, options.AliasTypeDictionary.Keys);
+    }
+
     public static TheoryData<Type> NonInstantiableWorkflowTypes() => new()
     {
         typeof(IWorkflow),
@@ -75,5 +105,12 @@ public class WorkflowRuntimeFeatureTests
         {
             return ValueTask.CompletedTask;
         }
+    }
+
+    private static void RegisterWorkflowTypeAliases(object feature, ExpressionOptions options)
+    {
+        feature.GetType()
+            .GetMethod("RegisterWorkflowTypeAliases", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(feature, new object[] { options });
     }
 }
