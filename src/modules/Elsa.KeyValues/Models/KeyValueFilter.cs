@@ -20,7 +20,7 @@ public class KeyValueFilter
     public ICollection<string>? Keys { get; set; }
 
     /// <summary>
-    /// Gets or sets the maximum number of records to return.
+    /// Gets or sets the maximum number of records to return. <c>null</c> means no limit; <c>0</c> returns no records.
     /// </summary>
     public int? Take { get; set; }
 
@@ -50,8 +50,8 @@ public class KeyValueFilter
         if (filter.OrderByKey)
             queryable = queryable.OrderBy(x => x.Id);
 
-        if (filter.Take is > 0)
-            queryable = queryable.Take(filter.Take.Value);
+        if (filter.Take != null)
+            queryable = queryable.Take(Math.Max(0, filter.Take.Value));
 
         return queryable;
     }

@@ -84,6 +84,50 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
     }
 
     [Fact]
+    public async Task FindManyAsync_MigratesOnlyCallerLimitFromLegacyScan()
+    {
+        var first = CreateItem("legacy-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
+        var second = CreateItem("legacy-2", new DateTimeOffset(2026, 5, 20, 12, 1, 0, TimeSpan.Zero));
+        var third = CreateItem("legacy-3", new DateTimeOffset(2026, 5, 20, 12, 2, 0, TimeSpan.Zero));
+        _payloadSerializer.Items = new[] { first, second, third }.ToDictionary(x => x.Id);
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:" && x.StartsWith), Arg.Any<CancellationToken>())
+            .Returns([CreateLegacyRecord(first), CreateLegacyRecord(second), CreateLegacyRecord(third)]);
+
+        var result = (await _store.FindManyAsync(2)).ToList();
+
+        Assert.Equal(["legacy-1", "legacy-2"], result.Select(x => x.Id));
+        await _keyValueStore.Received(1).SaveAsync(
+            Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Items:legacy-1"),
+            Arg.Any<CancellationToken>());
+        await _keyValueStore.Received(1).SaveAsync(
+            Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Items:legacy-2"),
+            Arg.Any<CancellationToken>());
+        await _keyValueStore.DidNotReceive().SaveAsync(
+            Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Items:legacy-3"),
+            Arg.Any<CancellationToken>());
+        await _keyValueStore.DidNotReceive().SaveAsync(
+            Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:State:LegacyScanCompleted"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task FindManyAsync_MarksLegacyScanCompleted_WhenCallerLimitCoversRecoverableItems()
+    {
+        var first = CreateItem("legacy-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
+        var second = CreateItem("legacy-2", new DateTimeOffset(2026, 5, 20, 12, 1, 0, TimeSpan.Zero));
+        _payloadSerializer.Items = new[] { first, second }.ToDictionary(x => x.Id);
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:" && x.StartsWith), Arg.Any<CancellationToken>())
+            .Returns([CreateLegacyRecord(first), CreateLegacyRecord(second)]);
+
+        var result = (await _store.FindManyAsync(2)).ToList();
+
+        Assert.Equal(["legacy-1", "legacy-2"], result.Select(x => x.Id));
+        await _keyValueStore.Received(1).SaveAsync(
+            Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:State:LegacyScanCompleted" && x.SerializedValue == "true"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task FindManyAsync_UsesRecoveryMarkersWithoutBroadScan_WhenLegacyScanAlreadyCompleted()
     {
         var orphan = CreateItem("orphan", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
@@ -250,6 +294,49 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
         await _keyValueStore.Received(1).DeleteAsync(indexKey, Arg.Any<CancellationToken>());
         await _keyValueStore.Received(1).DeleteAsync("Elsa:WorkflowDispatchOutbox:IndexById:outbox-1", Arg.Any<CancellationToken>());
         await _keyValueStore.DidNotReceive().FindManyAsync(
+            Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Index:" && x.StartsWith),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DeleteAsync_UsesScan_WhenIndexByIdValueDoesNotMatchExpectedId()
+    {
+        var item = CreateItem("outbox-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
+        var mismatchedIndexKey = $"Elsa:WorkflowDispatchOutbox:Index:{item.CreatedAt.UtcTicks:D20}:outbox-2";
+        _keyValueStore.FindAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Items:outbox-1"), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<SerializedKeyValuePair?>(null));
+        _keyValueStore.FindAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:IndexById:outbox-1"), Arg.Any<CancellationToken>())
+            .Returns(new SerializedKeyValuePair { Key = "Elsa:WorkflowDispatchOutbox:IndexById:outbox-1", SerializedValue = mismatchedIndexKey });
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Index:" && x.StartsWith), Arg.Any<CancellationToken>())
+            .Returns([CreateIndexRecord(item)]);
+
+        await _store.DeleteAsync(item.Id);
+
+        await _keyValueStore.DidNotReceive().DeleteAsync(mismatchedIndexKey, Arg.Any<CancellationToken>());
+        await _keyValueStore.Received(1).DeleteAsync($"Elsa:WorkflowDispatchOutbox:Index:{item.CreatedAt.UtcTicks:D20}:outbox-1", Arg.Any<CancellationToken>());
+        await _keyValueStore.Received(1).DeleteAsync("Elsa:WorkflowDispatchOutbox:IndexById:outbox-1", Arg.Any<CancellationToken>());
+        await _keyValueStore.Received(1).FindManyAsync(
+            Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Index:" && x.StartsWith),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DeleteAsync_UsesScan_WhenIndexByIdValueIsNotWellFormed()
+    {
+        var item = CreateItem("outbox-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
+        _keyValueStore.FindAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Items:outbox-1"), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<SerializedKeyValuePair?>(null));
+        _keyValueStore.FindAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:IndexById:outbox-1"), Arg.Any<CancellationToken>())
+            .Returns(new SerializedKeyValuePair { Key = "Elsa:WorkflowDispatchOutbox:IndexById:outbox-1", SerializedValue = "arbitrary-key" });
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Index:" && x.StartsWith), Arg.Any<CancellationToken>())
+            .Returns([CreateIndexRecord(item)]);
+
+        await _store.DeleteAsync(item.Id);
+
+        await _keyValueStore.DidNotReceive().DeleteAsync("arbitrary-key", Arg.Any<CancellationToken>());
+        await _keyValueStore.Received(1).DeleteAsync($"Elsa:WorkflowDispatchOutbox:Index:{item.CreatedAt.UtcTicks:D20}:outbox-1", Arg.Any<CancellationToken>());
+        await _keyValueStore.Received(1).DeleteAsync("Elsa:WorkflowDispatchOutbox:IndexById:outbox-1", Arg.Any<CancellationToken>());
+        await _keyValueStore.Received(1).FindManyAsync(
             Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Index:" && x.StartsWith),
             Arg.Any<CancellationToken>());
     }

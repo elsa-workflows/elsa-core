@@ -65,7 +65,7 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
     {
         var indexedItems = await FindIndexedItemsAsync(maxCount, cancellationToken);
         var recoverableItems = await FindRecoveryItemsAsync(cancellationToken);
-        var legacyItems = await FindLegacyItemsAsync(cancellationToken);
+        var legacyItems = await FindLegacyItemsAsync(maxCount, cancellationToken);
         var items = indexedItems
             .Concat(recoverableItems)
             .Concat(legacyItems)
@@ -199,7 +199,7 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
         return items;
     }
 
-    private async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindLegacyItemsAsync(CancellationToken cancellationToken)
+    private async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindLegacyItemsAsync(int maxCount, CancellationToken cancellationToken)
     {
         var legacyScanCompleted = await keyValueStore.FindAsync(new KeyValueFilter { Key = LegacyScanCompletedKey }, cancellationToken);
 
@@ -212,18 +212,22 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
             StartsWith = true
         }, cancellationToken);
 
-        var recoverableRecords = records
+        var recoverableItems = records
             .Where(IsRecoverableItemRecord)
+            .Select(x => new
+            {
+                Record = x,
+                Item = payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(x.SerializedValue)
+            })
+            .Where(x => x.Item != null)
             .ToList();
+        var recoverableItemsToMigrate = maxCount > 0 ? recoverableItems.Take(maxCount).ToList() : recoverableItems;
         var items = new List<WorkflowDispatchOutboxItem>();
 
-        foreach (var record in recoverableRecords)
+        foreach (var recoverableItem in recoverableItemsToMigrate)
         {
-            var item = payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(record.SerializedValue);
-
-            if (item == null)
-                continue;
-
+            var record = recoverableItem.Record;
+            var item = recoverableItem.Item!;
             await SaveAsync(item, cancellationToken);
 
             if (!record.Key.StartsWith(ItemKeyPrefix, StringComparison.Ordinal))
@@ -232,11 +236,14 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
             items.Add(item);
         }
 
-        await keyValueStore.SaveAsync(new SerializedKeyValuePair
+        if (recoverableItemsToMigrate.Count == recoverableItems.Count)
         {
-            Key = LegacyScanCompletedKey,
-            SerializedValue = "true"
-        }, cancellationToken);
+            await keyValueStore.SaveAsync(new SerializedKeyValuePair
+            {
+                Key = LegacyScanCompletedKey,
+                SerializedValue = "true"
+            }, cancellationToken);
+        }
 
         return items;
     }
@@ -247,9 +254,14 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
 
         if (lookupRecord != null)
         {
-            await keyValueStore.DeleteAsync(lookupRecord.SerializedValue, cancellationToken);
+            if (IsIndexKeyForId(lookupRecord.SerializedValue, id))
+            {
+                await keyValueStore.DeleteAsync(lookupRecord.SerializedValue, cancellationToken);
+                await keyValueStore.DeleteAsync(lookupRecord.Key, cancellationToken);
+                return;
+            }
+
             await keyValueStore.DeleteAsync(lookupRecord.Key, cancellationToken);
-            return;
         }
 
         var matchingIndexRecords = await keyValueStore.FindManyAsync(new KeyValueFilter
@@ -290,6 +302,28 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
     private static string GetIndexByIdKey(string id) => $"{IndexByIdKeyPrefix}{id}";
 
     private static string GetRecoveryKey(string id) => $"{RecoveryKeyPrefix}{id}";
+
+    private static bool IsIndexKeyForId(string indexKey, string id)
+    {
+        var expectedSuffix = $":{id}";
+
+        if (!indexKey.StartsWith(IndexKeyPrefix, StringComparison.Ordinal) || !indexKey.EndsWith(expectedSuffix, StringComparison.Ordinal))
+            return false;
+
+        var ticksStart = IndexKeyPrefix.Length;
+        var ticksLength = indexKey.Length - ticksStart - expectedSuffix.Length;
+
+        if (ticksLength != 20)
+            return false;
+
+        foreach (var character in indexKey.AsSpan(ticksStart, ticksLength))
+        {
+            if (character is < '0' or > '9')
+                return false;
+        }
+
+        return true;
+    }
 
     private static bool IsRecoverableItemRecord(SerializedKeyValuePair record)
     {

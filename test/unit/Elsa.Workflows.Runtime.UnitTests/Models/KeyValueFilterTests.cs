@@ -25,6 +25,26 @@ public class KeyValueFilterTests
         Assert.Equal(["key-a", "key-b"], result);
     }
 
+    [Fact]
+    public void Apply_ReturnsNoRecords_WhenTakeIsZero()
+    {
+        var filter = new KeyValueFilter { Take = 0 };
+
+        var result = filter.Apply(CreateUnorderedPairs()).ToList();
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void Apply_DoesNotLimitRecords_WhenTakeIsNull()
+    {
+        var filter = new KeyValueFilter { Take = null };
+
+        var result = filter.Apply(CreateUnorderedPairs()).Select(x => x.Key).ToList();
+
+        Assert.Equal(["key-c", "key-a", "key-b"], result);
+    }
+
     private static IQueryable<SerializedKeyValuePair> CreateUnorderedPairs()
     {
         return new[]
