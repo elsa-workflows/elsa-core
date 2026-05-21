@@ -302,7 +302,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public DateTimeOffset? FinishedAt { get; set; }
 
     /// <summary>
-    /// Gets or sets the exception that occurred during workflow execution, if any.
+    /// Gets the exception that occurred during workflow execution, if any.
     /// </summary>
     public Exception? Exception { get; internal set; }
 
