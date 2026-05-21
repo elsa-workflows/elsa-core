@@ -12,7 +12,8 @@ Start in [src/modules/Elsa.Workflows.Runtime](../../src/modules/Elsa.Workflows.R
 - `IWorkflowDispatcher`
 - `IStimulusDispatcher`
 - `IWorkflowCancellationDispatcher`
-- bookmark, bookmark queue, bookmark queue dead-letter, trigger, workflow execution log, and activity execution stores
+- runtime stores:
+  - bookmark, bookmark queue, bookmark queue dead-letter, trigger, workflow execution log, and activity execution stores
 - workflow matcher, starter, invoker, resumer, canceler, restarter
 - trigger indexer and bookmark manager
 - background workflow, stimulus, task, and activity dispatch
