@@ -90,6 +90,7 @@ public class WorkflowRuntimeFeatureTests
 
         Assert.Contains(workflowType.GetSimpleAssemblyQualifiedName(), _feature.Workflows.Keys);
         Assert.Contains(workflowType.FullName!, _feature.Workflows.Keys);
+        Assert.Same(_feature.Workflows[workflowType.FullName!], _feature.Workflows[workflowType.GetSimpleAssemblyQualifiedName()]);
     }
 
     [Fact]

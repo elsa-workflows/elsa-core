@@ -27,16 +27,24 @@ public static class WorkflowDictionaryExtensions
 
         var key = workflowType.GetSimpleAssemblyQualifiedName();
         var legacyKey = workflowType.FullName;
-        var factory = new Func<IServiceProvider, ValueTask<IWorkflow>>(sp =>
-        {
-            var workflow = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(sp, workflowType);
-            return new ValueTask<IWorkflow>(workflow);
-        });
+        var hasFactory = dictionary.TryGetValue(key, out var factory);
 
-        dictionary.TryAdd(key, factory);
+        if (!hasFactory && !string.IsNullOrWhiteSpace(legacyKey))
+            hasFactory = dictionary.TryGetValue(legacyKey, out factory);
+
+        if (!hasFactory)
+        {
+            factory = sp =>
+            {
+                var workflow = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(sp, workflowType);
+                return new ValueTask<IWorkflow>(workflow);
+            };
+        }
+
+        dictionary[key] = factory!;
 
         if (!string.IsNullOrWhiteSpace(legacyKey) && legacyKey != key)
-            dictionary.TryAdd(legacyKey, factory);
+            dictionary[legacyKey] = factory!;
 
         if (dictionary is IWorkflowTypeRegistry workflowTypeRegistry)
             workflowTypeRegistry.AddWorkflowType(workflowType);
