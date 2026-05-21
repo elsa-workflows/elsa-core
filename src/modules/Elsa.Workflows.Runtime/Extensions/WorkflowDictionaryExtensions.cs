@@ -33,10 +33,10 @@ public static class WorkflowDictionaryExtensions
             return new ValueTask<IWorkflow>(workflow);
         });
 
-        dictionary.Add(key, factory);
+        dictionary.TryAdd(key, factory);
 
         if (!string.IsNullOrWhiteSpace(legacyKey) && legacyKey != key)
-            dictionary.Add(legacyKey, factory);
+            dictionary.TryAdd(legacyKey, factory);
 
         if (dictionary is IWorkflowTypeRegistry workflowTypeRegistry)
             workflowTypeRegistry.AddWorkflowType(workflowType);

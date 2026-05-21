@@ -76,6 +76,18 @@ public class WorkflowRuntimeFeatureTests
     }
 
     [Fact]
+    public void WorkflowsAdd_DoesNotThrow_WhenLegacyKeyAlreadyExists()
+    {
+        var workflowType = typeof(GenericWorkflow<int>);
+        _feature.Workflows.Add(workflowType.FullName!, _ => new ValueTask<IWorkflow>(new GenericWorkflow<int>()));
+
+        _feature.Workflows.Add(workflowType);
+
+        Assert.Contains(workflowType.GetSimpleAssemblyQualifiedName(), _feature.Workflows.Keys);
+        Assert.Contains(workflowType.FullName!, _feature.Workflows.Keys);
+    }
+
+    [Fact]
     public void ShellWorkflowsAdd_RegistersWorkflowTypeAlias()
     {
         var workflowType = typeof(GenericWorkflow<int>);
