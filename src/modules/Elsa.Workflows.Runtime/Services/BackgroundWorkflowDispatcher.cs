@@ -19,19 +19,7 @@ public class BackgroundWorkflowDispatcher(ICommandSender commandSender, INotific
     {
         // Emit dispatching notification
         await notificationSender.SendAsync(new WorkflowDefinitionDispatching(request), cancellationToken);
-        
-        var command = new DispatchWorkflowDefinitionCommand(request.DefinitionVersionId)
-        {
-            Input = request.Input,
-            Properties = request.Properties,
-            CorrelationId = request.CorrelationId,
-            InstanceId = request.InstanceId,
-            TriggerActivityId = request.TriggerActivityId,
-            ParentWorkflowInstanceId = request.ParentWorkflowInstanceId,
-            SchedulingActivityExecutionId = request.SchedulingActivityExecutionId,
-            SchedulingWorkflowInstanceId = request.SchedulingWorkflowInstanceId,
-            SchedulingCallStackDepth = request.SchedulingCallStackDepth
-        };
+        var command = WorkflowDispatchCommandFactory.CreateCommand(request);
         
         // Background commands run independently of caller's lifecycle.
         await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), CancellationToken.None);
@@ -48,13 +36,7 @@ public class BackgroundWorkflowDispatcher(ICommandSender commandSender, INotific
     {
         // Emit dispatching notification
         await notificationSender.SendAsync(new WorkflowInstanceDispatching(request), cancellationToken);
-        
-        var command = new DispatchWorkflowInstanceCommand(request.InstanceId){
-            BookmarkId = request.BookmarkId,
-            ActivityHandle = request.ActivityHandle,
-            Input = request.Input,
-            Properties = request.Properties,
-            CorrelationId = request.CorrelationId};
+        var command = WorkflowDispatchCommandFactory.CreateCommand(request);
 
         // Background commands run independently of caller's lifecycle.
         await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), CancellationToken.None);
@@ -69,14 +51,7 @@ public class BackgroundWorkflowDispatcher(ICommandSender commandSender, INotific
     /// <inheritdoc />
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
-        var command = new DispatchTriggerWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload)
-        {
-            CorrelationId = request.CorrelationId,
-            WorkflowInstanceId = request.WorkflowInstanceId,
-            ActivityInstanceId = request.ActivityInstanceId,
-            Input = request.Input,
-            Properties = request.Properties
-        };
+        var command = WorkflowDispatchCommandFactory.CreateCommand(request);
         
         // Background commands run independently of caller's lifecycle.
         await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), CancellationToken.None);
@@ -86,13 +61,7 @@ public class BackgroundWorkflowDispatcher(ICommandSender commandSender, INotific
     /// <inheritdoc />
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
-        var command = new DispatchResumeWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload)
-        {
-            CorrelationId = request.CorrelationId,
-            WorkflowInstanceId = request.WorkflowInstanceId,
-            ActivityInstanceId = request.ActivityInstanceId,
-            Input = request.Input
-        };
+        var command = WorkflowDispatchCommandFactory.CreateCommand(request);
         
         // Background commands run independently of caller's lifecycle.
         await commandSender.SendAsync(command, CommandStrategy.Background, CreateHeaders(), CancellationToken.None);

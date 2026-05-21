@@ -24,6 +24,7 @@ using Elsa.Workflows.Runtime.UIHints;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Features;
@@ -52,7 +53,8 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcher { get; set; } = sp =>
     {
         var decoratedService = ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
-        return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
+        var transactionalService = ActivatorUtilities.CreateInstance<TransactionalWorkflowDispatcher>(sp, decoratedService);
+        return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, transactionalService);
     };
     
     /// <summary>
@@ -64,6 +66,11 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     /// A factory that instantiates an <see cref="IWorkflowCancellationDispatcher"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowCancellationDispatcher> WorkflowCancellationDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowCancellationDispatcher>(sp);
+
+    /// <summary>
+    /// A factory that instantiates an <see cref="IWorkflowDispatchOutboxStore"/>.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowDispatchOutboxStore> WorkflowDispatchOutboxStore { get; set; } = sp => ActivatorUtilities.CreateInstance<KeyValueWorkflowDispatchOutboxStore>(sp);
 
     /// <summary>
     /// A factory that instantiates an <see cref="IBookmarkStore"/>.
@@ -340,6 +347,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IWorkflowStarter, DefaultWorkflowStarter>()
             .AddScoped<IWorkflowRestarter, DefaultWorkflowRestarter>()
             .AddScoped<IBookmarkQueuePurger, DefaultBookmarkQueuePurger>()
+            .AddSingleton<IWorkflowDispatchOutboxAccessor, WorkflowDispatchOutboxAccessor>()
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             .AddScoped<IActivityPropertyLogPersistenceEvaluator, ActivityPropertyLogPersistenceEvaluator>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
@@ -379,6 +387,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddRecurringTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromMinutes(1))
             .AddRecurringTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10))
             .AddRecurringTask<RestartInterruptedWorkflowsTask>(TimeSpan.FromMinutes(5)) // Same default as the workflow liveness threshold.
+            .AddRecurringTask<ProcessWorkflowDispatchOutboxRecurringTask>(TimeSpan.FromSeconds(10))
             
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
@@ -395,6 +404,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddCommandHandler<CancelWorkflowsCommandHandler>()
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeBulkDispatchWorkflowActivity>()
+            .AddNotificationHandler<ProcessWorkflowDispatchOutbox>()
             .AddNotificationHandler<ResumeExecuteWorkflowActivity>()
             .AddNotificationHandler<IndexTriggers>()
             .AddNotificationHandler<CancelBackgroundActivities>()
@@ -413,5 +423,9 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddScoped<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
+
+        Services.TryAddScoped<IWorkflowDispatchOutbox>(sp => ActivatorUtilities.CreateInstance<WorkflowDispatchOutbox>(sp));
+        Services.TryAddScoped(WorkflowDispatchOutboxStore);
+        Services.TryAddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>();
     }
 }

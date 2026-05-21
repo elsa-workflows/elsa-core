@@ -20,6 +20,17 @@ public class KeyValueFilter
     public ICollection<string>? Keys { get; set; }
 
     /// <summary>
+    /// Gets or sets the maximum number of records to return. <c>null</c> means no limit; <c>0</c> returns no records.
+    /// </summary>
+    public int? Take { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether results should be ordered by the persisted key before applying <see cref="Take"/>.
+    /// The persisted key is stored as <c>Id</c>; <see cref="SerializedKeyValuePair.Key"/> is an alias.
+    /// </summary>
+    public bool OrderByKey { get; set; }
+
+    /// <summary>
     /// Applies the filter to the specified queryable.
     /// </summary>
     /// <param name="queryable">The queryable.</param>
@@ -35,6 +46,12 @@ public class KeyValueFilter
         }
 
         if (filter.Keys != null) queryable = queryable.Where(x => filter.Keys.Contains(x.Id));
+
+        if (filter.OrderByKey)
+            queryable = queryable.OrderBy(x => x.Id);
+
+        if (filter.Take != null)
+            queryable = queryable.Take(Math.Max(0, filter.Take.Value));
 
         return queryable;
     }

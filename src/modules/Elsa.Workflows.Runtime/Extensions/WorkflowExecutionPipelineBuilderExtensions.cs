@@ -18,6 +18,7 @@ public static class WorkflowExecutionPipelineBuilderExtensions
         pipelineBuilder
             .Reset()
             .UseExecutionCycleTracking()
+            .UseWorkflowDispatchOutbox()
             .UseWorkflowHeartbeat()
             .UseEngineExceptionHandling()
             .UsePersistentVariables()
@@ -37,6 +38,11 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     /// deadline breach.
     /// </summary>
     public static IWorkflowExecutionPipelineBuilder UseExecutionCycleTracking(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<ExecutionCycleTrackingMiddleware>();
+
+    /// <summary>
+    /// Installs middleware that scopes the current workflow execution context for transactional workflow dispatch outbox writes.
+    /// </summary>
+    public static IWorkflowExecutionPipelineBuilder UseWorkflowDispatchOutbox(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<WorkflowDispatchOutboxMiddleware>();
 
     /// <summary>
     /// Installs middleware that persists bookmarks after workflow execution.
