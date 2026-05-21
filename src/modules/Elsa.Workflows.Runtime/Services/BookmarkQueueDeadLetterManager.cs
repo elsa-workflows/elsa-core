@@ -15,10 +15,47 @@ public class BookmarkQueueDeadLetterManager(
 {
     public async Task<BookmarkQueueDeadLetterItem> DeadLetterAsync(BookmarkQueueItem item, string reason, Exception? exception = null, CancellationToken cancellationToken = default)
     {
-        var existing = await deadLetterStore.FindAsync(new BookmarkQueueDeadLetterFilter { OriginalQueueItemId = item.Id }, cancellationToken);
-        if (existing != null)
-            return existing;
+        var results = await DeadLetterManyAsync([item], reason, exception, cancellationToken);
+        return results.Single();
+    }
 
+    public async Task<IReadOnlyCollection<BookmarkQueueDeadLetterItem>> DeadLetterManyAsync(IEnumerable<BookmarkQueueItem> items, string reason, Exception? exception = null, CancellationToken cancellationToken = default)
+    {
+        var itemList = items.ToList();
+
+        if (itemList.Count == 0)
+            return Array.Empty<BookmarkQueueDeadLetterItem>();
+
+        var originalQueueItemIds = itemList.Select(x => x.Id).ToList();
+        var existingDeadLetters = (await deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter { OriginalQueueItemIds = originalQueueItemIds }, cancellationToken)).ToList();
+        var existingByOriginalQueueItemId = existingDeadLetters.ToDictionary(x => x.OriginalQueueItemId);
+        var now = systemClock.UtcNow;
+        var deadLetterItems = itemList
+            .Where(item => !existingByOriginalQueueItemId.ContainsKey(item.Id))
+            .Select(item => CreateDeadLetterItem(item, reason, exception, now))
+            .ToList();
+
+        if (deadLetterItems.Count == 0)
+            return itemList.Select(x => existingByOriginalQueueItemId[x.Id]).ToList();
+
+        var savedDeadLetterItems = await deadLetterStore.AddOrGetExistingManyAsync(deadLetterItems, cancellationToken);
+        var savedByOriginalQueueItemId = savedDeadLetterItems.ToDictionary(x => x.OriginalQueueItemId);
+        var newDeadLetterIds = deadLetterItems.Select(x => x.Id).ToHashSet();
+
+        foreach (var savedDeadLetterItem in savedDeadLetterItems.Where(x => newDeadLetterIds.Contains(x.Id)))
+        {
+            logger.LogInformation(
+                "Moved bookmark queue item {BookmarkQueueItemId} to dead letter {BookmarkQueueDeadLetterItemId} because {Reason}.",
+                savedDeadLetterItem.OriginalQueueItemId,
+                savedDeadLetterItem.Id,
+                reason);
+        }
+
+        return itemList.Select(x => existingByOriginalQueueItemId.GetValueOrDefault(x.Id) ?? savedByOriginalQueueItemId[x.Id]).ToList();
+    }
+
+    private BookmarkQueueDeadLetterItem CreateDeadLetterItem(BookmarkQueueItem item, string reason, Exception? exception, DateTimeOffset now)
+    {
         var deadLetterItem = new BookmarkQueueDeadLetterItem
         {
             Id = identityGenerator.GenerateId(),
@@ -41,18 +78,7 @@ public class BookmarkQueueDeadLetterManager(
             CanReplay = true
         };
 
-        var savedDeadLetterItem = await deadLetterStore.AddOrGetExistingAsync(deadLetterItem, cancellationToken);
-
-        if (savedDeadLetterItem.Id == deadLetterItem.Id)
-        {
-            logger.LogInformation(
-                "Moved bookmark queue item {BookmarkQueueItemId} to dead letter {BookmarkQueueDeadLetterItemId} because {Reason}.",
-                item.Id,
-                deadLetterItem.Id,
-                reason);
-        }
-
-        return savedDeadLetterItem;
+        return deadLetterItem;
     }
 
     public async Task<ReplayBookmarkQueueDeadLetterResult> ReplayAsync(string id, CancellationToken cancellationToken = default)
@@ -87,7 +113,7 @@ public class BookmarkQueueDeadLetterManager(
         {
             await bookmarkQueueStore.AddAsync(queueItem, cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OutOfMemoryException and not StackOverflowException)
         {
             item.CanReplay = true;
             item.ReplayedAt = null;

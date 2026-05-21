@@ -49,6 +49,34 @@ public class EFBookmarkQueueDeadLetterStore(Store<RuntimeElsaDbContext, Bookmark
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyCollection<BookmarkQueueDeadLetterItem>> AddOrGetExistingManyAsync(IEnumerable<BookmarkQueueDeadLetterItem> records, CancellationToken cancellationToken = default)
+    {
+        var recordList = records.ToList();
+
+        if (recordList.Count == 0)
+            return Array.Empty<BookmarkQueueDeadLetterItem>();
+
+        var originalQueueItemIds = recordList.Select(x => x.OriginalQueueItemId).ToList();
+        var existingItems = (await FindManyAsync(new BookmarkQueueDeadLetterFilter { OriginalQueueItemIds = originalQueueItemIds }, cancellationToken)).ToList();
+        var existingByOriginalQueueItemId = existingItems.ToDictionary(x => x.OriginalQueueItemId);
+        var recordsToAdd = recordList.Where(x => !existingByOriginalQueueItemId.ContainsKey(x.OriginalQueueItemId)).ToList();
+
+        if (recordsToAdd.Count == 0)
+            return recordList.Select(x => existingByOriginalQueueItemId[x.OriginalQueueItemId]).ToList();
+
+        try
+        {
+            await store.AddManyAsync(recordsToAdd, OnSaveAsync, cancellationToken);
+        }
+        catch (Exception ex) when (DbExceptionClassifier.IsDuplicateKey(ex))
+        {
+            return await AddOrGetExistingIndividuallyAsync(recordList, cancellationToken);
+        }
+
+        return recordList.Select(x => existingByOriginalQueueItemId.GetValueOrDefault(x.OriginalQueueItemId) ?? x).ToList();
+    }
+
+    /// <inheritdoc />
     public async Task<BookmarkQueueDeadLetterItem?> TryMarkReplayedAsync(string id, string queueItemId, DateTimeOffset replayedAt, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
@@ -104,6 +132,16 @@ public class EFBookmarkQueueDeadLetterStore(Store<RuntimeElsaDbContext, Bookmark
     public async Task<long> DeleteAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default)
     {
         return await store.DeleteWhereAsync(filter.Apply, cancellationToken);
+    }
+
+    private async Task<IReadOnlyCollection<BookmarkQueueDeadLetterItem>> AddOrGetExistingIndividuallyAsync(IEnumerable<BookmarkQueueDeadLetterItem> records, CancellationToken cancellationToken)
+    {
+        var results = new List<BookmarkQueueDeadLetterItem>();
+
+        foreach (var record in records)
+            results.Add(await AddOrGetExistingAsync(record, cancellationToken));
+
+        return results;
     }
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, BookmarkQueueDeadLetterItem entity, CancellationToken cancellationToken)

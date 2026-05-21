@@ -35,36 +35,34 @@ public class DefaultBookmarkQueuePurger(
             };
             var order = new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
             var page = await store.PageAsync(pageArgs, filter, order, cancellationToken);
-            var items = page.Items;
+            var items = page.Items.ToList();
 
             if (items.Count == 0)
                 break;
 
-            var movedCount = 0;
-            foreach (var item in items)
+            var deadLetters = (await deadLetterManager.DeadLetterManyAsync(items, "Expired", cancellationToken: cancellationToken)).ToList();
+            var itemIds = items.Select(x => x.Id).ToList();
+            var deletedCount = await store.DeleteAsync(new BookmarkQueueFilter
             {
-                var deadLetter = await deadLetterManager.DeadLetterAsync(item, "Expired", cancellationToken: cancellationToken);
+                Ids = itemIds
+            }, cancellationToken);
 
-                var deletedCount = await store.DeleteAsync(new BookmarkQueueFilter
+            if (deletedCount != items.Count)
+            {
+                foreach (var deadLetter in deadLetters.Where(x => x.CanReplay && x.Reason == "Expired"))
                 {
-                    Id = item.Id
-                }, cancellationToken);
-
-                if (deletedCount == 0)
-                {
-                    if (deadLetter.CanReplay && deadLetter.Reason == "Expired")
-                    {
-                        deadLetter.CanReplay = false;
-                        await deadLetterStore.SaveAsync(deadLetter, cancellationToken);
-                    }
-
-                    continue;
+                    deadLetter.CanReplay = false;
+                    await deadLetterStore.SaveAsync(deadLetter, cancellationToken);
                 }
-
-                movedCount++;
             }
 
-            logger.LogInformation("Moved {Count} expired bookmark queue items to the dead-letter store.", movedCount);
+            logger.LogInformation(
+                "Recorded {DeadLetterCount} expired bookmark queue dead-letter items and deleted {DeletedCount} active queue items.",
+                deadLetters.Count,
+                deletedCount);
+
+            if (deletedCount == 0)
+                break;
         }
 
         await PurgeDeadLettersAsync(now, cancellationToken);

@@ -30,6 +30,19 @@ public interface IBookmarkQueueDeadLetterStore
     }
 
     /// <summary>
+    /// Adds the specified <see cref="BookmarkQueueDeadLetterItem"/> records to the persistence store or returns existing items for the same original queue items.
+    /// </summary>
+    async Task<IReadOnlyCollection<BookmarkQueueDeadLetterItem>> AddOrGetExistingManyAsync(IEnumerable<BookmarkQueueDeadLetterItem> records, CancellationToken cancellationToken = default)
+    {
+        var results = new List<BookmarkQueueDeadLetterItem>();
+
+        foreach (var record in records)
+            results.Add(await AddOrGetExistingAsync(record, cancellationToken));
+
+        return results;
+    }
+
+    /// <summary>
     /// Atomically marks a replayable dead-letter item as replayed.
     /// </summary>
     Task<BookmarkQueueDeadLetterItem?> TryMarkReplayedAsync(string id, string queueItemId, DateTimeOffset replayedAt, CancellationToken cancellationToken = default);

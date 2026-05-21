@@ -23,7 +23,12 @@ public class BookmarkQueueDeadLetterFilter
     public string? OriginalQueueItemId { get; set; }
 
     /// <summary>
-    /// Gets or sets the IDs of the workflow instance.
+    /// Gets or sets the original queue item IDs.
+    /// </summary>
+    public IEnumerable<string>? OriginalQueueItemIds { get; set; }
+
+    /// <summary>
+    /// Gets or sets the ID of the workflow instance.
     /// </summary>
     public string? WorkflowInstanceId { get; set; }
 
@@ -46,6 +51,7 @@ public class BookmarkQueueDeadLetterFilter
         if (filter.Id != null) query = query.Where(x => x.Id == filter.Id);
         if (filter.Ids != null) query = query.Where(x => filter.Ids.Contains(x.Id));
         if (filter.OriginalQueueItemId != null) query = query.Where(x => x.OriginalQueueItemId == filter.OriginalQueueItemId);
+        if (filter.OriginalQueueItemIds != null) query = query.Where(x => filter.OriginalQueueItemIds.Contains(x.OriginalQueueItemId));
         if (filter.WorkflowInstanceId != null) query = query.Where(x => x.WorkflowInstanceId == filter.WorkflowInstanceId);
         if (filter.DeadLetteredAtLessThan != null) query = query.Where(x => x.DeadLetteredAt < filter.DeadLetteredAtLessThan);
 

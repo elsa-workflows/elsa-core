@@ -51,6 +51,30 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
     }
 
     /// <inheritdoc />
+    public Task<IReadOnlyCollection<BookmarkQueueDeadLetterItem>> AddOrGetExistingManyAsync(IEnumerable<BookmarkQueueDeadLetterItem> records, CancellationToken cancellationToken = default)
+    {
+        lock (_lock)
+        {
+            var results = new List<BookmarkQueueDeadLetterItem>();
+
+            foreach (var record in records)
+            {
+                var existing = store.Find(x => x.OriginalQueueItemId == record.OriginalQueueItemId);
+                if (existing != null)
+                {
+                    results.Add(Clone(existing));
+                    continue;
+                }
+
+                store.Add(Clone(record), x => x.Id);
+                results.Add(Clone(record));
+            }
+
+            return Task.FromResult<IReadOnlyCollection<BookmarkQueueDeadLetterItem>>(results);
+        }
+    }
+
+    /// <inheritdoc />
     public Task<BookmarkQueueDeadLetterItem?> TryMarkReplayedAsync(string id, string queueItemId, DateTimeOffset replayedAt, CancellationToken cancellationToken = default)
     {
         lock (_lock)

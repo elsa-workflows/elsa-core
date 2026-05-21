@@ -54,6 +54,31 @@ public class BookmarkQueueDeadLetterTests
     }
 
     [Fact]
+    public async Task PurgeAsync_DeletesExpiredQueueItemsInBatch()
+    {
+        var expired1 = NewQueueItem("expired-1", _now.AddMinutes(-3));
+        var expired2 = NewQueueItem("expired-2", _now.AddMinutes(-2));
+        await _queueStore.AddAsync(expired1);
+        await _queueStore.AddAsync(expired2);
+        var queueStore = new RecordingDeleteQueueStore(_queueStore);
+        var purger = new DefaultBookmarkQueuePurger(
+            queueStore,
+            _deadLetterStore,
+            CreateManager(),
+            _clock,
+            Microsoft.Extensions.Options.Options.Create(new BookmarkQueuePurgeOptions { Ttl = TimeSpan.FromMinutes(1), DeadLetterTtl = TimeSpan.FromDays(7), BatchSize = 10 }),
+            NullLogger<DefaultBookmarkQueuePurger>.Instance);
+
+        await purger.PurgeAsync();
+
+        var deleteFilter = Assert.Single(queueStore.DeleteFilters);
+        Assert.Null(deleteFilter.Id);
+        Assert.Equal(["expired-1", "expired-2"], deleteFilter.Ids);
+        Assert.Empty(await _queueStore.FindManyAsync(new BookmarkQueueFilter()));
+        Assert.Equal(2, (await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).Count());
+    }
+
+    [Fact]
     public async Task PurgeAsync_WhenExpiredItemWasAlreadyRemoved_LeavesDeadLetterForAuditOnly()
     {
         var expired = NewQueueItem("expired", _now.AddMinutes(-2));
@@ -201,7 +226,7 @@ public class BookmarkQueueDeadLetterTests
     [Fact]
     public async Task ProcessAsync_WhenResumeIsCanceled_PropagatesCancellationWithoutIncrementingDeliveryAttempts()
     {
-        var item = NewQueueItem("cancelled", _now);
+        var item = NewQueueItem("canceled", _now);
         await _queueStore.AddAsync(item);
         var processor = new BookmarkQueueProcessor(
             _queueStore,
@@ -213,7 +238,7 @@ public class BookmarkQueueDeadLetterTests
 
         await Assert.ThrowsAsync<OperationCanceledException>(() => processor.ProcessAsync());
 
-        var retained = await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "cancelled" });
+        var retained = await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "canceled" });
         Assert.NotNull(retained);
         Assert.Equal(0, retained.DeliveryAttempts);
         Assert.Empty(await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter()));
@@ -539,6 +564,30 @@ public class BookmarkQueueDeadLetterTests
         }
 
         public Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => inner.DeleteAsync(filter, cancellationToken);
+    }
+
+    private sealed class RecordingDeleteQueueStore(IBookmarkQueueStore inner) : IBookmarkQueueStore
+    {
+        public List<BookmarkQueueFilter> DeleteFilters { get; } = [];
+
+        public Task SaveAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default) => inner.SaveAsync(record, cancellationToken);
+
+        public Task AddAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default) => inner.AddAsync(record, cancellationToken);
+
+        public Task<BookmarkQueueItem?> FindAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => inner.FindAsync(filter, cancellationToken);
+
+        public Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => inner.FindManyAsync(filter, cancellationToken);
+
+        public Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default) => inner.PageAsync(pageArgs, orderBy, cancellationToken);
+
+        public Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default) =>
+            inner.PageAsync(pageArgs, filter, orderBy, cancellationToken);
+
+        public Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
+        {
+            DeleteFilters.Add(filter);
+            return inner.DeleteAsync(filter, cancellationToken);
+        }
     }
 
     private sealed class CoordinatedFindDeadLetterStore(IBookmarkQueueDeadLetterStore inner, int participantCount) : IBookmarkQueueDeadLetterStore

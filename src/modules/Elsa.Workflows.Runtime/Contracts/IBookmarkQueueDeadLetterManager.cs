@@ -13,6 +13,11 @@ public interface IBookmarkQueueDeadLetterManager
     Task<BookmarkQueueDeadLetterItem> DeadLetterAsync(BookmarkQueueItem item, string reason, Exception? exception = null, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Moves the specified queue item metadata into the dead-letter store.
+    /// </summary>
+    Task<IReadOnlyCollection<BookmarkQueueDeadLetterItem>> DeadLetterManyAsync(IEnumerable<BookmarkQueueItem> items, string reason, Exception? exception = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Replays an eligible dead-letter item back into the bookmark queue.
     /// </summary>
     Task<ReplayBookmarkQueueDeadLetterResult> ReplayAsync(string id, CancellationToken cancellationToken = default);

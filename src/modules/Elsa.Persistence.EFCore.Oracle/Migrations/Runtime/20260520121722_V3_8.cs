@@ -8,12 +8,20 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
     /// <inheritdoc />
     public partial class V3_8 : Migration
     {
+        private readonly Elsa.Persistence.EFCore.IElsaDbContextSchema _schema;
+
+        /// <inheritdoc />
+        public V3_8(Elsa.Persistence.EFCore.IElsaDbContextSchema schema)
+        {
+            _schema = schema;
+        }
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<int>(
                 name: "DeliveryAttempts",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueItems",
                 type: "NUMBER(10)",
                 nullable: false,
@@ -21,28 +29,28 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
 
             migrationBuilder.AddColumn<DateTimeOffset>(
                 name: "LastAttemptedAt",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueItems",
                 type: "TIMESTAMP(7) WITH TIME ZONE",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "LastErrorMessage",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueItems",
                 type: "NVARCHAR2(2000)",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "LastErrorType",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueItems",
                 type: "NVARCHAR2(2000)",
                 nullable: true);
 
             migrationBuilder.CreateTable(
                 name: "BookmarkQueueDeadLetterItems",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
@@ -73,50 +81,50 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookmarkQueueDeadLetterItem_ActivityInstanceId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueDeadLetterItems",
                 column: "ActivityInstanceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookmarkQueueDeadLetterItem_ActivityTypeName",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueDeadLetterItems",
                 column: "ActivityTypeName");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookmarkQueueDeadLetterItem_BookmarkId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueDeadLetterItems",
                 column: "BookmarkId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookmarkQueueDeadLetterItem_CorrelationId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueDeadLetterItems",
                 column: "CorrelationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookmarkQueueDeadLetterItem_DeadLetteredAt",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueDeadLetterItems",
                 column: "DeadLetteredAt");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookmarkQueueDeadLetterItem_OriginalQueueItemId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueDeadLetterItems",
                 column: "OriginalQueueItemId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookmarkQueueDeadLetterItem_TenantId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueDeadLetterItems",
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookmarkQueueDeadLetterItem_WorkflowInstanceId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueDeadLetterItems",
                 column: "WorkflowInstanceId");
         }
@@ -126,26 +134,26 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
         {
             migrationBuilder.DropTable(
                 name: "BookmarkQueueDeadLetterItems",
-                schema: "Elsa");
+                schema: _schema.Schema);
 
             migrationBuilder.DropColumn(
                 name: "DeliveryAttempts",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueItems");
 
             migrationBuilder.DropColumn(
                 name: "LastAttemptedAt",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueItems");
 
             migrationBuilder.DropColumn(
                 name: "LastErrorMessage",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueItems");
 
             migrationBuilder.DropColumn(
                 name: "LastErrorType",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "BookmarkQueueItems");
 
         }
