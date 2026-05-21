@@ -59,12 +59,7 @@ public static class WebApplicationExtensions
     /// <param name="routePrefix">The route prefix to apply to Elsa API endpoints.</param>
     /// <example>E.g. "elsa/api" will expose endpoints like this: "/elsa/api/workflow-definitions"</example>
     public static IEndpointRouteBuilder MapWorkflowsApi(this IEndpointRouteBuilder routes, string routePrefix = "elsa/api") =>
-        routes.MapFastEndpoints(config =>
-        {
-            config.Endpoints.RoutePrefix = routePrefix;
-            config.Serializer.RequestDeserializer = DeserializeRequestAsync;
-            config.Serializer.ResponseSerializer = SerializeRequestAsync;
-        });
+        routes.MapFastEndpoints(config => ConfigureWorkflowsApi(config, routePrefix));
 
     /// <summary>
     /// Applies an ASP.NET Core rate limiting policy to requests targeting the specified path prefix.
