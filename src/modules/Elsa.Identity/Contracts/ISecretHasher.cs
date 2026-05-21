@@ -28,7 +28,7 @@ public interface ISecretHasher
     /// </summary>
     /// <param name="secret">The secret to hash.</param>
     /// <param name="salt">The salt to use.</param>
-    /// <returns>The hashed secret.</returns>
+    /// <returns>The hashed secret bytes. Implementations should return a self-describing format that <see cref="VerifySecret(string, HashedSecret, out bool)"/> can parse; the default implementation returns a UTF-8 encoded PBKDF2-SHA256 envelope.</returns>
     byte[] HashSecret(byte[] secret, byte[] salt);
     
     /// <summary>
@@ -39,6 +39,20 @@ public interface ISecretHasher
     /// <param name="salt">The salt.</param>
     /// <returns>True if the secret is valid, otherwise false.</returns>
     bool VerifySecret(string clearTextSecret, string secret, string salt);
+
+    /// <summary>
+    /// Verifies the secret.
+    /// </summary>
+    /// <param name="clearTextSecret">The secret to verify.</param>
+    /// <param name="secret">The hashed secret.</param>
+    /// <param name="salt">The salt.</param>
+    /// <param name="needsRehash">Whether the stored hash should be upgraded.</param>
+    /// <returns>True if the secret is valid, otherwise false.</returns>
+    bool VerifySecret(string clearTextSecret, string secret, string salt, out bool needsRehash)
+    {
+        needsRehash = false;
+        return VerifySecret(clearTextSecret, secret, salt);
+    }
     
     /// <summary>
     /// Verifies the secret.
@@ -47,6 +61,19 @@ public interface ISecretHasher
     /// <param name="hashedSecret">The hashed secret.</param>
     /// <returns>True if the secret is valid, otherwise false.</returns>
     bool VerifySecret(string clearTextSecret, HashedSecret hashedSecret);
+
+    /// <summary>
+    /// Verifies the secret.
+    /// </summary>
+    /// <param name="clearTextSecret">The secret to verify.</param>
+    /// <param name="hashedSecret">The hashed secret.</param>
+    /// <param name="needsRehash">Whether the stored hash should be upgraded.</param>
+    /// <returns>True if the secret is valid, otherwise false.</returns>
+    bool VerifySecret(string clearTextSecret, HashedSecret hashedSecret, out bool needsRehash)
+    {
+        needsRehash = false;
+        return VerifySecret(clearTextSecret, hashedSecret);
+    }
 
     /// <summary>
     /// Generates a salt.
