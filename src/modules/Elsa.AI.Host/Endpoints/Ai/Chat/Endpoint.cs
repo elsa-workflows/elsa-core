@@ -41,11 +41,19 @@ public class Endpoint(
         response.Headers.Connection = "keep-alive";
 
         var completed = false;
+        var reconnectAccepted = request.IsReconnect;
+        var reconnectConnected = false;
         var disconnectedConversationId = request.ConversationId;
         try
         {
             await foreach (var streamEvent in orchestrator.ExecuteChatAsync(request, cancellationToken))
             {
+                if (reconnectAccepted && !reconnectConnected)
+                {
+                    sessionManager.MarkConnected(request.ConversationId);
+                    reconnectConnected = true;
+                }
+
                 disconnectedConversationId = streamEvent.ConversationId;
                 await response.WriteAsync($"event: {streamEvent.Type}\n", cancellationToken);
                 await response.WriteAsync($"data: {JsonSerializer.Serialize(streamEvent)}\n\n", cancellationToken);

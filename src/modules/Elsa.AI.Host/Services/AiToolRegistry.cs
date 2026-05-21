@@ -77,8 +77,10 @@ public class AiToolRegistry(IServiceScopeFactory scopeFactory, AiToolEnablementS
         return grantedPermissions.Contains(PermissionNames.All) || definition.Permissions.All(grantedPermissions.Contains);
     }
 
-    private class ScopedAiTool(IServiceScope scope, IAiTool inner) : IAiTool
+    private class ScopedAiTool(IServiceScope scope, IAiTool inner) : IAiTool, IDisposable
     {
+        private bool _disposed;
+
         public AiToolDefinition Definition => inner.Definition;
 
         public async ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default)
@@ -89,8 +91,17 @@ public class AiToolRegistry(IServiceScopeFactory scopeFactory, AiToolEnablementS
             }
             finally
             {
-                scope.Dispose();
+                Dispose();
             }
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            _disposed = true;
+            scope.Dispose();
         }
     }
 }

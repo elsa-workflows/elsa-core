@@ -27,6 +27,7 @@ public class AiFeature : IFastEndpointsShellFeature
     public string? DefaultProviderName { get; set; } = DefaultOptions.DefaultProviderName;
     public ICollection<AiProviderOptions> Providers { get; set; } = [];
     public ICollection<AiAgentOptions> Agents { get; set; } = [..DefaultOptions.Agents];
+    public ICollection<string> SupportedAttachmentKinds { get; set; } = [..DefaultOptions.SupportedAttachmentKinds];
 
     public void ConfigureServices(IServiceCollection services)
     {
@@ -45,5 +46,6 @@ public class AiFeature : IFastEndpointsShellFeature
         options.DefaultProviderName = DefaultProviderName;
         options.Providers = [..Providers];
         options.Agents = [..Agents];
+        options.SupportedAttachmentKinds = [..SupportedAttachmentKinds];
     }
 }

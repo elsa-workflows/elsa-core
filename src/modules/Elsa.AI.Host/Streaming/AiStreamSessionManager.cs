@@ -18,13 +18,18 @@ public class AiStreamSessionManager
         var now = DateTimeOffset.UtcNow;
         PruneExpired(now);
 
-        if (!_disconnectDeadlines.TryRemove(conversationId, out var deadline))
+        if (!_disconnectDeadlines.TryGetValue(conversationId, out var deadline))
             return false;
 
         if (deadline < now)
             return false;
 
         return true;
+    }
+
+    public void MarkConnected(string conversationId)
+    {
+        _disconnectDeadlines.TryRemove(conversationId, out _);
     }
 
     private void PruneExpired(DateTimeOffset now)

@@ -22,6 +22,7 @@ public class AiChatReconnectTests
         manager.MarkDisconnected("conversation-1", TimeSpan.FromMinutes(5));
 
         Assert.True(manager.CanReconnect("conversation-1"));
+        manager.MarkConnected("conversation-1");
         Assert.False(manager.CanReconnect("conversation-1"));
     }
 
