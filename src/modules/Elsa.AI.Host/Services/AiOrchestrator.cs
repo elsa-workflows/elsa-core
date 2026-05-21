@@ -12,18 +12,20 @@ public class AiOrchestrator(
     IAiToolRegistry toolRegistry,
     AiContextResolver contextResolver,
     AiStreamEventMapper streamEventMapper,
+    IAiAuditSink auditSink,
     IOptions<AiHostOptions> options) : IAiOrchestrator
 {
     public async IAsyncEnumerable<AiStreamEvent> ExecuteChatAsync(AiChatRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var conversationId = request.ConversationId ?? Guid.NewGuid().ToString("N");
         var sequence = 0L;
+        var provider = SelectProvider(request);
 
         yield return CreateEvent("conversation.started", conversationId, sequence++);
+        await RecordChatAuditAsync("chat.started", request, conversationId, provider?.Name, cancellationToken);
 
         var context = await contextResolver.ResolveAsync(request, cancellationToken);
         var tools = await toolRegistry.ListAsync(new AiToolQuery { Agent = request.Agent, ActorId = request.UserId, TenantId = request.TenantId }, cancellationToken);
-        var provider = SelectProvider(request);
 
         if (provider == null)
         {
@@ -48,6 +50,7 @@ public class AiOrchestrator(
             }
         }
 
+        await RecordChatAuditAsync("chat.completed", request, conversationId, provider?.Name, cancellationToken);
         yield return CreateEvent("conversation.completed", conversationId, sequence);
     }
 
@@ -76,4 +79,23 @@ public class AiOrchestrator(
         string.IsNullOrWhiteSpace(agent)
             ? null
             : options.Value.Agents.FirstOrDefault(x => string.Equals(x.Name, agent, StringComparison.OrdinalIgnoreCase))?.ProviderName;
+
+    private async ValueTask RecordChatAuditAsync(string type, AiChatRequest request, string conversationId, string? providerName, CancellationToken cancellationToken)
+    {
+        await auditSink.RecordAsync(new AiAuditEvent
+        {
+            Type = type,
+            TenantId = request.TenantId,
+            ActorId = request.UserId,
+            ConversationId = conversationId,
+            Timestamp = DateTimeOffset.UtcNow,
+            Summary = type == "chat.started" ? "Chat started" : "Chat completed",
+            Data = new JsonObject
+            {
+                ["agent"] = request.Agent,
+                ["provider"] = providerName,
+                ["attachmentCount"] = request.Attachments.Count
+            }
+        }, cancellationToken);
+    }
 }

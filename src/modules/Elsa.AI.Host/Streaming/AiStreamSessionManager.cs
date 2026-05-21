@@ -13,6 +13,16 @@ public class AiStreamSessionManager
 
     public bool CanReconnect(string conversationId)
     {
-        return _disconnectDeadlines.TryGetValue(conversationId, out var deadline) && deadline >= DateTimeOffset.UtcNow;
+        if (!_disconnectDeadlines.TryGetValue(conversationId, out var deadline))
+            return false;
+
+        if (deadline < DateTimeOffset.UtcNow)
+        {
+            _disconnectDeadlines.TryRemove(conversationId, out _);
+            return false;
+        }
+
+        _disconnectDeadlines.TryRemove(conversationId, out _);
+        return true;
     }
 }

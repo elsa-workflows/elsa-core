@@ -2,6 +2,7 @@ using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Text.Json.Nodes;
 
 namespace Elsa.AI.IntegrationTests;
@@ -108,6 +109,39 @@ public class AiChatEndpointTests
         Assert.Equal("second", delta.Data["provider"]!.GetValue<string>());
     }
 
+    [Fact(DisplayName = "Chat orchestration records start and completion audit events")]
+    public async Task ChatOrchestrationRecordsStartAndCompletionAuditEvents()
+    {
+        var auditSink = new CapturingAuditSink();
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.RemoveAll<IAiAuditSink>();
+        services.AddSingleton<IAiAuditSink>(auditSink);
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           TenantId = "tenant-1",
+                           UserId = "user-1",
+                           Message = "Explain this workflow"
+                       }))
+        {
+        }
+
+        Assert.Collection(
+            auditSink.Events,
+            started =>
+            {
+                Assert.Equal("chat.started", started.Type);
+                Assert.Equal("conversation-1", started.ConversationId);
+                Assert.Equal("tenant-1", started.TenantId);
+                Assert.Equal("user-1", started.ActorId);
+            },
+            completed => Assert.Equal("chat.completed", completed.Type));
+    }
+
     private class SequencedAiProvider : IAiProvider
     {
         public string Name => "sequenced";
@@ -156,6 +190,17 @@ public class AiChatEndpointTests
                     ["provider"] = name
                 }
             };
+        }
+    }
+
+    private class CapturingAuditSink : IAiAuditSink
+    {
+        public List<AiAuditEvent> Events { get; } = [];
+
+        public ValueTask RecordAsync(AiAuditEvent auditEvent, CancellationToken cancellationToken = default)
+        {
+            Events.Add(auditEvent);
+            return ValueTask.CompletedTask;
         }
     }
 }
