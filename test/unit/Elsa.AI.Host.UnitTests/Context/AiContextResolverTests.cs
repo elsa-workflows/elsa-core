@@ -48,7 +48,7 @@ public class AiContextResolverTests
         });
 
         var context = Assert.Single(result);
-        Assert.Equal("[redacted]", context.Summary);
+        Assert.Equal("Handles OAuth token refresh", context.Summary);
         Assert.Equal("[redacted]", context.Data["accessToken"]!.GetValue<string>());
         Assert.Equal("[redacted]", context.Data["description"]!.GetValue<string>());
         Assert.Equal("[redacted]", context.Metadata["apiKey"]!.GetValue<string>());
@@ -70,7 +70,7 @@ public class AiContextResolverTests
             return ValueTask.FromResult(new AiResolvedContext
             {
                 Kind = Kind,
-                Summary = "contains secret text",
+                Summary = "Handles OAuth token refresh",
                 Data = new JsonObject
                 {
                     ["accessToken"] = "token-value",

@@ -348,8 +348,11 @@ public class AiOrchestrator(
     private static bool IsDuplicateUserMessage(IReadOnlyCollection<AiMessage> messages, string message)
     {
         var lastMessage = messages.LastOrDefault();
-        return lastMessage is { Role: AiMessageRole.User } && string.Equals(lastMessage.Content, message, StringComparison.Ordinal);
+        return lastMessage is { Role: AiMessageRole.User } && string.Equals(NormalizeMessage(lastMessage.Content), NormalizeMessage(message), StringComparison.Ordinal);
     }
+
+    private static string NormalizeMessage(string message) =>
+        message.ReplaceLineEndings("\n").Trim();
 
     private async ValueTask SaveConversationAsync(string conversationId, AiChatRequest request, AiConversationStatus status, IReadOnlyCollection<AiMessage> messages, AiConversation? conversation, CancellationToken cancellationToken)
     {

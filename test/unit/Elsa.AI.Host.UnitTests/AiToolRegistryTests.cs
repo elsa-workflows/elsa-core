@@ -71,8 +71,8 @@ public class AiToolRegistryTests
         Assert.Equal("host", tool.Name);
     }
 
-    [Fact(DisplayName = "Tool registry exposes default tenant scoped tools without tenant context")]
-    public async Task ToolRegistryExposesDefaultTenantScopedToolsWithoutTenantContext()
+    [Fact(DisplayName = "Tool registry exposes default tools without tenant context")]
+    public async Task ToolRegistryExposesDefaultToolsWithoutTenantContext()
     {
         var registry = new AiToolRegistry(
             [
@@ -96,6 +96,7 @@ public class AiToolRegistryTests
                     Name = "restricted",
                     DisplayName = "Restricted",
                     EnabledByDefault = true,
+                    TenantBehavior = AiTenantBehavior.TenantScoped,
                     TenantIds = ["tenant-1"],
                     ActorIds = ["user-1"]
                 })
@@ -119,6 +120,7 @@ public class AiToolRegistryTests
                     Name = "restricted",
                     DisplayName = "Restricted",
                     EnabledByDefault = true,
+                    TenantBehavior = AiTenantBehavior.TenantScoped,
                     Permissions = ["workflows:write"]
                 })
             ],
@@ -145,6 +147,7 @@ public class AiToolRegistryTests
                 {
                     Name = "matching",
                     DisplayName = "Matching",
+                    TenantBehavior = AiTenantBehavior.TenantScoped,
                     TenantIds = ["tenant-1"],
                     ActorIds = ["user-1"]
                 }),
@@ -152,6 +155,7 @@ public class AiToolRegistryTests
                 {
                     Name = "wrong-tenant",
                     DisplayName = "Wrong tenant",
+                    TenantBehavior = AiTenantBehavior.TenantScoped,
                     TenantIds = ["tenant-2"]
                 }),
                 new TestTool(new AiToolDefinition

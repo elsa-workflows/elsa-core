@@ -310,7 +310,7 @@ public class AiChatEndpointTests
                        {
                            ConversationId = "conversation-1",
                            UserId = "user-1",
-                           Message = "Retry me",
+                           Message = "Retry me\r\n",
                            IsReconnect = true
                        }))
         {
@@ -550,6 +550,7 @@ public class AiChatEndpointTests
         {
             Name = "echo",
             DisplayName = "Echo",
+            TenantBehavior = AiTenantBehavior.TenantScoped,
             EnabledByDefault = true
         };
 
@@ -572,6 +573,7 @@ public class AiChatEndpointTests
         {
             Name = "echo",
             DisplayName = "Echo",
+            TenantBehavior = AiTenantBehavior.TenantScoped,
             EnabledByDefault = true
         };
 

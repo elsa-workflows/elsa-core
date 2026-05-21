@@ -9,7 +9,7 @@ public record AiToolDefinition
     public AiToolMutability Mutability { get; init; } = AiToolMutability.ReadOnly;
     public AiToolDangerLevel DangerLevel { get; init; } = AiToolDangerLevel.Low;
     public ICollection<string> Permissions { get; init; } = [];
-    public AiTenantBehavior TenantBehavior { get; init; } = AiTenantBehavior.TenantScoped;
+    public AiTenantBehavior TenantBehavior { get; init; } = AiTenantBehavior.HostScoped;
     public AiToolAuditBehavior AuditBehavior { get; init; } = AiToolAuditBehavior.RecordInvocation;
     public ICollection<string> AgentScopes { get; init; } = [];
     public ICollection<string> TenantIds { get; init; } = [];

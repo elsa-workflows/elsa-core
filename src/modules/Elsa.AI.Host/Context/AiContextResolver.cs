@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 
@@ -6,6 +7,11 @@ namespace Elsa.AI.Host.Context;
 public class AiContextResolver(IEnumerable<IAiContextProvider> providers)
 {
     private static readonly string[] SensitiveKeyFragments = ["secret", "token", "password", "apikey", "api_key", "api-key", "authorization", "credential", "bearer"];
+    private static readonly Regex[] SensitiveValuePatterns =
+    [
+        new(@"\bBearer\s+[A-Za-z0-9._~+/\-=]+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
+        new(@"\b(?:api[_-]?key|token|secret|password)\s*[:=]\s*['""]?[A-Za-z0-9._~+/\-=]{8,}['""]?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
+    ];
     private const string Redacted = "[redacted]";
     private readonly Dictionary<string, IAiContextProvider> _providers = BuildProviders(providers);
 
@@ -59,8 +65,13 @@ public class AiContextResolver(IEnumerable<IAiContextProvider> providers)
             _ => node?.DeepClone()
         };
 
-    private static string RedactText(string text) =>
-        SensitiveKeyFragments.Any(fragment => text.Contains(fragment, StringComparison.OrdinalIgnoreCase)) ? Redacted : text;
+    private static string RedactText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return text;
+
+        return SensitiveValuePatterns.Aggregate(text, (current, pattern) => pattern.Replace(current, Redacted));
+    }
 
     private static bool IsSensitiveKey(string key) =>
         SensitiveKeyFragments.Any(fragment => key.Contains(fragment, StringComparison.OrdinalIgnoreCase));

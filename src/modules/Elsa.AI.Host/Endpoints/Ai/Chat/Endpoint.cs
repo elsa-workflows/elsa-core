@@ -40,6 +40,7 @@ public class Endpoint(
         response.Headers.CacheControl = "no-cache";
         response.Headers.Connection = "keep-alive";
 
+        var completed = false;
         try
         {
             await foreach (var streamEvent in orchestrator.ExecuteChatAsync(request, cancellationToken))
@@ -48,10 +49,16 @@ public class Endpoint(
                 await response.WriteAsync($"data: {JsonSerializer.Serialize(streamEvent)}\n\n", cancellationToken);
                 await response.Body.FlushAsync(cancellationToken);
             }
+
+            completed = true;
         }
         catch (OperationCanceledException) when (HttpContext.RequestAborted.IsCancellationRequested)
         {
-            sessionManager.MarkDisconnected(request.ConversationId, options.Value.ReconnectGrace);
+        }
+        finally
+        {
+            if (!completed)
+                sessionManager.MarkDisconnected(request.ConversationId, options.Value.ReconnectGrace);
         }
     }
 }
