@@ -2,6 +2,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.HealthChecks;
+using Elsa.Workflows.Runtime.Options;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -27,7 +28,7 @@ public class ElsaWorkflowPersistenceHealthCheckTests
         _serviceProvider.GetService(typeof(IWorkflowInstanceStore)).Returns(_workflowInstanceStore);
         _serviceProvider.GetService(typeof(ITriggerStore)).Returns(_triggerStore);
         _serviceProvider.GetService(typeof(IBookmarkQueueStore)).Returns(_bookmarkQueueStore);
-        _sut = new ElsaWorkflowPersistenceHealthCheck(_serviceProvider, NullLogger<ElsaWorkflowPersistenceHealthCheck>.Instance);
+        _sut = CreateSut();
     }
 
     [Fact]
@@ -37,7 +38,7 @@ public class ElsaWorkflowPersistenceHealthCheckTests
 
         Assert.Equal(HealthStatus.Healthy, result.Status);
         Assert.Equal("persistence", result.Data["category"]);
-        Assert.Equal("workflow-definitions,workflow-instances,triggers,bookmark-queue", result.Data["probes"]);
+        Assert.Equal("workflow-definitions,workflow-instances,triggers,bookmark-queue", result.Data["successfulProbes"]);
         Assert.Equal("workflow-definitions,workflow-instances,triggers,bookmark-queue", result.Data["attemptedProbes"]);
         await _workflowDefinitionStore.Received(1).FindAsync(
             Arg.Is<WorkflowDefinitionFilter>(x => x.Id == "00000000-0000-0000-0000-000000000000"),
@@ -64,7 +65,7 @@ public class ElsaWorkflowPersistenceHealthCheckTests
     }
 
     [Fact]
-    public async Task ReturnsUnhealthyWithFailedStoreWhenAStoreProbeFails()
+    public async Task ReturnsUnhealthyWithFailedStoreAndStopsProbingWhenAStoreProbeFails()
     {
         _triggerStore.FindAsync(Arg.Any<TriggerFilter>(), Arg.Any<CancellationToken>()).Returns<ValueTask<Elsa.Workflows.Runtime.Entities.StoredTrigger?>>(_ => throw new InvalidOperationException("store unavailable"));
 
@@ -75,9 +76,25 @@ public class ElsaWorkflowPersistenceHealthCheckTests
         Assert.Equal("persistence", result.Data["category"]);
         Assert.Equal("triggers", result.Data["failedStore"]);
         Assert.Equal("triggers", result.Data["failedProbe"]);
-        Assert.Equal("workflow-definitions,workflow-instances,bookmark-queue", result.Data["probes"]);
+        Assert.Equal("workflow-definitions,workflow-instances", result.Data["successfulProbes"]);
+        Assert.Equal("workflow-definitions,workflow-instances,triggers", result.Data["attemptedProbes"]);
+        Assert.Equal("triggers", result.Data["failedProbes"]);
+        await _bookmarkQueueStore.DidNotReceive().FindAsync(Arg.Any<BookmarkQueueFilter>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ReturnsUnhealthyWithAllProbeDataWhenContinuationIsEnabled()
+    {
+        var sut = CreateSut(continueAfterFailure: true);
+        _triggerStore.FindAsync(Arg.Any<TriggerFilter>(), Arg.Any<CancellationToken>()).Returns<ValueTask<Elsa.Workflows.Runtime.Entities.StoredTrigger?>>(_ => throw new InvalidOperationException("store unavailable"));
+
+        var result = await sut.CheckHealthAsync(new HealthCheckContext());
+
+        Assert.Equal(HealthStatus.Unhealthy, result.Status);
+        Assert.Equal("workflow-definitions,workflow-instances,bookmark-queue", result.Data["successfulProbes"]);
         Assert.Equal("workflow-definitions,workflow-instances,triggers,bookmark-queue", result.Data["attemptedProbes"]);
         Assert.Equal("triggers", result.Data["failedProbes"]);
+        await _bookmarkQueueStore.Received(1).FindAsync(Arg.Any<BookmarkQueueFilter>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -90,7 +107,7 @@ public class ElsaWorkflowPersistenceHealthCheckTests
 
         Assert.Equal(HealthStatus.Healthy, result.Status);
         Assert.Equal("persistence", result.Data["category"]);
-        Assert.Equal("triggers,bookmark-queue", result.Data["probes"]);
+        Assert.Equal("triggers,bookmark-queue", result.Data["successfulProbes"]);
         Assert.Equal("triggers,bookmark-queue", result.Data["attemptedProbes"]);
         Assert.Equal("workflow-definitions,workflow-instances", result.Data["skippedProbes"]);
     }
@@ -109,7 +126,17 @@ public class ElsaWorkflowPersistenceHealthCheckTests
         Assert.Equal("No Elsa workflow persistence stores are registered.", result.Description);
         Assert.Equal("persistence", result.Data["category"]);
         Assert.Equal("workflow-definitions,workflow-instances,triggers,bookmark-queue", result.Data["skippedProbes"]);
-        Assert.False(result.Data.ContainsKey("probes"));
+        Assert.False(result.Data.ContainsKey("successfulProbes"));
+    }
+
+    private ElsaWorkflowPersistenceHealthCheck CreateSut(bool continueAfterFailure = false)
+    {
+        var options = Microsoft.Extensions.Options.Options.Create(new ElsaReadinessHealthCheckOptions
+        {
+            ContinuePersistenceProbesAfterFailure = continueAfterFailure
+        });
+
+        return new ElsaWorkflowPersistenceHealthCheck(_serviceProvider, options, NullLogger<ElsaWorkflowPersistenceHealthCheck>.Instance);
     }
 
     private static async Task<T> TrackProbeAsync<T>(ProbeConcurrencyTracker tracker, T result)

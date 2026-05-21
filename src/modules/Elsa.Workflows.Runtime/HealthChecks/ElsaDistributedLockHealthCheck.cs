@@ -24,26 +24,17 @@ public class ElsaDistributedLockHealthCheck(
             var distributedLockProvider = serviceProvider.GetService<IDistributedLockProvider>();
             if (distributedLockProvider == null)
             {
-                return HealthCheckResult.Degraded("Elsa distributed lock provider is not registered.", data: new Dictionary<string, object>
-                {
-                    ["category"] = "distributed-locks"
-                });
+                return HealthCheckResult.Degraded("Elsa distributed lock provider is not registered.", data: CreateData());
             }
 
             var lockName = $"elsa-health-check-{Guid.NewGuid():N}";
             await using var handle = await distributedLockProvider.TryAcquireLockAsync(lockName, options.Value.DistributedLockAcquisitionTimeout, cancellationToken);
             if (handle == null)
             {
-                return HealthCheckResult.Degraded("Elsa distributed lock provider was reachable, but the probe lock was not acquired.", data: new Dictionary<string, object>
-                {
-                    ["category"] = "distributed-locks"
-                });
+                return HealthCheckResult.Degraded("Elsa distributed lock provider was reachable, but the probe lock was not acquired.", data: CreateData());
             }
 
-            return HealthCheckResult.Healthy("Elsa distributed lock provider is reachable.", new Dictionary<string, object>
-            {
-                ["category"] = "distributed-locks"
-            });
+            return HealthCheckResult.Healthy("Elsa distributed lock provider is reachable.", CreateData());
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -52,10 +43,12 @@ public class ElsaDistributedLockHealthCheck(
         catch (Exception e) when (!e.IsFatal())
         {
             logger.LogWarning(e, "Elsa distributed lock provider is not reachable.");
-            return HealthCheckResult.Unhealthy("Elsa distributed lock provider is not reachable.", data: new Dictionary<string, object>
-            {
-                ["category"] = "distributed-locks"
-            });
+            return HealthCheckResult.Unhealthy("Elsa distributed lock provider is not reachable.", data: CreateData());
         }
+
+        static Dictionary<string, object> CreateData() => new()
+        {
+            ["category"] = "distributed-locks"
+        };
     }
 }

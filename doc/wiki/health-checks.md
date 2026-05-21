@@ -27,6 +27,8 @@ services
     .AddElsaReadinessChecks(includePersistence: false);
 ```
 
+Persistence probing stops after the first failed store by default to keep readiness responses bounded during dependency outages. Set `ContinuePersistenceProbesAfterFailure = true` when richer per-store diagnostics are more important than the fastest readiness response.
+
 Map separate endpoints for liveness and readiness:
 
 ```csharp

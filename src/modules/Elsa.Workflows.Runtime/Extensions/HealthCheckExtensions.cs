@@ -40,6 +40,10 @@ public static class HealthCheckExtensions
         if (configureOptions != null)
             optionsBuilder.Configure(configureOptions);
 
+        optionsBuilder
+            .Validate(x => x.DistributedLockAcquisitionTimeout > TimeSpan.Zero, "Distributed lock acquisition timeout must be greater than zero.")
+            .ValidateOnStart();
+
         builder.AddCheck<ElsaRuntimeHealthCheck>("elsa-runtime", tags: ReadinessTags);
 
         if (includePersistence)

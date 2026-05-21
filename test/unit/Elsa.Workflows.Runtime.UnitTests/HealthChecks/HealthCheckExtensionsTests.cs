@@ -22,6 +22,25 @@ public class HealthCheckExtensionsTests
         Assert.NotNull(serviceProvider.GetRequiredService<IOptions<ElsaReadinessHealthCheckOptions>>());
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void AddElsaReadinessChecksRejectsNonPositiveDistributedLockTimeout(int timeoutMilliseconds)
+    {
+        var services = new ServiceCollection();
+
+        services
+            .AddHealthChecks()
+            .AddElsaReadinessChecks(
+                includePersistence: false,
+                includeDistributedLocks: true,
+                configureOptions: options => options.DistributedLockAcquisitionTimeout = TimeSpan.FromMilliseconds(timeoutMilliseconds));
+
+        using var serviceProvider = services.BuildServiceProvider();
+
+        Assert.Throws<OptionsValidationException>(() => serviceProvider.GetRequiredService<IOptions<ElsaReadinessHealthCheckOptions>>().Value);
+    }
+
     [Fact]
     public void AddElsaReadinessChecksUsesElsaSpecificReadinessTag()
     {
