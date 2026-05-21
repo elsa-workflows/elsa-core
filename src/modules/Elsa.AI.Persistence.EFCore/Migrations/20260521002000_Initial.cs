@@ -66,6 +66,16 @@ public partial class Initial : Migration
             column: "ProposalId");
 
         migrationBuilder.CreateIndex(
+            name: "IX_AiAuditRecords_ActorId",
+            table: "AiAuditRecords",
+            column: "ActorId");
+
+        migrationBuilder.CreateIndex(
+            name: "IX_AiAuditRecords_TenantId_Timestamp",
+            table: "AiAuditRecords",
+            columns: new[] { "TenantId", "Timestamp" });
+
+        migrationBuilder.CreateIndex(
             name: "IX_AiAuditRecords_TenantId_ConversationId",
             table: "AiAuditRecords",
             columns: new[] { "TenantId", "ConversationId" });

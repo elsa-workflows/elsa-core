@@ -35,16 +35,16 @@ public class AiOrchestrator(
         }
 
         var messages = conversation?.Messages.ToList() ?? [];
-        var isDuplicateReconnectMessage = request.IsReconnect && IsDuplicateUserMessage(messages, request.Message);
-        var providerHistory = isDuplicateReconnectMessage ? messages.Take(messages.Count - 1).ToList() : messages.ToList();
+        var isDuplicateReconnectMessage = request.IsReconnect && HasReconnectUserMessage(conversation, request.Message);
+        var providerHistory = messages.ToList();
         var userMessage = isDuplicateReconnectMessage
-            ? messages.Last()
+            ? messages.Last(x => x.Role == AiMessageRole.User && string.Equals(NormalizeMessage(x.Content), NormalizeMessage(request.Message), StringComparison.Ordinal))
             : CreateMessage(conversationId, AiMessageRole.User, request.Message, sequence);
 
         if (!isDuplicateReconnectMessage)
             messages.Add(userMessage);
 
-        var toolResults = new List<AiToolTurnResult>();
+        var toolResults = isDuplicateReconnectMessage ? RestoreToolResults(messages) : new List<AiToolTurnResult>();
 
         yield return CreateEvent("conversation.started", conversationId, sequence++);
         await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, messages, conversation, cancellationToken);
@@ -79,7 +79,7 @@ public class AiOrchestrator(
                 await foreach (var providerEvent in provider.ExecuteTurnAsync(new AiTurnRequest
                                {
                                    ConversationId = conversationId,
-                                   Message = turn == 0 ? request.Message : "",
+                                   Message = turn == 0 && !isDuplicateReconnectMessage ? request.Message : "",
                                    Messages = providerHistory.ToList(),
                                    Context = context,
                                    Tools = tools,
@@ -129,6 +129,7 @@ public class AiOrchestrator(
                     providerHistory.Add(userMessage);
 
                 providerHistory.AddRange(currentTurnMessages);
+                await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, messages, conversation, cancellationToken);
 
                 if (turn == MaxProviderTurns - 1)
                     yield return CreateEvent("assistant.delta", conversationId, sequence++, new JsonObject
@@ -365,10 +366,43 @@ public class AiOrchestrator(
             Metadata = metadata ?? []
         };
 
-    private static bool IsDuplicateUserMessage(IReadOnlyCollection<AiMessage> messages, string message)
+    private static bool HasReconnectUserMessage(AiConversation? conversation, string message)
     {
-        var lastMessage = messages.LastOrDefault();
-        return lastMessage is { Role: AiMessageRole.User } && string.Equals(NormalizeMessage(lastMessage.Content), NormalizeMessage(message), StringComparison.Ordinal);
+        return conversation is { Status: AiConversationStatus.Active } &&
+               conversation.Messages.Any(x => x.Role == AiMessageRole.User && string.Equals(NormalizeMessage(x.Content), NormalizeMessage(message), StringComparison.Ordinal));
+    }
+
+    private static List<AiToolTurnResult> RestoreToolResults(IEnumerable<AiMessage> messages)
+    {
+        return messages
+            .Where(x => x.Role == AiMessageRole.Tool)
+            .Select(CreateToolTurnResult)
+            .OfType<AiToolTurnResult>()
+            .ToList();
+    }
+
+    private static AiToolTurnResult? CreateToolTurnResult(AiMessage message)
+    {
+        var toolCallId = message.Metadata["toolCallId"]?.GetValue<string>();
+        var toolName = message.Metadata["toolName"]?.GetValue<string>();
+
+        if (string.IsNullOrWhiteSpace(toolCallId) || string.IsNullOrWhiteSpace(toolName))
+            return null;
+
+        var status = Enum.TryParse<AiToolInvocationStatus>(message.Metadata["status"]?.GetValue<string>(), out var parsedStatus)
+            ? parsedStatus
+            : AiToolInvocationStatus.Completed;
+
+        return new AiToolTurnResult
+        {
+            ToolCallId = toolCallId,
+            ToolName = toolName,
+            Result = new AiToolResult
+            {
+                Status = status,
+                Summary = message.Content
+            }
+        };
     }
 
     private static string NormalizeMessage(string message) =>

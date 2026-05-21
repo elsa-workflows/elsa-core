@@ -18,6 +18,9 @@ public class AiToolEnablementService
         return _enabledToolNames.ContainsKey(definition.Name);
     }
 
+    /// <summary>
+    /// Enables a non-administrative tool by name. Administrative tools remain disabled by this service and must be exposed through a dedicated governed path.
+    /// </summary>
     public void Enable(string toolName)
     {
         _enabledToolNames.TryAdd(toolName, 0);
