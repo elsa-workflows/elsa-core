@@ -66,6 +66,7 @@ public record CreateAiSessionRequest
 public record AiTurnRequest
 {
     public string ConversationId { get; init; } = default!;
+    public string? ProviderSessionId { get; init; }
     public string Message { get; init; } = "";
     public IReadOnlyCollection<AiMessage> Messages { get; init; } = [];
     public IReadOnlyCollection<AiResolvedContext> Context { get; init; } = [];

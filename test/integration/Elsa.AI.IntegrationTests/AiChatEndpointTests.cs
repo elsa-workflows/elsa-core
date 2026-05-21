@@ -49,7 +49,7 @@ public class AiChatEndpointTests
             events.Add(streamEvent);
 
         var completion = Assert.Single(events, x => x.Type == "conversation.completed");
-        Assert.Equal(3, completion.Sequence);
+        Assert.Equal(4, completion.Sequence);
     }
 
     [Fact(DisplayName = "Chat orchestration routes to requested provider")]
@@ -178,6 +178,7 @@ public class AiChatEndpointTests
 
         var sessionRequest = Assert.Single(capturingProvider.SessionRequests);
         var turnRequest = Assert.Single(capturingProvider.Requests);
+        Assert.Equal("provider-session-" + sessionRequest.ConversationId, turnRequest.ProviderSessionId);
         Assert.Equal("configured", sessionRequest.ProviderConfiguration!.Name);
         Assert.Equal(capturingProvider.Name, turnRequest.ProviderConfiguration!.Provider);
         Assert.Equal("model-1", turnRequest.ProviderConfiguration.Model);

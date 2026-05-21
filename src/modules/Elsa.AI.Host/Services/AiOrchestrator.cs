@@ -62,7 +62,7 @@ public class AiOrchestrator(
 
         var userMessage = isDuplicateReconnectMessage
             ? messages.Last(x => x.Role == AiMessageRole.User && string.Equals(NormalizeMessage(x.Content), NormalizeMessage(request.Message), StringComparison.Ordinal))
-            : CreateMessage(conversationId, AiMessageRole.User, request.Message, sequence);
+            : CreateMessage(conversationId, AiMessageRole.User, request.Message, sequence++);
 
         if (!isDuplicateReconnectMessage)
             messages.Add(userMessage);
@@ -131,6 +131,7 @@ public class AiOrchestrator(
                 await foreach (var providerEvent in provider.ExecuteTurnAsync(new AiTurnRequest
                                {
                                    ConversationId = conversationId,
+                                   ProviderSessionId = providerSessionId,
                                    Message = turn == 0 && !isDuplicateReconnectMessage ? request.Message : "",
                                    Messages = providerHistory.ToList(),
                                    Context = context,
