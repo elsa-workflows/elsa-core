@@ -30,6 +30,7 @@
         <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.16"/>
         <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.16"/>
         <PackageVersion Include="Microsoft.Extensions.DependencyModel" Version="9.0.16"/>
+        <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.16"/>
         <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.16"/>
         <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.16"/>
         <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="9.0.16"/>
@@ -71,6 +72,7 @@
         <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8"/>
         <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8"/>
         <PackageVersion Include="Microsoft.Extensions.DependencyModel" Version="10.0.8"/>
+        <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.8"/>
         <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.8"/>
         <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.8"/>
         <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="10.0.8"/>

@@ -26,6 +26,7 @@ using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable RedundantAssignment
@@ -153,7 +154,9 @@ services.Configure<RuntimeOptions>(options => { options.InactivityThreshold = Ti
 services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(3600));
 services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.Configure<IncidentOptions>(options => options.DefaultIncidentStrategy = typeof(ContinueWithIncidentsStrategy));
-services.AddHealthChecks();
+services
+    .AddHealthChecks()
+    .AddElsaReadinessChecks(includeDistributedLocks: true);
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
 
@@ -169,7 +172,23 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 
 // Health checks.
-app.MapHealthChecks("/");
+app.MapHealthChecks("/health/live", new()
+{
+    Predicate = _ => false
+});
+app.MapHealthChecks("/health/ready", new()
+{
+    Predicate = check => check.Tags.Contains(HealthCheckExtensions.ElsaTag) && check.Tags.Contains(HealthCheckExtensions.ReadinessTag),
+    ResultStatusCodes =
+    {
+        [HealthStatus.Degraded] = StatusCodes.Status503ServiceUnavailable,
+        [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+    }
+});
+app.MapHealthChecks("/", new()
+{
+    Predicate = _ => false
+});
 
 // Routing used for SignalR.
 app.UseRouting();
