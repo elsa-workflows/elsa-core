@@ -35,8 +35,8 @@ public static class WorkflowInstrumentation
     public const string ActivityExecutionId = "workflow.activity.execution.id";
     public const string ActivityStatus = "workflow.activity.status";
     public const string ActivityOutcome = "workflow.activity.outcome";
-    public const string ActivityParentExecutionId = "workflow.activity.parent_execution.id";
-    public const string ActivityScheduledByExecutionId = "workflow.activity.scheduled_by_execution.id";
+    public const string ActivityParentExecutionId = "workflow.activity.parent.execution.id";
+    public const string ActivityScheduledByExecutionId = "workflow.activity.scheduled.by.execution.id";
     public const string ActivityFaulted = "workflow.activity.faulted";
 
     public const string TenantId = "elsa.tenant.id";

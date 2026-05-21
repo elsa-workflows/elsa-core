@@ -258,7 +258,7 @@ public class WorkflowInstrumentationTests
     private static void TransitionWorkflowTo(WorkflowExecutionContext context, WorkflowSubStatus subStatus)
     {
         var transitionTo = typeof(WorkflowExecutionContext).GetMethod("TransitionTo", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        transitionTo.Invoke(context, [subStatus]);
+        transitionTo.Invoke(context, new object?[] { subStatus });
     }
 
     private static DiagnosticsActivity GetStoppedActivity(ActivityCapture capture, string operationName, string tagKey, object? tagValue)
