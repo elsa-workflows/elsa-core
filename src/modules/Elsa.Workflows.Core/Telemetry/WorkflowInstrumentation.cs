@@ -3,6 +3,9 @@ using System.Diagnostics.Metrics;
 
 using DiagnosticsActivity = System.Diagnostics.Activity;
 using DiagnosticsActivityKind = System.Diagnostics.ActivityKind;
+using WorkflowActivityStatus = Elsa.Workflows.ActivityStatus;
+using WorkflowInstanceStatus = Elsa.Workflows.WorkflowStatus;
+using WorkflowInstanceSubStatus = Elsa.Workflows.WorkflowSubStatus;
 
 namespace Elsa.Workflows.Telemetry;
 
@@ -59,7 +62,7 @@ public static class WorkflowInstrumentation
 
     internal static WorkflowInstrumentationScope StartWorkflow(WorkflowExecutionContext context, bool? isStarting = null)
     {
-        var shouldRecordStarted = isStarting ?? context.SubStatus == Workflows.WorkflowSubStatus.Pending;
+        var shouldRecordStarted = isStarting ?? context.SubStatus == WorkflowInstanceSubStatus.Pending;
         var activity = Source.StartActivity(WorkflowExecuteOperation, DiagnosticsActivityKind.Internal);
 
         if (activity != null)
@@ -91,10 +94,10 @@ public static class WorkflowInstrumentation
     internal static void StopWorkflow(WorkflowInstrumentationScope scope, WorkflowExecutionContext context, Exception? exception)
     {
         var activity = scope.Activity;
-        var workflowException = exception ?? (context.SubStatus == Workflows.WorkflowSubStatus.Faulted ? context.Exception : null);
-        var cancelled = exception is OperationCanceledException || (exception == null && context.SubStatus == Workflows.WorkflowSubStatus.Cancelled);
-        var faulted = !cancelled && (workflowException != null || context.SubStatus == Workflows.WorkflowSubStatus.Faulted);
-        var workflowSubStatus = cancelled ? Workflows.WorkflowSubStatus.Cancelled : faulted ? Workflows.WorkflowSubStatus.Faulted : (Workflows.WorkflowSubStatus?)null;
+        var workflowException = exception ?? (context.SubStatus == WorkflowInstanceSubStatus.Faulted ? context.Exception : null);
+        var cancelled = exception is OperationCanceledException || (exception == null && context.SubStatus == WorkflowInstanceSubStatus.Cancelled);
+        var faulted = !cancelled && (workflowException != null || context.SubStatus == WorkflowInstanceSubStatus.Faulted);
+        var workflowSubStatus = cancelled ? WorkflowInstanceSubStatus.Cancelled : faulted ? WorkflowInstanceSubStatus.Faulted : (WorkflowInstanceSubStatus?)null;
 
         if (activity != null)
         {
@@ -106,16 +109,16 @@ public static class WorkflowInstrumentation
 
         if (faulted && WorkflowFaultedCounter.Enabled)
             WorkflowFaultedCounter.Add(1, CreateWorkflowTags(context, workflowSubStatusOverride: workflowSubStatus));
-        else if (context.SubStatus == Workflows.WorkflowSubStatus.Finished && WorkflowCompletedCounter.Enabled)
+        else if (context.SubStatus == WorkflowInstanceSubStatus.Finished && WorkflowCompletedCounter.Enabled)
             WorkflowCompletedCounter.Add(1, CreateWorkflowTags(context));
     }
 
     internal static void StopActivity(ActivityInstrumentationScope scope, ActivityExecutionContext context, Exception? exception)
     {
         var activity = scope.Activity;
-        var cancelled = exception is OperationCanceledException || (exception == null && context.Status == Workflows.ActivityStatus.Canceled);
-        var faulted = !cancelled && (exception != null || context.Status == Workflows.ActivityStatus.Faulted);
-        var activityStatus = cancelled ? Workflows.ActivityStatus.Canceled : context.Status;
+        var cancelled = exception is OperationCanceledException || (exception == null && context.Status == WorkflowActivityStatus.Canceled);
+        var faulted = !cancelled && (exception != null || context.Status == WorkflowActivityStatus.Faulted);
+        var activityStatus = cancelled ? WorkflowActivityStatus.Canceled : context.Status;
         var duration = Stopwatch.GetElapsedTime(scope.StartTimestamp).TotalSeconds;
 
         if (ActivityDuration.Enabled)
@@ -126,14 +129,14 @@ public static class WorkflowInstrumentation
             SetActivityTags(activity, context, activityStatus);
             activity.SetTag(ActivityFaulted, faulted);
             if (faulted)
-                activity.SetTag(ActivityStatus, Workflows.ActivityStatus.Faulted.ToString());
+                activity.SetTag(ActivityStatus, WorkflowActivityStatus.Faulted.ToString());
             SetActivityOutcome(activity, context);
             SetError(activity, exception ?? context.Exception, faulted);
             activity.Dispose();
         }
     }
 
-    private static void SetWorkflowTags(DiagnosticsActivity activity, WorkflowExecutionContext context, Workflows.WorkflowSubStatus? workflowSubStatusOverride = null)
+    private static void SetWorkflowTags(DiagnosticsActivity activity, WorkflowExecutionContext context, WorkflowInstanceSubStatus? workflowSubStatusOverride = null)
     {
         var workflow = context.Workflow;
         var identity = workflow.Identity;
@@ -153,7 +156,7 @@ public static class WorkflowInstrumentation
         AddIfNotNull(activity, TenantId, identity.TenantId);
     }
 
-    private static void SetActivityTags(DiagnosticsActivity activity, ActivityExecutionContext context, Workflows.ActivityStatus? activityStatusOverride = null)
+    private static void SetActivityTags(DiagnosticsActivity activity, ActivityExecutionContext context, WorkflowActivityStatus? activityStatusOverride = null)
     {
         var currentActivity = context.Activity;
         var activityStatus = activityStatusOverride ?? context.Status;
@@ -203,7 +206,7 @@ public static class WorkflowInstrumentation
         }
     }
 
-    private static TagList CreateWorkflowTags(WorkflowExecutionContext context, bool includeExecutionStatus = true, Workflows.WorkflowSubStatus? workflowSubStatusOverride = null)
+    private static TagList CreateWorkflowTags(WorkflowExecutionContext context, bool includeExecutionStatus = true, WorkflowInstanceSubStatus? workflowSubStatusOverride = null)
     {
         var workflow = context.Workflow;
         var identity = workflow.Identity;
@@ -227,7 +230,7 @@ public static class WorkflowInstrumentation
         return tags;
     }
 
-    private static TagList CreateActivityTags(ActivityExecutionContext context, Workflows.ActivityStatus activityStatus, bool faulted)
+    private static TagList CreateActivityTags(ActivityExecutionContext context, WorkflowActivityStatus activityStatus, bool faulted)
     {
         var currentActivity = context.Activity;
         var tags = new TagList
@@ -236,7 +239,7 @@ public static class WorkflowInstrumentation
             { WorkflowDefinitionId, context.WorkflowExecutionContext.Workflow.Identity.DefinitionId },
             { ActivityType, currentActivity.Type },
             { ActivityVersion, currentActivity.Version },
-            { ActivityStatus, faulted ? Workflows.ActivityStatus.Faulted.ToString() : activityStatus.ToString() },
+            { ActivityStatus, faulted ? WorkflowActivityStatus.Faulted.ToString() : activityStatus.ToString() },
             { ActivityFaulted, faulted }
         };
 
@@ -244,15 +247,15 @@ public static class WorkflowInstrumentation
         return tags;
     }
 
-    private static Workflows.WorkflowStatus GetWorkflowStatus(WorkflowExecutionContext context, Workflows.WorkflowSubStatus? workflowSubStatusOverride)
+    private static WorkflowInstanceStatus GetWorkflowStatus(WorkflowExecutionContext context, WorkflowInstanceSubStatus? workflowSubStatusOverride)
     {
         if (workflowSubStatusOverride == null)
             return context.Status;
 
         return workflowSubStatusOverride.Value switch
         {
-            Workflows.WorkflowSubStatus.Cancelled or Workflows.WorkflowSubStatus.Faulted or Workflows.WorkflowSubStatus.Finished => Workflows.WorkflowStatus.Finished,
-            _ => Workflows.WorkflowStatus.Running
+            WorkflowInstanceSubStatus.Cancelled or WorkflowInstanceSubStatus.Faulted or WorkflowInstanceSubStatus.Finished => WorkflowInstanceStatus.Finished,
+            _ => WorkflowInstanceStatus.Running
         };
     }
 
