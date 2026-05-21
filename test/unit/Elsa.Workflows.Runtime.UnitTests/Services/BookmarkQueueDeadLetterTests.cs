@@ -54,7 +54,7 @@ public class BookmarkQueueDeadLetterTests
     }
 
     [Fact]
-    public async Task PurgeAsync_WhenExpiredItemWasAlreadyRemoved_LeavesDeadLetterForRetry()
+    public async Task PurgeAsync_WhenExpiredItemWasAlreadyRemoved_LeavesDeadLetterForAuditOnly()
     {
         var expired = NewQueueItem("expired", _now.AddMinutes(-2));
         await _queueStore.AddAsync(expired);
@@ -71,6 +71,16 @@ public class BookmarkQueueDeadLetterTests
 
         var deadLetter = Assert.Single((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList());
         Assert.Equal("expired", deadLetter.OriginalQueueItemId);
+        Assert.False(deadLetter.CanReplay);
+        Assert.Null(deadLetter.ReplayedAt);
+        Assert.Null(deadLetter.ReplayedQueueItemId);
+
+        var replayResult = await CreateManager().ReplayAsync(deadLetter.Id);
+
+        Assert.False(replayResult.Succeeded);
+        Assert.Equal(ReplayBookmarkQueueDeadLetterResult.ReasonNotReplayable, replayResult.Reason);
+        Assert.Empty(await _queueStore.FindManyAsync(new BookmarkQueueFilter()));
+        await _signaler.DidNotReceive().TriggerAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -28,7 +28,7 @@ internal class Endpoint(IBookmarkQueueDeadLetterStore store) : ElsaEndpoint<List
         };
         var order = new BookmarkQueueDeadLetterItemOrder<DateTimeOffset>(x => x.DeadLetteredAt, OrderDirection.Descending);
         var page = await store.PageAsync(pageArgs, filter, order, cancellationToken);
-        var response = new ListResponse(page.Items, page.TotalCount);
+        var response = new ListResponse(page.Items.Select(BookmarkQueueDeadLetterModel.FromEntity).ToList(), page.TotalCount);
 
         await Send.OkAsync(response, cancellationToken);
     }

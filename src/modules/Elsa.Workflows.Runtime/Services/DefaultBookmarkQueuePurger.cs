@@ -43,7 +43,7 @@ public class DefaultBookmarkQueuePurger(
             var movedCount = 0;
             foreach (var item in items)
             {
-                await deadLetterManager.DeadLetterAsync(item, "Expired", cancellationToken: cancellationToken);
+                var deadLetter = await deadLetterManager.DeadLetterAsync(item, "Expired", cancellationToken: cancellationToken);
 
                 var deletedCount = await store.DeleteAsync(new BookmarkQueueFilter
                 {
@@ -51,7 +51,15 @@ public class DefaultBookmarkQueuePurger(
                 }, cancellationToken);
 
                 if (deletedCount == 0)
+                {
+                    if (deadLetter.CanReplay)
+                    {
+                        deadLetter.CanReplay = false;
+                        await deadLetterStore.SaveAsync(deadLetter, cancellationToken);
+                    }
+
                     continue;
+                }
 
                 movedCount++;
             }

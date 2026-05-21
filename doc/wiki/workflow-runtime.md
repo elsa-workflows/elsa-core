@@ -92,6 +92,8 @@ Operators can inspect and manage dead-lettered bookmark queue items through the 
 - `POST /elsa/api/bookmark-queue/dead-letters/{id}/replay`: requires `replay:bookmark-queue:dead-letters`; replay creates a new active queue item and marks the dead-letter item as no longer replayable.
 - `DELETE /elsa/api/bookmark-queue/dead-letters/{id}`: requires `delete:bookmark-queue:dead-letters`.
 
+Read responses return a dead-letter view model for audit and replay status. Resume options are omitted from these responses because they can contain workflow input and property values.
+
 ## Execution Logs
 
 Workflow and activity execution logs flow through sinks and stores:

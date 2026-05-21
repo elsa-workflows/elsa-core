@@ -1,4 +1,5 @@
 using Elsa.Abstractions;
+using Elsa.Workflows.Api.Endpoints.BookmarkQueueDeadLetters;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Filters;
 using JetBrains.Annotations;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Workflows.Api.Endpoints.BookmarkQueueDeadLetters.Get;
 
 [UsedImplicitly]
-internal class Endpoint(IBookmarkQueueDeadLetterStore store) : ElsaEndpointWithoutRequest
+internal class Endpoint(IBookmarkQueueDeadLetterStore store) : ElsaEndpointWithoutRequest<BookmarkQueueDeadLetterModel>
 {
     public override void Configure()
     {
@@ -26,6 +27,6 @@ internal class Endpoint(IBookmarkQueueDeadLetterStore store) : ElsaEndpointWitho
             return;
         }
 
-        await Send.OkAsync(item, cancellationToken);
+        await Send.OkAsync(BookmarkQueueDeadLetterModel.FromEntity(item), cancellationToken);
     }
 }
