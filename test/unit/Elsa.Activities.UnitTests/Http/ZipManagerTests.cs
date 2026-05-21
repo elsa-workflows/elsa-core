@@ -49,6 +49,17 @@ public class ZipManagerTests : IDisposable
     }
 
     [Fact]
+    public async Task LoadAsync_ValidTokenWithDots_LoadsCachedZip()
+    {
+        var downloadId = "Elsa.Alterations.ExecuteAlterationPlan";
+        await CreateCachedZipAsync(downloadId, "cached zip");
+
+        var result = await LoadAsync(downloadId);
+
+        Assert.True(result.HasValue);
+    }
+
+    [Fact]
     public async Task LoadAsync_ValidToken_OpensReturnedBlobFullPathWithinCacheDirectory()
     {
         var provider = Substitute.For<IFileCacheStorageProvider>();
@@ -83,7 +94,6 @@ public class ZipManagerTests : IDisposable
     [InlineData("..\\download")]
     [InlineData("nested/download")]
     [InlineData("nested\\download")]
-    [InlineData("download.token")]
     [InlineData("download token")]
     public async Task LoadAsync_TraversalLikeToken_ReturnsNull(string downloadId)
     {

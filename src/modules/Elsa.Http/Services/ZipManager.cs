@@ -14,7 +14,7 @@ namespace Elsa.Http.Services;
 internal class ZipManager
 {
     private const int MaxDownloadCorrelationIdLength = 128;
-    private static readonly SearchValues<char> DownloadCorrelationIdCharacters = SearchValues.Create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_");
+    private static readonly SearchValues<char> DownloadCorrelationIdCharacters = SearchValues.Create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.");
     private readonly ISystemClock _clock;
     private readonly IFileCacheStorageProvider _fileCacheStorageProvider;
     private readonly IOptions<HttpFileCacheOptions> _fileCacheOptions;
