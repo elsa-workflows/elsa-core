@@ -1,5 +1,8 @@
+using System.Text;
+using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.SasTokens.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using FastEndpoints;
 using JetBrains.Annotations;
@@ -11,8 +14,10 @@ namespace Elsa.Workflows.Api.Endpoints.Bookmarks.Resume;
 /// Resumes a bookmarked workflow instance with the bookmark ID specified in the provided SAS token.
 /// </summary>
 [PublicAPI]
-internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResumer, IBookmarkQueue bookmarkQueue, IPayloadSerializer serializer) : ElsaEndpoint<Request>
+internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResumer, IBookmarkQueue bookmarkQueue, IPayloadSerializer payloadSerializer, IApiSerializer apiSerializer) : ElsaEndpointWithoutRequest
 {
+    private const long MaxBookmarkResumeBodySize = 1024 * 1024;
+
     /// <inheritdoc />
     public override void Configure()
     {
@@ -22,15 +27,19 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
     }
 
     /// <inheritdoc />
-    public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(CancellationToken cancellationToken)
     {
-        var token = Query<string>("t")!;
-        var asynchronous = Query<bool>("async", false);
+        var token = Query<string?>("t", false);
 
-        if (!tokenService.TryDecryptToken<BookmarkTokenPayload>(token, out var payload)) 
+        if (string.IsNullOrWhiteSpace(token) || !tokenService.TryDecryptToken<BookmarkTokenPayload>(token, out var payload))
+        {
             AddError("Invalid token.");
+            await Send.ErrorsAsync(cancellation: cancellationToken);
+            return;
+        }
 
-        var input = HttpContext.Request.Method == HttpMethods.Post ? request.Input : GetInputFromQueryString();
+        var asynchronous = Query<bool>("async", false);
+        var input = await GetInputAsync(cancellationToken);
 
         if (ValidationFailed)
         {
@@ -56,15 +65,84 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
 
         try
         {
-            return serializer.Deserialize<IDictionary<string, object>>(inputJson);
+            return payloadSerializer.Deserialize<IDictionary<string, object>>(inputJson);
         }
-        catch
+        catch (Exception e) when (e is JsonException or NotSupportedException or InvalidOperationException or FormatException or ArgumentException)
         {
             AddError("Invalid input format. Expected a valid JSON string.");
             return null;
         }
     }
+
+    private async ValueTask<IDictionary<string, object>?> GetInputAsync(CancellationToken cancellationToken)
+    {
+        return HttpContext.Request.Method == HttpMethods.Post
+            ? await GetInputFromBodyAsync(cancellationToken)
+            : GetInputFromQueryString();
+    }
+
+    private async ValueTask<IDictionary<string, object>?> GetInputFromBodyAsync(CancellationToken cancellationToken)
+    {
+        if (HttpContext.Request.ContentLength == 0)
+            return null;
+
+        var body = await ReadRequestBodyAsync(cancellationToken);
+        if (ValidationFailed)
+            return null;
+
+        if (string.IsNullOrWhiteSpace(body))
+            return null;
+
+        try
+        {
+            var request = apiSerializer.Deserialize<Request>(body);
+            if (request == null)
+            {
+                AddError("Invalid input format. Expected a valid JSON request body.");
+                return null;
+            }
+
+            return request.Input;
+        }
+        catch (Exception e) when (e is JsonException or NotSupportedException or InvalidOperationException or FormatException or ArgumentException)
+        {
+            AddError("Invalid input format. Expected a valid JSON request body.");
+            return null;
+        }
+    }
     
+    private async ValueTask<string?> ReadRequestBodyAsync(CancellationToken cancellationToken)
+    {
+        var request = HttpContext.Request;
+        if (request.ContentLength is > MaxBookmarkResumeBodySize)
+        {
+            AddError("Request body is too large.");
+            return null;
+        }
+
+        await using var body = new MemoryStream();
+        var buffer = new byte[81920];
+        long totalBytesRead = 0;
+
+        while (true)
+        {
+            var bytesRead = await request.Body.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken);
+            if (bytesRead == 0)
+                break;
+
+            totalBytesRead += bytesRead;
+            if (totalBytesRead > MaxBookmarkResumeBodySize)
+            {
+                AddError("Request body is too large.");
+                return null;
+            }
+
+            await body.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
+        }
+
+        return body.Length == 0 ? null : Encoding.UTF8.GetString(body.ToArray());
+    }
+
     private async Task ResumeBookmarkedWorkflowAsync(BookmarkTokenPayload tokenPayload, IDictionary<string, object>? input, bool asynchronous, CancellationToken cancellationToken)
     {
         var bookmarkId = tokenPayload.BookmarkId;
