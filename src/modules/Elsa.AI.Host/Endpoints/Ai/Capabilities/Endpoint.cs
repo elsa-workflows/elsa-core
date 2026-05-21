@@ -1,11 +1,18 @@
 using Elsa.Abstractions;
+using Elsa.AI.Abstractions.Contracts;
+using Elsa.AI.Host.Options;
 using Elsa.AI.Host.Permissions;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.AI.Host.Endpoints.Ai.Capabilities;
 
 [PublicAPI]
-public class Endpoint : ElsaEndpointWithoutRequest<Response>
+public class Endpoint(
+    IOptions<AiHostOptions> options,
+    IEnumerable<IAiProvider> providers,
+    IEnumerable<IAiConversationStore> conversationStores,
+    IEnumerable<IAiProposalStore> proposalStores) : ElsaEndpointWithoutRequest<Response>
 {
     public override void Configure()
     {
@@ -15,12 +22,14 @@ public class Endpoint : ElsaEndpointWithoutRequest<Response>
 
     public override Task<Response> ExecuteAsync(CancellationToken cancellationToken)
     {
+        var optionsValue = options.Value;
+
         return Task.FromResult(new Response(
-            true,
-            true,
-            true,
-            ["WorkflowDefinition", "WorkflowInstance", "ActivitySelection", "DiagnosticsScope", "TimeRange"],
-            [new AiAgentCapability("workflow-author", "Workflow author", "Creates safe workflow proposals")]));
+            optionsValue.StreamingEnabled && providers.Any(),
+            optionsValue.ConversationPersistenceEnabled && conversationStores.Any(),
+            optionsValue.ProposalReviewEnabled && proposalStores.Any(),
+            optionsValue.SupportedAttachmentKinds.ToList(),
+            optionsValue.Agents.Select(x => new AiAgentCapability(x.Name, x.DisplayName, x.Description)).ToList()));
     }
 }
 

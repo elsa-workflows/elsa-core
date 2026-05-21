@@ -1,5 +1,7 @@
+using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Context;
+using System.Text.Json.Nodes;
 
 namespace Elsa.AI.Host.UnitTests.Context;
 
@@ -26,5 +28,52 @@ public class AiContextResolverTests
         var context = Assert.Single(result);
         Assert.Equal("WorkflowDefinition", context.Kind);
         Assert.Equal("workflow-1", context.ReferenceId);
+    }
+
+    [Fact(DisplayName = "Context resolver redacts sensitive data and metadata keys")]
+    public async Task ContextResolverRedactsSensitiveDataAndMetadataKeys()
+    {
+        var resolver = new AiContextResolver([new SensitiveContextProvider()]);
+
+        var result = await resolver.ResolveAsync(new AiChatRequest
+        {
+            UserId = "user-1",
+            Attachments =
+            [
+                new AiContextAttachment
+                {
+                    Kind = "Sensitive"
+                }
+            ]
+        });
+
+        var context = Assert.Single(result);
+        Assert.Equal("contains [redacted] text", context.Summary);
+        Assert.Equal("[redacted]", context.Data["accessToken"]!.GetValue<string>());
+        Assert.Equal("[redacted]", context.Metadata["apiKey"]!.GetValue<string>());
+        Assert.Equal("visible", context.Data["displayName"]!.GetValue<string>());
+    }
+
+    private class SensitiveContextProvider : IAiContextProvider
+    {
+        public string Kind => "Sensitive";
+
+        public ValueTask<AiResolvedContext> ResolveAsync(AiContextResolutionRequest request, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new AiResolvedContext
+            {
+                Kind = Kind,
+                Summary = "contains secret text",
+                Data = new JsonObject
+                {
+                    ["accessToken"] = "token-value",
+                    ["displayName"] = "visible"
+                },
+                Metadata = new JsonObject
+                {
+                    ["apiKey"] = "key-value"
+                }
+            });
+        }
     }
 }

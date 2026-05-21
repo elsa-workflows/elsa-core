@@ -1,8 +1,10 @@
+using System.Collections.Concurrent;
+
 namespace Elsa.AI.Host.Streaming;
 
 public class AiStreamSessionManager
 {
-    private readonly Dictionary<string, DateTimeOffset> _disconnectDeadlines = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, DateTimeOffset> _disconnectDeadlines = new(StringComparer.OrdinalIgnoreCase);
 
     public void MarkDisconnected(string conversationId, TimeSpan graceWindow)
     {

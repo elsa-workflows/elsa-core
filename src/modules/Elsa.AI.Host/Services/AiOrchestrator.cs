@@ -39,7 +39,10 @@ public class AiOrchestrator(
                                Tools = tools,
                                Agent = request.Agent
                            }, cancellationToken))
+            {
+                sequence = Math.Max(sequence, providerEvent.Sequence + 1);
                 yield return streamEventMapper.Map(conversationId, providerEvent);
+            }
         }
 
         yield return CreateEvent("conversation.completed", conversationId, sequence);
