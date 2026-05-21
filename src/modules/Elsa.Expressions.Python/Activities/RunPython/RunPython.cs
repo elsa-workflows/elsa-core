@@ -13,7 +13,7 @@ namespace Elsa.Expressions.Python.Activities;
 /// <summary>
 /// Executes Python code.
 /// </summary>
-[Activity("Elsa", "Scripting", "Executes Python code", DisplayName = "Run Python")]
+[Activity(WorkflowScriptActivityTypeNames.Namespace, WorkflowScriptActivityTypeNames.RunPythonType, 1, "Executes Python code", "Scripting", DisplayName = "Run Python")]
 public class RunPython : CodeActivity<object?>
 {
     /// <inheritdoc />

@@ -34,6 +34,9 @@ public class CSharpEvaluator(INotificationSender notificationSender, IOptions<CS
         Func<Script<object>, Script<object>>? configureScript = default,
         CancellationToken cancellationToken = default)
     {
+        if (!_csharpOptions.AllowHostCodeExecution)
+            throw new InvalidOperationException("C# workflow expression execution is disabled. Set CSharpOptions.AllowHostCodeExecution to true only for trusted workflow authors; Roslyn scripting is not a sandbox.");
+
         var scriptOptions = ScriptOptions.Default.WithOptimizationLevel(OptimizationLevel.Release);
 
         if (configureScriptOptions != null)

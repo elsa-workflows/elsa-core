@@ -6,6 +6,11 @@ public static class PermissionNames
     public const string ClaimType = "permissions";
 
     /// <summary>
+    /// Permission required to author or execute C# workflow expressions.
+    /// </summary>
+    public const string ExecuteCSharpExpressions = "exec:csharp-expressions";
+
+    /// <summary>
     /// Permission required to author or execute Python.NET workflow expressions.
     /// </summary>
     public const string ExecutePythonExpressions = "exec:python-expressions";

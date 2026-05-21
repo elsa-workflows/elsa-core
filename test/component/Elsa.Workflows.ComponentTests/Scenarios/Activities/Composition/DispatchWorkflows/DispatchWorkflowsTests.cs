@@ -1,5 +1,4 @@
 using Elsa.Common.Models;
-using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Models;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.Activities;
@@ -7,7 +6,10 @@ using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.ComponentTests.Scenarios.Activities.Composition.DispatchWorkflows.Workflows;
 using Elsa.Workflows.ComponentTests.Scenarios.Activities.DispatchWorkflows.Workflows;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Composition.DispatchWorkflows;
@@ -99,42 +101,49 @@ public class DispatchWorkflowsTests : AppComponentTest
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowExecutionContext.SubStatus);
     }
 
-    private async Task<(TestWorkflowExecutionResult Result, List<WorkflowExecutionContext> CompletedChildWorkflows)> RunWorkflowAndWaitForChildWorkflowAsync(
+    private async Task<(TestWorkflowExecutionResult Result, List<WorkflowState> CompletedChildWorkflows)> RunWorkflowAndWaitForChildWorkflowAsync(
         string parentWorkflowDefinitionId,
         string childWorkflowDefinitionId)
     {
-        var workflowEvents = Scope.ServiceProvider.GetRequiredService<WorkflowEvents>();
-        var completedChildWorkflows = new List<WorkflowExecutionContext>();
-        var childWorkflowCompletionTcs = new TaskCompletionSource();
+        var result = await RunWorkflowAsync(parentWorkflowDefinitionId);
+        var completedChildWorkflows = await WaitForCompletedChildWorkflowsAsync(result.WorkflowExecutionContext.Id, childWorkflowDefinitionId);
 
-        // Subscribe to child workflow completion events
-        void OnWorkflowStateCommitted(object? sender, WorkflowStateCommittedEventArgs e)
+        return (result, completedChildWorkflows);
+    }
+
+    private async Task<List<WorkflowState>> WaitForCompletedChildWorkflowsAsync(string parentWorkflowInstanceId, string childWorkflowDefinitionId)
+    {
+        var workflowInstanceStore = Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+        var timeoutAt = DateTimeOffset.UtcNow.AddSeconds(ChildWorkflowTimeoutSeconds);
+
+        while (DateTimeOffset.UtcNow < timeoutAt)
         {
-            if (e.WorkflowExecutionContext.Workflow.Identity.DefinitionId != childWorkflowDefinitionId ||
-                e.WorkflowExecutionContext.Status != WorkflowStatus.Finished)
-            {
-                return;
-            }
+            var completedChildWorkflows = await FindChildWorkflowStatesAsync(workflowInstanceStore, parentWorkflowInstanceId, childWorkflowDefinitionId, WorkflowStatus.Finished);
 
-            completedChildWorkflows.Add(e.WorkflowExecutionContext);
-            childWorkflowCompletionTcs.TrySetResult();
+            if (completedChildWorkflows.Count > 0)
+                return completedChildWorkflows;
+
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
         }
 
-        workflowEvents.WorkflowStateCommitted += OnWorkflowStateCommitted;
+        var childWorkflows = await FindChildWorkflowStatesAsync(workflowInstanceStore, parentWorkflowInstanceId, childWorkflowDefinitionId);
+        var observedStates = string.Join(", ", childWorkflows.Select(x => $"{x.Id}:{x.Status}:{x.SubStatus}"));
+        throw new TimeoutException($"Expected a completed child workflow with definition ID {childWorkflowDefinitionId}, but observed none. Observed child workflow states: {observedStates}");
+    }
 
-        try
+    private static async Task<List<WorkflowState>> FindChildWorkflowStatesAsync(
+        IWorkflowInstanceStore workflowInstanceStore,
+        string parentWorkflowInstanceId,
+        string childWorkflowDefinitionId,
+        WorkflowStatus? workflowStatus = null)
+    {
+        var filter = new WorkflowInstanceFilter
         {
-            // Run the main workflow
-            var result = await RunWorkflowAsync(parentWorkflowDefinitionId);
-
-            // Wait for the child workflow to complete
-            await childWorkflowCompletionTcs.Task.WaitAsync(TimeSpan.FromSeconds(ChildWorkflowTimeoutSeconds));
-
-            return (result, completedChildWorkflows);
-        }
-        finally
-        {
-            workflowEvents.WorkflowStateCommitted -= OnWorkflowStateCommitted;
-        }
+            DefinitionId = childWorkflowDefinitionId,
+            ParentWorkflowInstanceIds = new[] { parentWorkflowInstanceId },
+            WorkflowStatus = workflowStatus
+        };
+        var instances = await workflowInstanceStore.FindManyAsync(filter);
+        return instances.Select(x => x.WorkflowState).ToList();
     }
 }

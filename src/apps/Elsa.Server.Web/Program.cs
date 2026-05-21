@@ -29,6 +29,7 @@ using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable RedundantAssignment
@@ -94,6 +95,7 @@ services
             .UseScheduling()
             .UseCSharp(options =>
             {
+                configuration.GetSection("Scripting:CSharp").Bind(options);
                 options.DisableWrappers = disableVariableWrappers;
                 options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
                 options.AppendScript("string SayHelloWorld() => Greet(\"World\");");
@@ -196,7 +198,9 @@ services.AddRateLimiter(options =>
         });
     }
 });
-services.AddHealthChecks();
+services
+    .AddHealthChecks()
+    .AddElsaReadinessChecks(includeDistributedLocks: true);
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
 
@@ -212,7 +216,23 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 
 // Health checks.
-app.MapHealthChecks("/");
+app.MapHealthChecks("/health/live", new()
+{
+    Predicate = _ => false
+});
+app.MapHealthChecks("/health/ready", new()
+{
+    Predicate = check => check.Tags.Contains(HealthCheckExtensions.ElsaTag) && check.Tags.Contains(HealthCheckExtensions.ReadinessTag),
+    ResultStatusCodes =
+    {
+        [HealthStatus.Degraded] = StatusCodes.Status503ServiceUnavailable,
+        [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+    }
+});
+app.MapHealthChecks("/", new()
+{
+    Predicate = _ => false
+});
 
 // Elsa API endpoints for designer.
 var apiEndpointOptions = app.Services.GetRequiredService<IOptions<ApiEndpointOptions>>().Value;

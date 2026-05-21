@@ -2,6 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Alterations.Endpoints.Alterations.DryRun;
 
@@ -21,8 +22,19 @@ public class DryRun(IWorkflowInstanceFinder workflowInstanceFinder) : ElsaEndpoi
     /// <inheritdoc />
     public override async Task HandleAsync(AlterationWorkflowInstanceFilter filter, CancellationToken cancellationToken)
     {
+        if (!ValidateInput(filter))
+        {
+            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
+            return;
+        }
+
         var workflowInstanceIds = await workflowInstanceFinder.FindAsync(filter, cancellationToken);
         var response = new Response(workflowInstanceIds.ToList());
         await Send.OkAsync(response, cancellationToken);
+    }
+
+    private bool ValidateInput(AlterationWorkflowInstanceFilter filter)
+    {
+        return TimestampFilterValidation.Validate(filter.TimestampFilters, error => AddError(error));
     }
 }

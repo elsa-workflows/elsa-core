@@ -17,7 +17,7 @@ internal class BulkPublish(
     IWorkflowDefinitionPublisher workflowDefinitionPublisher,
     IAuthorizationService authorizationService,
     IWorkflowDefinitionService workflowDefinitionService,
-    PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService)
+    WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService)
     : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
@@ -77,10 +77,10 @@ internal class BulkPublish(
         foreach (var (_, definition) in publishableDefinitions)
         {
             var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
-            var pythonAuthorizationResult = await pythonAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, User, cancellationToken);
-            if (pythonAuthorizationResult != PythonWorkflowDefinitionAuthorizationResult.Allowed)
+            var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, User, cancellationToken);
+            if (!scriptAuthorizationResult.Succeeded)
             {
-                await PythonWorkflowDefinitionAuthorizationFailure.SendAsync(pythonAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+                await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
                 return null!;
             }
         }

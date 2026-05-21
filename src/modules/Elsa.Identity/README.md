@@ -83,3 +83,8 @@ identity.UseDefaultAdmin("admin", "REPLACE_WITH_SECURE_BOOTSTRAP_PASSWORD", "adm
 - Do not keep development defaults in production.
 - Prefer environment variables or a secret manager for admin credentials.
 - After first bootstrap, rotate credentials according to your security policy.
+- Localhost requests no longer satisfy `SecurityRoot` by default. Legacy localhost bootstrap requires an explicit opt-in: call `EnableLocalHostPermissionGrantForSecurityRoot()` in code-first configuration or set `EnableLocalHostPermissionGrant` on the shell `DefaultAuthentication` feature; prefer `DefaultAdminUser` instead.
+
+## Secret Hashing
+
+New identity passwords, client secrets, and API keys are hashed with PBKDF2-SHA256 using 600,000 iterations, a per-record salt, and version metadata. Existing legacy SHA-256 hashes remain valid and are upgraded opportunistically after a successful user login or API-key validation.

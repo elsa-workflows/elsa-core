@@ -15,7 +15,7 @@ namespace Elsa.Expressions.CSharp.Activities;
 /// <summary>
 /// Executes C# code.
 /// </summary>
-[Activity("Elsa", "Scripting", "Executes C# code", DisplayName = "Run C#")]
+[Activity(WorkflowScriptActivityTypeNames.Namespace, WorkflowScriptActivityTypeNames.RunCSharpType, 1, "Executes C# code", "Scripting", DisplayName = "Run C#")]
 public class RunCSharp : CodeActivity<object?>
 {
     /// <inheritdoc />

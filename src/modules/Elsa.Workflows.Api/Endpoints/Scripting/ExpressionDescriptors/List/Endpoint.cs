@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Elsa.Abstractions;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
@@ -12,7 +13,11 @@ namespace Elsa.Workflows.Api.Endpoints.Scripting.ExpressionDescriptors.List;
 [UsedImplicitly]
 internal class List(IExpressionDescriptorRegistry expressionDescriptorRegistry) : ElsaEndpointWithoutRequest<ListResponse<ExpressionDescriptorModel>>
 {
-    private const string PythonExpressionType = "Python";
+    private static readonly IReadOnlyDictionary<string, string> PrivilegedExpressionPermissions = new Dictionary<string, string>
+    {
+        ["CSharp"] = PermissionNames.ExecuteCSharpExpressions,
+        ["Python"] = PermissionNames.ExecutePythonExpressions
+    }.ToFrozenDictionary(StringComparer.Ordinal);
 
     /// <inheritdoc />
     public override void Configure()
@@ -32,9 +37,10 @@ internal class List(IExpressionDescriptorRegistry expressionDescriptorRegistry) 
 
     private bool CanListDescriptor(ExpressionDescriptor descriptor)
     {
-        return descriptor.Type != PythonExpressionType ||
-               (descriptor.IsBrowsable &&
-                User.Claims.Any(x => x.Type == "permissions" && (x.Value == PermissionNames.All || x.Value == PermissionNames.ExecutePythonExpressions)));
+        if (!PrivilegedExpressionPermissions.TryGetValue(descriptor.Type, out var permission))
+            return true;
+
+        return descriptor.IsBrowsable && User.Claims.Any(x => x.Type == PermissionNames.ClaimType && (x.Value == PermissionNames.All || x.Value == permission));
     }
 
     private static IEnumerable<ExpressionDescriptorModel> Map(List<ExpressionDescriptor> descriptors) => descriptors.Select(Map);
