@@ -44,7 +44,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     /// <summary>
     /// A list of workflow builders configured during application startup.
     /// </summary>
-    public IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> Workflows { get; set; } = new Dictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>>();
+    public IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> Workflows { get; set; } = new WorkflowFactoryDictionary();
     private ISet<Type> WorkflowTypes { get; } = new HashSet<Type>();
 
     /// <summary>
@@ -427,6 +427,10 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 
     private void RegisterWorkflowTypeAliases(ExpressionOptions options)
     {
-        WorkflowRuntimeTypeAliasRegistrar.Register(options, WorkflowTypes);
+        var workflowTypes = Workflows is IWorkflowTypeRegistry workflowTypeRegistry
+            ? WorkflowTypes.Concat(workflowTypeRegistry.WorkflowTypes)
+            : WorkflowTypes;
+
+        WorkflowRuntimeTypeAliasRegistrar.Register(options, workflowTypes);
     }
 }

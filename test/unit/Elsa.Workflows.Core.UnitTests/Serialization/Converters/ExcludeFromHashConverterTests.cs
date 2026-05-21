@@ -93,6 +93,22 @@ public class ExcludeFromHashConverterTests
         Assert.True(json.IndexOf("\"B\"", StringComparison.Ordinal) < json.IndexOf("\"A\"", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void Write_OrdersInheritedProperties_ByDeclaringTypeThenDeclarationOrder()
+    {
+        var json = JsonSerializer.Serialize<object>(new DerivedOrderedModel
+        {
+            BaseB = "base second",
+            BaseA = "base first",
+            DerivedB = "derived second",
+            DerivedA = "derived first"
+        }, _options);
+
+        Assert.True(json.IndexOf("\"DerivedB\"", StringComparison.Ordinal) < json.IndexOf("\"DerivedA\"", StringComparison.Ordinal));
+        Assert.True(json.IndexOf("\"DerivedA\"", StringComparison.Ordinal) < json.IndexOf("\"BaseB\"", StringComparison.Ordinal));
+        Assert.True(json.IndexOf("\"BaseB\"", StringComparison.Ordinal) < json.IndexOf("\"BaseA\"", StringComparison.Ordinal));
+    }
+
     private sealed class ConditionalIgnoreModel
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -146,5 +162,19 @@ public class ExcludeFromHashConverterTests
         public string? B { get; set; }
 
         public string? A { get; set; }
+    }
+
+    private class BaseOrderedModel
+    {
+        public string? BaseB { get; set; }
+
+        public string? BaseA { get; set; }
+    }
+
+    private sealed class DerivedOrderedModel : BaseOrderedModel
+    {
+        public string? DerivedB { get; set; }
+
+        public string? DerivedA { get; set; }
     }
 }

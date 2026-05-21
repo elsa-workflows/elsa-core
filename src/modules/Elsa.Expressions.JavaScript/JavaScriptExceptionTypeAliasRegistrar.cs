@@ -16,6 +16,6 @@ internal static class JavaScriptExceptionTypeAliasRegistrar
 
         var wrapperExceptionType = typeof(JavaScriptException).GetNestedType("JavaScriptErrorWrapperException", BindingFlags.Public | BindingFlags.NonPublic);
         if (wrapperExceptionType != null)
-            options.RegisterTypeAlias(wrapperExceptionType, wrapperExceptionType.Name);
+            options.RegisterTypeAlias(wrapperExceptionType, "Jint.JavaScriptErrorWrapperException");
     }
 }

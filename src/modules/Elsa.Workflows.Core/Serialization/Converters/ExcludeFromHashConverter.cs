@@ -46,7 +46,7 @@ public class ExcludeFromHashConverter : JsonConverter<object>
 
     private static PropertyMetadata[] GetSerializableProperties(Type type)
     {
-        return PropertyCache.GetValue(type, static itemType => itemType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+        return PropertyCache.GetValue(type, static itemType => GetPublicInstanceProperties(itemType)
             .Where(property => property.GetIndexParameters().Length == 0)
             .Select(property => new
             {
@@ -57,6 +57,19 @@ public class ExcludeFromHashConverter : JsonConverter<object>
             .Where(x => x.ExcludeFromHash == null && !ShouldAlwaysIgnoreProperty(x.JsonIgnore?.Condition))
             .Select(x => new PropertyMetadata(x.Property, x.JsonIgnore?.Condition))
             .ToArray());
+    }
+
+    private static IEnumerable<PropertyInfo> GetPublicInstanceProperties(Type type)
+    {
+        for (var currentType = type; currentType != null && currentType != typeof(object); currentType = currentType.BaseType)
+        {
+            foreach (var property in currentType
+                         .GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public)
+                         .OrderBy(x => x.MetadataToken))
+            {
+                yield return property;
+            }
+        }
     }
 
     private static bool ShouldAlwaysIgnoreProperty(JsonIgnoreCondition? condition)

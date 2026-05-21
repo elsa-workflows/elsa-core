@@ -48,6 +48,7 @@ public class WorkflowRuntimeFeatureTests
         _feature.AddWorkflow(workflowType);
 
         Assert.Contains(workflowType.GetSimpleAssemblyQualifiedName(), _feature.Workflows.Keys);
+        Assert.Contains(workflowType.FullName!, _feature.Workflows.Keys);
     }
 
     [Fact]
@@ -58,6 +59,39 @@ public class WorkflowRuntimeFeatureTests
         _shellFeature.AddWorkflow(workflowType);
 
         Assert.Contains(workflowType.GetSimpleAssemblyQualifiedName(), _shellFeature.Workflows.Keys);
+        Assert.Contains(workflowType.FullName!, _shellFeature.Workflows.Keys);
+    }
+
+    [Fact]
+    public void WorkflowsAdd_RegistersWorkflowTypeAlias()
+    {
+        var workflowType = typeof(GenericWorkflow<int>);
+        var options = new ExpressionOptions();
+
+        _feature.Workflows.Add(workflowType);
+
+        RegisterWorkflowTypeAliases(_feature, options);
+
+        Assert.Equal(workflowType, options.AliasTypeDictionary[workflowType.GetSimpleAssemblyQualifiedName()]);
+    }
+
+    [Fact]
+    public void ShellWorkflowsAdd_RegistersWorkflowTypeAlias()
+    {
+        var workflowType = typeof(GenericWorkflow<int>);
+        var options = new ExpressionOptions();
+
+        _shellFeature.Workflows.Add(workflowType);
+
+        RegisterWorkflowTypeAliases(_shellFeature, options);
+
+        Assert.Equal(workflowType, options.AliasTypeDictionary[workflowType.GetSimpleAssemblyQualifiedName()]);
+    }
+
+    [Fact]
+    public void WorkflowsAdd_Throws_WhenTypeDoesNotImplementWorkflow()
+    {
+        Assert.Throws<ArgumentException>(() => _feature.Workflows.Add(typeof(NotAWorkflow)));
     }
 
     [Fact]

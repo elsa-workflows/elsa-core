@@ -261,6 +261,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             options.AddTypeAlias<Downloadable>("Downloadable");
             options.AddTypeAlias<Downloadable[]>("Downloadable[]");
             options.AddTypeAlias<HttpStatusCode>();
+            options.AddTypeAlias<HttpRequestException>();
             options.AddTypeAlias<HttpEndpointBookmarkPayload>();
         });
     }

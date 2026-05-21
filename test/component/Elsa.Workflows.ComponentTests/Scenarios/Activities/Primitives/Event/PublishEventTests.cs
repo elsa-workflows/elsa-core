@@ -74,7 +74,7 @@ public class PublishEventTests : AppComponentTest
 
         // Verify the payload structure and content
         var payloadJson = JsonSerializer.Serialize(receivedPayload);
-        Assert.Contains("\"Status\"", payloadJson);
+        Assert.Contains("\"status\"", payloadJson);
         Assert.Contains("\"Shipped\"", payloadJson);
     }
 
