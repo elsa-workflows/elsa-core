@@ -1,5 +1,6 @@
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
+using Elsa.Workflows;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Stimuli;
 
@@ -23,13 +24,17 @@ internal static class WorkflowRuntimeTypeAliasRegistrar
         options.RegisterTypeAlias(typeof(ExecuteWorkflowStimulus), nameof(ExecuteWorkflowStimulus));
         options.RegisterTypeAlias(typeof(RunTaskStimulus), nameof(RunTaskStimulus));
 
-        foreach (var workflowType in workflowTypeNames.Select(ResolveWorkflowType).OfType<Type>().Distinct())
+        foreach (var workflowType in workflowTypeNames.Select(ResolveWorkflowType).OfType<Type>().Where(IsConcreteWorkflowType).Distinct())
             options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName());
     }
 
     private static Type? ResolveWorkflowType(string workflowTypeName)
     {
-        return Type.GetType(workflowTypeName, throwOnError: false) ??
-               AppDomain.CurrentDomain.GetAssemblies().Select(x => x.GetType(workflowTypeName, throwOnError: false)).FirstOrDefault(x => x != null);
+        return Type.GetType(workflowTypeName, throwOnError: false);
+    }
+
+    private static bool IsConcreteWorkflowType(Type type)
+    {
+        return typeof(IWorkflow).IsAssignableFrom(type) && type is { IsAbstract: false, IsInterface: false, ContainsGenericParameters: false };
     }
 }

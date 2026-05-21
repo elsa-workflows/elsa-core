@@ -1,5 +1,5 @@
-using System.Collections.Concurrent;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class ExcludeFromHashConverter : JsonConverter<object>
 {
-    private static readonly ConcurrentDictionary<Type, PropertyMetadata[]> PropertyCache = new();
+    private static readonly ConditionalWeakTable<Type, PropertyMetadata[]> PropertyCache = new();
     private JsonSerializerOptions? _options;
     
     /// <inheritdoc />
@@ -44,9 +44,8 @@ public class ExcludeFromHashConverter : JsonConverter<object>
 
     private static PropertyMetadata[] GetSerializableProperties(Type type)
     {
-        return PropertyCache.GetOrAdd(type, static itemType => itemType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+        return PropertyCache.GetValue(type, static itemType => itemType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
             .Where(property => property.GetIndexParameters().Length == 0)
-            .OrderBy(property => property.Name, StringComparer.Ordinal)
             .Select(property => new
             {
                 Property = property,

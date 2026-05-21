@@ -91,10 +91,15 @@ public class VariableMapper
         if (string.IsNullOrWhiteSpace(typeAlias))
             return null;
 
-        if (WorkflowJsonTypeResolver.TryResolveType(_wellKnownTypeRegistry, typeAlias, out var type))
+        if (WorkflowJsonTypeResolver.TryResolveType(_wellKnownTypeRegistry, typeAlias, out var type) && IsStorageDriverType(type))
             return type;
 
         _logger.LogWarning("Failed to resolve storage driver type alias {StorageDriverTypeName}", typeAlias);
         return null;
+    }
+
+    private static bool IsStorageDriverType(Type type)
+    {
+        return typeof(IStorageDriver).IsAssignableFrom(type) && type is { IsAbstract: false, IsInterface: false, ContainsGenericParameters: false };
     }
 }

@@ -86,11 +86,11 @@ public class ExcludeFromHashConverterTests
     }
 
     [Fact]
-    public void Write_OrdersPropertiesByOrdinalName()
+    public void Write_PreservesDeclarationOrder()
     {
         var json = JsonSerializer.Serialize<object>(new OrderedModel { B = "second", A = "first" }, _options);
 
-        Assert.True(json.IndexOf("\"A\"", StringComparison.Ordinal) < json.IndexOf("\"B\"", StringComparison.Ordinal));
+        Assert.True(json.IndexOf("\"B\"", StringComparison.Ordinal) < json.IndexOf("\"A\"", StringComparison.Ordinal));
     }
 
     private sealed class ConditionalIgnoreModel

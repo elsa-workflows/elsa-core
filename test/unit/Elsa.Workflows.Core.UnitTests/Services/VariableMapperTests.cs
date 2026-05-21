@@ -51,4 +51,14 @@ public class VariableMapperTests
 
         Assert.Null(variable.StorageDriverType);
     }
+
+    [Fact]
+    public void Map_DoesNotUseRegisteredNonStorageDriverAliasAsStorageDriver()
+    {
+        _registry.RegisterType(typeof(string), "NotAStorageDriver");
+
+        var variable = _mapper.Map(new VariableModel("id", "name", "String", "value", "NotAStorageDriver"));
+
+        Assert.Null(variable.StorageDriverType);
+    }
 }
