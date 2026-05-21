@@ -17,11 +17,11 @@ public class IngressRateLimitingTests
     [Fact]
     public async Task UseWorkflowsApiRateLimiting_AppliesPolicyToApiPrefix()
     {
-        await using var app = await CreateAppAsync(app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName));
+        await using var app = await CreateRoutedAppAsync(app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName));
         var client = app.GetTestClient();
 
-        var firstResponse = await client.GetAsync("/elsa/api/workflow-definitions");
-        var secondResponse = await client.GetAsync("/elsa/api/workflow-definitions");
+        var firstResponse = await client.GetAsync("/elsa/api/ping");
+        var secondResponse = await client.GetAsync("/elsa/api/ping");
 
         Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
         Assert.Equal(HttpStatusCode.TooManyRequests, secondResponse.StatusCode);
@@ -58,11 +58,11 @@ public class IngressRateLimitingTests
     [Fact]
     public async Task UseWorkflowsApiRateLimiting_NormalizesRoutePrefixWhitespace()
     {
-        await using var app = await CreateAppAsync(app => app.UseWorkflowsApiRateLimiting(" elsa/api ", PolicyName));
+        await using var app = await CreateRoutedAppAsync(app => app.UseWorkflowsApiRateLimiting(" elsa/api ", PolicyName));
         var client = app.GetTestClient();
 
-        var firstResponse = await client.GetAsync("/elsa/api/workflow-definitions");
-        var secondResponse = await client.GetAsync("/elsa/api/workflow-definitions");
+        var firstResponse = await client.GetAsync("/elsa/api/ping");
+        var secondResponse = await client.GetAsync("/elsa/api/ping");
 
         Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
         Assert.Equal(HttpStatusCode.TooManyRequests, secondResponse.StatusCode);
@@ -84,14 +84,14 @@ public class IngressRateLimitingTests
     [Fact]
     public async Task UseWorkflowsApiRateLimiting_DoesNotApplyPolicyToOtherPaths()
     {
-        await using var app = await CreateAppAsync(app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName));
+        await using var app = await CreateRoutedAppAsync(app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName));
         var client = app.GetTestClient();
 
-        await client.GetAsync("/elsa/api/workflow-definitions");
-        await client.GetAsync("/elsa/api/workflow-definitions");
+        await client.GetAsync("/elsa/api/ping");
+        await client.GetAsync("/elsa/api/ping");
         var otherResponse = await client.GetAsync("/other/path");
 
-        Assert.Equal(HttpStatusCode.OK, otherResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, otherResponse.StatusCode);
     }
 
     [Fact]
@@ -123,20 +123,33 @@ public class IngressRateLimitingTests
     }
 
     [Fact]
+    public async Task UseWorkflowsRateLimiting_AppliesPolicyToMiddlewarePathWhenEndpointRoutesExist()
+    {
+        await using var app = await CreateAppWithEndpointRouteAsync(app => app.UseWorkflowsRateLimiting("/workflows", PolicyName));
+        var client = app.GetTestClient();
+
+        var firstResponse = await client.GetAsync("/workflows/hello-world");
+        var secondResponse = await client.GetAsync("/workflows/hello-world");
+
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, secondResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task UseWorkflowsApiRateLimiting_UsesExistingGlobalRateLimiterMiddleware()
     {
         var policy = new CountingRateLimiterPolicy();
-        await using var app = await CreateAppAsync(
+        await using var app = await CreateRoutedAppAsync(
             app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName),
             options => options.AddPolicy(PolicyName, policy));
         var client = app.GetTestClient();
 
-        var firstResponse = await client.GetAsync("/elsa/api/workflow-definitions");
+        var firstResponse = await client.GetAsync("/elsa/api/ping");
 
         Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
         Assert.Equal(1, policy.PartitionRequestCount);
 
-        var secondResponse = await client.GetAsync("/elsa/api/workflow-definitions");
+        var secondResponse = await client.GetAsync("/elsa/api/ping");
 
         Assert.Equal(HttpStatusCode.TooManyRequests, secondResponse.StatusCode);
     }
@@ -154,6 +167,19 @@ public class IngressRateLimitingTests
         Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
         Assert.Equal("pong", content);
         Assert.Equal(HttpStatusCode.TooManyRequests, secondResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task UseWorkflowsApiRateLimiting_PreservesUnmatchedApiPrefixRouting()
+    {
+        await using var app = await CreateRoutedAppAsync(app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName));
+        var client = app.GetTestClient();
+
+        var unmatchedResponse = await client.GetAsync("/elsa/api/not-found");
+        var routedResponse = await client.GetAsync("/elsa/api/ping");
+
+        Assert.Equal(HttpStatusCode.NotFound, unmatchedResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, routedResponse.StatusCode);
     }
 
     [Fact]
@@ -257,7 +283,7 @@ public class IngressRateLimitingTests
     [Fact]
     public async Task UseWorkflowsApiRateLimiting_FailsWhenPolicyIsNotRegistered()
     {
-        await using var app = CreateApp(
+        await using var app = CreateRoutedApp(
             app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName),
             options => AddFixedWindowLimiter(options, "other"));
 
@@ -265,7 +291,7 @@ public class IngressRateLimitingTests
         await app.StartAsync();
         var client = app.GetTestClient();
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => client.GetAsync("/elsa/api/workflow-definitions"));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => client.GetAsync("/elsa/api/ping"));
 
         Assert.Contains("requires a rate limiting policy", exception.Message);
         Assert.Contains(PolicyName, exception.Message);
@@ -292,7 +318,30 @@ public class IngressRateLimitingTests
         return app;
     }
 
-    private static async Task<TestApplication> CreateRoutedAppAsync(Action<WebApplication> configure)
+    private static async Task<TestApplication> CreateRoutedAppAsync(Action<WebApplication> configure, Action<RateLimiterOptions>? configureRateLimiter = null)
+    {
+        var app = CreateRoutedApp(configure, configureRateLimiter);
+        app.Configure();
+        await app.StartAsync();
+        return app;
+    }
+
+    private static TestApplication CreateRoutedApp(Action<WebApplication> configure, Action<RateLimiterOptions>? configureRateLimiter = null)
+    {
+        var builder = CreateBuilder();
+        AddRateLimiterServices(builder.Services, configureRateLimiter);
+        var app = new TestApplication(builder.Build(), app =>
+        {
+            app.MapGet("/elsa/api/ping", () => "pong");
+            app.UseRouting();
+            configure(app);
+            app.UseRateLimiter();
+        });
+
+        return app;
+    }
+
+    private static async Task<TestApplication> CreateAppWithEndpointRouteAsync(Action<WebApplication> configure)
     {
         var builder = CreateBuilder();
         AddRateLimiterServices(builder.Services);
@@ -302,6 +351,7 @@ public class IngressRateLimitingTests
             app.UseRouting();
             configure(app);
             app.UseRateLimiter();
+            app.Run(context => context.Response.WriteAsync("ok"));
         });
 
         app.Configure();

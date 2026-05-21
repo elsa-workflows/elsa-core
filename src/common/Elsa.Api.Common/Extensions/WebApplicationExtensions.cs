@@ -43,7 +43,7 @@ public static class WebApplicationExtensions
             return app;
 
         var pathPrefix = NormalizeRoutePrefixPath(routePrefix);
-        return app.UseRateLimitingPolicyForPath(pathPrefix, policyName, "Elsa API rate limiting endpoint");
+        return app.UseRateLimitingPolicyForPath(pathPrefix, policyName, "Elsa API rate limiting endpoint", requireMatchedEndpoint: true);
     }
 
     /// <summary>
@@ -53,7 +53,12 @@ public static class WebApplicationExtensions
     /// <param name="routePrefix">The route prefix to apply to Elsa API endpoints.</param>
     /// <example>E.g. "elsa/api" will expose endpoints like this: "/elsa/api/workflow-definitions"</example>
     public static IEndpointRouteBuilder MapWorkflowsApi(this IEndpointRouteBuilder routes, string routePrefix = "elsa/api") =>
-        routes.MapFastEndpoints(config => ConfigureWorkflowsApi(config, routePrefix));
+        routes.MapFastEndpoints(config =>
+        {
+            config.Endpoints.RoutePrefix = routePrefix;
+            config.Serializer.RequestDeserializer = DeserializeRequestAsync;
+            config.Serializer.ResponseSerializer = SerializeRequestAsync;
+        });
 
     /// <summary>
     /// Applies an ASP.NET Core rate limiting policy to requests targeting the specified path prefix.
@@ -67,7 +72,18 @@ public static class WebApplicationExtensions
     /// and before the host's single <c>app.UseRateLimiter()</c> middleware. ASP.NET Core validates the configured policy when the
     /// rate limiter middleware handles matching requests.
     /// </remarks>
-    public static IApplicationBuilder UseRateLimitingPolicyForPath(this IApplicationBuilder app, PathString pathPrefix, string policyName, string displayName)
+    public static IApplicationBuilder UseRateLimitingPolicyForPath(this IApplicationBuilder app, PathString pathPrefix, string policyName, string displayName) =>
+        app.UseRateLimitingPolicyForPath(pathPrefix, policyName, displayName, false);
+
+    /// <summary>
+    /// Applies an ASP.NET Core rate limiting policy to requests targeting the specified path prefix.
+    /// </summary>
+    /// <param name="app">The application builder.</param>
+    /// <param name="pathPrefix">The path prefix to protect.</param>
+    /// <param name="policyName">The registered ASP.NET Core rate limiting policy name.</param>
+    /// <param name="displayName">The endpoint display name used for rate limiting metadata.</param>
+    /// <param name="requireMatchedEndpoint">Whether to skip rate limiting when endpoint routing selected no endpoint.</param>
+    public static IApplicationBuilder UseRateLimitingPolicyForPath(this IApplicationBuilder app, PathString pathPrefix, string policyName, string displayName, bool requireMatchedEndpoint)
     {
         if (!pathPrefix.HasValue || string.IsNullOrWhiteSpace(policyName))
             return app;
@@ -83,6 +99,12 @@ public static class WebApplicationExtensions
                 branch.Use(async (context, next) =>
                 {
                     var originalEndpoint = context.GetEndpoint();
+                    if (requireMatchedEndpoint && originalEndpoint == null)
+                    {
+                        await next(context);
+                        return;
+                    }
+
                     var rateLimitingEndpoint = originalEndpoint == null
                         ? fallbackEndpoint
                         : endpointCache.GetValue(originalEndpoint, endpoint => CreateRateLimitingEndpoint(endpoint, rateLimitingMetadata, displayName));
