@@ -26,7 +26,7 @@ public class DistributedRuntimeLockProviderValidator(
 
         if (localProviderType == null)
         {
-            logger.LogInformation(
+            logger.LogDebug(
                 "Distributed workflow runtime lock provider {DistributedLockProviderType} is configured. Ensure this provider coordinates across all application nodes.",
                 configuredProviderTypeName);
             return;
@@ -74,17 +74,15 @@ public class DistributedRuntimeLockProviderValidator(
         return null;
     }
 
-    private IReadOnlyCollection<IDistributedLockProvider> GetInnerProviders(IDistributedLockProvider provider)
+    private IEnumerable<IDistributedLockProvider> GetInnerProviders(IDistributedLockProvider provider)
     {
-        var providers = new List<IDistributedLockProvider>();
-
         foreach (var property in provider.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
         {
             if (property.GetIndexParameters().Length > 0)
                 continue;
 
             var returnsDistributedLockProvider = typeof(IDistributedLockProvider).IsAssignableFrom(property.PropertyType);
-            var returnsDistributedLockProviders = typeof(System.Collections.IEnumerable).IsAssignableFrom(property.PropertyType) && property.PropertyType != typeof(string);
+            var returnsDistributedLockProviders = TryGetDistributedLockProviderElementType(property.PropertyType, out _);
 
             if (!returnsDistributedLockProvider && !returnsDistributedLockProviders)
                 continue;
@@ -101,28 +99,71 @@ public class DistributedRuntimeLockProviderValidator(
             }
 
             if (value is IDistributedLockProvider innerProvider)
-                providers.Add(innerProvider);
+            {
+                yield return innerProvider;
+            }
             else if (value is System.Collections.IEnumerable innerProviders)
             {
+                System.Collections.IEnumerator enumerator;
+
                 try
                 {
-                    var providerItems = new List<IDistributedLockProvider>();
-
-                    foreach (var providerItem in innerProviders)
-                    {
-                        if (providerItem is IDistributedLockProvider distributedLockProvider)
-                            providerItems.Add(distributedLockProvider);
-                    }
-
-                    providers.AddRange(providerItems);
+                    enumerator = innerProviders.GetEnumerator();
                 }
                 catch (Exception ex)
                 {
                     logger.LogDebug(ex, "Skipping distributed lock provider property {PropertyName} because enumeration threw.", property.Name);
+                    continue;
+                }
+
+                using var disposableEnumerator = enumerator as IDisposable;
+
+                while (true)
+                {
+                    object? providerItem;
+
+                    try
+                    {
+                        if (!enumerator.MoveNext())
+                            break;
+
+                        providerItem = enumerator.Current;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogDebug(ex, "Skipping distributed lock provider property {PropertyName} because enumeration threw.", property.Name);
+                        break;
+                    }
+
+                    if (providerItem is IDistributedLockProvider distributedLockProvider)
+                        yield return distributedLockProvider;
                 }
             }
         }
+    }
 
-        return providers;
+    private static bool TryGetDistributedLockProviderElementType(Type type, out Type? elementType)
+    {
+        elementType = null;
+
+        if (type.IsArray)
+        {
+            elementType = type.GetElementType();
+            return elementType != null && typeof(IDistributedLockProvider).IsAssignableFrom(elementType);
+        }
+
+        if (type == typeof(string))
+            return false;
+
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            elementType = type.GetGenericArguments()[0];
+        else
+            elementType = type
+                .GetInterfaces()
+                .Where(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                .Select(x => x.GetGenericArguments()[0])
+                .FirstOrDefault(x => typeof(IDistributedLockProvider).IsAssignableFrom(x));
+
+        return elementType != null && typeof(IDistributedLockProvider).IsAssignableFrom(elementType);
     }
 }

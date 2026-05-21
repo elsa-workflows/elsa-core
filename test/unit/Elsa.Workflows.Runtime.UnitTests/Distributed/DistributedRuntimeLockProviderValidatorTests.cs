@@ -71,6 +71,14 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     }
 
     [Fact]
+    public void Validate_IgnoresObjectCollections_WhenTheyContainProviderInstances()
+    {
+        var validator = CreateValidator(new ObjectCollectionDistributedLockProvider([new CustomDistributedLockProvider(), _fileProvider]));
+
+        validator.Validate();
+    }
+
+    [Fact]
     public void Validate_IgnoresNullEntries_WhenProviderCollectionContainsNull()
     {
         var validator = CreateValidator(new NullableCompositeDistributedLockProvider([new CustomDistributedLockProvider(), null]));
@@ -155,7 +163,15 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
 
     public void Dispose()
     {
-        _lockDirectory.Delete(true);
+        try
+        {
+            _lockDirectory.Delete(true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DirectoryNotFoundException)
+        {
+            // Best-effort cleanup for temp directories that may still be held by the OS.
+        }
+
         GC.SuppressFinalize(this);
     }
 
@@ -185,6 +201,13 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         public IReadOnlyCollection<IDistributedLockProvider?> Providers { get; } = providers;
 
         public IDistributedLock CreateLock(string name) => Providers.OfType<IDistributedLockProvider>().First().CreateLock(name);
+    }
+
+    private class ObjectCollectionDistributedLockProvider(IReadOnlyCollection<object> providers) : IDistributedLockProvider
+    {
+        public IReadOnlyCollection<object> Providers { get; } = providers;
+
+        public IDistributedLock CreateLock(string name) => new CustomDistributedLock(name);
     }
 
     private class ThrowingPropertyDistributedLockProvider : IDistributedLockProvider

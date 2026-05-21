@@ -42,6 +42,9 @@ var services = builder.Services;
 var configuration = builder.Configuration;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
+var allowLocalDistributedRuntimeLockProvider =
+    builder.Environment.IsDevelopment() ||
+    configuration.GetValue("DistributedRuntime:AllowLocalLockProviderInDistributedRuntime", false);
 
 services
     .AddElsa(elsa =>
@@ -79,8 +82,8 @@ services
                 runtime.UseEntityFrameworkCore(ef => ef.UseSqlite());
                 runtime.UseCache();
                 runtime.UseDistributedRuntime();
-                // This sample host uses single-host file-system locks. Configure a cross-node provider for clustered deployments.
-                runtime.DistributedLockingOptions = options => options.AllowLocalLockProviderInDistributedRuntime = true;
+                // This sample host uses single-host file-system locks only for development or explicit single-host opt-in.
+                runtime.DistributedLockingOptions = options => options.AllowLocalLockProviderInDistributedRuntime = allowLocalDistributedRuntimeLockProvider;
             })
             .UseWorkflowsApi()
             .UseFluentStorageProvider()
