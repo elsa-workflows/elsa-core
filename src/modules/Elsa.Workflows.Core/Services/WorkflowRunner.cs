@@ -230,6 +230,7 @@ public class WorkflowRunner(
         }
         catch (Exception e)
         {
+            workflowExecutionContext.Exception ??= e;
             workflowExecutionException = e;
             throw;
         }

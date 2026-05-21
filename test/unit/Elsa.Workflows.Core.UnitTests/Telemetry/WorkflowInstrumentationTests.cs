@@ -123,11 +123,12 @@ public class WorkflowInstrumentationTests
         context.Workflow.WorkflowMetadata = new("Test workflow");
         var runner = CreateWorkflowRunner(context, new ThrowingWorkflowExecutionPipeline());
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(context));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(context));
 
         var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
         Assert.Equal("workflow.execute", span.OperationName);
         Assert.Equal(ActivityStatusCode.Error, span.Status);
+        Assert.Equal(exception, context.Exception);
         Assert.Equal(WorkflowSubStatus.Executing, context.SubStatus);
         Assert.Equal(context.Id, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowInstanceId));
         Assert.Equal(WorkflowStatus.Finished.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowStatus));
