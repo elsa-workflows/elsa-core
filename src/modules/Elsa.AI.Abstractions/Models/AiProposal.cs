@@ -2,7 +2,7 @@ namespace Elsa.AI.Abstractions.Models;
 
 public record AiProposal
 {
-    public string Id { get; init; } = default!;
+    public string Id { get; init; } = Guid.NewGuid().ToString("N");
     public string? TenantId { get; init; }
     public string ConversationId { get; init; } = default!;
     public AiProposalKind Kind { get; init; }

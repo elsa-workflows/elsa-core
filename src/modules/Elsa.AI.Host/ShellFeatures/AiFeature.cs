@@ -17,6 +17,9 @@ public class AiFeature : IFastEndpointsShellFeature
 {
     private static readonly AiHostOptions DefaultOptions = new();
 
+    public bool StreamingEnabled { get; set; } = DefaultOptions.StreamingEnabled;
+    public bool ConversationPersistenceEnabled { get; set; } = DefaultOptions.ConversationPersistenceEnabled;
+    public bool ProposalReviewEnabled { get; set; } = DefaultOptions.ProposalReviewEnabled;
     public TimeSpan ConversationRetention { get; set; } = DefaultOptions.ConversationRetention;
     public TimeSpan ReconnectGrace { get; set; } = DefaultOptions.ReconnectGrace;
     public int MaxToolResultBytes { get; set; } = DefaultOptions.MaxToolResultBytes;
@@ -31,6 +34,9 @@ public class AiFeature : IFastEndpointsShellFeature
 
     private void ConfigureOptions(AiHostOptions options)
     {
+        options.StreamingEnabled = StreamingEnabled;
+        options.ConversationPersistenceEnabled = ConversationPersistenceEnabled;
+        options.ProposalReviewEnabled = ProposalReviewEnabled;
         options.ConversationRetention = ConversationRetention;
         options.ReconnectGrace = ReconnectGrace;
         options.MaxToolResultBytes = MaxToolResultBytes;

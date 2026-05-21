@@ -5,7 +5,7 @@ namespace Elsa.AI.Host.Context;
 
 public class AiContextResolver(IEnumerable<IAiContextProvider> providers)
 {
-    private static readonly string[] SensitiveKeyFragments = ["secret", "token", "password", "apikey", "api_key", "authorization", "credential"];
+    private static readonly string[] SensitiveKeyFragments = ["secret", "token", "password", "apikey", "api_key", "api-key", "authorization", "credential", "bearer"];
     private const string Redacted = "[redacted]";
     private readonly Dictionary<string, IAiContextProvider> _providers = providers
         .GroupBy(x => x.Kind, StringComparer.OrdinalIgnoreCase)
@@ -62,7 +62,7 @@ public class AiContextResolver(IEnumerable<IAiContextProvider> providers)
         };
 
     private static string RedactText(string text) =>
-        text.Replace("secret", Redacted, StringComparison.OrdinalIgnoreCase);
+        SensitiveKeyFragments.Any(fragment => text.Contains(fragment, StringComparison.OrdinalIgnoreCase)) ? Redacted : text;
 
     private static bool IsSensitiveKey(string key) =>
         SensitiveKeyFragments.Any(fragment => key.Contains(fragment, StringComparison.OrdinalIgnoreCase));

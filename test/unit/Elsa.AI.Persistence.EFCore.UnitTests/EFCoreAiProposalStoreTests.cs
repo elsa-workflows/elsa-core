@@ -35,6 +35,27 @@ public class EFCoreAiProposalStoreTests : IAsyncLifetime
         Assert.Equal("Create a workflow", reloaded.Rationale);
     }
 
+    [Fact(DisplayName = "Proposal store persists proposals with generated IDs")]
+    public async Task ProposalStorePersistsProposalsWithGeneratedIds()
+    {
+        var store = new EFCoreAiProposalStore(_dbContext);
+        var proposal = new AiProposal
+        {
+            ConversationId = "conversation-1",
+            Kind = AiProposalKind.WorkflowCreate,
+            CreatedBy = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        await store.SaveAsync(proposal);
+        _dbContext.ChangeTracker.Clear();
+
+        var reloaded = await store.FindAsync(proposal.Id);
+
+        Assert.NotNull(reloaded);
+        Assert.False(string.IsNullOrWhiteSpace(reloaded.Id));
+    }
+
     [Fact(DisplayName = "Proposal store reads enum values case-insensitively")]
     public async Task ProposalStoreReadsEnumValuesCaseInsensitively()
     {

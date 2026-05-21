@@ -48,8 +48,9 @@ public class AiContextResolverTests
         });
 
         var context = Assert.Single(result);
-        Assert.Equal("contains [redacted] text", context.Summary);
+        Assert.Equal("[redacted]", context.Summary);
         Assert.Equal("[redacted]", context.Data["accessToken"]!.GetValue<string>());
+        Assert.Equal("[redacted]", context.Data["description"]!.GetValue<string>());
         Assert.Equal("[redacted]", context.Metadata["apiKey"]!.GetValue<string>());
         Assert.Equal("visible", context.Data["displayName"]!.GetValue<string>());
     }
@@ -88,6 +89,7 @@ public class AiContextResolverTests
                 Data = new JsonObject
                 {
                     ["accessToken"] = "token-value",
+                    ["description"] = "Bearer eyJhbGciOi",
                     ["displayName"] = "visible"
                 },
                 Metadata = new JsonObject
