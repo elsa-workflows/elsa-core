@@ -129,20 +129,32 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
                 Keys = itemKeys
             }, cancellationToken);
         var itemRecordLookup = itemRecords.ToDictionary(x => x.Key);
+        var items = new List<WorkflowDispatchOutboxItem>();
 
         foreach (var indexRecord in indexRecords)
         {
-            if (itemRecordLookup.ContainsKey(GetItemKey(indexRecord.SerializedValue)))
-                continue;
+            var id = indexRecord.SerializedValue;
+            var itemKey = GetItemKey(id);
 
-            await keyValueStore.DeleteAsync(indexRecord.Key, cancellationToken);
-            await keyValueStore.DeleteAsync(GetIndexByIdKey(indexRecord.SerializedValue), cancellationToken);
+            if (!itemRecordLookup.TryGetValue(itemKey, out var itemRecord))
+            {
+                await keyValueStore.DeleteAsync(indexRecord.Key, cancellationToken);
+                await keyValueStore.DeleteAsync(GetIndexByIdKey(id), cancellationToken);
+                continue;
+            }
+
+            var item = payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(itemRecord.SerializedValue);
+
+            if (item == null)
+            {
+                await DeleteUnrecoverableItemAsync(id, itemKey, indexRecord.Key, recoveryKey: null, cancellationToken: cancellationToken);
+                continue;
+            }
+
+            items.Add(item);
         }
 
-        return itemRecords
-            .Select(x => payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(x.SerializedValue))
-            .OfType<WorkflowDispatchOutboxItem>()
-            .ToList();
+        return items;
     }
 
     private async Task<IEnumerable<WorkflowDispatchOutboxItem>> FindRecoveryItemsAsync(CancellationToken cancellationToken)
@@ -174,10 +186,13 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
             var item = payloadSerializer.Deserialize<WorkflowDispatchOutboxItem>(itemRecord.SerializedValue);
 
             if (item == null)
+            {
+                await DeleteUnrecoverableItemAsync(id, itemRecord.Key, indexKey: null, recoveryKey: recoveryRecord.Key, cancellationToken: cancellationToken);
                 continue;
+            }
 
             await SaveIndexAsync(item, cancellationToken);
-            await keyValueStore.DeleteAsync(GetRecoveryKey(item.Id), cancellationToken);
+            await keyValueStore.DeleteAsync(recoveryRecord.Key, cancellationToken);
             items.Add(item);
         }
 
@@ -247,6 +262,23 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
         {
             await keyValueStore.DeleteAsync(indexRecord.Key, cancellationToken);
         }
+    }
+
+    private async Task DeleteUnrecoverableItemAsync(string id, string itemKey, string? indexKey, string? recoveryKey, CancellationToken cancellationToken)
+    {
+        if (indexKey != null)
+        {
+            await keyValueStore.DeleteAsync(indexKey, cancellationToken);
+            await keyValueStore.DeleteAsync(GetIndexByIdKey(id), cancellationToken);
+        }
+        else
+        {
+            await DeleteIndexesForMissingItemAsync(id, cancellationToken);
+        }
+
+        await keyValueStore.DeleteAsync(recoveryKey ?? GetRecoveryKey(id), cancellationToken);
+        await keyValueStore.DeleteAsync(GetLegacyKey(id), cancellationToken);
+        await keyValueStore.DeleteAsync(itemKey, cancellationToken);
     }
 
     private static string GetItemKey(string id) => $"{ItemKeyPrefix}{id}";

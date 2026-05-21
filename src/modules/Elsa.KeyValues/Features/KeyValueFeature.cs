@@ -29,9 +29,7 @@ public class KeyValueFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        if (KeyValueStore == DefaultKeyValueStore && !Services.Any(x => x.ServiceType == typeof(IKeyValueStore)))
-            Services.TryAddSingleton<MemoryStore<SerializedKeyValuePair>>();
-
+        Services.TryAddSingleton<MemoryStore<SerializedKeyValuePair>>();
         Services.TryAddScoped<IKeyValueStore>(KeyValueStore);
     }
 }

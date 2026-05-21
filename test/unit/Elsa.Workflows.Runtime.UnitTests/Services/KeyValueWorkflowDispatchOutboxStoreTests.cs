@@ -1,7 +1,9 @@
 using System.Text.Json;
+using Elsa.Common.Services;
 using Elsa.KeyValues.Contracts;
 using Elsa.KeyValues.Entities;
 using Elsa.KeyValues.Models;
+using Elsa.KeyValues.Stores;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Models;
 using NSubstitute;
@@ -103,6 +105,56 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
             Arg.Is<SerializedKeyValuePair>(x => x.Key == $"Elsa:WorkflowDispatchOutbox:Index:{orphan.CreatedAt.UtcTicks:D20}:orphan" && x.SerializedValue == "orphan"),
             Arg.Any<CancellationToken>());
         await _keyValueStore.Received(1).DeleteAsync("Elsa:WorkflowDispatchOutbox:Recovery:orphan", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task FindManyAsync_CleansUpCorruptIndexedItem_AllowingLaterItemsToProgress()
+    {
+        var keyValueStore = new MemoryKeyValueStore(new MemoryStore<SerializedKeyValuePair>());
+        var payloadSerializer = new TestPayloadSerializer();
+        var store = new KeyValueWorkflowDispatchOutboxStore(keyValueStore, payloadSerializer);
+        var corrupt = CreateItem("corrupt", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
+        var valid = CreateItem("valid", new DateTimeOffset(2026, 5, 20, 12, 1, 0, TimeSpan.Zero));
+        payloadSerializer.Items[valid.Id] = valid;
+        await SaveAsync(keyValueStore, CreateItemRecord(corrupt));
+        await SaveAsync(keyValueStore, CreateIndexRecord(corrupt));
+        await SaveAsync(keyValueStore, CreateIndexByIdRecord(corrupt));
+        await SaveAsync(keyValueStore, CreateRecoveryRecord(corrupt));
+        await SaveAsync(keyValueStore, CreateItemRecord(valid));
+        await SaveAsync(keyValueStore, CreateIndexRecord(valid));
+        await SaveAsync(keyValueStore, CreateIndexByIdRecord(valid));
+        await SaveAsync(keyValueStore, CreateLegacyScanCompletedRecord());
+
+        var firstBatch = (await store.FindManyAsync(1)).ToList();
+        var secondBatch = (await store.FindManyAsync(1)).ToList();
+
+        Assert.Empty(firstBatch);
+        Assert.Equal(["valid"], secondBatch.Select(x => x.Id));
+        Assert.Null(await FindAsync(keyValueStore, $"Elsa:WorkflowDispatchOutbox:Items:{corrupt.Id}"));
+        Assert.Null(await FindAsync(keyValueStore, $"Elsa:WorkflowDispatchOutbox:Index:{corrupt.CreatedAt.UtcTicks:D20}:{corrupt.Id}"));
+        Assert.Null(await FindAsync(keyValueStore, $"Elsa:WorkflowDispatchOutbox:IndexById:{corrupt.Id}"));
+        Assert.Null(await FindAsync(keyValueStore, $"Elsa:WorkflowDispatchOutbox:Recovery:{corrupt.Id}"));
+    }
+
+    [Fact]
+    public async Task FindManyAsync_CleansUpRecoveryRecord_WhenPayloadCannotBeDeserialized()
+    {
+        var item = CreateItem("corrupt", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
+        var indexKey = $"Elsa:WorkflowDispatchOutbox:Index:{item.CreatedAt.UtcTicks:D20}:{item.Id}";
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Recovery:" && x.StartsWith), Arg.Any<CancellationToken>())
+            .Returns([CreateRecoveryRecord(item)]);
+        _keyValueStore.FindManyAsync(Arg.Is<KeyValueFilter>(x => x.Keys != null), Arg.Any<CancellationToken>())
+            .Returns([CreateItemRecord(item)]);
+        _keyValueStore.FindAsync(Arg.Is<KeyValueFilter>(x => x.Key == $"Elsa:WorkflowDispatchOutbox:IndexById:{item.Id}"), Arg.Any<CancellationToken>())
+            .Returns(new SerializedKeyValuePair { Key = $"Elsa:WorkflowDispatchOutbox:IndexById:{item.Id}", SerializedValue = indexKey });
+
+        var result = (await _store.FindManyAsync()).ToList();
+
+        Assert.Empty(result);
+        await _keyValueStore.Received(1).DeleteAsync(indexKey, Arg.Any<CancellationToken>());
+        await _keyValueStore.Received(1).DeleteAsync($"Elsa:WorkflowDispatchOutbox:IndexById:{item.Id}", Arg.Any<CancellationToken>());
+        await _keyValueStore.Received(1).DeleteAsync($"Elsa:WorkflowDispatchOutbox:Recovery:{item.Id}", Arg.Any<CancellationToken>());
+        await _keyValueStore.Received(1).DeleteAsync($"Elsa:WorkflowDispatchOutbox:Items:{item.Id}", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -232,11 +284,33 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
         SerializedValue = item.Id
     };
 
+    private static SerializedKeyValuePair CreateIndexByIdRecord(WorkflowDispatchOutboxItem item) => new()
+    {
+        Key = $"Elsa:WorkflowDispatchOutbox:IndexById:{item.Id}",
+        SerializedValue = $"Elsa:WorkflowDispatchOutbox:Index:{item.CreatedAt.UtcTicks:D20}:{item.Id}"
+    };
+
     private static SerializedKeyValuePair CreateRecoveryRecord(WorkflowDispatchOutboxItem item) => new()
     {
         Key = $"Elsa:WorkflowDispatchOutbox:Recovery:{item.Id}",
         SerializedValue = item.Id
     };
+
+    private static SerializedKeyValuePair CreateLegacyScanCompletedRecord() => new()
+    {
+        Key = "Elsa:WorkflowDispatchOutbox:State:LegacyScanCompleted",
+        SerializedValue = "true"
+    };
+
+    private static async Task SaveAsync(IKeyValueStore keyValueStore, SerializedKeyValuePair record)
+    {
+        await keyValueStore.SaveAsync(record, CancellationToken.None);
+    }
+
+    private static async Task<SerializedKeyValuePair?> FindAsync(IKeyValueStore keyValueStore, string key)
+    {
+        return await keyValueStore.FindAsync(new KeyValueFilter { Key = key }, CancellationToken.None);
+    }
 
     private class TestPayloadSerializer : IPayloadSerializer
     {

@@ -27,9 +27,7 @@ public class KeyValueFeature : IShellFeature
 
     public void ConfigureServices(IServiceCollection services)
     {
-        if (KeyValueStore == DefaultKeyValueStore && !services.Any(x => x.ServiceType == typeof(IKeyValueStore)))
-            services.TryAddSingleton<MemoryStore<SerializedKeyValuePair>>();
-
+        services.TryAddSingleton<MemoryStore<SerializedKeyValuePair>>();
         services.TryAddScoped<IKeyValueStore>(KeyValueStore);
     }
 }
