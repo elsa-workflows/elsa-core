@@ -81,7 +81,9 @@ public class DistributedRuntimeLockProviderValidator(
             .Where(property => property.GetIndexParameters().Length == 0))
         {
             var returnsDistributedLockProvider = typeof(IDistributedLockProvider).IsAssignableFrom(property.PropertyType);
-            var returnsDistributedLockProviders = TryGetDistributedLockProviderElementType(property.PropertyType, out _);
+            var returnsDistributedLockProviders =
+                property.PropertyType == typeof(System.Collections.IEnumerable) ||
+                TryGetDistributedLockProviderElementType(property.PropertyType, out _);
 
             if (!returnsDistributedLockProvider && !returnsDistributedLockProviders)
                 continue;
@@ -109,7 +111,7 @@ public class DistributedRuntimeLockProviderValidator(
                 {
                     enumerator = innerProviders.GetEnumerator();
                 }
-                catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException or TargetInvocationException)
+                catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException or NotSupportedException or TargetInvocationException)
                 {
                     logger.LogDebug(ex, "Skipping distributed lock provider property {PropertyName} because enumeration threw.", property.Name);
                     continue;

@@ -71,6 +71,18 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     }
 
     [Fact]
+    public void Validate_Throws_WhenProviderUsesFileSystemProviderThroughNonGenericProviderCollection()
+    {
+        System.Collections.IEnumerable providers = new IDistributedLockProvider[] { new CustomDistributedLockProvider(), _fileProvider };
+        var validator = CreateValidator(new NonGenericCompositeDistributedLockProvider(providers));
+
+        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
+
+        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
+        Assert.Contains(nameof(NonGenericCompositeDistributedLockProvider), exception.Message);
+    }
+
+    [Fact]
     public void Validate_IgnoresObjectCollections_WhenTheyContainProviderInstances()
     {
         var validator = CreateValidator(new ObjectCollectionDistributedLockProvider([new CustomDistributedLockProvider(), _fileProvider]));
@@ -109,6 +121,14 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     public void Validate_IgnoresProviderCollectionsThatThrowDuringEnumeration()
     {
         var validator = CreateValidator(new ThrowingEnumerableDistributedLockProvider());
+
+        validator.Validate();
+    }
+
+    [Fact]
+    public void Validate_IgnoresProviderCollectionsThatThrowObjectDisposedDuringEnumeration()
+    {
+        var validator = CreateValidator(new ObjectDisposedEnumerableDistributedLockProvider());
 
         validator.Validate();
     }
@@ -194,6 +214,13 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         public IDistributedLock CreateLock(string name) => Providers.First().CreateLock(name);
     }
 
+    private class NonGenericCompositeDistributedLockProvider(System.Collections.IEnumerable providers) : IDistributedLockProvider
+    {
+        public System.Collections.IEnumerable Providers { get; } = providers;
+
+        public IDistributedLock CreateLock(string name) => Providers.OfType<IDistributedLockProvider>().First().CreateLock(name);
+    }
+
     private class NullableCompositeDistributedLockProvider(IReadOnlyCollection<IDistributedLockProvider?> providers) : IDistributedLockProvider
     {
         public IReadOnlyCollection<IDistributedLockProvider?> Providers { get; } = providers;
@@ -227,6 +254,18 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         public IEnumerator<IDistributedLockProvider> GetEnumerator() => throw new NotSupportedException("Enumeration unavailable.");
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    private class ObjectDisposedEnumerableDistributedLockProvider : IDistributedLockProvider
+    {
+        public System.Collections.IEnumerable Providers => new ObjectDisposedDistributedLockProviderEnumerable();
+
+        public IDistributedLock CreateLock(string name) => new CustomDistributedLock(name);
+    }
+
+    private class ObjectDisposedDistributedLockProviderEnumerable : System.Collections.IEnumerable
+    {
+        public System.Collections.IEnumerator GetEnumerator() => throw new ObjectDisposedException(nameof(ObjectDisposedDistributedLockProviderEnumerable));
     }
 
     private class CustomDistributedLockProvider : IDistributedLockProvider

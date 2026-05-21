@@ -42,9 +42,9 @@ var services = builder.Services;
 var configuration = builder.Configuration;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
+var configuredAllowLocalDistributedRuntimeLockProvider = configuration.GetValue<bool?>("DistributedRuntime:AllowLocalLockProviderInDistributedRuntime");
 var allowLocalDistributedRuntimeLockProvider =
-    builder.Environment.IsDevelopment() ||
-    configuration.GetValue("DistributedRuntime:AllowLocalLockProviderInDistributedRuntime", false);
+    configuredAllowLocalDistributedRuntimeLockProvider ?? builder.Environment.IsDevelopment();
 
 services
     .AddElsa(elsa =>
